@@ -1,0 +1,22 @@
+<h1>Meetings</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Body</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @meetings.each do |meeting| %>
+      <tr>
+        <td><%= meeting.starts_at&.strftime("%B %d, %Y %l:%M %p") %></td>
+        <td><%= meeting.body_name %></td>
+        <td><%= meeting.status.titleize %></td>
+        <td><%= link_to "View Details", meeting_path(meeting) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

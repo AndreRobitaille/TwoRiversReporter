@@ -1,0 +1,44 @@
+<h1><%= @meeting.body_name %></h1>
+
+<p>
+  <strong>Date:</strong>
+  <%= @meeting.starts_at&.strftime("%B %d, %Y %l:%M %p") %>
+</p>
+
+<p>
+  <strong>Status:</strong>
+  <%= @meeting.status.titleize %>
+</p>
+
+<p>
+  <strong>Original Source:</strong>
+  <%= link_to "View on City Website", @meeting.detail_page_url, target: "_blank" %>
+</p>
+
+<h2>Documents</h2>
+
+<% if @meeting.meeting_documents.any? %>
+  <ul>
+    <% @meeting.meeting_documents.each do |doc| %>
+      <li>
+        <strong><%= doc.document_type.humanize %></strong>
+        <% if doc.file.attached? && doc.document_type.include?("pdf") %>
+          (<%= number_to_human_size(doc.file.byte_size) %>)
+          <% if doc.text_quality.present? %>
+            - Quality: <%= doc.text_quality.humanize %>
+          <% end %>
+          <br>
+          <%= link_to "Download PDF", rails_blob_path(doc.file, disposition: "attachment") %>
+        <% else %>
+          <br>
+          <%= link_to "View Original", doc.source_url, target: "_blank" %>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <p>No documents found for this meeting.</p>
+<% end %>
+
+<br>
+<%= link_to "Back to Meetings", meetings_path %>
