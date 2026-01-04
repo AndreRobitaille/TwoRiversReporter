@@ -20,7 +20,14 @@ module Documents
 
         # 2. Extract Text via pdftotext
         # Output to stdout (-)
-        text = `pdftotext "#{path}" - 2>/dev/null`
+        raw_text = `pdftotext "#{path}" - 2>/dev/null`
+
+        # Sanitize text: remove any token longer than 250 chars (likely garbage/binary)
+        # This prevents Postgres index failures
+        Rails.logger.info "SANITIZING TEXT for doc #{document_id}..."
+        text = raw_text.scan(/\S+/).reject { |w| w.length > 250 }.join(" ")
+
+        Rails.logger.info "Extracted #{raw_text.length} chars (cleaned to #{text.length}) from #{path}"
         char_count = text.length
 
         # 3. Calculate Metrics
@@ -37,12 +44,15 @@ module Documents
         end
 
         # 4. Save
-        document.update!(
+        unless document.update(
           page_count: page_count,
           text_chars: char_count,
           avg_chars_per_page: avg,
-          text_quality: quality
+          text_quality: quality,
+          extracted_text: text
         )
+          Rails.logger.error "Failed to save analysis for #{document_id}: #{document.errors.full_messages.join(', ')}"
+        end
       end
     rescue StandardError => e
       document.update!(text_quality: "broken")

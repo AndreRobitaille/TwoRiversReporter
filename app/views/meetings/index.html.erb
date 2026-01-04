@@ -1,5 +1,15 @@
 <h1>Meetings</h1>
 
+<%= form_with url: meetings_path, method: :get, local: true do |form| %>
+  <div style="margin-bottom: 20px;">
+    <%= form.text_field :q, value: params[:q], placeholder: "Search documents...", style: "width: 300px; padding: 5px;" %>
+    <%= form.submit "Search", style: "padding: 5px;" %>
+    <% if params[:q].present? %>
+      <%= link_to "Clear", meetings_path, style: "margin-left: 10px;" %>
+    <% end %>
+  </div>
+<% end %>
+
 <table>
   <thead>
     <tr>
