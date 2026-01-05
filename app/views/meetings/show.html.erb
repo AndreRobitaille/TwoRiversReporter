@@ -33,6 +33,41 @@
   </div>
 <% end %>
 
+<% if @meeting.motions.any? %>
+  <div style="background-color: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 30px;">
+    <h2>Voting Record</h2>
+    <% @meeting.motions.each do |motion| %>
+      <div class="motion" style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+        <div style="font-size: 1.1em; margin-bottom: 10px;">
+          <strong>Motion:</strong> <%= motion.description %>
+        </div>
+        <div style="margin-bottom: 10px;">
+          <strong>Outcome:</strong> 
+          <span style="padding: 3px 8px; border-radius: 4px; color: white; background-color: <%= motion.outcome.downcase == 'passed' ? '#48bb78' : (motion.outcome.downcase == 'failed' ? '#e53e3e' : '#a0aec0') %>;">
+            <%= motion.outcome.titleize %>
+          </span>
+        </div>
+        
+        <% if motion.votes.any? %>
+          <details>
+            <summary style="cursor: pointer; color: #3182ce;">View Votes (<%= motion.votes.count %>)</summary>
+            <div style="margin-top: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
+              <% motion.votes.includes(:member).each do |vote| %>
+                <div style="padding: 5px; border: 1px solid #eee; border-radius: 4px;">
+                  <strong><%= vote.member.name %>:</strong>
+                  <span style="color: <%= vote.value == 'yes' ? 'green' : (vote.value == 'no' ? 'red' : 'grey') %>">
+                    <%= vote.value.titleize %>
+                  </span>
+                </div>
+              <% end %>
+            </div>
+          </details>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
 <% if @meeting.agenda_items.any? %>
   <h2>Agenda</h2>
   <div class="agenda-list">

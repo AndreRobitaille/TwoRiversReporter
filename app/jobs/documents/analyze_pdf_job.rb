@@ -77,6 +77,11 @@ module Documents
         if document.document_type.include?("minutes") || document.document_type.include?("packet")
           SummarizeMeetingJob.perform_later(document.meeting_id)
         end
+
+        # Trigger Vote Extraction for minutes
+        if document.document_type == "minutes_pdf"
+          ExtractVotesJob.perform_later(document.meeting_id)
+        end
       end
     rescue StandardError => e
       document.update!(text_quality: "broken")
