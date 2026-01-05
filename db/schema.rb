@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_05_001350) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_05_102401) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -42,6 +42,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_05_001350) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "agenda_item_documents", force: :cascade do |t|
+    t.bigint "agenda_item_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "meeting_document_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["agenda_item_id"], name: "index_agenda_item_documents_on_agenda_item_id"
+    t.index ["meeting_document_id"], name: "index_agenda_item_documents_on_meeting_document_id"
+  end
+
   create_table "agenda_items", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "meeting_id", null: false
@@ -52,6 +61,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_05_001350) do
     t.text "title"
     t.datetime "updated_at", null: false
     t.index ["meeting_id"], name: "index_agenda_items_on_meeting_id"
+  end
+
+  create_table "extractions", force: :cascade do |t|
+    t.text "cleaned_text"
+    t.datetime "created_at", null: false
+    t.bigint "meeting_document_id", null: false
+    t.integer "page_number"
+    t.text "raw_text"
+    t.datetime "updated_at", null: false
+    t.index ["meeting_document_id"], name: "index_extractions_on_meeting_document_id"
   end
 
   create_table "meeting_documents", force: :cascade do |t|
@@ -215,7 +234,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_05_001350) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "agenda_item_documents", "agenda_items"
+  add_foreign_key "agenda_item_documents", "meeting_documents"
   add_foreign_key "agenda_items", "meetings"
+  add_foreign_key "extractions", "meeting_documents"
   add_foreign_key "meeting_documents", "meetings"
   add_foreign_key "meeting_summaries", "meetings"
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade

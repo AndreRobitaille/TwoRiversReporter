@@ -1,5 +1,6 @@
 class MeetingDocument < ApplicationRecord
   belongs_to :meeting
+  has_many :extractions, dependent: :destroy
   has_one_attached :file
 
   after_save :update_search_vector, if: :saved_change_to_extracted_text?

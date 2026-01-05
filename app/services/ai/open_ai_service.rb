@@ -34,6 +34,43 @@ module Ai
       response.dig("choices", 0, "message", "content")
     end
 
+    def summarize_packet_with_citations(extractions)
+      # Build context with page markers
+      context = extractions.sort_by(&:page_number).map do |ex|
+        "--- [Page #{ex.page_number}] ---\n#{ex.cleaned_text}"
+      end.join("\n\n")
+
+      prompt = <<~PROMPT
+        You are a civic engagement assistant for the residents of Two Rivers, WI.
+        Your goal is to help residents understand what will be discussed at an upcoming meeting based on the meeting packet.
+
+        The following text is extracted from the meeting packet PDF, organized by page number.
+        Please provide a summary of the KEY items that affect residents (e.g., spending, zoning changes, new ordinances).
+
+        Guidelines:
+        - Focus on the "Why it matters" for a resident.
+        - Ignore routine procedural items (roll call, approval of minutes) unless they contain something unusual.
+        - If financial figures are mentioned, include them.
+        - Keep the tone neutral and informative.
+        - Structure the response with Markdown headers.
+        - CRITICAL: You MUST cite the source page for every claim using the format [Page X].
+        - Example: "The city plans to purchase a new fire truck for $500,000 [Page 12]."
+
+        Text to summarize:
+        #{context.truncate(100000)}
+      PROMPT
+
+      response = @client.chat(
+        parameters: {
+          model: "gpt-4o-mini",
+          messages: [ { role: "user", content: prompt } ],
+          temperature: 0.3
+        }
+      )
+
+      response.dig("choices", 0, "message", "content")
+    end
+
     def summarize_minutes(text)
       prompt = <<~PROMPT
         You are a civic engagement assistant for the residents of Two Rivers, WI.

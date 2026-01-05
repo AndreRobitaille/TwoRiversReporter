@@ -20,14 +20,34 @@ module Documents
 
         # 2. Extract Text via pdftotext
         # Output to stdout (-)
-        raw_text = `pdftotext "#{path}" - 2>/dev/null`
+        # We split by Form Feed (\f) to separate pages
+        raw_full_text = `pdftotext "#{path}" - 2>/dev/null`
 
-        # Sanitize text: remove any token longer than 250 chars (likely garbage/binary)
-        # This prevents Postgres index failures
-        Rails.logger.info "SANITIZING TEXT for doc #{document_id}..."
-        text = raw_text.scan(/\S+/).reject { |w| w.length > 250 }.join(" ")
+        # Clear existing extractions to be idempotent
+        document.extractions.destroy_all
 
-        Rails.logger.info "Extracted #{raw_text.length} chars (cleaned to #{text.length}) from #{path}"
+        raw_pages = raw_full_text.split("\f")
+        full_clean_text_parts = []
+
+        raw_pages.each_with_index do |page_text, index|
+          page_num = index + 1
+          # Sanitize text: remove any token longer than 250 chars (likely garbage/binary)
+          clean_page_text = page_text.scan(/\S+/).reject { |w| w.length > 250 }.join(" ")
+
+          # Store granular page extraction
+          Extraction.create!(
+            meeting_document: document,
+            page_number: page_num,
+            raw_text: page_text,
+            cleaned_text: clean_page_text
+          )
+
+          full_clean_text_parts << clean_page_text
+        end
+
+        text = full_clean_text_parts.join(" ")
+
+        Rails.logger.info "Extracted #{raw_full_text.length} chars (cleaned to #{text.length}) from #{path} across #{raw_pages.size} pages"
         char_count = text.length
 
         # 3. Calculate Metrics

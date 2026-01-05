@@ -283,35 +283,19 @@ OCR should be:
 
 ## Current Implementation Status (2026-01-05)
 
-### Phase 2: Agenda & Packet Summaries (In Progress)
+### Phase 2: Agenda & Packet Summaries (Completed)
 
-Implemented so far:
-- Agenda parsing: `Scrapers::ParseAgendaJob` parses `agenda_html` into `AgendaItem` records.
-- PDF extraction quality + extracted text: `Documents::AnalyzePdfJob` runs `pdfinfo`/`pdftotext` and stores `text_quality` metrics.
-- AI summaries (non-cited): `Documents::AnalyzePdfJob` triggers `SummarizeMeetingJob`, which calls `Ai::OpenAiService` and stores results in `MeetingSummary`.
-- Meeting page display: `app/views/meetings/show.html.erb` renders the most recent `MeetingSummary`.
+Implemented:
+- Agenda parsing: `Scrapers::ParseAgendaJob` parses `agenda_html` and links attachment PDFs.
+- PDF extraction: `Documents::AnalyzePdfJob` extracts text page-by-page into `Extraction` records.
+- Cited AI summaries: `Ai::OpenAiService` generates summaries with `[Page X]` citations grounded in extraction data.
+- Meeting page display: Renders Markdown summaries.
 
-Gaps to complete Phase 2:
-1. Page-aware extraction (required for citations)
-   - Add an `Extraction` model/table to store `meeting_document_id`, `page_number`, `raw_text`, `cleaned_text`.
-   - Update `Documents::AnalyzePdfJob` to preserve page boundaries (e.g., split `pdftotext` output on `\f`) and populate `Extraction` rows.
-2. Agenda item attachments (required for packet-grounded summaries)
-   - Add an `AgendaItemDocument` join model/table linking `agenda_items` to attachment `meeting_documents`.
-   - Extend `Scrapers::ParseAgendaJob` to extract attachment links per agenda item and associate them to `MeetingDocument` records.
-3. Cited summary generation
-   - Update `Ai::OpenAiService` prompts to require citations like `[Page 3]` and only make claims supported by cited pages.
-   - Pass page-scoped text (from `Extraction`) into the summarization prompt instead of one long blob.
-4. Resident-friendly rendering
-   - Render AI output as Markdown safely (current view uses `simple_format`, which treats Markdown as plain text).
-   - Display citations with clear labels and always link back to original PDFs.
+Future Improvements:
+- Link `[Page X]` citations directly to the PDF viewer anchor.
+- Handle multiple packet documents (attachments) in the summarization prompt context more robustly.
 
-Operational follow-ups once the above is implemented:
-- Re-run analysis/summarization for recent meetings to backfill cited summaries.
-- Add basic guardrails: skip/label summaries when `text_quality` is `image_scan`/`broken`.
-
----
-
-## Explicit Non-Goals
+### Phase 3: Minutes Analysis
 
 - No real-time streaming
 - No commenting system
