@@ -53,6 +53,10 @@ module Documents
         )
           Rails.logger.error "Failed to save analysis for #{document_id}: #{document.errors.full_messages.join(', ')}"
         end
+        # Trigger Summarization if this was a minutes or packet document
+        if document.document_type.include?("minutes") || document.document_type.include?("packet")
+          SummarizeMeetingJob.perform_later(document.meeting_id)
+        end
       end
     rescue StandardError => e
       document.update!(text_quality: "broken")

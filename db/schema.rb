@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_05_000425) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_05_001350) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -70,6 +70,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_05_000425) do
     t.datetime "updated_at", null: false
     t.index ["meeting_id"], name: "index_meeting_documents_on_meeting_id"
     t.index ["search_vector"], name: "index_meeting_documents_on_search_vector", using: :gin
+  end
+
+  create_table "meeting_summaries", force: :cascade do |t|
+    t.text "content"
+    t.datetime "created_at", null: false
+    t.bigint "meeting_id", null: false
+    t.string "summary_type"
+    t.datetime "updated_at", null: false
+    t.index ["meeting_id"], name: "index_meeting_summaries_on_meeting_id"
   end
 
   create_table "meetings", force: :cascade do |t|
@@ -208,6 +217,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_05_000425) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "agenda_items", "meetings"
   add_foreign_key "meeting_documents", "meetings"
+  add_foreign_key "meeting_summaries", "meetings"
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_failed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade

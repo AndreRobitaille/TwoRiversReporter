@@ -60,3 +60,7 @@ group :development do
 end
 
 gem "mechanize", "~> 2.14"
+
+gem "ruby-openai", "~> 8.3"
+
+gem "kramdown", "~> 2.5"
