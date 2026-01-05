@@ -80,6 +80,16 @@
           <%= item.title %>
         </div>
         
+        <% if item.topics.any? %>
+          <div style="margin-top: 5px;">
+            <% item.topics.each do |topic| %>
+              <span style="display: inline-block; background: #e2e8f0; color: #4a5568; padding: 2px 6px; border-radius: 12px; font-size: 0.8em; margin-right: 5px;">
+                <%= link_to topic.name, topic_path(topic), style: "text-decoration: none; color: inherit;" %>
+              </span>
+            <% end %>
+          </div>
+        <% end %>
+        
         <% if item.summary.present? %>
           <div style="margin-top: 5px; color: #444;">
             <strong>Summary:</strong> <%= item.summary %>

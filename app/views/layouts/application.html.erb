@@ -24,6 +24,14 @@
   </head>
 
   <body>
-    <%= yield %>
+    <nav style="padding: 20px; background: #f8f9fa; border-bottom: 1px solid #e9ecef; margin-bottom: 20px;">
+      <%= link_to "Home", root_path, style: "margin-right: 15px; font-weight: bold; text-decoration: none; color: #333;" %>
+      <%= link_to "Meetings", meetings_path, style: "margin-right: 15px; text-decoration: none; color: #555;" %>
+      <%= link_to "Topics", topics_path, style: "margin-right: 15px; text-decoration: none; color: #555;" %>
+      <%= link_to "Officials", members_path, style: "margin-right: 15px; text-decoration: none; color: #555;" %>
+    </nav>
+    <div style="padding: 0 20px;">
+      <%= yield %>
+    </div>
   </body>
 </html>

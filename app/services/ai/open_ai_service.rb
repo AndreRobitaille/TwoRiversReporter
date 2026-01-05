@@ -145,5 +145,40 @@ module Ai
 
       response.dig("choices", 0, "message", "content")
     end
+    def extract_topics(items_text)
+      prompt = <<~PROMPT
+        You are a civic data classifier.
+        Your goal is to classify agenda items into high-level topics based on their content.
+
+        The text below contains a list of agenda items with their internal IDs.
+        For each item, assign:
+        1. A primary category (Infrastructure, Public Safety, Parks & Rec, Finance, Zoning, Licensing, Personnel, Governance, Other).
+        2. Specific tags (keywords like "Tax Levy", "Short-term Rentals", "Harbor", "Police").
+
+        Return a JSON object:
+        {
+          "items": [
+            { "id": 123, "category": "Finance", "tags": ["Tax Levy", "Budget"] }
+          ]
+        }
+
+        Text:
+        #{items_text.truncate(50000)}
+      PROMPT
+
+      response = @client.chat(
+        parameters: {
+          model: "gpt-4o-mini",
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: "You are a classifier that outputs JSON." },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.1
+        }
+      )
+
+      response.dig("choices", 0, "message", "content")
+    end
   end
 end

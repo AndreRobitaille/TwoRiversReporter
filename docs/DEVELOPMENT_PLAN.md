@@ -270,9 +270,13 @@ OCR should be:
 - Vote extraction
 - Member vote history
 
-### Phase 4: Topic Aggregation
-- Cross-meeting issue tracking
-- Long-term accountability views
+### Phase 4: Topic Aggregation (Completed)
+
+Implemented:
+- Topic models: `Topic`, `AgendaItemTopic`.
+- Issue categorization: `ExtractTopicsJob` tags agenda items with high-level categories (Governance, Finance, etc.).
+- Member profiles: `MembersController` and views for listing officials and their voting history.
+- Topic exploration: `TopicsController` and views for browsing items by issue.
 
 ### Phase 5 (Optional): OCR for Legacy PDFs
 - OCR pipeline for image_scan documents

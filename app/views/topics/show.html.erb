@@ -1,0 +1,22 @@
+<h1>Topic: <%= @topic.name %></h1>
+
+<div class="timeline">
+  <% @items.each do |item| %>
+    <div class="timeline-item" style="margin-bottom: 20px; border-left: 2px solid #3182ce; padding-left: 15px;">
+      <div style="font-size: 0.9em; color: #718096;">
+        <%= item.meeting.starts_at&.strftime("%B %d, %Y") %> - <%= item.meeting.body_name %>
+      </div>
+      <div style="font-weight: bold; margin-top: 5px;">
+        <%= link_to item.title, meeting_path(item.meeting, anchor: "item-#{item.id}") %>
+      </div>
+      <% if item.summary.present? %>
+        <div style="margin-top: 5px; color: #4a5568;">
+          <%= item.summary %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>
+
+<br>
+<%= link_to "Back to Topics", topics_path %>

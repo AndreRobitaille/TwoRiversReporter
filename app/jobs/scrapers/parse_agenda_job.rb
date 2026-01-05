@@ -113,6 +113,7 @@ module Scrapers
       end
 
       Rails.logger.info "Parsed agenda items for Meeting #{meeting_id}"
+      ExtractTopicsJob.perform_later(meeting_id)
     end
   end
 end

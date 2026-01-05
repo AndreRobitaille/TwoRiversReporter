@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_05_124025) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_05_125603) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -49,6 +49,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_05_124025) do
     t.datetime "updated_at", null: false
     t.index ["agenda_item_id"], name: "index_agenda_item_documents_on_agenda_item_id"
     t.index ["meeting_document_id"], name: "index_agenda_item_documents_on_meeting_document_id"
+  end
+
+  create_table "agenda_item_topics", force: :cascade do |t|
+    t.bigint "agenda_item_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "topic_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["agenda_item_id"], name: "index_agenda_item_topics_on_agenda_item_id"
+    t.index ["topic_id"], name: "index_agenda_item_topics_on_topic_id"
   end
 
   create_table "agenda_items", force: :cascade do |t|
@@ -250,6 +259,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_05_124025) do
     t.index ["key"], name: "index_solid_queue_semaphores_on_key", unique: true
   end
 
+  create_table "topics", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "name"
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_topics_on_name"
+  end
+
   create_table "votes", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "member_id", null: false
@@ -264,6 +281,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_05_124025) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "agenda_item_documents", "agenda_items"
   add_foreign_key "agenda_item_documents", "meeting_documents"
+  add_foreign_key "agenda_item_topics", "agenda_items"
+  add_foreign_key "agenda_item_topics", "topics"
   add_foreign_key "agenda_items", "meetings"
   add_foreign_key "extractions", "meeting_documents"
   add_foreign_key "meeting_documents", "meetings"

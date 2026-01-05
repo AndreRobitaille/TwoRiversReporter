@@ -1,0 +1,12 @@
+<h1>Public Officials</h1>
+
+<div class="members-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px;">
+  <% @members.each do |member| %>
+    <div class="member-card" style="border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
+      <h3><%= link_to member.name, member_path(member) %></h3>
+      <p>
+        <strong>Votes Cast:</strong> <%= member.votes.count %><br>
+      </p>
+    </div>
+  <% end %>
+</div>
