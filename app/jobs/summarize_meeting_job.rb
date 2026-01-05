@@ -3,7 +3,7 @@ class SummarizeMeetingJob < ApplicationJob
 
   def perform(meeting_id)
     meeting = Meeting.find(meeting_id)
-    ai_service = Ai::OpenAiService.new
+    ai_service = ::Ai::OpenAiService.new
 
     # 1. Check for Minutes (Highest Priority for "What Happened")
     minutes_doc = meeting.meeting_documents.find_by(document_type: "minutes_pdf")
