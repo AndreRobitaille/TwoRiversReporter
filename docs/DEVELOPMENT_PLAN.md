@@ -295,8 +295,20 @@ Future Improvements:
 - Link `[Page X]` citations directly to the PDF viewer anchor.
 - Handle multiple packet documents (attachments) in the summarization prompt context more robustly.
 
-### Phase 3: Minutes Analysis
+### Phase 3: Minutes Analysis (Completed)
 
+Implemented:
+- Voting models: `Member`, `Motion`, `Vote`.
+- Vote extraction: `ExtractVotesJob` parses minutes via AI to extract motions and individual votes.
+- Meeting page display: "Voting Record" section showing outcomes and roll calls.
+
+### Phase 4: Topic Aggregation
+- Cross-meeting issue tracking
+- Long-term accountability views
+
+---
+
+## Explicit Non-Goals
 - No real-time streaming
 - No commenting system
 - No user accounts initially
