@@ -42,6 +42,8 @@ module Documents
         # Trigger Analysis for PDFs
         if document.document_type.to_s.end_with?("pdf")
           Documents::AnalyzePdfJob.perform_later(document.id)
+        elsif document.document_type == "agenda_html"
+          Scrapers::ParseAgendaJob.perform_later(document.meeting_id)
         end
 
       rescue OpenURI::HTTPError => e

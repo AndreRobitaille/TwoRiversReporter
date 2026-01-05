@@ -15,6 +15,34 @@
   <%= link_to "View on City Website", @meeting.detail_page_url, target: "_blank" %>
 </p>
 
+<% if @meeting.agenda_items.any? %>
+  <h2>Agenda</h2>
+  <div class="agenda-list">
+    <% @meeting.agenda_items.order(:order_index).each do |item| %>
+      <div class="agenda-item" style="margin-bottom: 20px; border-left: 4px solid #eee; padding-left: 15px;">
+        <div style="font-weight: bold; font-size: 1.1em;">
+          <% if item.number.present? %>
+            <span style="color: #666; margin-right: 5px;"><%= item.number %></span>
+          <% end %>
+          <%= item.title %>
+        </div>
+        
+        <% if item.summary.present? %>
+          <div style="margin-top: 5px; color: #444;">
+            <strong>Summary:</strong> <%= item.summary %>
+          </div>
+        <% end %>
+        
+        <% if item.recommended_action.present? %>
+          <div style="margin-top: 5px; font-style: italic; color: #2c5282;">
+            <strong>Action:</strong> <%= item.recommended_action %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
 <h2>Documents</h2>
 
 <% if @meeting.meeting_documents.any? %>
