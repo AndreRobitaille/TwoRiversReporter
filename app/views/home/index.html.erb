@@ -1,2 +1,92 @@
-<h1>Home#index</h1>
-<p>Find me in app/views/home/index.html.erb</p>
+<% content_for(:title) { "Two Rivers Reporter - City Meeting Transparency" } %>
+
+<div class="hero">
+  <h1 class="hero-title">Two Rivers Reporter</h1>
+  <p class="hero-subtitle">
+    Stay informed about city meetings, decisions, and how your elected officials vote.
+    A civic transparency project for Two Rivers, WI residents.
+  </p>
+  <div class="hero-actions">
+    <%= link_to "View Meetings", meetings_path, class: "btn btn--primary btn--lg" %>
+    <%= link_to "Browse Topics", topics_path, class: "btn btn--secondary btn--lg" %>
+  </div>
+</div>
+
+<% if @upcoming_meetings.any? %>
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">Upcoming Meetings</h2>
+      <%= link_to "View all", meetings_path, class: "btn btn--ghost" %>
+    </div>
+
+    <div class="card-grid">
+      <% @upcoming_meetings.each do |meeting| %>
+        <%= link_to meeting_path(meeting), class: "card card--clickable", style: "text-decoration: none; color: inherit;" do %>
+          <div class="card-header">
+            <h3 class="card-title"><%= meeting.body_name %></h3>
+            <div class="card-subtitle">
+              <%= meeting.starts_at&.strftime("%B %d, %Y at %l:%M %p") %>
+            </div>
+          </div>
+          <div class="card-body">
+            <span class="badge badge--primary"><%= meeting.status.titleize %></span>
+            <% if meeting.meeting_documents.any? %>
+              <span class="badge badge--default"><%= meeting.meeting_documents.count %> documents</span>
+            <% end %>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  </section>
+<% end %>
+
+<% if @recent_meetings.any? %>
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">Recent Meetings</h2>
+      <%= link_to "View all", meetings_path, class: "btn btn--ghost" %>
+    </div>
+
+    <div class="card-grid">
+      <% @recent_meetings.each do |meeting| %>
+        <%= link_to meeting_path(meeting), class: "card card--clickable", style: "text-decoration: none; color: inherit;" do %>
+          <div class="card-header">
+            <h3 class="card-title"><%= meeting.body_name %></h3>
+            <div class="card-subtitle">
+              <%= meeting.starts_at&.strftime("%B %d, %Y") %>
+            </div>
+          </div>
+          <div class="card-body">
+            <span class="badge <%= meeting.status == 'minutes_posted' ? 'badge--success' : 'badge--default' %>">
+              <%= meeting.status.titleize %>
+            </span>
+            <% if meeting.meeting_summaries.any? %>
+              <span class="badge badge--primary">Summary available</span>
+            <% end %>
+            <% if meeting.motions.any? %>
+              <span class="badge badge--default"><%= meeting.motions.count %> votes</span>
+            <% end %>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  </section>
+<% end %>
+
+<% if @recent_topics.any? %>
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">Popular Topics</h2>
+      <%= link_to "View all topics", topics_path, class: "btn btn--ghost" %>
+    </div>
+
+    <div class="tags">
+      <% @recent_topics.each do |topic| %>
+        <%= link_to topic_path(topic), class: "tag" do %>
+          <%= topic.name %>
+          <span class="text-muted">(<%= topic.agenda_items.count %>)</span>
+        <% end %>
+      <% end %>
+    </div>
+  </section>
+<% end %>

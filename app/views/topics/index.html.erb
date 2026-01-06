@@ -1,12 +1,25 @@
-<h1>Topics</h1>
+<% content_for(:title) { "Topics - Two Rivers Reporter" } %>
 
-<div style="display: flex; flex-wrap: wrap; gap: 10px;">
+<div class="page-header">
+  <h1 class="page-title">Topics</h1>
+  <p class="page-subtitle">Explore issues discussed across city meetings</p>
+</div>
+
+<div class="card-grid">
   <% @topics.each do |topic| %>
-    <%= link_to topic_path(topic), style: "text-decoration: none;" do %>
-      <div style="background: #f7fafc; border: 1px solid #cbd5e0; padding: 10px; border-radius: 8px;">
-        <span style="font-weight: bold; color: #2d3748;"><%= topic.name %></span>
-        <span style="color: #718096; font-size: 0.9em; margin-left: 5px;">(<%= topic.agenda_items.count %>)</span>
+    <%= link_to topic_path(topic), class: "card card--clickable", style: "text-decoration: none; color: inherit;" do %>
+      <div class="card-header">
+        <h3 class="card-title"><%= topic.name %></h3>
+      </div>
+      <div class="card-body">
+        <span class="text-secondary"><%= topic.agenda_items.count %> agenda items</span>
       </div>
     <% end %>
   <% end %>
 </div>
+
+<% if @topics.empty? %>
+  <div class="card text-center" style="padding: var(--space-12);">
+    <p class="text-secondary mb-0">No topics have been categorized yet.</p>
+  </div>
+<% end %>

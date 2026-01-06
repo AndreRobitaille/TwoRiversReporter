@@ -1,12 +1,25 @@
-<h1>Public Officials</h1>
+<% content_for(:title) { "Public Officials - Two Rivers Reporter" } %>
 
-<div class="members-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px;">
+<div class="page-header">
+  <h1 class="page-title">Public Officials</h1>
+  <p class="page-subtitle">Track voting records for elected officials and committee members</p>
+</div>
+
+<div class="card-grid">
   <% @members.each do |member| %>
-    <div class="member-card" style="border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
-      <h3><%= link_to member.name, member_path(member) %></h3>
-      <p>
-        <strong>Votes Cast:</strong> <%= member.votes.count %><br>
-      </p>
-    </div>
+    <%= link_to member_path(member), class: "card card--clickable", style: "text-decoration: none; color: inherit;" do %>
+      <div class="card-header">
+        <h3 class="card-title"><%= member.name %></h3>
+      </div>
+      <div class="card-body">
+        <span class="text-secondary"><%= member.votes.count %> votes recorded</span>
+      </div>
+    <% end %>
   <% end %>
 </div>
+
+<% if @members.empty? %>
+  <div class="card text-center" style="padding: var(--space-12);">
+    <p class="text-secondary mb-0">No officials have been identified yet.</p>
+  </div>
+<% end %>

@@ -1,32 +1,84 @@
-<h1>Meetings</h1>
+<% content_for(:title) { "Meetings - Two Rivers Reporter" } %>
 
-<%= form_with url: meetings_path, method: :get, local: true do |form| %>
-  <div style="margin-bottom: 20px;">
-    <%= form.text_field :q, value: params[:q], placeholder: "Search documents...", style: "width: 300px; padding: 5px;" %>
-    <%= form.submit "Search", style: "padding: 5px;" %>
+<div class="page-header">
+  <h1 class="page-title">City Meetings</h1>
+  <p class="page-subtitle">Browse meetings from all city boards and committees</p>
+</div>
+
+<%= form_with url: meetings_path, method: :get, local: true, class: "search-form" do |form| %>
+  <%= form.text_field :q,
+      value: params[:q],
+      placeholder: "Search meetings and documents...",
+      class: "form-input" %>
+  <%= form.submit "Search", class: "btn btn--primary" %>
+  <% if params[:q].present? %>
+    <%= link_to "Clear", meetings_path, class: "btn btn--ghost" %>
+  <% end %>
+<% end %>
+
+<% if params[:q].present? %>
+  <p class="text-secondary mb-6">
+    Showing results for "<strong><%= params[:q] %></strong>"
+  </p>
+<% end %>
+
+<div class="table-wrapper">
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Body</th>
+        <th>Status</th>
+        <th>Info</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @meetings.each do |meeting| %>
+        <tr>
+          <td>
+            <strong><%= meeting.starts_at&.strftime("%b %d, %Y") %></strong>
+            <div class="text-muted" style="font-size: var(--font-size-sm);">
+              <%= meeting.starts_at&.strftime("%l:%M %p") %>
+            </div>
+          </td>
+          <td><%= meeting.body_name %></td>
+          <td>
+            <span class="badge <%= case meeting.status
+              when 'minutes_posted' then 'badge--success'
+              when 'upcoming' then 'badge--primary'
+              else 'badge--default'
+            end %>">
+              <%= meeting.status.titleize %>
+            </span>
+          </td>
+          <td>
+            <div class="flex gap-2 flex-wrap">
+              <% if meeting.meeting_documents.any? %>
+                <span class="badge badge--default"><%= meeting.meeting_documents.count %> docs</span>
+              <% end %>
+              <% if meeting.meeting_summaries.any? %>
+                <span class="badge badge--primary">Summary</span>
+              <% end %>
+              <% if meeting.motions.any? %>
+                <span class="badge badge--default"><%= meeting.motions.count %> votes</span>
+              <% end %>
+            </div>
+          </td>
+          <td class="text-right">
+            <%= link_to "View", meeting_path(meeting), class: "btn btn--secondary btn--sm" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<% if @meetings.empty? %>
+  <div class="card text-center" style="padding: var(--space-12);">
+    <p class="text-secondary mb-4">No meetings found.</p>
     <% if params[:q].present? %>
-      <%= link_to "Clear", meetings_path, style: "margin-left: 10px;" %>
+      <%= link_to "Clear search", meetings_path, class: "btn btn--primary" %>
     <% end %>
   </div>
 <% end %>
-
-<table>
-  <thead>
-    <tr>
-      <th>Date</th>
-      <th>Body</th>
-      <th>Status</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @meetings.each do |meeting| %>
-      <tr>
-        <td><%= meeting.starts_at&.strftime("%B %d, %Y %l:%M %p") %></td>
-        <td><%= meeting.body_name %></td>
-        <td><%= meeting.status.titleize %></td>
-        <td><%= link_to "View Details", meeting_path(meeting) %></td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>

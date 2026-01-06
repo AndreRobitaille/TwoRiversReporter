@@ -1,43 +1,65 @@
-<h1><%= @member.name %></h1>
+<% content_for(:title) { "#{@member.name} - Public Officials - Two Rivers Reporter" } %>
 
-<div style="margin-bottom: 20px;">
-  <strong>Total Votes:</strong> <%= @votes.count %>
+<div class="page-header">
+  <h1 class="page-title"><%= @member.name %></h1>
+  <p class="page-subtitle"><%= @votes.count %> votes recorded</p>
 </div>
 
-<h2>Voting History</h2>
+<section class="section">
+  <h2>Voting History</h2>
 
-<% if @votes.any? %>
-  <table style="width: 100%; border-collapse: collapse;">
-    <thead>
-      <tr style="text-align: left; background: #eee;">
-        <th style="padding: 10px;">Date</th>
-        <th style="padding: 10px;">Body</th>
-        <th style="padding: 10px;">Motion</th>
-        <th style="padding: 10px;">Vote</th>
-        <th style="padding: 10px;">Outcome</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @votes.each do |vote| %>
-        <tr style="border-bottom: 1px solid #ddd;">
-          <td style="padding: 10px;"><%= vote.motion.meeting.starts_at&.strftime("%Y-%m-%d") %></td>
-          <td style="padding: 10px;"><%= vote.motion.meeting.body_name %></td>
-          <td style="padding: 10px;">
-            <%= link_to truncate(vote.motion.description, length: 100), meeting_path(vote.motion.meeting) %>
-          </td>
-          <td style="padding: 10px;">
-            <span style="color: <%= vote.value == 'yes' ? 'green' : (vote.value == 'no' ? 'red' : 'grey') %>">
-              <%= vote.value.titleize %>
-            </span>
-          </td>
-          <td style="padding: 10px;"><%= vote.motion.outcome.titleize %></td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-<% else %>
-  <p>No voting history found.</p>
+  <% if @votes.any? %>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Body</th>
+            <th>Motion</th>
+            <th>Vote</th>
+            <th>Outcome</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @votes.each do |vote| %>
+            <tr>
+              <td>
+                <strong><%= vote.motion.meeting.starts_at&.strftime("%b %d, %Y") %></strong>
+              </td>
+              <td><%= vote.motion.meeting.body_name %></td>
+              <td>
+                <%= link_to truncate(vote.motion.description, length: 80), meeting_path(vote.motion.meeting) %>
+              </td>
+              <td>
+                <span class="vote-value vote-value--<%= vote.value %>">
+                  <%= vote.value.titleize %>
+                </span>
+              </td>
+              <td>
+                <span class="badge <%= case vote.motion.outcome.downcase
+                  when 'passed' then 'badge--success'
+                  when 'failed' then 'badge--danger'
+                  else 'badge--default'
+                end %>">
+                  <%= vote.motion.outcome.titleize %>
+                </span>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="card text-center" style="padding: var(--space-12);">
+      <p class="text-secondary mb-0">No voting history found for this official.</p>
+    </div>
+  <% end %>
+</section>
+
+<%= link_to members_path, class: "back-link" do %>
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="19" y1="12" x2="5" y2="12"></line>
+    <polyline points="12 19 5 12 12 5"></polyline>
+  </svg>
+  Back to Officials
 <% end %>
-
-<br>
-<%= link_to "Back to Officials", members_path %>

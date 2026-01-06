@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <title><%= content_for(:title) || "Two Rivers Reporter" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="description" content="<%= content_for(:description) || "Stay informed about Two Rivers, WI city meetings, decisions, and voting records. A civic transparency project." %>">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="application-name" content="Two Rivers Reporter">
     <meta name="mobile-web-app-capable" content="yes">
@@ -21,17 +22,138 @@
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
+
+    <script>
+      // Theme detection and toggle
+      (function() {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+          document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+      })();
+    </script>
   </head>
 
   <body>
-    <nav style="padding: 20px; background: #f8f9fa; border-bottom: 1px solid #e9ecef; margin-bottom: 20px;">
-      <%= link_to "Home", root_path, style: "margin-right: 15px; font-weight: bold; text-decoration: none; color: #333;" %>
-      <%= link_to "Meetings", meetings_path, style: "margin-right: 15px; text-decoration: none; color: #555;" %>
-      <%= link_to "Topics", topics_path, style: "margin-right: 15px; text-decoration: none; color: #555;" %>
-      <%= link_to "Officials", members_path, style: "margin-right: 15px; text-decoration: none; color: #555;" %>
-    </nav>
-    <div style="padding: 0 20px;">
-      <%= yield %>
+    <div class="site-wrapper">
+      <header class="site-header">
+        <div class="container">
+          <%= link_to root_path, class: "site-logo" do %>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            Two Rivers Reporter
+          <% end %>
+
+          <button class="mobile-nav-toggle" aria-label="Toggle navigation" onclick="document.querySelector('.site-nav').classList.toggle('open')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+
+          <nav class="site-nav">
+            <%= link_to "Meetings", meetings_path, class: ("active" if controller_name == "meetings") %>
+            <%= link_to "Topics", topics_path, class: ("active" if controller_name == "topics") %>
+            <%= link_to "Officials", members_path, class: ("active" if controller_name == "members") %>
+
+            <button class="theme-toggle" aria-label="Toggle dark mode" onclick="toggleTheme()">
+              <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+              </svg>
+              <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+            </button>
+          </nav>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <div class="container">
+          <%= yield %>
+        </div>
+      </main>
+
+      <footer class="site-footer">
+        <div class="container">
+          <div class="footer-brand">
+            <h3>Two Rivers Reporter</h3>
+            <p>A civic transparency project for Two Rivers, WI residents. Stay informed about city meetings, decisions, and voting records.</p>
+          </div>
+
+          <div class="footer-links">
+            <%= link_to "Meetings", meetings_path %>
+            <%= link_to "Topics", topics_path %>
+            <%= link_to "Officials", members_path %>
+            <%= link_to "City Website", "https://www.two-rivers.org/meetings", target: "_blank", rel: "noopener" %>
+          </div>
+
+          <div class="footer-copyright">
+            <p>Data sourced from official City of Two Rivers documents. AI-generated summaries are clearly labeled.</p>
+          </div>
+        </div>
+      </footer>
     </div>
+
+    <script>
+      function toggleTheme() {
+        const html = document.documentElement;
+        const currentTheme = html.getAttribute('data-theme');
+        const sunIcon = document.querySelector('.sun-icon');
+        const moonIcon = document.querySelector('.moon-icon');
+
+        if (currentTheme === 'dark') {
+          html.setAttribute('data-theme', 'light');
+          localStorage.setItem('theme', 'light');
+          sunIcon.style.display = 'block';
+          moonIcon.style.display = 'none';
+        } else if (currentTheme === 'light') {
+          html.removeAttribute('data-theme');
+          localStorage.removeItem('theme');
+          updateThemeIcon();
+        } else {
+          html.setAttribute('data-theme', 'dark');
+          localStorage.setItem('theme', 'dark');
+          sunIcon.style.display = 'none';
+          moonIcon.style.display = 'block';
+        }
+      }
+
+      function updateThemeIcon() {
+        const html = document.documentElement;
+        const theme = html.getAttribute('data-theme');
+        const sunIcon = document.querySelector('.sun-icon');
+        const moonIcon = document.querySelector('.moon-icon');
+
+        if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          sunIcon.style.display = 'none';
+          moonIcon.style.display = 'block';
+        } else {
+          sunIcon.style.display = 'block';
+          moonIcon.style.display = 'none';
+        }
+      }
+
+      // Initialize icon state
+      document.addEventListener('DOMContentLoaded', updateThemeIcon);
+
+      // Listen for system theme changes
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function() {
+        if (!localStorage.getItem('theme')) {
+          updateThemeIcon();
+        }
+      });
+    </script>
   </body>
 </html>

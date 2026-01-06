@@ -1,16 +1,21 @@
-<h1>Topic: <%= @topic.name %></h1>
+<% content_for(:title) { "#{@topic.name} - Topics - Two Rivers Reporter" } %>
+
+<div class="page-header">
+  <h1 class="page-title"><%= @topic.name %></h1>
+  <p class="page-subtitle"><%= @items.count %> agenda items related to this topic</p>
+</div>
 
 <div class="timeline">
   <% @items.each do |item| %>
-    <div class="timeline-item" style="margin-bottom: 20px; border-left: 2px solid #3182ce; padding-left: 15px;">
-      <div style="font-size: 0.9em; color: #718096;">
-        <%= item.meeting.starts_at&.strftime("%B %d, %Y") %> - <%= item.meeting.body_name %>
+    <div class="timeline-item">
+      <div class="timeline-date">
+        <%= item.meeting.starts_at&.strftime("%B %d, %Y") %> &mdash; <%= item.meeting.body_name %>
       </div>
-      <div style="font-weight: bold; margin-top: 5px;">
+      <div class="timeline-title">
         <%= link_to item.title, meeting_path(item.meeting, anchor: "item-#{item.id}") %>
       </div>
       <% if item.summary.present? %>
-        <div style="margin-top: 5px; color: #4a5568;">
+        <div class="timeline-content">
           <%= item.summary %>
         </div>
       <% end %>
@@ -18,5 +23,16 @@
   <% end %>
 </div>
 
-<br>
-<%= link_to "Back to Topics", topics_path %>
+<% if @items.empty? %>
+  <div class="card text-center" style="padding: var(--space-12);">
+    <p class="text-secondary mb-0">No agenda items found for this topic.</p>
+  </div>
+<% end %>
+
+<%= link_to topics_path, class: "back-link" do %>
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="19" y1="12" x2="5" y2="12"></line>
+    <polyline points="12 19 5 12 12 5"></polyline>
+  </svg>
+  Back to Topics
+<% end %>
