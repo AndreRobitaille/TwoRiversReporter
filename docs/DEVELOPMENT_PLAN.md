@@ -255,20 +255,23 @@ OCR should be:
 
 ## Phased Development Plan
 
-### Phase 1: Core Ingestion
+### Phase 1: Core Ingestion (Completed)
+Implemented:
 - Meeting discovery
 - Document storage
 - Basic meeting pages
-- Record PDF extraction quality metrics (text_quality, text_chars)
+- Text quality metrics
 
-### Phase 2: Agenda & Packet Summaries
+### Phase 2: Agenda & Packet Summaries (Completed)
+Implemented:
 - Packet HTML parsing
-- Page-cited summaries
-- Resident explanations
+- Page-cited AI summaries
+- Page-aware extraction
 
-### Phase 3: Minutes Analysis
+### Phase 3: Minutes Analysis (Completed)
+Implemented:
 - Vote extraction
-- Member vote history
+- Member profiles
 
 ### Phase 4: Topic Aggregation (Completed)
 
