@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_05_145504) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_06_191909) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -137,6 +137,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_05_145504) do
     t.datetime "updated_at", null: false
     t.index ["agenda_item_id"], name: "index_motions_on_agenda_item_id"
     t.index ["meeting_id"], name: "index_motions_on_meeting_id"
+  end
+
+  create_table "sessions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "ip_address"
+    t.datetime "updated_at", null: false
+    t.string "user_agent"
+    t.bigint "user_id", null: false
+    t.index ["user_id"], name: "index_sessions_on_user_id"
   end
 
   create_table "solid_queue_blocked_executions", force: :cascade do |t|
@@ -268,6 +277,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_05_145504) do
     t.index ["name"], name: "index_topics_on_name"
   end
 
+  create_table "users", force: :cascade do |t|
+    t.boolean "admin", default: false, null: false
+    t.datetime "created_at", null: false
+    t.string "email_address", null: false
+    t.string "password_digest", null: false
+    t.text "recovery_codes_digest", default: [], null: false, array: true
+    t.boolean "totp_enabled", default: false, null: false
+    t.string "totp_secret"
+    t.datetime "updated_at", null: false
+    t.index ["email_address"], name: "index_users_on_email_address", unique: true
+  end
+
   create_table "votes", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "member_id", null: false
@@ -290,6 +311,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_05_145504) do
   add_foreign_key "meeting_summaries", "meetings"
   add_foreign_key "motions", "agenda_items"
   add_foreign_key "motions", "meetings"
+  add_foreign_key "sessions", "users"
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_failed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade

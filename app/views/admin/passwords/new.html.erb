@@ -1,0 +1,25 @@
+<% if flash[:alert] %>
+  <div class="flash flash--danger"><%= flash[:alert] %></div>
+<% end %>
+<% if flash[:notice] %>
+  <div class="flash flash--success"><%= flash[:notice] %></div>
+<% end %>
+
+<div class="card card--narrow">
+  <div class="card-header">
+    <h1 class="card-title">Reset admin password</h1>
+    <p class="card-subtitle">We’ll email a reset link if the admin exists.</p>
+  </div>
+
+  <%= form_with url: passwords_path do |form| %>
+    <div class="form-group">
+      <%= form.label :email_address, "Email", class: "form-label" %>
+      <%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username", placeholder: "you@example.com", class: "form-input" %>
+    </div>
+
+    <div class="flex gap-2 items-center">
+      <%= form.submit "Send reset instructions", class: "btn btn--primary" %>
+      <%= link_to "Back", new_session_path, class: "btn btn--secondary" %>
+    </div>
+  <% end %>
+</div>

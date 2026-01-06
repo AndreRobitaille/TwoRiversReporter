@@ -1,0 +1,32 @@
+<div class="card card--narrow">
+  <div class="card-header">
+    <h1 class="card-title">New admin user</h1>
+    <p class="card-subtitle">They must enroll MFA on first sign-in.</p>
+  </div>
+
+  <% if @user.errors.any? %>
+    <div class="flash flash--danger"><%= @user.errors.full_messages.to_sentence %></div>
+  <% end %>
+
+  <%= form_with model: @user, url: users_path do |form| %>
+    <div class="form-group">
+      <%= form.label :email_address, "Email", class: "form-label" %>
+      <%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username", placeholder: "you@example.com", class: "form-input" %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :password, "Temporary password", class: "form-label" %>
+      <%= form.password_field :password, required: true, autocomplete: "new-password", maxlength: 72, class: "form-input" %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :password_confirmation, "Confirm temporary password", class: "form-label" %>
+      <%= form.password_field :password_confirmation, required: true, autocomplete: "new-password", maxlength: 72, class: "form-input" %>
+    </div>
+
+    <div class="flex gap-2 items-center">
+      <%= form.submit "Create admin", class: "btn btn--primary" %>
+      <%= link_to "Back", users_path, class: "btn btn--secondary" %>
+    </div>
+  <% end %>
+</div>

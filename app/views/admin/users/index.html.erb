@@ -1,0 +1,32 @@
+<% if flash[:notice] %>
+  <div class="flash flash--success"><%= flash[:notice] %></div>
+<% end %>
+
+<div class="page-header">
+  <h1 class="page-title">Admin users</h1>
+  <p class="page-subtitle">Create and manage admin access</p>
+</div>
+
+<div class="flex gap-2 mb-4">
+  <%= link_to "New admin user", new_user_path, class: "btn btn--primary" %>
+  <%= link_to "Back", admin_root_path, class: "btn btn--secondary" %>
+</div>
+
+<div class="table-wrapper">
+  <table>
+    <thead>
+      <tr>
+        <th>Email</th>
+        <th>MFA enabled</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @users.each do |user| %>
+        <tr>
+          <td><%= user.email_address %></td>
+          <td><%= user.totp_enabled? ? "Yes" : "No" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

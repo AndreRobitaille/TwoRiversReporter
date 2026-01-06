@@ -1,0 +1,27 @@
+<% if flash[:alert] %>
+  <div class="flash flash--danger"><%= flash[:alert] %></div>
+<% end %>
+<% if flash[:notice] %>
+  <div class="flash flash--success"><%= flash[:notice] %></div>
+<% end %>
+
+<div class="card card--narrow">
+  <div class="card-header">
+    <h1 class="card-title">Recovery codes</h1>
+    <p class="card-subtitle">Store these offline. Each code can be used once.</p>
+  </div>
+
+  <ul>
+    <% @codes.each do |code| %>
+      <li><code><%= code %></code></li>
+    <% end %>
+  </ul>
+
+  <div class="flex gap-2 mt-6">
+    <%= link_to "I stored these safely", admin_root_path, class: "btn btn--primary" %>
+
+    <%= form_with url: recovery_codes_path, method: :post do |form| %>
+      <%= form.submit "Generate new codes", class: "btn btn--secondary" %>
+    <% end %>
+  </div>
+</div>

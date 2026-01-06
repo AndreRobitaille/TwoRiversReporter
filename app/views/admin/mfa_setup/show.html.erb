@@ -1,0 +1,29 @@
+<% if flash[:alert] %>
+  <div class="flash flash--danger"><%= flash[:alert] %></div>
+<% end %>
+
+<div class="card card--narrow">
+  <div class="card-header">
+    <h1 class="card-title">Set up MFA</h1>
+    <p class="card-subtitle">Add this account to an authenticator app, then confirm.</p>
+  </div>
+
+  <div class="form-group">
+    <div class="form-label">Secret</div>
+    <div class="text-secondary"><code><%= @user.totp_secret %></code></div>
+  </div>
+
+  <div class="form-group">
+    <div class="form-label">Provisioning URI</div>
+    <div class="text-secondary" style="word-break: break-word"><code><%= @user.totp_provisioning_uri %></code></div>
+  </div>
+
+  <%= form_with url: mfa_setup_path do |form| %>
+    <div class="form-group">
+      <%= form.label :code, "Confirmation code", class: "form-label" %>
+      <%= form.text_field :code, required: true, autofocus: true, autocomplete: "one-time-code", placeholder: "123456", class: "form-input" %>
+    </div>
+
+    <%= form.submit "Enable MFA", class: "btn btn--primary" %>
+  <% end %>
+</div>

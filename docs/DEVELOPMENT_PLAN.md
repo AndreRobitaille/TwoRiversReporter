@@ -231,6 +231,18 @@ OCR should be:
 - Clearly labeled as external research
 - Never mixed with packet-grounded claims
 
+### Contextual Summaries (Knowledgebase / RAG)
+- Purpose: provide relevant background (prior meetings, people/org/project history, city plans) without large context windows.
+- Inputs:
+  - Verified facts (admin-only knowledgebase).
+  - Retrieved excerpts from ingested PDFs/notes (top-k, capped per source).
+  - Prior-meeting history derived from the database.
+- Rules:
+  - Resident-facing content may use only `verified` knowledgebase facts.
+  - "Sensitive" facts must be gated and included only when directly relevant.
+  - Store stance/sentiment only for public commenters; do not infer officials' private sentiment.
+  - Document-grounded claims must be cited; background context must be labeled as background.
+
 ---
 
 ## Public Website Pages
@@ -289,12 +301,53 @@ Implemented:
 - Automatic triggering: `AnalyzePdfJob` detects "image_scan" quality and queues OCR.
 - Data enrichment: OCR'd text automatically triggers summarization and vote extraction.
 
+### Phase 6: Knowledgebase + Contextual Summaries (Planned)
+
+Goal: Improve meeting summaries by incorporating relevant local context (prior meetings, people/org/project history, city plans) while keeping API cost predictable. Residents never see the knowledgebase content itself.
+
+#### Prerequisite: Admin Authentication (Completed)
+- Implemented Rails-native authentication (User model + sessions).
+- Added admin-only namespace (`/admin`) and dashboard.
+- Enforced TOTP MFA for all admin accounts (using `rotp`).
+- Provided offline recovery codes for emergency access.
+- Styled auth forms to match application design.
+
+#### Knowledgebase Requirements
+- Admin-only knowledgebase
+  - Primary input: freeform typed notes.
+  - Secondary input: PDFs (e.g., Comprehensive Plan, Economic Plan, local history), ingested into searchable chunks.
+  - Knowledge entries support verification metadata (admin-only): `status`, `verified_on`, `verification_notes`.
+- Retrieval-augmented generation (RAG)
+  - Never send large static context windows to the LLM.
+  - Chunk and embed knowledge sources once; retrieve only the top relevant chunks for each meeting.
+  - Apply hard caps (total chunks, per-source chunks) and similarity thresholds to control prompt size.
+- Entity memory (admin-controlled)
+  - The system may extract and suggest entities from meeting documents (JSON mode) but must not automatically publish these as resident-facing "facts".
+  - Entity matching must support misspellings (aliases) and disambiguation (admin-only fields such as address or affiliation).
+- Facts and relationships
+  - The system may draft facts/relationships in "draft" status for admin review.
+  - Only "verified" facts may be used in resident-facing summaries.
+  - "Sensitive" facts (e.g., family relationships, ownership/financial ties) must be gated and included only when directly relevant to the meeting subject.
+- Public comment memory (limited scope)
+  - Store stance/sentiment only for public commenters (not officials).
+  - Officials' statements and vague "received emails" references are not stored as stance.
+  - Stance observations must be backed by evidence snippets and meeting/document references.
+- Resident feedback loop
+  - Residents can submit "correction / missing context" requests from a summary.
+  - Requests are stored for admin review and can trigger knowledgebase updates and summary regeneration.
+
+Summarization behavior changes:
+- Meeting summaries must clearly separate:
+  - Document-grounded claims (cited to meeting pages when available).
+  - Background context (from verified knowledgebase facts/excerpts).
+- Background facts must be included only when relevant to the meeting subjects (agenda items/topics/entities). Unrelated biographical trivia must be omitted.
+
 ---
 
 ## Explicit Non-Goals
 - No real-time streaming
 - No commenting system
-- No user accounts initially
+- No resident user accounts (admin accounts are allowed)
 - No moderation tools
 
 ---
