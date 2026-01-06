@@ -14,6 +14,10 @@ Rails.application.routes.draw do
     resource :recovery_codes, only: %i[show create], controller: "admin/recovery_codes"
     resource :account_password, only: %i[edit update], controller: "admin/account_passwords"
     resources :users, only: %i[index new create], controller: "admin/users"
+
+    resources :knowledge_sources, controller: "admin/knowledge_sources", as: :admin_knowledge_sources do
+      post :reingest, on: :member
+    end
   end
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

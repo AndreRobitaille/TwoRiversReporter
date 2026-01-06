@@ -1,0 +1,90 @@
+<div class="page-header">
+  <div class="flex justify-between items-center">
+    <div>
+      <div class="flex items-center gap-2 mb-2">
+        <%= link_to "Knowledgebase", admin_knowledge_sources_path, class: "text-secondary hover:underline" %>
+        <span class="text-muted">/</span>
+        <h1 class="page-title mb-0"><%= @source.title %></h1>
+      </div>
+      <div class="flex gap-2">
+        <span class="badge badge--default"><%= @source.source_type.upcase %></span>
+        <% if @source.active? %>
+          <span class="badge badge--success">Active</span>
+        <% else %>
+          <span class="badge badge--warning">Inactive</span>
+        <% end %>
+      </div>
+    </div>
+    
+    <div class="flex gap-2">
+      <%= button_to "Re-ingest", reingest_admin_knowledge_source_path(@source), method: :post, class: "btn btn--secondary" %>
+      <%= link_to "Edit", edit_admin_knowledge_source_path(@source), class: "btn btn--primary" %>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-6">
+  <div class="card-header">
+    <h2 class="card-title">Content</h2>
+  </div>
+  
+  <% if @source.source_type == "note" %>
+    <div class="prose">
+      <%= simple_format @source.body %>
+    </div>
+  <% elsif @source.source_type == "pdf" %>
+    <div class="flex items-center gap-4">
+      <% if @source.file.attached? %>
+        <div class="p-4 border rounded bg-slate-50">
+          <p class="font-medium mb-1"><%= @source.file.filename %></p>
+          <p class="text-sm text-secondary"><%= number_to_human_size(@source.file.byte_size) %></p>
+        </div>
+        <%= link_to "Download PDF", rails_blob_path(@source.file, disposition: "attachment"), class: "btn btn--secondary btn--sm" %>
+      <% else %>
+        <p class="text-warning">No file attached.</p>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% if @source.verification_notes.present? %>
+    <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded">
+      <h3 class="text-sm font-bold text-yellow-800 mb-1">Verification Notes</h3>
+      <p class="text-sm text-yellow-700 m-0"><%= @source.verification_notes %></p>
+      <% if @source.verified_on %>
+        <p class="text-xs text-yellow-600 mt-1">Verified on: <%= @source.verified_on %></p>
+      <% end %>
+    </div>
+  <% end %>
+</div>
+
+<div class="card">
+  <div class="card-header flex justify-between items-center">
+    <h2 class="card-title">Indexed Chunks (<%= @source.knowledge_chunks.count %>)</h2>
+  </div>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Index</th>
+          <th>Preview</th>
+          <th>Length</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @source.knowledge_chunks.order(:chunk_index).limit(50).each do |chunk| %>
+          <tr>
+            <td><%= chunk.chunk_index %></td>
+            <td class="font-mono text-xs text-secondary"><%= chunk.content.truncate(100) %></td>
+            <td><%= chunk.content.length %> chars</td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <% if @source.knowledge_chunks.count > 50 %>
+      <div class="p-4 text-center text-sm text-secondary border-t">
+        Showing first 50 chunks.
+      </div>
+    <% end %>
+  </div>
+</div>

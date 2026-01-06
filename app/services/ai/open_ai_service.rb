@@ -4,10 +4,23 @@ module Ai
       @client = OpenAI::Client.new(access_token: Rails.application.credentials.openai_access_token || ENV["OPENAI_ACCESS_TOKEN"])
     end
 
-    def summarize_packet(text)
+    def summarize_packet(text, context_chunks: [])
+      context_section = if context_chunks.any?
+        <<~CONTEXT
+          ### Relevant Context (From Knowledgebase)
+          The following background information may be relevant to the topics in this packet. Use it to explain *why* items matter, but clearly distinguish it from what is explicitly in the packet.
+
+          #{context_chunks.join("\n\n")}
+        CONTEXT
+      else
+        ""
+      end
+
       prompt = <<~PROMPT
         You are a civic engagement assistant for the residents of Two Rivers, WI.
         Your goal is to help residents understand what will be discussed at an upcoming meeting based on the meeting packet.
+
+        #{context_section}
 
         The following text is extracted from the meeting packet PDF.
         Please provide a summary of the KEY items that affect residents (e.g., spending, zoning changes, new ordinances).
@@ -18,6 +31,7 @@ module Ai
         - If financial figures are mentioned, include them.
         - Keep the tone neutral and informative.
         - Structure the response with Markdown headers.
+        - If you use information from the "Relevant Context" section, explicitly mention it is background context.
 
         Text to summarize:
         #{text.truncate(50000)} <!-- Truncate to avoid context limit issues initially -->
@@ -34,15 +48,28 @@ module Ai
       response.dig("choices", 0, "message", "content")
     end
 
-    def summarize_packet_with_citations(extractions)
+    def summarize_packet_with_citations(extractions, context_chunks: [])
       # Build context with page markers
-      context = extractions.sort_by(&:page_number).map do |ex|
+      doc_context = extractions.sort_by(&:page_number).map do |ex|
         "--- [Page #{ex.page_number}] ---\n#{ex.cleaned_text}"
       end.join("\n\n")
+
+      kb_context = if context_chunks.any?
+        <<~CONTEXT
+          ### Relevant Context (From Knowledgebase)
+          The following background information was retrieved from city archives. Use it to explain *why* items matter.
+
+          #{context_chunks.join("\n\n")}
+        CONTEXT
+      else
+        ""
+      end
 
       prompt = <<~PROMPT
         You are a civic engagement assistant for the residents of Two Rivers, WI.
         Your goal is to help residents understand what will be discussed at an upcoming meeting based on the meeting packet.
+
+        #{kb_context}
 
         The following text is extracted from the meeting packet PDF, organized by page number.
         Please provide a summary of the KEY items that affect residents (e.g., spending, zoning changes, new ordinances).
@@ -54,10 +81,10 @@ module Ai
         - Keep the tone neutral and informative.
         - Structure the response with Markdown headers.
         - CRITICAL: You MUST cite the source page for every claim using the format [Page X].
-        - Example: "The city plans to purchase a new fire truck for $500,000 [Page 12]."
+        - If you use information from the "Relevant Context", cite it as [Context: Source Title].
 
         Text to summarize:
-        #{context.truncate(100000)}
+        #{doc_context.truncate(100000)}
       PROMPT
 
       response = @client.chat(
@@ -71,10 +98,21 @@ module Ai
       response.dig("choices", 0, "message", "content")
     end
 
-    def summarize_minutes(text)
+    def summarize_minutes(text, context_chunks: [])
+      context_section = if context_chunks.any?
+        <<~CONTEXT
+          ### Relevant Context (From Knowledgebase)
+          #{context_chunks.join("\n\n")}
+        CONTEXT
+      else
+        ""
+      end
+
       prompt = <<~PROMPT
         You are a civic engagement assistant for the residents of Two Rivers, WI.
         Your goal is to help residents understand what happened at a past meeting based on the minutes.
+
+        #{context_section}
 
         The following text is extracted from the meeting minutes PDF.
         Please provide a recap of the meeting.
@@ -84,6 +122,7 @@ module Ai
         - Summarize public comments if any were made.
         - Summarize the outcome of key agenda items.
         - Structure the response with Markdown headers.
+        - If you use information from the "Relevant Context", cite it as [Context].
 
         Text to summarize:
         #{text.truncate(50000)}

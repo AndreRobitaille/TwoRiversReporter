@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_06_191909) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_06_195630) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -72,6 +72,45 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_06_191909) do
     t.index ["meeting_id"], name: "index_agenda_items_on_meeting_id"
   end
 
+  create_table "entities", force: :cascade do |t|
+    t.json "aliases"
+    t.datetime "created_at", null: false
+    t.string "entity_type"
+    t.string "name"
+    t.text "notes"
+    t.string "status"
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "entity_facts", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.text "fact_text"
+    t.boolean "sensitive"
+    t.json "source_ref"
+    t.string "source_type"
+    t.string "status"
+    t.datetime "updated_at", null: false
+    t.text "verification_notes"
+    t.date "verified_on"
+    t.index ["entity_id"], name: "index_entity_facts_on_entity_id"
+  end
+
+  create_table "entity_mentions", force: :cascade do |t|
+    t.string "context"
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.bigint "meeting_document_id", null: false
+    t.bigint "meeting_id", null: false
+    t.integer "page_number"
+    t.text "quote"
+    t.string "raw_name"
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_entity_mentions_on_entity_id"
+    t.index ["meeting_document_id"], name: "index_entity_mentions_on_meeting_document_id"
+    t.index ["meeting_id"], name: "index_entity_mentions_on_meeting_id"
+  end
+
   create_table "extractions", force: :cascade do |t|
     t.text "cleaned_text"
     t.datetime "created_at", null: false
@@ -80,6 +119,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_06_191909) do
     t.text "raw_text"
     t.datetime "updated_at", null: false
     t.index ["meeting_document_id"], name: "index_extractions_on_meeting_document_id"
+  end
+
+  create_table "knowledge_chunks", force: :cascade do |t|
+    t.integer "chunk_index"
+    t.text "content"
+    t.datetime "created_at", null: false
+    t.json "embedding"
+    t.bigint "knowledge_source_id", null: false
+    t.json "metadata"
+    t.datetime "updated_at", null: false
+    t.index ["knowledge_source_id"], name: "index_knowledge_chunks_on_knowledge_source_id"
+  end
+
+  create_table "knowledge_sources", force: :cascade do |t|
+    t.boolean "active"
+    t.text "body"
+    t.datetime "created_at", null: false
+    t.string "source_type"
+    t.string "status"
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.text "verification_notes"
+    t.date "verified_on"
   end
 
   create_table "meeting_documents", force: :cascade do |t|
@@ -269,6 +331,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_06_191909) do
     t.index ["key"], name: "index_solid_queue_semaphores_on_key", unique: true
   end
 
+  create_table "stance_observations", force: :cascade do |t|
+    t.float "confidence"
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.bigint "meeting_document_id", null: false
+    t.bigint "meeting_id", null: false
+    t.integer "page_number"
+    t.string "position"
+    t.text "quote"
+    t.float "sentiment"
+    t.string "topic"
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_stance_observations_on_entity_id"
+    t.index ["meeting_document_id"], name: "index_stance_observations_on_meeting_document_id"
+    t.index ["meeting_id"], name: "index_stance_observations_on_meeting_id"
+  end
+
   create_table "topics", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "description"
@@ -306,7 +385,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_06_191909) do
   add_foreign_key "agenda_item_topics", "agenda_items"
   add_foreign_key "agenda_item_topics", "topics"
   add_foreign_key "agenda_items", "meetings"
+  add_foreign_key "entity_facts", "entities"
+  add_foreign_key "entity_mentions", "entities"
+  add_foreign_key "entity_mentions", "meeting_documents"
+  add_foreign_key "entity_mentions", "meetings"
   add_foreign_key "extractions", "meeting_documents"
+  add_foreign_key "knowledge_chunks", "knowledge_sources"
   add_foreign_key "meeting_documents", "meetings"
   add_foreign_key "meeting_summaries", "meetings"
   add_foreign_key "motions", "agenda_items"
@@ -318,6 +402,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_06_191909) do
   add_foreign_key "solid_queue_ready_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_recurring_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_scheduled_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "stance_observations", "entities"
+  add_foreign_key "stance_observations", "meeting_documents"
+  add_foreign_key "stance_observations", "meetings"
   add_foreign_key "votes", "members"
   add_foreign_key "votes", "motions"
 end

@@ -1,0 +1,48 @@
+<div class="page-header">
+  <div class="flex justify-between items-center">
+    <div>
+      <h1 class="page-title">Knowledgebase</h1>
+      <p class="page-subtitle">Manage sources for AI context retrieval</p>
+    </div>
+    <%= link_to "New Source", new_admin_knowledge_source_path, class: "btn btn--primary" %>
+  </div>
+</div>
+
+<div class="table-wrapper">
+  <table>
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Type</th>
+        <th>Status</th>
+        <th>Chunks</th>
+        <th>Created</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @sources.each do |source| %>
+        <tr>
+          <td>
+            <strong><%= link_to source.title, admin_knowledge_source_path(source) %></strong>
+          </td>
+          <td>
+            <span class="badge badge--default"><%= source.source_type.upcase %></span>
+          </td>
+          <td>
+            <% if source.active? %>
+              <span class="badge badge--success">Active</span>
+            <% else %>
+              <span class="badge badge--default">Inactive</span>
+            <% end %>
+          </td>
+          <td><%= source.knowledge_chunks.count %></td>
+          <td><%= source.created_at.strftime("%b %d, %Y") %></td>
+          <td class="text-right">
+            <%= link_to "Edit", edit_admin_knowledge_source_path(source), class: "btn btn--sm btn--ghost" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

@@ -312,7 +312,7 @@ Goal: Improve meeting summaries by incorporating relevant local context (prior m
 - Provided offline recovery codes for emergency access.
 - Styled auth forms to match application design.
 
-#### Knowledgebase Requirements
+#### Knowledgebase Requirements (Completed)
 - Admin-only knowledgebase
   - Primary input: freeform typed notes.
   - Secondary input: PDFs (e.g., Comprehensive Plan, Economic Plan, local history), ingested into searchable chunks.
@@ -321,6 +321,7 @@ Goal: Improve meeting summaries by incorporating relevant local context (prior m
   - Never send large static context windows to the LLM.
   - Chunk and embed knowledge sources once; retrieve only the top relevant chunks for each meeting.
   - Apply hard caps (total chunks, per-source chunks) and similarity thresholds to control prompt size.
+  - Uses `pgvector` in production; Ruby-side cosine similarity fallback in dev.
 - Entity memory (admin-controlled)
   - The system may extract and suggest entities from meeting documents (JSON mode) but must not automatically publish these as resident-facing "facts".
   - Entity matching must support misspellings (aliases) and disambiguation (admin-only fields such as address or affiliation).
@@ -332,9 +333,8 @@ Goal: Improve meeting summaries by incorporating relevant local context (prior m
   - Store stance/sentiment only for public commenters (not officials).
   - Officials' statements and vague "received emails" references are not stored as stance.
   - Stance observations must be backed by evidence snippets and meeting/document references.
-- Resident feedback loop
-  - Residents can submit "correction / missing context" requests from a summary.
-  - Requests are stored for admin review and can trigger knowledgebase updates and summary regeneration.
+- Resident feedback loop (Deferred)
+  - Table for now; revisit after knowledgebase ingestion + retrieval are working.
 
 Summarization behavior changes:
 - Meeting summaries must clearly separate:

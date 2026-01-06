@@ -1,0 +1,71 @@
+<%= form_with model: [:admin, source] do |form| %>
+  <% if source.errors.any? %>
+    <div class="flash flash--danger">
+      <%= source.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= form.label :title, class: "form-label" %>
+    <%= form.text_field :title, class: "form-input", placeholder: "e.g. Comprehensive Plan 2022" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :source_type, class: "form-label" %>
+    <%= form.select :source_type, [["Note (Typed Text)", "note"], ["PDF Document", "pdf"]], {}, class: "form-select", data: { controller: "toggle", action: "change->toggle#reveal" } %>
+  </div>
+
+  <div class="form-group" id="body-field">
+    <%= form.label :body, "Note Content", class: "form-label" %>
+    <%= form.text_area :body, rows: 10, class: "form-textarea", placeholder: "Enter verified facts or context here..." %>
+    <p class="text-sm text-muted mt-1">Markdown supported.</p>
+  </div>
+
+  <div class="form-group" id="file-field">
+    <%= form.label :file, "Upload PDF", class: "form-label" %>
+    <%= form.file_field :file, class: "form-input", accept: "application/pdf" %>
+  </div>
+
+  <hr class="my-6 border-gray-200">
+
+  <div class="form-group">
+    <%= form.label :verification_notes, "Verification Notes (Internal)", class: "form-label" %>
+    <%= form.text_area :verification_notes, rows: 2, class: "form-textarea", placeholder: "Source URL, contact person, or reason for trust..." %>
+  </div>
+
+  <div class="form-group">
+    <label class="flex items-center gap-2 cursor-pointer">
+      <%= form.check_box :active %>
+      <span class="font-medium">Active (Available for retrieval)</span>
+    </label>
+  </div>
+
+  <div class="flex gap-2 items-center mt-6">
+    <%= form.submit class: "btn btn--primary" %>
+    <%= link_to "Cancel", admin_knowledge_sources_path, class: "btn btn--secondary" %>
+  </div>
+<% end %>
+
+<script>
+  // Simple vanilla JS toggle for source type fields
+  document.addEventListener("turbo:load", () => {
+    const typeSelect = document.querySelector("#knowledge_source_source_type");
+    const bodyField = document.querySelector("#body-field");
+    const fileField = document.querySelector("#file-field");
+
+    if (!typeSelect) return;
+
+    function updateFields() {
+      if (typeSelect.value === "note") {
+        bodyField.style.display = "block";
+        fileField.style.display = "none";
+      } else {
+        bodyField.style.display = "none";
+        fileField.style.display = "block";
+      }
+    }
+
+    typeSelect.addEventListener("change", updateFields);
+    updateFields(); // Init
+  });
+</script>
