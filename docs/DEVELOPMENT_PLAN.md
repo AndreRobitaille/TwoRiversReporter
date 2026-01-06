@@ -278,37 +278,13 @@ Implemented:
 - Member profiles: `MembersController` and views for listing officials and their voting history.
 - Topic exploration: `TopicsController` and views for browsing items by issue.
 
-### Phase 5 (Optional): OCR for Legacy PDFs
-- OCR pipeline for image_scan documents
-- Clear labeling and citation support
-- Opt-in scope controls and scheduling
-
----
-
-## Current Implementation Status (2026-01-05)
-
-### Phase 2: Agenda & Packet Summaries (Completed)
+### Phase 5: OCR for Legacy PDFs (Completed)
 
 Implemented:
-- Agenda parsing: `Scrapers::ParseAgendaJob` parses `agenda_html` and links attachment PDFs.
-- PDF extraction: `Documents::AnalyzePdfJob` extracts text page-by-page into `Extraction` records.
-- Cited AI summaries: `Ai::OpenAiService` generates summaries with `[Page X]` citations grounded in extraction data.
-- Meeting page display: Renders Markdown summaries.
-
-Future Improvements:
-- Link `[Page X]` citations directly to the PDF viewer anchor.
-- Handle multiple packet documents (attachments) in the summarization prompt context more robustly.
-
-### Phase 3: Minutes Analysis (Completed)
-
-Implemented:
-- Voting models: `Member`, `Motion`, `Vote`.
-- Vote extraction: `ExtractVotesJob` parses minutes via AI to extract motions and individual votes.
-- Meeting page display: "Voting Record" section showing outcomes and roll calls.
-
-### Phase 4: Topic Aggregation
-- Cross-meeting issue tracking
-- Long-term accountability views
+- Tesseract integration: Added `tesseract-ocr` to Dockerfile.
+- OCR pipeline: `OcrJob` converts PDF pages to images and extracts text.
+- Automatic triggering: `AnalyzePdfJob` detects "image_scan" quality and queues OCR.
+- Data enrichment: OCR'd text automatically triggers summarization and vote extraction.
 
 ---
 

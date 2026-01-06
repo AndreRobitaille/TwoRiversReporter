@@ -73,6 +73,13 @@ module Documents
         )
           Rails.logger.error "Failed to save analysis for #{document_id}: #{document.errors.full_messages.join(', ')}"
         end
+
+        # Trigger OCR if needed
+        if quality == "image_scan"
+          OcrJob.perform_later(document.id)
+          return
+        end
+
         # Trigger Summarization if this was a minutes or packet document
         if document.document_type.include?("minutes") || document.document_type.include?("packet")
           SummarizeMeetingJob.perform_later(document.meeting_id)

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_05_125603) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_05_145504) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -89,6 +89,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_05_125603) do
     t.text "extracted_text"
     t.datetime "fetched_at"
     t.bigint "meeting_id", null: false
+    t.string "ocr_status"
     t.integer "page_count"
     t.tsvector "search_vector"
     t.string "sha256"
