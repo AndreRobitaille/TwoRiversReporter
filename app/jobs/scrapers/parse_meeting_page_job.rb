@@ -60,9 +60,11 @@ module Scrapers
           if doc.new_record? || doc.changed?
             doc.save!
             Rails.logger.info "Found document: #{doc_type} at #{href}"
-            # Enqueue download
-            Documents::DownloadJob.perform_later(doc.id)
           end
+
+          # Always enqueue download to check for remote content updates
+          # The DownloadJob will handle conditional GETs to avoid unnecessary work
+          Documents::DownloadJob.perform_later(doc.id)
         end
       end
     end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_06_195630) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_06_200550) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -146,10 +146,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_06_195630) do
 
   create_table "meeting_documents", force: :cascade do |t|
     t.float "avg_chars_per_page"
+    t.bigint "content_length"
     t.datetime "created_at", null: false
     t.string "document_type"
+    t.string "etag"
     t.text "extracted_text"
     t.datetime "fetched_at"
+    t.datetime "last_modified"
     t.bigint "meeting_id", null: false
     t.string "ocr_status"
     t.integer "page_count"
