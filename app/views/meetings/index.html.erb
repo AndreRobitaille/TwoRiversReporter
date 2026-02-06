@@ -54,9 +54,17 @@
           </td>
           <td>
             <div class="flex gap-2 flex-wrap">
-              <% if meeting.meeting_documents.any? %>
-                <span class="badge badge--default"><%= meeting.meeting_documents.count %> docs</span>
+              <% case meeting.document_status %>
+              <% when :minutes %>
+                <span class="badge badge--success">Has Minutes</span>
+              <% when :packet %>
+                <span class="badge badge--primary">Has Packet</span>
+              <% when :agenda %>
+                <span class="badge badge--primary">Has Agenda</span>
+              <% else %>
+                <span class="badge badge--default">No info yet</span>
               <% end %>
+
               <% if meeting.meeting_summaries.any? %>
                 <span class="badge badge--primary">Summary</span>
               <% end %>
