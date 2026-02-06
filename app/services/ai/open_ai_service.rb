@@ -1,150 +1,44 @@
 module Ai
   class OpenAiService
+    # Updated to GPT-5.2 as requested
+    DEFAULT_MODEL = ENV.fetch("OPENAI_REASONING_MODEL", "gpt-5.2")
+
     def initialize
       @client = OpenAI::Client.new(access_token: Rails.application.credentials.openai_access_token || ENV["OPENAI_ACCESS_TOKEN"])
     end
 
-    def summarize_packet(text, context_chunks: [])
-      context_section = if context_chunks.any?
-        <<~CONTEXT
-          ### Relevant Context (From Knowledgebase)
-          The following background information may be relevant to the topics in this packet. Use it to explain *why* items matter, but clearly distinguish it from what is explicitly in the packet.
+    # Two-pass summary for packets
+    def summarize_packet_with_citations(extractions, context_chunks: [])
+      doc_context = prepare_doc_context(extractions)
+      kb_context = prepare_kb_context(context_chunks)
 
-          #{context_chunks.join("\n\n")}
-        CONTEXT
-      else
-        ""
-      end
+      # Pass 1: Planning / Analysis (JSON)
+      plan_json = analyze_meeting_content(doc_context, kb_context, "packet")
 
-      prompt = <<~PROMPT
-        You are a civic engagement assistant for the residents of Two Rivers, WI.
-        Your goal is to help residents understand what will be discussed at an upcoming meeting based on the meeting packet.
-
-        #{context_section}
-
-        The following text is extracted from the meeting packet PDF.
-        Please provide a summary of the KEY items that affect residents (e.g., spending, zoning changes, new ordinances).
-
-        Guidelines:
-        - Focus on the "Why it matters" for a resident.
-        - Ignore routine procedural items (roll call, approval of minutes) unless they contain something unusual.
-        - If financial figures are mentioned, include them.
-        - Keep the tone neutral and informative.
-        - Structure the response with Markdown headers.
-        - If you use information from the "Relevant Context" section, explicitly mention it is background context.
-
-        Text to summarize:
-        #{text.truncate(50000)} <!-- Truncate to avoid context limit issues initially -->
-      PROMPT
-
-      response = @client.chat(
-        parameters: {
-          model: "gpt-4o-mini",
-          messages: [ { role: "user", content: prompt } ],
-          temperature: 0.3
-        }
-      )
-
-      response.dig("choices", 0, "message", "content")
+      # Pass 2: Rendering (Markdown)
+      render_meeting_summary(doc_context, plan_json, "packet")
     end
 
-    def summarize_packet_with_citations(extractions, context_chunks: [])
-      # Build context with page markers
-      doc_context = extractions.sort_by(&:page_number).map do |ex|
-        "--- [Page #{ex.page_number}] ---\n#{ex.cleaned_text}"
-      end.join("\n\n")
-
-      kb_context = if context_chunks.any?
-        <<~CONTEXT
-          ### Relevant Context (From Knowledgebase)
-          The following background information was retrieved from city archives. Use it to explain *why* items matter.
-
-          #{context_chunks.join("\n\n")}
-        CONTEXT
-      else
-        ""
-      end
-
-      prompt = <<~PROMPT
-        You are a civic engagement assistant for the residents of Two Rivers, WI.
-        Your goal is to help residents understand what will be discussed at an upcoming meeting based on the meeting packet.
-
-        #{kb_context}
-
-        The following text is extracted from the meeting packet PDF, organized by page number.
-        Please provide a summary of the KEY items that affect residents (e.g., spending, zoning changes, new ordinances).
-
-        Guidelines:
-        - Focus on the "Why it matters" for a resident.
-        - Ignore routine procedural items (roll call, approval of minutes) unless they contain something unusual.
-        - If financial figures are mentioned, include them.
-        - Keep the tone neutral and informative.
-        - Structure the response with Markdown headers.
-        - CRITICAL: You MUST cite the source page for every claim using the format [Page X].
-        - If you use information from the "Relevant Context", cite it as [Context: Source Title].
-
-        Text to summarize:
-        #{doc_context.truncate(100000)}
-      PROMPT
-
-      response = @client.chat(
-        parameters: {
-          model: "gpt-4o-mini",
-          messages: [ { role: "user", content: prompt } ],
-          temperature: 0.3
-        }
-      )
-
-      response.dig("choices", 0, "message", "content")
+    def summarize_packet(text, context_chunks: [])
+      kb_context = prepare_kb_context(context_chunks)
+      plan_json = analyze_meeting_content(text, kb_context, "packet")
+      render_meeting_summary(text, plan_json, "packet")
     end
 
     def summarize_minutes(text, context_chunks: [])
-      context_section = if context_chunks.any?
-        <<~CONTEXT
-          ### Relevant Context (From Knowledgebase)
-          #{context_chunks.join("\n\n")}
-        CONTEXT
-      else
-        ""
-      end
-
-      prompt = <<~PROMPT
-        You are a civic engagement assistant for the residents of Two Rivers, WI.
-        Your goal is to help residents understand what happened at a past meeting based on the minutes.
-
-        #{context_section}
-
-        The following text is extracted from the meeting minutes PDF.
-        Please provide a recap of the meeting.
-
-        Guidelines:
-        - Highlight any specific votes taken (Who voted Yes/No?).
-        - Summarize public comments if any were made.
-        - Summarize the outcome of key agenda items.
-        - Structure the response with Markdown headers.
-        - If you use information from the "Relevant Context", cite it as [Context].
-
-        Text to summarize:
-        #{text.truncate(50000)}
-      PROMPT
-
-      response = @client.chat(
-        parameters: {
-          model: "gpt-4o-mini",
-          messages: [ { role: "user", content: prompt } ],
-          temperature: 0.3
-        }
-      )
-
-      response.dig("choices", 0, "message", "content")
+      kb_context = prepare_kb_context(context_chunks)
+      plan_json = analyze_meeting_content(text, kb_context, "minutes")
+      render_meeting_summary(text, plan_json, "minutes")
     end
+
     def extract_votes(text)
       prompt = <<~PROMPT
-        You are a data extraction assistant.
-        Your goal is to extract formal motions and voting records from meeting minutes.
+        <extraction_spec>
+        You are a data extraction assistant. Extract formal motions and voting records from meeting minutes into JSON.
 
-        The following text is from the meeting minutes.
-        Please return a JSON object with a key "motions" containing an array of every motion.
+        - Always follow this schema exactly (no extra fields).
+        - If a field is not present, set it to null.
+        - Before returning, re-scan to ensure no motions were missed.
 
         Schema:
         {
@@ -158,13 +52,13 @@ module Ai
             }
           ]
         }
+        </extraction_spec>
 
-        Guidelines:
-        - Identify motions where a decision was made.
-        - For "roll call" votes, you MUST list every member and their specific vote.
-        - For "voice votes" or "unanimous consent", if individual votes are not listed, you may leave the "votes" array empty or include only those explicitly named (e.g. "Smith abstained").
-        - If the text lists members "Present" at the start, use those names to infer "yes" votes on unanimous motions ONLY IF you are confident. Otherwise, prefer explicit data.
-        - Clean member names (remove "Councilmember", "Mr.", "Ms.", etc. if possible).
+        <ambiguity_handling>
+        - For "roll call" votes, list every member.
+        - For "voice votes", leave "votes" empty unless exceptions are named.
+        - Infer "yes" from "Present" members on unanimous votes ONLY if confident.
+        </ambiguity_handling>
 
         Text:
         #{text.truncate(50000)}
@@ -172,10 +66,135 @@ module Ai
 
       response = @client.chat(
         parameters: {
-          model: "gpt-4o-mini",
+          model: DEFAULT_MODEL,
           response_format: { type: "json_object" },
           messages: [
-            { role: "system", content: "You are a data extraction assistant that outputs JSON." },
+            { role: "system", content: "You are a data extraction assistant." },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.1
+        }
+      )
+      response.dig("choices", 0, "message", "content")
+    end
+
+    def extract_topics(items_text)
+      prompt = <<~PROMPT
+        <extraction_spec>
+        Classify agenda items into high-level topics.
+
+        Schema:
+        {
+          "items": [
+            {#{' '}
+              "id": 123,#{' '}
+              "category": "Infrastructure|Public Safety|Parks & Rec|Finance|Zoning|Licensing|Personnel|Governance|Other",#{' '}
+              "tags": ["Tag1", "Tag2"]#{' '}
+            }
+          ]
+        }
+        </extraction_spec>
+
+        Text:
+        #{items_text.truncate(50000)}
+      PROMPT
+
+      response = @client.chat(
+        parameters: {
+          model: DEFAULT_MODEL,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: "You are a civic data classifier." },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.1
+        }
+      )
+      response.dig("choices", 0, "message", "content")
+    end
+
+    private
+
+    def prepare_doc_context(extractions)
+      extractions.sort_by(&:page_number).map do |ex|
+        "--- [Page #{ex.page_number}] ---\n#{ex.cleaned_text}"
+      end.join("\n\n")
+    end
+
+    def prepare_kb_context(chunks)
+      return "" if chunks.empty?
+      <<~CONTEXT
+        <context_handling>
+        ### Relevant Context (Background Knowledge)
+        The following information comes from the city knowledgebase.
+        Use it to identify glossed-over details, but distinguish it from document content.
+
+        #{chunks.join("\n\n")}
+        </context_handling>
+      CONTEXT
+    end
+
+    # PASS 1: Analysis & Planning
+    def analyze_meeting_content(doc_text, kb_context, type)
+      system_role = "You are an investigative civic data analyst. Your goal is to deeply analyze meeting documents to identify what matters most to residents."
+
+      prompt = <<~PROMPT
+        Analyzes the provided #{type} text and return a JSON analysis plan.
+
+        #{kb_context}
+
+        <long_context_handling>
+        - The document text below may be long.
+        - First, internally scan for: Financial commitments, Regulatory changes, and "Decision Hinges" (unknowns).
+        - Anchor your analysis to specific sections or pages.
+        </long_context_handling>
+
+        DOCUMENT TEXT:
+        #{doc_text.truncate(100000)}
+
+        <extraction_spec>
+        Structure the output as a JSON object matching this schema exactly.
+
+        Schema:
+        {
+          "top_topics": [
+            {
+              "title": "Short descriptive title",
+              "impact_level": "High|Medium|Low",
+              "description": "One sentence summary.",
+              "why_it_matters": "Plain language explanation of resident impact.",
+              "key_details": "Specifics: $ amounts, dates, votes required.",
+              "citations": ["Page X"]
+            }
+          ],
+          "other_topics": [
+            { "title": "Topic Name", "summary": "Very brief summary." }
+          ],
+          "public_comments": [
+            { "speaker": "Name", "summary": "What they said (Address redacted)." }
+          ],
+          "decision_hinges": [
+            "Statement of a key unknown or critical verification point."
+          ],
+          "official_discussion": [
+             "Key point raised by a council member (if applicable)."
+          ]
+        }
+        </extraction_spec>
+
+        <investigative_guidelines>
+        - Look for what is *not* said. Glossed-over costs? indefinite timelines?
+        - "Decision Hinges" must be factual gaps (e.g. "Maintenance cost source not specified").
+        - Redact all residential addresses in public comments: "[Address redacted]".
+        </investigative_guidelines>
+      PROMPT
+
+      response = @client.chat(
+        parameters: {
+          model: DEFAULT_MODEL,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: system_role },
             { role: "user", content: prompt }
           ],
           temperature: 0.1
@@ -184,36 +203,72 @@ module Ai
 
       response.dig("choices", 0, "message", "content")
     end
-    def extract_topics(items_text)
+
+    # PASS 2: Rendering
+    def render_meeting_summary(doc_text, plan_json, type)
+      system_role = "You are a civic engagement assistant for Two Rivers, WI. Write clear, neutral, truth-seeking summaries."
+
       prompt = <<~PROMPT
-        You are a civic data classifier.
-        Your goal is to classify agenda items into high-level topics based on their content.
+        Using the provided ANALYSIS PLAN (JSON), write a final Markdown summary.
 
-        The text below contains a list of agenda items with their internal IDs.
-        For each item, assign:
-        1. A primary category (Infrastructure, Public Safety, Parks & Rec, Finance, Zoning, Licensing, Personnel, Governance, Other).
-        2. Specific tags (keywords like "Tax Levy", "Short-term Rentals", "Harbor", "Police").
+        <output_verbosity_spec>
+        - Follow the structure below EXACTLY.
+        - TL;DR: Max 3 bullets.
+        - Top Topics: Max 5 items.
+        - Other Topics: 1 line per item.
+        - Public Comment: Summarize key points, keep it neutral.
+        - Use standard Markdown headers (##, ###).
+        </output_verbosity_spec>
 
-        Return a JSON object:
-        {
-          "items": [
-            { "id": 123, "category": "Finance", "tags": ["Tax Levy", "Budget"] }
-          ]
-        }
+        <structure_enforcement>
+        ## TL;DR (Highest impact first)
+        (Bulleted list of top 3 critical items. Include citations [Page X].)
 
-        Text:
-        #{items_text.truncate(50000)}
+        ## Top Topics (Detailed)
+        (Iterate 'top_topics'. Format:)
+        ### 1) [Title] — Impact: [Level]
+        *   **Proposal:** [Description] [Citations]
+        *   **Why it matters:** [Why It Matters]
+        *   **Key Details:** [Key Details]
+
+        ## Other Topics (Brief)
+        (Bulleted list of 'other_topics'.)
+
+        ## Public Comment
+        (Summarize 'public_comments'. Redact addresses.)
+
+        ## Official Discussion
+        (Summarize 'official_discussion'.)
+
+        ## Decision Hinges (Key Unknowns)
+        (Bulleted list of 'decision_hinges'.)
+
+        ## Verification Notes
+        (List documents/pages to check.)
+        </structure_enforcement>
+
+        <uncertainty_and_ambiguity>
+        - Do not speculate.
+        - If a detail is missing in the JSON plan, do not invent it.
+        - Use "Not specified" for missing data.
+        </uncertainty_and_ambiguity>
+
+        INPUTS:
+        ANALYSIS PLAN (JSON):
+        #{plan_json}
+
+        ORIGINAL TEXT (For reference):
+        #{doc_text.truncate(50000)}
       PROMPT
 
       response = @client.chat(
         parameters: {
-          model: "gpt-4o-mini",
-          response_format: { type: "json_object" },
+          model: DEFAULT_MODEL,
           messages: [
-            { role: "system", content: "You are a classifier that outputs JSON." },
+            { role: "system", content: system_role },
             { role: "user", content: prompt }
           ],
-          temperature: 0.1
+          temperature: 0.2
         }
       )
 

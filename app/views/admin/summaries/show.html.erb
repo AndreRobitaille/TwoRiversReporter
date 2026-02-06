@@ -1,0 +1,51 @@
+<div class="page-header">
+  <div class="flex justify-between items-center">
+    <div>
+      <h1 class="page-title">AI Summaries</h1>
+      <p class="page-subtitle">Regenerate meeting summaries with knowledgebase context</p>
+    </div>
+    <%= button_to "Regenerate All Summaries", regenerate_all_admin_summaries_path, 
+        method: :post, 
+        class: "btn btn--primary",
+        data: { confirm: "This will queue all summarizable meetings for regeneration. Existing summaries will be replaced. Continue?" } %>
+  </div>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-value"><%= @total_meetings %></div>
+    <div class="stat-label">Total Meetings</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value"><%= @meetings_with_docs %></div>
+    <div class="stat-label">Meetings with Summarizable Docs</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value"><%= @existing_summaries %></div>
+    <div class="stat-label">Existing Summaries</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2 class="card-title">How It Works</h2>
+  <div class="prose">
+    <p>When summaries are regenerated:</p>
+    <ul>
+      <li>Each meeting with extracted document text is queued for processing</li>
+      <li>The AI retrieves relevant context from your <strong>Knowledgebase</strong> sources</li>
+      <li>Summaries are generated with citations to both meeting documents and knowledgebase sources</li>
+      <li>Existing summaries for each meeting are replaced with new ones</li>
+    </ul>
+    <p>
+      <strong>Note:</strong> Only meetings with minutes or packet PDFs that have extracted text will be summarized.
+      Make sure documents have been processed before regenerating summaries.
+    </p>
+  </div>
+</div>
+
+<% if @meetings_with_docs == 0 %>
+  <div class="alert alert--warning">
+    <strong>No summarizable meetings found.</strong>
+    Meetings need minutes or packet PDFs with extracted text before they can be summarized.
+  </div>
+<% end %>

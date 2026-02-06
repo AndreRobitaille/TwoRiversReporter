@@ -1,0 +1,177 @@
+<div class="page-header">
+  <div class="flex justify-between items-center">
+    <div>
+      <h1 class="page-title">Job Queue</h1>
+      <p class="page-subtitle">Monitor background job processing</p>
+    </div>
+    <div class="flex gap-2">
+      <%= button_to "Clear All Finished", clear_completed_admin_jobs_path, method: :post, class: "btn btn--secondary",
+            data: { confirm: "Clear all completed and failed jobs?" } %>
+      <% if @failed_count > 0 %>
+        <%= button_to "Retry All Failed", retry_all_failed_admin_jobs_path, method: :post, class: "btn btn--primary",
+            data: { confirm: "Retry all #{@failed_count} failed jobs?" } %>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<!-- Worker Status -->
+<div class="card mb-4">
+  <h2 class="card-title">Worker Status</h2>
+  <% if @worker_alive %>
+    <p class="text-green-700 font-medium">Worker is running</p>
+  <% else %>
+    <p class="text-red-700 font-medium">No active worker detected. Start with: <code>bin/jobs</code></p>
+  <% end %>
+
+  <% if @workers.any? || @dispatchers.any? %>
+    <table class="mt-3">
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>PID</th>
+          <th>Hostname</th>
+          <th>Last Heartbeat</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% (@workers + @dispatchers).each do |process| %>
+          <tr>
+            <td><%= process.kind %></td>
+            <td><%= process.pid %></td>
+            <td><%= process.hostname %></td>
+            <td><%= time_ago_in_words(process.last_heartbeat_at) %> ago</td>
+            <td>
+              <% if process.last_heartbeat_at > 60.seconds.ago %>
+                <span class="badge badge--success">Active</span>
+              <% else %>
+                <span class="badge badge--default">Stale</span>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</div>
+
+<!-- Queue Statistics -->
+<div class="stats-grid mb-4">
+  <div class="stat-card">
+    <div class="stat-value"><%= @ready_count %></div>
+    <div class="stat-label">Ready (waiting)</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value"><%= @claimed_count %></div>
+    <div class="stat-label">Running</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value"><%= @scheduled_count %></div>
+    <div class="stat-label">Scheduled</div>
+  </div>
+  <div class="stat-card <%= @failed_count > 0 ? 'stat-card--danger' : '' %>">
+    <div class="stat-value"><%= @failed_count %></div>
+    <div class="stat-label">Failed</div>
+  </div>
+</div>
+
+<!-- Pending Jobs by Type -->
+<% if @jobs_by_class.any? %>
+  <div class="card mb-4">
+    <h2 class="card-title">Pending Jobs by Type</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Job Class</th>
+          <th class="text-right">Count</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @jobs_by_class.each do |class_name, count| %>
+          <tr>
+            <td><code><%= class_name %></code></td>
+            <td class="text-right"><%= count %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
+<!-- Failed Jobs -->
+<% if @failed_jobs.any? %>
+  <div class="card mb-4">
+    <h2 class="card-title text-red-700">Failed Jobs</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Job</th>
+          <th>Error</th>
+          <th>Failed At</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @failed_jobs.each do |failed| %>
+          <tr>
+            <td>
+              <code><%= failed.job.class_name %></code>
+              <div class="text-xs text-gray-500 mt-1">
+                <%= truncate(failed.job.arguments.to_s, length: 80) %>
+              </div>
+            </td>
+            <td>
+              <div class="text-red-600 text-sm">
+                <%= truncate(failed.error.to_s.lines.first.to_s, length: 100) %>
+              </div>
+            </td>
+            <td><%= time_ago_in_words(failed.created_at) %> ago</td>
+            <td class="text-right">
+              <%= button_to "Retry", retry_failed_admin_jobs_path(id: failed.id), method: :post, class: "btn btn--sm btn--ghost" %>
+              <%= button_to "Discard", discard_failed_admin_jobs_path(id: failed.id), method: :delete, class: "btn btn--sm btn--ghost text-red-600",
+                  data: { confirm: "Permanently discard this failed job?" } %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
+<!-- Recent Completed Jobs -->
+<% if @recent_completed.any? %>
+  <div class="card">
+    <h2 class="card-title">Recently Completed</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Job</th>
+          <th>Arguments</th>
+          <th>Completed</th>
+          <th>Duration</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @recent_completed.each do |job| %>
+          <tr>
+            <td><code><%= job.class_name %></code></td>
+            <td class="text-xs text-gray-500"><%= truncate(job.arguments.to_s, length: 60) %></td>
+            <td><%= time_ago_in_words(job.finished_at) %> ago</td>
+            <td>
+              <% if job.created_at && job.finished_at %>
+                <%= distance_of_time_in_words(job.created_at, job.finished_at) %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
+<% if @jobs_by_class.empty? && @failed_jobs.empty? && @recent_completed.empty? %>
+  <div class="card">
+    <p class="text-gray-500">No jobs in the queue. Jobs will appear here when you trigger actions like summary regeneration.</p>
+  </div>
+<% end %>

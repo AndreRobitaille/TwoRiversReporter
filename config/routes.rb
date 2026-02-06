@@ -18,6 +18,18 @@ Rails.application.routes.draw do
     resources :knowledge_sources, controller: "admin/knowledge_sources", as: :admin_knowledge_sources do
       post :reingest, on: :member
     end
+
+    resource :summaries, only: [ :show ], controller: "admin/summaries", as: :admin_summaries do
+      post :regenerate_all, on: :collection
+      post :regenerate_one, on: :collection
+    end
+
+    resource :jobs, only: [ :show ], controller: "admin/jobs", as: :admin_jobs do
+      post :retry_failed, on: :member
+      post :retry_all_failed, on: :collection
+      delete :discard_failed, on: :member
+      post :clear_completed, on: :collection
+    end
   end
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
