@@ -16,7 +16,7 @@ module Admin
       if params[:q].present?
         @topics = @topics.similar_to(params[:q])
       else
-        @topics = @topics.order(last_seen_at: :desc, created_at: :desc)
+        @topics = sort_topics(@topics)
       end
 
       # Simple pagination
@@ -24,10 +24,17 @@ module Admin
       @per_page = 50
 
       # execute count before limit/offset
-      @total_topics = @topics.count
+      # Use .size which handles grouped queries correctly (returning a hash) or integer for standard queries
+      count_result = @topics.size
+      @total_topics = count_result.is_a?(Hash) ? count_result.size : count_result
       @total_pages = (@total_topics.to_f / @per_page).ceil
 
       @topics = @topics.offset((@page - 1) * @per_page).limit(@per_page)
+    end
+
+    def search
+      @topics = Topic.where("name ILIKE ?", "%#{params[:q]}%").limit(20)
+      render json: @topics.select(:id, :name)
     end
 
     def show
@@ -37,9 +44,23 @@ module Admin
 
     def update
       if @topic.update(topic_params)
-        redirect_to admin_topic_path(@topic), notice: "Topic updated."
+        respond_to do |format|
+          format.html { redirect_back fallback_location: admin_topics_path, notice: "Topic updated." }
+          format.turbo_stream { render_turbo_update("Topic updated.") }
+          format.json { render json: { success: true } }
+        end
       else
-        render :show, status: :unprocessable_entity
+        respond_to do |format|
+          format.html { render :show, status: :unprocessable_entity }
+          format.turbo_stream {
+            render turbo_stream: turbo_stream.replace(
+              helpers.dom_id(@topic),
+              partial: "admin/topics/topic",
+              locals: { topic: @topic }
+            )
+          }
+          format.json { render json: { success: false, errors: @topic.errors.full_messages }, status: :unprocessable_entity }
+        end
       end
     end
 
@@ -110,7 +131,25 @@ module Admin
       end
     end
 
+    def search
+      topics = Topic.where("name ILIKE ?", "%#{params[:q]}%").limit(20)
+      render json: topics.select(:id, :name)
+    end
+
     private
+
+    def sort_topics(topics)
+      column = %w[name status importance last_seen_at last_activity_at mentions_count].include?(params[:sort]) ? params[:sort] : "last_seen_at"
+      direction = %w[asc desc].include?(params[:direction]) ? params[:direction] : "desc"
+
+      if column == "mentions_count"
+        topics.left_joins(:agenda_items)
+              .group(:id)
+              .order(Arel.sql("COUNT(agenda_items.id) #{direction}"))
+      else
+        topics.order("#{column} #{direction}")
+      end
+    end
 
     def render_turbo_update(message)
       respond_to do |format|
@@ -130,7 +169,7 @@ module Admin
     end
 
     def topic_params
-      params.require(:topic).permit(:summary, :importance, :name)
+      params.require(:topic).permit(:description, :importance, :name)
     end
   end
 end

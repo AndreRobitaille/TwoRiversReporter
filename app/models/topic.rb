@@ -5,6 +5,7 @@ class Topic < ApplicationRecord
 
   validates :name, presence: true, uniqueness: { case_sensitive: false }
   validates :status, presence: true, inclusion: { in: %w[proposed approved blocked] }
+  validates :importance, numericality: { only_integer: true, greater_than_or_equal_to: 0, less_than_or_equal_to: 10 }, allow_nil: true
 
   scope :approved, -> { where(status: "approved") }
   scope :proposed, -> { where(status: "proposed") }

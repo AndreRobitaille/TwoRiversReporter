@@ -32,6 +32,9 @@ Rails.application.routes.draw do
     end
 
     resources :topics, controller: "admin/topics", as: :admin_topics do
+      collection do
+        get :search
+      end
       member do
         post :approve
         post :block

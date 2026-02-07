@@ -20,23 +20,28 @@
 </div>
 
 <div class="grid grid-cols-2 gap-6">
-  <div class="card p-6">
+  <div class="card p-6" id="topic-details-form">
     <h2 class="text-lg font-bold mb-4">Details</h2>
-    <%= form_with model: [:admin, @topic], local: true do |f| %>
+    <% if flash[:notice] %>
+      <div class="flash flash--success mb-4" data-controller="auto-hide">
+        <%= flash[:notice] %>
+      </div>
+    <% end %>
+    <%= form_with model: [:admin, @topic], data: { controller: "form-feedback", action: "submit->form-feedback#submit turbo:submit-end->form-feedback#end" } do |f| %>
       <div class="form-group">
         <%= f.label :name, "Canonical Name" %>
         <%= f.text_field :name, class: "form-input w-full" %>
       </div>
       <div class="form-group">
-        <%= f.label :summary, "Summary" %>
-        <%= f.text_area :summary, rows: 4, class: "form-input w-full" %>
+        <%= f.label :description, "Description" %>
+        <%= f.text_area :description, rows: 4, class: "form-input w-full" %>
       </div>
       <div class="form-group">
         <%= f.label :importance, "Importance (0-10)" %>
-        <%= f.number_field :importance, class: "form-input w-full" %>
+        <%= f.number_field :importance, min: 0, max: 10, class: "form-input w-full" %>
       </div>
       <div class="form-group mt-4 flex gap-2 flex-wrap">
-        <%= f.submit "Update Topic", class: "btn btn--primary" %>
+        <%= f.submit "Update Topic", class: "btn btn--primary", data: { form_feedback_target: "submit" } %>
         
         <% if @topic.status == "proposed" %>
           <%= link_to "Approve", approve_admin_topic_path(@topic), data: { turbo_method: :post }, class: "btn btn--success" %>
@@ -80,12 +85,15 @@
     <div class="border-t pt-4">
       <h3 class="text-md font-bold mb-2 text-danger">Merge into another Topic</h3>
       <p class="text-sm text-secondary mb-2">Move everything to a target topic. <strong>This topic will be deleted.</strong></p>
-      <%= form_with url: merge_admin_topic_path(@topic), method: :post, local: true, class: "flex gap-2", data: { turbo_confirm: "Are you sure? This topic will be deleted." } do |f| %>
-        <%# Load potential targets via simple query, ideally this would be an autocomplete if list is huge %>
-        <%= f.collection_select :target_topic_id, Topic.where.not(id: @topic.id).order(:name).limit(100), :id, :name, { prompt: "Select target topic..." }, { class: "form-select grow" } %>
-        <%= f.submit "Merge", class: "btn btn--danger" %>
-      <% end %>
-      <p class="text-xs text-secondary mt-1">Showing first 100 topics only.</p>
+      
+      <button type="button" 
+              class="btn btn--danger w-full justify-center" 
+              data-controller="modal-trigger" 
+              data-action="click->modal-trigger#open" 
+              data-modal-trigger-topic-id-value="<%= @topic.id %>" 
+              data-modal-trigger-topic-name-value="<%= @topic.name %>">
+        Merge / Alias To...
+      </button>
     </div>
   </div>
 </div>
@@ -119,3 +127,5 @@
     </table>
   </div>
 </div>
+
+<%= render "merge_modal" %>
