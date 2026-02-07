@@ -1,0 +1,121 @@
+<% content_for(:title) { "#{@topic.name} - Admin" } %>
+
+<div class="page-header">
+  <div class="flex items-center justify-between">
+    <h1 class="page-title"><%= @topic.name %></h1>
+    <div class="flex gap-2">
+      <%= link_to "Back to Topics", admin_topics_path, class: "btn btn--secondary" %>
+    </div>
+  </div>
+  <div class="mt-2 flex gap-2">
+    <span class="badge <%= case @topic.status
+      when 'approved' then 'badge--success'
+      when 'blocked' then 'badge--danger'
+      else 'badge--default'
+    end %>"><%= @topic.status.titleize %></span>
+    <% if @topic.pinned? %>
+      <span class="badge badge--primary">Pinned</span>
+    <% end %>
+  </div>
+</div>
+
+<div class="grid grid-cols-2 gap-6">
+  <div class="card p-6">
+    <h2 class="text-lg font-bold mb-4">Details</h2>
+    <%= form_with model: [:admin, @topic], local: true do |f| %>
+      <div class="form-group">
+        <%= f.label :name, "Canonical Name" %>
+        <%= f.text_field :name, class: "form-input w-full" %>
+      </div>
+      <div class="form-group">
+        <%= f.label :summary, "Summary" %>
+        <%= f.text_area :summary, rows: 4, class: "form-input w-full" %>
+      </div>
+      <div class="form-group">
+        <%= f.label :importance, "Importance (0-10)" %>
+        <%= f.number_field :importance, class: "form-input w-full" %>
+      </div>
+      <div class="form-group mt-4 flex gap-2 flex-wrap">
+        <%= f.submit "Update Topic", class: "btn btn--primary" %>
+        
+        <% if @topic.status == "proposed" %>
+          <%= link_to "Approve", approve_admin_topic_path(@topic), data: { turbo_method: :post }, class: "btn btn--success" %>
+        <% end %>
+        
+        <% unless @topic.status == "blocked" %>
+          <%= link_to "Block", block_admin_topic_path(@topic), data: { turbo_method: :post }, class: "btn btn--danger" %>
+        <% else %>
+          <%= link_to "Unblock", unblock_admin_topic_path(@topic), data: { turbo_method: :post }, class: "btn btn--secondary" %>
+        <% end %>
+        
+        <% unless @topic.pinned? %>
+          <%= link_to "Pin", pin_admin_topic_path(@topic), data: { turbo_method: :post }, class: "btn btn--secondary" %>
+        <% else %>
+          <%= link_to "Unpin", unpin_admin_topic_path(@topic), data: { turbo_method: :post }, class: "btn btn--secondary" %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="card p-6">
+    <h2 class="text-lg font-bold mb-4">Aliases & Merging</h2>
+    <% if @aliases.any? %>
+      <ul class="list-disc pl-5 mb-6">
+        <% @aliases.each do |a| %>
+          <li class="mb-1"><%= a.name %></li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="text-secondary mb-6">No aliases found.</p>
+    <% end %>
+
+    <div class="border-t pt-4 mb-6">
+      <h3 class="text-md font-bold mb-2">Add Manual Alias</h3>
+      <%= form_with url: create_alias_admin_topic_path(@topic), local: true, class: "flex gap-2" do |f| %>
+        <%= f.text_field :name, class: "form-input grow", placeholder: "e.g. alternate spelling" %>
+        <%= f.submit "Add", class: "btn btn--secondary" %>
+      <% end %>
+    </div>
+
+    <div class="border-t pt-4">
+      <h3 class="text-md font-bold mb-2 text-danger">Merge into another Topic</h3>
+      <p class="text-sm text-secondary mb-2">Move everything to a target topic. <strong>This topic will be deleted.</strong></p>
+      <%= form_with url: merge_admin_topic_path(@topic), method: :post, local: true, class: "flex gap-2", data: { turbo_confirm: "Are you sure? This topic will be deleted." } do |f| %>
+        <%# Load potential targets via simple query, ideally this would be an autocomplete if list is huge %>
+        <%= f.collection_select :target_topic_id, Topic.where.not(id: @topic.id).order(:name).limit(100), :id, :name, { prompt: "Select target topic..." }, { class: "form-select grow" } %>
+        <%= f.submit "Merge", class: "btn btn--danger" %>
+      <% end %>
+      <p class="text-xs text-secondary mt-1">Showing first 100 topics only.</p>
+    </div>
+  </div>
+</div>
+
+<div class="mt-6">
+  <h2 class="text-lg font-bold mb-4">Recent Mentions</h2>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Meeting</th>
+          <th>Agenda Item</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @recent_mentions.each do |agenda_item| %>
+          <tr>
+            <td>
+              <%= link_to agenda_item.meeting.body_name, meeting_path(agenda_item.meeting) %>
+            </td>
+            <td>
+              <%= agenda_item.title %>
+            </td>
+            <td>
+              <%= agenda_item.meeting.starts_at&.to_date %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

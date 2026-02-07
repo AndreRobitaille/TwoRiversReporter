@@ -37,7 +37,8 @@ class ExtractTopicsJob < ApplicationJob
           next if topic_name.blank?
 
           # Find or Create Topic
-          topic = Topic.find_or_create_by!(name: topic_name.strip.titleize)
+          topic = Topics::FindOrCreateService.call(topic_name)
+          next unless topic
 
           # Link
           AgendaItemTopic.find_or_create_by!(agenda_item: item, topic: topic)

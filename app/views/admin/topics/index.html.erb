@@ -1,0 +1,68 @@
+<% content_for(:title) { "Manage Topics - Admin" } %>
+
+<div class="page-header">
+  <div class="flex items-center justify-between">
+    <h1 class="page-title">Manage Topics</h1>
+    <div class="flex gap-2">
+      <%= link_to "Blocklist", admin_topic_blocklists_path, class: "btn btn--secondary" %>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-6">
+  <div class="flex gap-4 items-center flex-wrap p-4">
+    <%= form_with url: admin_topics_path, method: :get, local: true, class: "flex gap-2 grow" do |f| %>
+      <%= f.text_field :q, value: params[:q], placeholder: "Search topics...", class: "form-input grow" %>
+      <%= f.select :status, [["All Statuses", ""], ["Approved", "approved"], ["Blocked", "blocked"], ["Proposed", "proposed"]], { selected: params[:status] }, { class: "form-select" } %>
+      <div class="flex items-center gap-2">
+        <%= f.check_box :pinned, { checked: params[:pinned] == "true" }, "true", "false" %>
+        <%= f.label :pinned, "Pinned Only" %>
+      </div>
+      <%= f.submit "Filter", class: "btn btn--primary" %>
+      <%= link_to "Reset", admin_topics_path, class: "btn btn--ghost" %>
+    <% end %>
+  </div>
+</div>
+
+<div class="table-wrapper">
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Status</th>
+        <th>Stats</th>
+        <th>Last Seen</th>
+        <th class="text-right">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @topics.each do |topic| %>
+        <%= render partial: "topic", locals: { topic: topic } %>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<% if @total_pages > 1 %>
+  <div class="flex justify-between items-center mt-4">
+    <div>
+      <% if @page > 1 %>
+        <%= link_to "Previous", admin_topics_path(request.query_parameters.merge(page: @page - 1)), class: "btn btn--secondary" %>
+      <% else %>
+        <span class="btn btn--disabled">Previous</span>
+      <% end %>
+    </div>
+    
+    <div class="text-sm">
+      Page <%= @page %> of <%= @total_pages %> (<%= @total_topics %> topics)
+    </div>
+    
+    <div>
+      <% if @page < @total_pages %>
+        <%= link_to "Next", admin_topics_path(request.query_parameters.merge(page: @page + 1)), class: "btn btn--secondary" %>
+      <% else %>
+        <span class="btn btn--disabled">Next</span>
+      <% end %>
+    </div>
+  </div>
+<% end %>

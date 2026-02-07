@@ -10,9 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_06_200550) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_07_012527) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+  enable_extension "pg_trgm"
 
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
@@ -351,12 +352,35 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_200550) do
     t.index ["meeting_id"], name: "index_stance_observations_on_meeting_id"
   end
 
+  create_table "topic_aliases", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.bigint "topic_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_topic_aliases_on_name", unique: true
+    t.index ["topic_id"], name: "index_topic_aliases_on_topic_id"
+  end
+
+  create_table "topic_blocklists", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.string "reason"
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_topic_blocklists_on_name", unique: true
+  end
+
   create_table "topics", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "description"
+    t.integer "importance", default: 0
+    t.datetime "last_activity_at"
+    t.datetime "last_seen_at"
     t.string "name"
+    t.boolean "pinned", default: false, null: false
+    t.string "status", default: "approved", null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_topics_on_name"
+    t.index ["name"], name: "index_topics_on_name_trgm", opclass: :gin_trgm_ops, using: :gin
   end
 
   create_table "users", force: :cascade do |t|
@@ -408,6 +432,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_200550) do
   add_foreign_key "stance_observations", "entities"
   add_foreign_key "stance_observations", "meeting_documents"
   add_foreign_key "stance_observations", "meetings"
+  add_foreign_key "topic_aliases", "topics"
   add_foreign_key "votes", "members"
   add_foreign_key "votes", "motions"
 end

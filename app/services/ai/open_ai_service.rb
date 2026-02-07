@@ -83,17 +83,22 @@ module Ai
         <extraction_spec>
         Classify agenda items into high-level topics.
 
+        - Ignore "Minutes of Meetings" items if they refer to *previous* meetings (e.g. "Approve minutes of X"). Classify these as "Administrative".
+        - Do NOT extract topics from the titles of previous meeting minutes (e.g. if item is "Minutes of Public Works", do not tag "Public Works").
+        - If an item is purely administrative (Call to Order, Roll Call, Adjournment), classify as "Administrative".
+
         Schema:
         {
           "items": [
-            {#{' '}
-              "id": 123,#{' '}
-              "category": "Infrastructure|Public Safety|Parks & Rec|Finance|Zoning|Licensing|Personnel|Governance|Other",#{' '}
-              "tags": ["Tag1", "Tag2"]#{' '}
+            {
+              "id": 123,
+              "category": "Infrastructure|Public Safety|Parks & Rec|Finance|Zoning|Licensing|Personnel|Governance|Other|Administrative",
+              "tags": ["Tag1", "Tag2"]
             }
           ]
         }
         </extraction_spec>
+
 
         Text:
         #{items_text.truncate(50000)}

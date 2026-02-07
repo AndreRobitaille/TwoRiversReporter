@@ -30,6 +30,20 @@ Rails.application.routes.draw do
       delete :discard_failed, on: :member
       post :clear_completed, on: :collection
     end
+
+    resources :topics, controller: "admin/topics", as: :admin_topics do
+      member do
+        post :approve
+        post :block
+        post :unblock
+        post :pin
+        post :unpin
+        post :merge
+        post :create_alias
+      end
+    end
+
+    resources :topic_blocklists, controller: "admin/topic_blocklists", as: :admin_topic_blocklists
   end
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

@@ -1,0 +1,50 @@
+<tr id="<%= dom_id(topic) %>">
+  <td>
+    <div class="font-bold">
+      <%= link_to topic.name, admin_topic_path(topic), data: { turbo_frame: "_top" } %>
+      <% if topic.pinned? %>
+        <span class="badge badge--primary ml-2">Pinned</span>
+      <% end %>
+    </div>
+    <% if topic.topic_aliases.any? %>
+      <div class="text-sm text-secondary">
+        Aliases: <%= topic.topic_aliases.map(&:name).join(", ") %>
+      </div>
+    <% end %>
+  </td>
+  <td>
+    <span class="badge <%= case topic.status
+      when 'approved' then 'badge--success'
+      when 'blocked' then 'badge--danger'
+      else 'badge--default'
+    end %>">
+      <%= topic.status.titleize %>
+    </span>
+  </td>
+  <td>
+    <div class="text-sm">
+      Mentions: <%= topic.agenda_items.count %>
+    </div>
+  </td>
+  <td>
+    <%= topic.last_seen_at&.to_date %>
+  </td>
+  <td class="text-right">
+    <div class="flex gap-2 justify-end">
+      <% if topic.status == "proposed" %>
+        <%= button_to "Approve", approve_admin_topic_path(topic), method: :post, class: "btn btn--success btn--sm" %>
+        <%= button_to "Block", block_admin_topic_path(topic), method: :post, class: "btn btn--danger btn--sm" %>
+      <% elsif topic.status == "approved" %>
+        <%= button_to "Block", block_admin_topic_path(topic), method: :post, class: "btn btn--danger btn--sm" %>
+      <% elsif topic.status == "blocked" %>
+        <%= button_to "Unblock", unblock_admin_topic_path(topic), method: :post, class: "btn btn--secondary btn--sm" %>
+      <% end %>
+
+      <% unless topic.pinned? %>
+        <%= button_to "Pin", pin_admin_topic_path(topic), method: :post, class: "btn btn--primary btn--sm" %>
+      <% else %>
+        <%= button_to "Unpin", unpin_admin_topic_path(topic), method: :post, class: "btn btn--secondary btn--sm" %>
+      <% end %>
+    </div>
+  </td>
+</tr>
