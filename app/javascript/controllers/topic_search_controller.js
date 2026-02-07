@@ -31,12 +31,13 @@ export default class extends Controller {
           this.resultsTarget.innerHTML = `<div class="p-2 text-secondary text-sm">No topics found.</div>`
         } else {
           this.resultsTarget.innerHTML = data.map(topic => `
-            <div class="p-2 hover:bg-slate-100 cursor-pointer border-b last:border-0"
-                 data-action="click->topic-search#select"
-                 data-id="${topic.id}"
-                 data-name="${topic.name}">
+            <button type="button"
+                    class="modal__result"
+                    data-action="click->topic-search#select"
+                    data-id="${topic.id}"
+                    data-name="${topic.name}">
               ${topic.name}
-            </div>
+            </button>
           `).join("")
         }
       })

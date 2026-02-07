@@ -1358,3 +1358,72 @@ th.sortable-header:hover {
 .w-4 { width: 1rem; }
 .h-4 { height: 1rem; }
 .w-full { width: 100%; }
+
+/* ============================================
+   Modals
+   ============================================ */
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal[hidden] {
+  display: none;
+}
+
+.modal__panel {
+  width: 100%;
+  max-width: 500px;
+  background: var(--color-surface);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal__results {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-top: var(--space-1);
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.modal__result {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: var(--space-2);
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--font-size-base);
+  color: var(--color-text);
+}
+
+.modal__result:last-child {
+  border-bottom: none;
+}
+
+.modal__result:hover {
+  background-color: var(--color-primary-light);
+}
+
+/* ============================================
+   Additional Utilities
+   ============================================ */
+
+.font-bold { font-weight: var(--font-weight-bold); }
+.block { display: block; }
+.text-xl { font-size: var(--font-size-xl); }
+.border { border: 1px solid var(--color-border); }
+.rounded { border-radius: var(--radius-md); }

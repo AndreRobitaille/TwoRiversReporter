@@ -4,14 +4,14 @@ export default class extends Controller {
   static targets = ["container", "sourceName", "form"]
 
   connect() {
-    this.element.classList.add("hidden")
+    this.element.hidden = true
   }
 
   open(event) {
     const { topicId, topicName } = event.detail
     this.sourceNameTarget.innerText = topicName
     this.formTarget.action = `/admin/topics/${topicId}/merge`
-    this.element.classList.remove("hidden")
+    this.element.hidden = false
     
     // Find the search controller within this modal and reset it
     const searchElement = this.element.querySelector('[data-controller="topic-search"]')
@@ -24,7 +24,7 @@ export default class extends Controller {
   }
 
   close() {
-    this.element.classList.add("hidden")
+    this.element.hidden = true
   }
 
   stop(event) {
