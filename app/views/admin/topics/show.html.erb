@@ -105,20 +105,36 @@
       <thead>
         <tr>
           <th>Meeting</th>
-          <th>Agenda Item</th>
+          <th style="width: 50%;">Agenda Item</th>
           <th>Date</th>
         </tr>
       </thead>
       <tbody>
         <% @recent_mentions.each do |agenda_item| %>
+          <% preview = topic_mention_preview(agenda_item, @topic, window: @preview_window) %>
           <tr>
-            <td>
+            <td style="white-space: nowrap;">
               <%= link_to agenda_item.meeting.body_name, meeting_path(agenda_item.meeting) %>
             </td>
             <td>
-              <%= agenda_item.title %>
+              <div class="font-bold"><%= agenda_item.title %></div>
+              <% if preview %>
+                <div class="text-sm mt-2" style="background-color: var(--color-surface); padding: var(--space-2); border-radius: var(--radius-sm); border: 1px solid var(--color-border);">
+                  <div class="mb-1" style="font-style: italic; color: var(--color-text-secondary);">
+                    &ldquo;<%= highlight_preview_terms(preview[:text], preview[:terms]) %>&rdquo;
+                  </div>
+                  <div class="text-xs text-secondary">
+                    &mdash; <%= preview[:document_type].to_s.humanize %>
+                    <% if preview[:page_number].present? %>
+                      (Page <%= preview[:page_number] %>)
+                    <% end %>
+                  </div>
+                </div>
+              <% else %>
+                 <div class="text-xs text-secondary mt-1" style="font-style: italic;">Preview unavailable</div>
+              <% end %>
             </td>
-            <td>
+            <td style="white-space: nowrap;">
               <%= agenda_item.meeting.starts_at&.to_date %>
             </td>
           </tr>

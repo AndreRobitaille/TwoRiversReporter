@@ -46,11 +46,9 @@
         <th class="text-right">Actions</th>
       </tr>
     </thead>
-    <tbody>
-      <% @topics.each do |topic| %>
-        <%= render partial: "topic", locals: { topic: topic } %>
-      <% end %>
-    </tbody>
+    <% @topics.each do |topic| %>
+      <%= render partial: "topic", locals: { topic: topic, preview_window: @preview_window } %>
+    <% end %>
   </table>
 </div>
 

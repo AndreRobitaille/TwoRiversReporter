@@ -1,53 +1,110 @@
-<tr id="<%= dom_id(topic) %>">
-  <td>
-    <div class="font-bold">
-      <%= link_to topic.name, admin_topic_path(topic), data: { turbo_frame: "_top" } %>
-    </div>
-    <% if topic.topic_aliases.any? %>
-      <div class="text-sm text-secondary">
-        Aliases: <%= topic.topic_aliases.map(&:name).join(", ") %>
+<tbody id="<%= dom_id(topic) %>" data-controller="row-toggle">
+  <tr>
+    <td>
+      <div class="font-bold">
+        <%= link_to topic.name, admin_topic_path(topic), data: { turbo_frame: "_top" } %>
       </div>
-    <% end %>
-  </td>
-  <td>
-    <%= form_with model: [:admin, topic], class: "flex items-center gap-2", data: { controller: "inline-save", action: "submit->inline-save#submit turbo:submit-end->inline-save#end" } do |f| %>
-      <%= f.number_field :importance, min: 0, max: 10, class: "form-input w-16 px-2 py-1 text-sm" %>
-      <%= f.submit "Save", class: "btn btn--primary btn--sm" %>
-    <% end %>
-  </td>
-  <td>
-    <div class="text-sm">
-      <%= topic.agenda_items.count %>
-    </div>
-  </td>
-  <td>
-    <%= topic.last_seen_at&.to_date %>
-  </td>
-  <td>
-    <%= topic.last_activity_at&.to_date %>
-  </td>
-  <td class="text-right">
-    <div class="flex gap-2 justify-end">
-      <button type="button" 
-              class="btn btn--secondary btn--sm" 
-              data-controller="modal-trigger" 
-              data-action="click->modal-trigger#open" 
-              data-modal-trigger-topic-id-value="<%= topic.id %>" 
-              data-modal-trigger-topic-name-value="<%= topic.name %>">
-        Alias/Merge
-      </button>
-
-      <% if topic.status == "blocked" %>
-        <%= button_to "Blocked", unblock_admin_topic_path(topic), method: :post, class: "btn btn--danger btn--sm" %>
-      <% else %>
-        <%= button_to "Approved", block_admin_topic_path(topic), method: :post, class: "btn btn--success btn--sm" %>
+      <% if topic.topic_aliases.any? %>
+        <div class="text-sm text-secondary">
+          Aliases: <%= topic.topic_aliases.map(&:name).join(", ") %>
+        </div>
       <% end %>
-
-      <% unless topic.pinned? %>
-        <%= button_to "Pin", pin_admin_topic_path(topic), method: :post, class: "btn btn--secondary btn--sm" %>
-      <% else %>
-        <%= button_to "Unpin", unpin_admin_topic_path(topic), method: :post, class: "btn btn--primary btn--sm" %>
+    </td>
+    <td>
+      <%= form_with model: [:admin, topic], class: "flex items-center gap-2", data: { controller: "inline-save", action: "submit->inline-save#submit turbo:submit-end->inline-save#end" } do |f| %>
+        <%= f.number_field :importance, min: 0, max: 10, class: "form-input w-16 px-2 py-1 text-sm" %>
+        <%= f.submit "Save", class: "btn btn--primary btn--sm" %>
       <% end %>
-    </div>
-  </td>
-</tr>
+    </td>
+    <td>
+      <div class="text-sm">
+        <%= topic.agenda_items.count %>
+      </div>
+    </td>
+    <td>
+      <%= topic.last_seen_at&.to_date %>
+    </td>
+    <td>
+      <%= topic.last_activity_at&.to_date %>
+    </td>
+    <td class="text-right">
+      <div class="flex gap-2 justify-end">
+        <% has_mentions = topic.agenda_items.size > 0 %>
+        <button type="button"
+                class="btn btn--secondary btn--sm"
+                <% if has_mentions %>
+                  data-action="row-toggle#toggle"
+                  data-row-toggle-target="button"
+                  aria-expanded="false"
+                  aria-controls="<%= dom_id(topic, :preview) %>"
+                <% else %>
+                  disabled
+                  style="opacity: 0.5; cursor: not-allowed;"
+                <% end %>>
+          Preview
+        </button>
+
+        <button type="button"
+                class="btn btn--secondary btn--sm"
+                data-controller="modal-trigger"
+                data-action="click->modal-trigger#open"
+                data-modal-trigger-topic-id-value="<%= topic.id %>"
+                data-modal-trigger-topic-name-value="<%= topic.name %>">
+          Alias/Merge
+        </button>
+
+        <% if topic.status == "blocked" %>
+          <%= button_to "Blocked", unblock_admin_topic_path(topic), method: :post, class: "btn btn--danger btn--sm" %>
+        <% else %>
+          <%= button_to "Approved", block_admin_topic_path(topic), method: :post, class: "btn btn--success btn--sm" %>
+        <% end %>
+
+        <% unless topic.pinned? %>
+          <%= button_to "Pin", pin_admin_topic_path(topic), method: :post, class: "btn btn--secondary btn--sm" %>
+        <% else %>
+          <%= button_to "Unpin", unpin_admin_topic_path(topic), method: :post, class: "btn btn--primary btn--sm" %>
+        <% end %>
+      </div>
+    </td>
+  </tr>
+  <tr id="<%= dom_id(topic, :preview) %>" data-row-toggle-target="details" hidden>
+    <td colspan="6">
+      <div class="text-sm">
+        <% recent_mentions = topic_recent_mentions(topic, limit: 3) %>
+        <% if recent_mentions.any? %>
+          <% recent_mentions.each do |agenda_item| %>
+            <% preview = topic_mention_preview(agenda_item, topic, window: preview_window) %>
+            <div class="mb-2">
+              <div class="font-bold">
+                <%= agenda_item.meeting.body_name %>
+                <% if agenda_item.meeting.starts_at.present? %>
+                  <span class="text-secondary">(<%= agenda_item.meeting.starts_at.to_date %>)</span>
+                <% end %>
+              </div>
+              <div class="text-secondary"><%= agenda_item.title %></div>
+              <% if preview %>
+                <div class="text-sm mt-2" style="background-color: var(--color-bg); padding: var(--space-2); border-radius: var(--radius-sm); border: 1px solid var(--color-border);">
+                  <div class="mb-1" style="font-style: italic; color: var(--color-text-secondary);">
+                    &ldquo;<%= highlight_preview_terms(preview[:text], preview[:terms]) %>&rdquo;
+                  </div>
+                  <% if preview[:document_type].present? || preview[:page_number].present? %>
+                    <div class="text-xs text-secondary">
+                      &mdash; <%= preview[:document_type].to_s.humanize %>
+                      <% if preview[:page_number].present? %>
+                        (Page <%= preview[:page_number] %>)
+                      <% end %>
+                    </div>
+                  <% end %>
+                </div>
+              <% else %>
+                <div class="text-secondary mt-2 text-xs italic">Preview unavailable.</div>
+              <% end %>
+            </div>
+          <% end %>
+        <% else %>
+          <div class="text-secondary">No recent mentions.</div>
+        <% end %>
+      </div>
+    </td>
+  </tr>
+</tbody>

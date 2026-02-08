@@ -3,6 +3,7 @@ module Admin
     before_action :set_topic, only: %i[show update approve block unblock pin unpin merge create_alias]
 
     def index
+      @preview_window = helpers.preview_window_from_params(params)
       @topics = Topic.all
 
       if params[:status].present?
@@ -39,7 +40,10 @@ module Admin
 
     def show
       @aliases = @topic.topic_aliases
-      @recent_mentions = @topic.agenda_items.includes(:meeting).order("meetings.starts_at DESC").limit(10)
+      @preview_window = helpers.preview_window_from_params(params)
+      @recent_mentions = @topic.agenda_items.includes(meeting: { meeting_documents: :extractions })
+        .order("meetings.starts_at DESC")
+        .limit(10)
     end
 
     def update
@@ -52,13 +56,13 @@ module Admin
       else
         respond_to do |format|
           format.html { render :show, status: :unprocessable_entity }
-          format.turbo_stream {
-            render turbo_stream: turbo_stream.replace(
-              helpers.dom_id(@topic),
-              partial: "admin/topics/topic",
-              locals: { topic: @topic }
-            )
-          }
+        format.turbo_stream {
+          render turbo_stream: turbo_stream.replace(
+            helpers.dom_id(@topic),
+            partial: "admin/topics/topic",
+            locals: { topic: @topic, preview_window: helpers.preview_window_from_params(params) }
+          )
+        }
           format.json { render json: { success: false, errors: @topic.errors.full_messages }, status: :unprocessable_entity }
         end
       end
@@ -139,6 +143,8 @@ module Admin
     private
 
     def sort_topics(topics)
+      params[:sort] = "last_seen_at" if params[:sort].blank?
+      params[:direction] = "desc" if params[:direction].blank?
       column = %w[name status importance last_seen_at last_activity_at mentions_count].include?(params[:sort]) ? params[:sort] : "last_seen_at"
       direction = %w[asc desc].include?(params[:direction]) ? params[:direction] : "desc"
 
@@ -157,7 +163,7 @@ module Admin
           render turbo_stream: turbo_stream.replace(
             helpers.dom_id(@topic),
             partial: "admin/topics/topic",
-            locals: { topic: @topic }
+            locals: { topic: @topic, preview_window: helpers.preview_window_from_params(params) }
           )
         }
         format.html { redirect_back fallback_location: admin_topics_path, notice: message }
