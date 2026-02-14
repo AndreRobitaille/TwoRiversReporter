@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_07_012527) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_14_200546) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -361,6 +361,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_07_012527) do
     t.index ["topic_id"], name: "index_topic_aliases_on_topic_id"
   end
 
+  create_table "topic_appearances", force: :cascade do |t|
+    t.bigint "agenda_item_id"
+    t.datetime "appeared_at", null: false
+    t.string "body_name"
+    t.datetime "created_at", null: false
+    t.string "evidence_type", null: false
+    t.bigint "meeting_id", null: false
+    t.jsonb "source_ref"
+    t.bigint "topic_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["agenda_item_id"], name: "index_topic_appearances_on_agenda_item_id"
+    t.index ["meeting_id"], name: "index_topic_appearances_on_meeting_id"
+    t.index ["topic_id", "appeared_at"], name: "index_topic_appearances_on_topic_id_and_appeared_at"
+    t.index ["topic_id"], name: "index_topic_appearances_on_topic_id"
+  end
+
   create_table "topic_blocklists", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name", null: false
@@ -369,18 +385,41 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_07_012527) do
     t.index ["name"], name: "index_topic_blocklists_on_name", unique: true
   end
 
+  create_table "topic_status_events", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "evidence_type", null: false
+    t.string "lifecycle_status", null: false
+    t.text "notes"
+    t.datetime "occurred_at", null: false
+    t.jsonb "source_ref"
+    t.bigint "topic_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["topic_id", "occurred_at"], name: "index_topic_status_events_on_topic_id_and_occurred_at"
+    t.index ["topic_id"], name: "index_topic_status_events_on_topic_id"
+  end
+
   create_table "topics", force: :cascade do |t|
+    t.string "canonical_name"
     t.datetime "created_at", null: false
     t.text "description"
+    t.datetime "first_seen_at"
     t.integer "importance", default: 0
     t.datetime "last_activity_at"
     t.datetime "last_seen_at"
+    t.string "lifecycle_status"
     t.string "name"
     t.boolean "pinned", default: false, null: false
+    t.string "review_status"
+    t.string "slug"
     t.string "status", default: "approved", null: false
     t.datetime "updated_at", null: false
+    t.index ["canonical_name"], name: "index_topics_on_canonical_name", unique: true
+    t.index ["first_seen_at"], name: "index_topics_on_first_seen_at"
+    t.index ["lifecycle_status"], name: "index_topics_on_lifecycle_status"
     t.index ["name"], name: "index_topics_on_name"
     t.index ["name"], name: "index_topics_on_name_trgm", opclass: :gin_trgm_ops, using: :gin
+    t.index ["review_status"], name: "index_topics_on_review_status"
+    t.index ["slug"], name: "index_topics_on_slug", unique: true
   end
 
   create_table "users", force: :cascade do |t|
@@ -433,6 +472,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_07_012527) do
   add_foreign_key "stance_observations", "meeting_documents"
   add_foreign_key "stance_observations", "meetings"
   add_foreign_key "topic_aliases", "topics"
+  add_foreign_key "topic_appearances", "agenda_items"
+  add_foreign_key "topic_appearances", "meetings"
+  add_foreign_key "topic_appearances", "topics"
+  add_foreign_key "topic_status_events", "topics"
   add_foreign_key "votes", "members"
   add_foreign_key "votes", "motions"
 end
