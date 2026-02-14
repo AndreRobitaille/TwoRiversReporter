@@ -87,7 +87,7 @@ This is a living note for future actions, not an implementation log.
 - #50 Topic-aware retrieval context + caps
 
 ## Explicit Issue Order (Recommended)
-1) #47 Topic schema redesign + migration/backfill
+1) [x] #47 Topic schema redesign + migration/backfill
 2) #38 Topic review queue + admin triage for AI proposals
 3) #48 Topic continuity pipeline: lifecycle derivation + deferral/disappearance
 4) #49 Topic-aware summarization (governance-compliant)
