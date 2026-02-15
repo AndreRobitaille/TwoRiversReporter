@@ -51,7 +51,19 @@ module Admin
     end
 
     def update
-      if @topic.update(topic_params)
+      @topic.assign_attributes(topic_params)
+
+      if @topic.will_save_change_to_source_notes?
+        if @topic.source_notes.present?
+          @topic.added_by = Current.user&.email
+          @topic.added_at = Time.current
+        else
+          @topic.added_by = nil
+          @topic.added_at = nil
+        end
+      end
+
+      if @topic.save
         respond_to do |format|
           format.html { redirect_back fallback_location: admin_topics_path, notice: "Topic updated." }
           format.turbo_stream { render_turbo_update("Topic updated.") }
@@ -242,7 +254,7 @@ module Admin
     end
 
     def topic_params
-      params.require(:topic).permit(:description, :importance, :name)
+      params.require(:topic).permit(:description, :importance, :name, :source_type, :source_notes)
     end
   end
 end

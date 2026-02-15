@@ -5,6 +5,7 @@ class Topic < ApplicationRecord
   has_many :topic_appearances, dependent: :destroy
   has_many :topic_status_events, dependent: :destroy
   has_many :topic_review_events, dependent: :destroy
+  has_many :topic_summaries, dependent: :destroy
 
   validates :name, presence: true, uniqueness: { case_sensitive: false }
   validates :status, presence: true, inclusion: { in: %w[proposed approved blocked] }
@@ -14,6 +15,8 @@ class Topic < ApplicationRecord
   validates :slug, uniqueness: true, allow_nil: true
 
   validates :importance, numericality: { only_integer: true, greater_than_or_equal_to: 0, less_than_or_equal_to: 10 }, allow_nil: true
+
+  store_accessor :resident_reported_context, :source_type, :source_notes, :added_by, :added_at
 
   scope :approved, -> { where(status: "approved") }
   scope :proposed, -> { where(status: "proposed") }

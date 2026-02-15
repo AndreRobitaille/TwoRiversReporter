@@ -90,7 +90,7 @@ This is a living note for future actions, not an implementation log.
 1) [x] #47 Topic schema redesign + migration/backfill
 2) [x] #38 Topic review queue + admin triage for AI proposals
 3) [x] #48 Topic continuity pipeline: lifecycle derivation + deferral/disappearance
-4) #49 Topic-aware summarization (governance-compliant)
+4) [x] #49 Topic-aware summarization (governance-compliant)
 5) #50 Topic-aware retrieval context + caps
 6) #39 Topic detail page: continuity timeline with motions/votes
 7) UI reorientation and polish: #25, #29–36, #31, #33–34, #41–43

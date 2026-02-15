@@ -118,6 +118,126 @@ module Ai
       response.dig("choices", 0, "message", "content")
     end
 
+    def analyze_topic_summary(context_json)
+      system_role = "You are a civic continuity analyst. Your goal is to separate factual record from institutional framing and civic sentiment."
+
+      prompt = <<~PROMPT
+        Analyze the provided Topic Context and return a JSON analysis plan.
+
+        <governance_constraints>
+        - Topic Governance is binding.
+        - Factual Record: Must have citations. If no document evidence, do not state as fact.
+        - Institutional Framing: Label staff summaries/titles as framing, not truth.
+        - Civic Sentiment: Use observational language ("appears to", "residents expressed"). No unanimity claims.
+        - Continuity: Explicitly note recurrence, deferrals, and cross-body progression.
+        </governance_constraints>
+
+        TOPIC CONTEXT (JSON):
+        #{context_json.to_json}
+
+        <citation_rules>
+        - You must include citations for all claims in "factual_record" and "institutional_framing".
+        - Use the "citation_id" provided in the input context (e.g. "doc-123").
+        - The "citations" array in the output should contain objects: { "citation_id": "doc-123", "label": "Packet Page 12" }.
+        - If no citation is available for a claim, do not include it in the factual record.
+        </citation_rules>
+
+        <resident_reported_rules>
+        - If "resident_reported_context" is present in the input, include it only in the "resident_reported_context" section.
+        - Never place resident-reported information into factual_record.
+        - Always preserve the label "Resident-reported (no official record)".
+        </resident_reported_rules>
+
+        <extraction_spec>
+        Return a JSON object matching this schema exactly.
+
+        Schema:
+        {
+          "topic_name": "Canonical name",
+          "lifecycle_status": "active|dormant|resolved|recurring",
+          "factual_record": [
+            { "statement": "Verified claim.", "citations": [{ "citation_id": "...", "label": "..." }] }
+          ],
+          "institutional_framing": [
+             { "statement": "How the city frames this.", "source": "Staff Summary", "citations": [{ "citation_id": "...", "label": "..." }] }
+          ],
+          "civic_sentiment": [
+             { "observation": "Observed resident feedback.", "evidence": "Public Comment", "citations": [{ "citation_id": "...", "label": "..." }] }
+          ],
+          "resident_reported_context": [
+             { "statement": "Resident-reported context.", "label": "Resident-reported (no official record)" }
+          ],
+          "continuity_signals": [
+             { "signal": "recurrence|deferral|disappearance|cross_body_progression", "details": "Explanation", "citations": [{ "citation_id": "...", "label": "..." }] }
+          ],
+          "decision_hinges": ["Unknowns or key dependencies"],
+          "ambiguities": ["Conflicting info"],
+          "verification_notes": ["What to check"]
+        }
+        </extraction_spec>
+      PROMPT
+
+      response = @client.chat(
+        parameters: {
+          model: DEFAULT_MODEL,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: system_role },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.1
+        }
+      )
+
+      response.dig("choices", 0, "message", "content")
+    end
+
+    def render_topic_summary(plan_json)
+      system_role = "You are a civic engagement assistant. Write a Topic-First summary."
+
+      prompt = <<~PROMPT
+        Using the provided TOPIC ANALYSIS (JSON), write a Markdown summary for this Topic's appearance in the meeting.
+
+        <style_guide>
+        - Heading 2 (##) for the Topic Name.
+        - Section: **Factual Record** (Bulleted). Append citations like [Packet Page 12].
+        - Section: **Institutional Framing** (Bulleted).
+        - Section: **Civic Sentiment** (Bulleted, if any).
+        - Section: **Resident-reported (no official record)** (Bulleted, if any).
+        - Section: **Continuity** (If signals exist).
+        - Do NOT mix these categories.
+        - If a section is empty, omit it (except Factual Record, which should note "No new factual record" if empty).
+        </style_guide>
+
+        <citation_rendering>
+        - When rendering citations, use the "label" field from the citation object.
+        - Format: Statement [Label].
+        </citation_rendering>
+
+        <resident_reported_rendering>
+        - If resident_reported_context is present, render it under the exact heading:
+          **Resident-reported (no official record)**.
+        - Do not add citations to this section.
+        </resident_reported_rendering>
+
+        INPUT (JSON):
+        #{plan_json}
+      PROMPT
+
+      response = @client.chat(
+        parameters: {
+          model: DEFAULT_MODEL,
+          messages: [
+            { role: "system", content: system_role },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.2
+        }
+      )
+
+      response.dig("choices", 0, "message", "content")
+    end
+
     private
 
     def prepare_doc_context(extractions)

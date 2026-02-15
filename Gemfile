@@ -58,6 +58,8 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  gem "minitest-mock"
 end
 
 group :development do
@@ -70,3 +72,4 @@ gem "mechanize", "~> 2.14"
 gem "ruby-openai", "~> 8.3"
 
 gem "kramdown", "~> 2.5"
+gem "redcarpet", "~> 3.6"

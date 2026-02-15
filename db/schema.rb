@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_14_213000) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_15_221034) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -411,6 +411,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_14_213000) do
     t.index ["topic_id"], name: "index_topic_status_events_on_topic_id"
   end
 
+  create_table "topic_summaries", force: :cascade do |t|
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.jsonb "generation_data", default: {}
+    t.bigint "meeting_id", null: false
+    t.string "summary_type", default: "topic_digest", null: false
+    t.bigint "topic_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["meeting_id"], name: "index_topic_summaries_on_meeting_id"
+    t.index ["topic_id", "meeting_id", "summary_type"], name: "idx_on_topic_id_meeting_id_summary_type_4aa4bd999d", unique: true
+    t.index ["topic_id"], name: "index_topic_summaries_on_topic_id"
+  end
+
   create_table "topics", force: :cascade do |t|
     t.string "canonical_name"
     t.datetime "created_at", null: false
@@ -422,6 +435,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_14_213000) do
     t.string "lifecycle_status"
     t.string "name"
     t.boolean "pinned", default: false, null: false
+    t.jsonb "resident_reported_context", default: {}, null: false
     t.string "review_status"
     t.string "slug"
     t.string "status", default: "approved", null: false
@@ -491,6 +505,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_14_213000) do
   add_foreign_key "topic_review_events", "topics"
   add_foreign_key "topic_review_events", "users"
   add_foreign_key "topic_status_events", "topics"
+  add_foreign_key "topic_summaries", "meetings"
+  add_foreign_key "topic_summaries", "topics"
   add_foreign_key "votes", "members"
   add_foreign_key "votes", "motions"
 end

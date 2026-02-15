@@ -6,6 +6,16 @@ class SummarizeMeetingJob < ApplicationJob
     ai_service = ::Ai::OpenAiService.new
     retrieval_service = RetrievalService.new
 
+    # 1. Meeting-Level Summary (Minutes or Packet)
+    generate_meeting_summary(meeting, ai_service, retrieval_service)
+
+    # 2. Topic-Level Summaries
+    generate_topic_summaries(meeting, ai_service, retrieval_service)
+  end
+
+  private
+
+  def generate_meeting_summary(meeting, ai_service, retrieval_service)
     # Build retrieval query
     query = build_retrieval_query(meeting)
     retrieved_chunks = retrieval_service.retrieve_context(query)
@@ -31,16 +41,82 @@ class SummarizeMeetingJob < ApplicationJob
 
       if summary_text
         save_summary(meeting, "packet_analysis", summary_text)
-        nil
+      end
+    end
+  end
+
+  def generate_topic_summaries(meeting, ai_service, retrieval_service)
+    # Only process approved topics to avoid noise
+    meeting.topics.approved.distinct.each do |topic|
+      # Retrieve context specific to the topic
+      query_builder = Topics::RetrievalQueryBuilder.new(topic, meeting)
+      query = query_builder.build_query
+
+      retrieved_chunks = retrieval_service.retrieve_context(query, limit: 5)
+      formatted_context = retrieval_service.format_context(retrieved_chunks).split("\n\n")
+
+      builder = Topics::SummaryContextBuilder.new(topic, meeting)
+      context_json = builder.build_context_json(kb_context_chunks: formatted_context)
+
+      analysis_json_str = ai_service.analyze_topic_summary(context_json)
+
+      # Parse safely for storage
+      analysis_json = begin
+        JSON.parse(analysis_json_str)
+      rescue JSON::ParserError
+        Rails.logger.error("Failed to parse topic summary analysis for Topic #{topic.id}")
+        {}
+      end
+
+      # Validate citations
+      analysis_json = validate_analysis_json(analysis_json, context_json[:citation_ids])
+
+      markdown_content = ai_service.render_topic_summary(analysis_json.to_json)
+
+      save_topic_summary(meeting, topic, markdown_content, analysis_json)
+    end
+  end
+
+  def validate_analysis_json(json, allowed_citation_ids)
+    allowed_ids = Array(allowed_citation_ids).compact
+
+    # Ensure factual_record entries have citations and are in allowed list
+    if json["factual_record"].is_a?(Array)
+      json["factual_record"].select! do |entry|
+        citations = entry["citations"]
+        valid = citations.is_a?(Array) && citations.any? do |citation|
+          next false unless citation.is_a?(Hash)
+          allowed_ids.include?(citation["citation_id"])
+        end
+
+        unless valid
+          Rails.logger.warn("Dropping uncited or invalid factual claim: #{entry['statement']}")
+        end
+
+        valid
       end
     end
 
-    # 3. Fallback: Agenda Only?
-    # We already have AgendaItems parsed, so an "Agenda Overview" might just be redundant unless we want a prose summary.
-    # For now, we skip if only agenda exists.
+    # Ensure institutional_framing entries have citations and are in allowed list
+    if json["institutional_framing"].is_a?(Array)
+      json["institutional_framing"].select! do |entry|
+        citations = entry["citations"]
+        valid = citations.is_a?(Array) && citations.any? do |citation|
+          next false unless citation.is_a?(Hash)
+          allowed_ids.include?(citation["citation_id"])
+        end
+
+        unless valid
+          Rails.logger.warn("Dropping uncited or invalid framing claim: #{entry['statement']}")
+        end
+
+        valid
+      end
+    end
+
+    json
   end
 
-  private
 
   def build_retrieval_query(meeting)
     parts = [ "#{meeting.body_name} meeting on #{meeting.starts_at&.to_date}" ]
@@ -56,6 +132,13 @@ class SummarizeMeetingJob < ApplicationJob
   def save_summary(meeting, type, content)
     summary = meeting.meeting_summaries.find_or_initialize_by(summary_type: type)
     summary.content = content
+    summary.save!
+  end
+
+  def save_topic_summary(meeting, topic, content, generation_data)
+    summary = meeting.topic_summaries.find_or_initialize_by(topic: topic, summary_type: "topic_digest")
+    summary.content = content
+    summary.generation_data = generation_data
     summary.save!
   end
 end
