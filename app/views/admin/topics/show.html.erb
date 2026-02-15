@@ -7,12 +7,19 @@
       <%= link_to "Back to Topics", admin_topics_path, class: "btn btn--secondary" %>
     </div>
   </div>
-  <div class="mt-2 flex gap-2">
+  <div class="mt-2 flex gap-2 flex-wrap">
+    <span class="badge <%= case @topic.review_status
+      when 'approved' then 'badge--success'
+      when 'blocked' then 'badge--danger'
+      when 'proposed' then 'badge--warning'
+      else 'badge--default'
+    end %>">Review: <%= @topic.review_status.presence || "unknown" %></span>
     <span class="badge <%= case @topic.status
       when 'approved' then 'badge--success'
       when 'blocked' then 'badge--danger'
+      when 'proposed' then 'badge--default'
       else 'badge--default'
-    end %>"><%= @topic.status.titleize %></span>
+    end %>">Visibility: <%= @topic.status == "approved" ? "public" : @topic.status %></span>
     <% if @topic.pinned? %>
       <span class="badge badge--primary">Pinned</span>
     <% end %>
@@ -43,10 +50,14 @@
       <div class="form-group mt-4 flex gap-2 flex-wrap">
         <%= f.submit "Update Topic", class: "btn btn--primary", data: { form_feedback_target: "submit" } %>
         
-        <% if @topic.status == "proposed" %>
+        <% if @topic.review_status == "proposed" %>
           <%= link_to "Approve", approve_admin_topic_path(@topic), data: { turbo_method: :post }, class: "btn btn--success" %>
         <% end %>
-        
+
+        <% if @topic.review_status == "approved" %>
+          <%= link_to "Needs review", needs_review_admin_topic_path(@topic), data: { turbo_method: :post }, class: "btn btn--secondary" %>
+        <% end %>
+
         <% unless @topic.status == "blocked" %>
           <%= link_to "Block", block_admin_topic_path(@topic), data: { turbo_method: :post }, class: "btn btn--danger" %>
         <% else %>

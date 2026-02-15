@@ -2,55 +2,98 @@
 
 <div class="page-header">
   <div class="flex items-center justify-between">
-    <h1 class="page-title">Manage Topics</h1>
-    <div class="flex gap-2">
-      <%= link_to "Blocklist", admin_topic_blocklists_path, class: "btn btn--secondary" %>
+    <div>
+      <h1 class="page-title">Manage Topics</h1>
+      <p class="page-subtitle">Review AI-proposed topics, then approve to make them public.</p>
     </div>
   </div>
 </div>
 
 <div class="card mb-6">
-  <div class="flex gap-4 items-center flex-wrap p-4">
-    <%= form_with url: admin_topics_path, method: :get, local: true, class: "flex gap-2 grow" do |f| %>
-      <%= f.text_field :q, value: params[:q], placeholder: "Search topics...", class: "form-input grow" %>
-      <%= f.select :status, [["All Statuses", ""], ["Approved", "approved"], ["Blocked", "blocked"], ["Proposed", "proposed"]], { selected: params[:status] }, { class: "form-select" } %>
-      <div class="flex items-center gap-2">
-        <%= f.check_box :pinned, { checked: params[:pinned] == "true" }, "true", "false" %>
-        <%= f.label :pinned, "Pinned Only" %>
+  <% review_active = params[:review_status] == "proposed" %>
+  <% approved_active = params[:review_status] == "approved" %>
+  <% blocked_active = params[:review_status] == "blocked" %>
+  <% all_active = params[:review_status].blank? && params[:status].blank? %>
+
+  <div class="flex items-center justify-between flex-wrap gap-4">
+    <div>
+      <div class="text-sm text-secondary">Workflow</div>
+      <div class="flex gap-2 flex-wrap mt-2">
+        <%= link_to "1. Review Queue", admin_topics_path(review_status: "proposed"), class: "btn #{review_active ? 'btn--primary' : 'btn--secondary'}" %>
+        <%= link_to "2. Approved", admin_topics_path(review_status: "approved"), class: "btn #{approved_active ? 'btn--primary' : 'btn--secondary'}" %>
+        <%= link_to "3. Blocked", admin_topics_path(review_status: "blocked"), class: "btn #{blocked_active ? 'btn--primary' : 'btn--secondary'}" %>
+        <%= link_to "All Topics", admin_topics_path, class: "btn #{all_active ? 'btn--primary' : 'btn--secondary'}" %>
       </div>
-      <%= f.submit "Filter", class: "btn btn--primary" %>
-      <%= link_to "Reset", admin_topics_path, class: "btn btn--ghost" %>
-    <% end %>
+    </div>
+    <div class="flex gap-2">
+      <%= link_to "Blocklist", admin_topic_blocklists_path, class: "btn btn--secondary" %>
+    </div>
+  </div>
+
+  <div class="mt-4 text-sm text-secondary">
+    Review Queue contains AI-proposed topics. Approve to publish, or block to prevent future matches.
   </div>
 </div>
 
-<div class="table-wrapper">
-  <table>
-    <thead>
-      <tr>
-        <th class="sortable-header">
-          <%= sort_link("name", "Name") %>
-        </th>
-        <th class="sortable-header">
-          <%= sort_link("importance", "Importance") %>
-        </th>
-        <th class="sortable-header">
-          <%= sort_link("mentions_count", "Mentions") %>
-        </th>
-        <th class="sortable-header">
-          <%= sort_link("last_seen_at", "Last Seen") %>
-        </th>
-        <th class="sortable-header">
-          <%= sort_link("last_activity_at", "Last Acted On") %>
-        </th>
-        <th class="text-right">Actions</th>
-      </tr>
-    </thead>
-    <% @topics.each do |topic| %>
-      <%= render partial: "topic", locals: { topic: topic, preview_window: @preview_window } %>
-    <% end %>
-  </table>
+<div class="card mb-6">
+  <%= form_with url: admin_topics_path, method: :get, local: true, class: "flex gap-2 flex-wrap items-center" do |f| %>
+    <%= f.hidden_field :review_status, value: params[:review_status] if params[:review_status].present? %>
+    <%= f.text_field :q, value: params[:q], placeholder: "Search topics...", class: "form-input grow" %>
+    <div class="flex items-center gap-2">
+      <%= f.check_box :pinned, { checked: params[:pinned] == "true" }, "true", "false" %>
+      <%= f.label :pinned, "Pinned Only" %>
+    </div>
+    <%= f.submit "Filter", class: "btn btn--primary" %>
+    <%= link_to "Reset", admin_topics_path, class: "btn btn--ghost" %>
+  <% end %>
 </div>
+
+<%= form_with url: bulk_update_admin_topics_path, method: :post, local: true, data: { turbo: false } do |f| %>
+  <div class="mb-4 flex gap-2 flex-wrap items-center hidden" id="bulk-actions">
+    <div class="flex items-center gap-2">
+      <%= label_tag :reason, "Reason (optional)", class: "text-sm text-secondary" %>
+      <%= text_field_tag :reason, nil, class: "form-input", placeholder: "Add a note for the audit log" %>
+    </div>
+    <%= f.submit "Approve Selected", class: "btn btn--success" %>
+    <%= f.submit "Block Selected", class: "btn btn--danger" %>
+    <%= f.submit "Mark for Review", class: "btn btn--secondary" %>
+  </div>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th class="w-8">
+            <input type="checkbox" id="select-all" class="form-checkbox" />
+          </th>
+          <th class="sortable-header">
+            <%= sort_link("name", "Name") %>
+          </th>
+          <th>Review</th>
+          <th>Visibility</th>
+          <th class="sortable-header">
+            <%= sort_link("importance", "Importance") %>
+          </th>
+          <th class="sortable-header">
+            <%= sort_link("mentions_count", "Mentions") %>
+          </th>
+          <th class="sortable-header">
+            <%= sort_link("last_seen_at", "Last Seen") %>
+          </th>
+          <th class="sortable-header">
+            <%= sort_link("last_activity_at", "Last Acted On") %>
+          </th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @topics.each do |topic| %>
+          <%= render partial: "topic", locals: { topic: topic, preview_window: @preview_window } %>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
 
 <% if @total_pages > 1 %>
   <div class="flex justify-between items-center mt-4">
@@ -77,3 +120,31 @@
 <% end %>
 
 <%= render "merge_modal" %>
+
+<script>
+  document.addEventListener("turbo:load", function() {
+    const selectAll = document.getElementById("select-all");
+    const checkboxes = document.querySelectorAll("input[name='topic_ids[]']");
+    const bulkActions = document.getElementById("bulk-actions");
+
+    if (selectAll) {
+      selectAll.addEventListener("change", function() {
+        checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        toggleBulkActions();
+      });
+    }
+
+    checkboxes.forEach(cb => {
+      cb.addEventListener("change", toggleBulkActions);
+    });
+
+    function toggleBulkActions() {
+      const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
+      if (anyChecked) {
+        bulkActions.classList.remove("hidden");
+      } else {
+        bulkActions.classList.add("hidden");
+      }
+    }
+  });
+</script>

@@ -34,11 +34,13 @@ Rails.application.routes.draw do
     resources :topics, controller: "admin/topics", as: :admin_topics do
       collection do
         get :search
+        post :bulk_update
       end
       member do
         post :approve
         post :block
         post :unblock
+        post :needs_review
         post :pin
         post :unpin
         post :merge

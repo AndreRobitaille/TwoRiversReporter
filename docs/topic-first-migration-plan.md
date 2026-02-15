@@ -46,9 +46,9 @@ This is a living note for future actions, not an implementation log.
 4) [x] Add idempotent backfill job with logging.
 
 ### Phase 2: Topic Proposal Pipeline
-1) AI extraction creates proposals only (review_status = proposed).
-2) Admin queue for review/merge/approve/block.
-3) Blocklist and alias resolution run before proposal creation.
+1) [x] AI extraction creates proposals only (review_status = proposed).
+2) [x] Admin queue for review/merge/approve/block.
+3) [x] Blocklist and alias resolution run before proposal creation.
 
 ### Phase 3: Continuity Signals
 1) Derive lifecycle status from agenda anchors and resolution evidence.
@@ -88,7 +88,7 @@ This is a living note for future actions, not an implementation log.
 
 ## Explicit Issue Order (Recommended)
 1) [x] #47 Topic schema redesign + migration/backfill
-2) #38 Topic review queue + admin triage for AI proposals
+2) [x] #38 Topic review queue + admin triage for AI proposals
 3) #48 Topic continuity pipeline: lifecycle derivation + deferral/disappearance
 4) #49 Topic-aware summarization (governance-compliant)
 5) #50 Topic-aware retrieval context + caps

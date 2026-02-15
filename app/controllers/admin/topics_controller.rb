@@ -1,6 +1,6 @@
 module Admin
   class TopicsController < BaseController
-    before_action :set_topic, only: %i[show update approve block unblock pin unpin merge create_alias]
+    before_action :set_topic, only: %i[show update approve block unblock needs_review pin unpin merge create_alias]
 
     def index
       @preview_window = helpers.preview_window_from_params(params)
@@ -8,6 +8,10 @@ module Admin
 
       if params[:status].present?
         @topics = @topics.where(status: params[:status])
+      end
+
+      if params[:review_status].present?
+        @topics = @topics.where(review_status: params[:review_status])
       end
 
       if params[:pinned] == "true"
@@ -69,19 +73,28 @@ module Admin
     end
 
     def approve
-      @topic.update(status: "approved")
+      @topic.update(status: "approved", review_status: "approved")
+      record_review_event(@topic, "approved")
       render_turbo_update("Topic approved.")
     end
 
     def block
-      @topic.update(status: "blocked")
+      @topic.update(status: "blocked", review_status: "blocked")
+      record_review_event(@topic, "blocked")
       render_turbo_update("Topic blocked.")
     end
 
     def unblock
       # Default to approved as that is now the standard state
-      @topic.update(status: "approved")
+      @topic.update(status: "approved", review_status: "approved")
+      record_review_event(@topic, "unblocked")
       render_turbo_update("Topic unblocked.")
+    end
+
+    def needs_review
+      @topic.update(status: "proposed", review_status: "proposed")
+      record_review_event(@topic, "needs_review")
+      render_turbo_update("Topic moved to review queue.")
     end
 
     def pin
@@ -140,6 +153,36 @@ module Admin
       render json: topics.select(:id, :name)
     end
 
+    def bulk_update
+      if params[:topic_ids].blank?
+        redirect_back fallback_location: admin_topics_path, alert: "No topics selected."
+        return
+      end
+
+      topic_ids = Array(params[:topic_ids])
+      topics = Topic.where(id: topic_ids)
+      reason = params[:reason].presence
+
+      notice = case params[:commit]
+      when "Approve Selected"
+        topics.update_all(status: "approved", review_status: "approved")
+        record_bulk_review_events(topic_ids, "approved", reason)
+        "Selected topics approved."
+      when "Block Selected"
+        topics.update_all(status: "blocked", review_status: "blocked")
+        record_bulk_review_events(topic_ids, "blocked", reason)
+        "Selected topics blocked."
+      when "Mark for Review"
+        topics.update_all(status: "proposed", review_status: "proposed")
+        record_bulk_review_events(topic_ids, "needs_review", reason)
+        "Selected topics moved to review queue."
+      else
+        "No action taken."
+      end
+
+      redirect_back fallback_location: admin_topics_path, notice: notice
+    end
+
     private
 
     def sort_topics(topics)
@@ -172,6 +215,30 @@ module Admin
 
     def set_topic
       @topic = Topic.find(params[:id])
+    end
+
+    def record_review_event(topic, action)
+      return unless Current.user
+
+      TopicReviewEvent.create!(
+        topic: topic,
+        user: Current.user,
+        action: action,
+        reason: params[:reason].presence
+      )
+    end
+
+    def record_bulk_review_events(topic_ids, action, reason)
+      return unless Current.user
+
+      topic_ids.each do |topic_id|
+        TopicReviewEvent.create!(
+          topic_id: topic_id,
+          user: Current.user,
+          action: action,
+          reason: reason
+        )
+      end
     end
 
     def topic_params

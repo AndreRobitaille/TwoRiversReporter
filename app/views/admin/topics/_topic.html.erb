@@ -1,5 +1,8 @@
 <tbody id="<%= dom_id(topic) %>" data-controller="row-toggle">
   <tr>
+    <td class="w-8 text-center align-middle">
+      <%= check_box_tag "topic_ids[]", topic.id, false, class: "form-checkbox" %>
+    </td>
     <td>
       <div class="font-bold">
         <%= link_to topic.name, admin_topic_path(topic), data: { turbo_frame: "_top" } %>
@@ -8,6 +11,34 @@
         <div class="text-sm text-secondary">
           Aliases: <%= topic.topic_aliases.map(&:name).join(", ") %>
         </div>
+      <% end %>
+    </td>
+    <td>
+      <% review_badge_class = case topic.review_status
+         when "approved" then "badge--success"
+         when "blocked" then "badge--danger"
+         when "proposed" then "badge--warning"
+         else "badge--default"
+      end %>
+      <% review_label = topic.review_status.presence || "unknown" %>
+      <span class="badge <%= review_badge_class %>">Review: <%= review_label %></span>
+    </td>
+    <td>
+      <% visibility_badge_class = case topic.status
+         when "approved" then "badge--success"
+         when "blocked" then "badge--danger"
+         when "proposed" then "badge--default"
+         else "badge--default"
+      end %>
+      <% visibility_label = case topic.status
+         when "approved" then "public"
+         when "blocked" then "blocked"
+         when "proposed" then "hidden"
+         else "unknown"
+      end %>
+      <span class="badge <%= visibility_badge_class %>">Visibility: <%= visibility_label %></span>
+      <% if topic.pinned? %>
+        <span class="badge badge--primary">Pinned</span>
       <% end %>
     </td>
     <td>
@@ -53,10 +84,14 @@
           Alias/Merge
         </button>
 
-        <% if topic.status == "blocked" %>
-          <%= button_to "Blocked", unblock_admin_topic_path(topic), method: :post, class: "btn btn--danger btn--sm" %>
+        <% if topic.review_status == "proposed" %>
+          <%= button_to "Approve", approve_admin_topic_path(topic), method: :post, class: "btn btn--success btn--sm" %>
+          <%= button_to "Block", block_admin_topic_path(topic), method: :post, class: "btn btn--danger btn--sm" %>
+        <% elsif topic.review_status == "blocked" || topic.status == "blocked" %>
+          <%= button_to "Unblock", unblock_admin_topic_path(topic), method: :post, class: "btn btn--secondary btn--sm" %>
         <% else %>
-          <%= button_to "Approved", block_admin_topic_path(topic), method: :post, class: "btn btn--success btn--sm" %>
+          <%= button_to "Needs review", needs_review_admin_topic_path(topic), method: :post, class: "btn btn--secondary btn--sm" %>
+          <%= button_to "Block", block_admin_topic_path(topic), method: :post, class: "btn btn--danger btn--sm" %>
         <% end %>
 
         <% unless topic.pinned? %>
@@ -68,7 +103,7 @@
     </td>
   </tr>
   <tr id="<%= dom_id(topic, :preview) %>" data-row-toggle-target="details" hidden>
-    <td colspan="6">
+    <td colspan="9">
       <div class="text-sm">
         <% recent_mentions = topic_recent_mentions(topic, limit: 3) %>
         <% if recent_mentions.any? %>

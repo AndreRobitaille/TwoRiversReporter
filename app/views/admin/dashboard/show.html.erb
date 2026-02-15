@@ -1,15 +1,37 @@
 <div class="page-header">
   <h1 class="page-title">Admin</h1>
-  <p class="page-subtitle">Manage admin accounts and security settings</p>
+  <p class="page-subtitle">Content, operations, and security tools.</p>
 </div>
 
-<div class="card card--narrow">
+<div class="card card--narrow mb-6">
+  <div class="card-header">
+    <h2 class="card-title">Content</h2>
+    <p class="card-subtitle">Manage civic knowledge and topic workflows.</p>
+  </div>
   <ul>
     <li><%= link_to "Knowledgebase Sources", admin_knowledge_sources_path %></li>
     <li><%= link_to "Topics", admin_topics_path %></li>
     <li><%= link_to "Topic Blocklist", admin_topic_blocklists_path %></li>
     <li><%= link_to "AI Summaries", admin_summaries_path %></li>
+  </ul>
+</div>
+
+<div class="card card--narrow mb-6">
+  <div class="card-header">
+    <h2 class="card-title">Operations</h2>
+    <p class="card-subtitle">Background jobs and system status.</p>
+  </div>
+  <ul>
     <li><%= link_to "Job Queue", admin_jobs_path %></li>
+  </ul>
+</div>
+
+<div class="card card--narrow">
+  <div class="card-header">
+    <h2 class="card-title">Security & Users</h2>
+    <p class="card-subtitle">Account access and recovery tools.</p>
+  </div>
+  <ul>
     <li><%= link_to "Admin users", users_path %></li>
     <li><%= link_to "Change password", edit_account_password_path %></li>
     <li><%= link_to "Show new recovery codes", recovery_codes_path %></li>

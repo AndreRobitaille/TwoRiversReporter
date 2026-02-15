@@ -1133,6 +1133,10 @@ details[open] summary {
   border: 0;
 }
 
+.hidden {
+  display: none;
+}
+
 /* Prose (for markdown content) */
 .prose {
   max-width: 75ch;

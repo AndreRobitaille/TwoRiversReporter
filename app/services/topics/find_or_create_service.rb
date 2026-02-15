@@ -37,7 +37,7 @@ module Topics
       end
 
       # 5. Create New Topic
-      Topic.create!(name: @normalized_name, status: "approved")
+      Topic.create!(name: @normalized_name, status: "proposed", review_status: "proposed")
     end
   end
 end

@@ -14,7 +14,8 @@ module Topics
       topic = Topics::FindOrCreateService.call("New Topic")
       assert_instance_of Topic, topic
       assert_equal "new topic", topic.name
-      assert_equal "approved", topic.status
+      assert_equal "proposed", topic.status
+      assert_equal "proposed", topic.review_status
     end
 
     test "returns existing topic (exact match)" do
