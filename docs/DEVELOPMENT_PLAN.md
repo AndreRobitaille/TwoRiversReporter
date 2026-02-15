@@ -1,11 +1,13 @@
 # Two Rivers Meetings Transparency Site
+
 ## Software Development Plan
 
----
+------------------------------------------------------------------------
 
 ## Purpose
 
-This project builds a public-facing website for residents of Two Rivers, WI to:
+This project builds a public-facing website for residents of Two Rivers,
+WI to:
 
 - See upcoming city meetings as early as possible
 - Understand what is actually being discussed or decided
@@ -13,359 +15,253 @@ This project builds a public-facing website for residents of Two Rivers, WI to:
 - Hold elected officials and appointed boards accountable
 
 The system ingests official city-published documents (PDFs and HTML),
-preserves them as the source of truth, and produces clearly labeled,
+preserves them as the source of record, and produces clearly labeled,
 citation-backed summaries for residents.
 
-AI-generated content must never replace or obscure the official documents.
+AI-generated content must never replace or obscure official documents.
 
----
+------------------------------------------------------------------------
+
+# Foundational Concept: Topics
+
+This application is fundamentally a **civic topic tracking system**.
+
+Meetings are the event stream.\
+Documents are the artifacts.\
+**Topics are the organizing structure.**
+
+Topics represent persistent civic concerns that:
+
+- Span multiple meetings
+- Cross governing bodies
+- Accumulate motions, votes, deferrals, and disappearances
+- Persist over months or years
+- Reflect what residents care about
+
+All topic-related modeling, extraction, inference, and presentation must
+conform to:
+
+**`docs/topics/TOPIC_GOVERNANCE.md`**
+
+If implementation conflicts with Topic Governance, implementation must
+change.
+
+Summaries, knowledgebase context, and "What to Watch" features exist to
+serve Topic continuity.
+
+------------------------------------------------------------------------
 
 ## Guiding Principles
 
-1. PDFs are authoritative  
-   HTML is used for discovery and structure. PDFs are the legal record.
+1. **PDFs are authoritative artifacts**\
+    HTML is used for discovery and structure. PDFs are the legal record
+    of what was published.
 
-2. Everything is optional  
-   Not all meetings have packets, minutes, or video.
+2. **Topics are primary; meetings are inputs**\
+    Meeting-centric views are projections of Topic continuity.
 
-3. Progressive enrichment  
-   Meetings become more useful over time as documents appear.
+3. **Progressive enrichment**\
+    Meetings and Topics become more useful over time as documents
+    appear.
 
-4. Explainability over cleverness  
-   All summaries must include citations. External research must be labeled.
+4. **Explainability over cleverness**\
+    All summaries must include citations. External research must be
+    labeled.
 
-5. Single application  
-   No microservices. No SPA. Server-rendered HTML with background jobs.
+5. **Structural skepticism, not editorializing**\
+    The system surfaces patterns without assigning motive.
 
----
+6. **Single application architecture**\
+    No microservices. No SPA. Server-rendered HTML with background jobs.
+
+------------------------------------------------------------------------
 
 ## Technology Stack
 
 ### Core
+
 - Ruby on Rails
 - PostgreSQL
-- Server-rendered HTML (Rails views)
+- Server-rendered HTML
 - Minimal JavaScript (Turbo/Hotwire only if needed)
 
 ### Background Processing
+
 - ActiveJob
-- Sidekiq or Solid Queue
+- Solid Queue
 
 ### Parsing & Extraction
-- Nokogiri (HTML parsing)
-- pdftotext / pdfinfo (Poppler utilities)
-- OCR (future, optional): Tesseract or equivalent
+
+- Nokogiri
+- pdftotext / pdfinfo
+- Tesseract (OCR)
 
 ### Storage
-- Local filesystem initially
-- S3-compatible storage later if needed
 
----
+- ActiveStorage (local in dev, S3-compatible in production)
+
+------------------------------------------------------------------------
 
 ## High-Level Architecture
 
-City Website  
-↓  
-Meeting Index Pages  
-↓  
-Meeting Detail Pages (canonical records)  
-↓  
-Document Ingestion  
-↓  
-Text Extraction + Structuring (page-aware when possible)  
-↓  
-Summarization + Analysis  
-↓  
-Public Website  
+City Website\
+↓\
+Meeting Discovery\
+↓\
+Document Ingestion\
+↓\
+Text Extraction + Structuring\
+↓\
+Topic Detection & Association\
+↓\
+Summarization (Topic-aware)\
+↓\
+Resident-Facing Pages
 
----
+------------------------------------------------------------------------
 
 ## Core Domain Model
 
 ### Meeting
+
 Represents a single official meeting.
 
-Fields:
-- body_name
-- meeting_type
-- starts_at
-- location
-- detail_page_url
-- status (upcoming, held, minutes_posted)
+Key fields: - body_name - meeting_type - starts_at - location -
+detail_page_url - status
 
 ### MeetingDocument
+
 Represents any document associated with a meeting.
 
-Fields:
-- meeting_id
-- document_type  
-  (agenda_pdf, agenda_html, packet_pdf, packet_html, minutes_pdf, attachment_pdf)
-- source_url
-- fetched_at
-- sha256
-- storage_path
-- page_count
+Key fields: - meeting_id - document_type - source_url - sha256 -
+page_count - text_quality - extracted_text
 
-Extraction-quality fields (to support legacy and scanned PDFs):
-- text_chars (integer, total extracted characters from pdftotext)
-- avg_chars_per_page (float, derived if page_count known)
-- text_quality (string/enum: text, mixed, image_scan, broken)
+### Topic (Foundational)
 
-### AgendaItem (optional)
-Created only when packet HTML exists.
+Represents a long-lived civic concern.
 
-Fields:
-- meeting_id
-- order_index
-- code
-- title
-- summary_text
-- recommended_action
+Key fields: - canonical_name - slug - status (active, dormant,
+resolved) - first_seen_at - last_seen_at - description
+(admin-controlled)
 
-### AgendaItemDocument
-Join table linking agenda items to attachment PDFs.
+Topics must: - Support aliases - Support sub-topics - Track cross-body
+continuity - Derive status from agenda recurrence + resolution signals
 
-### Extraction
-Stores page-aware text output.
+### AgendaItemTopic (Join)
 
-Fields:
-- meeting_document_id
-- page_number
-- raw_text
-- cleaned_text
+Links agenda items or meeting events to Topics.
 
-### Summary
-Stores AI-generated content.
+### MeetingSummary
 
-Fields:
-- subject_type (meeting or agenda_item)
-- subject_id
-- summary_type  
-  (agenda_overview, packet_grounded, minutes_summary, context_explainer)
-- content_markdown
-- citations_json
-- generated_at
+AI-generated content grounded in documents and Topic context.
 
----
+------------------------------------------------------------------------
 
 ## Ingestion Workflow
 
-### Step 1: Discover Meetings
-- Crawl https://www.two-rivers.org/meetings
-- Follow links to meeting detail pages
-- Create or update Meeting records
+1. Discover meetings
+2. Parse detail pages
+3. Download documents
+4. Extract text (classify quality)
+5. Parse packet HTML (if available)
+6. Associate agenda items to Topics
+7. Update Topic continuity metrics
 
-### Step 2: Parse Meeting Detail Pages
-- Extract date, time, body, location
-- Detect document links by label
-- Create MeetingDocument records
+------------------------------------------------------------------------
 
-### Step 3: Download Documents
-- Download PDFs and HTML
-- Compute SHA-256 hashes
-- Skip unchanged documents
-- For PDFs:
-  - Determine page_count (pdfinfo when available)
-  - Run pdftotext and record text_chars and avg_chars_per_page
-  - Classify text_quality:
-    - text: avg_chars_per_page >= 200
-    - mixed: 20 <= avg_chars_per_page < 200
-    - image_scan: avg_chars_per_page < 20
-    - broken: extraction error
+## Topic Lifecycle
 
-### Step 4: Packet HTML Parsing (when available)
-- Extract agenda items
-- Extract summaries, recommended actions
-- Extract attachment links
-- Create AgendaItem and AgendaItemDocument records
+Topics move through states based on observable signals:
 
-### Step 5: PDF Text Extraction (Phase 2+)
-- Extract text page by page (not required for Phase 1)
-- Preserve page numbers
-- Store raw and cleaned text
+- **Active** -- Appears on recent agendas or under active discussion
+- **Dormant** -- No recent activity but historically significant
+- **Resolved** -- Formal decision reached (vote, ordinance adoption,
+    abandonment)
+- **Recurring** -- Previously resolved but resurfaced
 
----
+Status derivation must: - Prefer agenda anchors - Treat disappearance
+without resolution as meaningful - Avoid assuming resolution without
+evidence
 
-## Legacy PDFs and Document Quality
-
-Older meeting PDFs may be:
-- scanned image PDFs (no embedded text)
-- low-quality Word-export PDFs
-- inconsistent formatting across years/vendors
-
-The system must:
-- keep the original PDF as the source of truth
-- record extraction quality (text_quality) for transparency
-- avoid overpromising search/summaries when text_quality is poor
-
-### OCR (future, not Phase 1)
-OCR may be added later to improve searchability for image_scan PDFs, but:
-- it is compute-heavy
-- it can introduce transcription errors
-- it must still support page-based citations and clear labeling
-
-OCR should be:
-- opt-in per document (or limited to high-interest bodies like City Council)
-- scheduled asynchronously (never on a web request path)
-
----
+------------------------------------------------------------------------
 
 ## Summarization Rules
 
-### Packet-Grounded Summaries
-- Source: packet PDFs or attachment PDFs
-- Must include page or document citations
-- No external interpretation without labeling
+Summaries must:
 
-### Agenda-Only Summaries
-- Used when no packet exists
-- Plain-language explanation of agenda items
-- Highlight decisions and hearings
+- Separate document-grounded claims from background context
+- Cite packet pages or meeting pages when possible
+- Use verified knowledgebase facts only
+- Never infer motive
+- Surface recurrence and deferral patterns
 
-### Minutes Summaries
-- Extract motions, votes, and discussion highlights
-- Normalize member names
-- Enable vote tracking
+Topic-aware summaries should: - Reference prior relevant meetings -
+Indicate duration of issue - Note governing body progression (committee
+→ council)
 
-### Context Explainers
-- Clearly labeled as external research
-- Never mixed with packet-grounded claims
+------------------------------------------------------------------------
 
-### Contextual Summaries (Knowledgebase / RAG)
-- Purpose: provide relevant background (prior meetings, people/org/project history, city plans) without large context windows.
-- Inputs:
-  - Verified facts (admin-only knowledgebase).
-  - Retrieved excerpts from ingested PDFs/notes (top-k, capped per source).
-  - Prior-meeting history derived from the database.
-- Rules:
-  - Resident-facing content may use only `verified` knowledgebase facts.
-  - "Sensitive" facts must be gated and included only when directly relevant.
-  - Store stance/sentiment only for public commenters; do not infer officials' private sentiment.
-  - Document-grounded claims must be cited; background context must be labeled as background.
+## Knowledgebase + Contextual Summaries
 
----
+Purpose: Provide relevant historical and structural background without
+overwhelming prompts.
 
-## Public Website Pages
+Constraints:
+
+- Only verified facts may appear in resident-facing summaries
+- Sensitive relationships must be gated
+- Stance tracking limited to public commenters
+- Retrieval must be capped and relevance-scored
+
+------------------------------------------------------------------------
+
+## Public Website Structure
 
 ### Home
+
 - Upcoming meetings
-- Recently posted minutes
-- Recently updated meetings
+- Recently updated Topics
+- "What to Watch" (Topic-driven)
+
+### Topic Page (Primary Lens)
+
+- Topic description
+- Timeline of meetings
+- Motions and votes
+- Related documents
+- Status indicator
+- Upcoming agenda appearances
 
 ### Meeting Page
+
 - Meeting details
 - Official documents
-- Summaries when available
-- Status indicators (packet posted, minutes pending, text quality)
+- Topic associations
+- Summaries
 
-### Body / Committee Pages
-- Meeting history
-- Common topics
-- Attendance and voting summaries (future)
-
----
-
-## Phased Development Plan
-
-### Phase 1: Core Ingestion (Completed)
-Implemented:
-- Meeting discovery
-- Document storage
-- Basic meeting pages
-- Text quality metrics
-
-### Phase 2: Agenda & Packet Summaries (Completed)
-Implemented:
-- Packet HTML parsing
-- Page-cited AI summaries
-- Page-aware extraction
-
-### Phase 3: Minutes Analysis (Completed)
-Implemented:
-- Vote extraction
-- Member profiles
-
-### Phase 4: Topic Aggregation (Completed)
-
-Implemented:
-- Topic models: `Topic`, `AgendaItemTopic`.
-- Issue categorization: `ExtractTopicsJob` tags agenda items with high-level categories (Governance, Finance, etc.).
-- Member profiles: `MembersController` and views for listing officials and their voting history.
-- Topic exploration: `TopicsController` and views for browsing items by issue.
-
-### Phase 5: OCR for Legacy PDFs (Completed)
-
-Implemented:
-- Tesseract integration: Added `tesseract-ocr` to Dockerfile.
-- OCR pipeline: `OcrJob` converts PDF pages to images and extracts text.
-- Automatic triggering: `AnalyzePdfJob` detects "image_scan" quality and queues OCR.
-- Data enrichment: OCR'd text automatically triggers summarization and vote extraction.
-
-### Phase 6: Knowledgebase + Contextual Summaries (Planned)
-
-Goal: Improve meeting summaries by incorporating relevant local context (prior meetings, people/org/project history, city plans) while keeping API cost predictable. Residents never see the knowledgebase content itself.
-
-#### Prerequisite: Admin Authentication (Completed)
-- Implemented Rails-native authentication (User model + sessions).
-- Added admin-only namespace (`/admin`) and dashboard.
-- Enforced TOTP MFA for all admin accounts (using `rotp`).
-- Provided offline recovery codes for emergency access.
-- Styled auth forms to match application design.
-
-#### Knowledgebase Requirements (Completed)
-- Admin-only knowledgebase
-  - Primary input: freeform typed notes.
-  - Secondary input: PDFs (e.g., Comprehensive Plan, Economic Plan, local history), ingested into searchable chunks.
-  - Knowledge entries support verification metadata (admin-only): `status`, `verified_on`, `verification_notes`.
-- Retrieval-augmented generation (RAG)
-  - Never send large static context windows to the LLM.
-  - Chunk and embed knowledge sources once; retrieve only the top relevant chunks for each meeting.
-  - Apply hard caps (total chunks, per-source chunks) and similarity thresholds to control prompt size.
-  - Uses `pgvector` in production; Ruby-side cosine similarity fallback in dev.
-- Entity memory (admin-controlled)
-  - The system may extract and suggest entities from meeting documents (JSON mode) but must not automatically publish these as resident-facing "facts".
-  - Entity matching must support misspellings (aliases) and disambiguation (admin-only fields such as address or affiliation).
-- Facts and relationships
-  - The system may draft facts/relationships in "draft" status for admin review.
-  - Only "verified" facts may be used in resident-facing summaries.
-  - "Sensitive" facts (e.g., family relationships, ownership/financial ties) must be gated and included only when directly relevant to the meeting subject.
-- Public comment memory (limited scope)
-  - Store stance/sentiment only for public commenters (not officials).
-  - Officials' statements and vague "received emails" references are not stored as stance.
-  - Stance observations must be backed by evidence snippets and meeting/document references.
-- Resident feedback loop (Deferred)
-  - Table for now; revisit after knowledgebase ingestion + retrieval are working.
-
-Summarization behavior changes:
-- Meeting summaries must clearly separate:
-  - Document-grounded claims (cited to meeting pages when available).
-  - Background context (from verified knowledgebase facts/excerpts).
-- Background facts must be included only when relevant to the meeting subjects (agenda items/topics/entities). Unrelated biographical trivia must be omitted.
-
----
-
-## Explicit Non-Goals
-- No real-time streaming
-- No commenting system
-- No resident user accounts (admin accounts are allowed)
-- No moderation tools
-
----
+------------------------------------------------------------------------
 
 ## Quality Bar
 
 The system must:
-- Never fabricate decisions or votes
-- Always link back to official documents
-- Remain usable if AI features fail
-- Be transparent about document text quality
 
----
+- Never fabricate decisions or votes
+- Always link to official documents
+- Remain usable if AI fails
+- Be transparent about extraction quality
+- Preserve long-term civic memory
+
+------------------------------------------------------------------------
 
 ## Instructions for AI Coding Tools
 
-- Treat this document as authoritative
-- Do not introduce new services or frameworks
-- Prefer clarity over abstraction
-- Ask before changing data models
-- Never commit API keys/secrets; prefer `ENV`-driven configuration
+- Treat this document as authoritative.
+- The next engineering work must start with `docs/topic-first-migration-plan.md`.
+- When beginning any topic-related task, read `docs/topics/TOPIC_GOVERNANCE.md` first.
+- Treat `docs/topics/TOPIC_GOVERNANCE.md` as binding for all Topic
+    logic.
+- Meetings are inputs. Topics are the organizing layer.
+- Do not introduce new services or frameworks.
+- Prefer clarity over abstraction.
+- Ask before changing data models.
+- Never commit secrets.

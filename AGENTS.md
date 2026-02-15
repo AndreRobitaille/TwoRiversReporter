@@ -70,6 +70,7 @@ This is a Rails app using Minitest (no RSpec detected).
 - Single Rails app; avoid new services/frameworks.
 - Prefer server-rendered HTML; minimal JavaScript.
 - Background work via ActiveJob + Solid Queue; do not do heavy work in controllers.
+- Keep controllers thin; put pipeline logic in jobs/services.
 
 ### Common Domain Concepts
 - `Meeting` has many `MeetingDocument`, `AgendaItem`, summaries, motions.
@@ -97,6 +98,11 @@ This is a Rails app using Minitest (no RSpec detected).
   - Prefer “I don’t know / not in document” to invention.
 - Always label AI-generated content in UI.
 
+### Data & Retrieval
+- Knowledgebase ingestion lives in `KnowledgeSource`/`KnowledgeChunk` + `IngestKnowledgeSourceJob`.
+- Retrieval behavior is centralized in `RetrievalService` and `VectorService`.
+- Keep retrieval caps/thresholds explicit and documented.
+
 ---
 
 ## Style Guidelines
@@ -105,6 +111,7 @@ This is a Rails app using Minitest (no RSpec detected).
 - Follow RuboCop Rails Omakase (`.rubocop.yml`).
 - Prefer small, readable methods over clever metaprogramming.
 - Prefer `bin/rubocop` to ensure consistent config.
+- No static typing framework (no Sorbet); avoid adding one.
 
 ### Naming
 - Use conventional Rails names and namespaces:
@@ -131,6 +138,7 @@ This is a Rails app using Minitest (no RSpec detected).
 ### Formatting / Rendering
 - Keep views simple and data-prepared in controllers/jobs.
 - When rendering Markdown, keep output labeled as AI and encourage verification.
+- Reuse existing CSS classes/components before adding new ones.
 
 ---
 
@@ -144,4 +152,3 @@ This is a Rails app using Minitest (no RSpec detected).
 ## Deployment Notes (Fly.io / Docker)
 - The `Dockerfile` installs `poppler-utils` and `tesseract-ocr` for PDF extraction/OCR.
 - If deploying via buildpacks instead of Docker, ensure equivalent OS packages are installed.
-

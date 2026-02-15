@@ -54,6 +54,9 @@ class ExtractVotesJob < ApplicationJob
 
       Rails.logger.info "Extracted #{motions.size} motions for Meeting #{meeting_id}"
 
+      # Trigger Topic Continuity Update
+      Topics::UpdateContinuityJob.perform_later(meeting_id: meeting_id)
+
     rescue JSON::ParserError => e
       Rails.logger.error "Failed to parse votes JSON for Meeting #{meeting_id}: #{e.message}"
     rescue ActiveRecord::RecordInvalid => e

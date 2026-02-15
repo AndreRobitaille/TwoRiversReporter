@@ -51,9 +51,9 @@ This is a living note for future actions, not an implementation log.
 3) [x] Blocklist and alias resolution run before proposal creation.
 
 ### Phase 3: Continuity Signals
-1) Derive lifecycle status from agenda anchors and resolution evidence.
-2) Track deferral/disappearance without implying intent.
-3) Log lifecycle transitions in `topic_status_events`.
+1) [x] Derive lifecycle status from agenda anchors and resolution evidence.
+2) [x] Track deferral/disappearance without implying intent.
+3) [x] Log lifecycle transitions in `topic_status_events`.
 
 ### Phase 4: Summarization + Retrieval
 1) Topic-aware summaries with fact/framing/sentiment separation.
@@ -89,7 +89,7 @@ This is a living note for future actions, not an implementation log.
 ## Explicit Issue Order (Recommended)
 1) [x] #47 Topic schema redesign + migration/backfill
 2) [x] #38 Topic review queue + admin triage for AI proposals
-3) #48 Topic continuity pipeline: lifecycle derivation + deferral/disappearance
+3) [x] #48 Topic continuity pipeline: lifecycle derivation + deferral/disappearance
 4) #49 Topic-aware summarization (governance-compliant)
 5) #50 Topic-aware retrieval context + caps
 6) #39 Topic detail page: continuity timeline with motions/votes

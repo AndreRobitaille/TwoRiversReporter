@@ -46,6 +46,14 @@ class Topics::BackfillContinuityJob < ApplicationJob
     # 3. Sync review_status
     topic.review_status ||= topic.status
 
+    # Save base changes before continuity processing
+    if topic.save
+      Rails.logger.info "Updated base fields for topic #{topic.id}"
+    else
+      Rails.logger.error "Failed to save topic #{topic.id}: #{topic.errors.full_messages}"
+      return
+    end
+
     # 4. Rebuild topic_appearances
     # Find associated agenda_items via agenda_item_topics
     # We destroy existing ones to ensure idempotency
@@ -65,28 +73,9 @@ class Topics::BackfillContinuityJob < ApplicationJob
       )
     end
 
-    # 5. Update timestamps and lifecycle status
-    appearances = topic.topic_appearances.order(:appeared_at)
-    if appearances.any?
-      topic.first_seen_at = appearances.first.appeared_at
-      topic.last_seen_at = appearances.last.appeared_at
-      topic.last_activity_at = appearances.last.appeared_at
+    # 5. Update timestamps and lifecycle status via service
+    Topics::ContinuityService.call(topic)
 
-      # Simple lifecycle heuristic: active if last activity within 6 months
-      if topic.last_activity_at < 6.months.ago
-        topic.lifecycle_status = "dormant"
-      else
-        topic.lifecycle_status = "active"
-      end
-    else
-      # No appearances? Keep existing timestamps if present, else nil
-      topic.lifecycle_status = "dormant"
-    end
-
-    if topic.save
-      Rails.logger.info "Successfully backfilled topic #{topic.id} (#{topic.canonical_name})"
-    else
-      Rails.logger.error "Failed to save topic #{topic.id}: #{topic.errors.full_messages}"
-    end
+    Rails.logger.info "Successfully backfilled continuity for topic #{topic.id}"
   end
 end
