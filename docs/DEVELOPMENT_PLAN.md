@@ -270,3 +270,4 @@ The system must:
 - Prefer clarity over abstraction.
 - Ask before changing data models.
 - Never commit secrets.
+- For topic cleanup automation and triage runs, see `docs/topic-triage-tool.md`.

@@ -2,6 +2,7 @@ module Ai
   class OpenAiService
     # Updated to GPT-5.2 as requested
     DEFAULT_MODEL = ENV.fetch("OPENAI_REASONING_MODEL", "gpt-5.2")
+    DEFAULT_GEMINI_MODEL = ENV.fetch("GEMINI_MODEL", "gemini-3-pro-preview")
 
     def initialize
       @client = OpenAI::Client.new(access_token: Rails.application.credentials.openai_access_token || ENV["OPENAI_ACCESS_TOKEN"])
@@ -116,6 +117,69 @@ module Ai
         }
       )
       response.dig("choices", 0, "message", "content")
+    end
+
+    def triage_topics(context_json)
+      prompt = <<~PROMPT
+        You are assisting a civic transparency system. Propose topic merges, approvals, and procedural blocks.
+
+        <governance_constraints>
+        - Topic Governance is binding.
+        - Prefer resident-facing canonical topics over granular variations (e.g., "Alcohol licensing" over "Beer"/"Wine").
+        - Do NOT merge if scope is ambiguous or evidence conflicts.
+        - Procedural/admin items should be blocked (Roberts Rules, roll call, adjournment, agenda approval, minutes).
+        </governance_constraints>
+
+        <input>
+        The JSON includes:
+        - topics: list of topic records with recent agenda items.
+        - similarity_candidates: suggested similar topics.
+        - procedural_keywords: keywords that indicate procedural items.
+        </input>
+
+        <output_schema>
+        Return JSON with the exact schema below.
+        {
+          "merge_map": [
+            { "canonical": "Topic Name", "aliases": ["Alt1", "Alt2"], "confidence": 0.0, "rationale": "..." }
+          ],
+          "approvals": [
+            { "topic": "Topic Name", "approve": true, "confidence": 0.0, "rationale": "..." }
+          ],
+          "blocks": [
+            { "topic": "Topic Name", "block": true, "confidence": 0.0, "rationale": "..." }
+          ]
+        }
+        </output_schema>
+
+        <rules>
+        - "confidence" must be between 0.0 and 1.0.
+        - Only include items you are confident about.
+        - If unsure, omit the entry.
+        - Rationale should be short and cite the evidence signals (agenda items/titles).
+        </rules>
+
+        INPUT JSON:
+        #{context_json.to_json}
+      PROMPT
+
+      if use_gemini?
+        gemini_generate(prompt, temperature: 0.1)
+      else
+        response = @client.chat(
+          parameters: {
+            model: DEFAULT_MODEL,
+            response_format: { type: "json_object" },
+            messages: [
+              { role: "system", content: "You are a careful civic topic triage assistant." },
+              { role: "user", content: prompt }
+            ],
+            temperature: 0.1
+          }
+        )
+
+        response.dig("choices", 0, "message", "content")
+      end
     end
 
     def analyze_topic_summary(context_json)
@@ -257,6 +321,41 @@ module Ai
         #{chunks.join("\n\n")}
         </context_handling>
       CONTEXT
+    end
+
+    def gemini_api_key
+      Rails.application.credentials.gemini_access_token || ENV["GEMINI_ACCESS_TOKEN"]
+    end
+
+    def use_gemini?
+      ENV["USE_GEMINI"] == "true" && gemini_api_key.present?
+    end
+
+    def gemini_generate(prompt, temperature: 0.1)
+      conn = Faraday.new(url: "https://generativelanguage.googleapis.com", request: { open_timeout: 10, timeout: 240 })
+      response = conn.post("/v1beta/models/#{DEFAULT_GEMINI_MODEL}:generateContent") do |req|
+        req.params["key"] = gemini_api_key
+        req.headers["Content-Type"] = "application/json"
+        req.body = {
+          contents: [
+            { role: "user", parts: [ { text: prompt } ] }
+          ],
+          generationConfig: {
+            temperature: temperature,
+            response_mime_type: "application/json"
+          }
+        }.to_json
+      end
+
+      unless response.success?
+        raise "Gemini request failed: status=#{response.status} body=#{response.body}"
+      end
+
+      data = JSON.parse(response.body)
+      text = data.dig("candidates", 0, "content", "parts", 0, "text")
+      return text if text.present?
+
+      raise "Gemini response missing content: #{response.body}"
     end
 
     # PASS 1: Analysis & Planning

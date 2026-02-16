@@ -1,5 +1,5 @@
 class TopicReviewEvent < ApplicationRecord
-  ACTIONS = %w[approved blocked needs_review unblocked].freeze
+  ACTIONS = %w[approved blocked needs_review unblocked merged].freeze
 
   belongs_to :topic
   belongs_to :user
