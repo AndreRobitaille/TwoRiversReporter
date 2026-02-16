@@ -1,38 +1,134 @@
 <% content_for(:title) { "#{@topic.name} - Topics - Two Rivers Reporter" } %>
 
 <div class="page-header">
-  <h1 class="page-title"><%= @topic.name %></h1>
-  <p class="page-subtitle"><%= @items.count %> agenda items related to this topic</p>
+  <div class="d-flex align-items-center justify-content-between">
+    <div>
+      <h1 class="page-title"><%= @topic.name %></h1>
+      <div class="topic-meta mt-2">
+        <%= topic_lifecycle_badge(@topic.lifecycle_status || "unknown") %>
+        <span class="text-secondary ml-3">
+          Last active: <%= @topic.last_activity_at&.strftime("%B %d, %Y") || "Unknown" %>
+        </span>
+      </div>
+    </div>
+  </div>
+  <p class="page-subtitle mt-3">
+    <%= @topic.description %>
+  </p>
 </div>
 
 <div class="timeline">
-  <% @items.each do |item| %>
-    <div class="timeline-item">
-      <div class="timeline-date">
-        <%= item.meeting.starts_at&.strftime("%B %d, %Y") %> &mdash; <%= item.meeting.body_name %>
+  <% @timeline_items.group_by { |i| (i.try(:appeared_at) || i.try(:occurred_at))&.to_date }.each do |date, items| %>
+    <div class="timeline-group">
+      <div class="timeline-date-marker">
+        <%= date&.strftime("%B %d, %Y") %>
       </div>
-      <div class="timeline-title">
-        <%= link_to item.title, meeting_path(item.meeting, anchor: "item-#{item.id}") %>
-      </div>
-      <% if item.summary.present? %>
-        <div class="timeline-content">
-          <%= item.summary %>
-        </div>
+
+      <% items.each do |item| %>
+        <% if item.is_a?(TopicAppearance) %>
+          <div class="timeline-item timeline-item--appearance">
+            <div class="timeline-header d-flex justify-content-between align-items-center">
+              <span class="font-weight-bold"><%= item.meeting.body_name %></span>
+              <%= link_to "View Meeting", meeting_path(item.meeting), class: "text-sm text-secondary" %>
+            </div>
+
+            <% if item.agenda_item %>
+              <div class="timeline-content mt-2">
+                <div class="agenda-item-title font-weight-medium">
+                  <%= link_to item.agenda_item.title, meeting_path(item.meeting, anchor: "item-#{item.agenda_item.id}") %>
+                </div>
+                
+                <% if item.agenda_item.summary.present? %>
+                  <div class="agenda-item-summary mt-1 text-secondary">
+                    <%= item.agenda_item.summary %>
+                  </div>
+                <% end %>
+
+                <%# Inline Motions %>
+                <% if item.agenda_item.motions.any? %>
+                  <div class="mt-3 pl-3 border-left">
+                    <% item.agenda_item.motions.each do |motion| %>
+                      <div class="motion mb-2">
+                        <div class="d-flex align-items-center justify-content-between">
+                          <span class="badge <%= case motion.outcome.downcase
+                            when 'passed', 'adopted', 'approved' then 'badge--success'
+                            when 'failed', 'defeated' then 'badge--danger'
+                            else 'badge--default'
+                          end %>">
+                            <%= motion.outcome.titleize %>
+                          </span>
+                        </div>
+                        <div class="text-sm mt-1"><%= motion.description %></div>
+                        
+                        <% if motion.votes.any? %>
+                          <details class="mt-1">
+                            <summary class="text-xs text-secondary cursor-pointer">
+                              Show <%= pluralize(motion.votes.count, "vote") %>
+                            </summary>
+                            <div class="votes-grid mt-2">
+                              <% motion.votes.each do |vote| %>
+                                <div class="vote-card text-xs p-1 border rounded">
+                                  <span class="font-weight-bold"><%= vote.member.name %></span>: 
+                                  <span class="vote-value--<%= vote.value %>"><%= vote.value.titleize %></span>
+                                </div>
+                              <% end %>
+                            </div>
+                          </details>
+                        <% end %>
+                      </div>
+                    <% end %>
+                  </div>
+                <% end %>
+              </div>
+            <% else %>
+              <div class="timeline-content mt-2 text-secondary font-italic">
+                Mentioned in meeting minutes or packet (no agenda item link).
+              </div>
+            <% end %>
+
+            <%# Document Citations %>
+            <% if item.meeting.meeting_documents.any? %>
+              <div class="timeline-footer mt-2 pt-2 border-top text-xs text-secondary">
+                Sources: 
+                <% item.meeting.meeting_documents.each do |doc| %>
+                  <%= link_to doc.document_type.humanize, rails_blob_path(doc.file, disposition: "inline"), target: "_blank", class: "mr-2" if doc.file.attached? %>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+
+        <% elsif item.is_a?(TopicStatusEvent) %>
+          <div class="timeline-item timeline-item--status-event bg-light p-3 rounded mb-3 border">
+            <div class="d-flex align-items-center">
+              <%= signal_badge(item.evidence_type) %>
+              <span class="ml-2 text-secondary text-sm">
+                Status changed to <strong><%= item.lifecycle_status.humanize %></strong>
+              </span>
+            </div>
+            <% if item.notes.present? %>
+              <div class="mt-2 text-sm text-secondary font-italic">
+                <%= item.notes %>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
       <% end %>
     </div>
   <% end %>
 </div>
 
-<% if @items.empty? %>
+<% if @timeline_items.empty? %>
   <div class="card text-center" style="padding: var(--space-12);">
-    <p class="text-secondary mb-0">No agenda items found for this topic.</p>
+    <p class="text-secondary mb-0">No timeline data found for this topic.</p>
   </div>
 <% end %>
 
-<%= link_to topics_path, class: "back-link" do %>
-  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <line x1="19" y1="12" x2="5" y2="12"></line>
-    <polyline points="12 19 5 12 12 5"></polyline>
-  </svg>
-  Back to Topics
-<% end %>
+<div class="mt-4">
+  <%= link_to topics_path, class: "back-link" do %>
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="19" y1="12" x2="5" y2="12"></line>
+      <polyline points="12 19 5 12 12 5"></polyline>
+    </svg>
+    Back to Topics
+  <% end %>
+</div>

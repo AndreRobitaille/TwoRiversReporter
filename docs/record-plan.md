@@ -6,4 +6,6 @@
 
 # === END AGENT-META ===
 
+NOTE TO AI AGENTS: Do not write to this file. It is for human reference only.
+
 Please update all relevant local documentation, update the github issue with a comment about what you did (markdown formatted), mark the issue as complete in the @docs/topic-first-migration-plan.md , then commit the changes, ensuring your commit message closes the issue number we've been working on.

@@ -968,6 +968,24 @@ details[open] summary {
   color: var(--color-text-secondary);
 }
 
+.timeline-group {
+  margin-bottom: var(--space-8);
+}
+
+.timeline-date-marker {
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--space-4);
+  color: var(--color-text);
+  border-bottom: 2px solid var(--color-border);
+  padding-bottom: var(--space-2);
+}
+
+.timeline-item--status-event {
+  border-left-color: var(--color-text-muted);
+  background: var(--color-bg);
+}
+
 /* ============================================
    Page Header
    ============================================ */
