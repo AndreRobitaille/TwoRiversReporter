@@ -101,4 +101,4 @@ This is a living note for future actions, not an implementation log.
 4) [x] #49 Topic-aware summarization (governance-compliant)
 5) [x] #50 Topic-aware retrieval context + caps
 6) [x] #39 Topic detail page: continuity timeline with motions/votes
-7) UI reorientation and polish: #25, #29–36, #31, #33–34, #41–43 (include "Recently Updated" row for Topics index)
+7) UI reorientation and polish: #30–36, #31, #33–34, #41–43 (include "Recently Updated" row for Topics index)

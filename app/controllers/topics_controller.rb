@@ -11,11 +11,21 @@ class TopicsController < ApplicationController
                                .order(last_activity_at: :desc)
                                .limit(6)
 
-    # Group by lifecycle status
-    @grouped_topics = base_scope.order(last_activity_at: :desc)
-                               .group_by(&:lifecycle_status)
-                               .transform_keys { |k| k.presence || "unknown" }
-                               .sort_by { |status, _| status_order(status) }
+    # Group by lifecycle status with group metadata
+    grouped = base_scope.order(last_activity_at: :desc)
+                        .to_a
+                        .group_by { |topic| topic.lifecycle_status.presence || "unknown" }
+
+    @grouped_topics = grouped.map do |status, topics|
+      {
+        status: status,
+        topics: topics,
+        count: topics.size,
+        last_activity_at: topics.map(&:last_activity_at).compact.max
+      }
+    end.sort_by do |group|
+      [ status_order(group[:status]), group_last_activity_sort_key(group[:last_activity_at]) ]
+    end
   end
 
   private
@@ -28,6 +38,12 @@ class TopicsController < ApplicationController
     when "resolved" then 3
     else 4
     end
+  end
+
+  def group_last_activity_sort_key(last_activity_at)
+    return 0 unless last_activity_at
+
+    -last_activity_at.to_i
   end
 
   def show

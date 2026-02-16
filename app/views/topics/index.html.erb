@@ -44,16 +44,21 @@
     </section>
   <% end %>
 
-  <% @grouped_topics.each do |status, topics| %>
+  <% @grouped_topics.each do |group| %>
+    <% status = group[:status] %>
+    <% topics = group[:topics] %>
+    <% count = group[:count] %>
+    <% last_activity_at = group[:last_activity_at] %>
     <section class="topic-group mb-8">
       <div class="group-header mb-4">
         <h2 class="h3 mb-2">
           <%= status.capitalize %> Topics
-          <span class="text-secondary text-sm" style="font-weight: normal; margin-left: var(--space-2);">(<%= topics.count %>)</span>
+          <span class="text-secondary text-sm" style="font-weight: normal; margin-left: var(--space-2);">(<%= count %>)</span>
         </h2>
         <% if desc = status_descriptions[status] %>
           <p class="text-secondary mb-0"><%= desc %></p>
         <% end %>
+        <p class="text-secondary text-sm mb-0">Last activity: <%= group_last_activity_label(last_activity_at) %></p>
       </div>
       
       <div class="card-grid">
