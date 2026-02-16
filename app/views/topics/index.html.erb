@@ -26,9 +26,13 @@
 
       <div class="card-grid">
         <% @recent_topics.each do |topic| %>
-          <%= link_to topic_path(topic), class: "card card--clickable", style: "text-decoration: none; color: inherit;" do %>
+          <% signals = @highlight_signals[topic.id] %>
+          <%= link_to topic_path(topic), class: ["card card--clickable", ("card--highlighted" if signals)].compact.join(" "), style: "text-decoration: none; color: inherit;" do %>
             <div class="card-header">
-              <h3 class="card-title"><%= topic.name %></h3>
+              <div class="flex justify-between items-center">
+                <h3 class="card-title"><%= topic.name %></h3>
+                <%= topic_lifecycle_badge(topic.lifecycle_status) if topic.lifecycle_status %>
+              </div>
             </div>
             <div class="card-body">
               <div class="flex justify-between text-secondary text-sm">
@@ -37,6 +41,13 @@
                   <span>Updated <%= time_ago_in_words(topic.last_activity_at) %> ago</span>
                 <% end %>
               </div>
+              <% if signals %>
+                <div class="card-signals">
+                  <% signals.each do |label| %>
+                    <span class="badge badge--outline"><%= label %></span>
+                  <% end %>
+                </div>
+              <% end %>
             </div>
           <% end %>
         <% end %>
@@ -63,9 +74,13 @@
       
       <div class="card-grid">
         <% topics.each do |topic| %>
-          <%= link_to topic_path(topic), class: "card card--clickable", style: "text-decoration: none; color: inherit;" do %>
+          <% signals = @highlight_signals[topic.id] %>
+          <%= link_to topic_path(topic), class: ["card card--clickable", ("card--highlighted" if signals)].compact.join(" "), style: "text-decoration: none; color: inherit;" do %>
             <div class="card-header">
-              <h3 class="card-title"><%= topic.name %></h3>
+              <div class="flex justify-between items-center">
+                <h3 class="card-title"><%= topic.name %></h3>
+                <%= topic_lifecycle_badge(topic.lifecycle_status) if topic.lifecycle_status %>
+              </div>
             </div>
             <div class="card-body">
               <div class="flex justify-between text-secondary text-sm">
@@ -74,6 +89,13 @@
                   <span>Updated <%= time_ago_in_words(topic.last_activity_at) %> ago</span>
                 <% end %>
               </div>
+              <% if signals %>
+                <div class="card-signals">
+                  <% signals.each do |label| %>
+                    <span class="badge badge--outline"><%= label %></span>
+                  <% end %>
+                </div>
+              <% end %>
             </div>
           <% end %>
         <% end %>

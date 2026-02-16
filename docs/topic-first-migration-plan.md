@@ -62,17 +62,18 @@ This is a living note for future actions, not an implementation log.
 
 ### Phase 5: UI + Navigation
 1) [x] Topics index grouped by lifecycle status.
-2) Topics index: "Recently Updated" row (cross-status recency).
-3) Topics index: filters (status, body, timeframe).
-4) Topics index: pagination + activity window rules.
-5) Topic navigation: standardize click-through behavior.
-6) Topic pages: empty/error/low-signal states (QA checklist).
-7) Add semantic color tokens for light/dark modes.
-8) Apply theme color tokens to Topics + Home.
-9) Topic lifecycle status chips.
-10) Topic page: add identity accents to top cards.
-11) Theme QA: verify tokenized light/dark modes.
-12) Home page reoriented to Topic-first modules.
+2) [x] Topics index: "Recently Updated" row (cross-status recency).
+3) [x] Topics index: highlight newly active/resurfaced topics (structural signal badges).
+4) Topics index: filters (status, body, timeframe).
+5) Topics index: pagination + activity window rules.
+6) Topic navigation: standardize click-through behavior.
+7) Topic pages: empty/error/low-signal states (QA checklist).
+8) Add semantic color tokens for light/dark modes.
+9) Apply theme color tokens to Topics + Home.
+10) Topic lifecycle status chips.
+11) Topic page: add identity accents to top cards.
+12) Theme QA: verify tokenized light/dark modes.
+13) Home page reoriented to Topic-first modules.
 
 ## Backfill Strategy (Draft)
 - Run a backfill job that:
@@ -101,4 +102,6 @@ This is a living note for future actions, not an implementation log.
 4) [x] #49 Topic-aware summarization (governance-compliant)
 5) [x] #50 Topic-aware retrieval context + caps
 6) [x] #39 Topic detail page: continuity timeline with motions/votes
-7) UI reorientation and polish: #30–36, #31, #33–34, #41–43 (include "Recently Updated" row for Topics index)
+7) UI reorientation and polish: #30–36, #33–34, #41–43 (include "Recently Updated" row for Topics index)
+   - [x] #29 Topics index: lifecycle grouping + recently updated row
+   - [x] #32 Topics list: highlight newly active/resurfaced topics

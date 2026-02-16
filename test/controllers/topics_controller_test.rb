@@ -68,4 +68,70 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     titles = css_select("section#recent-topics .card-title").map { |node| node.text.strip }
     assert_equal [ @active_topic.name, @recurring_topic.name, @dormant_topic.name, @resolved_topic.name ], titles
   end
+
+  test "index shows lifecycle badges on topic cards" do
+    get topics_url
+    assert_response :success
+
+    assert_select ".badge", text: "Active"
+    assert_select ".badge", text: "Dormant"
+    assert_select ".badge", text: "Resolved"
+    assert_select ".badge", text: "Recurring"
+  end
+
+  test "index highlights topic with recent continuity signal" do
+    # Create a recent agenda_recurrence event for the recurring topic
+    TopicStatusEvent.create!(
+      topic: @recurring_topic,
+      lifecycle_status: "recurring",
+      evidence_type: "agenda_recurrence",
+      occurred_at: 5.days.ago
+    )
+
+    get topics_url
+    assert_response :success
+
+    # Should have a highlighted card
+    assert_select ".card--highlighted", minimum: 1
+
+    # Should show the "Resurfaced" signal badge
+    assert_select ".card-signals .badge", text: "Resurfaced"
+  end
+
+  test "index does not highlight topics without recent signals" do
+    # No TopicStatusEvents created — no highlights expected
+    get topics_url
+    assert_response :success
+
+    assert_select ".card--highlighted", count: 0
+    assert_select ".card-signals", count: 0
+  end
+
+  test "index highlights topic with deferral signal" do
+    TopicStatusEvent.create!(
+      topic: @active_topic,
+      lifecycle_status: "active",
+      evidence_type: "deferral_signal",
+      occurred_at: 10.days.ago
+    )
+
+    get topics_url
+    assert_response :success
+
+    assert_select ".card-signals .badge", text: "Deferral Observed"
+  end
+
+  test "index does not highlight old signals outside 30-day window" do
+    TopicStatusEvent.create!(
+      topic: @recurring_topic,
+      lifecycle_status: "recurring",
+      evidence_type: "agenda_recurrence",
+      occurred_at: 60.days.ago
+    )
+
+    get topics_url
+    assert_response :success
+
+    assert_select ".card--highlighted", count: 0
+  end
 end

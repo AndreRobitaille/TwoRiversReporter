@@ -26,24 +26,9 @@ class TopicsController < ApplicationController
     end.sort_by do |group|
       [ status_order(group[:status]), group_last_activity_sort_key(group[:last_activity_at]) ]
     end
-  end
 
-  private
-
-  def status_order(status)
-    case status
-    when "active" then 0
-    when "recurring" then 1
-    when "dormant" then 2
-    when "resolved" then 3
-    else 4
-    end
-  end
-
-  def group_last_activity_sort_key(last_activity_at)
-    return 0 unless last_activity_at
-
-    -last_activity_at.to_i
+    # Build highlight signals from recent continuity events
+    @highlight_signals = build_highlight_signals
   end
 
   def show
@@ -63,5 +48,51 @@ class TopicsController < ApplicationController
     end.reverse
   rescue ActiveRecord::RecordNotFound
     redirect_to topics_path, alert: "Topic not found."
+  end
+
+  private
+
+  def status_order(status)
+    case status
+    when "active" then 0
+    when "recurring" then 1
+    when "dormant" then 2
+    when "resolved" then 3
+    else 4
+    end
+  end
+
+  HIGHLIGHT_WINDOW = 30.days
+
+  HIGHLIGHT_EVENT_TYPES = %w[
+    agenda_recurrence
+    deferral_signal
+    cross_body_progression
+    disappearance_signal
+    rules_engine_update
+  ].freeze
+
+  def build_highlight_signals
+    events = TopicStatusEvent
+      .where(topic_id: Topic.publicly_visible.select(:id))
+      .where(evidence_type: HIGHLIGHT_EVENT_TYPES)
+      .where(occurred_at: HIGHLIGHT_WINDOW.ago..)
+      .select(:topic_id, :evidence_type, :lifecycle_status)
+
+    signals = {}
+    events.each do |event|
+      label = helpers.highlight_signal_label(event.evidence_type, event.lifecycle_status)
+      next unless label
+
+      signals[event.topic_id] ||= []
+      signals[event.topic_id] << label unless signals[event.topic_id].include?(label)
+    end
+    signals
+  end
+
+  def group_last_activity_sort_key(last_activity_at)
+    return 0 unless last_activity_at
+
+    -last_activity_at.to_i
   end
 end

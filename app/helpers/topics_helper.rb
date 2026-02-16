@@ -22,6 +22,21 @@ module TopicsHelper
     tag.span(label, class: "badge #{css_class} badge--outline", title: type.humanize)
   end
 
+  # Maps a TopicStatusEvent to a short highlight label for the topics index.
+  # Returns nil if the event type is not highlight-worthy.
+  HIGHLIGHT_LABELS = {
+    "agenda_recurrence" => "Resurfaced",
+    "deferral_signal" => "Deferral Observed",
+    "cross_body_progression" => "Moved Bodies",
+    "disappearance_signal" => "Disappeared"
+  }.freeze
+
+  def highlight_signal_label(evidence_type, lifecycle_status = nil)
+    return "Newly Active" if evidence_type == "rules_engine_update" && lifecycle_status == "active"
+
+    HIGHLIGHT_LABELS[evidence_type]
+  end
+
   def group_last_activity_label(last_activity_at)
     return "Not yet recorded" if last_activity_at.blank?
 

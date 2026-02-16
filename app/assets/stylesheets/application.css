@@ -469,6 +469,17 @@ small {
   border-color: var(--color-primary);
 }
 
+.card--highlighted {
+  border-left: 3px solid var(--color-primary);
+}
+
+.card-signals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
 .card-header {
   margin-bottom: var(--space-4);
 }
@@ -739,6 +750,21 @@ tbody tr:hover {
 .badge--danger {
   background: var(--color-danger-light);
   color: var(--color-danger);
+}
+
+.badge--info {
+  background: var(--color-accent-light, var(--color-primary-light));
+  color: var(--color-accent, var(--color-primary));
+}
+
+.badge--secondary {
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
+}
+
+.badge--outline {
+  background: transparent;
+  border: 1px solid currentColor;
 }
 
 /* Topic Tags */
