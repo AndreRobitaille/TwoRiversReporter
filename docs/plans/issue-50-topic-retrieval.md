@@ -3,6 +3,9 @@
 ## Goal
 Make knowledgebase retrieval topic-centric, deterministic, and explicitly capped, with clear provenance labeling for verified vs unverified sources.
 
+## Status
+Complete. All acceptance criteria met, including strict topic-only retrieval and dual provenance labels.
+
 ## References
 - `docs/DEVELOPMENT_PLAN.md`
 - `docs/topics/TOPIC_GOVERNANCE.md`
