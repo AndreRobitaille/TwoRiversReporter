@@ -56,15 +56,23 @@ This is a living note for future actions, not an implementation log.
 3) [x] Log lifecycle transitions in `topic_status_events`.
 
 ### Phase 4: Summarization + Retrieval
-1) Topic-aware summaries with fact/framing/sentiment separation.
-2) Citations required for factual claims.
+1) [x] Topic-aware summaries with fact/framing/sentiment separation.
+2) [x] Citations required for factual claims.
 3) [x] Retrieval uses topic history and caps context size.
 
 ### Phase 5: UI + Navigation
-1) Home page reoriented to Topic-first modules.
-2) Topics index grouped by lifecycle status.
-3) Topic detail page becomes authoritative continuity view.
-4) Meetings page treated as projection with Topic context.
+1) [x] Topics index grouped by lifecycle status.
+2) Topics index: "Recently Updated" row (cross-status recency).
+3) Topics index: filters (status, body, timeframe).
+4) Topics index: pagination + activity window rules.
+5) Topic navigation: standardize click-through behavior.
+6) Topic pages: empty/error/low-signal states (QA checklist).
+7) Add semantic color tokens for light/dark modes.
+8) Apply theme color tokens to Topics + Home.
+9) Topic lifecycle status chips.
+10) Topic page: add identity accents to top cards.
+11) Theme QA: verify tokenized light/dark modes.
+12) Home page reoriented to Topic-first modules.
 
 ## Backfill Strategy (Draft)
 - Run a backfill job that:
@@ -93,4 +101,4 @@ This is a living note for future actions, not an implementation log.
 4) [x] #49 Topic-aware summarization (governance-compliant)
 5) [x] #50 Topic-aware retrieval context + caps
 6) [x] #39 Topic detail page: continuity timeline with motions/votes
-7) UI reorientation and polish: #25, #29–36, #31, #33–34, #41–43
+7) UI reorientation and polish: #25, #29–36, #31, #33–34, #41–43 (include "Recently Updated" row for Topics index)
