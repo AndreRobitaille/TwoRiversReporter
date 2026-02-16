@@ -19,7 +19,7 @@ Make knowledgebase retrieval topic-centric, deterministic, and explicitly capped
 - `Topics::RetrievalQueryBuilder` builds topic/appearance/agenda query text, but retrieval still scans all active sources.
 - `RetrievalService#format_context` labels trust based on `knowledge_source.verification_notes`.
 - Topic summaries call `retrieve_context` with a limit of 5, but no topic-based filtering or explicit size caps.
-- `KnowledgeSource`/`KnowledgeChunk` have no topic linkage fields or associations today.
+- `KnowledgeSource`/`KnowledgeChunk` linked to `Topic` via `knowledge_source_topics` (many-to-many).
 
 ## Proposed Approach
 1) Add topic-aware retrieval filtering
@@ -63,6 +63,12 @@ Make knowledgebase retrieval topic-centric, deterministic, and explicitly capped
 5. [x] Document behavior
    - Add inline docs in `RetrievalService` and/or `Topics::RetrievalQueryBuilder`.
    - Update relevant docs if needed (only if changes are user-facing).
+
+6. [x] Add Schema Linkage
+   - Added `KnowledgeSourceTopic` join table.
+   - Added `KnowledgeSource#topics` and `Topic#knowledge_sources`.
+   - Implemented `rake topics:backfill_knowledge_sources` for heuristic linking.
+   - Updated `retrieve_topic_context` to filter by topic ID.
 
 ## Open Questions
 - Is there an existing schema link between `Topic` and `KnowledgeSource`/`KnowledgeChunk`? If not, what is the approved linkage pattern? (No link currently. Deferred schema change.)

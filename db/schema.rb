@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_15_221034) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_16_144452) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -131,6 +131,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_15_221034) do
     t.json "metadata"
     t.datetime "updated_at", null: false
     t.index ["knowledge_source_id"], name: "index_knowledge_chunks_on_knowledge_source_id"
+  end
+
+  create_table "knowledge_source_topics", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "knowledge_source_id", null: false
+    t.float "relevance_score", default: 0.0
+    t.bigint "topic_id", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "verified", default: false
+    t.index ["knowledge_source_id", "topic_id"], name: "index_ks_topics_on_source_and_topic", unique: true
+    t.index ["knowledge_source_id"], name: "index_knowledge_source_topics_on_knowledge_source_id"
+    t.index ["topic_id"], name: "index_knowledge_source_topics_on_topic_id"
   end
 
   create_table "knowledge_sources", force: :cascade do |t|
@@ -484,6 +496,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_15_221034) do
   add_foreign_key "entity_mentions", "meetings"
   add_foreign_key "extractions", "meeting_documents"
   add_foreign_key "knowledge_chunks", "knowledge_sources"
+  add_foreign_key "knowledge_source_topics", "knowledge_sources"
+  add_foreign_key "knowledge_source_topics", "topics"
   add_foreign_key "meeting_documents", "meetings"
   add_foreign_key "meeting_summaries", "meetings"
   add_foreign_key "motions", "agenda_items"

@@ -1,5 +1,7 @@
 class KnowledgeSource < ApplicationRecord
   has_many :knowledge_chunks, dependent: :destroy
+  has_many :knowledge_source_topics, dependent: :destroy
+  has_many :topics, through: :knowledge_source_topics
   has_one_attached :file
 
   validates :title, presence: true

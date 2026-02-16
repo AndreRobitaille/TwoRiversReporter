@@ -8,11 +8,19 @@ class RetrievalServiceTest < ActiveSupport::TestCase
     @source1 = KnowledgeSource.create!(title: "City Plan", source_type: "pdf", verification_notes: "Official", active: true)
     @source2 = KnowledgeSource.create!(title: "Resident Note", source_type: "note", active: true)
 
+    # Create topics
+    @topic1 = Topic.create!(name: "Budget", status: "approved")
+    @topic2 = Topic.create!(name: "Parks", status: "approved")
+
+    # Link sources to topics
+    @source1.topics << @topic1
+    @source2.topics << @topic2
+
     # Create chunks with embeddings
     # We mock embeddings as arrays of floats for VectorService
     @chunk1 = KnowledgeChunk.create!(knowledge_source: @source1, content: "A" * 1000, embedding: [ 1.0, 0.0, 0.0 ])
     @chunk2 = KnowledgeChunk.create!(knowledge_source: @source1, content: "B" * 1000, embedding: [ 0.9, 0.1, 0.0 ])
-    @chunk3 = KnowledgeChunk.create!(knowledge_source: @source2, content: "C" * 1000, embedding: [ 0.8, 0.2, 0.0 ])
+    @chunk3 = KnowledgeChunk.create!(knowledge_source: @source2, content: "C" * 1000, embedding: [ 0.8, 0.2, 0.0 ]) # Matches @topic2
     @chunk4 = KnowledgeChunk.create!(knowledge_source: @source2, content: "D" * 1000, embedding: [ 0.7, 0.3, 0.0 ])
     @chunk5 = KnowledgeChunk.create!(knowledge_source: @source1, content: "E" * 1000, embedding: [ 0.6, 0.4, 0.0 ])
     @chunk6 = KnowledgeChunk.create!(knowledge_source: @source2, content: "F" * 1000, embedding: [ 0.5, 0.5, 0.0 ])
@@ -27,12 +35,32 @@ class RetrievalServiceTest < ActiveSupport::TestCase
 
     @service.instance_variable_set(:@embedding_service, mock_embedding_service)
 
-    results = @service.retrieve_topic_context(topic: nil, query_text: "test", limit: 3, max_chars: 10000)
+    # Use topic1 (source1). chunk1, chunk2, chunk5 are candidates.
+    results = @service.retrieve_topic_context(topic: @topic1, query_text: "test", limit: 3, max_chars: 10000)
 
     assert_equal 3, results.size
     assert_equal @chunk1, results[0][:chunk]
     assert_equal @chunk2, results[1][:chunk]
-    assert_equal @chunk3, results[2][:chunk]
+    assert_equal @chunk5, results[2][:chunk]
+  end
+
+  test "retrieve_topic_context filters non-topic sources" do
+    mock_embedding_service = Object.new
+    def mock_embedding_service.embed(text); [ 0.8, 0.2, 0.0 ]; end # Matches chunk3 best (topic2)
+    @service.instance_variable_set(:@embedding_service, mock_embedding_service)
+
+    # Query for Topic 1 (Source 1 only).
+    # Even though Chunk 3 (Topic 2) is a perfect vector match, it should be excluded.
+    results = @service.retrieve_topic_context(topic: @topic1, query_text: "test", limit: 5, max_chars: 10000)
+
+    # Should only return chunks from Source 1
+    results.each do |result|
+      assert_equal @source1, result[:chunk].knowledge_source
+    end
+
+    # Ensure Chunk 3 is NOT present
+    chunk_ids = results.map { |r| r[:chunk].id }
+    refute_includes chunk_ids, @chunk3.id
   end
 
   test "retrieve_topic_context respects max_chars" do
@@ -42,7 +70,7 @@ class RetrievalServiceTest < ActiveSupport::TestCase
 
     # Chunks are 1000 chars each.
     # Limit 5, max_chars 2500. Should return 2 chunks (2000 chars).
-    results = @service.retrieve_topic_context(topic: nil, query_text: "test", limit: 5, max_chars: 2500)
+    results = @service.retrieve_topic_context(topic: @topic1, query_text: "test", limit: 5, max_chars: 2500)
 
     assert_equal 2, results.size
     assert_equal @chunk1, results[0][:chunk]
@@ -64,7 +92,7 @@ class RetrievalServiceTest < ActiveSupport::TestCase
     first_id = [ chunk_a.id, chunk_b.id ].min
     second_id = [ chunk_a.id, chunk_b.id ].max
 
-    results = @service.retrieve_topic_context(topic: nil, query_text: "test", limit: 2, max_chars: 10000)
+    results = @service.retrieve_topic_context(topic: @topic1, query_text: "test", limit: 2, max_chars: 10000)
 
     assert_equal 2, results.size
     assert_equal first_id, results[0][:chunk].id

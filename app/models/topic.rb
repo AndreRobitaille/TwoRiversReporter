@@ -1,6 +1,8 @@
 class Topic < ApplicationRecord
   has_many :agenda_item_topics, dependent: :destroy
   has_many :agenda_items, through: :agenda_item_topics
+  has_many :knowledge_source_topics, dependent: :destroy
+  has_many :knowledge_sources, through: :knowledge_source_topics
   has_many :topic_aliases, dependent: :destroy
   has_many :topic_appearances, dependent: :destroy
   has_many :topic_status_events, dependent: :destroy

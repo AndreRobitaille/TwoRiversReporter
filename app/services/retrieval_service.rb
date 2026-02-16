@@ -3,32 +3,36 @@ class RetrievalService
     @embedding_service = ::Ai::EmbeddingService.new
   end
 
-  def retrieve_context(query_text, limit: 10)
+  def retrieve_context(query_text, limit: 10, candidate_scope: nil)
     return [] if query_text.blank?
 
     query_embedding = @embedding_service.embed(query_text)
 
+    # Base scope: Active knowledge chunks
+    scope = KnowledgeChunk.joins(:knowledge_source).where(knowledge_sources: { active: true })
+
+    # Apply candidate scope if provided (e.g. topic filter)
+    scope = scope.merge(candidate_scope) if candidate_scope
+
     # In production with pgvector:
-    # KnowledgeChunk.nearest_neighbors(:embedding, query_embedding, distance: "cosine").limit(limit)
+    # scope.nearest_neighbors(:embedding, query_embedding, distance: "cosine").limit(limit)
 
     # In dev with pure Ruby fallback:
-    all_chunks = KnowledgeChunk.joins(:knowledge_source).where(knowledge_sources: { active: true })
-
-    # If dataset is huge, this is slow. For <10k chunks, it's fine.
-    # We load all embeddings into memory to compute dot product.
-
+    all_chunks = scope.to_a
     results = VectorService.nearest_neighbors(query_embedding, all_chunks, top_k: limit)
 
-    # Return array of { chunk: chunk_obj, score: float }
     results
   end
 
   # Topic-aware retrieval with strict caps and determinism
   def retrieve_topic_context(topic:, query_text:, limit: 5, max_chars: 6000)
-    # 1. Fetch more candidates than needed to allow for size filtering
-    # We fetch 3x the limit to have a buffer for skipping large/irrelevant chunks if we were filtering,
-    # but primarily to ensure we have enough candidates to fill the caps.
-    candidates = retrieve_context(query_text, limit: limit * 3)
+    # 0. Build topic-specific scope
+    # Only include chunks from knowledge sources linked to this topic
+    topic_scope = KnowledgeChunk.joins(knowledge_source: :knowledge_source_topics)
+                                .where(knowledge_source_topics: { topic_id: topic.id })
+
+    # 1. Fetch candidates with topic filter
+    candidates = retrieve_context(query_text, limit: limit * 3, candidate_scope: topic_scope)
 
     # 2. Apply caps (count and size)
     final_results = []
