@@ -30,6 +30,10 @@ Meetings are the event stream.\
 Documents are the artifacts.\
 **Topics are the organizing structure.**
 
+Resident entry is expected to be time-based (upcoming or recent meetings),
+but the system must always reveal Topic continuity as the primary
+explanatory layer.
+
 Topics represent persistent civic concerns that:
 
 - Span multiple meetings
@@ -219,8 +223,8 @@ Constraints:
 
 ### Home
 
-- Upcoming meetings
-- Recently updated Topics
+- Upcoming meetings (primary entry)
+- Recently updated Topics (continuity cues)
 - "What to Watch" (Topic-driven)
 
 ### Topic Page (Primary Lens)
@@ -238,6 +242,7 @@ Constraints:
 - Official documents
 - Topic associations
 - Summaries
+- Pivot to Topic continuity (agenda items link to Topic timeline)
 
 ------------------------------------------------------------------------
 

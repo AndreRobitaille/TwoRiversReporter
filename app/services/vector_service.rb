@@ -31,6 +31,6 @@ class VectorService
       { chunk: chunk, score: score }
     end.compact
 
-    scored.sort_by { |item| -item[:score] }.take(top_k)
+    scored.sort_by { |item| [ -item[:score], item[:chunk].id ] }.take(top_k)
   end
 end

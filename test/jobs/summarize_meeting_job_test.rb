@@ -35,6 +35,8 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     retrieval_stub = Object.new
     def retrieval_stub.retrieve_context(*args, **kwargs); []; end
     def retrieval_stub.format_context(*args); ""; end
+    def retrieval_stub.retrieve_topic_context(*args, **kwargs); []; end
+    def retrieval_stub.format_topic_context(*args); []; end
 
     RetrievalService.stub :new, retrieval_stub do
       Ai::OpenAiService.stub :new, mock_ai do

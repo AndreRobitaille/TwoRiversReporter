@@ -52,8 +52,8 @@ class SummarizeMeetingJob < ApplicationJob
       query_builder = Topics::RetrievalQueryBuilder.new(topic, meeting)
       query = query_builder.build_query
 
-      retrieved_chunks = retrieval_service.retrieve_context(query, limit: 5)
-      formatted_context = retrieval_service.format_context(retrieved_chunks).split("\n\n")
+      retrieved_chunks = retrieval_service.retrieve_topic_context(topic: topic, query_text: query, limit: 5, max_chars: 6000)
+      formatted_context = retrieval_service.format_topic_context(retrieved_chunks)
 
       builder = Topics::SummaryContextBuilder.new(topic, meeting)
       context_json = builder.build_context_json(kb_context_chunks: formatted_context)

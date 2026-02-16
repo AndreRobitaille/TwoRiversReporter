@@ -58,7 +58,7 @@ This is a living note for future actions, not an implementation log.
 ### Phase 4: Summarization + Retrieval
 1) Topic-aware summaries with fact/framing/sentiment separation.
 2) Citations required for factual claims.
-3) Retrieval uses topic history and caps context size.
+3) [x] Retrieval uses topic history and caps context size.
 
 ### Phase 5: UI + Navigation
 1) Home page reoriented to Topic-first modules.
@@ -91,6 +91,6 @@ This is a living note for future actions, not an implementation log.
 2) [x] #38 Topic review queue + admin triage for AI proposals
 3) [x] #48 Topic continuity pipeline: lifecycle derivation + deferral/disappearance
 4) [x] #49 Topic-aware summarization (governance-compliant)
-5) #50 Topic-aware retrieval context + caps
+5) [x] #50 Topic-aware retrieval context + caps
 6) #39 Topic detail page: continuity timeline with motions/votes
 7) UI reorientation and polish: #25, #29–36, #31, #33–34, #41–43
