@@ -40,6 +40,7 @@ Make knowledgebase retrieval topic-centric, deterministic, and explicitly capped
 4) Prompt labeling
    - Ensure formatted context clearly labels each chunk as verified/unverified.
    - Add source type/provenance tags to prevent mixing verified facts with unverified background.
+   - **Update**: Added split labeling: `Source Trust: VERIFIED/UNVERIFIED` (is document verified?) AND `Topic Link: VERIFIED/UNVERIFIED` (is connection to topic verified?).
 
 ## Implementation Tasks
 1. [x] Audit data model for topic-to-knowledge mapping
@@ -69,6 +70,10 @@ Make knowledgebase retrieval topic-centric, deterministic, and explicitly capped
    - Added `KnowledgeSource#topics` and `Topic#knowledge_sources`.
    - Implemented `rake topics:backfill_knowledge_sources` for heuristic linking.
    - Updated `retrieve_topic_context` to filter by topic ID.
+
+7. [x] Refine Provenance Labeling
+   - Updated `format_topic_context` to include both Source Trust and Topic Link trust labels.
+   - Updated tests to verify detailed provenance.
 
 ## Open Questions
 - Is there an existing schema link between `Topic` and `KnowledgeSource`/`KnowledgeChunk`? If not, what is the approved linkage pattern? (No link currently. Deferred schema change.)

@@ -13,8 +13,8 @@ class RetrievalServiceTest < ActiveSupport::TestCase
     @topic2 = Topic.create!(name: "Parks", status: "approved")
 
     # Link sources to topics
-    @source1.topics << @topic1
-    @source2.topics << @topic2
+    @link1 = KnowledgeSourceTopic.create!(knowledge_source: @source1, topic: @topic1, verified: true)
+    @link2 = KnowledgeSourceTopic.create!(knowledge_source: @source2, topic: @topic2, verified: false)
 
     # Create chunks with embeddings
     # We mock embeddings as arrays of floats for VectorService
@@ -99,24 +99,27 @@ class RetrievalServiceTest < ActiveSupport::TestCase
     assert_equal second_id, results[1][:chunk].id
   end
 
-  test "format_topic_context includes provenance" do
-    results = [
-      { chunk: @chunk1, score: 0.9 },
-      { chunk: @chunk3, score: 0.8 }
-    ]
+  test "format_topic_context includes detailed provenance" do
+    # Result for Topic 1 (Source 1) - Verified Source, Verified Link
+    result1 = { chunk: @chunk1, score: 0.9, topic: @topic1 }
 
-    formatted = @service.format_topic_context(results)
+    # Result for Topic 2 (Source 2) - Unverified Source, Unverified Link
+    result2 = { chunk: @chunk3, score: 0.8, topic: @topic2 }
+
+    formatted = @service.format_topic_context([ result1, result2 ])
 
     assert_equal 2, formatted.size
 
-    # Verify Source 1 (Verified)
+    # Verify Source 1
     assert_match /Source: City Plan/, formatted[0]
-    assert_match /Status: VERIFIED/, formatted[0]
+    assert_match /Source Trust: VERIFIED/, formatted[0]
+    assert_match /Topic Link: VERIFIED/, formatted[0]
     assert_match /ID: #{@source1.id}/, formatted[0]
 
-    # Verify Source 2 (Unverified)
+    # Verify Source 2
     assert_match /Source: Resident Note/, formatted[1]
-    assert_match /Status: UNVERIFIED/, formatted[1]
+    assert_match /Source Trust: UNVERIFIED/, formatted[1]
+    assert_match /Topic Link: UNVERIFIED/, formatted[1]
     assert_match /ID: #{@source2.id}/, formatted[1]
   end
 end
