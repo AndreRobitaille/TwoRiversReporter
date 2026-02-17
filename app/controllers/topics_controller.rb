@@ -1,4 +1,6 @@
 class TopicsController < ApplicationController
+  include HighlightSignals
+
   def index
     # Fetch all publicly visible topics
     base_scope = Topic.publicly_visible
@@ -60,34 +62,6 @@ class TopicsController < ApplicationController
     when "resolved" then 3
     else 4
     end
-  end
-
-  HIGHLIGHT_WINDOW = 30.days
-
-  HIGHLIGHT_EVENT_TYPES = %w[
-    agenda_recurrence
-    deferral_signal
-    cross_body_progression
-    disappearance_signal
-    rules_engine_update
-  ].freeze
-
-  def build_highlight_signals
-    events = TopicStatusEvent
-      .where(topic_id: Topic.publicly_visible.select(:id))
-      .where(evidence_type: HIGHLIGHT_EVENT_TYPES)
-      .where(occurred_at: HIGHLIGHT_WINDOW.ago..)
-      .select(:topic_id, :evidence_type, :lifecycle_status)
-
-    signals = {}
-    events.each do |event|
-      label = helpers.highlight_signal_label(event.evidence_type, event.lifecycle_status)
-      next unless label
-
-      signals[event.topic_id] ||= []
-      signals[event.topic_id] << label unless signals[event.topic_id].include?(label)
-    end
-    signals
   end
 
   def group_last_activity_sort_key(last_activity_at)

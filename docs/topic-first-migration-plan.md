@@ -73,7 +73,7 @@ This is a living note for future actions, not an implementation log.
 10) Topic lifecycle status chips.
 11) Topic page: add identity accents to top cards.
 12) Theme QA: verify tokenized light/dark modes.
-13) Home page reoriented to Topic-first modules.
+13) [x] Home page reoriented to Topic-first modules.
 
 ## Backfill Strategy (Draft)
 - Run a backfill job that:
@@ -105,3 +105,4 @@ This is a living note for future actions, not an implementation log.
 7) UI reorientation and polish: #30–36, #33–34, #41–43 (include "Recently Updated" row for Topics index)
    - [x] #29 Topics index: lifecycle grouping + recently updated row
    - [x] #32 Topics list: highlight newly active/resurfaced topics
+   - [x] #25 Home: Topic-first homepage with Worth Watching, Recent Signals, and time-windowed meeting lists

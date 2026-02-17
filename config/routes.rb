@@ -1,5 +1,5 @@
 Rails.application.routes.draw do
-  root "meetings#index"
+  root "home#index"
   resources :meetings, only: %i[index show]
   resources :members, only: %i[index show]
   resources :topics, only: %i[index show]

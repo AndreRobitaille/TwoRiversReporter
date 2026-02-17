@@ -8,6 +8,10 @@ class Meeting < ApplicationRecord
 
   validates :detail_page_url, presence: true, uniqueness: true
 
+  scope :upcoming, -> { where("starts_at > ?", Time.current).order(starts_at: :asc) }
+  scope :recent, -> { where("starts_at <= ?", Time.current).order(starts_at: :desc) }
+  scope :in_window, ->(from, to) { where(starts_at: from..to) }
+
   def document_status
     # Avoid N+1 queries if loaded, otherwise load
     docs = association(:meeting_documents).loaded? ? meeting_documents : meeting_documents.load

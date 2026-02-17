@@ -1,92 +1,102 @@
-<% content_for(:title) { "Two Rivers Reporter - City Meeting Transparency" } %>
+<% content_for(:title) { "Two Rivers Reporter - What's Happening" } %>
 
-<div class="hero">
-  <h1 class="hero-title">Two Rivers Reporter</h1>
-  <p class="hero-subtitle">
-    Stay informed about city meetings, decisions, and how your elected officials vote.
-    A civic transparency project for Two Rivers, WI residents.
+<div class="home-intro">
+  <h1 class="page-title">Two Rivers Reporter</h1>
+  <p class="page-subtitle">
+    What's happening in Two Rivers city government
+    <%= link_to meetings_path, class: "search-link" do %>
+      Search all meetings &#8594;
+    <% end %>
   </p>
-  <div class="hero-actions">
-    <%= link_to "View Meetings", meetings_path, class: "btn btn--primary btn--lg" %>
-    <%= link_to "Browse Topics", topics_path, class: "btn btn--secondary btn--lg" %>
+</div>
+
+<%# === Topic Signal Cards === %>
+<div class="card-grid mb-8" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
+  <%# Worth Watching %>
+  <div class="card card--warm">
+    <div class="card-header">
+      <h2 class="card-title">Worth Watching</h2>
+      <p class="card-subtitle">Active topics with upcoming meetings or recent signals</p>
+    </div>
+    <div class="card-body">
+      <% if @worth_watching.any? %>
+        <% @worth_watching.each do |topic| %>
+          <%= render "worth_watching_item", topic: topic %>
+        <% end %>
+      <% else %>
+        <p class="text-muted">No active topics with upcoming meetings.</p>
+      <% end %>
+    </div>
+    <% if @worth_watching.any? %>
+      <div class="card-footer">
+        <%= link_to "All topics &#8594;".html_safe, topics_path, class: "text-sm" %>
+      </div>
+    <% end %>
+  </div>
+
+  <%# Recent Signals %>
+  <div class="card card--cool">
+    <div class="card-header">
+      <h2 class="card-title">Recent Signals</h2>
+      <p class="card-subtitle">Topics with new continuity events in the last 30 days</p>
+    </div>
+    <div class="card-body">
+      <% if @recent_signals.any? %>
+        <% @recent_signals.each do |topic| %>
+          <%= render "recent_signal_item", topic: topic %>
+        <% end %>
+      <% else %>
+        <p class="text-muted">No recent topic activity detected.</p>
+      <% end %>
+    </div>
+    <% if @recent_signals.any? %>
+      <div class="card-footer">
+        <%= link_to "All topics &#8594;".html_safe, topics_path, class: "text-sm" %>
+      </div>
+    <% end %>
   </div>
 </div>
 
-<% if @upcoming_meetings.any? %>
-  <section class="section">
-    <div class="section-header">
-      <h2 class="section-title">Upcoming Meetings</h2>
-      <%= link_to "View all", meetings_path, class: "btn btn--ghost" %>
-    </div>
+<hr class="home-divider">
 
-    <div class="card-grid">
-      <% @upcoming_meetings.each do |meeting| %>
-        <%= link_to meeting_path(meeting), class: "card card--clickable", style: "text-decoration: none; color: inherit;" do %>
-          <div class="card-header">
-            <h3 class="card-title"><%= meeting.body_name %></h3>
-            <div class="card-subtitle">
-              <%= meeting.starts_at&.strftime("%B %d, %Y at %l:%M %p") %>
-            </div>
-          </div>
-          <div class="card-body">
-            <span class="badge badge--primary"><%= meeting.status.titleize %></span>
-            <% if meeting.meeting_documents.any? %>
-              <span class="badge badge--default"><%= meeting.meeting_documents.count %> documents</span>
-            <% end %>
-          </div>
-        <% end %>
-      <% end %>
-    </div>
-  </section>
-<% end %>
+<%# === Upcoming Meetings === %>
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title">Upcoming Meetings</h2>
+    <span class="section-time-badge">Next 30 days</span>
+  </div>
 
-<% if @recent_meetings.any? %>
-  <section class="section">
-    <div class="section-header">
-      <h2 class="section-title">Recent Meetings</h2>
-      <%= link_to "View all", meetings_path, class: "btn btn--ghost" %>
+  <% if @upcoming_meeting_groups.any? %>
+    <% @upcoming_meeting_groups.each do |group| %>
+      <%= render "meeting_week_group", group: group %>
+    <% end %>
+  <% else %>
+    <div class="empty-state">
+      <p class="mb-0">No upcoming meetings scheduled.</p>
     </div>
+  <% end %>
+</section>
 
-    <div class="card-grid">
-      <% @recent_meetings.each do |meeting| %>
-        <%= link_to meeting_path(meeting), class: "card card--clickable", style: "text-decoration: none; color: inherit;" do %>
-          <div class="card-header">
-            <h3 class="card-title"><%= meeting.body_name %></h3>
-            <div class="card-subtitle">
-              <%= meeting.starts_at&.strftime("%B %d, %Y") %>
-            </div>
-          </div>
-          <div class="card-body">
-            <span class="badge <%= meeting.status == 'minutes_posted' ? 'badge--success' : 'badge--default' %>">
-              <%= meeting.status.titleize %>
-            </span>
-            <% if meeting.meeting_summaries.any? %>
-              <span class="badge badge--primary">Summary available</span>
-            <% end %>
-            <% if meeting.motions.any? %>
-              <span class="badge badge--default"><%= meeting.motions.count %> votes</span>
-            <% end %>
-          </div>
-        <% end %>
-      <% end %>
-    </div>
-  </section>
-<% end %>
+<%# === Recently Completed === %>
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title">Recently Completed</h2>
+    <span class="section-time-badge">Past 14 days</span>
+  </div>
 
-<% if @recent_topics.any? %>
-  <section class="section">
-    <div class="section-header">
-      <h2 class="section-title">Popular Topics</h2>
-      <%= link_to "View all topics", topics_path, class: "btn btn--ghost" %>
+  <% if @recent_meeting_groups.any? %>
+    <% @recent_meeting_groups.each do |group| %>
+      <%= render "meeting_week_group", group: group %>
+    <% end %>
+  <% else %>
+    <div class="empty-state">
+      <p class="mb-0">No recent meetings.</p>
     </div>
+  <% end %>
 
-    <div class="tags">
-      <% @recent_topics.each do |topic| %>
-        <%= link_to topic_path(topic), class: "tag" do %>
-          <%= topic.name %>
-          <span class="text-muted">(<%= topic.agenda_items.count %>)</span>
-        <% end %>
-      <% end %>
-    </div>
-  </section>
-<% end %>
+  <div class="mt-6">
+    <%= link_to meetings_path, class: "btn btn--secondary" do %>
+      Search all meetings &#8594;
+    <% end %>
+  </div>
+</section>

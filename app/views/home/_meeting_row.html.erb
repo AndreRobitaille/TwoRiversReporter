@@ -1,0 +1,43 @@
+<tr>
+  <td>
+    <strong><%= meeting.starts_at&.strftime("%b %-d") %></strong>
+    <div class="text-muted text-sm"><%= meeting.starts_at&.strftime("%l:%M %p") %></div>
+  </td>
+  <td><%= meeting.body_name %></td>
+  <td>
+    <% topics = meeting.agenda_items.flat_map(&:topics).uniq %>
+    <% if topics.any? %>
+      <div class="flex flex-wrap gap-1">
+        <% topics.first(3).each do |topic| %>
+          <%= link_to topic.name, topic_path(topic), class: "tag tag--topic" %>
+        <% end %>
+        <% if topics.size > 3 %>
+          <span class="text-muted text-xs">+<%= topics.size - 3 %> more</span>
+        <% end %>
+      </div>
+    <% else %>
+      <span class="text-muted text-sm">No topics yet</span>
+    <% end %>
+  </td>
+  <td>
+    <div class="flex gap-2 flex-wrap">
+      <% case meeting.document_status %>
+      <% when :minutes %>
+        <span class="badge badge--success">Minutes</span>
+      <% when :packet %>
+        <span class="badge badge--primary">Packet</span>
+      <% when :agenda %>
+        <span class="badge badge--primary">Agenda</span>
+      <% end %>
+      <% if meeting.meeting_summaries.any? %>
+        <span class="badge badge--primary">Summary</span>
+      <% end %>
+      <% if meeting.motions.any? %>
+        <span class="badge badge--default"><%= meeting.motions.size %> votes</span>
+      <% end %>
+    </div>
+  </td>
+  <td class="text-right">
+    <%= link_to "View", meeting_path(meeting), class: "btn btn--secondary btn--sm" %>
+  </td>
+</tr>

@@ -1,0 +1,22 @@
+<div class="week-group">
+  <h3 class="week-group__label"><%= group[:label] %></h3>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Body</th>
+          <th>Topics</th>
+          <th>Info</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% group[:meetings].each do |meeting| %>
+          <%= render "meeting_row", meeting: meeting %>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
