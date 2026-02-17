@@ -81,6 +81,14 @@ module Ai
 
     def extract_topics(items_text)
       prompt = <<~PROMPT
+        <governance_constraints>
+        - Topics are long-lived civic concerns that may span multiple meetings, bodies, and extended periods.
+        - Prefer agenda items as structural anchors for topic detection.
+        - Distinguish routine procedural items from substantive civic issues.
+        - If confidence in topic classification is low, set confidence below 0.5 and classify as "Other".
+        - Do not infer motive or speculate about intent behind agenda item placement or wording.
+        </governance_constraints>
+
         <extraction_spec>
         Classify agenda items into high-level topics.
 
@@ -94,12 +102,16 @@ module Ai
             {
               "id": 123,
               "category": "Infrastructure|Public Safety|Parks & Rec|Finance|Zoning|Licensing|Personnel|Governance|Other|Administrative",
-              "tags": ["Tag1", "Tag2"]
+              "tags": ["Tag1", "Tag2"],
+              "confidence": 0.9
             }
           ]
         }
-        </extraction_spec>
 
+        - "confidence" must be between 0.0 and 1.0.
+        - Use high confidence (>= 0.8) for clear, unambiguous civic topics.
+        - Use low confidence (< 0.5) for items where the topic is unclear or could be procedural.
+        </extraction_spec>
 
         Text:
         #{items_text.truncate(50000)}
@@ -363,9 +375,16 @@ module Ai
       system_role = "You are an investigative civic data analyst. Your goal is to deeply analyze meeting documents to identify what matters most to residents."
 
       prompt = <<~PROMPT
-        Analyzes the provided #{type} text and return a JSON analysis plan.
+        Analyze the provided #{type} text and return a JSON analysis plan.
 
         #{kb_context}
+
+        <governance_constraints>
+        - Do not assign motive or speculate about intent.
+        - Treat staff summaries, agenda item titles, and recommended actions as institutional framing, not neutral truth.
+        - Decision hinges must be factual gaps (e.g. "Maintenance cost source not specified"), not editorial judgments.
+        - Describe what is observable. Do not editorialize.
+        </governance_constraints>
 
         <long_context_handling>
         - The document text below may be long.
@@ -394,6 +413,9 @@ module Ai
           "other_topics": [
             { "title": "Topic Name", "summary": "Very brief summary." }
           ],
+          "framing_notes": [
+            "Observation about how the city presents or frames an issue (e.g. staff summary language, recommended action wording)."
+          ],
           "public_comments": [
             { "speaker": "Name", "summary": "What they said (Address redacted)." }
           ],
@@ -407,8 +429,8 @@ module Ai
         </extraction_spec>
 
         <investigative_guidelines>
-        - Look for what is *not* said. Glossed-over costs? indefinite timelines?
-        - "Decision Hinges" must be factual gaps (e.g. "Maintenance cost source not specified").
+        - Note costs, timelines, or details that are not explicitly stated in the document.
+        - "Decision Hinges" must be factual gaps, not speculation about why information is missing.
         - Redact all residential addresses in public comments: "[Address redacted]".
         </investigative_guidelines>
       PROMPT
@@ -458,6 +480,9 @@ module Ai
         ## Other Topics (Brief)
         (Bulleted list of 'other_topics'.)
 
+        ## Institutional Framing
+        (If 'framing_notes' exist, render as a bulleted list. These are observations about how the city presents or frames issues — not neutral facts. Omit this section if empty.)
+
         ## Public Comment
         (Summarize 'public_comments'. Redact addresses.)
 
@@ -472,7 +497,8 @@ module Ai
         </structure_enforcement>
 
         <uncertainty_and_ambiguity>
-        - Do not speculate.
+        - Do not speculate. Do not assign motive or infer intent. Describe what is observable.
+        - Treat staff recommendations and agenda titles as institutional framing, not neutral description.
         - If a detail is missing in the JSON plan, do not invent it.
         - Use "Not specified" for missing data.
         </uncertainty_and_ambiguity>

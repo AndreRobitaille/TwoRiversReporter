@@ -198,9 +198,10 @@ module Admin
     private
 
     def sort_topics(topics)
-      params[:sort] = "last_seen_at" if params[:sort].blank?
+      default_sort = params[:review_status] == "proposed" ? "created_at" : "last_seen_at"
+      params[:sort] = default_sort if params[:sort].blank?
       params[:direction] = "desc" if params[:direction].blank?
-      column = %w[name status importance last_seen_at last_activity_at mentions_count].include?(params[:sort]) ? params[:sort] : "last_seen_at"
+      column = %w[name status importance last_seen_at last_activity_at created_at mentions_count].include?(params[:sort]) ? params[:sort] : default_sort
       direction = %w[asc desc].include?(params[:direction]) ? params[:direction] : "desc"
 
       if column == "mentions_count"

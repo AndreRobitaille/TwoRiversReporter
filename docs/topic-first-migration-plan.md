@@ -49,6 +49,8 @@ This is a living note for future actions, not an implementation log.
 1) [x] AI extraction creates proposals only (review_status = proposed).
 2) [x] Admin queue for review/merge/approve/block.
 3) [x] Blocklist and alias resolution run before proposal creation.
+4) [x] Review queue defaults to `created_at DESC` for proposed topics (surfaces new extractions above backlog).
+5) [x] "New" badge on recently created topics; sortable "Created" column in admin table.
 
 ### Phase 3: Continuity Signals
 1) [x] Derive lifecycle status from agenda anchors and resolution evidence.
@@ -59,6 +61,7 @@ This is a living note for future actions, not an implementation log.
 1) [x] Topic-aware summaries with fact/framing/sentiment separation.
 2) [x] Citations required for factual claims.
 3) [x] Retrieval uses topic history and caps context size.
+4) [x] LLM prompt governance audit: `extract_topics`, `analyze_meeting_content`, and `render_meeting_summary` aligned with TOPIC_GOVERNANCE.md (confidence scoring, anti-speculation, framing separation).
 
 ### Phase 5: UI + Navigation
 1) [x] Topics index grouped by lifecycle status.

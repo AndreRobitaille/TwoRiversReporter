@@ -26,10 +26,15 @@ class ExtractTopicsJob < ApplicationJob
         item_id = c_data["id"]
         category = c_data["category"]
         tags = c_data["tags"] || []
+        confidence = c_data["confidence"]&.to_f
 
         # Find item
         item = AgendaItem.find_by(id: item_id)
         next unless item
+
+        if confidence && confidence < 0.5
+          Rails.logger.warn "Low-confidence topic classification (#{confidence}) for AgendaItem #{item_id}: category=#{category}, tags=#{tags.inspect}"
+        end
 
         # Create topics
         all_topics = [ category ] + tags
