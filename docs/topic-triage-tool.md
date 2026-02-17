@@ -18,7 +18,18 @@ Default behavior:
 - Review-only (no changes) unless `apply: true` and `dry_run: false`.
 - Uses OpenAI by default; Gemini is opt-in.
 
-## Run commands
+## Automatic triage after scraper runs
+
+`Topics::AutoTriageJob` runs automatically after topic extraction. Each
+`ExtractTopicsJob` enqueues it with a 3-minute delay so extraction jobs
+from the same scraper run complete first. The job is idempotent — multiple
+enqueues are safe.
+
+Auto-triage uses `min_confidence: 0.9` and applies changes directly.
+Topics below the confidence threshold remain in the review queue for
+manual review.
+
+## Manual run commands
 Dry run (no changes):
 ```
 bin/rails runner "Topics::TriageTool.call"
@@ -57,5 +68,8 @@ Gemini (opt-in):
 - Leaves ambiguous items untouched.
 
 ## Notes
-- This tool is intended for cleanup during development; revisit or remove
-  once a stable human review workflow is in place.
+- Auto-triage handles the high-confidence bulk work (procedural blocks,
+  obvious merges, clear approvals). The admin review queue is for
+  everything the AI is uncertain about.
+- Manual runs are still useful for one-off cleanup or adjusting the
+  confidence threshold.

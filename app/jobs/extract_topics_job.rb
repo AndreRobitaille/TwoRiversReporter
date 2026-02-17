@@ -55,6 +55,10 @@ class ExtractTopicsJob < ApplicationJob
 
       Rails.logger.info "Tagged #{classifications.size} items for Meeting #{meeting_id}"
 
+      # Schedule auto-triage with delay so extraction jobs from the same scraper run
+      # complete before triage fires. Multiple enqueues are safe — the job is idempotent.
+      Topics::AutoTriageJob.set(wait: 3.minutes).perform_later
+
     rescue JSON::ParserError => e
       Rails.logger.error "Failed to parse topics JSON for Meeting #{meeting_id}: #{e.message}"
     end
