@@ -36,7 +36,8 @@ class ExtractVotesJob < ApplicationJob
           member = Member.find_or_create_by!(name: name)
 
           # Validate value is allowed (yes/no/abstain/absent/recused)
-          val = v_data["value"].downcase
+          val = v_data["value"]&.downcase
+          next if val.blank?
           unless %w[yes no abstain absent recused].include?(val)
             val = "abstain" # Fallback or handle error? Let's default to abstain if unclear, or skip?
             # Creating with invalid value will raise validation error.

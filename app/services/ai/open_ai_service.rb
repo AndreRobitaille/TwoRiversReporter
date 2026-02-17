@@ -90,7 +90,7 @@ module Ai
         </governance_constraints>
 
         <extraction_spec>
-        Classify agenda items into high-level topics.
+        Classify agenda items into high-level topics. Return JSON matching the schema below.
 
         - Ignore "Minutes of Meetings" items if they refer to *previous* meetings (e.g. "Approve minutes of X"). Classify these as "Administrative".
         - Do NOT extract topics from the titles of previous meeting minutes (e.g. if item is "Minutes of Public Works", do not tag "Public Works").

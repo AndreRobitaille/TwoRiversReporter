@@ -36,8 +36,11 @@ class ExtractTopicsJob < ApplicationJob
           Rails.logger.warn "Low-confidence topic classification (#{confidence}) for AgendaItem #{item_id}: category=#{category}, tags=#{tags.inspect}"
         end
 
-        # Create topics
-        all_topics = [ category ] + tags
+        # Skip administrative/procedural items entirely — they don't produce substantive topics
+        next if category == "Administrative"
+
+        # Create topics from tags only (category is a broad grouping, not a topic)
+        all_topics = tags
         all_topics.each do |topic_name|
           next if topic_name.blank?
 
