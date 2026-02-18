@@ -13,7 +13,7 @@ module Topics
       Topics::TriageTool.call(
         apply: true,
         dry_run: false,
-        min_confidence: 0.9,
+        min_confidence: Topics::TriageTool::DEFAULT_MIN_CONFIDENCE,
         max_topics: 50
       )
     end

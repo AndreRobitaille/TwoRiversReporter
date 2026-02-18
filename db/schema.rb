@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_18_031350) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_18_043318) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -399,11 +399,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_18_031350) do
 
   create_table "topic_review_events", force: :cascade do |t|
     t.string "action", null: false
+    t.boolean "automated", default: false, null: false
+    t.float "confidence"
     t.datetime "created_at", null: false
     t.text "reason"
     t.bigint "topic_id", null: false
     t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
+    t.bigint "user_id"
     t.index ["created_at"], name: "index_topic_review_events_on_created_at"
     t.index ["topic_id", "created_at"], name: "index_topic_review_events_on_topic_id_and_created_at"
     t.index ["topic_id"], name: "index_topic_review_events_on_topic_id"

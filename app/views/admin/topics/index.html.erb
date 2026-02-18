@@ -13,7 +13,7 @@
   <% review_active = params[:review_status] == "proposed" %>
   <% approved_active = params[:review_status] == "approved" %>
   <% blocked_active = params[:review_status] == "blocked" %>
-  <% all_active = params[:review_status].blank? && params[:status].blank? %>
+  <% all_active = params[:review_status].blank? && params[:status].blank? && params[:view].blank? %>
 
   <div class="flex items-center justify-between flex-wrap gap-4">
     <div>
@@ -23,6 +23,7 @@
         <%= link_to "2. Approved", admin_topics_path(review_status: "approved"), class: "btn #{approved_active ? 'btn--primary' : 'btn--secondary'}" %>
         <%= link_to "3. Blocked", admin_topics_path(review_status: "blocked"), class: "btn #{blocked_active ? 'btn--primary' : 'btn--secondary'}" %>
         <%= link_to "All Topics", admin_topics_path, class: "btn #{all_active ? 'btn--primary' : 'btn--secondary'}" %>
+        <%= link_to "AI Decisions", admin_topics_path(view: "ai_decisions"), class: "btn #{params[:view] == 'ai_decisions' ? 'btn--primary' : 'btn--secondary'}" %>
       </div>
     </div>
     <div class="flex gap-2">
@@ -48,6 +49,9 @@
   <% end %>
 </div>
 
+<% if params[:view] == "ai_decisions" %>
+  <%= render "ai_decisions" %>
+<% else %>
 <%= form_with url: bulk_update_admin_topics_path, method: :post, local: true, data: { turbo: false } do |f| %>
   <div class="mb-4 flex gap-2 flex-wrap items-center hidden" id="bulk-actions">
     <div class="flex items-center gap-2">
@@ -120,6 +124,7 @@
       <% end %>
     </div>
   </div>
+<% end %>
 <% end %>
 
 <%= render "merge_modal" %>

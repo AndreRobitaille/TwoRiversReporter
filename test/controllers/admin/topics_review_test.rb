@@ -59,6 +59,26 @@ module Admin
       assert_equal "blocked", event.action
     end
 
+    test "blocking a topic adds its name to blocklist" do
+      topic = Topic.create!(name: "Public Comment Period", status: "proposed", review_status: "proposed")
+
+      assert_difference "TopicBlocklist.count" do
+        post block_admin_topic_url(topic)
+      end
+
+      assert TopicBlocklist.exists?(name: "public comment period"),
+        "Blocked topic name should be added to blocklist"
+    end
+
+    test "blocking a topic does not duplicate existing blocklist entry" do
+      topic = Topic.create!(name: "Duplicate Entry", status: "proposed", review_status: "proposed")
+      TopicBlocklist.create!(name: "duplicate entry")
+
+      assert_no_difference "TopicBlocklist.count" do
+        post block_admin_topic_url(topic)
+      end
+    end
+
     test "should mark approved topic as needs review" do
       assert_difference "TopicReviewEvent.count", 1 do
         post needs_review_admin_topic_url(@approved_topic)
