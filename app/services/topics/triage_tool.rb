@@ -167,7 +167,7 @@ module Topics
           next if source_topic.id == target_topic.id
 
           merge_topics!(source_topic, target_topic)
-          record_review_event(user, target_topic, "merged", merge_reason(merge))
+          record_review_event(user, target_topic, "merged", merge_reason(merge), confidence: confidence)
           append_log("merge source=#{source_topic.id} target=#{target_topic.id} confidence=#{confidence} rationale=#{merge["rationale"]}")
         end
       end
@@ -186,7 +186,7 @@ module Topics
         next if topic.status == "approved"
 
         topic.update!(status: "approved", review_status: "approved")
-        record_review_event(user, topic, "approved", approval_reason(approval))
+        record_review_event(user, topic, "approved", approval_reason(approval), confidence: confidence)
         append_log("approve topic=#{topic.id} confidence=#{confidence} rationale=#{approval["rationale"]}")
       end
     end
@@ -204,7 +204,7 @@ module Topics
         next if topic.status == "blocked"
 
         topic.update!(status: "blocked", review_status: "blocked")
-        record_review_event(user, topic, "blocked", block_reason(block))
+        record_review_event(user, topic, "blocked", block_reason(block), confidence: confidence)
         append_log("block topic=#{topic.id} confidence=#{confidence} rationale=#{block["rationale"]}")
       end
     end
@@ -244,14 +244,14 @@ module Topics
       rationale.present? ? "#{base}: #{rationale}" : base
     end
 
-    def record_review_event(user, topic, action, reason)
-      return unless user
-
+    def record_review_event(user, topic, action, reason, confidence: nil)
       TopicReviewEvent.create!(
         topic: topic,
         user: user,
         action: action,
-        reason: reason
+        reason: reason,
+        automated: user.nil?,
+        confidence: confidence
       )
     end
 
