@@ -17,6 +17,11 @@ class Topic < ApplicationRecord
   validates :slug, uniqueness: true, allow_nil: true
 
   validates :importance, numericality: { only_integer: true, greater_than_or_equal_to: 0, less_than_or_equal_to: 10 }, allow_nil: true
+  validates :resident_impact_score, numericality: {
+    only_integer: true,
+    greater_than_or_equal_to: 1,
+    less_than_or_equal_to: 5
+  }, allow_nil: true
 
   store_accessor :resident_reported_context, :source_type, :source_notes, :added_by, :added_at
 
@@ -42,9 +47,22 @@ class Topic < ApplicationRecord
 
   before_validation :maintain_derived_fields
 
+  RESIDENT_IMPACT_OVERRIDE_WINDOW = 180.days
+
   def self.normalize_name(name)
     return nil if name.blank?
     name.strip.downcase.gsub(/[[:punct:]]/, "").squish
+  end
+
+  def resident_impact_admin_locked?
+    resident_impact_overridden_at.present? &&
+      resident_impact_overridden_at > RESIDENT_IMPACT_OVERRIDE_WINDOW.ago
+  end
+
+  def update_resident_impact_from_ai(score)
+    return if resident_impact_admin_locked?
+
+    update(resident_impact_score: score)
   end
 
   private

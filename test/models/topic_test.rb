@@ -65,4 +65,65 @@ class TopicTest < ActiveSupport::TestCase
     assert_not_nil topic.last_seen_at
     assert_equal "active", topic.lifecycle_status
   end
+
+  test "validates resident_impact_score range 1-5" do
+    topic = Topic.new(name: "Test", status: "proposed", resident_impact_score: 6)
+    assert_not topic.valid?
+    assert_includes topic.errors[:resident_impact_score], "must be less than or equal to 5"
+
+    topic.resident_impact_score = 0
+    assert_not topic.valid?
+    assert_includes topic.errors[:resident_impact_score], "must be greater than or equal to 1"
+
+    topic.resident_impact_score = 3
+    assert topic.valid?
+  end
+
+  test "allows nil resident_impact_score" do
+    topic = Topic.new(name: "Test", status: "proposed", resident_impact_score: nil)
+    assert topic.valid?
+  end
+
+  test "resident_impact_admin_locked? returns true within 180 days" do
+    topic = Topic.create!(name: "Test Lock True", status: "proposed",
+      resident_impact_score: 4,
+      resident_impact_overridden_at: 10.days.ago)
+    assert topic.resident_impact_admin_locked?
+  end
+
+  test "resident_impact_admin_locked? returns false after 180 days" do
+    topic = Topic.create!(name: "Test Lock Expired", status: "proposed",
+      resident_impact_score: 4,
+      resident_impact_overridden_at: 181.days.ago)
+    assert_not topic.resident_impact_admin_locked?
+  end
+
+  test "resident_impact_admin_locked? returns false when no override" do
+    topic = Topic.create!(name: "Test Lock Nil", status: "proposed", resident_impact_score: 3)
+    assert_not topic.resident_impact_admin_locked?
+  end
+
+  test "update_resident_impact_from_ai skips when admin locked" do
+    topic = Topic.create!(name: "Test AI Skip", status: "proposed",
+      resident_impact_score: 5,
+      resident_impact_overridden_at: 10.days.ago)
+    topic.update_resident_impact_from_ai(2)
+    assert_equal 5, topic.reload.resident_impact_score
+  end
+
+  test "update_resident_impact_from_ai updates when not locked" do
+    topic = Topic.create!(name: "Test AI Update", status: "proposed",
+      resident_impact_score: 2,
+      resident_impact_overridden_at: nil)
+    topic.update_resident_impact_from_ai(4)
+    assert_equal 4, topic.reload.resident_impact_score
+  end
+
+  test "update_resident_impact_from_ai updates when override expired" do
+    topic = Topic.create!(name: "Test AI Expired", status: "proposed",
+      resident_impact_score: 5,
+      resident_impact_overridden_at: 200.days.ago)
+    topic.update_resident_impact_from_ai(3)
+    assert_equal 3, topic.reload.resident_impact_score
+  end
 end
