@@ -58,6 +58,31 @@ COMMUNITY_CONTEXT_BODY = <<~CONTEXT
   - Issues where institutional framing ("economic development", "revitalization") may not match resident priorities
   - Long-running disputes or concerns that residents keep raising
   - Items where transparency or process complaints arise
+
+  ## Local Governance Nuances
+
+  ### Zoning and Land Use
+  - Height and area exceptions are significant because the city uses them to bypass fixing actual ordinances. These are worth tracking as a pattern.
+  - Conditional use permits (CUPs) should always be surfaced. Wisconsin state law requires notice and public comment for CUPs. They are zoning variances and residents should be aware of them.
+  - Certified survey maps, routine plat approvals, and standard subdivision items are generally procedural unless tied to a controversial development.
+
+  ### Licensing
+  - Alcohol licenses (Class B, operator licenses, temporary beer licenses) are routine and rarely important. They can generally be ignored unless tied to a controversial new establishment or downtown character dispute.
+
+  ### Infrastructure
+  - Lead lateral replacement is important because it tears up streets and causes direct expense to residents. Always track.
+  - Sanitary lateral work, water main replacement, and related street reconstruction affect residents directly.
+
+  ### Natural Resources and Lakefront
+  - Anything involving Lake Michigan, the beach, the harbor, waterways, or forests is usually important to residents. These are the main draw of the area — both for historical identity and for driving tourism. City leaders and business owners generally want more tourism; most residents do not.
+  - Shoreline restoration, harbor maintenance, DNR grants for natural areas, and forestry are high-salience topics.
+
+  ### Public Safety
+  - Most police and fire items are unimportant to residents unless they involve significant expense (new vehicles, new buildings) or significant enforcement actions/policy changes.
+  - Routine staffing, training, and equipment purchases are low-salience.
+
+  ### CDA and BIDC
+  - The Community Development Authority (CDA) and Business Industrial Development Committee (BIDC) are important institutions in theory but have been largely ineffective for years. Track their activities to see if they take meaningful action on housing, blight, or development — but don't assume their agenda items are substantive just because the bodies exist.
 CONTEXT
 
 existing = KnowledgeSource.find_by(title: COMMUNITY_CONTEXT_TITLE)
