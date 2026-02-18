@@ -224,6 +224,23 @@ module Ai
         - Always preserve the label "Resident-reported (no official record)".
         </resident_reported_rules>
 
+        <headline_rules>
+        - Write one plain-language sentence that a Two Rivers resident would understand without context.
+        - Focus on what happened or what is coming, not on committee process or institutional mechanics.
+        - Be specific: "Council approves $2.1M senior center contract in 5-2 vote" not "Senior center topic discussed."
+        </headline_rules>
+
+        <resident_impact_rules>
+        - Score resident impact 1-5 based on how directly this affects the daily lives, property, finances, community identity, or public services of Two Rivers residents.
+        - 1: Routine procedural item, no direct resident impact.
+        - 2: Minor administrative matter with indirect effects.
+        - 3: Moderate impact — affects a specific group or neighborhood.
+        - 4: Significant impact — affects most residents (taxes, major infrastructure, services).
+        - 5: Major impact — community-wide financial, identity, or quality-of-life change.
+        - Consider: public comment volume, financial impact on residents, physical changes to the community, threats to community identity or services, and whether residents have expressed concern.
+        - Two Rivers is a small post-industrial city. Residents care about property taxes, development changes, community services, and whether their leaders are listening.
+        </resident_impact_rules>
+
         <extraction_spec>
         Return a JSON object matching this schema exactly.
 
@@ -248,7 +265,12 @@ module Ai
           ],
           "decision_hinges": ["Unknowns or key dependencies"],
           "ambiguities": ["Conflicting info"],
-          "verification_notes": ["What to check"]
+          "verification_notes": ["What to check"],
+          "headline": "One plain-language sentence a resident would understand without context. Focus on what happened or what is coming, not on committee process.",
+          "resident_impact": {
+            "score": 3,
+            "rationale": "Brief explanation of why this matters to Two Rivers residents"
+          }
         }
         </extraction_spec>
       PROMPT
