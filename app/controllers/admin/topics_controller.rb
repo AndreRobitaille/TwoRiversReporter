@@ -4,6 +4,15 @@ module Admin
 
     def index
       @preview_window = helpers.preview_window_from_params(params)
+
+      if params[:view] == "ai_decisions"
+        @ai_events = TopicReviewEvent.automated
+                                     .recent
+                                     .includes(:topic)
+                                     .order(created_at: :desc)
+        return render :index
+      end
+
       @topics = Topic.all
 
       if params[:status].present?

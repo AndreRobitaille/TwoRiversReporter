@@ -1,0 +1,57 @@
+<div class="card">
+  <h2 class="text-lg font-bold mb-4">Recent AI Decisions (Last 7 Days)</h2>
+
+  <% if @ai_events&.any? %>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Topic</th>
+            <th>Action</th>
+            <th>Confidence</th>
+            <th>Rationale</th>
+            <th class="text-right">Undo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @ai_events.each do |event| %>
+            <% next unless event.topic %>
+            <tr>
+              <td class="text-sm"><%= event.created_at.strftime("%b %d, %H:%M") %></td>
+              <td>
+                <%= link_to event.topic.name, admin_topic_path(event.topic) %>
+              </td>
+              <td>
+                <% badge_class = case event.action
+                   when "approved" then "badge--success"
+                   when "blocked" then "badge--danger"
+                   when "merged" then "badge--info"
+                   else "badge--default"
+                end %>
+                <span class="badge <%= badge_class %>"><%= event.action.capitalize %></span>
+              </td>
+              <td class="text-sm">
+                <% if event.confidence %>
+                  <%= (event.confidence * 100).round %>%
+                <% else %>
+                  &mdash;
+                <% end %>
+              </td>
+              <td class="text-sm text-secondary"><%= truncate(event.reason.to_s, length: 80) %></td>
+              <td class="text-right">
+                <% if event.action == "approved" %>
+                  <%= button_to "Block", block_admin_topic_path(event.topic), method: :post, class: "btn btn--danger btn--sm" %>
+                <% elsif event.action == "blocked" %>
+                  <%= button_to "Approve", approve_admin_topic_path(event.topic), method: :post, class: "btn btn--success btn--sm" %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="text-secondary">No automated decisions in the last 7 days.</p>
+  <% end %>
+</div>
