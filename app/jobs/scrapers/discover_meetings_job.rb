@@ -7,8 +7,6 @@ module Scrapers
     def perform(since: nil)
       agent = Mechanize.new
       agent.user_agent_alias = "Mac Safari"
-      agent.verify_mode = OpenSSL::SSL::VERIFY_NONE # For resilience against bad certs/configs
-
       page = agent.get(MEETINGS_URL)
 
       loop do

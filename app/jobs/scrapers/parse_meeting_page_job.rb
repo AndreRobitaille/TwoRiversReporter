@@ -7,8 +7,6 @@ module Scrapers
 
       agent = Mechanize.new
       agent.user_agent_alias = "Mac Safari"
-      agent.verify_mode = OpenSSL::SSL::VERIFY_NONE
-
       begin
         page = agent.get(meeting.detail_page_url)
       rescue Mechanize::ResponseCodeError => e

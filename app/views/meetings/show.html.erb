@@ -22,7 +22,7 @@
   <div class="meeting-meta-item">
     <span class="meeting-meta-label">Original Source</span>
     <span class="meeting-meta-value">
-      <%= link_to "View on City Website", @meeting.detail_page_url, target: "_blank", rel: "noopener" %>
+      <%= link_to "View on City Website", safe_external_url(@meeting.detail_page_url), target: "_blank", rel: "noopener" %>
     </span>
   </div>
 </div>
@@ -196,7 +196,7 @@
               <% if doc.file.attached? && doc.document_type.include?("pdf") %>
                 <%= link_to "Download PDF", rails_blob_path(doc.file, disposition: "attachment"), class: "btn btn--secondary btn--sm" %>
               <% else %>
-                <%= link_to "View Original", doc.source_url, target: "_blank", rel: "noopener", class: "btn btn--secondary btn--sm" %>
+                <%= link_to "View Original", safe_external_url(doc.source_url), target: "_blank", rel: "noopener", class: "btn btn--secondary btn--sm" %>
               <% end %>
             </div>
           </li>

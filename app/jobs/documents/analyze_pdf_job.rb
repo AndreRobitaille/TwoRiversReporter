@@ -1,3 +1,5 @@
+require "open3"
+
 module Documents
   class AnalyzePdfJob < ApplicationJob
     queue_as :default
@@ -10,8 +12,8 @@ module Documents
         path = file.path
 
         # 1. Get Page Count via pdfinfo
-        pdf_info = `pdfinfo "#{path}" 2>&1`
-        if $?.success?
+        pdf_info, status = Open3.capture2e("pdfinfo", path)
+        if status.success?
           page_count = pdf_info[/^Pages:\s+(\d+)$/, 1].to_i
         else
           Rails.logger.warn "pdfinfo failed for #{document_id}"
@@ -21,7 +23,7 @@ module Documents
         # 2. Extract Text via pdftotext
         # Output to stdout (-)
         # We split by Form Feed (\f) to separate pages
-        raw_full_text = `pdftotext "#{path}" - 2>/dev/null`
+        raw_full_text, _, _ = Open3.capture3("pdftotext", path, "-")
 
         # Clear existing extractions to be idempotent
         document.extractions.destroy_all

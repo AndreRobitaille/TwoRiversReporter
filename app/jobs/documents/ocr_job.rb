@@ -1,3 +1,5 @@
+require "open3"
+
 module Documents
   class OcrJob < ApplicationJob
     queue_as :default
@@ -35,7 +37,7 @@ module Documents
 
           # Run Tesseract
           # tesseract image.png stdout
-          text = `tesseract "#{image_path}" stdout 2>/dev/null`
+          text, _, _ = Open3.capture3("tesseract", image_path, "stdout")
 
           clean_text = text.scan(/\S+/).reject { |w| w.length > 250 }.join(" ")
 

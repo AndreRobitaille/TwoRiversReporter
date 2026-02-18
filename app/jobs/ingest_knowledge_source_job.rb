@@ -1,3 +1,5 @@
+require "open3"
+
 class IngestKnowledgeSourceJob < ApplicationJob
   queue_as :default
 
@@ -43,7 +45,8 @@ class IngestKnowledgeSourceJob < ApplicationJob
 
     source.file.open do |file|
       # Use pdftotext (same as AnalyzePdfJob)
-      `pdftotext "#{file.path}" - 2>/dev/null`
+      stdout, _, _ = Open3.capture3("pdftotext", file.path, "-")
+      stdout
     end
   end
 

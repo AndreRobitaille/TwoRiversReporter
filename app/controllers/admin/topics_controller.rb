@@ -209,7 +209,7 @@ module Admin
               .group(:id)
               .order(Arel.sql("COUNT(agenda_items.id) #{direction}"))
       else
-        topics.order("#{column} #{direction}")
+        topics.order(column => direction)
       end
     end
 

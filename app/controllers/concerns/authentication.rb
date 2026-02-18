@@ -35,7 +35,13 @@ module Authentication
     end
 
     def after_authentication_url
-      session.delete(:return_to_after_authenticating) || admin_root_url
+      url = session.delete(:return_to_after_authenticating)
+      return admin_root_url unless url
+
+      uri = URI.parse(url)
+      (uri.host.nil? || uri.host == request.host) ? url : admin_root_url
+    rescue URI::InvalidURIError
+      admin_root_url
     end
 
     def start_new_session_for(user)
