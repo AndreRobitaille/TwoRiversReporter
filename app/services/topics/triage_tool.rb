@@ -1,6 +1,11 @@
 module Topics
   class TriageTool
-    DEFAULT_MIN_CONFIDENCE = 0.85
+    DEFAULT_MIN_CONFIDENCE = {
+      block: 0.7,
+      merge: 0.75,
+      approve: 0.8,
+      approve_novel: 0.9
+    }.freeze
     DEFAULT_SIMILARITY_THRESHOLD = 0.75
     DEFAULT_MAX_TOPICS = 200
     DEFAULT_AGENDA_ITEM_LIMIT = 5
@@ -39,7 +44,7 @@ module Topics
     def initialize(apply:, dry_run:, min_confidence:, max_topics:, similarity_threshold:, agenda_item_limit:, user_id:, user_email:)
       @apply = apply
       @dry_run = dry_run
-      @min_confidence = min_confidence
+      @min_confidence = normalize_confidence(min_confidence)
       @max_topics = max_topics
       @similarity_threshold = similarity_threshold
       @agenda_item_limit = agenda_item_limit
@@ -152,7 +157,7 @@ module Topics
     def apply_merges(merges, user)
       merges.each do |merge|
         confidence = merge["confidence"].to_f
-        next if confidence < @min_confidence
+        next if confidence < confidence_threshold_for(:merge)
 
         canonical = merge["canonical"].to_s
         aliases = Array(merge["aliases"])
@@ -176,7 +181,7 @@ module Topics
     def apply_approvals(approvals, user)
       approvals.each do |approval|
         confidence = approval["confidence"].to_f
-        next if confidence < @min_confidence
+        next if confidence < confidence_threshold_for(:approve)
 
         topic_name = approval["topic"].to_s
         next if topic_name.blank?
@@ -194,7 +199,7 @@ module Topics
     def apply_blocks(blocks, user)
       blocks.each do |block|
         confidence = block["confidence"].to_f
-        next if confidence < @min_confidence
+        next if confidence < confidence_threshold_for(:block)
 
         topic_name = block["topic"].to_s
         next if topic_name.blank?
@@ -253,6 +258,18 @@ module Topics
         automated: user.nil?,
         confidence: confidence
       )
+    end
+
+    def normalize_confidence(conf)
+      if conf.is_a?(Hash)
+        conf.symbolize_keys
+      else
+        { block: conf, merge: conf, approve: conf, approve_novel: conf }
+      end
+    end
+
+    def confidence_threshold_for(action)
+      @min_confidence[action] || @min_confidence[:approve]
     end
 
     def append_log(message)
