@@ -97,6 +97,7 @@ module Admin
     def block
       @topic.update(status: "blocked", review_status: "blocked")
       record_review_event(@topic, "blocked")
+      expand_blocklist(@topic.name)
       render_turbo_update("Topic blocked.")
     end
 
@@ -256,6 +257,22 @@ module Admin
           reason: reason
         )
       end
+    end
+
+    def expand_blocklist(blocked_name)
+      normalized = Topic.normalize_name(blocked_name)
+      TopicBlocklist.find_or_create_by(name: normalized)
+
+      # Add similar variants via pg_trgm
+      Topic.similar_to(blocked_name, 0.8)
+           .where(status: "blocked")
+           .where.not(name: normalized)
+           .pluck(:name)
+           .each do |variant|
+        TopicBlocklist.find_or_create_by(name: variant)
+      end
+    rescue => e
+      Rails.logger.warn "Blocklist expansion failed for '#{blocked_name}': #{e.message}"
     end
 
     def topic_params
