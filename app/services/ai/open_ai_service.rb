@@ -79,7 +79,19 @@ module Ai
       response.dig("choices", 0, "message", "content")
     end
 
-    def extract_topics(items_text)
+    def extract_topics(items_text, community_context: "", existing_topics: [])
+      existing_topics_text = if existing_topics.any?
+        "\n<existing_topics>\nThese topics already exist in the system. Prefer tagging items to these existing topics rather than creating new similar names:\n#{existing_topics.join("\n")}\n</existing_topics>\n"
+      else
+        ""
+      end
+
+      community_context_text = if community_context.present?
+        "\n<community_context>\n#{community_context}\n</community_context>\n"
+      else
+        ""
+      end
+
       prompt = <<~PROMPT
         <governance_constraints>
         - Topics are long-lived civic concerns that may span multiple meetings, bodies, and extended periods.
@@ -88,27 +100,33 @@ module Ai
         - If confidence in topic classification is low, set confidence below 0.5 and classify as "Other".
         - Do not infer motive or speculate about intent behind agenda item placement or wording.
         </governance_constraints>
-
+        #{community_context_text}
+        #{existing_topics_text}
         <extraction_spec>
         Classify agenda items into high-level topics. Return JSON matching the schema below.
 
         - Ignore "Minutes of Meetings" items if they refer to *previous* meetings (e.g. "Approve minutes of X"). Classify these as "Administrative".
         - Do NOT extract topics from the titles of previous meeting minutes (e.g. if item is "Minutes of Public Works", do not tag "Public Works").
         - If an item is purely administrative (Call to Order, Roll Call, Adjournment), classify as "Administrative".
+        - If an item is routine institutional business (individual license renewals, standard report acceptances, routine personnel actions, proclamations), classify as "Routine".
+        - For each tag, decide whether it represents a persistent civic concern worth tracking as a topic (topic_worthy: true) or a one-time routine item (topic_worthy: false).
+        - When a tag matches or is very similar to an existing topic name, use the existing topic name exactly.
 
         Schema:
         {
           "items": [
             {
               "id": 123,
-              "category": "Infrastructure|Public Safety|Parks & Rec|Finance|Zoning|Licensing|Personnel|Governance|Other|Administrative",
+              "category": "Infrastructure|Public Safety|Parks & Rec|Finance|Zoning|Licensing|Personnel|Governance|Other|Administrative|Routine",
               "tags": ["Tag1", "Tag2"],
+              "topic_worthy": true,
               "confidence": 0.9
             }
           ]
         }
 
         - "confidence" must be between 0.0 and 1.0.
+        - "topic_worthy" must be true or false. Set to false for routine, one-off, or procedural items.
         - Use high confidence (>= 0.8) for clear, unambiguous civic topics.
         - Use low confidence (< 0.5) for items where the topic is unclear or could be procedural.
         </extraction_spec>
@@ -122,7 +140,7 @@ module Ai
           model: DEFAULT_MODEL,
           response_format: { type: "json_object" },
           messages: [
-            { role: "system", content: "You are a civic data classifier." },
+            { role: "system", content: "You are a civic data classifier for Two Rivers, WI." },
             { role: "user", content: prompt }
           ],
           temperature: 0.1

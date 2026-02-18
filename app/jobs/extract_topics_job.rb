@@ -15,8 +15,18 @@ class ExtractTopicsJob < ApplicationJob
       "ID: #{item.id}\nTitle: #{item.title}\nSummary: #{item.summary}\n"
     end.join("\n---\n")
 
+    # Retrieve community context for extraction
+    community_context = retrieve_community_context
+
+    # Get existing approved topic names to reduce duplicates
+    existing_topics = Topic.approved.pluck(:name)
+
     ai_service = ::Ai::OpenAiService.new
-    json_response = ai_service.extract_topics(items_text)
+    json_response = ai_service.extract_topics(
+      items_text,
+      community_context: community_context,
+      existing_topics: existing_topics
+    )
 
     begin
       data = JSON.parse(json_response)
@@ -27,6 +37,7 @@ class ExtractTopicsJob < ApplicationJob
         category = c_data["category"]
         tags = c_data["tags"] || []
         confidence = c_data["confidence"]&.to_f
+        topic_worthy = c_data.fetch("topic_worthy", true)
 
         # Find item
         item = AgendaItem.find_by(id: item_id)
@@ -36,19 +47,20 @@ class ExtractTopicsJob < ApplicationJob
           Rails.logger.warn "Low-confidence topic classification (#{confidence}) for AgendaItem #{item_id}: category=#{category}, tags=#{tags.inspect}"
         end
 
-        # Skip administrative/procedural items entirely — they don't produce substantive topics
+        # Skip administrative/procedural/routine items
         next if category == "Administrative"
+        next if category == "Routine"
+
+        # Skip items the AI determined are not topic-worthy
+        next unless topic_worthy
 
         # Create topics from tags only (category is a broad grouping, not a topic)
-        all_topics = tags
-        all_topics.each do |topic_name|
+        tags.each do |topic_name|
           next if topic_name.blank?
 
-          # Find or Create Topic
           topic = Topics::FindOrCreateService.call(topic_name)
           next unless topic
 
-          # Link
           AgendaItemTopic.find_or_create_by!(agenda_item: item, topic: topic)
         end
       end
@@ -62,5 +74,16 @@ class ExtractTopicsJob < ApplicationJob
     rescue JSON::ParserError => e
       Rails.logger.error "Failed to parse topics JSON for Meeting #{meeting_id}: #{e.message}"
     end
+  end
+
+  private
+
+  def retrieve_community_context
+    retrieval = RetrievalService.new
+    results = retrieval.retrieve_context("Two Rivers community values resident concerns topic extraction", limit: 5)
+    retrieval.format_context(results)
+  rescue => e
+    Rails.logger.warn "Failed to retrieve community context for extraction: #{e.message}"
+    ""
   end
 end
