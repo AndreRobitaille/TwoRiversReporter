@@ -73,63 +73,67 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "coming up card shows high-impact topics with upcoming appearances" do
+    @active_topic.update!(resident_impact_score: 4)
+    TopicSummary.create!(
+      topic: @active_topic, meeting: @future_meeting,
+      content: "## Summary", summary_type: "topic_digest",
+      generation_data: { "headline" => "TIF district expansion under review" }
+    )
+
+    get root_url
+    assert_response :success
+    assert_match "Coming Up", response.body
+    assert_match "TIF district expansion under review", response.body
+  end
+
+  test "coming up card hidden when no qualifying topics" do
+    get root_url
+    assert_response :success
+    assert_no_match "Coming Up", response.body
+  end
+
+  test "what happened card shows recent high-impact decisions" do
+    @recurring_topic.update!(resident_impact_score: 3)
+    agenda_item = AgendaItem.create!(meeting: @past_meeting, title: "Rate Vote")
+    AgendaItemTopic.create!(topic: @recurring_topic, agenda_item: agenda_item)
+    Motion.create!(
+      agenda_item: agenda_item, meeting: @past_meeting,
+      description: "Approve rate increase", outcome: "approved"
+    )
+    TopicSummary.create!(
+      topic: @recurring_topic, meeting: @past_meeting,
+      content: "## Summary", summary_type: "topic_digest",
+      generation_data: { "headline" => "Water rates increased 8% for all residents" }
+    )
+
+    get root_url
+    assert_response :success
+    assert_match "What Happened", response.body
+    assert_match "Water rates increased 8% for all residents", response.body
+  end
+
+  test "what happened card hidden when no qualifying topics" do
+    get root_url
+    assert_response :success
+    assert_no_match "What Happened", response.body
+  end
+
   test "renders successfully with no data" do
     TopicAppearance.destroy_all
     AgendaItemTopic.destroy_all
     AgendaItem.destroy_all
     TopicStatusEvent.destroy_all
+    Motion.destroy_all
     Meeting.destroy_all
     Topic.destroy_all
 
     get root_url
     assert_response :success
-
-    assert_select "p", text: /No active topics with upcoming meetings/
-    assert_select "p", text: /No recent topic activity detected/
+    assert_no_match "Coming Up", response.body
+    assert_no_match "What Happened", response.body
     assert_select "p", text: /No upcoming meetings scheduled/
     assert_select "p", text: /No recent meetings/
-  end
-
-  test "shows worth watching topics with upcoming appearances" do
-    get root_url
-    assert_response :success
-
-    # Active topic with future meeting should appear
-    assert_match "downtown tif district", response.body
-  end
-
-  test "does not show blocked topics in worth watching" do
-    # Give blocked topic a future appearance too
-    agenda_item = AgendaItem.create!(meeting: @future_meeting, title: "Blocked Item")
-    AgendaItemTopic.create!(topic: @blocked_topic, agenda_item: agenda_item)
-    TopicAppearance.create!(
-      topic: @blocked_topic,
-      meeting: @future_meeting,
-      agenda_item: agenda_item,
-      appeared_at: @future_meeting.starts_at,
-      body_name: @future_meeting.body_name,
-      evidence_type: "agenda_item"
-    )
-
-    get root_url
-    assert_response :success
-
-    assert_no_match "Blocked Topic", response.body
-  end
-
-  test "shows recent signals from TopicStatusEvents" do
-    TopicStatusEvent.create!(
-      topic: @recurring_topic,
-      lifecycle_status: "recurring",
-      evidence_type: "agenda_recurrence",
-      occurred_at: 5.days.ago
-    )
-
-    get root_url
-    assert_response :success
-
-    # Should show the signal badge
-    assert_select ".badge", text: "Resurfaced"
   end
 
   test "shows upcoming meetings grouped by week" do

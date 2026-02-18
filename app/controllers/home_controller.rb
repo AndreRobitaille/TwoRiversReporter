@@ -1,79 +1,73 @@
 class HomeController < ApplicationController
-  include HighlightSignals
-
   UPCOMING_WINDOW = 30.days
   RECENT_WINDOW = 14.days
   CARD_LIMIT = 5
+  COMING_UP_MIN_IMPACT = 3
+  WHAT_HAPPENED_MIN_IMPACT = 2
+  WHAT_HAPPENED_WINDOW = 30.days
 
   def index
-    @worth_watching = build_worth_watching
-    @recent_signals = build_recent_signals
+    @coming_up = build_coming_up
+    @what_happened = build_what_happened
     @upcoming_meeting_groups = upcoming_meetings_grouped
     @recent_meeting_groups = recent_meetings_grouped
   end
 
   private
 
-  def build_worth_watching
-    # Topics appearing on future meeting agendas
+  def build_coming_up
     upcoming_topic_ids = TopicAppearance
       .joins(:meeting)
       .where(meetings: { starts_at: Time.current.. })
       .select(:topic_id).distinct
 
-    # Topics with recent highlight signals
-    signal_topic_ids = TopicStatusEvent
-      .where(evidence_type: HIGHLIGHT_EVENT_TYPES)
-      .where(occurred_at: HIGHLIGHT_WINDOW.ago..)
-      .select(:topic_id).distinct
+    topics = Topic.approved
+      .where(id: upcoming_topic_ids)
+      .where("resident_impact_score >= ?", COMING_UP_MIN_IMPACT)
+      .order(resident_impact_score: :desc)
+      .limit(CARD_LIMIT)
 
-    topics = Topic.publicly_visible
-                  .where(id: upcoming_topic_ids)
-                  .or(Topic.publicly_visible.where(id: signal_topic_ids))
-                  .where(lifecycle_status: %w[active recurring])
-                  .limit(CARD_LIMIT)
-
-    # Attach next appearance info and signals
-    topic_ids = topics.map(&:id)
-    @worth_watching_signals = build_highlight_signals(topic_ids)
-    @worth_watching_next_appearances = next_appearances_for(topic_ids)
-
-    topics
+    attach_headlines(topics)
   end
 
-  def build_recent_signals
-    events = TopicStatusEvent
-      .where(evidence_type: HIGHLIGHT_EVENT_TYPES)
-      .where(occurred_at: HIGHLIGHT_WINDOW.ago..)
-      .where(topic_id: Topic.publicly_visible.select(:id))
-      .order(occurred_at: :desc)
-      .select(:topic_id, :evidence_type, :lifecycle_status, :occurred_at)
+  def build_what_happened
+    # Topics with recent motions
+    motion_topic_ids = AgendaItemTopic
+      .joins(agenda_item: :motions)
+      .where(motions: { created_at: WHAT_HAPPENED_WINDOW.ago.. })
+      .select(:topic_id).distinct
 
-    # Group by topic, keep most recent event time
-    topic_event_map = {}
-    signals = {}
-    events.each do |event|
-      topic_event_map[event.topic_id] ||= event.occurred_at
+    # Topics with recent status events
+    event_topic_ids = TopicStatusEvent
+      .where(occurred_at: WHAT_HAPPENED_WINDOW.ago..)
+      .select(:topic_id).distinct
 
-      label = helpers.highlight_signal_label(event.evidence_type, event.lifecycle_status)
-      next unless label
+    topics = Topic.approved
+      .where(id: motion_topic_ids)
+      .or(Topic.approved.where(id: event_topic_ids))
+      .where("resident_impact_score >= ?", WHAT_HAPPENED_MIN_IMPACT)
+      .order(resident_impact_score: :desc, last_activity_at: :desc)
+      .limit(CARD_LIMIT)
 
-      signals[event.topic_id] ||= []
-      signals[event.topic_id] << label unless signals[event.topic_id].include?(label)
+    attach_headlines(topics)
+  end
+
+  def attach_headlines(topics)
+    return [] if topics.empty?
+
+    topic_ids = topics.map(&:id)
+    latest_summaries = TopicSummary
+      .where(topic_id: topic_ids, summary_type: "topic_digest")
+      .order(:topic_id, created_at: :desc)
+      .select("DISTINCT ON (topic_id) topic_id, generation_data")
+
+    @headlines ||= {}
+    latest_summaries.each do |summary|
+      headline = summary.generation_data&.dig("headline")
+      @headlines[summary.topic_id] = headline if headline.present?
     end
 
-    @recent_signals_map = signals
-    @recent_signals_times = topic_event_map
-
-    # Return topics ordered by most recent event
-    topic_ids = topic_event_map.keys.first(CARD_LIMIT)
-    return Topic.none if topic_ids.empty?
-
-    Topic.publicly_visible
-         .where(id: topic_ids)
-         .index_by(&:id)
-         .values_at(*topic_ids)
-         .compact
+    topics
   end
 
   def upcoming_meetings_grouped
@@ -127,19 +121,5 @@ class HomeController < ApplicationController
         "#{week_start.strftime('%b %-d')} \u2013 #{week_end.strftime('%b %-d')}"
       end
     end
-  end
-
-  def next_appearances_for(topic_ids)
-    return {} if topic_ids.empty?
-
-    TopicAppearance
-      .joins(:meeting)
-      .where(topic_id: topic_ids)
-      .where(meetings: { starts_at: Time.current.. })
-      .order(Arel.sql("topic_appearances.topic_id, meetings.starts_at ASC"))
-      .select("DISTINCT ON (topic_appearances.topic_id) topic_appearances.topic_id, meetings.starts_at, meetings.body_name")
-      .each_with_object({}) do |row, hash|
-        hash[row.topic_id] = { starts_at: row.starts_at, body_name: row.body_name }
-      end
   end
 end

@@ -1758,3 +1758,35 @@ th.sortable-header:hover {
 .text-xl { font-size: var(--font-size-xl); }
 .border { border: 1px solid var(--color-border); }
 .rounded { border-radius: var(--radius-md); }
+
+/* ============================================
+   Topic Headline Items (Coming Up / What Happened)
+   ============================================ */
+
+.topic-headline-item {
+  display: block;
+  padding: var(--space-2) 0;
+  text-decoration: none;
+  color: inherit;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.topic-headline-item:last-child {
+  border-bottom: none;
+}
+
+.topic-headline-item:hover {
+  background-color: var(--color-surface-hover, rgba(0, 0, 0, 0.02));
+}
+
+.topic-headline-item__name {
+  font-weight: 600;
+  display: block;
+}
+
+.topic-headline-item__headline {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
