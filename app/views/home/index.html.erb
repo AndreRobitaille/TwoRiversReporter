@@ -19,7 +19,7 @@
       </div>
       <div class="card-body">
         <% @coming_up.each do |topic| %>
-          <%= render "coming_up_item", topic: topic %>
+          <%= render "topic_headline_item", topic: topic %>
         <% end %>
       </div>
       <div class="card-footer">
@@ -35,7 +35,7 @@
       </div>
       <div class="card-body">
         <% @what_happened.each do |topic| %>
-          <%= render "what_happened_item", topic: topic %>
+          <%= render "topic_headline_item", topic: topic %>
         <% end %>
       </div>
       <div class="card-footer">
