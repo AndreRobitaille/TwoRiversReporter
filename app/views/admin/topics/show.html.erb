@@ -65,6 +65,26 @@
         <%= f.label :importance, "Importance (0-10)" %>
         <%= f.number_field :importance, min: 0, max: 10, class: "form-input w-full" %>
       </div>
+      <div class="form-group">
+        <%= f.label :resident_impact_score, "Resident Impact (1-5)" %>
+        <%= f.select :resident_impact_score,
+          options_for_select(
+            [["--", ""], ["1 - Routine", 1], ["2 - Minor", 2], ["3 - Moderate", 3], ["4 - Significant", 4], ["5 - Major", 5]],
+            @topic.resident_impact_score
+          ),
+          {},
+          class: "form-input w-full" %>
+        <p class="text-xs text-secondary mt-1">
+          <% if @topic.resident_impact_admin_locked? %>
+            Set by admin (<%= time_ago_in_words(@topic.resident_impact_overridden_at) %> ago, expires in
+            <%= distance_of_time_in_words(@topic.resident_impact_overridden_at + 180.days, Time.current) %>)
+          <% elsif @topic.resident_impact_score.present? %>
+            AI-assessed
+          <% else %>
+            Not yet scored
+          <% end %>
+        </p>
+      </div>
       <div class="form-group mt-4 flex gap-2 flex-wrap">
         <%= f.submit "Update Topic", class: "btn btn--primary", data: { form_feedback_target: "submit" } %>
         

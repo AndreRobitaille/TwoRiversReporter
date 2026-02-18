@@ -74,6 +74,12 @@ class SummarizeMeetingJob < ApplicationJob
       markdown_content = ai_service.render_topic_summary(analysis_json.to_json)
 
       save_topic_summary(meeting, topic, markdown_content, analysis_json)
+
+      # Propagate resident impact score to topic
+      if analysis_json["resident_impact"].is_a?(Hash)
+        score = analysis_json["resident_impact"]["score"].to_i
+        topic.update_resident_impact_from_ai(score) if score.between?(1, 5)
+      end
     end
   end
 

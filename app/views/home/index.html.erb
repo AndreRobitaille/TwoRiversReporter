@@ -10,54 +10,44 @@
   </p>
 </div>
 
-<%# === Topic Signal Cards === %>
+<%# === Topic Headline Cards === %>
 <div class="card-grid mb-8" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
-  <%# Worth Watching %>
-  <div class="card card--warm">
-    <div class="card-header">
-      <h2 class="card-title">Worth Watching</h2>
-      <p class="card-subtitle">Active topics with upcoming meetings or recent signals</p>
-    </div>
-    <div class="card-body">
-      <% if @worth_watching.any? %>
-        <% @worth_watching.each do |topic| %>
-          <%= render "worth_watching_item", topic: topic %>
+  <% if @coming_up.any? %>
+    <div class="card card--warm">
+      <div class="card-header">
+        <h2 class="card-title">Coming Up</h2>
+      </div>
+      <div class="card-body">
+        <% @coming_up.each do |topic| %>
+          <%= render "topic_headline_item", topic: topic %>
         <% end %>
-      <% else %>
-        <p class="text-muted">No active topics with upcoming meetings.</p>
-      <% end %>
-    </div>
-    <% if @worth_watching.any? %>
+      </div>
       <div class="card-footer">
         <%= link_to "All topics &#8594;".html_safe, topics_path, class: "text-sm" %>
       </div>
-    <% end %>
-  </div>
+    </div>
+  <% end %>
 
-  <%# Recent Signals %>
-  <div class="card card--cool">
-    <div class="card-header">
-      <h2 class="card-title">Recent Signals</h2>
-      <p class="card-subtitle">Topics with new continuity events in the last 30 days</p>
-    </div>
-    <div class="card-body">
-      <% if @recent_signals.any? %>
-        <% @recent_signals.each do |topic| %>
-          <%= render "recent_signal_item", topic: topic %>
+  <% if @what_happened.any? %>
+    <div class="card card--cool">
+      <div class="card-header">
+        <h2 class="card-title">What Happened</h2>
+      </div>
+      <div class="card-body">
+        <% @what_happened.each do |topic| %>
+          <%= render "topic_headline_item", topic: topic %>
         <% end %>
-      <% else %>
-        <p class="text-muted">No recent topic activity detected.</p>
-      <% end %>
-    </div>
-    <% if @recent_signals.any? %>
+      </div>
       <div class="card-footer">
         <%= link_to "All topics &#8594;".html_safe, topics_path, class: "text-sm" %>
       </div>
-    <% end %>
-  </div>
+    </div>
+  <% end %>
 </div>
 
-<hr class="home-divider">
+<% if @coming_up.any? || @what_happened.any? %>
+  <hr class="home-divider">
+<% end %>
 
 <%# === Upcoming Meetings === %>
 <section class="section">

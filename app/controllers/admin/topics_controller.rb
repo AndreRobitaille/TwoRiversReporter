@@ -53,7 +53,7 @@ module Admin
     def update
       @topic.assign_attributes(topic_params)
 
-      if @topic.will_save_change_to_source_notes?
+      if @topic.source_notes_changed?
         if @topic.source_notes.present?
           @topic.added_by = Current.user&.email
           @topic.added_at = Time.current
@@ -61,6 +61,10 @@ module Admin
           @topic.added_by = nil
           @topic.added_at = nil
         end
+      end
+
+      if @topic.will_save_change_to_attribute?(:resident_impact_score) && @topic.resident_impact_score.present?
+        @topic.resident_impact_overridden_at = Time.current
       end
 
       if @topic.save
@@ -255,7 +259,7 @@ module Admin
     end
 
     def topic_params
-      params.require(:topic).permit(:description, :importance, :name, :source_type, :source_notes)
+      params.require(:topic).permit(:description, :importance, :name, :source_type, :source_notes, :resident_impact_score)
     end
   end
 end

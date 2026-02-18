@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_16_144452) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_18_031350) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -447,6 +447,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_144452) do
     t.string "lifecycle_status"
     t.string "name"
     t.boolean "pinned", default: false, null: false
+    t.datetime "resident_impact_overridden_at"
+    t.integer "resident_impact_score"
     t.jsonb "resident_reported_context", default: {}, null: false
     t.string "review_status"
     t.string "slug"
@@ -457,6 +459,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_144452) do
     t.index ["lifecycle_status"], name: "index_topics_on_lifecycle_status"
     t.index ["name"], name: "index_topics_on_name"
     t.index ["name"], name: "index_topics_on_name_trgm", opclass: :gin_trgm_ops, using: :gin
+    t.index ["resident_impact_score"], name: "index_topics_on_resident_impact_score"
     t.index ["review_status"], name: "index_topics_on_review_status"
     t.index ["slug"], name: "index_topics_on_slug", unique: true
   end
