@@ -11,13 +11,13 @@ class ExtractTopicsJobTest < ActiveJob::TestCase
     item = AgendaItem.create!(meeting: meeting, number: "1", title: "Operator License Renewal - Jane Doe", order_index: 1)
 
     ai_response = {
-      "items" => [{
+      "items" => [ {
         "id" => item.id,
         "category" => "Licensing",
-        "tags" => ["operator license renewal"],
+        "tags" => [ "operator license renewal" ],
         "topic_worthy" => false,
         "confidence" => 0.9
-      }]
+      } ]
     }.to_json
 
     mock_ai = Minitest::Mock.new
@@ -49,13 +49,13 @@ class ExtractTopicsJobTest < ActiveJob::TestCase
     item = AgendaItem.create!(meeting: meeting, number: "1", title: "Accept Monthly Financial Report", order_index: 1)
 
     ai_response = {
-      "items" => [{
+      "items" => [ {
         "id" => item.id,
         "category" => "Routine",
-        "tags" => ["monthly financial report"],
+        "tags" => [ "monthly financial report" ],
         "topic_worthy" => false,
         "confidence" => 0.8
-      }]
+      } ]
     }.to_json
 
     mock_ai = Minitest::Mock.new
@@ -87,13 +87,13 @@ class ExtractTopicsJobTest < ActiveJob::TestCase
     item = AgendaItem.create!(meeting: meeting, number: "1", title: "Lakefront Development Proposal", order_index: 1)
 
     ai_response = {
-      "items" => [{
+      "items" => [ {
         "id" => item.id,
         "category" => "Zoning",
-        "tags" => ["lakefront development"],
+        "tags" => [ "lakefront development" ],
         "topic_worthy" => true,
         "confidence" => 0.85
-      }]
+      } ]
     }.to_json
 
     mock_ai = Minitest::Mock.new

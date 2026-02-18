@@ -34,8 +34,8 @@ class Topics::TriageToolTest < ActiveSupport::TestCase
 
     results = {
       "merge_map" => [],
-      "approvals" => [{ "topic" => "important civic topic test", "approve" => true, "confidence" => 0.7, "rationale" => "test" }],
-      "blocks" => [{ "topic" => "routine procedural item test", "block" => true, "confidence" => 0.7, "rationale" => "test" }]
+      "approvals" => [ { "topic" => "important civic topic test", "approve" => true, "confidence" => 0.7, "rationale" => "test" } ],
+      "blocks" => [ { "topic" => "routine procedural item test", "block" => true, "confidence" => 0.7, "rationale" => "test" } ]
     }
 
     tool.send(:apply_results, results, nil)
