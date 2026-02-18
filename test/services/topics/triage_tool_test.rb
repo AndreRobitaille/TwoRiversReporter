@@ -43,4 +43,19 @@ class Topics::TriageToolTest < ActiveSupport::TestCase
     assert_equal "blocked", topic_block.reload.status, "Should block at 0.7"
     assert_equal "proposed", topic_approve.reload.status, "Should NOT approve at 0.7"
   end
+
+  test "build_context includes community context" do
+    Topic.create!(name: "test triage context topic", status: "proposed")
+
+    tool = Topics::TriageTool.new(
+      apply: false, dry_run: true,
+      min_confidence: Topics::TriageTool::DEFAULT_MIN_CONFIDENCE,
+      max_topics: 10,
+      similarity_threshold: 0.75, agenda_item_limit: 5,
+      user_id: nil, user_email: nil
+    )
+
+    context = tool.send(:build_context)
+    assert context.key?(:community_context), "Context should include community_context key"
+  end
 end

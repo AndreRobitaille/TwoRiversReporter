@@ -104,7 +104,8 @@ module Topics
         procedural_keywords: PROCEDURAL_KEYWORDS,
         similarity_threshold: @similarity_threshold,
         topics: topic_payloads,
-        similarity_candidates: similarity_candidates
+        similarity_candidates: similarity_candidates,
+        community_context: retrieve_community_context
       }
     end
 
@@ -127,6 +128,15 @@ module Topics
       end
 
       candidates
+    end
+
+    def retrieve_community_context
+      retrieval = RetrievalService.new
+      results = retrieval.retrieve_context("Two Rivers community values resident concerns topic triage approval", limit: 5)
+      retrieval.format_context(results)
+    rescue => e
+      Rails.logger.warn "Failed to retrieve community context for triage: #{e.message}"
+      ""
     end
 
     def resolve_user

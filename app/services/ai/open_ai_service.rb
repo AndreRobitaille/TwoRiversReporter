@@ -150,6 +150,14 @@ module Ai
     end
 
     def triage_topics(context_json)
+      community_context = context_json.delete(:community_context) || context_json.delete("community_context") || ""
+
+      community_section = if community_context.present?
+        "\n<community_context>\nUse this context about Two Rivers residents to inform your approval and blocking decisions. Topics that matter to residents should be approved; routine institutional items should be blocked.\n#{community_context}\n</community_context>\n"
+      else
+        ""
+      end
+
       prompt = <<~PROMPT
         You are assisting a civic transparency system. Propose topic merges, approvals, and procedural blocks.
 
@@ -159,7 +167,7 @@ module Ai
         - Do NOT merge if scope is ambiguous or evidence conflicts.
         - Procedural/admin items should be blocked (Roberts Rules, roll call, adjournment, agenda approval, minutes).
         </governance_constraints>
-
+        #{community_section}
         <input>
         The JSON includes:
         - topics: list of topic records with recent agenda items.
