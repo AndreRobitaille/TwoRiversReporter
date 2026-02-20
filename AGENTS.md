@@ -90,6 +90,14 @@ This is a Rails app using Minitest (no RSpec detected).
 - For `text_quality == "image_scan"`, OCR is queued (`Documents::OcrJob`).
 - `Extraction` rows store page-aware text; keep page numbers stable.
 
+### Topic Extraction Pipeline
+- `ExtractTopicsJob` runs in two passes:
+  - **Pass 1**: Classifies agenda items into topics. Includes item-level document text (via `AgendaItemDocument`) and meeting-level packet/minutes text so the AI can identify topics even when agenda titles are generic (e.g. "PUBLIC HEARING").
+  - **Pass 2**: Refines catch-all ordinance topics. Items tagged with topics in `CATCHALL_TOPIC_NAMES` (e.g. "height and area exceptions") get a second AI call that either keeps the tag (minor variance) or replaces it with a substantive civic concern (significant issue). Error-isolated so failures don't lose pass 1 results.
+- To add new catch-all ordinance sections, append to `CATCHALL_TOPIC_NAMES` in `ExtractTopicsJob`.
+- Topic names should be at a "neighborhood conversation" level — no addresses or applicant names.
+- Full pipeline to homepage: `ExtractTopicsJob` → `AgendaItemTopic` (auto-creates `TopicAppearance`) → `AutoTriageJob` (approves/blocks) → `SummarizeMeetingJob` (sets `resident_impact_score`) → homepage "Coming Up" card requires `approved` status + `resident_impact_score >= 3`.
+
 ### AI Usage
 - Use `Ai::OpenAiService` for OpenAI calls; do not scatter API calls across the codebase.
 - Prompts should:
