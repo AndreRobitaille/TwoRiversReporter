@@ -79,7 +79,7 @@ module Ai
       response.dig("choices", 0, "message", "content")
     end
 
-    def extract_topics(items_text, community_context: "", existing_topics: [])
+    def extract_topics(items_text, community_context: "", existing_topics: [], meeting_documents_context: "")
       existing_topics_text = if existing_topics.any?
         "\n<existing_topics>\nThese topics already exist in the system. Prefer tagging items to these existing topics rather than creating new similar names:\n#{existing_topics.join("\n")}\n</existing_topics>\n"
       else
@@ -88,6 +88,12 @@ module Ai
 
       community_context_text = if community_context.present?
         "\n<community_context>\n#{community_context}\n</community_context>\n"
+      else
+        ""
+      end
+
+      meeting_docs_text = if meeting_documents_context.present?
+        "\n<meeting_documents>\nThe following text comes from meeting packet/minutes PDFs. Use this to identify substantive topics when agenda item titles are generic (e.g. \"PUBLIC HEARING\"). Match document content to the agenda items above.\n#{meeting_documents_context.truncate(30000, separator: ' ')}\n</meeting_documents>\n"
       else
         ""
       end
@@ -109,6 +115,9 @@ module Ai
         - Do NOT extract topics from the titles of previous meeting minutes (e.g. if item is "Minutes of Public Works", do not tag "Public Works").
         - If an item is purely administrative (Call to Order, Roll Call, Adjournment), classify as "Administrative".
         - If an item is routine institutional business (individual license renewals, standard report acceptances, routine personnel actions, proclamations), classify as "Routine".
+        - When an agenda item title is generic (e.g. "PUBLIC HEARING", "NEW BUSINESS"), use attached document text or meeting document context to identify the actual substantive topic.
+        - When an agenda item references a catch-all ordinance section (e.g. "Height and Area Exceptions"), also identify the substantive civic concern if one exists.
+        - Topic names should be at a "neighborhood conversation" level — not hyper-specific (no addresses or applicant details in the topic name).
         - For each tag, decide whether it represents a persistent civic concern worth tracking as a topic (topic_worthy: true) or a one-time routine item (topic_worthy: false).
         - When a tag matches or is very similar to an existing topic name, use the existing topic name exactly.
 
@@ -131,8 +140,9 @@ module Ai
         - Use low confidence (< 0.5) for items where the topic is unclear or could be procedural.
         </extraction_spec>
 
-        Text:
+        Agenda Items:
         #{items_text.truncate(50000)}
+        #{meeting_docs_text}
       PROMPT
 
       response = @client.chat(
@@ -141,6 +151,44 @@ module Ai
           response_format: { type: "json_object" },
           messages: [
             { role: "system", content: "You are a civic data classifier for Two Rivers, WI." },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.1
+        }
+      )
+      response.dig("choices", 0, "message", "content")
+    end
+
+    def refine_catchall_topic(item_title:, item_summary:, catchall_topic:, document_text:, existing_topics: [])
+      existing_topics_text = if existing_topics.any?
+        "Existing topics (prefer reusing these): #{existing_topics.join(', ')}"
+      else
+        ""
+      end
+
+      prompt = <<~PROMPT
+        An agenda item was tagged with "#{catchall_topic}", which is a catch-all ordinance section covering miscellaneous zoning exceptions.
+
+        Agenda item title: #{item_title}
+        #{item_summary.present? ? "Summary: #{item_summary}" : ""}
+
+        Document text:
+        #{document_text.truncate(6000, separator: ' ')}
+
+        #{existing_topics_text}
+
+        Decide: is this a minor/routine variance request, or a significant civic issue?
+
+        - Minor (standard fence permit, simple setback request): return {"action": "keep"}
+        - Significant (appeal, commercial construction, contested variance, public hearing): return {"action": "replace", "topic_name": "..."} with a topic name at the "neighborhood conversation" level (e.g. "zoning appeal", not "Riverside Seafood Inc 12x12 structure"). No addresses or applicant names in the topic name. Prefer reusing an existing topic name if one fits.
+      PROMPT
+
+      response = @client.chat(
+        parameters: {
+          model: DEFAULT_MODEL,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: "You are a civic topic classifier for Two Rivers, WI. Respond with JSON." },
             { role: "user", content: prompt }
           ],
           temperature: 0.1

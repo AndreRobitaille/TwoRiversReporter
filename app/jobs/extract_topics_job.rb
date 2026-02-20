@@ -3,20 +3,34 @@ class ExtractTopicsJob < ApplicationJob
 
   def perform(meeting_id)
     meeting = Meeting.find(meeting_id)
-    items = meeting.agenda_items.order(:order_index)
+    items = meeting.agenda_items.includes(meeting_documents: :extractions).order(:order_index)
 
     if items.empty?
       Rails.logger.info "No agenda items for Meeting #{meeting_id} to tag."
       return
     end
 
-    # Format items for AI
+    # Format items for AI — enriched with linked document text
     items_text = items.map do |item|
-      "ID: #{item.id}\nTitle: #{item.title}\nSummary: #{item.summary}\n"
+      parts = []
+      parts << "ID: #{item.id}"
+      parts << "Title: #{item.title}"
+      parts << "Summary: #{item.summary}" if item.summary.present?
+
+      # Include linked document text (truncated per doc)
+      item.meeting_documents.each do |doc|
+        next if doc.extracted_text.blank?
+        parts << "Attached Document (#{doc.document_type}): #{doc.extracted_text.truncate(2000, separator: ' ')}"
+      end
+
+      parts.join("\n")
     end.join("\n---\n")
 
     # Retrieve community context for extraction
     community_context = retrieve_community_context
+
+    # Build meeting-level document context (packets/minutes not linked to specific items)
+    meeting_docs_context = build_meeting_document_context(meeting, items)
 
     # Get existing approved topic names to reduce duplicates
     existing_topics = Topic.approved.pluck(:name)
@@ -25,7 +39,8 @@ class ExtractTopicsJob < ApplicationJob
     json_response = ai_service.extract_topics(
       items_text,
       community_context: community_context,
-      existing_topics: existing_topics
+      existing_topics: existing_topics,
+      meeting_documents_context: meeting_docs_context
     )
 
     begin
@@ -67,6 +82,9 @@ class ExtractTopicsJob < ApplicationJob
 
       Rails.logger.info "Tagged #{classifications.size} items for Meeting #{meeting_id}"
 
+      # Pass 2: Refine catch-all ordinance topics into substantive civic concerns
+      refine_catchall_topics(meeting, ai_service, existing_topics)
+
       # Schedule auto-triage with delay so extraction jobs from the same scraper run
       # complete before triage fires. Multiple enqueues are safe — the job is idempotent.
       Topics::AutoTriageJob.set(wait: 3.minutes).perform_later
@@ -77,6 +95,89 @@ class ExtractTopicsJob < ApplicationJob
   end
 
   private
+
+  CATCHALL_TOPIC_NAMES = %w[
+    height\ and\ area\ exceptions
+  ].freeze
+
+  def refine_catchall_topics(meeting, ai_service, existing_topics)
+    catchall_links = AgendaItemTopic
+      .joins(:topic)
+      .where(agenda_item_id: meeting.agenda_items.select(:id))
+      .where(topics: { canonical_name: CATCHALL_TOPIC_NAMES })
+      .includes(:agenda_item, :topic)
+
+    return if catchall_links.empty?
+
+    catchall_links.each do |link|
+      item = link.agenda_item
+      doc_text = gather_item_document_text(item, meeting)
+      next if doc_text.blank?
+
+      begin
+        result = ai_service.refine_catchall_topic(
+          item_title: item.title,
+          item_summary: item.summary,
+          catchall_topic: link.topic.name,
+          document_text: doc_text,
+          existing_topics: existing_topics
+        )
+
+        data = JSON.parse(result)
+        next unless data["action"] == "replace"
+
+        new_name = data["topic_name"]
+        next if new_name.blank?
+
+        new_topic = Topics::FindOrCreateService.call(new_name)
+        next unless new_topic
+
+        # Replace the catch-all tag with the substantive topic
+        link.destroy!
+        AgendaItemTopic.find_or_create_by!(agenda_item: item, topic: new_topic)
+        Rails.logger.info "Refined catch-all '#{link.topic.name}' -> '#{new_topic.name}' for AgendaItem #{item.id}"
+      rescue JSON::ParserError, Faraday::Error => e
+        Rails.logger.error "Refinement failed for AgendaItem #{item.id}: #{e.class} #{e.message}"
+      end
+    end
+  end
+
+  def gather_item_document_text(item, meeting)
+    parts = []
+
+    # Item-linked documents
+    item.meeting_documents.each do |doc|
+      next if doc.extracted_text.blank?
+      parts << doc.extracted_text.truncate(2000, separator: " ")
+    end
+
+    # Meeting-level packet/minutes
+    meeting.meeting_documents.where(document_type: %w[packet_pdf minutes_pdf]).each do |doc|
+      next if doc.extracted_text.blank?
+      parts << doc.extracted_text.truncate(4000, separator: " ")
+    end
+
+    parts.join("\n---\n")
+  end
+
+  def build_meeting_document_context(meeting, items)
+    # Find document IDs already linked to specific agenda items
+    linked_doc_ids = AgendaItemDocument
+      .where(agenda_item_id: items.map(&:id))
+      .pluck(:meeting_document_id)
+
+    # Load meeting-level documents (packet/minutes) NOT linked to any item
+    meeting_docs = meeting.meeting_documents
+      .where(document_type: %w[packet_pdf minutes_pdf])
+      .where.not(id: linked_doc_ids)
+      .where.not(extracted_text: [ nil, "" ])
+
+    return "" if meeting_docs.empty?
+
+    meeting_docs.map do |doc|
+      "#{doc.document_type}: #{doc.extracted_text.truncate(8000, separator: ' ')}"
+    end.join("\n---\n")
+  end
 
   def retrieve_community_context
     retrieval = RetrievalService.new
