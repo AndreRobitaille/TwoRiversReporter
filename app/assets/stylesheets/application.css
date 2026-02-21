@@ -1019,66 +1019,6 @@ details[open] summary {
 }
 
 /* ============================================
-   Timeline
-   ============================================ */
-
-.timeline {
-  margin-top: var(--space-4);
-}
-
-.timeline-item {
-  padding: var(--space-4);
-  padding-left: var(--space-6);
-  margin-bottom: var(--space-4);
-  border-left: 2px solid var(--color-primary);
-  position: relative;
-}
-
-.timeline-item::before {
-  content: "";
-  position: absolute;
-  left: -5px;
-  top: var(--space-5);
-  width: 8px;
-  height: 8px;
-  background: var(--color-primary);
-  border-radius: 50%;
-}
-
-.timeline-date {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
-  margin-bottom: var(--space-2);
-}
-
-.timeline-title {
-  font-weight: var(--font-weight-semibold);
-  margin-bottom: var(--space-2);
-}
-
-.timeline-content {
-  color: var(--color-text-secondary);
-}
-
-.timeline-group {
-  margin-bottom: var(--space-8);
-}
-
-.timeline-date-marker {
-  font-weight: var(--font-weight-bold);
-  font-size: var(--font-size-lg);
-  margin-bottom: var(--space-4);
-  color: var(--color-text);
-  border-bottom: 2px solid var(--color-border);
-  padding-bottom: var(--space-2);
-}
-
-.timeline-item--status-event {
-  border-left-color: var(--color-text-muted);
-  background: var(--color-bg);
-}
-
-/* ============================================
    Page Header
    ============================================ */
 
