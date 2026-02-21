@@ -1,6 +1,6 @@
 <%= turbo_stream.append "all-topics-cards" do %>
   <% @topics.each do |topic| %>
-    <%= render "topics/topic_card", topic: topic, highlight_signals: @highlight_signals %>
+    <%= render "topics/topic_card", topic: topic, highlight_signals: {} %>
   <% end %>
 <% end %>
 

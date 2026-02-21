@@ -251,3 +251,17 @@ have been largely ineffective for years. Track their activities to see
 if they take meaningful action on housing, blight, or development —
 but do not assume their agenda items are substantive just because the
 bodies exist.
+
+**Committee Roles and Cross-Body Movement:**
+Topics routinely appear at multiple committees — this is normal
+workflow and not noteworthy on its own. The only cross-body signal
+that matters is when City Council sends something back down to a
+subcommittee, which signals disagreement, unresolved issues, or that
+Council was not satisfied with the committee recommendation.
+
+**Committee on Aging:**
+Primarily an update and input committee. Its purpose is to keep senior
+residents informed and gather their input. Items discussed there
+rarely involve substantive votes or binding decisions. Do not
+overweight appearances at the Committee on Aging unless there is clear
+evidence of real deliberation or a binding vote.

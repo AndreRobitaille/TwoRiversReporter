@@ -448,6 +448,16 @@ module Ai
           Bad: "[agenda-309]" or "[appearance-2481]"
         </constraints>
 
+        <local_governance>
+        - Cross-body movement (topic appearing at different committees) is routine
+          and NOT noteworthy unless City Council sends something BACK DOWN to a
+          subcommittee — that's a signal of disagreement or unresolved issues.
+        - The Committee on Aging is primarily an update/input committee for senior
+          residents. Items there rarely involve substantive votes or decisions.
+          Don't overweight their appearances unless there's clear evidence of
+          real deliberation or a binding vote.
+        </local_governance>
+
         TOPIC CONTEXT (JSON):
         #{context.to_json}
 

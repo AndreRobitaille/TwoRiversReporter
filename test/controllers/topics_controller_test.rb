@@ -126,8 +126,7 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".badge", text: "Recurring", count: 0
   end
 
-  test "index highlights topic with recent continuity signal" do
-    # Use @active_topic (shown in hero) with a deferral signal
+  test "index renders topic cards without signal pills" do
     TopicStatusEvent.create!(
       topic: @active_topic,
       lifecycle_status: "active",
@@ -138,44 +137,17 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     get topics_url
     assert_response :success
 
-    assert_select ".card--highlighted", minimum: 1
-    assert_select ".card-signals .badge", text: "Delayed"
-  end
-
-  test "index does not highlight topics without recent signals" do
-    # No TopicStatusEvents created — no highlights expected
-    get topics_url
-    assert_response :success
-
-    assert_select ".card--highlighted", count: 0
+    # Signal pills were removed from cards
     assert_select ".card-signals", count: 0
+    # Cards should still render
+    assert_select ".card--topic", minimum: 1
   end
 
-  test "index highlights topic with deferral signal" do
-    TopicStatusEvent.create!(
-      topic: @active_topic,
-      lifecycle_status: "active",
-      evidence_type: "deferral_signal",
-      occurred_at: 10.days.ago
-    )
-
+  test "index renders cards without highlighted class" do
     get topics_url
     assert_response :success
 
-    assert_select ".card-signals .badge", text: "Delayed"
-  end
-
-  test "index does not highlight old signals outside 30-day window" do
-    TopicStatusEvent.create!(
-      topic: @active_topic,
-      lifecycle_status: "active",
-      evidence_type: "deferral_signal",
-      occurred_at: 60.days.ago
-    )
-
-    get topics_url
-    assert_response :success
-
+    # Highlighted card class was removed
     assert_select ".card--highlighted", count: 0
   end
 
