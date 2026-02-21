@@ -14,7 +14,7 @@
     <h2 class="section-title">Coming Up</h2>
     <div class="card-grid">
       <% @upcoming.each do |appearance| %>
-        <div class="card">
+        <%= link_to meeting_path(appearance.meeting), class: "card card-link card-link--upcoming" do %>
           <div class="card-body">
             <div class="text-sm text-secondary mb-1">
               <%= appearance.meeting.body_name %>
@@ -32,13 +32,16 @@
                 <%= appearance.agenda_item.title %>
               </div>
               <% if public_comment_meeting?(appearance.agenda_item) %>
-                <div class="badge badge--info mb-2">Public comment period</div>
+                <span class="badge badge--info mb-2">Public comment period</span>
               <% end %>
             <% end %>
-            <%= link_to "View meeting details", meeting_path(appearance.meeting),
-                class: "text-sm" %>
+            <div class="card-link-arrow">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
           </div>
-        </div>
+        <% end %>
       <% end %>
     </div>
     <p class="text-sm text-secondary mt-3">
