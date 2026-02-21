@@ -62,6 +62,10 @@ module Admin
     def update
       @topic.assign_attributes(topic_params)
 
+      if @topic.will_save_change_to_attribute?(:description)
+        @topic.description_generated_at = nil
+      end
+
       if @topic.source_notes_changed?
         if @topic.source_notes.present?
           @topic.added_by = Current.user&.email
