@@ -2,7 +2,7 @@
 
 ## Problem
 
-331 of 332 topics have empty descriptions. The topic card partial already renders descriptions when present (truncated to 80 chars), but without them the topics index page shows only names and metadata — insufficient context for residents.
+331 of 332 topics had empty descriptions. The topic card partial renders descriptions when present (truncated to 80 chars), but without them the topics index page showed only names and metadata — insufficient context for residents.
 
 ## Design Decisions
 
@@ -10,13 +10,42 @@
 - **Activity-informed but scope-level.** Descriptions reflect the breadth of a topic's activity without anchoring to any single event, address, or applicant. A topic like "development" should describe the range of what it covers, not the latest project.
 - **Tiered generation.** Topics with 3+ agenda items get activity-informed descriptions. Fewer than 3 get broader civic-concept descriptions.
 - **80-character target.** Matches the existing `truncate(..., length: 80)` in `_topic_card.html.erb`.
-- **Lightweight model.** Uses `gpt-4.1-mini` (or equivalent) — no reasoning model needed for one-sentence generation.
+- **Lightweight model.** Uses `gpt-5-mini` via `LIGHTWEIGHT_MODEL` constant. Override with `OPENAI_LIGHTWEIGHT_MODEL` env var.
 - **Fixed refresh schedule.** Regenerate every 90 days via a weekly sweep job. No scope-change detection heuristics.
 - **Admin override respected.** Manually-edited descriptions are never overwritten.
 
+## How It Works
+
+### Automatic Operation
+
+1. **New topics**: When `TriageTool` auto-approves a topic, or an admin approves via the admin UI (single or bulk), `Topics::GenerateDescriptionJob` is enqueued automatically.
+2. **Weekly refresh**: `Topics::RefreshDescriptionsJob` runs every Monday at 3am (configured in `config/recurring.yml`). It finds approved topics where:
+   - `description_generated_at` is older than 90 days (stale AI descriptions), OR
+   - `description` is blank and `description_generated_at` is nil (never generated)
+   - It skips admin-edited topics (description present + `description_generated_at` nil)
+3. **Admin override**: When an admin manually edits a description in the admin form, `description_generated_at` is set to nil. This tells the refresh job to leave it alone permanently.
+
+### Manual Operation
+
+**Backfill all missing descriptions:**
+```bash
+bin/rails topics:generate_descriptions
+```
+Runs synchronously, prints each description as it's generated. Safe to re-run — skips topics that already have descriptions.
+
+**Generate for a single topic:**
+```bash
+bin/rails runner "Topics::GenerateDescriptionJob.perform_now(TOPIC_ID)"
+```
+
+**Force-regenerate a specific topic** (even if it has one):
+```bash
+bin/rails runner "Topic.find(ID).update!(description_generated_at: 100.days.ago); Topics::GenerateDescriptionJob.perform_now(ID)"
+```
+
 ## Data Model
 
-One new column on `topics`:
+One column on `topics`:
 
 ```ruby
 add_column :topics, :description_generated_at, :datetime
@@ -39,7 +68,7 @@ Prompt guardrails:
 - Neighborhood-conversation language, not bureaucratic jargon
 - Tiered: if 3+ agenda items, "based on the following activity, describe what this topic covers"; if fewer, "write a broad civic-concept description"
 
-Uses a lightweight model constant (e.g., `LIGHTWEIGHT_MODEL = "gpt-4.1-mini"`).
+Uses `LIGHTWEIGHT_MODEL` constant (`gpt-5-mini`).
 
 ### 2. `Topics::GenerateDescriptionJob`
 
@@ -47,36 +76,30 @@ Uses a lightweight model constant (e.g., `LIGHTWEIGHT_MODEL = "gpt-4.1-mini"`).
 - Loads topic + agenda items (titles, summaries) + any TopicSummary headlines
 - Calls `OpenAiService#generate_topic_description`
 - Writes `description` and `description_generated_at`
-- Guard: skips if `description_generated_at` is present and within refresh threshold (prevents duplicate work)
-- Idempotent, safe to re-run
+- Guard: skips admin-edited descriptions and recently-generated descriptions
+- Idempotent, safe to re-run. Rescues errors and logs them.
 
-### 3. Integration: `TriageTool.apply_approvals`
+### 3. `Topics::RefreshDescriptionsJob`
 
-After approving a topic, enqueue `Topics::GenerateDescriptionJob.perform_later(topic.id)`.
-
-### 4. Integration: Admin form
-
-When an admin manually edits the description field, nil out `description_generated_at` so the refresh job leaves it alone.
-
-### 5. `Topics::RefreshDescriptionsJob`
-
-- Runs weekly (Solid Queue recurring schedule)
-- Finds approved topics where `description_generated_at < 90.days.ago`
+- Runs weekly (Solid Queue recurring schedule, `config/recurring.yml`)
+- Finds approved topics with stale or missing descriptions
 - Enqueues `GenerateDescriptionJob` for each
 - Thin scheduler — no AI calls itself
 
-### 6. Backfill
+### 4. Integration Points
 
-Rake task or one-liner:
-```ruby
-Topic.where(status: "approved").where(description: [nil, ""]).find_each do |t|
-  Topics::GenerateDescriptionJob.perform_later(t.id)
-end
-```
+- **`TriageTool.apply_approvals`** — enqueues after auto-approval
+- **`Admin::TopicsController#approve`** — enqueues after manual approval
+- **`Admin::TopicsController#bulk_update`** — enqueues for each bulk-approved topic
+- **`Admin::TopicsController#update`** — nils `description_generated_at` when description is manually edited
+
+### 5. Rake Task
+
+`bin/rails topics:generate_descriptions` — backfills all approved topics with missing descriptions, running synchronously with progress output.
 
 ## Not Included (YAGNI)
 
-- No admin UI button for triggering regeneration (clear description + wait for refresh)
+- No admin UI button for triggering regeneration (clear description + wait for refresh, or use rake task)
 - No per-topic refresh interval
 - No description change history
 - No view changes (card partial already renders descriptions)
