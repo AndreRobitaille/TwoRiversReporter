@@ -256,4 +256,117 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".page-subtitle", text: /currently under discussion/i
     assert_select "a[href=?]", "/topics/explore"
   end
+
+  # --- Topic show page tests ---
+
+  test "show loads topic and renders successfully" do
+    get topic_url(@active_topic)
+    assert_response :success
+    assert_select "h1", text: @active_topic.name
+  end
+
+  test "show redirects to topics index for non-existent topic" do
+    get topic_url(id: 999999)
+    assert_redirected_to topics_path
+  end
+
+  test "show does not display proposed topics" do
+    proposed = Topic.create!(name: "Proposed Topic", status: "proposed")
+    get topic_url(proposed)
+    assert_redirected_to topics_path
+  end
+
+  test "show loads upcoming appearances for future meetings" do
+    future_meeting = Meeting.create!(
+      body_name: "Plan Commission",
+      meeting_type: "Regular",
+      starts_at: 7.days.from_now,
+      status: "parsed",
+      detail_page_url: "http://example.com/future",
+      location: "City Hall"
+    )
+    future_item = AgendaItem.create!(meeting: future_meeting, title: "Future Discussion")
+    AgendaItemTopic.create!(topic: @active_topic, agenda_item: future_item)
+    TopicAppearance.create!(
+      topic: @active_topic, meeting: future_meeting,
+      agenda_item: future_item, appeared_at: future_meeting.starts_at,
+      evidence_type: "agenda_item"
+    )
+
+    get topic_url(@active_topic)
+    assert_response :success
+    assert_select ".topic-upcoming", minimum: 1
+  end
+
+  test "show hides upcoming section when no future meetings" do
+    get topic_url(@active_topic)
+    assert_response :success
+    assert_select ".topic-upcoming", count: 0
+  end
+
+  test "show loads most recent topic summary" do
+    TopicSummary.create!(
+      topic: @active_topic, meeting: @meeting,
+      content: "## Street Repair\n\n**Factual Record**\n- City approved funding [Packet Page 5].",
+      summary_type: "topic_digest", generation_data: { model: "test" }
+    )
+
+    get topic_url(@active_topic)
+    assert_response :success
+    assert_select ".topic-summary", minimum: 1
+  end
+
+  test "show hides summary section when no summaries exist" do
+    get topic_url(@active_topic)
+    assert_response :success
+    assert_select ".topic-summary", count: 0
+  end
+
+  test "show loads recent activity from past meetings" do
+    past_item = AgendaItem.create!(meeting: @meeting, title: "Past Item", summary: "Discussed repairs")
+    AgendaItemTopic.create!(topic: @active_topic, agenda_item: past_item)
+    TopicAppearance.create!(
+      topic: @active_topic, meeting: @meeting,
+      agenda_item: past_item, appeared_at: @meeting.starts_at,
+      evidence_type: "agenda_item"
+    )
+
+    get topic_url(@active_topic)
+    assert_response :success
+    assert_select ".topic-recent-activity", minimum: 1
+  end
+
+  test "show loads decisions with motions and votes" do
+    item_with_motion = AgendaItem.create!(meeting: @meeting, title: "Vote Item")
+    AgendaItemTopic.create!(topic: @active_topic, agenda_item: item_with_motion)
+    motion = Motion.create!(
+      meeting: @meeting, agenda_item: item_with_motion,
+      description: "Approve street plan", outcome: "Passed"
+    )
+    member = Member.create!(name: "Ald. Smith")
+    Vote.create!(motion: motion, member: member, value: "yes")
+    TopicAppearance.create!(
+      topic: @active_topic, meeting: @meeting,
+      agenda_item: item_with_motion, appeared_at: @meeting.starts_at,
+      evidence_type: "agenda_item"
+    )
+
+    get topic_url(@active_topic)
+    assert_response :success
+    assert_select ".topic-decisions", minimum: 1
+  end
+
+  test "show hides decisions section when no motions exist" do
+    get topic_url(@active_topic)
+    assert_response :success
+    assert_select ".topic-decisions", count: 0
+  end
+
+  test "show displays empty state when topic has no activity at all" do
+    empty_topic = Topic.create!(name: "Empty Topic", status: "approved", lifecycle_status: "active")
+
+    get topic_url(empty_topic)
+    assert_response :success
+    assert_select ".topic-empty-state", minimum: 1
+  end
 end

@@ -38,18 +38,30 @@ class TopicsController < ApplicationController
   def show
     @topic = Topic.publicly_visible.find(params[:id])
 
-    # Eager load data for the timeline
-    @appearances = @topic.topic_appearances
-                         .includes(:meeting, agenda_item: { motions: { votes: :member } })
-                         .order(appeared_at: :desc)
+    # Upcoming: future meetings where this topic is on the agenda
+    @upcoming = @topic.topic_appearances
+                      .includes(meeting: [], agenda_item: [])
+                      .joins(:meeting)
+                      .where("meetings.starts_at > ?", Time.current)
+                      .order("meetings.starts_at ASC")
 
-    # Load status events
-    @status_events = @topic.topic_status_events.order(occurred_at: :desc)
+    # Most recent topic summary
+    @summary = @topic.topic_summaries.order(created_at: :desc).first
 
-    # Merge and sort for display
-    @timeline_items = (@appearances + @status_events).sort_by do |item|
-      item.try(:appeared_at) || item.try(:occurred_at) || Time.at(0)
-    end.reverse
+    # Recent activity: last 3 past appearances with an agenda item
+    @recent_activity = @topic.topic_appearances
+                            .includes(agenda_item: { motions: :votes }, meeting: [])
+                            .joins(:meeting)
+                            .where("meetings.starts_at <= ?", Time.current)
+                            .where.not(agenda_item_id: nil)
+                            .order(appeared_at: :desc)
+                            .limit(3)
+
+    # Key decisions: all motions linked to this topic's agenda items
+    @decisions = Motion.joins(agenda_item: :agenda_item_topics)
+                       .where(agenda_item_topics: { topic_id: @topic.id })
+                       .includes(:meeting, votes: :member)
+                       .order("meetings.starts_at DESC")
   rescue ActiveRecord::RecordNotFound
     redirect_to topics_path, alert: "Topic not found."
   end
