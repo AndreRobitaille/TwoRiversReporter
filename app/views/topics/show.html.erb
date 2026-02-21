@@ -52,7 +52,7 @@
 
 <%# === 3. What's Happening === %>
 <% if @summary %>
-  <section class="topic-summary section">
+  <section class="topic-summary section topic-section">
     <h2 class="section-title">What's Happening</h2>
     <div class="card">
       <div class="card-body topic-summary-content">
@@ -64,7 +64,7 @@
 
 <%# === 4. Recent Activity === %>
 <% if @recent_activity.any? %>
-  <section class="topic-recent-activity section">
+  <section class="topic-recent-activity section topic-section">
     <h2 class="section-title">Recent Activity</h2>
     <div class="topic-activity-list">
       <% @recent_activity.each do |appearance| %>
@@ -101,7 +101,7 @@
 
 <%# === 5. Key Decisions === %>
 <% if @decisions.any? %>
-  <section class="topic-decisions section">
+  <section class="topic-decisions section topic-section">
     <h2 class="section-title">Key Decisions</h2>
     <% @decisions.each do |motion| %>
       <div class="topic-decision-item">
@@ -145,12 +145,6 @@
 <% end %>
 
 <%# === Footer === %>
-<div class="mt-6">
-  <%= link_to topics_path, class: "back-link" do %>
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="19" y1="12" x2="5" y2="12"></line>
-      <polyline points="12 19 5 12 12 5"></polyline>
-    </svg>
-    Back to Topics
-  <% end %>
+<div class="mt-8">
+  <%= link_to "← Back to Topics", topics_path, class: "btn btn--secondary" %>
 </div>
