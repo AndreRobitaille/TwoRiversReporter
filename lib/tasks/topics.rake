@@ -26,4 +26,24 @@ namespace :topics do
 
     puts "Backfill complete."
   end
+
+  desc "Generate descriptions for approved topics missing them"
+  task generate_descriptions: :environment do
+    scope = Topic.approved.where(description: [ nil, "" ])
+    total = scope.count
+    puts "Generating descriptions for #{total} approved topics..."
+
+    scope.find_each.with_index(1) do |topic, i|
+      print "[#{i}/#{total}] #{topic.name}... "
+      Topics::GenerateDescriptionJob.perform_now(topic.id)
+      topic.reload
+      if topic.description.present?
+        puts topic.description
+      else
+        puts "(no description generated)"
+      end
+    end
+
+    puts "Done. #{Topic.approved.where.not(description: [ nil, "" ]).count} topics now have descriptions."
+  end
 end
