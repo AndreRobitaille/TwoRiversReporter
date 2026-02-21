@@ -1736,6 +1736,10 @@ th.sortable-header:hover {
 .topic-headline-item__name {
   font-weight: 600;
   display: block;
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
 }
 
 .topic-headline-item__headline {
