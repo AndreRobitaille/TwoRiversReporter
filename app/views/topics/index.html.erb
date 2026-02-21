@@ -2,7 +2,7 @@
 
 <div class="page-header">
   <h1 class="page-title">Topics</h1>
-  <p class="page-subtitle">Topics currently under discussion in Two Rivers</p>
+  <p class="page-subtitle">What Two Rivers city government is working on</p>
 </div>
 
 <% if @topics.empty? && @hero_topics.empty? %>
@@ -14,7 +14,7 @@
     <section class="topic-group mb-8" id="hero-topics">
       <div class="group-header mb-4">
         <h2 class="h3 mb-2">What Matters Now</h2>
-        <p class="text-secondary mb-0">High-impact topics with recent activity.</p>
+        <p class="text-secondary mb-0">The biggest issues right now</p>
       </div>
       <div class="card-grid">
         <% @hero_topics.each do |topic| %>
@@ -55,8 +55,6 @@
 <% end %>
 
 <div class="text-center mt-8 mb-8">
-  <p class="text-secondary text-sm">
-    Looking for older or resolved topics?
-    <%= link_to "Explore the full archive", topics_explore_path %>.
-  </p>
+  <p class="text-secondary mb-3">Looking for older or resolved topics?</p>
+  <%= link_to "Explore the full archive →", topics_explore_path, class: "btn btn--secondary" %>
 </div>
