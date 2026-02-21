@@ -16,6 +16,7 @@ module Topics
       context = build_briefing_context(topic, meeting, retrieval_service)
       analysis_json_str = ai_service.analyze_topic_briefing(context)
       analysis_json = parse_json_safely(analysis_json_str, topic)
+      return if analysis_json.empty?
 
       rendered = ai_service.render_topic_briefing(analysis_json.to_json)
 
@@ -37,8 +38,9 @@ module Topics
         .limit(RAW_CONTEXT_MEETING_LIMIT)
         .pluck(:meeting_id)
 
-      recent_raw_context = recent_meeting_ids.flat_map do |mid|
-        builder = Topics::SummaryContextBuilder.new(topic, Meeting.find(mid))
+      recent_meetings = Meeting.where(id: recent_meeting_ids)
+      recent_raw_context = recent_meetings.flat_map do |meeting|
+        builder = Topics::SummaryContextBuilder.new(topic, meeting)
         builder.build_context_json[:agenda_items]
       end
 
