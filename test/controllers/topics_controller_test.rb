@@ -169,4 +169,61 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
 
     assert_select ".card--highlighted", count: 0
   end
+
+  test "index only shows active topics in main list" do
+    get topics_url
+    assert_response :success
+
+    card_titles = css_select("#all-topics .card-title").map { |node| node.text.strip }
+    assert_includes card_titles, @active_topic.name
+    refute_includes card_titles, @dormant_topic.name
+    refute_includes card_titles, @resolved_topic.name
+  end
+
+  test "index hero section shows active topics ranked by resident_impact_score" do
+    @active_topic.update!(resident_impact_score: 5, last_activity_at: 2.days.ago)
+    low_impact = Topic.create!(
+      name: "low impact topic", lifecycle_status: "active", status: "approved",
+      resident_impact_score: 1, last_activity_at: 1.day.ago
+    )
+    AgendaItemTopic.create!(topic: low_impact, agenda_item: @agenda_item)
+
+    get topics_url
+    assert_response :success
+
+    hero_titles = css_select("#hero-topics .card-title").map { |node| node.text.strip }
+    assert_equal @active_topic.name, hero_titles.first
+  end
+
+  test "index hero section excludes topics without activity in last 30 days" do
+    @active_topic.update!(resident_impact_score: 5, last_activity_at: 60.days.ago)
+
+    get topics_url
+    assert_response :success
+
+    hero_titles = css_select("#hero-topics .card-title").map { |node| node.text.strip }
+    refute_includes hero_titles, @active_topic.name
+  end
+
+  test "index main list excludes topics already in hero section" do
+    @active_topic.update!(resident_impact_score: 5, last_activity_at: 1.day.ago)
+
+    get topics_url
+    assert_response :success
+
+    hero_titles = css_select("#hero-topics .card-title").map { |node| node.text.strip }
+    main_titles = css_select("#all-topics .card-title").map { |node| node.text.strip }
+
+    hero_titles.each do |title|
+      refute_includes main_titles, title
+    end
+  end
+
+  test "index shows explanation text and explore link" do
+    get topics_url
+    assert_response :success
+
+    assert_select ".page-subtitle", text: /currently under discussion/i
+    assert_select "a[href=?]", "/topics/explore"
+  end
 end
