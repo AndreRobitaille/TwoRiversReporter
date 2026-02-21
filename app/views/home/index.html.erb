@@ -23,7 +23,7 @@
         <% end %>
       </div>
       <div class="card-footer">
-        <%= link_to "All topics &#8594;".html_safe, topics_path, class: "text-sm" %>
+        <%= link_to "All topics →", topics_path, class: "btn btn--secondary btn--sm" %>
       </div>
     </div>
   <% end %>
@@ -39,11 +39,17 @@
         <% end %>
       </div>
       <div class="card-footer">
-        <%= link_to "All topics &#8594;".html_safe, topics_path, class: "text-sm" %>
+        <%= link_to "All topics →", topics_path, class: "btn btn--secondary btn--sm" %>
       </div>
     </div>
   <% end %>
 </div>
+
+<% unless @coming_up.any? || @what_happened.any? %>
+  <div class="empty-state mb-8">
+    <p class="mb-0">No hot topics right now. Check the meetings below to see what's scheduled.</p>
+  </div>
+<% end %>
 
 <% if @coming_up.any? || @what_happened.any? %>
   <hr class="home-divider">
