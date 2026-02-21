@@ -56,4 +56,27 @@ module TopicsHelper
 
     agenda_item.title.match?(/public (hearing|comment)/i)
   end
+
+  def render_topic_summary_content(markdown_content)
+    return "" if markdown_content.blank?
+
+    lines = markdown_content.lines.map(&:chomp)
+
+    # Remove heading lines and internal section headers
+    filtered = lines.reject do |line|
+      line.match?(/\A##\s/) ||
+        line.match?(/\A\*\*(Factual Record|Institutional Framing|Civic Sentiment|Continuity|Resident-reported)/i) ||
+        line.strip.empty?
+    end
+
+    # Convert markdown bullets to HTML list items
+    items = filtered.map do |line|
+      text = line.sub(/\A\s*[-*]\s*/, "").strip
+      next if text.empty?
+      content_tag(:li, text)
+    end.compact
+
+    return "" if items.empty?
+    content_tag(:ul, items.join.html_safe, class: "topic-summary-list")
+  end
 end

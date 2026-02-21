@@ -1,129 +1,145 @@
 <% content_for(:title) { "#{@topic.name} - Topics - Two Rivers Reporter" } %>
 
+<%# === 1. Header === %>
 <div class="page-header">
-  <div class="d-flex align-items-center justify-content-between">
-    <div>
-      <h1 class="page-title"><%= @topic.name %></h1>
-      <div class="topic-meta mt-2">
-        <%= topic_lifecycle_badge(@topic.lifecycle_status || "unknown") %>
-        <span class="text-secondary ml-3">
-          Last active: <%= @topic.last_activity_at&.strftime("%B %d, %Y") || "Unknown" %>
-        </span>
-      </div>
-    </div>
-  </div>
-  <p class="page-subtitle mt-3">
-    <%= @topic.description %>
-  </p>
+  <h1 class="page-title"><%= @topic.name %></h1>
+  <% if @topic.description.present? %>
+    <p class="page-subtitle"><%= @topic.description %></p>
+  <% end %>
 </div>
 
-<div class="timeline">
-  <% @timeline_items.group_by { |i| (i.try(:appeared_at) || i.try(:occurred_at))&.to_date }.each do |date, items| %>
-    <div class="timeline-group">
-      <div class="timeline-date-marker">
-        <%= date&.strftime("%B %d, %Y") %>
-      </div>
-
-      <% items.each do |item| %>
-        <% if item.is_a?(TopicAppearance) %>
-          <div class="timeline-item timeline-item--appearance">
-            <div class="timeline-header d-flex justify-content-between align-items-center">
-              <span class="font-weight-bold"><%= item.meeting.body_name %></span>
-              <%= link_to "View Meeting", meeting_path(item.meeting), class: "text-sm text-secondary" %>
+<%# === 2. Coming Up === %>
+<% if @upcoming.any? %>
+  <section class="topic-upcoming section">
+    <h2 class="section-title">Coming Up</h2>
+    <div class="card-grid">
+      <% @upcoming.each do |appearance| %>
+        <div class="card">
+          <div class="card-body">
+            <div class="text-sm text-secondary mb-1">
+              <%= appearance.meeting.body_name %>
             </div>
-
-            <% if item.agenda_item %>
-              <div class="timeline-content mt-2">
-                <div class="agenda-item-title font-weight-medium">
-                  <%= link_to item.agenda_item.title, meeting_path(item.meeting, anchor: "item-#{item.agenda_item.id}") %>
-                </div>
-                
-                <% if item.agenda_item.summary.present? %>
-                  <div class="agenda-item-summary mt-1 text-secondary">
-                    <%= item.agenda_item.summary %>
-                  </div>
-                <% end %>
-
-                <%# Inline Motions %>
-                <% if item.agenda_item.motions.any? %>
-                  <div class="mt-3 pl-3 border-left">
-                    <% item.agenda_item.motions.each do |motion| %>
-                      <div class="motion mb-2">
-                        <div class="d-flex align-items-center justify-content-between">
-                          <span class="badge <%= case motion.outcome.downcase
-                            when 'passed', 'adopted', 'approved' then 'badge--success'
-                            when 'failed', 'defeated' then 'badge--danger'
-                            else 'badge--default'
-                          end %>">
-                            <%= motion.outcome.titleize %>
-                          </span>
-                        </div>
-                        <div class="text-sm mt-1"><%= motion.description %></div>
-                        
-                        <% if motion.votes.any? %>
-                          <details class="mt-1">
-                            <summary class="text-xs text-secondary cursor-pointer">
-                              Show <%= pluralize(motion.votes.count, "vote") %>
-                            </summary>
-                            <div class="votes-grid mt-2">
-                              <% motion.votes.each do |vote| %>
-                                <div class="vote-card text-xs p-1 border rounded">
-                                  <span class="font-weight-bold"><%= vote.member.name %></span>: 
-                                  <span class="vote-value--<%= vote.value %>"><%= vote.value.titleize %></span>
-                                </div>
-                              <% end %>
-                            </div>
-                          </details>
-                        <% end %>
-                      </div>
-                    <% end %>
-                  </div>
-                <% end %>
-              </div>
-            <% else %>
-              <div class="timeline-content mt-2 text-secondary font-italic">
-                Mentioned in meeting minutes or packet (no agenda item link).
+            <div class="font-weight-bold mb-1">
+              <%= appearance.meeting.starts_at.strftime("%A, %B %-d at %-I:%M %p") %>
+            </div>
+            <% if appearance.meeting.location.present? %>
+              <div class="text-sm text-secondary mb-2">
+                <%= appearance.meeting.location %>
               </div>
             <% end %>
-
-            <%# Document Citations %>
-            <% if item.meeting.meeting_documents.any? %>
-              <div class="timeline-footer mt-2 pt-2 border-top text-xs text-secondary">
-                Sources: 
-                <% item.meeting.meeting_documents.each do |doc| %>
-                  <%= link_to doc.document_type.humanize, rails_blob_path(doc.file, disposition: "inline"), target: "_blank", class: "mr-2" if doc.file.attached? %>
-                <% end %>
+            <% if appearance.agenda_item %>
+              <div class="mb-2">
+                <%= appearance.agenda_item.title %>
               </div>
+              <% if public_comment_meeting?(appearance.agenda_item) %>
+                <div class="badge badge--info mb-2">Public comment period</div>
+              <% end %>
             <% end %>
+            <%= link_to "View meeting details", meeting_path(appearance.meeting),
+                class: "text-sm" %>
           </div>
+        </div>
+      <% end %>
+    </div>
+    <p class="text-sm text-secondary mt-3">
+      You can always contact your council members about this topic.
+    </p>
+  </section>
+<% end %>
 
-        <% elsif item.is_a?(TopicStatusEvent) %>
-          <div class="timeline-item timeline-item--status-event bg-light p-3 rounded mb-3 border">
-            <div class="d-flex align-items-center">
-              <%= signal_badge(item.evidence_type) %>
-              <span class="ml-2 text-secondary text-sm">
-                Status changed to <strong><%= item.lifecycle_status.humanize %></strong>
+<%# === 3. What's Happening === %>
+<% if @summary %>
+  <section class="topic-summary section">
+    <h2 class="section-title">What's Happening</h2>
+    <div class="card">
+      <div class="card-body topic-summary-content">
+        <%= sanitize(render_topic_summary_content(@summary.content)) %>
+      </div>
+    </div>
+  </section>
+<% end %>
+
+<%# === 4. Recent Activity === %>
+<% if @recent_activity.any? %>
+  <section class="topic-recent-activity section">
+    <h2 class="section-title">Recent Activity</h2>
+    <% @recent_activity.each do |appearance| %>
+      <div class="topic-activity-item">
+        <div class="flex justify-between items-center">
+          <span class="font-weight-bold"><%= appearance.meeting.body_name %></span>
+          <span class="text-sm text-secondary">
+            <%= appearance.appeared_at.strftime("%B %-d, %Y") %>
+          </span>
+        </div>
+        <% if appearance.agenda_item %>
+          <div class="mt-1"><%= appearance.agenda_item.title %></div>
+          <% appearance.agenda_item.motions.each do |motion| %>
+            <div class="mt-1">
+              <span class="badge <%= case motion.outcome&.downcase
+                when 'passed', 'adopted', 'approved' then 'badge--success'
+                when 'failed', 'defeated' then 'badge--danger'
+                else 'badge--default'
+              end %>">
+                <%= motion_outcome_text(motion) %>
               </span>
             </div>
-            <% if item.notes.present? %>
-              <div class="mt-2 text-sm text-secondary font-italic">
-                <%= item.notes %>
+          <% end %>
+        <% end %>
+        <div class="mt-2">
+          <%= link_to "View meeting", meeting_path(appearance.meeting),
+              class: "text-sm" %>
+        </div>
+      </div>
+    <% end %>
+  </section>
+<% end %>
+
+<%# === 5. Key Decisions === %>
+<% if @decisions.any? %>
+  <section class="topic-decisions section">
+    <h2 class="section-title">Key Decisions</h2>
+    <% @decisions.each do |motion| %>
+      <div class="topic-decision-item">
+        <div class="flex justify-between items-center mb-1">
+          <span class="font-weight-bold"><%= motion.meeting.body_name %></span>
+          <span class="text-sm text-secondary">
+            <%= motion.meeting.starts_at.strftime("%B %-d, %Y") %>
+          </span>
+        </div>
+        <div class="mb-2"><%= motion.description %></div>
+        <div class="mb-2">
+          <span class="badge <%= case motion.outcome&.downcase
+            when 'passed', 'adopted', 'approved' then 'badge--success'
+            when 'failed', 'defeated' then 'badge--danger'
+            else 'badge--default'
+          end %>">
+            <%= motion_outcome_text(motion) %>
+          </span>
+        </div>
+        <% if motion.votes.any? %>
+          <div class="votes-grid">
+            <% motion.votes.each do |vote| %>
+              <div class="vote-card text-sm">
+                <span class="font-weight-bold"><%= vote.member.name %></span>:
+                <span class="vote-value--<%= vote.value %>"><%= vote.value.titleize %></span>
               </div>
             <% end %>
           </div>
         <% end %>
-      <% end %>
-    </div>
-  <% end %>
-</div>
+      </div>
+    <% end %>
+  </section>
+<% end %>
 
-<% if @timeline_items.empty? %>
-  <div class="card text-center" style="padding: var(--space-12);">
-    <p class="text-secondary mb-0">No timeline data found for this topic.</p>
+<%# === Empty state === %>
+<% if @upcoming.empty? && @summary.nil? && @recent_activity.empty? && @decisions.empty? %>
+  <div class="topic-empty-state empty-state">
+    <p class="mb-0">No meeting activity recorded for this topic yet.</p>
   </div>
 <% end %>
 
-<div class="mt-4">
+<%# === Footer === %>
+<div class="mt-6">
   <%= link_to topics_path, class: "back-link" do %>
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <line x1="19" y1="12" x2="5" y2="12"></line>
