@@ -9,6 +9,9 @@
     </div>
   </div>
   <div class="card-body">
+    <% if topic.description.present? %>
+      <p class="text-secondary text-sm mb-2"><%= truncate(topic.description, length: 80) %></p>
+    <% end %>
     <div class="flex justify-between text-secondary text-sm">
       <span><%= topic.try(:agenda_item_count_cache) || topic.agenda_items.count %> agenda items</span>
       <% if topic.last_activity_at %>
