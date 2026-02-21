@@ -201,6 +201,7 @@ module Topics
         next if topic.status == "approved"
 
         topic.update!(status: "approved", review_status: "approved")
+        Topics::GenerateDescriptionJob.perform_later(topic.id)
         record_review_event(user, topic, "approved", approval_reason(approval), confidence: confidence)
         append_log("approve topic=#{topic.id} confidence=#{confidence} rationale=#{approval["rationale"]}")
       end
