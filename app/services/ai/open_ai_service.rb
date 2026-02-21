@@ -411,6 +411,60 @@ module Ai
       response.dig("choices", 0, "message", "content")
     end
 
+    def generate_topic_description(topic_context)
+      topic_name = topic_context[:topic_name]
+      agenda_items = topic_context[:agenda_items] || []
+      headlines = topic_context[:headlines] || []
+
+      activity_text = agenda_items.map { |ai| "- #{ai[:title]}#{ai[:summary].present? ? ": #{ai[:summary]}" : ""}" }.join("\n")
+      headlines_text = headlines.any? ? "\nRecent headlines:\n#{headlines.map { |h| "- #{h}" }.join("\n")}" : ""
+
+      if agenda_items.size >= 3
+        user_prompt = <<~PROMPT
+          Describe what the civic topic "#{topic_name}" covers based on the following activity:
+
+          #{activity_text}
+          #{headlines_text}
+
+          Rules:
+          - One sentence, max 80 characters
+          - Describe the scope, not a specific event
+          - No addresses, applicant names, dates, or vote counts
+          - Plain neighborhood language, not bureaucratic jargon
+          - Don't start with "This topic" or "Covers"
+          - Return ONLY the sentence, no quotes
+        PROMPT
+      else
+        user_prompt = <<~PROMPT
+          Write a broad civic-concept description for the topic "#{topic_name}".
+          #{activity_text.present? ? "\nKnown activity:\n#{activity_text}" : ""}
+          #{headlines_text}
+
+          Rules:
+          - One sentence, max 80 characters
+          - Describe the scope, not a specific event
+          - No addresses, applicant names, dates, or vote counts
+          - Plain neighborhood language, not bureaucratic jargon
+          - Don't start with "This topic" or "Covers"
+          - Return ONLY the sentence, no quotes
+        PROMPT
+      end
+
+      response = @client.chat(
+        parameters: {
+          model: LIGHTWEIGHT_MODEL,
+          messages: [
+            { role: "system", content: "You are a concise civic topic describer for Two Rivers, WI." },
+            { role: "user", content: user_prompt }
+          ],
+          temperature: 0.3
+        }
+      )
+
+      content = response.dig("choices", 0, "message", "content")
+      content.present? ? content.strip : nil
+    end
+
     private
 
     def prepare_doc_context(extractions)
