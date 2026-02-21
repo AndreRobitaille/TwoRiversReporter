@@ -23,5 +23,14 @@ class AgendaItemTopic < ApplicationRecord
 
     # Trigger Continuity Update
     Topics::UpdateContinuityJob.perform_later(topic_id: topic.id)
+
+    # Trigger headline briefing for future meetings
+    if agenda_item.meeting.starts_at&.future?
+      Topics::UpdateTopicBriefingJob.perform_later(
+        topic_id: topic.id,
+        meeting_id: agenda_item.meeting.id,
+        tier: "headline_only"
+      )
+    end
   end
 end

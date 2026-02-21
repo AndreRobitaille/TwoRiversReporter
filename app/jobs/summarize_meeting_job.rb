@@ -80,6 +80,12 @@ class SummarizeMeetingJob < ApplicationJob
         score = analysis_json["resident_impact"]["score"].to_i
         topic.update_resident_impact_from_ai(score) if score.between?(1, 5)
       end
+
+      # Trigger full briefing generation
+      Topics::GenerateTopicBriefingJob.perform_later(
+        topic_id: topic.id,
+        meeting_id: meeting.id
+      )
     end
   end
 
