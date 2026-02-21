@@ -439,10 +439,13 @@ module Ai
         </voice>
 
         <constraints>
-        - Factual claims need citations. No evidence = don't state it.
+        - Factual claims must be grounded in the source data. No evidence = don't state it.
         - Civic sentiment: observational ("residents pushed back", "drew complaints").
         - Note deferrals, recurrence, disappearance — these are patterns residents care about.
         - Don't invent continuity that isn't in the data.
+        - For citations, use the meeting/committee name and date — NOT internal IDs.
+          Good: "City Council, Nov 17" or "Public Works Committee, Jan 27"
+          Bad: "[agenda-309]" or "[appearance-2481]"
         </constraints>
 
         TOPIC CONTEXT (JSON):
@@ -461,13 +464,13 @@ module Ai
             "what_to_watch": "One sentence about what's next, or null"
           },
           "factual_record": [
-            {"event": "What happened — plain language", "date": "YYYY-MM-DD", "citations": ["source ref"]}
+            {"event": "What happened — plain language", "date": "YYYY-MM-DD", "meeting": "City Council or committee name"}
           ],
           "civic_sentiment": [
-            {"observation": "What residents said/want", "evidence": "Source", "citations": ["..."]}
+            {"observation": "What residents said/want", "evidence": "Source", "meeting": "meeting name"}
           ],
           "continuity_signals": [
-            {"signal": "recurrence|deferral|disappearance|cross_body_progression", "details": "...", "citations": ["..."]}
+            {"signal": "recurrence|deferral|disappearance|cross_body_progression", "details": "...", "meeting": "meeting name"}
           ],
           "resident_impact": {"score": 1, "rationale": "One sentence — why residents should care"},
           "ambiguities": ["What's still unclear"],
@@ -542,13 +545,14 @@ module Ai
         starts with "- ". Do NOT return a JSON array — return a string.
 
         Format each bullet exactly like this:
-        - Nov 17, 2025 — Council discussed cutting Route 1 bus subsidy [agenda-309]
-        - Feb 16, 2026 — City proposed $2.5M in new borrowing [agenda-1449]
+        - Nov 17, 2025 — Council discussed cutting Route 1 bus subsidy (City Council)
+        - Jan 27, 2026 — Committee reviewed land pricing (BIDC-CDA)
 
         Rules:
         - Plain language. "Council approved 4-3" not "motion carried with a vote of 4-3."
         - Oldest first, newest last.
-        - Every claim needs a citation in [brackets] at the end.
+        - End each bullet with the meeting/committee name in parentheses.
+          Do NOT use internal IDs like [agenda-309]. Use the meeting name.
         - No editorializing — just what happened and when.
         - Use readable dates (e.g., "Nov 17, 2025") not ISO format.
         </record_content_guide>
