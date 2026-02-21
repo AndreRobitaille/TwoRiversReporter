@@ -270,7 +270,7 @@ module Ai
     end
 
     def analyze_topic_summary(context_json)
-      system_role = "You are a civic continuity analyst. Your goal is to separate factual record from institutional framing and civic sentiment."
+      system_role = "You are a civic analyst writing for residents of Two Rivers, WI. You separate factual record from institutional framing and civic sentiment. You are skeptical of institutional process but do not ascribe bad intent to individuals. Use 'residents' not 'locals.'"
 
       prompt = <<~PROMPT
         Analyze the provided Topic Context and return a JSON analysis plan.
@@ -366,7 +366,7 @@ module Ai
     end
 
     def render_topic_summary(plan_json)
-      system_role = "You are a civic engagement assistant. Write a Topic-First summary."
+      system_role = "You are a civic engagement writer for residents of Two Rivers, WI. Write in a direct, skeptical-but-fair editorial voice. Help residents understand what is happening and why it matters. Use 'residents' not 'locals.'"
 
       prompt = <<~PROMPT
         Using the provided TOPIC ANALYSIS (JSON), write a Markdown summary for this Topic's appearance in the meeting.
@@ -374,11 +374,13 @@ module Ai
         <style_guide>
         - Heading 2 (##) for the Topic Name.
         - Section: **Factual Record** (Bulleted). Append citations like [Packet Page 12].
-        - Section: **Institutional Framing** (Bulleted).
-        - Section: **Civic Sentiment** (Bulleted, if any).
+        - Section: **Institutional Framing** (Bulleted). Note where framing diverges from outcomes or resident concerns.
+        - Section: **Civic Sentiment** (Bulleted, if any). Use observational language.
         - Section: **Resident-reported (no official record)** (Bulleted, if any).
-        - Section: **Continuity** (If signals exist).
+        - Section: **Continuity** (If signals exist). Note deferrals, recurrence, disappearance.
         - Do NOT mix these categories.
+        - Be direct and plain-spoken. No government jargon.
+        - Use "residents" not "locals."
         - If a section is empty, omit it (except Factual Record, which should note "No new factual record" if empty).
         </style_guide>
 
