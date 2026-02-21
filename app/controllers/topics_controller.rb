@@ -33,8 +33,6 @@ class TopicsController < ApplicationController
   end
 
   def explore
-    # Placeholder for full archive — Task 5
-    redirect_to topics_path
   end
 
   def show
