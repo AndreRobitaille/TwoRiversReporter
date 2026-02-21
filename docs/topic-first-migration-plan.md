@@ -67,7 +67,7 @@ This is a living note for future actions, not an implementation log.
 1) [x] Topics index grouped by lifecycle status.
 2) [x] Topics index: "Recently Updated" row (cross-status recency).
 3) [x] Topics index: highlight newly active/resurfaced topics (structural signal badges).
-4) Topics index: filters (status, body, timeframe).
+4) [x] Topics index: curated active-only view with explore placeholder.
 5) [x] Topics index: pagination + activity window rules.
 6) Topic navigation: standardize click-through behavior.
 7) Topic pages: empty/error/low-signal states (QA checklist).
