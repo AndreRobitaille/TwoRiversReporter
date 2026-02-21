@@ -1759,8 +1759,8 @@ th.sortable-header:hover {
 
 /* Section titles — subtle bottom border for clear start markers */
 .topic-upcoming .section-title,
-.topic-summary .section-title,
-.topic-recent-activity .section-title,
+.topic-briefing-editorial .section-title,
+.topic-briefing-record .section-title,
 .topic-decisions .section-title {
   padding-bottom: var(--space-3);
   border-bottom: 2px solid var(--color-primary);
@@ -1842,6 +1842,44 @@ th.sortable-header:hover {
 }
 
 .topic-summary-list li:last-child {
+  margin-bottom: 0;
+}
+
+/* Topic Briefing */
+.briefing-headline-text {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  margin-bottom: 0;
+}
+
+.briefing-editorial-content {
+  line-height: var(--line-height-relaxed);
+}
+
+.briefing-editorial-content p {
+  margin-bottom: var(--space-4);
+}
+
+.briefing-editorial-content p:last-child {
+  margin-bottom: 0;
+}
+
+.card--surface-raised {
+  background-color: var(--color-surface-raised);
+}
+
+.topic-record-list {
+  list-style: disc;
+  padding-left: var(--space-6);
+}
+
+.topic-record-list li {
+  margin-bottom: var(--space-2);
+  line-height: var(--line-height-normal);
+}
+
+.topic-record-list li:last-child {
   margin-bottom: 0;
 }
 

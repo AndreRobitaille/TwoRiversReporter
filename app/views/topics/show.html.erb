@@ -48,56 +48,43 @@
   </section>
 <% end %>
 
-<%# === 3. What's Happening === %>
-<% if @summary %>
-  <section class="topic-summary section topic-section">
-    <h2 class="section-title">What's Happening</h2>
-    <div class="card">
-      <div class="card-body topic-summary-content">
-        <%= sanitize(render_topic_summary_content(@summary.content)) %>
+<%# === 3. Briefing Headline === %>
+<% if @briefing&.headline.present? %>
+  <section class="topic-briefing-headline section">
+    <div class="card card--warm">
+      <div class="card-body">
+        <p class="briefing-headline-text"><%= @briefing.headline %></p>
+        <%= briefing_freshness_badge(@briefing) %>
       </div>
     </div>
   </section>
 <% end %>
 
-<%# === 4. Recent Activity === %>
-<% if @recent_activity.any? %>
-  <section class="topic-recent-activity section topic-section">
-    <h2 class="section-title">Recent Activity</h2>
-    <div class="topic-activity-list">
-      <% @recent_activity.each do |appearance| %>
-        <div class="topic-activity-item">
-          <div class="flex justify-between items-center">
-            <span class="font-bold"><%= appearance.meeting.body_name %></span>
-            <span class="text-sm text-secondary">
-              <%= appearance.appeared_at.strftime("%B %-d, %Y") %>
-            </span>
-          </div>
-          <% if appearance.agenda_item %>
-            <% appearance.agenda_item.motions.each do |motion| %>
-              <div class="mt-2">
-                <span class="badge <%= case motion.outcome&.downcase
-                  when 'passed', 'adopted', 'approved' then 'badge--success'
-                  when 'failed', 'defeated' then 'badge--danger'
-                  else 'badge--default'
-                end %>">
-                  <%= motion_outcome_text(motion) %>
-                </span>
-              </div>
-            <% end %>
-            <div class="mt-1 text-sm text-secondary"><%= appearance.agenda_item.title %></div>
-          <% end %>
-          <div class="mt-3">
-            <%= link_to "View meeting →", meeting_path(appearance.meeting),
-                class: "btn btn--secondary btn--sm" %>
-          </div>
-        </div>
-      <% end %>
+<%# === 4. What's Going On (Editorial) === %>
+<% if @briefing&.editorial_content.present? %>
+  <section class="topic-briefing-editorial section topic-section">
+    <h2 class="section-title">What's Going On</h2>
+    <div class="card">
+      <div class="card-body briefing-editorial-content">
+        <%= sanitize(render_briefing_editorial(@briefing.editorial_content)) %>
+      </div>
     </div>
   </section>
 <% end %>
 
-<%# === 5. Key Decisions === %>
+<%# === 5. Record (Factual) === %>
+<% if @briefing&.record_content.present? %>
+  <section class="topic-briefing-record section topic-section">
+    <h2 class="section-title">Record</h2>
+    <div class="card card--surface-raised">
+      <div class="card-body">
+        <%= sanitize(render_briefing_record(@briefing.record_content)) %>
+      </div>
+    </div>
+  </section>
+<% end %>
+
+<%# === 6. Key Decisions === %>
 <% if @decisions.any? %>
   <section class="topic-decisions section topic-section">
     <h2 class="section-title">Key Decisions</h2>
@@ -136,7 +123,7 @@
 <% end %>
 
 <%# === Empty state === %>
-<% if @upcoming.empty? && @summary.nil? && @recent_activity.empty? && @decisions.empty? %>
+<% if @upcoming.empty? && @briefing.nil? && @decisions.empty? %>
   <div class="topic-empty-state empty-state">
     <p class="mb-0">No meeting activity recorded for this topic yet.</p>
   </div>

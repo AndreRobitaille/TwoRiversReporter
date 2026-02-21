@@ -304,36 +304,40 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".topic-upcoming", count: 0
   end
 
-  test "show loads most recent topic summary" do
-    TopicSummary.create!(
-      topic: @active_topic, meeting: @meeting,
-      content: "## Street Repair\n\n**Factual Record**\n- City approved funding [Packet Page 5].",
-      summary_type: "topic_digest", generation_data: { model: "test" }
+  test "show displays briefing headline when present" do
+    TopicBriefing.create!(
+      topic: @active_topic,
+      headline: "Street repairs approved for downtown",
+      generation_tier: "headline_only"
     )
 
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-summary", minimum: 1
+    assert_select ".topic-briefing-headline", minimum: 1
+    assert_select ".briefing-headline-text", text: "Street repairs approved for downtown"
   end
 
-  test "show hides summary section when no summaries exist" do
+  test "show hides briefing sections when no briefing exists" do
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-summary", count: 0
+    assert_select ".topic-briefing-headline", count: 0
+    assert_select ".topic-briefing-editorial", count: 0
+    assert_select ".topic-briefing-record", count: 0
   end
 
-  test "show loads recent activity from past meetings" do
-    past_item = AgendaItem.create!(meeting: @meeting, title: "Past Item", summary: "Discussed repairs")
-    AgendaItemTopic.create!(topic: @active_topic, agenda_item: past_item)
-    TopicAppearance.create!(
-      topic: @active_topic, meeting: @meeting,
-      agenda_item: past_item, appeared_at: @meeting.starts_at,
-      evidence_type: "agenda_item"
+  test "show displays editorial and record sections for full briefing" do
+    TopicBriefing.create!(
+      topic: @active_topic,
+      headline: "Street repairs approved",
+      editorial_content: "The council voted to fund repairs.\n\nWork begins in spring.",
+      record_content: "- Approved $50k budget\n- Timeline: March 2026",
+      generation_tier: "full"
     )
 
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-recent-activity", minimum: 1
+    assert_select ".topic-briefing-editorial", minimum: 1
+    assert_select ".topic-briefing-record", minimum: 1
   end
 
   test "show loads decisions with motions and votes" do
@@ -392,18 +396,16 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".topic-upcoming a.card-link", minimum: 1
   end
 
-  test "show recent activity has button links to meetings" do
-    past_item = AgendaItem.create!(meeting: @meeting, title: "Past Item")
-    AgendaItemTopic.create!(topic: @active_topic, agenda_item: past_item)
-    TopicAppearance.create!(
-      topic: @active_topic, meeting: @meeting,
-      agenda_item: past_item, appeared_at: @meeting.starts_at,
-      evidence_type: "agenda_item"
+  test "show briefing freshness badge displays New for recent briefings" do
+    TopicBriefing.create!(
+      topic: @active_topic,
+      headline: "New development on topic",
+      generation_tier: "headline_only"
     )
 
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-activity-item a.btn", minimum: 1
+    assert_select ".badge--primary", text: "New"
   end
 
   test "show key decisions displays vote label" do

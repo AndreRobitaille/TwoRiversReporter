@@ -45,6 +45,34 @@ module TopicsHelper
     agenda_item.title.match?(/public (hearing|comment)/i)
   end
 
+  def render_briefing_editorial(markdown_content)
+    return "" if markdown_content.blank?
+
+    paragraphs = markdown_content.split(/\n{2,}/).map(&:strip).reject(&:blank?)
+    safe_join(paragraphs.map { |p| content_tag(:p, p) })
+  end
+
+  def render_briefing_record(markdown_content)
+    return "" if markdown_content.blank?
+
+    lines = markdown_content.lines.map(&:chomp)
+    items = lines.filter_map do |line|
+      text = line.sub(/\A\s*[-*]\s*/, "").strip
+      next if text.empty?
+      content_tag(:li, text)
+    end
+
+    return "" if items.empty?
+    content_tag(:ul, safe_join(items), class: "topic-record-list")
+  end
+
+  def briefing_freshness_badge(briefing)
+    return unless briefing.updated_at > 7.days.ago
+
+    label = briefing.created_at == briefing.updated_at ? "New" : "Updated"
+    tag.span(label, class: "badge badge--primary")
+  end
+
   def render_topic_summary_content(markdown_content)
     return "" if markdown_content.blank?
 

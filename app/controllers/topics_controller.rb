@@ -45,17 +45,7 @@ class TopicsController < ApplicationController
                       .where("meetings.starts_at > ?", Time.current)
                       .order("meetings.starts_at ASC")
 
-    # Most recent topic summary
-    @summary = @topic.topic_summaries.order(created_at: :desc).first
-
-    # Recent activity: last 3 past appearances with an agenda item
-    @recent_activity = @topic.topic_appearances
-                            .includes(agenda_item: { motions: :votes }, meeting: [])
-                            .joins(:meeting)
-                            .where("meetings.starts_at <= ?", Time.current)
-                            .where.not(agenda_item_id: nil)
-                            .order(appeared_at: :desc)
-                            .limit(3)
+    @briefing = @topic.topic_briefing
 
     # Key decisions: all motions linked to this topic's agenda items
     @decisions = Motion.joins(agenda_item: :agenda_item_topics)
