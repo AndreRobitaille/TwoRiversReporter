@@ -1743,15 +1743,68 @@ th.sortable-header:hover {
 
 /* === Topic Show Page === */
 
+/* Section dividers — top border on sections after the first */
+.topic-section {
+  padding-top: var(--space-8);
+  border-top: 1px solid var(--color-border);
+}
+
+/* Section titles — subtle bottom border for clear start markers */
+.topic-upcoming .section-title,
+.topic-summary .section-title,
+.topic-recent-activity .section-title,
+.topic-decisions .section-title {
+  padding-bottom: var(--space-3);
+  border-bottom: 2px solid var(--color-primary);
+  display: inline-block;
+  margin-bottom: var(--space-6);
+}
+
+/* Coming Up — clickable card links */
+.card-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+  cursor: pointer;
+}
+
+.card-link:hover {
+  text-decoration: none;
+  color: inherit;
+  box-shadow: var(--shadow-md);
+}
+
+.card-link--upcoming {
+  border-left: 4px solid var(--color-accent-warm);
+}
+
+.card-link-arrow {
+  display: flex;
+  justify-content: flex-end;
+  color: var(--color-text-muted);
+  margin-top: var(--space-2);
+}
+
+.card-link:hover .card-link-arrow {
+  color: var(--color-primary);
+}
+
+/* Recent Activity — discrete cards with gap spacing */
+.topic-activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
 .topic-activity-item {
   padding: var(--space-4);
-  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
 }
 
-.topic-activity-item:last-child {
-  border-bottom: none;
-}
-
+/* Key Decisions — items with bottom border */
 .topic-decision-item {
   padding: var(--space-4);
   border-bottom: 1px solid var(--color-border);
@@ -1761,6 +1814,25 @@ th.sortable-header:hover {
   border-bottom: none;
 }
 
+/* Vote grid enhancements */
+.votes-label {
+  margin-top: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.vote-card--yes {
+  border-left: 3px solid var(--color-success);
+}
+
+.vote-card--no {
+  border-left: 3px solid var(--color-danger);
+}
+
+.vote-card--abstain {
+  border-left: 3px solid var(--color-text-muted);
+}
+
+/* Summary content */
 .topic-summary-list {
   margin: 0;
   padding-left: var(--space-5);
