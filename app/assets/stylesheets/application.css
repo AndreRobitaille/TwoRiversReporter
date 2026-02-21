@@ -1779,16 +1779,6 @@ th.sortable-header:hover {
   border-left: 4px solid var(--color-accent-warm);
 }
 
-.card-link-arrow {
-  display: flex;
-  justify-content: flex-end;
-  color: var(--color-text-muted);
-  margin-top: var(--space-2);
-}
-
-.card-link:hover .card-link-arrow {
-  color: var(--color-primary);
-}
 
 /* Recent Activity — discrete cards with gap spacing */
 .topic-activity-list {
