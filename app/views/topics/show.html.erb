@@ -122,10 +122,11 @@
           </span>
         </div>
         <% if motion.votes.any? %>
+          <div class="votes-label text-sm font-weight-medium text-secondary">How they voted</div>
           <div class="votes-grid">
             <% motion.votes.each do |vote| %>
-              <div class="vote-card text-sm">
-                <span class="font-weight-bold"><%= vote.member.name %></span>:
+              <div class="vote-card vote-card--<%= vote.value %> text-sm">
+                <span class="font-weight-bold"><%= vote.member.name %></span>
                 <span class="vote-value--<%= vote.value %>"><%= vote.value.titleize %></span>
               </div>
             <% end %>
