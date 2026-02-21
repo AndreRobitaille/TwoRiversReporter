@@ -139,7 +139,7 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     assert_select ".card--highlighted", minimum: 1
-    assert_select ".card-signals .badge", text: "Deferral Observed"
+    assert_select ".card-signals .badge", text: "Delayed"
   end
 
   test "index does not highlight topics without recent signals" do
@@ -162,7 +162,7 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     get topics_url
     assert_response :success
 
-    assert_select ".card-signals .badge", text: "Deferral Observed"
+    assert_select ".card-signals .badge", text: "Delayed"
   end
 
   test "index does not highlight old signals outside 30-day window" do
@@ -253,7 +253,7 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     get topics_url
     assert_response :success
 
-    assert_select ".page-subtitle", text: /currently under discussion/i
+    assert_select ".page-subtitle", text: /What Two Rivers city government is working on/
     assert_select "a[href=?]", "/topics/explore"
   end
 
