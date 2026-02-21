@@ -51,4 +51,38 @@ class TopicsHelperTest < ActionView::TestCase
     item = OpenStruct.new(title: nil)
     refute public_comment_meeting?(item)
   end
+
+  test "render_topic_summary_content strips section headers and renders list" do
+    content = <<~MD
+      ## Street Repair
+
+      **Factual Record**
+      - City approved $50k funding [Packet Page 5].
+      - Work begins in spring.
+
+      **Institutional Framing**
+      - Presented as routine maintenance.
+
+      **Civic Sentiment**
+      - Residents expressed concern about delays.
+    MD
+
+    result = render_topic_summary_content(content)
+    assert_includes result, "<li>"
+    assert_includes result, "City approved $50k funding [Packet Page 5]."
+    assert_includes result, "Residents expressed concern about delays."
+    refute_includes result, "Factual Record"
+    refute_includes result, "Institutional Framing"
+    refute_includes result, "Street Repair"
+  end
+
+  test "render_topic_summary_content returns empty string for blank content" do
+    assert_equal "", render_topic_summary_content(nil)
+    assert_equal "", render_topic_summary_content("")
+  end
+
+  test "render_topic_summary_content handles content with only headers" do
+    content = "## Topic Name\n\n**Factual Record**\n"
+    assert_equal "", render_topic_summary_content(content)
+  end
 end
