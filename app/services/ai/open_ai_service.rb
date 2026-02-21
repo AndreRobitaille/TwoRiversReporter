@@ -411,6 +411,169 @@ module Ai
       response.dig("choices", 0, "message", "content")
     end
 
+    def analyze_topic_briefing(context)
+      system_role = <<~ROLE
+        You are a civic analyst writing for residents of Two Rivers, WI.
+        You are skeptical of institutional process and framing, but you do not
+        ascribe bad intent to individuals. You surface patterns, flag process
+        concerns, and help residents understand what is really happening.
+        You never use the word "locals" — always "residents."
+      ROLE
+
+      prompt = <<~PROMPT
+        Analyze the full history of this topic across all meetings and return
+        a JSON analysis that synthesizes the complete arc.
+
+        <editorial_voice>
+        - Be skeptical of process and decisions, not of people.
+        - Surface patterns: deferrals, repeated framing, scope changes.
+        - Flag when institutional framing doesn't match outcomes or resident concerns.
+        - "Means to an end" analysis is appropriate — note who benefits from decisions.
+        - Do not ascribe malice, corruption, or unethical behavior to individuals.
+        - Use "residents" not "locals."
+        </editorial_voice>
+
+        <governance_constraints>
+        - Factual Record: Must have citations. If no document evidence, do not state as fact.
+        - Civic Sentiment: Use observational language ("appears to", "residents expressed").
+        - Continuity: Explicitly note recurrence, deferrals, cross-body progression, and disappearance.
+        - Do not manufacture historical continuity that doesn't exist in the source data.
+        </governance_constraints>
+
+        TOPIC CONTEXT (JSON):
+        #{context.to_json}
+
+        <extraction_spec>
+        Return a JSON object matching this schema exactly:
+        {
+          "headline": "One plain-language sentence about current status",
+          "editorial_analysis": {
+            "current_state": "What just happened or where things stand",
+            "pattern_observations": ["Observable patterns across meetings"],
+            "process_concerns": ["Process issues worth noting, if any"],
+            "what_to_watch": "Forward-looking note, or null"
+          },
+          "factual_record": [
+            {"event": "What happened", "date": "YYYY-MM-DD", "citations": ["Source reference"]}
+          ],
+          "civic_sentiment": [
+            {"observation": "What residents appear to think/want", "evidence": "Source", "citations": ["..."]}
+          ],
+          "continuity_signals": [
+            {"signal": "recurrence|deferral|disappearance|cross_body_progression", "details": "...", "citations": ["..."]}
+          ],
+          "resident_impact": {"score": 1, "rationale": "Why this matters to residents"},
+          "ambiguities": ["Unresolved questions"],
+          "verification_notes": ["What to check"]
+        }
+        </extraction_spec>
+      PROMPT
+
+      response = @client.chat(
+        parameters: {
+          model: DEFAULT_MODEL,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: system_role },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.1
+        }
+      )
+
+      response.dig("choices", 0, "message", "content")
+    end
+
+    def render_topic_briefing(analysis_json)
+      system_role = <<~ROLE
+        You are a civic engagement writer for residents of Two Rivers, WI.
+        You write in a direct, skeptical-but-fair editorial voice. You help
+        residents understand what is happening and why it matters. You never
+        use the word "locals" — always "residents."
+      ROLE
+
+      prompt = <<~PROMPT
+        Using the TOPIC ANALYSIS below, generate two pieces of content and
+        return them as a JSON object with keys "editorial_content" and
+        "record_content".
+
+        <editorial_content_guide>
+        Write the "What's Going On" section as natural prose paragraphs.
+        - Lead with what just happened or where things stand.
+        - Weave in pattern observations and process concerns from the analysis.
+        - Include civic sentiment where relevant.
+        - Use inline citations like [Packet p.3] or [Minutes p.7].
+        - Be direct and editorial — help readers who can't connect the dots.
+        - If there's something worth watching, end with that.
+        - Do NOT use section headers within this content.
+        - Keep it 2-4 paragraphs.
+        </editorial_content_guide>
+
+        <record_content_guide>
+        Write the "Record" section as a chronological bulleted markdown list.
+        - Each bullet: date — what happened [citation]
+        - Oldest first, newest last.
+        - Every claim must have a citation.
+        - Include vote tallies where available.
+        - Pure facts, no editorializing in this section.
+        </record_content_guide>
+
+        TOPIC ANALYSIS (JSON):
+        #{analysis_json}
+      PROMPT
+
+      response = @client.chat(
+        parameters: {
+          model: DEFAULT_MODEL,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: system_role },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.2
+        }
+      )
+
+      JSON.parse(response.dig("choices", 0, "message", "content"))
+    rescue JSON::ParserError
+      { "editorial_content" => "", "record_content" => "" }
+    end
+
+    def generate_briefing_interim(context)
+      prompt = <<~PROMPT
+        You are updating a topic briefing headline and adding a brief note
+        about an upcoming meeting. Return a JSON object with keys "headline"
+        and "upcoming_note".
+
+        Topic: #{context[:topic_name]}
+        Current headline: #{context[:current_headline]}
+        Meeting: #{context[:meeting_body]} on #{context[:meeting_date]}
+        Agenda items: #{context[:agenda_items].to_json}
+
+        <rules>
+        - "headline": One sentence, plain language. Focus on what's coming.
+          Example: "Council to vote on modified parking plan, Mar 4"
+        - "upcoming_note": 1-2 sentences about what to expect at the meeting
+          based on agenda items. Plain language, no jargon.
+        - Use "residents" not "locals."
+        </rules>
+      PROMPT
+
+      response = @client.chat(
+        parameters: {
+          model: LIGHTWEIGHT_MODEL,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "user", content: prompt }
+          ]
+        }
+      )
+
+      JSON.parse(response.dig("choices", 0, "message", "content"))
+    rescue JSON::ParserError
+      { "headline" => context[:current_headline], "upcoming_note" => "" }
+    end
+
     def generate_topic_description(topic_context)
       topic_name = topic_context[:topic_name]
       agenda_items = topic_context[:agenda_items] || []
