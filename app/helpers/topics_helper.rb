@@ -26,9 +26,9 @@ module TopicsHelper
   # Returns nil if the event type is not highlight-worthy.
   HIGHLIGHT_LABELS = {
     "agenda_recurrence" => "Resurfaced",
-    "deferral_signal" => "Deferral Observed",
-    "cross_body_progression" => "Moved Bodies",
-    "disappearance_signal" => "Disappeared"
+    "deferral_signal" => "Delayed",
+    "cross_body_progression" => "Moved to new committee",
+    "disappearance_signal" => "No longer on agenda"
   }.freeze
 
   def highlight_signal_label(evidence_type, lifecycle_status = nil)

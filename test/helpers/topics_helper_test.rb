@@ -85,4 +85,16 @@ class TopicsHelperTest < ActionView::TestCase
     content = "## Topic Name\n\n**Factual Record**\n"
     assert_equal "", render_topic_summary_content(content)
   end
+
+  test "highlight_signal_label returns Delayed for deferral_signal" do
+    assert_equal "Delayed", highlight_signal_label("deferral_signal")
+  end
+
+  test "highlight_signal_label returns No longer on agenda for disappearance_signal" do
+    assert_equal "No longer on agenda", highlight_signal_label("disappearance_signal")
+  end
+
+  test "highlight_signal_label returns Moved to new committee for cross_body_progression" do
+    assert_equal "Moved to new committee", highlight_signal_label("cross_body_progression")
+  end
 end
