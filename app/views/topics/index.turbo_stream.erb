@@ -1,0 +1,28 @@
+<%= turbo_stream.append "all-topics-cards" do %>
+  <% @topics.each do |topic| %>
+    <%= render "topics/topic_card", topic: topic, highlight_signals: @highlight_signals %>
+  <% end %>
+<% end %>
+
+<%= turbo_stream.replace "all-topics-page" do %>
+  <div id="all-topics-page">
+    <% if @pagy.next %>
+      <div class="topics-show-more">
+        <%= link_to topics_path(page: @pagy.next, format: :turbo_stream),
+              class: "btn btn--secondary" do %>
+          Show more
+        <% end %>
+      </div>
+    <% else %>
+      <div class="topics-show-more">
+        <span class="text-secondary text-sm">All topics loaded</span>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
+<%= turbo_stream.replace "topics-count" do %>
+  <span id="topics-count" class="topics-count text-secondary text-sm">
+    Showing <%= @pagy.to %> of <%= @pagy.count %> topics
+  </span>
+<% end %>

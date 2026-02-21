@@ -568,6 +568,16 @@ small {
   gap: var(--space-6);
 }
 
+.topics-show-more {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-8) 0 var(--space-4);
+}
+
+.topics-count {
+  white-space: nowrap;
+}
+
 /* ============================================
    Tables
    ============================================ */

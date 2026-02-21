@@ -1,18 +1,11 @@
 <% content_for(:title) { "Topics - Two Rivers Reporter" } %>
 
-<% status_descriptions = {
-     "active" => "Currently under discussion or recently on an agenda.",
-     "recurring" => "Issues that appear periodically on agendas.",
-     "dormant" => "No activity in recent meetings.",
-     "resolved" => "Formal decision reached or issue closed."
-   } %>
-
 <div class="page-header">
   <h1 class="page-title">Topics</h1>
   <p class="page-subtitle">Explore issues discussed across city meetings</p>
 </div>
 
-<% if @grouped_topics.empty? %>
+<% if @topics.empty? && @recent_topics.empty? %>
   <div class="card text-center" style="padding: var(--space-12);">
     <p class="text-secondary mb-0">No topics have been categorized yet.</p>
   </div>
@@ -23,83 +16,38 @@
         <h2 class="h3 mb-2">Recently Updated</h2>
         <p class="text-secondary mb-0">The latest topics with new activity across meetings.</p>
       </div>
-
       <div class="card-grid">
         <% @recent_topics.each do |topic| %>
-          <% signals = @highlight_signals[topic.id] %>
-          <%= link_to topic_path(topic), class: ["card card--clickable", ("card--highlighted" if signals)].compact.join(" "), style: "text-decoration: none; color: inherit;" do %>
-            <div class="card-header">
-              <div class="flex justify-between items-center">
-                <h3 class="card-title"><%= topic.name %></h3>
-                <%= topic_lifecycle_badge(topic.lifecycle_status) if topic.lifecycle_status %>
-              </div>
-            </div>
-            <div class="card-body">
-              <div class="flex justify-between text-secondary text-sm">
-                <span><%= topic.try(:agenda_item_count_cache) || topic.agenda_items.count %> agenda items</span>
-                <% if topic.last_activity_at %>
-                  <span>Updated <%= time_ago_in_words(topic.last_activity_at) %> ago</span>
-                <% end %>
-              </div>
-              <% if signals %>
-                <div class="card-signals">
-                  <% signals.each do |label| %>
-                    <span class="badge badge--outline"><%= label %></span>
-                  <% end %>
-                </div>
-              <% end %>
-            </div>
-          <% end %>
+          <%= render "topics/topic_card", topic: topic, highlight_signals: @highlight_signals %>
         <% end %>
       </div>
     </section>
   <% end %>
 
-  <% @grouped_topics.each do |group| %>
-    <% status = group[:status] %>
-    <% topics = group[:topics] %>
-    <% count = group[:count] %>
-    <% last_activity_at = group[:last_activity_at] %>
-    <section class="topic-group mb-8">
-      <div class="group-header mb-4">
-        <h2 class="h3 mb-2">
-          <%= status.capitalize %> Topics
-          <span class="text-secondary text-sm" style="font-weight: normal; margin-left: var(--space-2);">(<%= count %>)</span>
-        </h2>
-        <% if desc = status_descriptions[status] %>
-          <p class="text-secondary mb-0"><%= desc %></p>
-        <% end %>
-        <p class="text-secondary text-sm mb-0">Last activity: <%= group_last_activity_label(last_activity_at) %></p>
+  <section class="topic-group mb-8" id="all-topics">
+    <div class="group-header mb-4">
+      <div class="flex justify-between items-center">
+        <h2 class="h3 mb-0">All Topics</h2>
+        <span id="topics-count" class="topics-count text-secondary text-sm">
+          Showing <%= @pagy.to %> of <%= @pagy.count %> topics
+        </span>
       </div>
-      
-      <div class="card-grid">
-        <% topics.each do |topic| %>
-          <% signals = @highlight_signals[topic.id] %>
-          <%= link_to topic_path(topic), class: ["card card--clickable", ("card--highlighted" if signals)].compact.join(" "), style: "text-decoration: none; color: inherit;" do %>
-            <div class="card-header">
-              <div class="flex justify-between items-center">
-                <h3 class="card-title"><%= topic.name %></h3>
-                <%= topic_lifecycle_badge(topic.lifecycle_status) if topic.lifecycle_status %>
-              </div>
-            </div>
-            <div class="card-body">
-              <div class="flex justify-between text-secondary text-sm">
-                <span><%= topic.try(:agenda_item_count_cache) || topic.agenda_items.count %> agenda items</span>
-                <% if topic.last_activity_at %>
-                  <span>Updated <%= time_ago_in_words(topic.last_activity_at) %> ago</span>
-                <% end %>
-              </div>
-              <% if signals %>
-                <div class="card-signals">
-                  <% signals.each do |label| %>
-                    <span class="badge badge--outline"><%= label %></span>
-                  <% end %>
-                </div>
-              <% end %>
-            </div>
+    </div>
+    <div id="all-topics-cards" class="card-grid">
+      <% @topics.each do |topic| %>
+        <%= render "topics/topic_card", topic: topic, highlight_signals: @highlight_signals %>
+      <% end %>
+    </div>
+
+    <div id="all-topics-page">
+      <% if @pagy.next %>
+        <div class="topics-show-more">
+          <%= link_to topics_path(page: @pagy.next, format: :turbo_stream),
+                class: "btn btn--secondary" do %>
+            Show more
           <% end %>
-        <% end %>
-      </div>
-    </section>
-  <% end %>
+        </div>
+      <% end %>
+    </div>
+  </section>
 <% end %>

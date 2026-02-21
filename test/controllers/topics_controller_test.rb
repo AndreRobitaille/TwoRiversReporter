@@ -78,7 +78,7 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a", text: /Show more/, count: 0
   end
 
-  test "index page 2 returns topics in a turbo frame" do
+  test "index page 2 returns turbo stream with appended topics" do
     18.times do |i|
       topic = Topic.create!(
         name: "Extra Topic #{i}",
@@ -89,11 +89,11 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
       AgendaItemTopic.create!(topic: topic, agenda_item: @agenda_item)
     end
 
-    get topics_url(page: 2)
+    get topics_url(page: 2, format: :turbo_stream)
     assert_response :success
-
-    # Page 2 should return a turbo frame response with remaining topics
-    assert_select "turbo-frame#all-topics-page"
+    assert_equal "text/vnd.turbo-stream.html; charset=utf-8", response.content_type
+    assert_match "all-topics-cards", response.body
+    assert_match "all-topics-page", response.body
   end
 
   test "index shows recently updated topics ordered by recency" do

@@ -2,35 +2,26 @@ class TopicsController < ApplicationController
   include HighlightSignals
 
   def index
-    # Fetch all publicly visible topics
     base_scope = Topic.publicly_visible
                       .joins(:agenda_items)
-                      .group(:id)
+                      .group("topics.id")
                       .select("topics.*, COUNT(agenda_items.id) as agenda_item_count_cache")
+                      .order(last_activity_at: :desc)
 
-    # Recently updated topics across all statuses
-    @recent_topics = base_scope.where.not(last_activity_at: nil)
-                               .order(last_activity_at: :desc)
-                               .limit(6)
+    # Recently updated topics (hero section — always first 6)
+    @recent_topics = base_scope.where.not(last_activity_at: nil).limit(6)
 
-    # Group by lifecycle status with group metadata
-    grouped = base_scope.order(last_activity_at: :desc)
-                        .to_a
-                        .group_by { |topic| topic.lifecycle_status.presence || "unknown" }
+    # Paginated flat list
+    @pagy, @topics = pagy(base_scope, limit: 20)
 
-    @grouped_topics = grouped.map do |status, topics|
-      {
-        status: status,
-        topics: topics,
-        count: topics.size,
-        last_activity_at: topics.map(&:last_activity_at).compact.max
-      }
-    end.sort_by do |group|
-      [ status_order(group[:status]), group_last_activity_sort_key(group[:last_activity_at]) ]
+    # Only compute highlight signals for visible topics
+    visible_ids = (@recent_topics.map(&:id) + @topics.map(&:id)).uniq
+    @highlight_signals = build_highlight_signals(visible_ids)
+
+    respond_to do |format|
+      format.html
+      format.turbo_stream
     end
-
-    # Build highlight signals from recent continuity events
-    @highlight_signals = build_highlight_signals
   end
 
   def show
@@ -50,23 +41,5 @@ class TopicsController < ApplicationController
     end.reverse
   rescue ActiveRecord::RecordNotFound
     redirect_to topics_path, alert: "Topic not found."
-  end
-
-  private
-
-  def status_order(status)
-    case status
-    when "active" then 0
-    when "recurring" then 1
-    when "dormant" then 2
-    when "resolved" then 3
-    else 4
-    end
-  end
-
-  def group_last_activity_sort_key(last_activity_at)
-    return 0 unless last_activity_at
-
-    -last_activity_at.to_i
   end
 end
