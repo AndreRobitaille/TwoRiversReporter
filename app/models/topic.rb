@@ -55,6 +55,10 @@ class Topic < ApplicationRecord
     name.strip.downcase.gsub(/[[:punct:]]/, "").squish
   end
 
+  def approved?
+    status == "approved"
+  end
+
   def resident_impact_admin_locked?
     resident_impact_overridden_at.present? &&
       resident_impact_overridden_at > RESIDENT_IMPACT_OVERRIDE_WINDOW.ago
