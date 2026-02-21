@@ -9,7 +9,7 @@ class Topics::RefreshDescriptionsJobTest < ActiveJob::TestCase
 
     Topics::RefreshDescriptionsJob.perform_now
 
-    assert_enqueued_with(job: Topics::GenerateDescriptionJob, args: [stale.id])
+    assert_enqueued_with(job: Topics::GenerateDescriptionJob, args: [ stale.id ])
     assert_enqueued_jobs 1, only: Topics::GenerateDescriptionJob
   end
 
@@ -21,7 +21,7 @@ class Topics::RefreshDescriptionsJobTest < ActiveJob::TestCase
 
     Topics::RefreshDescriptionsJob.perform_now
 
-    assert_enqueued_with(job: Topics::GenerateDescriptionJob, args: [blank.id])
+    assert_enqueued_with(job: Topics::GenerateDescriptionJob, args: [ blank.id ])
     assert_enqueued_jobs 1, only: Topics::GenerateDescriptionJob
   end
 

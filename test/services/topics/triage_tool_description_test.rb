@@ -19,7 +19,7 @@ class Topics::TriageToolDescriptionTest < ActiveSupport::TestCase
     }
 
     mock_ai = Minitest::Mock.new
-    mock_ai.expect :triage_topics, triage_results.to_json, [Hash]
+    mock_ai.expect :triage_topics, triage_results.to_json, [ Hash ]
 
     retrieval_stub = Object.new
     def retrieval_stub.retrieve_context(*args, **kwargs); []; end
