@@ -5,8 +5,6 @@ class HomeController < ApplicationController
   COMING_UP_MIN_IMPACT = 3
   WHAT_HAPPENED_MIN_IMPACT = 2
   WHAT_HAPPENED_WINDOW = 30.days
-  MEETING_BUFFER = 3.hours
-
   def index
     @coming_up = build_coming_up
     @what_happened = build_what_happened
@@ -72,7 +70,7 @@ class HomeController < ApplicationController
   end
 
   def upcoming_meetings_grouped
-    meetings = Meeting.in_window(Time.current - MEETING_BUFFER, UPCOMING_WINDOW.from_now)
+    meetings = Meeting.in_window(Time.current - MeetingsHelper::MEETING_BUFFER, UPCOMING_WINDOW.from_now)
                       .includes(:meeting_documents, :meeting_summaries, :motions,
                                 agenda_items: { agenda_item_topics: :topic })
                       .order(starts_at: :asc)
@@ -81,7 +79,7 @@ class HomeController < ApplicationController
   end
 
   def recent_meetings_grouped
-    meetings = Meeting.in_window(RECENT_WINDOW.ago, Time.current - MEETING_BUFFER)
+    meetings = Meeting.in_window(RECENT_WINDOW.ago, Time.current - MeetingsHelper::MEETING_BUFFER)
                       .includes(:meeting_documents, :meeting_summaries, :motions,
                                 agenda_items: { agenda_item_topics: :topic })
                       .order(starts_at: :desc)
