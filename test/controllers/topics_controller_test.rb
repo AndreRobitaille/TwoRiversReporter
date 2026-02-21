@@ -31,34 +31,69 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     @resolved_topic.update!(last_activity_at: now - 3.days)
   end
 
-  test "index groups topics by lifecycle status" do
+  test "index shows topics sorted by last_activity_at descending" do
     get topics_url
     assert_response :success
 
-    # Check for group headers
-    assert_select "h2", text: /Active Topics/
-    assert_select "h2", text: /Recurring Topics/
-    assert_select "h2", text: /Dormant Topics/
-    assert_select "h2", text: /Resolved Topics/
-
-    # Check ordering of groups (Active -> Recurring -> Dormant -> Resolved)
-    body = response.body
-    active_idx = body.index("Active Topics")
-    recurring_idx = body.index("Recurring Topics")
-    dormant_idx = body.index("Dormant Topics")
-    resolved_idx = body.index("Resolved Topics")
-
-    assert active_idx < recurring_idx, "Active should come before Recurring"
-    assert recurring_idx < dormant_idx, "Recurring should come before Dormant"
-    assert dormant_idx < resolved_idx, "Dormant should come before Resolved"
+    titles = css_select("#all-topics .card-title").map { |node| node.text.strip }
+    assert_equal [
+      @active_topic.name,
+      @recurring_topic.name,
+      @dormant_topic.name,
+      @resolved_topic.name
+    ], titles
   end
 
-  test "index shows counts in headers" do
+  test "index paginates topics with default page size" do
+    # Create enough topics to exceed one page (20 per page)
+    18.times do |i|
+      topic = Topic.create!(
+        name: "Extra Topic #{i}",
+        lifecycle_status: "active",
+        status: "approved",
+        last_activity_at: (i + 10).days.ago
+      )
+      AgendaItemTopic.create!(topic: topic, agenda_item: @agenda_item)
+    end
+
     get topics_url
     assert_response :success
-    assert_select "h2", text: /Active Topics/ do
-      assert_select "span", text: "(1)"
+
+    # Should show 20 of 22 total topics
+    cards = css_select("#all-topics .card")
+    assert_equal 20, cards.size
+
+    # Should show count indicator
+    assert_select ".topics-count", text: /Showing.*of 22/
+
+    # Should show "Show more" button
+    assert_select "a", text: /Show more/
+  end
+
+  test "index does not show 'Show more' when all topics fit on one page" do
+    get topics_url
+    assert_response :success
+
+    # Only 4 topics in setup — no pagination needed
+    assert_select "a", text: /Show more/, count: 0
+  end
+
+  test "index page 2 returns topics in a turbo frame" do
+    18.times do |i|
+      topic = Topic.create!(
+        name: "Extra Topic #{i}",
+        lifecycle_status: "active",
+        status: "approved",
+        last_activity_at: (i + 10).days.ago
+      )
+      AgendaItemTopic.create!(topic: topic, agenda_item: @agenda_item)
     end
+
+    get topics_url(page: 2)
+    assert_response :success
+
+    # Page 2 should return a turbo frame response with remaining topics
+    assert_select "turbo-frame#all-topics-page"
   end
 
   test "index shows recently updated topics ordered by recency" do
