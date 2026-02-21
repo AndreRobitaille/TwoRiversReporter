@@ -2,26 +2,39 @@ class TopicsController < ApplicationController
   include HighlightSignals
 
   def index
-    base_scope = Topic.publicly_visible
-                      .joins(:agenda_items)
-                      .group("topics.id")
-                      .select("topics.*, COUNT(agenda_items.id) as agenda_item_count_cache")
-                      .order(last_activity_at: :desc)
+    active_scope = Topic.publicly_visible
+                        .active
+                        .joins(:agenda_items)
+                        .group("topics.id")
+                        .select("topics.*, COUNT(agenda_items.id) as agenda_item_count_cache")
 
-    # Recently updated topics (hero section — always first 6)
-    @recent_topics = base_scope.where.not(last_activity_at: nil).limit(6)
+    # Hero: high-impact active topics with recent activity (30 days), ranked by impact
+    @hero_topics = active_scope
+                     .where(last_activity_at: 30.days.ago..)
+                     .order(resident_impact_score: :desc, last_activity_at: :desc)
+                     .limit(6)
 
-    # Paginated flat list
-    @pagy, @topics = pagy(base_scope, limit: 20)
+    # Main list: remaining active topics, excluding hero, paginated
+    hero_ids = @hero_topics.map(&:id)
+    remaining_scope = active_scope
+                        .where.not(id: hero_ids)
+                        .order(last_activity_at: :desc)
 
-    # Only compute highlight signals for visible topics
-    visible_ids = (@recent_topics.map(&:id) + @topics.map(&:id)).uniq
+    @pagy, @topics = pagy(remaining_scope, limit: 20)
+
+    # Highlight signals for all visible topics
+    visible_ids = (hero_ids + @topics.map(&:id)).uniq
     @highlight_signals = build_highlight_signals(visible_ids)
 
     respond_to do |format|
       format.html
       format.turbo_stream
     end
+  end
+
+  def explore
+    # Placeholder for full archive — Task 5
+    redirect_to topics_path
   end
 
   def show

@@ -3,6 +3,7 @@ Rails.application.routes.draw do
   resources :meetings, only: %i[index show]
   resources :members, only: %i[index show]
   resources :topics, only: %i[index show]
+  get "topics/explore", to: "topics#explore", as: :topics_explore
 
   get "admin" => "admin/dashboard#show", as: :admin_root
 

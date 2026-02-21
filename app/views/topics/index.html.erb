@@ -2,52 +2,61 @@
 
 <div class="page-header">
   <h1 class="page-title">Topics</h1>
-  <p class="page-subtitle">Explore issues discussed across city meetings</p>
+  <p class="page-subtitle">Topics currently under discussion in Two Rivers</p>
 </div>
 
-<% if @topics.empty? && @recent_topics.empty? %>
+<% if @topics.empty? && @hero_topics.empty? %>
   <div class="card text-center" style="padding: var(--space-12);">
-    <p class="text-secondary mb-0">No topics have been categorized yet.</p>
+    <p class="text-secondary mb-0">No active topics right now. Check back after upcoming meetings.</p>
   </div>
 <% else %>
-  <% if @recent_topics.present? %>
-    <section class="topic-group mb-8" id="recent-topics">
+  <% if @hero_topics.present? %>
+    <section class="topic-group mb-8" id="hero-topics">
       <div class="group-header mb-4">
-        <h2 class="h3 mb-2">Recently Updated</h2>
-        <p class="text-secondary mb-0">The latest topics with new activity across meetings.</p>
+        <h2 class="h3 mb-2">What Matters Now</h2>
+        <p class="text-secondary mb-0">High-impact topics with recent activity.</p>
       </div>
       <div class="card-grid">
-        <% @recent_topics.each do |topic| %>
+        <% @hero_topics.each do |topic| %>
           <%= render "topics/topic_card", topic: topic, highlight_signals: @highlight_signals %>
         <% end %>
       </div>
     </section>
   <% end %>
 
-  <section class="topic-group mb-8" id="all-topics">
-    <div class="group-header mb-4">
-      <div class="flex justify-between items-center">
-        <h2 class="h3 mb-0">All Topics</h2>
-        <span id="topics-count" class="topics-count text-secondary text-sm">
-          Showing <%= @pagy.to %> of <%= @pagy.count %> topics
-        </span>
-      </div>
-    </div>
-    <div id="all-topics-cards" class="card-grid">
-      <% @topics.each do |topic| %>
-        <%= render "topics/topic_card", topic: topic, highlight_signals: @highlight_signals %>
-      <% end %>
-    </div>
-
-    <div id="all-topics-page">
-      <% if @pagy.next %>
-        <div class="topics-show-more">
-          <%= link_to topics_path(page: @pagy.next, format: :turbo_stream),
-                class: "btn btn--secondary" do %>
-            Show more
-          <% end %>
+  <% if @topics.present? %>
+    <section class="topic-group mb-8" id="all-topics">
+      <div class="group-header mb-4">
+        <div class="flex justify-between items-center">
+          <h2 class="h3 mb-0">Active Topics</h2>
+          <span id="topics-count" class="topics-count text-secondary text-sm">
+            Showing <%= @pagy.to %> of <%= @pagy.count %> topics
+          </span>
         </div>
-      <% end %>
-    </div>
-  </section>
+      </div>
+      <div id="all-topics-cards" class="card-grid">
+        <% @topics.each do |topic| %>
+          <%= render "topics/topic_card", topic: topic, highlight_signals: @highlight_signals %>
+        <% end %>
+      </div>
+
+      <div id="all-topics-page">
+        <% if @pagy.next %>
+          <div class="topics-show-more">
+            <%= link_to topics_path(page: @pagy.next, format: :turbo_stream),
+                  class: "btn btn--secondary" do %>
+              Show more
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
 <% end %>
+
+<div class="text-center mt-8 mb-8">
+  <p class="text-secondary text-sm">
+    Looking for older or resolved topics?
+    <%= link_to "Explore the full archive", topics_explore_path %>.
+  </p>
+</div>
