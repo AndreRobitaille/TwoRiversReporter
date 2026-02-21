@@ -176,4 +176,25 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "a[href='#{meetings_path}']", minimum: 1
   end
+
+  test "meeting within 3-hour buffer stays in upcoming section" do
+    # Create a meeting that started 2 hours ago (within 3-hour buffer)
+    recent_meeting = Meeting.create!(
+      body_name: "Zoning Board",
+      meeting_type: "Regular",
+      starts_at: 2.hours.ago,
+      status: "upcoming",
+      detail_page_url: "http://example.com/recent-buffer"
+    )
+
+    get root_url
+    assert_response :success
+
+    # The meeting should appear in upcoming, not recently completed
+    # Check that it's in the upcoming section by looking at the section structure
+    assert_select "section" do |sections|
+      upcoming_section = sections.find { |s| s.text.include?("Upcoming Meetings") }
+      assert upcoming_section.text.include?("Zoning Board"), "Expected Zoning Board in upcoming section"
+    end
+  end
 end
