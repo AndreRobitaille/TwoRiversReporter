@@ -1800,3 +1800,37 @@ th.sortable-header:hover {
   color: var(--color-text-secondary);
   line-height: 1.4;
 }
+
+/* === Topic Show Page === */
+
+.topic-activity-item {
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.topic-activity-item:last-child {
+  border-bottom: none;
+}
+
+.topic-decision-item {
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.topic-decision-item:last-child {
+  border-bottom: none;
+}
+
+.topic-summary-list {
+  margin: 0;
+  padding-left: var(--space-5);
+}
+
+.topic-summary-list li {
+  margin-bottom: var(--space-2);
+  line-height: 1.6;
+}
+
+.topic-summary-list li:last-child {
+  margin-bottom: 0;
+}
