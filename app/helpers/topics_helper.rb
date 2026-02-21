@@ -49,21 +49,35 @@ module TopicsHelper
     return "" if markdown_content.blank?
 
     paragraphs = markdown_content.split(/\n{2,}/).map(&:strip).reject(&:blank?)
-    safe_join(paragraphs.map { |p| content_tag(:p, p) })
+    safe_join(paragraphs.map { |p| content_tag(:p, render_inline_markdown(p)) })
   end
 
   def render_briefing_record(markdown_content)
     return "" if markdown_content.blank?
 
-    lines = markdown_content.lines.map(&:chomp)
+    # Handle AI returning a JSON array instead of markdown bullets
+    lines = if markdown_content.strip.start_with?("[")
+      parsed = JSON.parse(markdown_content) rescue nil
+      parsed.is_a?(Array) ? parsed : markdown_content.lines.map(&:chomp)
+    else
+      markdown_content.lines.map(&:chomp)
+    end
+
     items = lines.filter_map do |line|
-      text = line.sub(/\A\s*[-*]\s*/, "").strip
+      text = line.to_s.sub(/\A\s*[-*]\s*/, "").strip
       next if text.empty?
       content_tag(:li, text)
     end
 
     return "" if items.empty?
     content_tag(:ul, safe_join(items), class: "topic-record-list")
+  end
+
+  # Convert **bold** markdown to <strong> tags
+  def render_inline_markdown(text)
+    escaped = ERB::Util.html_escape(text)
+    bolded = escaped.gsub(/\*\*(.+?)\*\*/) { content_tag(:strong, Regexp.last_match(1)) }
+    bolded.html_safe
   end
 
   def briefing_freshness_badge(briefing)

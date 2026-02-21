@@ -451,9 +451,9 @@ module Ai
         <extraction_spec>
         Return a JSON object matching this schema:
         {
-          "headline": "Short punchy status — 12 words max. Like a newspaper headline.
-            Good: 'City weighing noise exemptions for events'
-            Bad: 'The City has discussed potential changes to the noise ordinance that would allow exemptions'",
+          "headline": "1-2 short sentences, 20 words max total. Like a newspaper headline.
+            Good: 'City wants to cut bus subsidy paid by property taxes. No plan yet.'
+            Bad: 'The City has discussed reducing Two Rivers property-tax support for Maritime Metro Transit Route 1 and separately set 2026 borrowing parameters'",
           "editorial_analysis": {
             "current_state": "1-2 sentences. Plain language. What just happened or where it stands.",
             "pattern_observations": ["Short observations about patterns, if any"],
@@ -508,41 +508,49 @@ module Ai
         "What's Going On" — the quick version residents actually need.
 
         STRUCTURE:
-        - Start with 1-2 sentences: what happened or where it stands.
-        - Then the "so what" — why this matters, who it affects, what's sketchy.
-        - End with "Worth watching:" if there's something coming up.
-        - Total: 80-150 words. Shorter is better. Stop when you've said it.
+        - Start with what happened or where things stand.
+        - Then the "so what" — why this matters, who it affects, what's unclear.
+        - End with **Worth watching:** if there's something coming up.
+        - Total: 100-200 words. Say enough to give context, then stop.
 
         TONE:
-        - Neighborhood conversation, not policy memo.
-        - Short sentences. Short paragraphs (2-3 sentences max each).
+        - Neighborhood conversation, not policy memo. But not snarky either.
+        - Clear, direct sentences. Don't force them to be choppy — just avoid
+          run-on bureaucratic constructions.
+        - Short paragraphs (2-4 sentences each).
         - No jargon: say "borrowing" not "general obligation promissory notes."
         - NEVER reference your sources meta-textually. Don't say "the record
           shows" or "in the materials provided" or "the provided documents."
           Just state what happened. If you don't know the outcome, say so plainly:
           "No vote yet" or "Still waiting on a decision."
-        - Inline citations like [agenda-123] are fine — they're small and helpful.
-        - Be direct. "The City wants to..." not "The City has indicated a desire to..."
+        - Be analytical but fair. Point out what's missing or unclear, but don't
+          editorialize with words like "sketchy" or loaded characterizations.
+        - "The City wants to..." not "The City has indicated a desire to..."
 
-        BAD EXAMPLE (too long, too jargony, self-referential):
-        "The City has discussed reducing Two Rivers property-tax support for
-        Maritime Metro Transit Route 1 and separately set 2026 borrowing
-        parameters that include a property-tax-levy-supported portion, but
-        the record provided does not show a final decision."
-
-        GOOD EXAMPLE (scannable, plain, direct):
-        "The City says Route 1 bus subsidies are up 44% in five years and wants
-        to find other funding. No specifics yet on what that means — could be
-        service cuts, fare hikes, or cost-sharing. [agenda-309]"
+        FORMATTING:
+        - Use **bold** for key phrases that help scanners find the point fast.
+        - Do NOT use section headers (##, ###) — just paragraphs.
+        - Do NOT include inline citations like [agenda-123]. The "Record" section
+          below provides all sourcing. The editorial should read cleanly without
+          reference codes cluttering it up.
         </editorial_content_guide>
 
         <record_content_guide>
         Chronological bullet list. Just the facts.
-        - Each bullet: date — what happened [citation]
+
+        CRITICAL: Return a plain markdown string with bullet lines. Each line
+        starts with "- ". Do NOT return a JSON array — return a string.
+
+        Format each bullet exactly like this:
+        - Nov 17, 2025 — Council discussed cutting Route 1 bus subsidy [agenda-309]
+        - Feb 16, 2026 — City proposed $2.5M in new borrowing [agenda-1449]
+
+        Rules:
         - Plain language. "Council approved 4-3" not "motion carried with a vote of 4-3."
         - Oldest first, newest last.
-        - Every claim needs a citation.
-        - No editorializing in this section.
+        - Every claim needs a citation in [brackets] at the end.
+        - No editorializing — just what happened and when.
+        - Use readable dates (e.g., "Nov 17, 2025") not ISO format.
         </record_content_guide>
 
         TOPIC ANALYSIS (JSON):
