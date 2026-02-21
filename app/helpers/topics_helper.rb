@@ -42,4 +42,18 @@ module TopicsHelper
 
     "#{time_ago_in_words(last_activity_at)} ago"
   end
+
+  def motion_outcome_text(motion)
+    return motion.outcome if motion.votes.empty?
+
+    yes_count = motion.votes.count { |v| v.value == "yes" }
+    no_count = motion.votes.count { |v| v.value == "no" }
+    "#{motion.outcome} #{yes_count}-#{no_count}"
+  end
+
+  def public_comment_meeting?(agenda_item)
+    return false if agenda_item.title.blank?
+
+    agenda_item.title.match?(/public (hearing|comment)/i)
+  end
 end
