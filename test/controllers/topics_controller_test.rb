@@ -369,4 +369,61 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".topic-empty-state", minimum: 1
   end
+
+  test "show upcoming cards are links to meeting pages" do
+    future_meeting = Meeting.create!(
+      body_name: "Plan Commission",
+      meeting_type: "Regular",
+      starts_at: 7.days.from_now,
+      status: "parsed",
+      detail_page_url: "http://example.com/future",
+      location: "City Hall"
+    )
+    future_item = AgendaItem.create!(meeting: future_meeting, title: "Future Discussion")
+    AgendaItemTopic.create!(topic: @active_topic, agenda_item: future_item)
+    TopicAppearance.create!(
+      topic: @active_topic, meeting: future_meeting,
+      agenda_item: future_item, appeared_at: future_meeting.starts_at,
+      evidence_type: "agenda_item"
+    )
+
+    get topic_url(@active_topic)
+    assert_response :success
+    assert_select ".topic-upcoming a.card-link", minimum: 1
+  end
+
+  test "show recent activity has button links to meetings" do
+    past_item = AgendaItem.create!(meeting: @meeting, title: "Past Item")
+    AgendaItemTopic.create!(topic: @active_topic, agenda_item: past_item)
+    TopicAppearance.create!(
+      topic: @active_topic, meeting: @meeting,
+      agenda_item: past_item, appeared_at: @meeting.starts_at,
+      evidence_type: "agenda_item"
+    )
+
+    get topic_url(@active_topic)
+    assert_response :success
+    assert_select ".topic-activity-item a.btn", minimum: 1
+  end
+
+  test "show key decisions displays vote label" do
+    item_with_motion = AgendaItem.create!(meeting: @meeting, title: "Vote Item")
+    AgendaItemTopic.create!(topic: @active_topic, agenda_item: item_with_motion)
+    motion = Motion.create!(
+      meeting: @meeting, agenda_item: item_with_motion,
+      description: "Approve street plan", outcome: "Passed"
+    )
+    member = Member.create!(name: "Ald. Jones")
+    Vote.create!(motion: motion, member: member, value: "yes")
+
+    get topic_url(@active_topic)
+    assert_response :success
+    assert_select ".votes-label", text: "How they voted"
+  end
+
+  test "show has back to topics button" do
+    get topic_url(@active_topic)
+    assert_response :success
+    assert_select "a.btn", text: /Back to Topics/
+  end
 end
