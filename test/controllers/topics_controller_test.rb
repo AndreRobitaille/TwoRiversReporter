@@ -98,25 +98,21 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     assert_match "all-topics-page", response.body
   end
 
-  test "index shows hero topics ranked by impact" do
-    # Give setup topic a low score so it doesn't dominate
-    @active_topic.update!(resident_impact_score: 1)
-
-    high_impact = Topic.create!(
-      name: "High Impact", lifecycle_status: "active", status: "approved",
-      resident_impact_score: 5, last_activity_at: 2.days.ago
+  test "index shows hero topics ranked by impact with nulls last" do
+    # @active_topic has nil impact score — should sort after scored topics
+    scored_topic = Topic.create!(
+      name: "Scored Topic", lifecycle_status: "active", status: "approved",
+      resident_impact_score: 3, last_activity_at: 2.days.ago
     )
-    low_impact = Topic.create!(
-      name: "Low Impact", lifecycle_status: "active", status: "approved",
-      resident_impact_score: 2, last_activity_at: 1.day.ago
-    )
-    [ high_impact, low_impact ].each { |t| AgendaItemTopic.create!(topic: t, agenda_item: @agenda_item) }
+    AgendaItemTopic.create!(topic: scored_topic, agenda_item: @agenda_item)
 
     get topics_url
     assert_response :success
 
     titles = css_select("#hero-topics .card-title").map { |node| node.text.strip }
-    assert_equal "high impact", titles.first
+    assert_equal "scored topic", titles.first
+    # @active_topic (nil score) should come after scored topics
+    assert_equal @active_topic.name, titles.last
   end
 
   test "index shows lifecycle badges on topic cards" do

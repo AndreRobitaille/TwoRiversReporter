@@ -11,7 +11,7 @@ class TopicsController < ApplicationController
     # Hero: high-impact active topics with recent activity (30 days), ranked by impact
     @hero_topics = active_scope
                      .where(last_activity_at: 30.days.ago..)
-                     .order(resident_impact_score: :desc, last_activity_at: :desc)
+                     .order(Arel.sql("resident_impact_score DESC NULLS LAST"), last_activity_at: :desc)
                      .limit(6)
 
     # Main list: remaining active topics, excluding hero, paginated
