@@ -103,6 +103,7 @@ module Admin
 
     def approve
       @topic.update(status: "approved", review_status: "approved")
+      Topics::GenerateDescriptionJob.perform_later(@topic.id)
       record_review_event(@topic, "approved")
       render_turbo_update("Topic approved.")
     end
@@ -196,6 +197,7 @@ module Admin
       notice = case params[:commit]
       when "Approve Selected"
         topics.update_all(status: "approved", review_status: "approved")
+        topics.each { |t| Topics::GenerateDescriptionJob.perform_later(t.id) }
         record_bulk_review_events(topic_ids, "approved", reason)
         "Selected topics approved."
       when "Block Selected"

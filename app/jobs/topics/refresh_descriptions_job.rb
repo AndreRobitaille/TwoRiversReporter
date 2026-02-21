@@ -14,7 +14,7 @@ module Topics
       threshold = Topics::GenerateDescriptionJob::REFRESH_THRESHOLD.ago
 
       Topic.approved.where(
-        "description_generated_at < :threshold OR (description IS NULL AND description_generated_at IS NULL)",
+        "description_generated_at < :threshold OR ((description IS NULL OR description = '') AND description_generated_at IS NULL)",
         threshold: threshold
       )
     end

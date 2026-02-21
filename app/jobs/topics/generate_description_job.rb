@@ -25,6 +25,8 @@ module Topics
         description: description,
         description_generated_at: Time.current
       )
+    rescue StandardError => e
+      Rails.logger.error "GenerateDescriptionJob failed for Topic #{topic_id}: #{e.class} #{e.message}"
     end
 
     private
