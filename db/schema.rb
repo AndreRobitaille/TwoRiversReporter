@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_21_165422) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_21_214258) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -397,6 +397,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_21_165422) do
     t.index ["name"], name: "index_topic_blocklists_on_name", unique: true
   end
 
+  create_table "topic_briefings", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "editorial_content"
+    t.jsonb "generation_data", default: {}, null: false
+    t.string "generation_tier", null: false
+    t.string "headline", null: false
+    t.datetime "last_full_generation_at"
+    t.text "record_content"
+    t.bigint "topic_id", null: false
+    t.bigint "triggering_meeting_id"
+    t.datetime "updated_at", null: false
+    t.index ["topic_id"], name: "index_topic_briefings_on_topic_id", unique: true
+    t.index ["triggering_meeting_id"], name: "index_topic_briefings_on_triggering_meeting_id"
+  end
+
   create_table "topic_review_events", force: :cascade do |t|
     t.string "action", null: false
     t.boolean "automated", default: false, null: false
@@ -522,6 +537,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_21_165422) do
   add_foreign_key "topic_appearances", "agenda_items"
   add_foreign_key "topic_appearances", "meetings"
   add_foreign_key "topic_appearances", "topics"
+  add_foreign_key "topic_briefings", "meetings", column: "triggering_meeting_id"
+  add_foreign_key "topic_briefings", "topics"
   add_foreign_key "topic_review_events", "topics"
   add_foreign_key "topic_review_events", "users"
   add_foreign_key "topic_status_events", "topics"

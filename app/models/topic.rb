@@ -8,6 +8,7 @@ class Topic < ApplicationRecord
   has_many :topic_status_events, dependent: :destroy
   has_many :topic_review_events, dependent: :destroy
   has_many :topic_summaries, dependent: :destroy
+  has_one :topic_briefing, dependent: :destroy
 
   validates :name, presence: true, uniqueness: { case_sensitive: false }
   validates :status, presence: true, inclusion: { in: %w[proposed approved blocked] }
