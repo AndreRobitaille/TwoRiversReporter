@@ -19,7 +19,7 @@
             <div class="text-sm text-secondary mb-1">
               <%= appearance.meeting.body_name %>
             </div>
-            <div class="font-weight-bold mb-1">
+            <div class="font-bold mb-1">
               <%= appearance.meeting.starts_at.strftime("%A, %B %-d at %-I:%M %p") %>
             </div>
             <% if appearance.meeting.location.present? %>
@@ -36,7 +36,7 @@
               <% end %>
             <% end %>
             <div class="card-link-arrow">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <polyline points="9 18 15 12 9 6"></polyline>
               </svg>
             </div>
@@ -70,7 +70,7 @@
       <% @recent_activity.each do |appearance| %>
         <div class="topic-activity-item">
           <div class="flex justify-between items-center">
-            <span class="font-weight-bold"><%= appearance.meeting.body_name %></span>
+            <span class="font-bold"><%= appearance.meeting.body_name %></span>
             <span class="text-sm text-secondary">
               <%= appearance.appeared_at.strftime("%B %-d, %Y") %>
             </span>
@@ -106,7 +106,7 @@
     <% @decisions.each do |motion| %>
       <div class="topic-decision-item">
         <div class="flex justify-between items-center mb-1">
-          <span class="font-weight-bold"><%= motion.meeting.body_name %></span>
+          <span class="font-bold"><%= motion.meeting.body_name %></span>
           <span class="text-sm text-secondary">
             <%= motion.meeting.starts_at.strftime("%B %-d, %Y") %>
           </span>
@@ -122,11 +122,11 @@
           </span>
         </div>
         <% if motion.votes.any? %>
-          <div class="votes-label text-sm font-weight-medium text-secondary">How they voted</div>
+          <div class="votes-label text-sm font-medium text-secondary">How they voted</div>
           <div class="votes-grid">
             <% motion.votes.each do |vote| %>
               <div class="vote-card vote-card--<%= vote.value %> text-sm">
-                <span class="font-weight-bold"><%= vote.member.name %></span>
+                <span class="font-bold"><%= vote.member.name %></span>
                 <span class="vote-value--<%= vote.value %>"><%= vote.value.titleize %></span>
               </div>
             <% end %>
