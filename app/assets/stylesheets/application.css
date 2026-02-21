@@ -519,10 +519,14 @@ small {
 
 .card--clickable {
   cursor: pointer;
+  text-decoration: none;
+  color: inherit;
 }
 
 .card--clickable:hover {
   border-color: var(--color-primary);
+  text-decoration: none;
+  color: inherit;
 }
 
 .card--highlighted {
