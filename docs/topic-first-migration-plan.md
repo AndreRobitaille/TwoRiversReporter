@@ -68,7 +68,7 @@ This is a living note for future actions, not an implementation log.
 2) [x] Topics index: "Recently Updated" row (cross-status recency).
 3) [x] Topics index: highlight newly active/resurfaced topics (structural signal badges).
 4) Topics index: filters (status, body, timeframe).
-5) Topics index: pagination + activity window rules.
+5) [x] Topics index: pagination + activity window rules.
 6) Topic navigation: standardize click-through behavior.
 7) Topic pages: empty/error/low-signal states (QA checklist).
 8) Add semantic color tokens for light/dark modes.
