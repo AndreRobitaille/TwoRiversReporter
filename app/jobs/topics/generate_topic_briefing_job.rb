@@ -64,7 +64,7 @@ module Topics
         knowledgebase_context: formatted_kb,
         continuity_context: {
           status_events: topic.topic_status_events.order(occurred_at: :desc).limit(5).map do |e|
-            { event_type: e.evidence_type, details: e.details, date: e.occurred_at&.iso8601 }
+            { event_type: e.evidence_type, notes: e.notes, date: e.occurred_at&.iso8601 }
           end,
           total_appearances: topic.topic_appearances.count
         }
