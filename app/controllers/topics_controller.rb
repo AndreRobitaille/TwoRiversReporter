@@ -22,6 +22,12 @@ class TopicsController < ApplicationController
 
     @pagy, @topics = pagy(remaining_scope, limit: 20)
 
+    # Preload briefings to avoid N+1 on cards
+    ActiveRecord::Associations::Preloader.new(
+      records: @hero_topics + @topics,
+      associations: :topic_briefing
+    ).call
+
     # Highlight signals for all visible topics
     visible_ids = (hero_ids + @topics.map(&:id)).uniq
     @highlight_signals = build_highlight_signals(visible_ids)

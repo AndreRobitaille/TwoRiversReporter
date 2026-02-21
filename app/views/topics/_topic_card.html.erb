@@ -4,7 +4,9 @@
     <h3 class="card-title"><%= topic.name %></h3>
   </div>
   <div class="card-body">
-    <% if topic.description.present? %>
+    <% if topic.topic_briefing&.headline.present? %>
+      <p class="card-briefing-headline mb-2"><%= topic.topic_briefing.headline %></p>
+    <% elsif topic.description.present? %>
       <p class="text-secondary mb-2"><%= truncate(topic.description, length: 80) %></p>
     <% end %>
     <div class="flex justify-between items-center text-secondary text-sm">
