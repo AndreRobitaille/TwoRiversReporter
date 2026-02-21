@@ -1844,3 +1844,11 @@ th.sortable-header:hover {
 .topic-summary-list li:last-child {
   margin-bottom: 0;
 }
+
+/* === Meeting Table — Mobile === */
+
+@media (max-width: 768px) {
+  .meeting-topics-col {
+    display: none;
+  }
+}
