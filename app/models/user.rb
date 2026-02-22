@@ -34,14 +34,14 @@ class User < ApplicationRecord
   def totp_provisioning_uri
     return if totp_secret.blank?
 
-    ROTP::TOTP.new(totp_secret, issuer: "TwoRiversReporter").provisioning_uri(email_address)
+    ROTP::TOTP.new(totp_secret, issuer: "TwoRiversMatters").provisioning_uri(email_address)
   end
 
   def valid_totp_code?(code)
     return false if totp_secret.blank?
 
     normalized = code.to_s.delete(" ")
-    ROTP::TOTP.new(totp_secret, issuer: "TwoRiversReporter").verify(
+    ROTP::TOTP.new(totp_secret, issuer: "TwoRiversMatters").verify(
       normalized,
       drift_behind: 30,
       drift_ahead: 30

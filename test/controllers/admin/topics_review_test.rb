@@ -9,7 +9,7 @@ module Admin
       post session_url, params: { email_address: "admin@example.com", password: "password" }
       follow_redirect!
 
-      totp = ROTP::TOTP.new(@admin.totp_secret, issuer: "TwoRiversReporter")
+      totp = ROTP::TOTP.new(@admin.totp_secret, issuer: "TwoRiversMatters")
       post mfa_session_url, params: { code: totp.now }
       follow_redirect!
 

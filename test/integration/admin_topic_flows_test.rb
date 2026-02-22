@@ -15,7 +15,7 @@ class AdminTopicFlowsTest < ActionDispatch::IntegrationTest
     post session_url, params: { email_address: @admin.email_address, password: "password" }
     follow_redirect! # to mfa_session/new
 
-    totp = ROTP::TOTP.new(@admin.totp_secret, issuer: "TwoRiversReporter")
+    totp = ROTP::TOTP.new(@admin.totp_secret, issuer: "TwoRiversMatters")
     post mfa_session_url, params: { code: totp.now }
     follow_redirect! # to admin_root
 
