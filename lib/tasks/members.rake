@@ -49,7 +49,7 @@ namespace :members do
     puts "Done. '#{source_name}' merged into '#{target.name}' and deleted."
   end
 
-  desc "Auto-alias single-word member names to full names (dry run with DRY_RUN=1)"
+  desc "Auto-merge single-word member names into matching full names (dry run with DRY_RUN=1)"
   task cleanup: :environment do
     dry_run = ENV["DRY_RUN"] == "1"
     puts dry_run ? "DRY RUN — no changes will be made" : "Running cleanup..."
