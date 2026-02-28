@@ -30,10 +30,8 @@ class ExtractVotesJob < ApplicationJob
           raw_name = v_data["member"]
           next if raw_name.blank?
 
-          # Normalize name: Remove common titles and punctuation
-          name = raw_name.gsub(/^(Councilmember|Alderman|Alderperson|Commissioner|Manager|Clerk|Mr\.|Ms\.|Mrs\.)\s+/i, "").strip
-
-          member = Member.find_or_create_by!(name: name)
+          member = Member.resolve(raw_name)
+          next unless member
 
           # Validate value is allowed (yes/no/abstain/absent/recused)
           val = v_data["value"]&.downcase

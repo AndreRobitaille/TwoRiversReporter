@@ -1,8 +1,6 @@
 class ExtractCommitteeMembersJob < ApplicationJob
   queue_as :default
 
-  TITLE_PATTERN = /^(Councilmember|Alderman|Alderperson|Commissioner|Manager|Clerk|Mr\.|Ms\.|Mrs\.)\s+/i
-
   def perform(meeting_id)
     meeting = Meeting.find(meeting_id)
     minutes_doc = meeting.meeting_documents.find_by(document_type: "minutes_pdf")
@@ -33,20 +31,13 @@ class ExtractCommitteeMembersJob < ApplicationJob
 
   private
 
-  def normalize_name(raw_name)
-    raw_name.gsub(TITLE_PATTERN, "").strip
-  end
-
-  def find_or_create_member(raw_name)
-    name = normalize_name(raw_name)
-    Member.find_or_create_by!(name: name)
-  end
-
   def create_attendance_records(meeting, data)
     (data["voting_members_present"] || []).each do |name|
       next if name.blank?
 
-      member = find_or_create_member(name)
+      member = Member.resolve(name)
+      next unless member
+
       meeting.meeting_attendances.create!(
         member: member, status: "present", attendee_type: "voting_member"
       )
@@ -55,7 +46,9 @@ class ExtractCommitteeMembersJob < ApplicationJob
     (data["voting_members_absent"] || []).each do |name|
       next if name.blank?
 
-      member = find_or_create_member(name)
+      member = Member.resolve(name)
+      next unless member
+
       meeting.meeting_attendances.create!(
         member: member, status: "absent", attendee_type: "voting_member"
       )
@@ -65,7 +58,9 @@ class ExtractCommitteeMembersJob < ApplicationJob
       name = entry.is_a?(Hash) ? entry["name"] : entry
       next if name.blank?
 
-      member = find_or_create_member(name)
+      member = Member.resolve(name)
+      next unless member
+
       meeting.meeting_attendances.create!(
         member: member, status: "present", attendee_type: "non_voting_staff",
         capacity: entry.is_a?(Hash) ? entry["capacity"] : nil
@@ -76,7 +71,9 @@ class ExtractCommitteeMembersJob < ApplicationJob
       name = entry.is_a?(Hash) ? entry["name"] : entry
       next if name.blank?
 
-      member = find_or_create_member(name)
+      member = Member.resolve(name)
+      next unless member
+
       meeting.meeting_attendances.create!(
         member: member, status: "present", attendee_type: "guest"
       )
