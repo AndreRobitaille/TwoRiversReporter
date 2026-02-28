@@ -80,6 +80,54 @@ module Ai
       response.dig("choices", 0, "message", "content")
     end
 
+    def extract_committee_members(text)
+      prompt = <<~PROMPT
+        <extraction_spec>
+        Extract the roll call / attendance information from these meeting minutes into JSON.
+
+        Meeting minutes use various formats for roll call. Common patterns:
+        - "Present: Name1, Name2" / "Absent: Name3"
+        - "Councilmembers: Name1, Name2" / "Absent and Excused: Name3"
+        - "Also Present: Title, Name" (non-voting staff)
+        - "Guests: Name" (visitors, not committee members)
+        - Sometimes just a list of names with no labels (assume all present)
+
+        Rules:
+        - Committee/board members listed in the main roll call are voting members.
+        - People listed under "Also Present", with government titles (Director, Manager,
+          Chief, Clerk, Attorney, Secretary, Supervisor), or explicitly labeled as staff
+          are non_voting_staff. Include their title/capacity.
+        - People listed under "Guests" or "Visitors" are guests.
+        - If someone has a title like "Recording Secretary" they are non_voting_staff.
+        - Return full names as written. Do not abbreviate or alter names.
+        - If no absent members are listed, return an empty array for voting_members_absent.
+
+        Schema:
+        {
+          "voting_members_present": ["Full Name", ...],
+          "voting_members_absent": ["Full Name", ...],
+          "non_voting_staff": [{"name": "Full Name", "capacity": "Title"}, ...],
+          "guests": [{"name": "Full Name"}]
+        }
+        </extraction_spec>
+
+        Text:
+        #{text.truncate(50_000)}
+      PROMPT
+
+      response = @client.chat(
+        parameters: {
+          model: LIGHTWEIGHT_MODEL,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: "You are a data extraction assistant. Return only valid JSON." },
+            { role: "user", content: prompt }
+          ]
+        }
+      )
+      response.dig("choices", 0, "message", "content")
+    end
+
     def extract_topics(items_text, community_context: "", existing_topics: [], meeting_documents_context: "")
       existing_topics_text = if existing_topics.any?
         "\n<existing_topics>\nThese topics already exist in the system. Prefer tagging items to these existing topics rather than creating new similar names:\n#{existing_topics.join("\n")}\n</existing_topics>\n"
