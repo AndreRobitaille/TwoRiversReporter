@@ -124,6 +124,14 @@ When analyzing documents, the LLM must:
     creation.
 4.  Detect when a topic disappears without resolution.
 5.  Distinguish routine procedural items from substantive civic issues.
+6.  Never create topics at the process-category level. Categories like
+    Zoning, Infrastructure, Finance, Public Safety, Licensing, and
+    Personnel describe administrative domains, not civic concerns.
+    Topics must be specific enough to tell a coherent story across
+    meetings (e.g., "conditional use permits", not "zoning").
+7.  Mark routine one-off items as not topic-worthy rather than forcing
+    them into a topic. A single plat review or standard license
+    renewal is not a topic.
 
 If confidence in topic classification is low:
 
