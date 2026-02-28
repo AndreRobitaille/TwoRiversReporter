@@ -5,6 +5,9 @@ class HomeController < ApplicationController
   COMING_UP_MIN_IMPACT = 3
   WHAT_HAPPENED_MIN_IMPACT = 2
   WHAT_HAPPENED_WINDOW = 30.days
+  COMING_UP_OVER_FETCH = 15
+  MAX_TOPICS_PER_MEETING = 2
+
   def index
     @coming_up = build_coming_up
     @what_happened = build_what_happened
@@ -20,13 +23,14 @@ class HomeController < ApplicationController
       .where(meetings: { starts_at: Time.current.. })
       .select(:topic_id).distinct
 
-    topics = Topic.approved
+    candidates = Topic.approved
       .where(id: upcoming_topic_ids)
       .where("resident_impact_score >= ?", COMING_UP_MIN_IMPACT)
       .order(resident_impact_score: :desc)
-      .limit(CARD_LIMIT)
+      .limit(COMING_UP_OVER_FETCH)
 
-    attach_headlines(topics)
+    topics = apply_meeting_diversity(candidates)
+    attach_coming_up_headlines(topics)
   end
 
   def build_what_happened
@@ -48,25 +52,58 @@ class HomeController < ApplicationController
       .order(resident_impact_score: :desc, last_activity_at: :desc)
       .limit(CARD_LIMIT)
 
-    attach_headlines(topics)
+    attach_what_happened_headlines(topics)
   end
 
-  def attach_headlines(topics)
+  def attach_coming_up_headlines(topics)
     return [] if topics.empty?
 
-    topic_ids = topics.map(&:id)
-    latest_summaries = TopicSummary
-      .where(topic_id: topic_ids, summary_type: "topic_digest")
-      .order(:topic_id, created_at: :desc)
-      .select("DISTINCT ON (topic_id) topic_id, generation_data")
-
-    @headlines ||= {}
-    latest_summaries.each do |summary|
-      headline = summary.generation_data&.dig("headline")
-      @headlines[summary.topic_id] = headline if headline.present?
+    briefings = TopicBriefing.where(topic_id: topics.map(&:id))
+    @coming_up_headlines = {}
+    briefings.each do |b|
+      @coming_up_headlines[b.topic_id] = b.upcoming_headline if b.upcoming_headline.present?
     end
 
     topics
+  end
+
+  def attach_what_happened_headlines(topics)
+    return [] if topics.empty?
+
+    briefings = TopicBriefing.where(topic_id: topics.map(&:id))
+    @what_happened_headlines = {}
+    briefings.each do |b|
+      @what_happened_headlines[b.topic_id] = b.headline if b.headline.present?
+    end
+
+    topics
+  end
+
+  def apply_meeting_diversity(candidates)
+    return candidates.to_a if candidates.empty?
+
+    topic_ids = candidates.map(&:id)
+    next_meetings = TopicAppearance
+      .joins(:meeting)
+      .where(topic_id: topic_ids, meetings: { starts_at: Time.current.. })
+      .order(Arel.sql("topic_id, meetings.starts_at ASC"))
+      .select("DISTINCT ON (topic_id) topic_id, meeting_id")
+
+    topic_to_meeting = next_meetings.each_with_object({}) { |row, h| h[row.topic_id] = row.meeting_id }
+    meeting_counts = Hash.new(0)
+    result = []
+
+    candidates.each do |topic|
+      meeting_id = topic_to_meeting[topic.id]
+      next unless meeting_id
+      next if meeting_counts[meeting_id] >= MAX_TOPICS_PER_MEETING
+
+      result << topic
+      meeting_counts[meeting_id] += 1
+      break if result.size >= CARD_LIMIT
+    end
+
+    result
   end
 
   def upcoming_meetings_grouped

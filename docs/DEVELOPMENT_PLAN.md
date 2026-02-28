@@ -373,9 +373,9 @@ full design. Summary:
 
 | Tier | Trigger | AI Cost | Output |
 |------|---------|---------|--------|
-| `headline_only` | Future meeting scheduled | None | Derived headline |
-| `interim` | Agenda/packet added | 1× gpt-5-mini | Updated headline + upcoming note |
-| `full` | Minutes published | 2× gpt-5.2 | Full editorial + record + headline |
+| `headline_only` | Future meeting scheduled | None | Derived `upcoming_headline` |
+| `interim` | Agenda/packet added | 1× gpt-5-mini | Updated `upcoming_headline` + upcoming note |
+| `full` | Minutes published | 2× gpt-5.2 | Full editorial + record + `headline` + `upcoming_headline` |
 
 ------------------------------------------------------------------------
 
@@ -401,9 +401,21 @@ analysis but is distinguished from document content in the prompt.
 
 ### Home
 
-- Upcoming meetings (primary entry)
-- Recently updated Topics (continuity cues)
-- "What to Watch" (Topic-driven)
+Two topic headline cards in a responsive grid:
+
+- **What Happened** (left, cool-themed) — Topics with recent motions or
+  status events (past 30 days, impact ≥ 2). Uses `TopicBriefing.headline`
+  (backward-looking).
+- **Coming Up** (right, warm-themed) — Topics appearing in future meetings
+  (impact ≥ 3). Uses `TopicBriefing.upcoming_headline` (forward-looking).
+  Falls back to `topic.description` when no upcoming headline exists.
+- **Meeting diversity filter** — "Coming Up" caps at 2 topics per upcoming
+  meeting to prevent one meeting's related topics from dominating the card.
+  Over-fetches 15 candidates, filters to 5.
+
+Below the cards:
+- Upcoming meetings (grouped by week, next 30 days)
+- Recently completed meetings (grouped by week, past 14 days)
 
 ### Topic Page (Primary Lens)
 

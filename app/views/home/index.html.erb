@@ -12,14 +12,14 @@
 
 <%# === Topic Headline Cards === %>
 <div class="card-grid mb-8" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
-  <% if @coming_up.any? %>
-    <div class="card card--warm">
+  <% if @what_happened.any? %>
+    <div class="card card--cool">
       <div class="card-header">
-        <h2 class="card-title">Coming Up</h2>
+        <h2 class="card-title">What Happened</h2>
       </div>
       <div class="card-body">
-        <% @coming_up.each do |topic| %>
-          <%= render "topic_headline_item", topic: topic %>
+        <% @what_happened.each do |topic| %>
+          <%= render "topic_headline_item", topic: topic, headlines: @what_happened_headlines %>
         <% end %>
       </div>
       <div class="card-footer">
@@ -28,14 +28,14 @@
     </div>
   <% end %>
 
-  <% if @what_happened.any? %>
-    <div class="card card--cool">
+  <% if @coming_up.any? %>
+    <div class="card card--warm">
       <div class="card-header">
-        <h2 class="card-title">What Happened</h2>
+        <h2 class="card-title">Coming Up</h2>
       </div>
       <div class="card-body">
-        <% @what_happened.each do |topic| %>
-          <%= render "topic_headline_item", topic: topic %>
+        <% @coming_up.each do |topic| %>
+          <%= render "topic_headline_item", topic: topic, headlines: @coming_up_headlines %>
         <% end %>
       </div>
       <div class="card-footer">

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_28_200458) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_28_222016) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -470,6 +470,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_28_200458) do
     t.text "record_content"
     t.bigint "topic_id", null: false
     t.bigint "triggering_meeting_id"
+    t.string "upcoming_headline"
     t.datetime "updated_at", null: false
     t.index ["topic_id"], name: "index_topic_briefings_on_topic_id", unique: true
     t.index ["triggering_meeting_id"], name: "index_topic_briefings_on_triggering_meeting_id"

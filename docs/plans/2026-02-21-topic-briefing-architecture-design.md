@@ -42,7 +42,8 @@ rolling `TopicBriefing`.
 | Column | Type | Purpose |
 |--------|------|---------|
 | `topic_id` | integer, unique | One briefing per topic |
-| `headline` | string | TL;DR line at top of topic page |
+| `headline` | string | Backward-looking TL;DR ("What Happened" cards, topic page) |
+| `upcoming_headline` | string, nullable | Forward-looking headline for "Coming Up" cards. Null if no future meetings. |
 | `editorial_content` | text | "What's Going On" section (markdown) |
 | `record_content` | text | "Record" section (cited bullet list, markdown) |
 | `generation_data` | jsonb | Full structured AI analysis for audit |
@@ -64,20 +65,23 @@ frequency, not a clock.
 ```
 AgendaItemTopic created for future meeting
   → UpdateTopicBriefingJob (tier: :headline_only)
-  → Derives headline from data: "Coming up at Council, Mar 4"
-  → Sets generation_tier = "headline_only"
+  → Sets upcoming_headline: "Coming up at Council, Mar 4"
+  → Sets headline ||= "Topic update" (validation default)
+  → Sets generation_tier = "headline_only" (only if not already interim/full)
 ```
 
 Hooks into existing `AgendaItemTopic after_create` callback chain.
+Always updates `upcoming_headline` even on full-tier briefings (additive field).
 
 #### Tier 2: Agenda/Packet Added (1 cheap AI call)
 
 ```
 Document extraction completes, meeting has no minutes yet
   → UpdateTopicBriefingJob (tier: :interim)
-  → 1x gpt-5-mini call: update headline + generate upcoming note
+  → 1x gpt-5-mini call: generate forward-looking headline + upcoming note
+  → Saves headline to upcoming_headline (not headline)
   → Appends note to editorial_content
-  → Sets generation_tier = "interim"
+  → Sets generation_tier = "interim" (only if not already full)
 ```
 
 #### Tier 3: Minutes Published (2 reasoning calls — full regen)
@@ -91,8 +95,11 @@ SummarizeMeetingJob completes for meeting with minutes
     - Raw docs from last 2-3 meetings
     - KB context via RetrievalService
     - Topic metadata (lifecycle, aliases, appearances)
+    - Upcoming meeting context (future appearances + agenda items)
   → 1x gpt-5.2: structured analysis → generation_data JSON
-  → 1x gpt-5.2: render editorial_content + record_content + headline
+    (includes both headline and upcoming_headline)
+  → 1x gpt-5.2: render editorial_content + record_content
+  → Saves headline (backward-looking) + upcoming_headline (forward-looking)
   → Sets generation_tier = "full", last_full_generation_at = now
 ```
 
@@ -119,7 +126,8 @@ Input:
 Output JSON:
 ```json
 {
-  "headline": "One-sentence TL;DR of current status",
+  "headline": "One-sentence TL;DR of current status (backward-looking)",
+  "upcoming_headline": "Forward-looking headline if upcoming meetings exist, else null",
   "editorial_analysis": {
     "current_state": "What just happened / where things stand",
     "pattern_observations": ["Deferred twice before vote", "..."],

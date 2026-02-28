@@ -15,7 +15,7 @@ class Topics::UpdateTopicBriefingJobTest < ActiveJob::TestCase
     )
   end
 
-  test "tier headline_only creates briefing from meeting data without AI" do
+  test "tier headline_only creates briefing with upcoming_headline" do
     Topics::UpdateTopicBriefingJob.perform_now(
       topic_id: @topic.id,
       meeting_id: @future_meeting.id,
@@ -24,13 +24,12 @@ class Topics::UpdateTopicBriefingJobTest < ActiveJob::TestCase
 
     briefing = @topic.reload.topic_briefing
     assert_not_nil briefing
-    assert_includes briefing.headline, "City Council"
+    assert_includes briefing.upcoming_headline, "City Council"
+    assert_equal "Topic update", briefing.headline
     assert_equal "headline_only", briefing.generation_tier
-    assert_nil briefing.editorial_content
-    assert_nil briefing.record_content
   end
 
-  test "tier headline_only updates existing briefing without overwriting full" do
+  test "tier headline_only updates upcoming_headline without overwriting full briefing" do
     TopicBriefing.create!(
       topic: @topic,
       headline: "Existing full headline",
@@ -48,10 +47,12 @@ class Topics::UpdateTopicBriefingJobTest < ActiveJob::TestCase
 
     briefing = @topic.reload.topic_briefing
     assert_equal "full", briefing.generation_tier
+    assert_equal "Existing full headline", briefing.headline
     assert_equal "Full editorial", briefing.editorial_content
+    assert_includes briefing.upcoming_headline, "City Council"
   end
 
-  test "tier interim calls lightweight AI and updates headline and editorial" do
+  test "tier interim saves forward-looking headline to upcoming_headline" do
     mock_ai = Minitest::Mock.new
     mock_ai.expect :generate_briefing_interim, {
       "headline" => "Council to vote on parking plan, #{@future_meeting.starts_at.strftime('%b %-d')}",
@@ -70,11 +71,42 @@ class Topics::UpdateTopicBriefingJobTest < ActiveJob::TestCase
 
     briefing = @topic.reload.topic_briefing
     assert_not_nil briefing
-    assert_includes briefing.headline, "parking plan"
+    assert_includes briefing.upcoming_headline, "parking plan"
+    assert_equal "Topic update", briefing.headline
     assert_includes briefing.editorial_content, "revised proposal"
     assert_equal "interim", briefing.generation_tier
 
     mock_ai.verify
+  end
+
+  test "tier interim does not downgrade full briefing tier" do
+    TopicBriefing.create!(
+      topic: @topic,
+      headline: "Full briefing headline",
+      editorial_content: "Full editorial",
+      generation_tier: "full",
+      last_full_generation_at: 1.day.ago
+    )
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :generate_briefing_interim, {
+      "headline" => "Council votes on parking soon",
+      "upcoming_note" => "New proposal coming."
+    } do |_| true end
+
+    Ai::OpenAiService.stub :new, mock_ai do
+      Topics::UpdateTopicBriefingJob.perform_now(
+        topic_id: @topic.id,
+        meeting_id: @future_meeting.id,
+        tier: "interim"
+      )
+    end
+
+    briefing = @topic.reload.topic_briefing
+    assert_equal "full", briefing.generation_tier
+    assert_equal "Full briefing headline", briefing.headline
+    assert_equal "Council votes on parking soon", briefing.upcoming_headline
+    assert_includes briefing.editorial_content, "New proposal coming"
   end
 
   test "skips non-approved topics" do

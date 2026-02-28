@@ -23,12 +23,13 @@ module Topics
     def update_headline_only(topic, meeting)
       briefing = topic.topic_briefing || topic.build_topic_briefing
 
-      # Don't downgrade a full or interim briefing
-      return if briefing.persisted? && briefing.generation_tier.in?(%w[interim full])
-
       date_str = meeting.starts_at.strftime("%b %-d")
-      briefing.headline = "Coming up at #{meeting.body_name}, #{date_str}"
-      briefing.generation_tier = "headline_only"
+      briefing.upcoming_headline = "Coming up at #{meeting.body_name}, #{date_str}"
+      briefing.headline ||= "Topic update"
+
+      unless briefing.persisted? && briefing.generation_tier.in?(%w[interim full])
+        briefing.generation_tier = "headline_only"
+      end
       briefing.triggering_meeting = meeting
       briefing.save!
     end
@@ -36,16 +37,13 @@ module Topics
     def update_interim(topic, meeting)
       briefing = topic.topic_briefing || topic.build_topic_briefing
 
-      # Don't downgrade a full briefing
-      return if briefing.persisted? && briefing.generation_tier == "full"
-
       agenda_items = meeting.agenda_items
         .joins(:agenda_item_topics)
         .where(agenda_item_topics: { topic_id: topic.id })
 
       context = {
         topic_name: topic.canonical_name,
-        current_headline: briefing.headline,
+        current_headline: briefing.upcoming_headline || briefing.headline,
         meeting_body: meeting.body_name,
         meeting_date: meeting.starts_at&.to_date&.to_s,
         agenda_items: agenda_items.map { |ai| { title: ai.title, summary: ai.summary } }
@@ -53,14 +51,18 @@ module Topics
 
       result = Ai::OpenAiService.new.generate_briefing_interim(context)
 
-      briefing.headline = result["headline"] if result["headline"].present?
+      briefing.upcoming_headline = result["headline"] if result["headline"].present?
+      briefing.headline ||= "Topic update"
       if result["upcoming_note"].present?
         briefing.editorial_content = [
           briefing.editorial_content,
           result["upcoming_note"]
         ].compact.join("\n\n")
       end
-      briefing.generation_tier = "interim"
+
+      unless briefing.persisted? && briefing.generation_tier == "full"
+        briefing.generation_tier = "interim"
+      end
       briefing.triggering_meeting = meeting
       briefing.save!
     end

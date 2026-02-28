@@ -27,6 +27,7 @@ class Topics::GenerateTopicBriefingJobTest < ActiveJob::TestCase
   test "generates full briefing from topic summary building blocks" do
     analysis_json = {
       "headline" => "Council approved modified parking plan 4-3 on Feb 18",
+      "upcoming_headline" => nil,
       "editorial_analysis" => {
         "current_state" => "The city approved the plan.",
         "pattern_observations" => [ "Deferred twice" ],
@@ -68,6 +69,7 @@ class Topics::GenerateTopicBriefingJobTest < ActiveJob::TestCase
     briefing = @topic.reload.topic_briefing
     assert_not_nil briefing
     assert_equal "Council approved modified parking plan 4-3 on Feb 18", briefing.headline
+    assert_nil briefing.upcoming_headline
     assert_includes briefing.editorial_content, "8 spots"
     assert_includes briefing.record_content, "Minutes p.7"
     assert_equal "full", briefing.generation_tier
@@ -78,9 +80,60 @@ class Topics::GenerateTopicBriefingJobTest < ActiveJob::TestCase
     mock_ai.verify
   end
 
+  test "saves upcoming_headline when AI provides one" do
+    # Create a future meeting appearance
+    future_meeting = Meeting.create!(
+      body_name: "Plan Commission",
+      starts_at: 5.days.from_now,
+      detail_page_url: "http://example.com/future"
+    )
+    future_item = future_meeting.agenda_items.create!(title: "Parking Review", order_index: 1)
+    AgendaItemTopic.create!(topic: @topic, agenda_item: future_item)
+    TopicAppearance.create!(
+      topic: @topic, meeting: future_meeting, agenda_item: future_item,
+      appeared_at: future_meeting.starts_at, body_name: future_meeting.body_name,
+      evidence_type: "agenda_item"
+    )
+
+    analysis_json = {
+      "headline" => "Council approved parking plan 4-3",
+      "upcoming_headline" => "Plan Commission reviews parking changes, Mar 5",
+      "editorial_analysis" => { "current_state" => "Approved" },
+      "factual_record" => [],
+      "resident_impact" => { "score" => 3, "rationale" => "Affects downtown" }
+    }.to_json
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :analyze_topic_briefing, analysis_json do |arg|
+      # Verify upcoming_context is included
+      arg.is_a?(Hash) && arg[:upcoming_context].is_a?(Array) && arg[:upcoming_context].any?
+    end
+    mock_ai.expect :render_topic_briefing, {
+      "editorial_content" => "Editorial", "record_content" => "Record"
+    } do |_| true end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_topic_context(*args, **kwargs); []; end
+    def retrieval_stub.format_topic_context(*args); []; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        Topics::GenerateTopicBriefingJob.perform_now(
+          topic_id: @topic.id,
+          meeting_id: @meeting.id
+        )
+      end
+    end
+
+    briefing = @topic.reload.topic_briefing
+    assert_equal "Plan Commission reviews parking changes, Mar 5", briefing.upcoming_headline
+    mock_ai.verify
+  end
+
   test "propagates resident impact score to topic" do
     analysis_json = {
       "headline" => "Test",
+      "upcoming_headline" => nil,
       "editorial_analysis" => { "current_state" => "Test" },
       "factual_record" => [],
       "resident_impact" => { "score" => 4, "rationale" => "Test" }
@@ -128,6 +181,7 @@ class Topics::GenerateTopicBriefingJobTest < ActiveJob::TestCase
 
     analysis_json = {
       "headline" => "New headline",
+      "upcoming_headline" => "Coming up soon",
       "editorial_analysis" => { "current_state" => "Updated" },
       "factual_record" => [],
       "resident_impact" => { "score" => 3, "rationale" => "Test" }
@@ -154,5 +208,6 @@ class Topics::GenerateTopicBriefingJobTest < ActiveJob::TestCase
 
     assert_equal 1, TopicBriefing.where(topic: @topic).count
     assert_equal "New headline", @topic.reload.topic_briefing.headline
+    assert_equal "Coming up soon", @topic.reload.topic_briefing.upcoming_headline
   end
 end

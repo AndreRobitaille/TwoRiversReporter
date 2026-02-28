@@ -73,18 +73,21 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
-  test "coming up card shows high-impact topics with upcoming appearances" do
+  test "coming up card shows high-impact topics with upcoming_headline" do
     @active_topic.update!(resident_impact_score: 4)
-    TopicSummary.create!(
-      topic: @active_topic, meeting: @future_meeting,
-      content: "## Summary", summary_type: "topic_digest",
-      generation_data: { "headline" => "TIF district expansion under review" }
+    TopicBriefing.create!(
+      topic: @active_topic,
+      headline: "TIF district expanded last month",
+      upcoming_headline: "TIF district expansion vote at Council, Mar 3",
+      generation_tier: "full"
     )
 
     get root_url
     assert_response :success
     assert_match "Coming Up", response.body
-    assert_match "TIF district expansion under review", response.body
+    assert_match "TIF district expansion vote at Council, Mar 3", response.body
+    # Should NOT show the backward-looking headline in Coming Up
+    assert_no_match "expanded last month", response.body.split("What Happened").last.to_s
   end
 
   test "coming up card hidden when no qualifying topics" do
@@ -93,7 +96,21 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_no_match "Coming Up", response.body
   end
 
-  test "what happened card shows recent high-impact decisions" do
+  test "coming up falls back to description when no upcoming_headline" do
+    @active_topic.update!(resident_impact_score: 4, description: "Tax incentive district downtown")
+    TopicBriefing.create!(
+      topic: @active_topic,
+      headline: "Some past headline",
+      upcoming_headline: nil,
+      generation_tier: "full"
+    )
+
+    get root_url
+    assert_response :success
+    assert_match "Tax incentive district downtown", response.body
+  end
+
+  test "what happened card shows recent high-impact decisions with headline" do
     @recurring_topic.update!(resident_impact_score: 3)
     agenda_item = AgendaItem.create!(meeting: @past_meeting, title: "Rate Vote")
     AgendaItemTopic.create!(topic: @recurring_topic, agenda_item: agenda_item)
@@ -101,10 +118,10 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
       agenda_item: agenda_item, meeting: @past_meeting,
       description: "Approve rate increase", outcome: "approved"
     )
-    TopicSummary.create!(
-      topic: @recurring_topic, meeting: @past_meeting,
-      content: "## Summary", summary_type: "topic_digest",
-      generation_data: { "headline" => "Water rates increased 8% for all residents" }
+    TopicBriefing.create!(
+      topic: @recurring_topic,
+      headline: "Water rates increased 8% for all residents",
+      generation_tier: "full"
     )
 
     get root_url
@@ -117,6 +134,69 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     get root_url
     assert_response :success
     assert_no_match "What Happened", response.body
+  end
+
+  test "what happened card appears before coming up card" do
+    @active_topic.update!(resident_impact_score: 4)
+    @recurring_topic.update!(resident_impact_score: 3)
+    agenda_item = AgendaItem.create!(meeting: @past_meeting, title: "Vote")
+    AgendaItemTopic.create!(topic: @recurring_topic, agenda_item: agenda_item)
+    Motion.create!(agenda_item: agenda_item, meeting: @past_meeting, description: "Vote", outcome: "approved")
+
+    get root_url
+    assert_response :success
+
+    what_happened_pos = response.body.index("What Happened")
+    coming_up_pos = response.body.index("Coming Up")
+    assert what_happened_pos < coming_up_pos, "What Happened should appear before Coming Up"
+  end
+
+  test "coming up applies meeting diversity — max 2 per meeting" do
+    # Create 4 topics all in the same future meeting
+    topics = 4.times.map do |i|
+      topic = Topic.create!(
+        name: "topic #{i}",
+        status: "approved",
+        lifecycle_status: "active",
+        resident_impact_score: 5 - i
+      )
+      item = AgendaItem.create!(meeting: @future_meeting, title: "Item #{i}")
+      AgendaItemTopic.create!(topic: topic, agenda_item: item)
+      TopicAppearance.create!(
+        topic: topic, meeting: @future_meeting, agenda_item: item,
+        appeared_at: @future_meeting.starts_at, body_name: @future_meeting.body_name,
+        evidence_type: "agenda_item"
+      )
+      topic
+    end
+
+    # Create a topic in a different meeting
+    other_meeting = Meeting.create!(
+      body_name: "Plan Commission", starts_at: 5.days.from_now,
+      detail_page_url: "http://example.com/other"
+    )
+    other_topic = Topic.create!(
+      name: "other meeting topic", status: "approved",
+      lifecycle_status: "active", resident_impact_score: 3
+    )
+    other_item = AgendaItem.create!(meeting: other_meeting, title: "Other Item")
+    AgendaItemTopic.create!(topic: other_topic, agenda_item: other_item)
+    TopicAppearance.create!(
+      topic: other_topic, meeting: other_meeting, agenda_item: other_item,
+      appeared_at: other_meeting.starts_at, body_name: other_meeting.body_name,
+      evidence_type: "agenda_item"
+    )
+
+    get root_url
+    assert_response :success
+
+    # Extract just the Coming Up card content
+    assert_select ".card--warm .card-body" do |card|
+      card_text = card.text
+      same_meeting_count = topics.count { |t| card_text.include?(t.name) }
+      assert same_meeting_count <= 2, "Expected at most 2 topics from same meeting in Coming Up, got #{same_meeting_count}"
+      assert_includes card_text, "other meeting topic"
+    end
   end
 
   test "renders successfully with no data" do
@@ -165,8 +245,6 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     get root_url
     assert_response :success
 
-    # The old meeting (60 days ago) should not have a View link in the meeting tables
-    # but the body name might appear in topic cards, so check specifically in table rows
     old_url = meeting_path(@old_meeting)
     assert_select "a[href='#{old_url}']", count: 0
   end
@@ -228,7 +306,6 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     # The meeting should appear in upcoming, not recently completed
-    # Check that it's in the upcoming section by looking at the section structure
     assert_select "section" do |sections|
       upcoming_section = sections.find { |s| s.text.include?("Upcoming Meetings") }
       assert upcoming_section.text.include?("Zoning Board"), "Expected Zoning Board in upcoming section"

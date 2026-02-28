@@ -67,8 +67,30 @@ module Topics
             { event_type: e.evidence_type, notes: e.notes, date: e.occurred_at&.iso8601 }
           end,
           total_appearances: topic.topic_appearances.count
-        }
+        },
+        upcoming_context: build_upcoming_context(topic)
       }
+    end
+
+    def build_upcoming_context(topic)
+      upcoming_appearances = topic.topic_appearances
+        .joins(:meeting)
+        .where(meetings: { starts_at: Time.current.. })
+        .order("meetings.starts_at ASC")
+        .limit(3)
+        .includes(:meeting, :agenda_item)
+
+      upcoming_appearances.map do |appearance|
+        agenda_items = appearance.meeting.agenda_items
+          .joins(:agenda_item_topics)
+          .where(agenda_item_topics: { topic_id: topic.id })
+
+        {
+          meeting_body: appearance.meeting.body_name,
+          meeting_date: appearance.meeting.starts_at&.to_date&.to_s,
+          agenda_items: agenda_items.map { |ai| { title: ai.title, summary: ai.summary } }
+        }
+      end
     end
 
     def parse_json_safely(json_str, topic)
@@ -82,6 +104,7 @@ module Topics
       briefing = topic.topic_briefing || topic.build_topic_briefing
 
       briefing.headline = analysis_json["headline"] || "Topic update"
+      briefing.upcoming_headline = analysis_json["upcoming_headline"]
       briefing.editorial_content = rendered["editorial_content"]
       briefing.record_content = rendered["record_content"]
       briefing.generation_data = analysis_json

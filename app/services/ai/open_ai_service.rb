@@ -579,8 +579,14 @@ module Ai
         Return a JSON object matching this schema:
         {
           "headline": "1-2 short sentences, 20 words max total. Like a newspaper headline.
+            Backward-looking: what just happened or where things stand.
             Good: 'City wants to cut bus subsidy paid by property taxes. No plan yet.'
             Bad: 'The City has discussed reducing Two Rivers property-tax support for Maritime Metro Transit Route 1 and separately set 2026 borrowing parameters'",
+          "upcoming_headline": "Forward-looking headline (20 words max) if the topic has upcoming meetings.
+            Focus on what's next — the vote, hearing, or decision coming up.
+            Include the committee name and date.
+            Example: 'Council votes on paving list, Mar 4'
+            Return null if no upcoming meetings in the context.",
           "editorial_analysis": {
             "current_state": "1-2 sentences. Plain language. What just happened or where it stands.",
             "pattern_observations": ["Short observations about patterns, if any"],
