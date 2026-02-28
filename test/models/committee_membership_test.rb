@@ -57,4 +57,14 @@ class CommitteeMembershipTest < ActiveSupport::TestCase
     CommitteeMembership.create!(committee: @committee, member: @member)
     assert_includes @member.committees, @committee
   end
+
+  test "staff role is valid" do
+    membership = CommitteeMembership.new(committee: @committee, member: @member, role: "staff")
+    assert membership.valid?
+  end
+
+  test "non_voting role is valid" do
+    membership = CommitteeMembership.new(committee: @committee, member: @member, role: "non_voting")
+    assert membership.valid?
+  end
 end
