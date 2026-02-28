@@ -42,6 +42,9 @@ Civic transparency site for Two Rivers, WI. Ingests official city meeting docume
 | Seed category blocklist | `bin/rails topics:seed_category_blocklist` |
 | Split a broad topic | `bin/rails topics:split_broad_topic[topic_name]` |
 | Extract memberships from minutes | `bin/rails members:extract_from_minutes` |
+| Merge members | `bin/rails members:merge[source_name,target_name]` |
+| Auto-merge single-word members | `bin/rails members:cleanup` |
+| List duplicate members | `bin/rails members:list_duplicates` |
 
 CI (`bin/ci` / `config/ci.rb`) runs: setup, rubocop, bundler-audit, importmap audit, brakeman. Note: CI does **not** run tests currently.
 
@@ -65,6 +68,7 @@ City Website → Scraper Jobs (discover/parse meetings)
 - **`MeetingAttendance`** — Per-meeting roll call record. Tracks present/absent/excused with attendee type (voting_member/non_voting_staff/guest). Created by `ExtractCommitteeMembersJob`. Drives automatic CommitteeMembership creation and departure detection (2 consecutive absences from roll call).
 - **`Meeting`** — Single official meeting. Has documents, agenda items, motions, summaries. `belongs_to :committee` (optional); keeps `body_name` as historical display text.
 - **`MeetingDocument`** — PDF/HTML artifact. Has `extracted_text`, `text_quality`, `ocr_status`. Page-level text stored in `Extraction` rows.
+- **`Member`** — Public official or committee member. Has canonical `name`, linked via `MemberAlias` for name variants (titles stripped, suffixes removed, last-name-only entries auto-aliased). `Member.resolve(raw_name)` centralizes normalization + alias lookup + auto-aliasing. Merge duplicates via `Member#merge_into!(target)`.
 - **`AgendaItem`** — Item on agenda. Links to topics via `AgendaItemTopic`. Has motions and votes.
 - **`KnowledgeSource` / `KnowledgeChunk`** — Admin-maintained context for RAG. Chunks have vector embeddings.
 - **`TopicSummary` / `MeetingSummary`** — AI-generated summaries. Topic summaries use a two-pass architecture (structured analysis → editorial rendering). Internal categories (factual record, institutional framing, civic sentiment) exist in `generation_data` JSON but are synthesized into unified editorial prose for display.
@@ -101,6 +105,7 @@ Topic cards (`topics/_topic_card` partial) are the primary navigation element to
 - **Single Rails app** — No microservices, no SPA. Server-rendered HTML + background jobs.
 - **Thin controllers** — Business logic in services and jobs, not controllers.
 - **Jobs must be idempotent** — Safe to re-run; clear/rebuild derived rows when appropriate.
+- **Member resolution uses `Member.resolve`** — Both extraction jobs (`ExtractCommitteeMembersJob`, `ExtractVotesJob`) use `Member.resolve(raw_name)` instead of direct `find_or_create_by!`. This centralizes name normalization, alias lookup, and auto-aliasing.
 - **AI calls go through `Ai::OpenAiService`** — Don't scatter OpenAI API calls elsewhere. Committee context injected via `prepare_committee_context` (database-driven, not hardcoded).
 - **Summaries require citations** — All factual claims must trace to document artifacts (e.g., `[Packet Page 12]`).
 - **Separate fact from inference** — Topic summaries distinguish factual record, institutional framing, and civic sentiment.

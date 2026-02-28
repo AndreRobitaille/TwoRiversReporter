@@ -146,12 +146,23 @@ Related models:
   365 Planning Committee"). Used by the scraper to resolve `body_name`.
 - **CommitteeMembership** — Tracks which officials sit on which committees,
   with role, start/end dates, and source (ai_extracted, admin_manual, seeded).
-  AI-driven extraction from meeting minutes is planned (see GitHub issue #72).
+  AI-driven extraction from meeting minutes via `ExtractCommitteeMembersJob`.
 - **MeetingAttendance** — Per-meeting roll call record. Tracks who was
   present, absent, or excused at each meeting, with attendee type
   (voting_member, non_voting_staff, guest) and optional capacity title.
   Created by `ExtractCommitteeMembersJob` from meeting minutes.
   Drives automatic `CommitteeMembership` creation and departure detection.
+
+### MemberAlias
+
+Maps name variants to canonical Member records. Used by `Member.resolve`
+to consolidate name variations from meeting minutes (e.g., "Council Rep
+Adam Wachowski" → "Adam Wachowski", "Brandt" → "Doug Brandt").
+
+Key fields: - member_id (FK) - name (unique)
+
+Admin-managed via `/admin/members`. Auto-created by `Member.resolve` for
+unambiguous last-name-only entries.
 
 ### Meeting
 
