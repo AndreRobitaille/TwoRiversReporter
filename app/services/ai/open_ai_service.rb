@@ -225,6 +225,52 @@ module Ai
       response.dig("choices", 0, "message", "content")
     end
 
+    def re_extract_item_topics(item_title:, item_summary:, document_text:, broad_topic_name:, existing_topics: [])
+      existing_topics_text = if existing_topics.any?
+        "Existing topics (prefer reusing these when appropriate): #{existing_topics.join(', ')}"
+      else
+        ""
+      end
+
+      prompt = <<~PROMPT
+        An agenda item was tagged with "#{broad_topic_name}", which is too broad to be
+        a useful topic. It's a process category, not a specific civic concern.
+
+        Re-classify this item. Return JSON with:
+        - "tags": array of specific topic names (0-2 tags), or empty if not topic-worthy
+        - "topic_worthy": true if this represents a persistent civic concern residents
+          would follow across meetings, false if it's routine/one-off
+
+        Agenda item title: #{item_title}
+        #{item_summary.present? ? "Summary: #{item_summary}" : ""}
+
+        Document text:
+        #{document_text.to_s.truncate(6000, separator: ' ')}
+
+        #{existing_topics_text}
+
+        Topic names should be at a "neighborhood conversation" level:
+        - Good: "conditional use permits", "fence setback rules", "downtown redevelopment"
+        - Bad: "zoning" (too broad), "123 Main St fence variance" (too narrow)
+        - If this is a routine one-off action, set topic_worthy to false and tags to []
+
+        Return JSON: {"tags": [...], "topic_worthy": true/false}
+      PROMPT
+
+      response = @client.chat(
+        parameters: {
+          model: DEFAULT_MODEL,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: "You are a civic data classifier for Two Rivers, WI." },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.1
+        }
+      )
+      response.dig("choices", 0, "message", "content")
+    end
+
     def triage_topics(context_json)
       community_context = context_json.delete(:community_context) || context_json.delete("community_context") || ""
 
