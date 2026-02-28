@@ -58,7 +58,7 @@ Rails.application.routes.draw do
       end
     end
 
-    resources :members, controller: "admin/members", as: :admin_members do
+    resources :members, only: %i[index show], controller: "admin/members", as: :admin_members do
       member do
         post :create_alias
         delete :destroy_alias
