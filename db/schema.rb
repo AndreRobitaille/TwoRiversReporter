@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_28_181225) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_28_191225) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -192,6 +192,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_28_181225) do
     t.datetime "updated_at", null: false
     t.text "verification_notes"
     t.date "verified_on"
+  end
+
+  create_table "meeting_attendances", force: :cascade do |t|
+    t.string "attendee_type", null: false
+    t.string "capacity"
+    t.datetime "created_at", null: false
+    t.bigint "meeting_id", null: false
+    t.bigint "member_id", null: false
+    t.string "status", null: false
+    t.datetime "updated_at", null: false
+    t.index ["meeting_id", "member_id"], name: "index_meeting_attendances_on_meeting_id_and_member_id", unique: true
+    t.index ["meeting_id"], name: "index_meeting_attendances_on_meeting_id"
+    t.index ["member_id"], name: "index_meeting_attendances_on_member_id"
   end
 
   create_table "meeting_documents", force: :cascade do |t|
@@ -563,6 +576,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_28_181225) do
   add_foreign_key "knowledge_chunks", "knowledge_sources"
   add_foreign_key "knowledge_source_topics", "knowledge_sources"
   add_foreign_key "knowledge_source_topics", "topics"
+  add_foreign_key "meeting_attendances", "meetings"
+  add_foreign_key "meeting_attendances", "members"
   add_foreign_key "meeting_documents", "meetings"
   add_foreign_key "meeting_summaries", "meetings"
   add_foreign_key "meetings", "committees"
