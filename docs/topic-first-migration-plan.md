@@ -71,6 +71,9 @@ This is a living note for future actions, not an implementation log.
 5) [x] Topics index: pagination + activity window rules.
 6) [x] Topic navigation: standardize click-through behavior.
 7) Topic pages: empty/error/low-signal states (QA checklist).
+   - [x] Broad topic quality: extraction prompt blocks category names as topics,
+     blocklist prevents recreation, `topics:split_broad_topic` rake task for cleanup.
+     See `docs/plans/2026-02-28-broad-topic-prevention-design.md`.
 8) Add semantic color tokens for light/dark modes.
 9) Apply theme color tokens to Topics + Home.
 10) Topic lifecycle status chips.
