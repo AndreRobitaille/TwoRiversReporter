@@ -46,4 +46,30 @@ namespace :topics do
 
     puts "Done. #{Topic.approved.where.not(description: [ nil, "" ]).count} topics now have descriptions."
   end
+
+  desc "Add process-category names to topic blocklist (idempotent)"
+  task seed_category_blocklist: :environment do
+    categories = [
+      "zoning",
+      "infrastructure",
+      "public safety",
+      "parks & rec",
+      "finance",
+      "licensing",
+      "personnel",
+      "governance"
+    ]
+
+    categories.each do |name|
+      normalized = name.to_s.strip.downcase.gsub(/[[:punct:]]/, "").squish
+      entry = TopicBlocklist.find_or_initialize_by(name: normalized)
+      if entry.new_record?
+        entry.reason = "Process category — too broad for a topic"
+        entry.save!
+        puts "Added to blocklist: #{name}"
+      else
+        puts "Already blocked: #{name}"
+      end
+    end
+  end
 end
