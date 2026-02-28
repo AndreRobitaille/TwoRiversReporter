@@ -13,7 +13,9 @@ class Committee < ApplicationRecord
 
   scope :active, -> { where(status: "active") }
   scope :dormant, -> { where(status: "dormant") }
-  scope :for_ai_context, -> { where(status: %w[active dormant]).where.not(description: [nil, ""]).order(:name) }
+  scope :for_ai_context, -> {
+    where(status: %w[active dormant]).where.not(description: [ nil, "" ]).order(:name)
+  }
 
   def self.resolve(body_name)
     return nil if body_name.blank?
