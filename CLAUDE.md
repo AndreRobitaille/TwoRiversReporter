@@ -60,7 +60,8 @@ City Website → Scraper Jobs (discover/parse meetings)
 ### Core Domain Models
 
 - **`Topic`** — Central organizing model. Has `status` (approved/proposed/blocked), `review_status`, `lifecycle_status` (active/dormant/resolved/recurring). Linked to meetings via `AgendaItemTopic`. Has aliases, blocklist entries, appearances, status events, summaries.
-- **`Meeting`** — Single official meeting. Has documents, agenda items, motions, summaries.
+- **`Committee`** — Governing body (city board, tax-funded nonprofit, or external). Has `committee_type`, `status` (active/dormant/dissolved), `description` (injected into AI prompts). Linked to meetings via FK, members via `CommitteeMembership`, and historical names via `CommitteeAlias`. Normalizes the free-form `body_name` string.
+- **`Meeting`** — Single official meeting. Has documents, agenda items, motions, summaries. `belongs_to :committee` (optional); keeps `body_name` as historical display text.
 - **`MeetingDocument`** — PDF/HTML artifact. Has `extracted_text`, `text_quality`, `ocr_status`. Page-level text stored in `Extraction` rows.
 - **`AgendaItem`** — Item on agenda. Links to topics via `AgendaItemTopic`. Has motions and votes.
 - **`KnowledgeSource` / `KnowledgeChunk`** — Admin-maintained context for RAG. Chunks have vector embeddings.
@@ -87,7 +88,7 @@ City Website → Scraper Jobs (discover/parse meetings)
 ### Routes
 
 Public: `/ (home#index)`, `/meetings`, `/topics`, `/members` (all read-only index+show).
-Admin: `/admin` namespace with dashboard, session/MFA auth, topic management (approve/block/merge/alias), knowledge sources, summaries, job monitoring.
+Admin: `/admin` namespace with dashboard, session/MFA auth, topic management (approve/block/merge/alias), committees (CRUD with alias management), knowledge sources, summaries, job monitoring.
 
 ### Topic Navigation Pattern
 
@@ -98,7 +99,7 @@ Topic cards (`topics/_topic_card` partial) are the primary navigation element to
 - **Single Rails app** — No microservices, no SPA. Server-rendered HTML + background jobs.
 - **Thin controllers** — Business logic in services and jobs, not controllers.
 - **Jobs must be idempotent** — Safe to re-run; clear/rebuild derived rows when appropriate.
-- **AI calls go through `Ai::OpenAiService`** — Don't scatter OpenAI API calls elsewhere.
+- **AI calls go through `Ai::OpenAiService`** — Don't scatter OpenAI API calls elsewhere. Committee context injected via `prepare_committee_context` (database-driven, not hardcoded).
 - **Summaries require citations** — All factual claims must trace to document artifacts (e.g., `[Packet Page 12]`).
 - **Separate fact from inference** — Topic summaries distinguish factual record, institutional framing, and civic sentiment.
 - **Credentials** — Encrypted in `config/credentials.yml.enc`, decrypted via `config/master.key` (gitignored). Access via `Rails.application.credentials.<key>`.
