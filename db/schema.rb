@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_21_214258) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_28_181225) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -71,6 +71,43 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_21_214258) do
     t.text "title"
     t.datetime "updated_at", null: false
     t.index ["meeting_id"], name: "index_agenda_items_on_meeting_id"
+  end
+
+  create_table "committee_aliases", force: :cascade do |t|
+    t.bigint "committee_id", null: false
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+    t.index ["committee_id"], name: "index_committee_aliases_on_committee_id"
+    t.index ["name"], name: "index_committee_aliases_on_name", unique: true
+  end
+
+  create_table "committee_memberships", force: :cascade do |t|
+    t.bigint "committee_id", null: false
+    t.datetime "created_at", null: false
+    t.date "ended_on"
+    t.bigint "member_id", null: false
+    t.string "role"
+    t.string "source", default: "admin_manual", null: false
+    t.date "started_on"
+    t.datetime "updated_at", null: false
+    t.index ["committee_id", "member_id", "ended_on"], name: "idx_committee_memberships_unique_active", unique: true, where: "(ended_on IS NULL)"
+    t.index ["committee_id"], name: "index_committee_memberships_on_committee_id"
+    t.index ["member_id"], name: "index_committee_memberships_on_member_id"
+  end
+
+  create_table "committees", force: :cascade do |t|
+    t.string "committee_type", default: "city", null: false
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.date "dissolved_on"
+    t.date "established_on"
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.string "status", default: "active", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_committees_on_name", unique: true
+    t.index ["slug"], name: "index_committees_on_slug", unique: true
   end
 
   create_table "entities", force: :cascade do |t|
@@ -190,6 +227,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_21_214258) do
 
   create_table "meetings", force: :cascade do |t|
     t.string "body_name"
+    t.bigint "committee_id"
     t.datetime "created_at", null: false
     t.string "detail_page_url"
     t.string "location"
@@ -197,6 +235,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_21_214258) do
     t.datetime "starts_at"
     t.string "status"
     t.datetime "updated_at", null: false
+    t.index ["committee_id"], name: "index_meetings_on_committee_id"
   end
 
   create_table "members", force: :cascade do |t|
@@ -377,6 +416,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_21_214258) do
     t.bigint "agenda_item_id"
     t.datetime "appeared_at", null: false
     t.string "body_name"
+    t.bigint "committee_id"
     t.datetime "created_at", null: false
     t.string "evidence_type", null: false
     t.bigint "meeting_id", null: false
@@ -384,6 +424,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_21_214258) do
     t.bigint "topic_id", null: false
     t.datetime "updated_at", null: false
     t.index ["agenda_item_id"], name: "index_topic_appearances_on_agenda_item_id"
+    t.index ["committee_id"], name: "index_topic_appearances_on_committee_id"
     t.index ["meeting_id"], name: "index_topic_appearances_on_meeting_id"
     t.index ["topic_id", "appeared_at"], name: "index_topic_appearances_on_topic_id_and_appeared_at"
     t.index ["topic_id"], name: "index_topic_appearances_on_topic_id"
@@ -511,6 +552,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_21_214258) do
   add_foreign_key "agenda_item_topics", "agenda_items"
   add_foreign_key "agenda_item_topics", "topics"
   add_foreign_key "agenda_items", "meetings"
+  add_foreign_key "committee_aliases", "committees"
+  add_foreign_key "committee_memberships", "committees"
+  add_foreign_key "committee_memberships", "members"
   add_foreign_key "entity_facts", "entities"
   add_foreign_key "entity_mentions", "entities"
   add_foreign_key "entity_mentions", "meeting_documents"
@@ -521,6 +565,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_21_214258) do
   add_foreign_key "knowledge_source_topics", "topics"
   add_foreign_key "meeting_documents", "meetings"
   add_foreign_key "meeting_summaries", "meetings"
+  add_foreign_key "meetings", "committees"
   add_foreign_key "motions", "agenda_items"
   add_foreign_key "motions", "meetings"
   add_foreign_key "sessions", "users"
@@ -535,6 +580,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_21_214258) do
   add_foreign_key "stance_observations", "meetings"
   add_foreign_key "topic_aliases", "topics"
   add_foreign_key "topic_appearances", "agenda_items"
+  add_foreign_key "topic_appearances", "committees"
   add_foreign_key "topic_appearances", "meetings"
   add_foreign_key "topic_appearances", "topics"
   add_foreign_key "topic_briefings", "meetings", column: "triggering_meeting_id"

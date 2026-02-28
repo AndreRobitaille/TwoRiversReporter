@@ -1,0 +1,56 @@
+<%= form_with model: [:admin, committee] do |form| %>
+  <% if committee.errors.any? %>
+    <div class="flash flash--danger">
+      <%= committee.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= form.label :name, class: "form-label" %>
+    <%= form.text_field :name, class: "form-input", placeholder: "e.g. Plan Commission" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :description, class: "form-label" %>
+    <%= form.text_area :description, rows: 4, class: "form-textarea",
+        placeholder: "Purpose and mandate — this is injected into AI prompts as context." %>
+    <p class="text-sm text-muted mt-1">Describe what this committee does. This text is provided to the AI when generating meeting and topic summaries.</p>
+  </div>
+
+  <div class="flex gap-4">
+    <div class="form-group grow">
+      <%= form.label :committee_type, "Type", class: "form-label" %>
+      <%= form.select :committee_type, [
+        ["City Board/Commission", "city"],
+        ["Tax-Funded Nonprofit", "tax_funded_nonprofit"],
+        ["External (Non-City)", "external"]
+      ], {}, class: "form-select" %>
+    </div>
+
+    <div class="form-group grow">
+      <%= form.label :status, class: "form-label" %>
+      <%= form.select :status, [
+        ["Active", "active"],
+        ["Dormant", "dormant"],
+        ["Dissolved", "dissolved"]
+      ], {}, class: "form-select" %>
+    </div>
+  </div>
+
+  <div class="flex gap-4">
+    <div class="form-group grow">
+      <%= form.label :established_on, "Established", class: "form-label" %>
+      <%= form.date_field :established_on, class: "form-input" %>
+    </div>
+
+    <div class="form-group grow">
+      <%= form.label :dissolved_on, "Dissolved", class: "form-label" %>
+      <%= form.date_field :dissolved_on, class: "form-input" %>
+    </div>
+  </div>
+
+  <div class="flex gap-2 items-center mt-6">
+    <%= form.submit class: "btn btn--primary" %>
+    <%= link_to "Cancel", admin_committees_path, class: "btn btn--secondary" %>
+  </div>
+<% end %>

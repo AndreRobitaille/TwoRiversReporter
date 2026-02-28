@@ -126,12 +126,34 @@ Resident-Facing Pages
 
 ## Core Domain Model
 
+### Committee
+
+Represents a governing body (city board, tax-funded nonprofit, or external
+organization). Normalizes the free-form `body_name` string that the scraper
+captures from the city website.
+
+Key fields: - name - slug - description - committee_type (city,
+tax_funded_nonprofit, external) - status (active, dormant, dissolved) -
+established_on - dissolved_on
+
+Committee descriptions are injected into AI prompts via
+`OpenAiService#prepare_committee_context` so the AI understands what each
+body does when generating summaries. Descriptions are editable via admin UI.
+
+Related models:
+- **CommitteeAlias** — Maps historical/variant names to canonical committee
+  (e.g., "Splash Pad and Ice Rink Planning Committee" → "Central Park West
+  365 Planning Committee"). Used by the scraper to resolve `body_name`.
+- **CommitteeMembership** — Tracks which officials sit on which committees,
+  with role, start/end dates, and source (ai_extracted, admin_manual, seeded).
+  AI-driven extraction from meeting minutes is planned (see GitHub issue #72).
+
 ### Meeting
 
-Represents a single official meeting.
+Represents a single official meeting. Belongs to a Committee (optional).
 
-Key fields: - body_name - meeting_type - starts_at - location -
-detail_page_url - status
+Key fields: - body_name (historical, as scraped) - committee_id (FK) -
+meeting_type - starts_at - location - detail_page_url - status
 
 ### MeetingDocument
 

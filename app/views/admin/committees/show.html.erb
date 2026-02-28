@@ -1,0 +1,161 @@
+<% content_for(:title) { "#{@committee.name} - Admin" } %>
+
+<div class="page-header">
+  <div class="flex justify-between items-center">
+    <div>
+      <div class="flex items-center gap-2 mb-2">
+        <%= link_to "Committees", admin_committees_path, class: "text-secondary hover:underline" %>
+        <span class="text-muted">/</span>
+        <h1 class="page-title mb-0"><%= @committee.name %></h1>
+      </div>
+      <div class="flex gap-2">
+        <span class="badge badge--default"><%= @committee.committee_type.humanize %></span>
+        <% case @committee.status %>
+        <% when "active" %>
+          <span class="badge badge--success">Active</span>
+        <% when "dormant" %>
+          <span class="badge badge--warning">Dormant</span>
+        <% when "dissolved" %>
+          <span class="badge badge--default">Dissolved</span>
+        <% end %>
+      </div>
+    </div>
+    <div class="flex gap-2">
+      <%= link_to "Edit", edit_admin_committee_path(@committee), class: "btn btn--primary" %>
+      <%= button_to "Delete", admin_committee_path(@committee), method: :delete,
+          class: "btn btn--danger", form: { data: { turbo_confirm: "Delete this committee?" } } %>
+    </div>
+  </div>
+</div>
+
+<% if @committee.description.present? %>
+  <div class="card p-6 mb-6">
+    <h2 class="text-lg font-bold mb-2">Description</h2>
+    <p class="text-secondary"><%= @committee.description %></p>
+    <% if @committee.established_on.present? || @committee.dissolved_on.present? %>
+      <div class="flex gap-4 mt-4 text-sm text-muted">
+        <% if @committee.established_on.present? %>
+          <span>Established: <%= @committee.established_on %></span>
+        <% end %>
+        <% if @committee.dissolved_on.present? %>
+          <span>Dissolved: <%= @committee.dissolved_on %></span>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
+<div class="card p-6 mb-6">
+  <h2 class="text-lg font-bold mb-4">Aliases</h2>
+  <p class="text-sm text-secondary mb-4">Name variants used by the scraper to match this committee. Historical names map old meetings to this committee.</p>
+
+  <% if @aliases.any? %>
+    <table class="mb-4">
+      <tbody>
+        <% @aliases.each do |a| %>
+          <tr>
+            <td><%= a.name %></td>
+            <td class="text-right">
+              <%= button_to "Remove", destroy_alias_admin_committee_path(@committee, alias_id: a.id),
+                  method: :delete, class: "btn btn--sm btn--ghost text-danger",
+                  form: { data: { turbo_confirm: "Remove this alias?" } } %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="text-secondary mb-4">No aliases.</p>
+  <% end %>
+
+  <%= form_with url: create_alias_admin_committee_path(@committee), local: true, class: "flex gap-2" do |f| %>
+    <%= f.text_field :name, class: "form-input grow", placeholder: "e.g. Old Committee Name" %>
+    <%= f.submit "Add Alias", class: "btn btn--secondary" %>
+  <% end %>
+</div>
+
+<div class="card p-6 mb-6">
+  <h2 class="text-lg font-bold mb-4">Members (<%= @memberships.count %>)</h2>
+  <p class="text-sm text-secondary mb-4">Committee membership tracking. AI-driven extraction coming soon.</p>
+
+  <% current = @memberships.select { |m| m.ended_on.nil? } %>
+  <% past = @memberships.select { |m| m.ended_on.present? } %>
+
+  <% if current.any? %>
+    <h3 class="text-md font-bold mb-2">Current</h3>
+    <table class="mb-4">
+      <thead>
+        <tr>
+          <th>Member</th>
+          <th>Role</th>
+          <th>Since</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% current.each do |m| %>
+          <tr>
+            <td><%= m.member.name %></td>
+            <td><%= m.role&.humanize || "Member" %></td>
+            <td><%= m.started_on %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+
+  <% if past.any? %>
+    <h3 class="text-md font-bold mb-2">Past</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Member</th>
+          <th>Role</th>
+          <th>Period</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% past.each do |m| %>
+          <tr>
+            <td><%= m.member.name %></td>
+            <td><%= m.role&.humanize || "Member" %></td>
+            <td><%= m.started_on %> — <%= m.ended_on %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+
+  <% if @memberships.empty? %>
+    <p class="text-secondary">No members recorded yet.</p>
+  <% end %>
+</div>
+
+<div class="card p-6">
+  <h2 class="text-lg font-bold mb-4">Meetings (<%= @committee.meetings.count %>)</h2>
+  <% recent_meetings = @committee.meetings.order(starts_at: :desc).limit(10) %>
+  <% if recent_meetings.any? %>
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Body Name (Scraped)</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% recent_meetings.each do |m| %>
+          <tr>
+            <td><%= link_to m.starts_at&.strftime("%b %d, %Y"), meeting_path(m) %></td>
+            <td class="text-sm text-secondary"><%= m.body_name %></td>
+            <td><%= m.status %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <% if @committee.meetings.count > 10 %>
+      <p class="text-sm text-muted mt-2">Showing 10 most recent of <%= @committee.meetings.count %> meetings.</p>
+    <% end %>
+  <% else %>
+    <p class="text-secondary">No meetings linked yet.</p>
+  <% end %>
+</div>

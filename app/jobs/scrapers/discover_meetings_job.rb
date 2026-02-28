@@ -65,8 +65,13 @@ module Scrapers
       # Update attributes
       meeting.starts_at = starts_at
       meeting.body_name = title_text
+      meeting.committee = Committee.resolve(title_text)
       meeting.meeting_type = "regular" # Default, can be refined later
       meeting.status = determine_status(starts_at)
+
+      if meeting.committee_id.blank? && meeting.body_name.present?
+        Rails.logger.warn "DiscoverMeetingsJob: No committee match for body_name='#{meeting.body_name}'"
+      end
 
       if meeting.save
         # Enqueue parsing of the detail page

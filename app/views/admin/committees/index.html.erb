@@ -1,0 +1,67 @@
+<% content_for(:title) { "Committees - Admin" } %>
+
+<div class="page-header">
+  <div class="flex justify-between items-center">
+    <div>
+      <h1 class="page-title">Committees & Boards</h1>
+      <p class="page-subtitle">Manage governing bodies and their descriptions for AI context.</p>
+    </div>
+    <%= link_to "New Committee", new_admin_committee_path, class: "btn btn--primary" %>
+  </div>
+</div>
+
+<div class="flex gap-2 mb-4 flex-wrap">
+  <%= link_to "All", admin_committees_path, class: "btn btn--sm #{params[:type].blank? && params[:status].blank? ? 'btn--primary' : 'btn--ghost'}" %>
+  <%= link_to "City", admin_committees_path(type: "city"), class: "btn btn--sm #{params[:type] == 'city' ? 'btn--primary' : 'btn--ghost'}" %>
+  <%= link_to "Tax-Funded Nonprofit", admin_committees_path(type: "tax_funded_nonprofit"), class: "btn btn--sm #{params[:type] == 'tax_funded_nonprofit' ? 'btn--primary' : 'btn--ghost'}" %>
+  <%= link_to "External", admin_committees_path(type: "external"), class: "btn btn--sm #{params[:type] == 'external' ? 'btn--primary' : 'btn--ghost'}" %>
+  <span class="mx-2 border-l"></span>
+  <%= link_to "Active", admin_committees_path(status: "active"), class: "btn btn--sm #{params[:status] == 'active' ? 'btn--primary' : 'btn--ghost'}" %>
+  <%= link_to "Dormant", admin_committees_path(status: "dormant"), class: "btn btn--sm #{params[:status] == 'dormant' ? 'btn--primary' : 'btn--ghost'}" %>
+  <%= link_to "Dissolved", admin_committees_path(status: "dissolved"), class: "btn btn--sm #{params[:status] == 'dissolved' ? 'btn--primary' : 'btn--ghost'}" %>
+</div>
+
+<div class="table-wrapper">
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Status</th>
+        <th>Meetings</th>
+        <th>Aliases</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @committees.each do |committee| %>
+        <tr>
+          <td>
+            <strong><%= link_to committee.name, admin_committee_path(committee) %></strong>
+            <% if committee.description.present? %>
+              <p class="text-sm text-secondary mt-1 mb-0"><%= truncate(committee.description, length: 80) %></p>
+            <% end %>
+          </td>
+          <td>
+            <span class="badge badge--default"><%= committee.committee_type.humanize %></span>
+          </td>
+          <td>
+            <% case committee.status %>
+            <% when "active" %>
+              <span class="badge badge--success">Active</span>
+            <% when "dormant" %>
+              <span class="badge badge--warning">Dormant</span>
+            <% when "dissolved" %>
+              <span class="badge badge--default">Dissolved</span>
+            <% end %>
+          </td>
+          <td><%= committee.meetings.count %></td>
+          <td><%= committee.committee_aliases.count %></td>
+          <td class="text-right">
+            <%= link_to "Edit", edit_admin_committee_path(committee), class: "btn btn--sm btn--ghost" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
