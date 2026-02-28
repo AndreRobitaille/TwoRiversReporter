@@ -107,6 +107,33 @@ module Ai
         - If confidence in topic classification is low, set confidence below 0.5 and classify as "Other".
         - Do not infer motive or speculate about intent behind agenda item placement or wording.
         </governance_constraints>
+        <topic_granularity>
+        Category names (Infrastructure, Public Safety, Parks & Rec, Finance, Zoning,
+        Licensing, Personnel, Governance) describe process DOMAINS, not topics.
+
+        NEVER use a category name as a topic tag. The "category" field already captures
+        the domain. The "tags" array must name the SPECIFIC civic concern.
+
+        Good topic names (specific enough to tell a coherent story over time):
+        - "conditional use permits" (recurring zoning process residents track)
+        - "fence setback rules" (specific ordinance change affecting homeowners)
+        - "downtown redevelopment" (ongoing planning effort)
+        - "bus route subsidy" (specific budget/service issue)
+
+        Bad topic names (too broad — contain dozens of unrelated concerns):
+        - "zoning" (covers CUPs, variances, rezoning, ordinances, land sales)
+        - "infrastructure" (covers roads, sewers, water, buildings)
+        - "finance" (covers budgets, borrowing, grants, fees)
+
+        Not topic-worthy (set topic_worthy: false):
+        - One-off procedural actions (a single plat review, routine survey map)
+        - Standard approvals with no controversy or recurring significance
+        - Items that happen once and are done
+
+        Ask yourself: "Would a resident follow this topic across multiple meetings?"
+        If the answer only makes sense for a SPECIFIC concern within the category,
+        name that concern. If the item is routine, mark it not topic-worthy.
+        </topic_granularity>
         #{community_context_text}
         #{existing_topics_text}
         <extraction_spec>
