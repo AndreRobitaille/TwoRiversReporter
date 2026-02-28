@@ -11,5 +11,13 @@ class MeetingsController < ApplicationController
 
   def show
     @meeting = Meeting.find(params[:id])
+
+    approved_topics = @meeting.topics.approved
+      .includes(:topic_appearances, :topic_briefing)
+      .distinct
+
+    @ongoing_topics, @new_topics = approved_topics.partition do |topic|
+      topic.topic_appearances.size > 1
+    end
   end
 end
