@@ -16,6 +16,7 @@ class AgendaItemTopic < ApplicationRecord
         agenda_item: agenda_item,
         appeared_at: meeting.starts_at || agenda_item.created_at,
         body_name: meeting.body_name,
+        committee: meeting.committee,
         evidence_type: "agenda_item",
         source_ref: { agenda_item_id: agenda_item.id, title: agenda_item.title }
       )
