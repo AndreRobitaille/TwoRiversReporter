@@ -65,6 +65,7 @@ module Documents
         end
         if document.document_type == "minutes_pdf"
           ExtractVotesJob.perform_later(document.meeting_id)
+          ExtractCommitteeMembersJob.perform_later(document.meeting_id)
         end
 
         Rails.logger.info "OCR completed for Document #{document_id} (#{images.count} pages)"
