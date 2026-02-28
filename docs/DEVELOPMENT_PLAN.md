@@ -249,6 +249,64 @@ Topic-aware summaries should: - Reference prior relevant meetings -
 Indicate duration of issue - Note governing body progression (committee
 → council)
 
+### Editorial Voice
+
+All resident-facing summaries use a neighborhood-reporter voice:
+
+- **Skeptical of process and decisions, not of people.** Question what's
+  being done and why. Don't name-and-shame or ascribe bad intent.
+- **Editorialize early.** Casual residents can't connect the dots
+  themselves — the summary does that work for them.
+- **Plain language.** Translate jargon ("general obligation promissory
+  notes" → "borrowing"). Write for phone scanners, not policy wonks.
+- **Resident impact first.** Cost, timeline, who's affected, what
+  changes in the neighborhood — this is what people care about.
+- **No procedural noise.** Motions, seconds, and roll-call details
+  belong in Key Decisions, not in narrative summaries.
+
+### Two-Pass Generation Architecture
+
+Full-quality summaries (both per-meeting `TopicSummary` and rolling
+`TopicBriefing`) use a two-pass architecture:
+
+**Pass 1 — Structured Analysis** (`analyze_topic_briefing` /
+`analyze_topic_summary`): gpt-5.2 with `response_format: json_object`.
+Produces structured JSON with editorial analysis, factual record, civic
+sentiment, continuity signals, and resident impact scoring (1–5 scale).
+Knowledgebase context is included here to inform analysis.
+
+**Pass 2 — Markdown Rendering** (`render_topic_briefing` /
+`render_topic_summary`): gpt-5.2 takes the Pass 1 JSON and renders
+resident-facing markdown. Produces two distinct sections:
+
+- **Editorial** ("What's Going On"): 100–200 word prose. Analytical,
+  skeptical, no inline citation IDs. Reads cleanly as narrative.
+- **Record**: Chronological bullet list. Each bullet ends with meeting
+  name and date in parentheses (not internal IDs). Factual only.
+
+Internal structural categories (Factual Record, Institutional Framing,
+Civic Sentiment) exist in the analysis JSON but are **never exposed** in
+rendered output. The rendering pass synthesizes them into unified
+editorial prose.
+
+### Citation Rules
+
+- Per-meeting summaries cite packet pages: `[Packet Page 12]`
+- Rolling briefing record bullets cite meeting names: `(Council, Feb 18)`
+- Internal IDs (e.g., `[agenda-309]`) are never shown to residents
+- Citation translation happens at the prompt level, not post-processing
+
+### Three-Tier Briefing Pipeline
+
+See `docs/plans/2026-02-21-topic-briefing-architecture-design.md` for
+full design. Summary:
+
+| Tier | Trigger | AI Cost | Output |
+|------|---------|---------|--------|
+| `headline_only` | Future meeting scheduled | None | Derived headline |
+| `interim` | Agenda/packet added | 1× gpt-5-mini | Updated headline + upcoming note |
+| `full` | Minutes published | 2× gpt-5.2 | Full editorial + record + headline |
+
 ------------------------------------------------------------------------
 
 ## Knowledgebase + Contextual Summaries
@@ -263,6 +321,10 @@ Constraints:
 - Stance tracking limited to public commenters
 - Retrieval must be capped and relevance-scored
 
+Integration: KB context is fed into Pass 1 (analysis) of the two-pass
+pipeline via `Topics::SummaryContextBuilder`. It informs editorial
+analysis but is distinguished from document content in the prompt.
+
 ------------------------------------------------------------------------
 
 ## Public Website Structure
@@ -275,20 +337,50 @@ Constraints:
 
 ### Topic Page (Primary Lens)
 
-- Topic description
-- Timeline of meetings
-- Motions and votes
+- Topic description (auto-generated, max 80 chars)
+- Briefing headline (bold, warm card)
+- Coming Up cards (future meetings with this topic)
+- "What's Going On" editorial (prose, 100–200 words)
+- "Record" (chronological cited bullets spanning all meetings)
+- Key Decisions (motions with vote breakdowns)
 - Related documents
-- Status indicator
-- Upcoming agenda appearances
+- Status/lifecycle indicators
 
 ### Meeting Page
 
 - Meeting details
 - Official documents
-- Topic associations
-- Summaries
-- Pivot to Topic continuity (agenda items link to Topic timeline)
+- Topic Analysis (AI-generated per-topic summaries, collapsible)
+- Meeting Recap / Packet Analysis (AI-generated meeting-level summary)
+- Voting Record (motions with vote breakdowns)
+- Agenda (with inline topic tags linking to topic pages)
+- Documents (PDFs, originals)
+- **Issues in This Meeting** — topic cards split into two subsections:
+  - *Ongoing*: topics with 2+ meeting appearances ("These issues have
+    come up across multiple meetings. Click any for the full picture.")
+  - *New This Meeting*: topics appearing for the first time
+  - Reuses the standard `_topic_card` partial (same cards as homepage
+    and topics index) for consistent navigation
+  - Only shows approved topics; skips section entirely if none exist
+
+### Navigation: Topic Click-Through Behavior
+
+Topic navigation follows these principles:
+
+- **Topic cards are the primary discovery path.** The same card partial
+  (`topics/_topic_card`) is used on the homepage, topics index, and
+  meeting pages. Clicking any card goes to `/topics/:id`.
+- **Meeting pages bridge to topics via the "Issues in This Meeting"
+  section** placed after documents. Residents who read a meeting's AI
+  analysis can discover deeper topic history through these cards.
+- **Topic summary headers are not clickable.** AI-generated prose uses
+  different language than canonical topic names, and the interaction
+  wouldn't be apparent to residents unfamiliar with the topic concept.
+- **Homepage meeting rows show topic pills filtered by importance.**
+  Only approved topics with `resident_impact_score >= 2` appear as
+  pills. No count cap, no overflow indicator. Empty cells are fine.
+- **Agenda item topic tags** remain as inline links to topic pages
+  (contextual, secondary navigation).
 
 ------------------------------------------------------------------------
 
@@ -307,8 +399,14 @@ The system must:
 ## Instructions for AI Coding Tools
 
 - Treat this document as authoritative.
+- **Before any work, also read these two documents:**
+    - **`docs/AUDIENCE.md`** — Who uses this site, how they behave,
+      and what they care about. All UI, content, and prioritization
+      decisions must account for this audience.
+    - **`docs/topics/TOPIC_GOVERNANCE.md`** — Binding rules for all
+      topic extraction, classification, summarization, and lifecycle
+      logic.
 - The next engineering work must start with `docs/topic-first-migration-plan.md`.
-- When beginning any topic-related task, read `docs/topics/TOPIC_GOVERNANCE.md` first.
 - Treat `docs/topics/TOPIC_GOVERNANCE.md` as binding for all Topic
     logic.
 - Meetings are inputs. Topics are the organizing layer.
