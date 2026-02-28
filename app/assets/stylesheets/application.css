@@ -1933,3 +1933,168 @@ th.sortable-header:hover {
     display: none;
   }
 }
+
+/* ============================================
+   City Officials Page
+   ============================================ */
+
+.officials-type-divider {
+  margin: var(--space-10) 0 var(--space-5);
+}
+
+.officials-type-divider:first-of-type {
+  margin-top: 0;
+}
+
+.officials-type-label {
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-semibold);
+  margin: 0 0 var(--space-1) 0;
+  padding-bottom: var(--space-2);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.officials-type-explanation {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: var(--space-2) 0 0 0;
+}
+
+.officials-committee {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: var(--space-6);
+}
+
+.officials-committee--council {
+  border-left: 3px solid var(--color-primary);
+}
+
+.officials-committee-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-raised);
+}
+
+.officials-committee-name-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-2);
+}
+
+.officials-committee-name {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  margin: 0;
+  line-height: var(--line-height-tight);
+}
+
+.officials-committee-desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: var(--line-height-relaxed);
+}
+
+.officials-committee-topics {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.officials-topics-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+.officials-member-count {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding-top: var(--space-1);
+}
+
+.officials-roster {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.officials-member {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.officials-roster li:last-child .officials-member {
+  border-bottom: none;
+}
+
+.officials-member-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.officials-member-name {
+  font-weight: var(--font-weight-semibold);
+}
+
+.officials-member-badges {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.officials-member .btn {
+  flex-shrink: 0;
+}
+
+/* Officials page — mobile */
+@media (max-width: 640px) {
+  .officials-committee-header {
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-4);
+  }
+
+  .officials-member-count {
+    padding-top: 0;
+  }
+
+  .officials-member {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .officials-member-info {
+    flex-basis: 100%;
+  }
+
+  .officials-committee-topics {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

@@ -433,6 +433,42 @@ analysis but is distinguished from document content in the prompt.
     and topics index) for consistent navigation
   - Only shows approved topics; skips section entirely if none exist
 
+### City Officials Page
+
+Directory of current voting members grouped by committee. Navigation
+label: "City Officials" (header + footer).
+
+**Layout:**
+
+- Committees grouped by type: City Government → Tax-Funded Organizations
+  → Other Organizations. City Council always first within city type.
+- Each committee type section has a heading and one-line explanation of
+  what that type means (elected vs appointed vs independent).
+- Each committee shows its full description and up to 5 recent topic
+  pills (linked to topic pages) under "Recently working on:".
+- Members listed alphabetically by last name within each committee.
+- "View [First Name]'s votes" button links to member show page (only
+  shown if the member has recorded votes).
+
+**Badges (all dynamically derived, no static data):**
+
+- **"Elected by voters"** — shown on the City Council committee header.
+- **"Elected — Council Member"** — shown on members who currently sit on
+  City Council when they appear on other committees. Derived from current
+  City Council memberships on each page load.
+- **"City Manager"** — identified from `MeetingAttendance` records where
+  `capacity = "City Manager"`.
+- **"Chair" / "Vice Chair"** — from `CommitteeMembership.role`.
+
+**Key files:**
+
+- `app/controllers/members_controller.rb` — queries committees with
+  current voting members, builds council member ID set, loads recent
+  topics per committee.
+- `app/views/members/index.html.erb` — grouped roster layout.
+- `app/views/members/show.html.erb` — individual member voting record.
+- CSS: `.officials-*` classes in `app/assets/stylesheets/application.css`.
+
 ### Navigation: Topic Click-Through Behavior
 
 Topic navigation follows these principles:

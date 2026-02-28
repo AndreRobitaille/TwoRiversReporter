@@ -57,7 +57,7 @@
           <nav class="site-nav">
             <%= link_to "Meetings", meetings_path, class: ("active" if controller_name == "meetings") %>
             <%= link_to "Topics", topics_path, class: ("active" if controller_name == "topics") %>
-            <%= link_to "Officials", members_path, class: ("active" if controller_name == "members") %>
+            <%= link_to "City Officials", members_path, class: ("active" if controller_name == "members") %>
 
             <button class="theme-toggle" aria-label="Toggle dark mode" onclick="toggleTheme()">
               <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -95,7 +95,7 @@
           <div class="footer-links">
             <%= link_to "Meetings", meetings_path %>
             <%= link_to "Topics", topics_path %>
-            <%= link_to "Officials", members_path %>
+            <%= link_to "City Officials", members_path %>
             <%= link_to "City Website", "https://www.two-rivers.org/meetings", target: "_blank", rel: "noopener" %>
           </div>
 

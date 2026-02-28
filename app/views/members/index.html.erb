@@ -1,24 +1,91 @@
-<% content_for(:title) { "Public Officials - Two Rivers Matters" } %>
+<% content_for(:title) { "City Officials - Two Rivers Matters" } %>
 
 <div class="page-header">
-  <h1 class="page-title">Public Officials</h1>
-  <p class="page-subtitle">Track voting records for elected officials and committee members</p>
+  <h1 class="page-title">City Officials</h1>
+  <p class="page-subtitle">Who sits on the boards and committees that make decisions in Two Rivers</p>
 </div>
 
-<div class="card-grid">
-  <% @members.each do |member| %>
-    <%= link_to member_path(member), class: "card card--clickable", style: "text-decoration: none; color: inherit;" do %>
-      <div class="card-header">
-        <h3 class="card-title"><%= member.name %></h3>
-      </div>
-      <div class="card-body">
-        <span class="text-secondary"><%= member.votes.count %> votes recorded</span>
+<% if @committees.any? %>
+  <% current_type = nil %>
+  <% @committees.each do |committee| %>
+    <% voting_memberships = committee.committee_memberships
+         .select { |cm| cm.ended_on.nil? && !%w[staff non_voting].include?(cm.role) }
+         .uniq(&:member_id)
+         .sort_by { |cm| cm.member.name.split.last } %>
+    <% next if voting_memberships.empty? %>
+
+    <% if committee.committee_type != current_type %>
+      <% current_type = committee.committee_type %>
+      <% type_label, type_explanation = case current_type
+           when "city"
+             [ "City Government", "Elected and appointed bodies that make binding decisions for Two Rivers" ]
+           when "tax_funded_nonprofit"
+             [ "Tax-Funded Organizations", "Non-profit boards that receive city funding but operate independently" ]
+           when "external"
+             [ "Other Organizations", "Independent bodies not directly controlled by the city" ]
+         end %>
+      <div class="officials-type-divider">
+        <h2 class="officials-type-label"><%= type_label %></h2>
+        <p class="officials-type-explanation"><%= type_explanation %></p>
       </div>
     <% end %>
-  <% end %>
-</div>
 
-<% if @members.empty? %>
+    <div class="officials-committee<%= " officials-committee--council" if committee.name == "City Council" %>">
+      <div class="officials-committee-header">
+        <div>
+          <div class="officials-committee-name-row">
+            <h3 class="officials-committee-name"><%= committee.name %></h3>
+            <% if committee.name == "City Council" %>
+              <span class="badge badge--primary">Elected by voters</span>
+            <% end %>
+          </div>
+          <% if committee.description.present? %>
+            <p class="officials-committee-desc"><%= committee.description %></p>
+          <% end %>
+          <% topics = @committee_topics[committee.id] %>
+          <% if topics.present? %>
+            <div class="officials-committee-topics">
+              <span class="officials-topics-label">Recently working on:</span>
+              <span class="tags">
+                <% topics.each do |topic| %>
+                  <%= link_to topic.canonical_name, topic_path(topic), class: "tag" %>
+                <% end %>
+              </span>
+            </div>
+          <% end %>
+        </div>
+        <span class="officials-member-count"><%= voting_memberships.size %> members</span>
+      </div>
+
+      <ul class="officials-roster">
+        <% voting_memberships.each do |cm| %>
+          <% member = cm.member %>
+          <li class="officials-member">
+            <div class="officials-member-info">
+              <span class="officials-member-name"><%= member.name %></span>
+              <% if member.id == @city_manager_id || (cm.role.present? && cm.role.in?(%w[chair vice_chair])) || (committee.name != "City Council" && @council_member_ids.include?(member.id)) %>
+                <span class="officials-member-badges">
+                  <% if member.id == @city_manager_id %>
+                    <span class="badge badge--warning">City Manager</span>
+                  <% end %>
+                  <% if cm.role.present? && cm.role.in?(%w[chair vice_chair]) %>
+                    <span class="badge badge--primary"><%= cm.role.titleize.tr("_", " ") %></span>
+                  <% end %>
+                  <% if committee.name != "City Council" && @council_member_ids.include?(member.id) %>
+                    <span class="badge badge--success">Elected &mdash; Council Member</span>
+                  <% end %>
+                </span>
+              <% end %>
+            </div>
+            <% if member.votes.any? %>
+              <%= link_to "View #{member.name.split.first}'s votes", member_path(member), class: "btn btn--secondary btn--sm" %>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+<% else %>
   <div class="card text-center" style="padding: var(--space-12);">
     <p class="text-secondary mb-0">No officials have been identified yet.</p>
   </div>
