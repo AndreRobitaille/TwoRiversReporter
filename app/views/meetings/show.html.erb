@@ -210,6 +210,36 @@
   <% end %>
 </section>
 
+<% if @ongoing_topics.present? || @new_topics.present? %>
+  <section class="section">
+    <h2>Issues in This Meeting</h2>
+
+    <% if @ongoing_topics.present? %>
+      <div class="mb-8">
+        <h3>Ongoing</h3>
+        <p class="text-sm text-secondary mb-4">These issues have come up across multiple meetings. Click any for the full picture.</p>
+        <div class="card-grid">
+          <% @ongoing_topics.each do |topic| %>
+            <%= render "topics/topic_card", topic: topic %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <% if @new_topics.present? %>
+      <div>
+        <h3>New This Meeting</h3>
+        <p class="text-sm text-secondary mb-4">These issues came up for the first time.</p>
+        <div class="card-grid">
+          <% @new_topics.each do |topic| %>
+            <%= render "topics/topic_card", topic: topic %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </section>
+<% end %>
+
 <%= link_to meetings_path, class: "back-link" do %>
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <line x1="19" y1="12" x2="5" y2="12"></line>
