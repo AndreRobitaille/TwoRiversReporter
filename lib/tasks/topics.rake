@@ -47,6 +47,86 @@ namespace :topics do
     puts "Done. #{Topic.approved.where.not(description: [ nil, "" ]).count} topics now have descriptions."
   end
 
+  desc "Re-extract items from a broad topic into specific topics"
+  task :split_broad_topic, [:topic_name] => :environment do |_t, args|
+    topic_name = args[:topic_name]
+    abort "Usage: bin/rails topics:split_broad_topic[topic_name]" if topic_name.blank?
+
+    normalized = Topic.normalize_name(topic_name)
+    topic = Topic.find_by("LOWER(name) = ?", normalized)
+    abort "Topic '#{topic_name}' not found" unless topic
+
+    links = AgendaItemTopic.where(topic: topic).includes(agenda_item: { meeting: {}, meeting_documents: {} })
+    puts "Found #{links.count} agenda items linked to '#{topic.name}'"
+    abort "No items to re-extract" if links.empty?
+
+    ai_service = Ai::OpenAiService.new
+    existing_topics = Topic.approved.where.not(id: topic.id).pluck(:name)
+
+    removed = 0
+    retagged = 0
+    skipped = 0
+
+    links.find_each do |link|
+      item = link.agenda_item
+      meeting = item.meeting
+
+      # Gather document context
+      doc_parts = []
+      item.meeting_documents.each do |doc|
+        next if doc.extracted_text.blank?
+        doc_parts << doc.extracted_text.truncate(2000, separator: " ")
+      end
+      meeting.meeting_documents.where(document_type: %w[packet_pdf minutes_pdf]).each do |doc|
+        next if doc.extracted_text.blank?
+        doc_parts << doc.extracted_text.truncate(4000, separator: " ")
+      end
+      doc_text = doc_parts.join("\n---\n")
+
+      print "[#{meeting.starts_at&.strftime('%Y-%m-%d')} #{meeting.body_name}] #{item.title.truncate(60)}... "
+
+      begin
+        result = ai_service.re_extract_item_topics(
+          item_title: item.title,
+          item_summary: item.summary,
+          document_text: doc_text,
+          broad_topic_name: topic.name,
+          existing_topics: existing_topics
+        )
+
+        data = JSON.parse(result)
+        tags = data["tags"] || []
+        topic_worthy = data.fetch("topic_worthy", false)
+
+        if !topic_worthy || tags.empty?
+          link.destroy!
+          removed += 1
+          puts "NOT TOPIC-WORTHY (removed)"
+        else
+          tags.each do |new_name|
+            new_topic = Topics::FindOrCreateService.call(new_name)
+            if new_topic
+              AgendaItemTopic.find_or_create_by!(agenda_item: item, topic: new_topic)
+              puts "-> #{new_topic.name}"
+              existing_topics << new_topic.name unless existing_topics.include?(new_topic.name)
+            else
+              puts "-> #{new_name} (BLOCKED)"
+            end
+          end
+          link.destroy!
+          retagged += 1
+        end
+      rescue JSON::ParserError, Faraday::Error => e
+        puts "ERROR: #{e.class} #{e.message}"
+        skipped += 1
+      end
+    end
+
+    puts "\nDone. Removed: #{removed}, Retagged: #{retagged}, Errors: #{skipped}"
+    remaining = AgendaItemTopic.where(topic: topic).count
+    puts "#{remaining} items still linked to '#{topic.name}'"
+  end
+
   desc "Add process-category names to topic blocklist (idempotent)"
   task seed_category_blocklist: :environment do
     categories = [
