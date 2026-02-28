@@ -8,18 +8,13 @@
   </td>
   <td><%= meeting.body_name %></td>
   <td class="meeting-topics-col">
-    <% topics = meeting.agenda_items.flat_map(&:topics).uniq %>
+    <% topics = meeting.agenda_items.flat_map(&:topics).uniq.select { |t| t.approved? && (t.resident_impact_score || 0) >= 2 } %>
     <% if topics.any? %>
       <div class="flex flex-wrap gap-1">
-        <% topics.first(3).each do |topic| %>
+        <% topics.each do |topic| %>
           <%= link_to topic.name, topic_path(topic), class: "tag tag--topic" %>
         <% end %>
-        <% if topics.size > 3 %>
-          <span class="text-muted text-xs">+<%= topics.size - 3 %> more</span>
-        <% end %>
       </div>
-    <% else %>
-      <span class="text-muted text-sm">No topics yet</span>
     <% end %>
   </td>
   <td class="text-right">

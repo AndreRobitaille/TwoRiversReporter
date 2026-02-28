@@ -154,6 +154,7 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "shows topic tags on meeting rows" do
+    @active_topic.update!(resident_impact_score: 3)
     get root_url
     assert_response :success
 
@@ -175,6 +176,42 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     assert_select "a[href='#{meetings_path}']", minimum: 1
+  end
+
+  test "meeting row shows only topics with impact >= 2" do
+    low_impact_topic = Topic.create!(
+      name: "minor procedure change",
+      status: "approved",
+      lifecycle_status: "active",
+      resident_impact_score: 1
+    )
+    high_impact_topic = Topic.create!(
+      name: "major road closure",
+      status: "approved",
+      lifecycle_status: "active",
+      resident_impact_score: 3
+    )
+
+    item_low = AgendaItem.create!(meeting: @future_meeting, title: "Procedure")
+    AgendaItemTopic.create!(topic: low_impact_topic, agenda_item: item_low)
+
+    item_high = AgendaItem.create!(meeting: @future_meeting, title: "Road Work")
+    AgendaItemTopic.create!(topic: high_impact_topic, agenda_item: item_high)
+
+    get root_url
+    assert_response :success
+
+    assert_select ".tag--topic", text: "major road closure"
+    assert_select ".tag--topic", text: "minor procedure change", count: 0
+  end
+
+  test "meeting row shows no pills when no topics meet impact threshold" do
+    # All existing topics have nil impact score
+    get root_url
+    assert_response :success
+
+    # No "No topics yet" text should appear
+    assert_select ".meeting-topics-col .text-muted", count: 0
   end
 
   test "meeting within 3-hour buffer stays in upcoming section" do
