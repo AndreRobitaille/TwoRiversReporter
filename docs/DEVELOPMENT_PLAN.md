@@ -173,6 +173,38 @@ AI-generated content grounded in documents and Topic context.
 
 ------------------------------------------------------------------------
 
+## Topic Granularity
+
+The extraction prompt classifies agenda items into **categories**
+(Zoning, Infrastructure, Finance, etc.) and **topic tags**. Categories
+describe process domains; topic tags must name specific civic concerns.
+
+**Category names are never valid topic names.** They are blocked in
+the `TopicBlocklist` and the extraction prompt explicitly forbids them.
+A topic must be specific enough to tell a coherent story over time.
+
+| Level | Example | Valid topic? |
+|-------|---------|-------------|
+| Category (too broad) | "zoning", "infrastructure", "finance" | No |
+| Civic concern | "conditional use permits", "city budget", "street paving" | Yes |
+| Hyper-specific | "123 Main St survey map" | No |
+| Routine/one-off | single plat review, standard license renewal | Not topic-worthy |
+
+**The test:** "Would a resident follow this topic across multiple
+meetings?" If the answer only makes sense for a specific concern within
+the category, name that concern. If the item is routine, it's not
+topic-worthy.
+
+### Cleanup tools
+
+- `bin/rails topics:seed_category_blocklist` — adds all category names
+  to the blocklist (idempotent).
+- `bin/rails topics:split_broad_topic[name]` — re-extracts agenda items
+  from a named broad topic. Each item is re-classified into a specific
+  topic or marked not topic-worthy. New topics go through normal triage.
+
+------------------------------------------------------------------------
+
 ## Topic Descriptions
 
 Topics have short (~80 char) descriptions displayed on topic cards and

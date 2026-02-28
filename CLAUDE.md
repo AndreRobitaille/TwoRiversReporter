@@ -39,6 +39,8 @@ Civic transparency site for Two Rivers, WI. Ingests official city meeting docume
 | Run migration | `bin/rails db:migrate` |
 | Run job inline | `bin/rails runner "JobClass.perform_now(id)"` |
 | Backfill topic descriptions | `bin/rails topics:generate_descriptions` |
+| Seed category blocklist | `bin/rails topics:seed_category_blocklist` |
+| Split a broad topic | `bin/rails topics:split_broad_topic[topic_name]` |
 
 CI (`bin/ci` / `config/ci.rb`) runs: setup, rubocop, bundler-audit, importmap audit, brakeman. Note: CI does **not** run tests currently.
 
