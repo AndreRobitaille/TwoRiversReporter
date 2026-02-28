@@ -57,6 +57,14 @@ Rails.application.routes.draw do
         delete :destroy_alias
       end
     end
+
+    resources :members, controller: "admin/members", as: :admin_members do
+      member do
+        post :create_alias
+        delete :destroy_alias
+        post :merge
+      end
+    end
   end
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

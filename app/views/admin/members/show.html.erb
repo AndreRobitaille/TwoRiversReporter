@@ -1,0 +1,162 @@
+<% content_for(:title) { "#{@member.name} - Admin" } %>
+
+<div class="page-header">
+  <div class="flex justify-between items-center">
+    <div>
+      <div class="flex items-center gap-2 mb-2">
+        <%= link_to "Members", admin_members_path, class: "text-secondary hover:underline" %>
+        <span class="text-muted">/</span>
+        <h1 class="page-title mb-0"><%= @member.name %></h1>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card p-6 mb-6">
+  <h2 class="text-lg font-bold mb-4">Aliases</h2>
+  <p class="text-sm text-secondary mb-4">Name variants used to match this person across meeting documents.</p>
+
+  <% if @aliases.any? %>
+    <table class="mb-4">
+      <tbody>
+        <% @aliases.each do |a| %>
+          <tr>
+            <td><%= a.name %></td>
+            <td class="text-right">
+              <%= button_to "Remove", destroy_alias_admin_member_path(@member, alias_id: a.id),
+                  method: :delete, class: "btn btn--sm btn--ghost text-danger",
+                  form: { data: { turbo_confirm: "Remove this alias?" } } %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="text-secondary mb-4">No aliases.</p>
+  <% end %>
+
+  <%= form_with url: create_alias_admin_member_path(@member), local: true, class: "flex gap-2" do |f| %>
+    <%= f.text_field :name, class: "form-input grow", placeholder: "e.g. Bob Smith" %>
+    <%= f.submit "Add Alias", class: "btn btn--secondary" %>
+  <% end %>
+</div>
+
+<div class="card p-6 mb-6">
+  <h2 class="text-lg font-bold mb-4">Merge Into Another Member</h2>
+  <p class="text-sm text-secondary mb-4">Moves all votes, attendances, and memberships to the target. Creates an alias from this member's name. This member is deleted after merge.</p>
+
+  <% if @other_members.any? %>
+    <%= form_with url: merge_admin_member_path(@member), local: true, class: "flex gap-2 items-end" do |f| %>
+      <%= f.select :target_member_id, options_from_collection_for_select(@other_members, :id, :name),
+          { prompt: "Select target member..." }, class: "form-input grow" %>
+      <%= f.submit "Merge", class: "btn btn--danger",
+          data: { turbo_confirm: "Merge #{@member.name} into the selected member? This cannot be undone." } %>
+    <% end %>
+  <% else %>
+    <p class="text-secondary">No other members to merge into.</p>
+  <% end %>
+</div>
+
+<% if @memberships.any? %>
+  <div class="card p-6 mb-6">
+    <h2 class="text-lg font-bold mb-4">Committee Memberships (<%= @memberships.count %>)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Committee</th>
+          <th>Role</th>
+          <th>Started</th>
+          <th>Ended</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @memberships.each do |m| %>
+          <tr>
+            <td><%= link_to m.committee.name, admin_committee_path(m.committee) %></td>
+            <td><%= m.role&.humanize || "Member" %></td>
+            <td><%= m.started_on %></td>
+            <td><%= m.ended_on || "Current" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
+<% if @attendances.any? %>
+  <div class="card p-6 mb-6">
+    <h2 class="text-lg font-bold mb-4">Recent Attendance (<%= @attendances.length %>)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Meeting</th>
+          <th>Date</th>
+          <th>Status</th>
+          <th>Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @attendances.each do |a| %>
+          <tr>
+            <td><%= link_to a.meeting.body_name || "Meeting", meeting_path(a.meeting) %></td>
+            <td><%= a.meeting.starts_at&.strftime("%b %d, %Y") %></td>
+            <td>
+              <% case a.status %>
+              <% when "present" %>
+                <span class="badge badge--success">Present</span>
+              <% when "absent" %>
+                <span class="badge badge--default">Absent</span>
+              <% when "excused" %>
+                <span class="badge badge--warning">Excused</span>
+              <% end %>
+            </td>
+            <td><%= a.attendee_type.humanize %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <% if @member.meeting_attendances.count > 20 %>
+      <p class="text-sm text-muted mt-2">Showing 20 most recent of <%= @member.meeting_attendances.count %> attendances.</p>
+    <% end %>
+  </div>
+<% end %>
+
+<% if @votes.any? %>
+  <div class="card p-6">
+    <h2 class="text-lg font-bold mb-4">Recent Votes (<%= @votes.length %>)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Meeting</th>
+          <th>Date</th>
+          <th>Motion</th>
+          <th>Vote</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @votes.each do |v| %>
+          <tr>
+            <td><%= link_to v.motion.meeting.body_name || "Meeting", meeting_path(v.motion.meeting) %></td>
+            <td><%= v.motion.meeting.starts_at&.strftime("%b %d, %Y") %></td>
+            <td class="text-sm"><%= truncate(v.motion.description, length: 80) %></td>
+            <td>
+              <% case v.value %>
+              <% when "yes" %>
+                <span class="badge badge--success">Yes</span>
+              <% when "no" %>
+                <span class="badge badge--danger">No</span>
+              <% when "abstain" %>
+                <span class="badge badge--warning">Abstain</span>
+              <% else %>
+                <span class="badge badge--default"><%= v.value.humanize %></span>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <% if @member.votes.count > 20 %>
+      <p class="text-sm text-muted mt-2">Showing 20 most recent of <%= @member.votes.count %> votes.</p>
+    <% end %>
+  </div>
+<% end %>

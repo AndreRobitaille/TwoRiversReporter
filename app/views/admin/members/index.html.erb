@@ -1,0 +1,41 @@
+<% content_for(:title) { "Members - Admin" } %>
+
+<div class="page-header">
+  <div class="flex justify-between items-center">
+    <div>
+      <h1 class="page-title">Members</h1>
+      <p class="page-subtitle">Manage elected officials, staff, and meeting participants.</p>
+    </div>
+  </div>
+</div>
+
+<div class="table-wrapper">
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Aliases</th>
+        <th>Votes</th>
+        <th>Memberships</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @members.each do |member| %>
+        <tr>
+          <td>
+            <strong><%= link_to member.name, admin_member_path(member) %></strong>
+          </td>
+          <td><%= member.alias_count %></td>
+          <td><%= member.vote_count %></td>
+          <td><%= member.membership_count %></td>
+          <td class="text-right">
+            <%= link_to "View", admin_member_path(member), class: "btn btn--sm btn--ghost" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<p class="text-sm text-muted mt-4"><%= @members.length %> members total.</p>
