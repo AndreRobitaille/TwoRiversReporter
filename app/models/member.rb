@@ -80,8 +80,14 @@ class Member < ApplicationRecord
         end
       end
 
-      # Move aliases to target
-      member_aliases.update_all(member_id: target.id)
+      # Move aliases to target (skip if name already taken)
+      member_aliases.each do |member_alias|
+        if MemberAlias.exists?(name: member_alias.name, member_id: target.id)
+          member_alias.destroy!
+        else
+          member_alias.update!(member_id: target.id)
+        end
+      end
 
       # Create alias from source name
       MemberAlias.find_or_create_by!(member: target, name: name)
