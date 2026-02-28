@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_28_191225) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_28_200458) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -249,6 +249,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_28_191225) do
     t.string "status"
     t.datetime "updated_at", null: false
     t.index ["committee_id"], name: "index_meetings_on_committee_id"
+  end
+
+  create_table "member_aliases", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "member_id", null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+    t.index ["member_id"], name: "index_member_aliases_on_member_id"
+    t.index ["name"], name: "index_member_aliases_on_name", unique: true
   end
 
   create_table "members", force: :cascade do |t|
@@ -581,6 +590,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_28_191225) do
   add_foreign_key "meeting_documents", "meetings"
   add_foreign_key "meeting_summaries", "meetings"
   add_foreign_key "meetings", "committees"
+  add_foreign_key "member_aliases", "members"
   add_foreign_key "motions", "agenda_items"
   add_foreign_key "motions", "meetings"
   add_foreign_key "sessions", "users"
