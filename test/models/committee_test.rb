@@ -81,4 +81,16 @@ class CommitteeTest < ActiveSupport::TestCase
   test "resolve returns nil for unknown name" do
     assert_nil Committee.resolve("Nonexistent Board")
   end
+
+  test "resolve strips canceled suffix" do
+    committee = Committee.create!(name: "City Council")
+    CommitteeAlias.create!(committee: committee, name: "City Council Meeting")
+    assert_equal committee, Committee.resolve("City Council Meeting - CANCELED")
+  end
+
+  test "resolve strips no quorum suffix" do
+    committee = Committee.create!(name: "City Council")
+    CommitteeAlias.create!(committee: committee, name: "City Council Meeting")
+    assert_equal committee, Committee.resolve("City Council Meeting - CANCELED - NO QUORUM")
+  end
 end

@@ -17,7 +17,10 @@ class Committee < ApplicationRecord
 
   def self.resolve(body_name)
     return nil if body_name.blank?
-    find_by(name: body_name) || CommitteeAlias.find_by(name: body_name)&.committee
+    cleaned = body_name.strip
+                        .sub(%r{\s*[-/(]?\s*(CANCELED|CANCELLED|NO QUORUM|RESCHEDULED).*$}i, "")
+                        .strip
+    find_by(name: cleaned) || CommitteeAlias.find_by(name: cleaned)&.committee
   end
 
   private

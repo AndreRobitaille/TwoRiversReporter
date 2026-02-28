@@ -6,7 +6,7 @@ committees_data = [
     description: "Exercises all legislative and general ordinance powers under Wisconsin's council-manager form of government. Sets policy; the city manager handles execution.",
     committee_type: "city",
     status: "active",
-    aliases: ["City Council Meeting"]
+    aliases: ["City Council Meeting", "City Council Work Session", "City Council Special Meeting", "City Council Listening Session"]
   },
   {
     name: "Advisory Recreation Board",
@@ -48,7 +48,7 @@ committees_data = [
     description: "Advises on industrial development, promotes the city's industrial advantages, and recommends use of city properties for industrial purposes. Same membership as CDA; meets concurrently.",
     committee_type: "city",
     status: "active",
-    aliases: ["Business and Industrial Development Committee Meeting", "BIDC", "BIDC Meeting"]
+    aliases: ["Business and Industrial Development Committee Meeting", "BIDC", "BIDC Meeting", "Business and Industrial Development Committee - Community Development Authority Meeting"]
   },
   {
     name: "Business Improvement District Board",
@@ -80,7 +80,7 @@ committees_data = [
     description: "Identifies concerns of older citizens and advises the Advisory Recreation Board and city manager on senior citizen issues. Primarily an update/input committee.",
     committee_type: "city",
     status: "active",
-    aliases: ["Committee on Aging Meeting"]
+    aliases: ["Committee on Aging Meeting", "Committee On Aging"]
   },
   {
     name: "Community Development Authority",
@@ -101,14 +101,14 @@ committees_data = [
     description: "Nonprofit promoting overnight tourism. Operates using room tax revenues in compliance with Wisconsin tourism promotion laws. Funded through Room Tax Commission allocations.",
     committee_type: "tax_funded_nonprofit",
     status: "active",
-    aliases: ["Explore Two Rivers Board of Directors Meeting", "Explore Two Rivers Meeting"]
+    aliases: ["Explore Two Rivers Board of Directors Meeting", "Explore Two Rivers Meeting", "Explore Two Rivers Meeting of the Board of Directors"]
   },
   {
     name: "Library Board of Trustees",
     description: "Oversees public library management and policy. Has exclusive control over library funds, property, and staffing including appointing the library director.",
     committee_type: "city",
     status: "active",
-    aliases: ["Library Board of Trustees Meeting"]
+    aliases: ["Library Board of Trustees Meeting", "Library Board Meeting"]
   },
   {
     name: "Main Street Board of Directors",
@@ -157,7 +157,7 @@ committees_data = [
     description: "Manages and allocates room tax revenues from lodging facilities. At least 70% must fund tourism; remainder available for other city needs.",
     committee_type: "city",
     status: "active",
-    aliases: ["Room Tax Commission Meeting"]
+    aliases: ["Room Tax Commission Meeting", "Room Tax Commission Special Meeting"]
   },
   {
     name: "Two Rivers Business Association",
