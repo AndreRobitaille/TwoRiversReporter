@@ -38,12 +38,12 @@ class Member < ApplicationRecord
       candidates = where("name ILIKE ?", "% #{normalized}")
       if candidates.count == 1
         member = candidates.first
-        MemberAlias.create!(member: member, name: normalized)
+        MemberAlias.find_or_create_by!(member: member, name: normalized)
         return member
       end
     end
 
-    # 4. Create new member
-    create!(name: normalized)
+    # 4. Create new member (find_or_create handles concurrent job races)
+    find_or_create_by!(name: normalized)
   end
 end
