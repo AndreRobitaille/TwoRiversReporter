@@ -177,4 +177,110 @@ class MemberTest < ActiveSupport::TestCase
   test "resolve returns nil for nil input" do
     assert_nil Member.resolve(nil)
   end
+
+  # --- merge_into! ---
+
+  test "merge_into! moves votes to target" do
+    source = Member.create!(name: "Merge Source #{SecureRandom.hex(4)}")
+    target = Member.create!(name: "Merge Target #{SecureRandom.hex(4)}")
+    meeting = Meeting.create!(body_name: "Common Council", starts_at: Time.current,
+                              detail_page_url: "https://example.com/m-#{SecureRandom.hex(6)}")
+    motion = Motion.create!(meeting: meeting, description: "Approve budget", outcome: "passed")
+    Vote.create!(member: source, motion: motion, value: "yes")
+
+    source.merge_into!(target)
+
+    assert_equal 1, target.reload.votes.count
+    assert_equal "yes", target.votes.first.value
+    assert_not Member.exists?(source.id)
+  end
+
+  test "merge_into! moves committee_memberships to target" do
+    source = Member.create!(name: "Merge Source #{SecureRandom.hex(4)}")
+    target = Member.create!(name: "Merge Target #{SecureRandom.hex(4)}")
+    committee = Committee.create!(name: "Committee #{SecureRandom.hex(4)}", committee_type: "city", status: "active")
+    CommitteeMembership.create!(member: source, committee: committee, source: "admin_manual")
+
+    source.merge_into!(target)
+
+    assert_equal 1, target.reload.committee_memberships.count
+    assert_equal committee, target.committee_memberships.first.committee
+  end
+
+  test "merge_into! moves meeting_attendances to target" do
+    source = Member.create!(name: "Merge Source #{SecureRandom.hex(4)}")
+    target = Member.create!(name: "Merge Target #{SecureRandom.hex(4)}")
+    meeting = Meeting.create!(body_name: "Common Council", starts_at: Time.current,
+                              detail_page_url: "https://example.com/m-#{SecureRandom.hex(6)}")
+    MeetingAttendance.create!(member: source, meeting: meeting, status: "present", attendee_type: "voting_member")
+
+    source.merge_into!(target)
+
+    assert_equal 1, target.reload.meeting_attendances.count
+    assert_equal meeting, target.meeting_attendances.first.meeting
+  end
+
+  test "merge_into! creates alias from source name" do
+    source = Member.create!(name: "Merge Source #{SecureRandom.hex(4)}")
+    target = Member.create!(name: "Merge Target #{SecureRandom.hex(4)}")
+
+    source_name = source.name
+    source.merge_into!(target)
+
+    assert MemberAlias.exists?(member_id: target.id, name: source_name)
+  end
+
+  test "merge_into! moves existing aliases to target" do
+    source = Member.create!(name: "Merge Source #{SecureRandom.hex(4)}")
+    target = Member.create!(name: "Merge Target #{SecureRandom.hex(4)}")
+    MemberAlias.create!(member: source, name: "Src Alias #{SecureRandom.hex(4)}")
+
+    alias_name = source.member_aliases.first.name
+    source_name = source.name
+    source.merge_into!(target)
+
+    assert MemberAlias.exists?(member_id: target.id, name: alias_name)
+    assert MemberAlias.exists?(member_id: target.id, name: source_name)
+  end
+
+  test "merge_into! skips duplicate vote for same motion" do
+    source = Member.create!(name: "Merge Source #{SecureRandom.hex(4)}")
+    target = Member.create!(name: "Merge Target #{SecureRandom.hex(4)}")
+    meeting = Meeting.create!(body_name: "Common Council", starts_at: Time.current,
+                              detail_page_url: "https://example.com/m-#{SecureRandom.hex(6)}")
+    motion = Motion.create!(meeting: meeting, description: "Approve budget", outcome: "passed")
+    Vote.create!(member: source, motion: motion, value: "yes")
+    Vote.create!(member: target, motion: motion, value: "no")
+
+    assert_difference "Vote.count", -1 do
+      source.merge_into!(target)
+    end
+
+    assert_equal 1, target.reload.votes.count
+    assert_equal "no", target.votes.first.value
+  end
+
+  test "merge_into! skips duplicate attendance for same meeting" do
+    source = Member.create!(name: "Merge Source #{SecureRandom.hex(4)}")
+    target = Member.create!(name: "Merge Target #{SecureRandom.hex(4)}")
+    meeting = Meeting.create!(body_name: "Common Council", starts_at: Time.current,
+                              detail_page_url: "https://example.com/m-#{SecureRandom.hex(6)}")
+    MeetingAttendance.create!(member: source, meeting: meeting, status: "present", attendee_type: "voting_member")
+    MeetingAttendance.create!(member: target, meeting: meeting, status: "absent", attendee_type: "voting_member")
+
+    assert_difference "MeetingAttendance.count", -1 do
+      source.merge_into!(target)
+    end
+
+    assert_equal 1, target.reload.meeting_attendances.count
+    assert_equal "absent", target.meeting_attendances.first.status
+  end
+
+  test "merge_into! cannot merge into self" do
+    source = Member.create!(name: "Merge Source #{SecureRandom.hex(4)}")
+
+    assert_raises(ArgumentError) do
+      source.merge_into!(source)
+    end
+  end
 end
