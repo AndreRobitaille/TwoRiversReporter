@@ -41,6 +41,7 @@ Civic transparency site for Two Rivers, WI. Ingests official city meeting docume
 | Backfill topic descriptions | `bin/rails topics:generate_descriptions` |
 | Seed category blocklist | `bin/rails topics:seed_category_blocklist` |
 | Split a broad topic | `bin/rails topics:split_broad_topic[topic_name]` |
+| Extract memberships from minutes | `bin/rails members:extract_from_minutes` |
 
 CI (`bin/ci` / `config/ci.rb`) runs: setup, rubocop, bundler-audit, importmap audit, brakeman. Note: CI does **not** run tests currently.
 
@@ -61,6 +62,7 @@ City Website → Scraper Jobs (discover/parse meetings)
 
 - **`Topic`** — Central organizing model. Has `status` (approved/proposed/blocked), `review_status`, `lifecycle_status` (active/dormant/resolved/recurring). Linked to meetings via `AgendaItemTopic`. Has aliases, blocklist entries, appearances, status events, summaries.
 - **`Committee`** — Governing body (city board, tax-funded nonprofit, or external). Has `committee_type`, `status` (active/dormant/dissolved), `description` (injected into AI prompts). Linked to meetings via FK, members via `CommitteeMembership`, and historical names via `CommitteeAlias`. Normalizes the free-form `body_name` string.
+- **`MeetingAttendance`** — Per-meeting roll call record. Tracks present/absent/excused with attendee type (voting_member/non_voting_staff/guest). Created by `ExtractCommitteeMembersJob`. Drives automatic CommitteeMembership creation and departure detection (2 consecutive absences from roll call).
 - **`Meeting`** — Single official meeting. Has documents, agenda items, motions, summaries. `belongs_to :committee` (optional); keeps `body_name` as historical display text.
 - **`MeetingDocument`** — PDF/HTML artifact. Has `extracted_text`, `text_quality`, `ocr_status`. Page-level text stored in `Extraction` rows.
 - **`AgendaItem`** — Item on agenda. Links to topics via `AgendaItemTopic`. Has motions and votes.
@@ -83,7 +85,7 @@ City Website → Scraper Jobs (discover/parse meetings)
 - `Scrapers::` — Meeting discovery and page/agenda parsing
 - `Documents::` — Download, PDF analysis, OCR
 - `Topics::` — Continuity updates, backfills, description generation (`GenerateDescriptionJob`, `RefreshDescriptionsJob`)
-- Top-level: `ExtractTopicsJob`, `ExtractVotesJob`, `SummarizeMeetingJob`, `IngestKnowledgeSourceJob`
+- Top-level: `ExtractTopicsJob`, `ExtractVotesJob`, `ExtractCommitteeMembersJob`, `SummarizeMeetingJob`, `IngestKnowledgeSourceJob`
 
 ### Routes
 

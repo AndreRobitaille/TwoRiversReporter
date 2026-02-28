@@ -147,6 +147,11 @@ Related models:
 - **CommitteeMembership** — Tracks which officials sit on which committees,
   with role, start/end dates, and source (ai_extracted, admin_manual, seeded).
   AI-driven extraction from meeting minutes is planned (see GitHub issue #72).
+- **MeetingAttendance** — Per-meeting roll call record. Tracks who was
+  present, absent, or excused at each meeting, with attendee type
+  (voting_member, non_voting_staff, guest) and optional capacity title.
+  Created by `ExtractCommitteeMembersJob` from meeting minutes.
+  Drives automatic `CommitteeMembership` creation and departure detection.
 
 ### Meeting
 
