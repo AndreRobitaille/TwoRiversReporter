@@ -29,11 +29,15 @@ module Topics
 
       # 4. Check Similarity (Topic)
       # We want the most similar one above threshold
-      similar_topic = Topic.similar_to(@normalized_name, SIMILARITY_THRESHOLD).first
-      if similar_topic
-        # Create alias and return existing topic
-        TopicAlias.create!(name: @normalized_name, topic: similar_topic)
-        return similar_topic
+      begin
+        similar_topic = Topic.similar_to(@normalized_name, SIMILARITY_THRESHOLD).first
+        if similar_topic
+          # Create alias and return existing topic
+          TopicAlias.create!(name: @normalized_name, topic: similar_topic)
+          return similar_topic
+        end
+      rescue ActiveRecord::StatementInvalid => e
+        Rails.logger.warn "Similarity check skipped (pg_trgm unavailable): #{e.message}"
       end
 
       # 5. Create New Topic
