@@ -356,6 +356,7 @@ module Ai
         - Continuity: Explicitly note recurrence, deferrals, and cross-body progression.
         </governance_constraints>
 
+        #{prepare_committee_context}
         TOPIC CONTEXT (JSON):
         #{context_json.to_json}
 
@@ -521,15 +522,7 @@ module Ai
           Bad: "[agenda-309]" or "[appearance-2481]"
         </constraints>
 
-        <local_governance>
-        - Cross-body movement (topic appearing at different committees) is routine
-          and NOT noteworthy unless City Council sends something BACK DOWN to a
-          subcommittee — that's a signal of disagreement or unresolved issues.
-        - The Committee on Aging is primarily an update/input committee for senior
-          residents. Items there rarely involve substantive votes or decisions.
-          Don't overweight their appearances unless there's clear evidence of
-          real deliberation or a binding vote.
-        </local_governance>
+        #{prepare_committee_context}
 
         TOPIC CONTEXT (JSON):
         #{context.to_json}
@@ -770,6 +763,26 @@ module Ai
       CONTEXT
     end
 
+    def prepare_committee_context
+      committees = Committee.for_ai_context
+      return "" if committees.empty?
+
+      lines = committees.map do |c|
+        type_label = c.committee_type.humanize
+        "- #{c.name} (#{type_label}): #{c.description}"
+      end
+
+      <<~CONTEXT
+        <local_governance>
+        The following committees and boards operate in Two Rivers:
+        #{lines.join("\n")}
+
+        Notes:
+        - Cross-body movement (topic appearing at different committees) is routine and NOT noteworthy unless City Council sends something BACK DOWN to a subcommittee — that's a signal of disagreement or unresolved issues.
+        </local_governance>
+      CONTEXT
+    end
+
     def gemini_api_key
       Rails.application.credentials.gemini_access_token || ENV["GEMINI_ACCESS_TOKEN"]
     end
@@ -813,6 +826,7 @@ module Ai
         Analyze the provided #{type} text and return a JSON analysis plan.
 
         #{kb_context}
+        #{prepare_committee_context}
 
         <governance_constraints>
         - Do not assign motive or speculate about intent.
