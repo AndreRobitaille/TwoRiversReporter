@@ -1,0 +1,8 @@
+<% content_for(:title) { "Edit #{@committee.name} - Admin" } %>
+
+<div class="card card--narrow">
+  <div class="card-header">
+    <h1 class="card-title">Edit Committee</h1>
+  </div>
+  <%= render "form", committee: @committee %>
+</div>

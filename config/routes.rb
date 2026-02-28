@@ -50,6 +50,13 @@ Rails.application.routes.draw do
     end
 
     resources :topic_blocklists, controller: "admin/topic_blocklists", as: :admin_topic_blocklists
+
+    resources :committees, controller: "admin/committees", as: :admin_committees do
+      member do
+        post :create_alias
+        delete :destroy_alias
+      end
+    end
   end
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
