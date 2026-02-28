@@ -58,7 +58,7 @@ namespace :members do
     puts "Found #{single_word_members.count} single-word member names"
 
     single_word_members.find_each do |member|
-      candidates = Member.where("name ILIKE ? AND id != ?", "% #{member.name}", member.id)
+      candidates = Member.where("name ILIKE ? AND id != ?", "% #{ActiveRecord::Base.sanitize_sql_like(member.name)}", member.id)
       if candidates.count == 1
         target = candidates.first
         if dry_run

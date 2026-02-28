@@ -35,7 +35,7 @@ class Member < ApplicationRecord
 
     # 3. Auto-alias last-name-only (single word) when unambiguous
     if normalized.split.size == 1
-      candidates = where("name ILIKE ?", "% #{normalized}")
+      candidates = where("name ILIKE ?", "% #{sanitize_sql_like(normalized)}")
       if candidates.count == 1
         member = candidates.first
         MemberAlias.find_or_create_by!(member: member, name: normalized)
