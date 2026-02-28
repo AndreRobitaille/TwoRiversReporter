@@ -16,4 +16,34 @@ class Member < ApplicationRecord
             .strip
             .squish
   end
+
+  # Resolve a raw name string to a Member record.
+  # Follows normalize → exact match → alias → auto-alias → create pattern.
+  def self.resolve(raw_name)
+    return nil if raw_name.blank?
+
+    normalized = normalize_name(raw_name)
+    return nil if normalized.blank?
+
+    # 1. Exact match on Member.name
+    member = find_by(name: normalized)
+    return member if member
+
+    # 2. Match via alias
+    alias_match = MemberAlias.find_by(name: normalized)
+    return alias_match.member if alias_match
+
+    # 3. Auto-alias last-name-only (single word) when unambiguous
+    if normalized.split.size == 1
+      candidates = where("name ILIKE ?", "% #{normalized}")
+      if candidates.count == 1
+        member = candidates.first
+        MemberAlias.create!(member: member, name: normalized)
+        return member
+      end
+    end
+
+    # 4. Create new member
+    create!(name: normalized)
+  end
 end

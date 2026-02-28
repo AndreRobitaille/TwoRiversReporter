@@ -104,4 +104,77 @@ class MemberTest < ActiveSupport::TestCase
   test "normalize_name is case-insensitive for suffixes" do
     assert_equal "John Smith", Member.normalize_name("John Smith (VIA ZOOM)")
   end
+
+  # --- resolve ---
+
+  test "resolve finds existing member by exact normalized name" do
+    member = Member.create!(name: "Doug Brandt")
+    assert_equal member, Member.resolve("Doug Brandt")
+  end
+
+  test "resolve finds member by alias" do
+    member = Member.create!(name: "Doug Brandt")
+    MemberAlias.create!(member: member, name: "Douglas Brandt")
+    assert_equal member, Member.resolve("Douglas Brandt")
+  end
+
+  test "resolve auto-aliases last-name-only when one match" do
+    member = Member.create!(name: "Doug Brandt")
+    resolved = Member.resolve("Brandt")
+
+    assert_equal member, resolved
+    assert MemberAlias.exists?(member: member, name: "Brandt")
+  end
+
+  test "resolve does not auto-alias last-name-only when multiple matches" do
+    Member.create!(name: "Doug Brandt")
+    Member.create!(name: "Susie Brandt")
+
+    resolved = Member.resolve("Brandt")
+
+    assert_equal "Brandt", resolved.name
+    assert_not_equal "Doug Brandt", resolved.name
+    assert_not MemberAlias.exists?(name: "Brandt")
+  end
+
+  test "resolve creates new member when no match" do
+    assert_difference "Member.count", 1 do
+      member = Member.resolve("Jane Doe")
+      assert_equal "Jane Doe", member.name
+    end
+  end
+
+  test "resolve handles Council Rep prefix and via telephone suffix together" do
+    member = Member.create!(name: "John Smith")
+    assert_equal member, Member.resolve("Council Rep John Smith (via telephone)")
+  end
+
+  test "resolve returns existing member without creating duplicates" do
+    Member.create!(name: "Doug Brandt")
+
+    assert_no_difference "Member.count" do
+      Member.resolve("Doug Brandt")
+    end
+  end
+
+  test "resolve is idempotent for auto-aliasing" do
+    member = Member.create!(name: "Doug Brandt")
+
+    first_resolve = Member.resolve("Brandt")
+    assert_equal member, first_resolve
+
+    assert_no_difference "MemberAlias.count" do
+      second_resolve = Member.resolve("Brandt")
+      assert_equal member, second_resolve
+    end
+  end
+
+  test "resolve returns nil for blank input" do
+    assert_nil Member.resolve("")
+    assert_nil Member.resolve("   ")
+  end
+
+  test "resolve returns nil for nil input" do
+    assert_nil Member.resolve(nil)
+  end
 end
