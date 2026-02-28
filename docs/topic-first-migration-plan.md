@@ -69,7 +69,7 @@ This is a living note for future actions, not an implementation log.
 3) [x] Topics index: highlight newly active/resurfaced topics (structural signal badges).
 4) [x] Topics index: curated active-only view with explore placeholder.
 5) [x] Topics index: pagination + activity window rules.
-6) Topic navigation: standardize click-through behavior.
+6) [x] Topic navigation: standardize click-through behavior.
 7) Topic pages: empty/error/low-signal states (QA checklist).
 8) Add semantic color tokens for light/dark modes.
 9) Apply theme color tokens to Topics + Home.
