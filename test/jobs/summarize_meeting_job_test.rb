@@ -26,7 +26,9 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
 
     generation_data = {
       "headline" => "Council approved the budget",
-      "highlights" => [{ "text" => "Budget approved", "citation" => "Page 1", "vote" => "5-2", "impact" => "high" }],
+      "highlights" => [
+        { "text" => "Budget approved", "citation" => "Page 1", "vote" => "5-2", "impact" => "high" }
+      ],
       "public_input" => [],
       "item_details" => []
     }

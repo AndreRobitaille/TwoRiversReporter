@@ -796,83 +796,8 @@ module Ai
       content.present? ? content.strip : nil
     end
 
-    private
-
-    def prepare_doc_context(extractions)
-      extractions.sort_by(&:page_number).map do |ex|
-        "--- [Page #{ex.page_number}] ---\n#{ex.cleaned_text}"
-      end.join("\n\n")
-    end
-
-    def prepare_kb_context(chunks)
-      return "" if chunks.empty?
-      <<~CONTEXT
-        <context_handling>
-        ### Relevant Context (Background Knowledge)
-        The following information comes from the city knowledgebase.
-        Use it to identify glossed-over details, but distinguish it from document content.
-
-        #{chunks.join("\n\n")}
-        </context_handling>
-      CONTEXT
-    end
-
-    def prepare_committee_context
-      committees = Committee.for_ai_context
-      return "" if committees.empty?
-
-      lines = committees.map do |c|
-        type_label = c.committee_type.humanize
-        "- #{c.name} (#{type_label}): #{c.description}"
-      end
-
-      <<~CONTEXT
-        <local_governance>
-        The following committees and boards operate in Two Rivers:
-        #{lines.join("\n")}
-
-        Notes:
-        - Cross-body movement (topic appearing at different committees) is routine and NOT noteworthy unless City Council sends something BACK DOWN to a subcommittee — that's a signal of disagreement or unresolved issues.
-        </local_governance>
-      CONTEXT
-    end
-
-    def gemini_api_key
-      Rails.application.credentials.gemini_access_token || ENV["GEMINI_ACCESS_TOKEN"]
-    end
-
-    def use_gemini?
-      ENV["USE_GEMINI"] == "true" && gemini_api_key.present?
-    end
-
-    def gemini_generate(prompt, temperature: 0.1)
-      conn = Faraday.new(url: "https://generativelanguage.googleapis.com", request: { open_timeout: 10, timeout: 240 })
-      response = conn.post("/v1beta/models/#{DEFAULT_GEMINI_MODEL}:generateContent") do |req|
-        req.params["key"] = gemini_api_key
-        req.headers["Content-Type"] = "application/json"
-        req.body = {
-          contents: [
-            { role: "user", parts: [ { text: prompt } ] }
-          ],
-          generationConfig: {
-            temperature: temperature,
-            response_mime_type: "application/json"
-          }
-        }.to_json
-      end
-
-      unless response.success?
-        raise "Gemini request failed: status=#{response.status} body=#{response.body}"
-      end
-
-      data = JSON.parse(response.body)
-      text = data.dig("candidates", 0, "content", "parts", 0, "text")
-      return text if text.present?
-
-      raise "Gemini response missing content: #{response.body}"
-    end
-
-    # PASS 1: Structured meeting analysis — produces JSON for direct rendering
+    # Structured meeting analysis — produces JSON for direct rendering.
+    # Called by SummarizeMeetingJob to store structured JSON in generation_data.
     def analyze_meeting_content(doc_text, kb_context, type)
       system_role = <<~ROLE
         You are a civic journalist covering Two Rivers, WI city government
@@ -985,8 +910,82 @@ module Ai
 
       response.dig("choices", 0, "message", "content")
     end
-    # Called directly by SummarizeMeetingJob to store structured JSON
-    public :analyze_meeting_content, :prepare_kb_context, :prepare_doc_context
+
+    def prepare_doc_context(extractions)
+      extractions.sort_by(&:page_number).map do |ex|
+        "--- [Page #{ex.page_number}] ---\n#{ex.cleaned_text}"
+      end.join("\n\n")
+    end
+
+    def prepare_kb_context(chunks)
+      return "" if chunks.empty?
+      <<~CONTEXT
+        <context_handling>
+        ### Relevant Context (Background Knowledge)
+        The following information comes from the city knowledgebase.
+        Use it to identify glossed-over details, but distinguish it from document content.
+
+        #{chunks.join("\n\n")}
+        </context_handling>
+      CONTEXT
+    end
+
+    private
+
+    def prepare_committee_context
+      committees = Committee.for_ai_context
+      return "" if committees.empty?
+
+      lines = committees.map do |c|
+        type_label = c.committee_type.humanize
+        "- #{c.name} (#{type_label}): #{c.description}"
+      end
+
+      <<~CONTEXT
+        <local_governance>
+        The following committees and boards operate in Two Rivers:
+        #{lines.join("\n")}
+
+        Notes:
+        - Cross-body movement (topic appearing at different committees) is routine and NOT noteworthy unless City Council sends something BACK DOWN to a subcommittee — that's a signal of disagreement or unresolved issues.
+        </local_governance>
+      CONTEXT
+    end
+
+    def gemini_api_key
+      Rails.application.credentials.gemini_access_token || ENV["GEMINI_ACCESS_TOKEN"]
+    end
+
+    def use_gemini?
+      ENV["USE_GEMINI"] == "true" && gemini_api_key.present?
+    end
+
+    def gemini_generate(prompt, temperature: 0.1)
+      conn = Faraday.new(url: "https://generativelanguage.googleapis.com", request: { open_timeout: 10, timeout: 240 })
+      response = conn.post("/v1beta/models/#{DEFAULT_GEMINI_MODEL}:generateContent") do |req|
+        req.params["key"] = gemini_api_key
+        req.headers["Content-Type"] = "application/json"
+        req.body = {
+          contents: [
+            { role: "user", parts: [ { text: prompt } ] }
+          ],
+          generationConfig: {
+            temperature: temperature,
+            response_mime_type: "application/json"
+          }
+        }.to_json
+      end
+
+      unless response.success?
+        raise "Gemini request failed: status=#{response.status} body=#{response.body}"
+      end
+
+      data = JSON.parse(response.body)
+      text = data.dig("candidates", 0, "content", "parts", 0, "text")
+      return text if text.present?
+
+      raise "Gemini response missing content: #{response.body}"
+    end
 
     # PASS 2: Rendering (legacy — used by summarize_minutes/packet wrappers)
     def render_meeting_summary(doc_text, plan_json, type)
