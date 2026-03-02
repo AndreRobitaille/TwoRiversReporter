@@ -1,17 +1,38 @@
 <% content_for(:title) { "#{@topic.name} - Topics - Two Rivers Matters" } %>
 
-<%# === 1. Header === %>
+<%# === 1. Header (always present) === %>
 <div class="page-header">
   <h1 class="page-title"><%= @topic.name %></h1>
   <% if @topic.description.present? %>
     <p class="page-subtitle"><%= @topic.description %></p>
   <% end %>
+  <div class="flex items-center gap-2 mt-2">
+    <% if @topic.lifecycle_status %>
+      <%= topic_lifecycle_badge(@topic.lifecycle_status) %>
+    <% end %>
+    <% if @briefing %>
+      <%= briefing_freshness_badge(@briefing) %>
+    <% end %>
+  </div>
 </div>
 
-<%# === 2. Coming Up === %>
-<% if @upcoming.any? %>
-  <section class="topic-upcoming section">
-    <h2 class="section-title">Coming Up</h2>
+<%# === 2. What to Watch (warm callout) === %>
+<section class="topic-watch section">
+  <h2 class="section-title">What to Watch</h2>
+  <% watch_text = briefing_what_to_watch(@briefing) %>
+  <% if watch_text.present? %>
+    <div class="topic-watch-callout">
+      <p><%= render_inline_markdown(watch_text) %></p>
+    </div>
+  <% else %>
+    <p class="section-empty">No analysis available yet for this topic.</p>
+  <% end %>
+</section>
+
+<%# === 3. Coming Up (meeting cards) === %>
+<section class="topic-upcoming section topic-section">
+  <h2 class="section-title">Coming Up</h2>
+  <% if @upcoming.any? %>
     <div class="card-grid">
       <% @upcoming.each do |appearance| %>
         <%= link_to meeting_path(appearance.meeting), class: "card card-link card-link--upcoming" do %>
@@ -42,52 +63,41 @@
         <% end %>
       <% end %>
     </div>
-    <p class="text-sm text-secondary mt-3">
-      You can always contact your council members about this topic.
-    </p>
-  </section>
-<% end %>
+  <% else %>
+    <p class="section-empty">No upcoming meetings scheduled for this topic.</p>
+  <% end %>
+</section>
 
-<%# === 3. Briefing Headline === %>
-<% if @briefing&.headline.present? %>
-  <section class="topic-briefing-headline section">
-    <div class="card card--warm">
-      <div class="card-body">
-        <p class="briefing-headline-text"><%= @briefing.headline %></p>
-        <%= briefing_freshness_badge(@briefing) %>
-      </div>
-    </div>
-  </section>
-<% end %>
-
-<%# === 4. What's Going On (Editorial) === %>
-<% if @briefing&.editorial_content.present? %>
-  <section class="topic-briefing-editorial section topic-section">
-    <h2 class="section-title">What's Going On</h2>
+<%# === 4. The Story (editorial) === %>
+<section class="topic-story section topic-section">
+  <h2 class="section-title">The Story</h2>
+  <% story_text = briefing_current_state(@briefing) %>
+  <% if story_text.present? %>
     <div class="card">
       <div class="card-body briefing-editorial-content">
-        <%= sanitize(render_briefing_editorial(@briefing.editorial_content)) %>
+        <%= sanitize(render_briefing_editorial(story_text)) %>
       </div>
     </div>
-  </section>
-<% end %>
-
-<%# === 5. Record (Factual) === %>
-<% if @briefing&.record_content.present? %>
-  <section class="topic-briefing-record section topic-section">
-    <h2 class="section-title">Record</h2>
-    <div class="card card--surface-raised">
-      <div class="card-body">
-        <%= sanitize(render_briefing_record(@briefing.record_content)) %>
+    <% concerns = briefing_process_concerns(@briefing) %>
+    <% if concerns.any? %>
+      <div class="topic-concerns-callout">
+        <div class="concerns-label">Worth noting</div>
+        <ul>
+          <% concerns.each do |concern| %>
+            <li><%= concern %></li>
+          <% end %>
+        </ul>
       </div>
-    </div>
-  </section>
-<% end %>
+    <% end %>
+  <% else %>
+    <p class="section-empty">This topic is being tracked but hasn't been fully analyzed yet. Check back after the next meeting.</p>
+  <% end %>
+</section>
 
-<%# === 6. Key Decisions === %>
-<% if @decisions.any? %>
-  <section class="topic-decisions section topic-section">
-    <h2 class="section-title">Key Decisions</h2>
+<%# === 5. Key Decisions (votes) === %>
+<section class="topic-decisions section topic-section">
+  <h2 class="section-title">Key Decisions</h2>
+  <% if @decisions.any? %>
     <% @decisions.each do |motion| %>
       <div class="topic-decision-item">
         <div class="flex justify-between items-center mb-1">
@@ -119,15 +129,33 @@
         <% end %>
       </div>
     <% end %>
-  </section>
-<% end %>
+  <% else %>
+    <p class="section-empty">No votes or motions recorded for this topic.</p>
+  <% end %>
+</section>
 
-<%# === Empty state === %>
-<% if @upcoming.empty? && @briefing.nil? && @decisions.empty? %>
-  <div class="topic-empty-state empty-state">
-    <p class="mb-0">No meeting activity recorded for this topic yet.</p>
-  </div>
-<% end %>
+<%# === 6. Record (timeline) === %>
+<section class="topic-record section topic-section">
+  <h2 class="section-title">Record</h2>
+  <% record_entries = briefing_factual_record(@briefing) %>
+  <% if record_entries.any? %>
+    <div class="topic-timeline">
+      <% record_entries.each do |entry| %>
+        <div class="topic-timeline-entry">
+          <div class="topic-timeline-date">
+            <%= format_record_date(entry["date"]) %>
+          </div>
+          <div class="topic-timeline-content">
+            <%= entry["event"] %>
+            <span class="topic-timeline-meeting"><%= entry["meeting"] %></span>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="section-empty">No meeting activity recorded for this topic yet.</p>
+  <% end %>
+</section>
 
 <%# === Footer === %>
 <div class="mt-8">
