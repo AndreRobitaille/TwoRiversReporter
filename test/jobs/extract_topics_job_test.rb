@@ -400,6 +400,50 @@ class ExtractTopicsJobTest < ActiveJob::TestCase
     mock_ai.verify
   end
 
+  test "falls back to packet text when no minutes exist" do
+    meeting = Meeting.create!(
+      body_name: "City Council", meeting_type: "Regular",
+      starts_at: 1.day.from_now, status: "agenda_posted",
+      detail_page_url: "http://example.com/m/packet-fallback"
+    )
+    item = AgendaItem.create!(meeting: meeting, number: "1", title: "Zoning Request", order_index: 1)
+    MeetingDocument.create!(
+      meeting: meeting, document_type: "packet_pdf",
+      extracted_text: "PACKET_ONLY zoning variance application details"
+    )
+
+    captured_kwargs = nil
+    ai_response = {
+      "items" => [ {
+        "id" => item.id,
+        "category" => "Zoning",
+        "tags" => [ "zoning variance" ],
+        "topic_worthy" => true,
+        "confidence" => 0.85
+      } ]
+    }.to_json
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_topics, ai_response do |text, **kwargs|
+      captured_kwargs = kwargs
+      true
+    end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        ExtractTopicsJob.perform_now(meeting.id)
+      end
+    end
+
+    assert_includes captured_kwargs[:meeting_documents_context], "PACKET_ONLY"
+    assert_includes captured_kwargs[:meeting_documents_context], "packet_pdf"
+    mock_ai.verify
+  end
+
   test "keeps catch-all topic when refinement says minor" do
     meeting = Meeting.create!(
       body_name: "Zoning Board", meeting_type: "Regular",
