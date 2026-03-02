@@ -155,16 +155,6 @@ class TopicsHelperTest < ActionView::TestCase
     assert_equal [], briefing_factual_record(briefing)
   end
 
-  test "briefing_headline_text extracts from generation_data with fallback" do
-    briefing = OpenStruct.new(generation_data: { "headline" => "From JSON" }, headline: "From field")
-    assert_equal "From JSON", briefing_headline_text(briefing)
-  end
-
-  test "briefing_headline_text falls back to headline field" do
-    briefing = OpenStruct.new(generation_data: nil, headline: "From field")
-    assert_equal "From field", briefing_headline_text(briefing)
-  end
-
   test "format_record_date formats ISO date as month day year" do
     assert_equal "Sep 2, 2025", format_record_date("2025-09-02")
     assert_equal "Nov 15, 2025", format_record_date("2025-11-15")

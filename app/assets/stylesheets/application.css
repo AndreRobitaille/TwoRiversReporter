@@ -1899,13 +1899,6 @@ th.sortable-header:hover {
 }
 
 /* Topic Briefing */
-.briefing-headline-text {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
-  line-height: var(--line-height-tight);
-  margin-bottom: 0;
-}
-
 .briefing-editorial-content {
   line-height: var(--line-height-relaxed);
 }
@@ -1915,24 +1908,6 @@ th.sortable-header:hover {
 }
 
 .briefing-editorial-content p:last-child {
-  margin-bottom: 0;
-}
-
-.card--surface-raised {
-  background-color: var(--color-surface-raised);
-}
-
-.topic-record-list {
-  list-style: disc;
-  padding-left: var(--space-6);
-}
-
-.topic-record-list li {
-  margin-bottom: var(--space-2);
-  line-height: var(--line-height-normal);
-}
-
-.topic-record-list li:last-child {
   margin-bottom: 0;
 }
 
