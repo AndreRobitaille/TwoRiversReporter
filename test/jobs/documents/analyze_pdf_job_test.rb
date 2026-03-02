@@ -29,9 +29,9 @@ module Documents
       pdfinfo_output = "Pages: 1\n"
       pdftotext_output = "Test minutes content for topic extraction"
 
-      Open3.stub :capture2e, [pdfinfo_output, OpenStruct.new(success?: true)] do
-        Open3.stub :capture3, [pdftotext_output, "", OpenStruct.new(success?: true)] do
-          assert_enqueued_with(job: ExtractTopicsJob, args: [@meeting.id]) do
+      Open3.stub :capture2e, [ pdfinfo_output, OpenStruct.new(success?: true) ] do
+        Open3.stub :capture3, [ pdftotext_output, "", OpenStruct.new(success?: true) ] do
+          assert_enqueued_with(job: ExtractTopicsJob, args: [ @meeting.id ]) do
             Documents::AnalyzePdfJob.perform_now(doc.id)
           end
         end
@@ -52,8 +52,8 @@ module Documents
       pdfinfo_output = "Pages: 1\n"
       pdftotext_output = "Packet content"
 
-      Open3.stub :capture2e, [pdfinfo_output, OpenStruct.new(success?: true)] do
-        Open3.stub :capture3, [pdftotext_output, "", OpenStruct.new(success?: true)] do
+      Open3.stub :capture2e, [ pdfinfo_output, OpenStruct.new(success?: true) ] do
+        Open3.stub :capture3, [ pdftotext_output, "", OpenStruct.new(success?: true) ] do
           Documents::AnalyzePdfJob.perform_now(doc.id)
         end
       end
