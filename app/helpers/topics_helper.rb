@@ -87,6 +87,33 @@ module TopicsHelper
     tag.span(label, class: "badge badge--primary")
   end
 
+  def briefing_what_to_watch(briefing)
+    briefing&.generation_data&.dig("editorial_analysis", "what_to_watch")
+  end
+
+  def briefing_current_state(briefing)
+    briefing&.generation_data&.dig("editorial_analysis", "current_state") ||
+      briefing&.editorial_content
+  end
+
+  def briefing_process_concerns(briefing)
+    briefing&.generation_data&.dig("editorial_analysis", "process_concerns") || []
+  end
+
+  def briefing_factual_record(briefing)
+    briefing&.generation_data&.dig("factual_record") || []
+  end
+
+  def briefing_headline_text(briefing)
+    briefing&.generation_data&.dig("headline") || briefing&.headline
+  end
+
+  def format_record_date(date_string)
+    Date.parse(date_string).strftime("%b %-d, %Y")
+  rescue Date::Error, TypeError
+    date_string.to_s
+  end
+
   def render_topic_summary_content(markdown_content)
     return "" if markdown_content.blank?
 

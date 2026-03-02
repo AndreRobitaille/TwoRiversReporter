@@ -97,4 +97,80 @@ class TopicsHelperTest < ActionView::TestCase
   test "highlight_signal_label returns Moved to new committee for cross_body_progression" do
     assert_equal "Moved to new committee", highlight_signal_label("cross_body_progression")
   end
+
+  test "briefing_what_to_watch extracts from generation_data" do
+    briefing = OpenStruct.new(generation_data: {
+      "editorial_analysis" => { "what_to_watch" => "Watch for a vote on the budget." }
+    })
+    assert_equal "Watch for a vote on the budget.", briefing_what_to_watch(briefing)
+  end
+
+  test "briefing_what_to_watch returns nil when generation_data is nil" do
+    briefing = OpenStruct.new(generation_data: nil)
+    assert_nil briefing_what_to_watch(briefing)
+  end
+
+  test "briefing_what_to_watch returns nil for nil briefing" do
+    assert_nil briefing_what_to_watch(nil)
+  end
+
+  test "briefing_current_state extracts from generation_data" do
+    briefing = OpenStruct.new(generation_data: {
+      "editorial_analysis" => { "current_state" => "The council approved the plan." }
+    })
+    assert_equal "The council approved the plan.", briefing_current_state(briefing)
+  end
+
+  test "briefing_current_state falls back to editorial_content" do
+    briefing = OpenStruct.new(generation_data: nil, editorial_content: "Fallback content.")
+    assert_equal "Fallback content.", briefing_current_state(briefing)
+  end
+
+  test "briefing_process_concerns extracts from generation_data" do
+    briefing = OpenStruct.new(generation_data: {
+      "editorial_analysis" => { "process_concerns" => ["No public input.", "Rushed timeline."] }
+    })
+    assert_equal ["No public input.", "Rushed timeline."], briefing_process_concerns(briefing)
+  end
+
+  test "briefing_process_concerns returns empty array when missing" do
+    briefing = OpenStruct.new(generation_data: { "editorial_analysis" => {} })
+    assert_equal [], briefing_process_concerns(briefing)
+  end
+
+  test "briefing_factual_record extracts structured entries from generation_data" do
+    briefing = OpenStruct.new(generation_data: {
+      "factual_record" => [
+        { "date" => "2025-09-02", "event" => "Council approved plan.", "meeting" => "City Council, Sep 2" },
+        { "date" => "2025-11-05", "event" => "Item appeared on agenda.", "meeting" => "Public Works, Nov 5" }
+      ]
+    })
+    result = briefing_factual_record(briefing)
+    assert_equal 2, result.size
+    assert_equal "2025-09-02", result.first["date"]
+  end
+
+  test "briefing_factual_record returns empty array when generation_data is nil" do
+    briefing = OpenStruct.new(generation_data: nil)
+    assert_equal [], briefing_factual_record(briefing)
+  end
+
+  test "briefing_headline_text extracts from generation_data with fallback" do
+    briefing = OpenStruct.new(generation_data: { "headline" => "From JSON" }, headline: "From field")
+    assert_equal "From JSON", briefing_headline_text(briefing)
+  end
+
+  test "briefing_headline_text falls back to headline field" do
+    briefing = OpenStruct.new(generation_data: nil, headline: "From field")
+    assert_equal "From field", briefing_headline_text(briefing)
+  end
+
+  test "format_record_date formats ISO date as month day year" do
+    assert_equal "Sep 2, 2025", format_record_date("2025-09-02")
+    assert_equal "Nov 15, 2025", format_record_date("2025-11-15")
+  end
+
+  test "format_record_date returns original string for unparseable dates" do
+    assert_equal "not a date", format_record_date("not a date")
+  end
 end
