@@ -985,8 +985,10 @@ module Ai
 
       response.dig("choices", 0, "message", "content")
     end
+    # Called directly by SummarizeMeetingJob to store structured JSON
+    public :analyze_meeting_content, :prepare_kb_context, :prepare_doc_context
 
-    # PASS 2: Rendering
+    # PASS 2: Rendering (legacy — used by summarize_minutes/packet wrappers)
     def render_meeting_summary(doc_text, plan_json, type)
       system_role = "You are a civic engagement assistant for Two Rivers, WI. Write clear, neutral, truth-seeking summaries."
 

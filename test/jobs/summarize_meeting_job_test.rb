@@ -17,9 +17,62 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     @item.topics << @topic
   end
 
+  test "generates meeting summary with generation_data from minutes" do
+    doc = @meeting.meeting_documents.create!(
+      document_type: "minutes_pdf",
+      source_url: "http://example.com/minutes.pdf",
+      extracted_text: "Page 1: The council approved the budget 5-2."
+    )
+
+    generation_data = {
+      "headline" => "Council approved the budget",
+      "highlights" => [{ "text" => "Budget approved", "citation" => "Page 1", "vote" => "5-2", "impact" => "high" }],
+      "public_input" => [],
+      "item_details" => []
+    }
+
+    mock_ai = Minitest::Mock.new
+    # Meeting-level: prepare_kb_context + analyze_meeting_content called directly
+    mock_ai.expect :prepare_kb_context, "" do |arg|
+      arg.is_a?(Array)
+    end
+    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |text, kb, type|
+      type == "minutes"
+    end
+    # Topic-level: still uses two-pass
+    mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg|
+      arg.is_a?(Hash)
+    end
+    mock_ai.expect :render_topic_summary, "## Summary" do |arg|
+      arg.is_a?(String)
+    end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+    def retrieval_stub.retrieve_topic_context(*args, **kwargs); []; end
+    def retrieval_stub.format_topic_context(*args); []; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        SummarizeMeetingJob.perform_now(@meeting.id)
+      end
+    end
+
+    summary = @meeting.meeting_summaries.find_by(summary_type: "minutes_recap")
+    assert summary, "Should create a minutes_recap summary"
+    assert_equal generation_data, summary.generation_data
+    assert_nil summary.content
+  end
+
   test "generates topic summary for approved topics" do
     # Mock OpenAI
     mock_ai = Minitest::Mock.new
+
+    # Meeting-level: prepare_kb_context called (no docs, so no analyze call)
+    mock_ai.expect :prepare_kb_context, "" do |arg|
+      arg.is_a?(Array)
+    end
 
     # Analyze call expectation
     mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg|
@@ -60,6 +113,11 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
 
     mock_ai = Minitest::Mock.new
 
+    # Meeting-level: prepare_kb_context called (no docs, so no analyze call)
+    mock_ai.expect :prepare_kb_context, "" do |arg|
+      arg.is_a?(Array)
+    end
+
     ai_response = {
       headline: "Test headline",
       factual_record: [],
@@ -97,6 +155,11 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
 
     mock_ai = Minitest::Mock.new
 
+    # Meeting-level: prepare_kb_context called (no docs, so no analyze call)
+    mock_ai.expect :prepare_kb_context, "" do |arg|
+      arg.is_a?(Array)
+    end
+
     ai_response = {
       headline: "Test headline",
       factual_record: [],
@@ -131,6 +194,10 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
 
   test "enqueues GenerateTopicBriefingJob after topic summary generation" do
     mock_ai = Minitest::Mock.new
+    # Meeting-level: prepare_kb_context called (no docs, so no analyze call)
+    mock_ai.expect :prepare_kb_context, "" do |arg|
+      arg.is_a?(Array)
+    end
     mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg|
       arg.is_a?(Hash)
     end
