@@ -419,14 +419,21 @@ Below the cards:
 
 ### Topic Page (Primary Lens)
 
-- Topic description (auto-generated, max 80 chars)
-- Briefing headline (bold, warm card)
-- Coming Up cards (future meetings with this topic)
-- "What's Going On" editorial (prose, 100–200 words)
-- "Record" (chronological cited bullets spanning all meetings)
-- Key Decisions (motions with vote breakdowns)
-- Related documents
-- Status/lifecycle indicators
+Fixed layout, inverted pyramid — every section always visible. Empty sections
+show contextual messages instead of hiding.
+
+| # | Section | Data Source |
+|---|---------|-------------|
+| 1 | Header | `topic.name`, `.description`, lifecycle badge, freshness badge |
+| 2 | What to Watch | `generation_data.editorial_analysis.what_to_watch` (warm callout) |
+| 3 | Coming Up | Future meetings with this topic (card grid) |
+| 4 | The Story | `generation_data.editorial_analysis.current_state` + process concerns |
+| 5 | Key Decisions | Motions with vote breakdowns |
+| 6 | Record | `generation_data.factual_record` (timeline layout: date left, event right) |
+
+Briefing content renders from **structured pass 1 JSON** (`generation_data`)
+instead of pass 2 markdown. Markdown fields are fallbacks for briefings
+without `generation_data` (e.g., `headline_only` tier).
 
 ### Meeting Page
 

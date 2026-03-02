@@ -109,6 +109,16 @@ The homepage has two topic headline cards (`home/_topic_headline_item` partial):
 - **Meeting diversity**: "Coming Up" caps at 2 topics per meeting to prevent related topics from dominating. Over-fetches 15 candidates, applies diversity filter, takes top 5.
 - Headlines come from `TopicBriefing` (not `TopicSummary`). Each section uses its own headlines hash passed as a local to the partial.
 
+### Topic Show Page
+
+The topic show page (`topics/show.html.erb`) uses a **fixed inverted-pyramid layout** — all sections always render, with empty state messages when data is absent. Section order: Header → What to Watch → Coming Up → The Story → Key Decisions → Record.
+
+**Structured JSON rendering:** Briefing content renders from `TopicBriefing.generation_data` (pass 1 structured JSON) instead of pass 2 markdown. Helper methods in `TopicsHelper` extract fields: `briefing_what_to_watch`, `briefing_current_state`, `briefing_process_concerns`, `briefing_factual_record`, `format_record_date`. Markdown fields (`editorial_content`, `record_content`) are fallbacks for briefings without `generation_data`.
+
+**Key CSS classes:** `.topic-watch` (What to Watch section), `.topic-watch-callout` (warm callout card), `.topic-story` (The Story section), `.topic-concerns-callout` (process concerns), `.topic-record` (Record section), `.topic-timeline` / `.topic-timeline-entry` (timeline layout), `.section-empty` (empty state text).
+
+**Design doc:** `docs/plans/2026-03-01-topic-show-consistent-layout-design.md`
+
 ## Conventions
 
 - **Single Rails app** — No microservices, no SPA. Server-rendered HTML + background jobs.
