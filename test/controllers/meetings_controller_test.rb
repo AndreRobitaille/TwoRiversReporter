@@ -69,21 +69,21 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     refute all_topics.include?(@blocked_topic)
   end
 
-  test "show renders issues section with ongoing and new subsections" do
+  test "show renders topics section with ongoing and new subsections" do
     get meeting_url(@meeting)
     assert_response :success
 
-    assert_select "h2", text: "Issues in This Meeting"
+    assert_select "h2", text: "Topics in This Meeting"
     assert_select "h3", text: "Ongoing"
     assert_select "h3", text: "New This Meeting"
   end
 
-  test "show hides issues section when no approved topics" do
+  test "show renders empty state when no approved topics" do
     AgendaItemTopic.destroy_all
     get meeting_url(@meeting)
     assert_response :success
 
-    assert_select "h2", text: "Issues in This Meeting", count: 0
+    assert_select ".section-empty", text: "No topics have been identified for this meeting."
   end
 
   test "show assigns summary with generation_data" do
@@ -102,5 +102,46 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     get meeting_url(@meeting)
     assert_response :success
     assert_nil assigns(:summary)
+  end
+
+  test "show renders headline from generation_data" do
+    MeetingSummary.create!(
+      meeting: @meeting,
+      summary_type: "minutes_recap",
+      generation_data: { "headline" => "Council approved the budget 5-2." }
+    )
+
+    get meeting_url(@meeting)
+    assert_response :success
+
+    assert_select ".meeting-headline", text: /Council approved the budget/
+  end
+
+  test "show renders empty state when no summary exists" do
+    get meeting_url(@meeting)
+    assert_response :success
+
+    assert_select ".section-empty", text: "No summary available for this meeting yet."
+  end
+
+  test "show renders legacy markdown when no generation_data" do
+    MeetingSummary.create!(
+      meeting: @meeting,
+      summary_type: "minutes_recap",
+      content: "## Old Recap\n\nThis is the old markdown."
+    )
+
+    get meeting_url(@meeting)
+    assert_response :success
+
+    assert_select ".meeting-legacy-recap"
+  end
+
+  test "show renders documents section with empty state" do
+    @meeting.meeting_documents.destroy_all
+    get meeting_url(@meeting)
+    assert_response :success
+
+    assert_select ".section-empty", text: "No documents available for this meeting."
   end
 end
