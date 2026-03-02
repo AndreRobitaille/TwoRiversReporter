@@ -195,7 +195,12 @@ Links agenda items or meeting events to Topics.
 
 ### MeetingSummary
 
-AI-generated content grounded in documents and Topic context.
+AI-generated content grounded in documents and Topic context. Uses a
+single-pass architecture: `analyze_meeting_content` produces structured
+JSON stored in `generation_data` (headline, highlights, public_input,
+item_details). The meeting show page renders directly from this structured
+data. The `content` (markdown) field is a legacy fallback for summaries
+without `generation_data`.
 
 ------------------------------------------------------------------------
 
@@ -337,10 +342,10 @@ All resident-facing summaries use a neighborhood-reporter voice:
 - **No procedural noise.** Motions, seconds, and roll-call details
   belong in Key Decisions, not in narrative summaries.
 
-### Two-Pass Generation Architecture
+### Summary Generation Architecture
 
-Full-quality summaries (both per-meeting `TopicSummary` and rolling
-`TopicBriefing`) use a two-pass architecture:
+**Topic summaries** (per-meeting `TopicSummary` and rolling
+`TopicBriefing`) use a **two-pass** architecture:
 
 **Pass 1 — Structured Analysis** (`analyze_topic_briefing` /
 `analyze_topic_summary`): gpt-5.2 with `response_format: json_object`.
@@ -361,6 +366,17 @@ Internal structural categories (Factual Record, Institutional Framing,
 Civic Sentiment) exist in the analysis JSON but are **never exposed** in
 rendered output. The rendering pass synthesizes them into unified
 editorial prose.
+
+**Meeting summaries** (`MeetingSummary`) use a **single-pass** architecture:
+
+`analyze_meeting_content` produces structured JSON stored in
+`generation_data` with fields: `headline`, `highlights` (key takeaways
+with vote/citation annotations), `public_input` (resident comments),
+and `item_details` (per-agenda-item analysis with decisions). The meeting
+show page renders directly from this structured data. The legacy two-pass
+flow (`analyze_meeting_content` → `render_meeting_summary`) is preserved
+for backward compatibility but `SummarizeMeetingJob` no longer calls
+`render_meeting_summary`.
 
 ### Citation Rules
 
@@ -440,20 +456,30 @@ without `generation_data` (e.g., `headline_only` tier).
 
 ### Meeting Page
 
-- Meeting details
-- Official documents
-- Topic Analysis (AI-generated per-topic summaries, collapsible)
-- Meeting Recap / Packet Analysis (AI-generated meeting-level summary)
-- Voting Record (motions with vote breakdowns)
-- Agenda (with inline topic tags linking to topic pages)
-- Documents (PDFs, originals)
-- **Issues in This Meeting** — topic cards split into two subsections:
-  - *Ongoing*: topics with 2+ meeting appearances ("These issues have
-    come up across multiple meetings. Click any for the full picture.")
-  - *New This Meeting*: topics appearing for the first time
-  - Reuses the standard `_topic_card` partial (same cards as homepage
-    and topics index) for consistent navigation
-  - Only shows approved topics; skips section entirely if none exist
+Fixed layout, inverted pyramid — every section always visible. Empty
+sections show contextual messages instead of hiding.
+
+| # | Section | Data Source |
+|---|---------|-------------|
+| 1 | Header | Meeting date, body name, committee link, meeting type badge |
+| 2 | Headline | `generation_data.headline` (one-sentence meeting summary) |
+| 3 | Highlights | `generation_data.highlights` (key takeaways with vote/citation annotations) |
+| 4 | Public Input | `generation_data.public_input` (resident comments at the meeting) |
+| 5 | Agenda Items | `generation_data.item_details` (per-item cards with decisions and analysis) |
+| 6 | Topics | Topic cards split into Ongoing (2+ appearances) and New This Meeting |
+| 7 | Documents | Official PDFs and originals |
+
+Meeting summary content renders from **structured single-pass JSON**
+(`generation_data`) instead of two-pass markdown. The `content` (markdown)
+field is a fallback for meetings without `generation_data`.
+
+**Issues in This Meeting** — topic cards split into two subsections:
+- *Ongoing*: topics with 2+ meeting appearances ("These issues have
+  come up across multiple meetings. Click any for the full picture.")
+- *New This Meeting*: topics appearing for the first time
+- Reuses the standard `_topic_card` partial (same cards as homepage
+  and topics index) for consistent navigation
+- Only shows approved topics; skips section entirely if none exist
 
 ### City Officials Page
 
