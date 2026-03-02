@@ -351,6 +351,55 @@ class ExtractTopicsJobTest < ActiveJob::TestCase
     mock_ai.verify
   end
 
+  test "minutes text uses 25K truncation limit" do
+    meeting = Meeting.create!(
+      body_name: "Advisory Recreation Board", meeting_type: "Regular",
+      starts_at: 1.day.from_now, status: "agenda_posted",
+      detail_page_url: "http://example.com/m/minutes-25k"
+    )
+    item = AgendaItem.create!(meeting: meeting, number: "1", title: "Parks Discussion", order_index: 1)
+
+    # Create minutes text that's 15K chars — above old 8K limit
+    long_minutes = "MINUTES_START " + ("discussion about park improvements. " * 400) + " MINUTES_END"
+    MeetingDocument.create!(
+      meeting: meeting, document_type: "minutes_pdf",
+      extracted_text: long_minutes
+    )
+
+    captured_kwargs = nil
+    ai_response = {
+      "items" => [ {
+        "id" => item.id,
+        "category" => "Recreation",
+        "tags" => [ "park improvements" ],
+        "topic_worthy" => true,
+        "confidence" => 0.8
+      } ]
+    }.to_json
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_topics, ai_response do |text, **kwargs|
+      captured_kwargs = kwargs
+      true
+    end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        ExtractTopicsJob.perform_now(meeting.id)
+      end
+    end
+
+    # Should include text beyond the old 8K limit
+    assert_includes captured_kwargs[:meeting_documents_context], "MINUTES_START"
+    assert_includes captured_kwargs[:meeting_documents_context], "MINUTES_END"
+    assert captured_kwargs[:meeting_documents_context].length > 8000
+    mock_ai.verify
+  end
+
   test "keeps catch-all topic when refinement says minor" do
     meeting = Meeting.create!(
       body_name: "Zoning Board", meeting_type: "Regular",
