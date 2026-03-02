@@ -872,70 +872,103 @@ module Ai
       raise "Gemini response missing content: #{response.body}"
     end
 
-    # PASS 1: Analysis & Planning
+    # PASS 1: Structured meeting analysis — produces JSON for direct rendering
     def analyze_meeting_content(doc_text, kb_context, type)
-      system_role = "You are an investigative civic data analyst. Your goal is to deeply analyze meeting documents to identify what matters most to residents."
+      system_role = <<~ROLE
+        You are a civic journalist covering Two Rivers, WI city government
+        for a community news site. Your audience is residents — mostly 35+,
+        mobile-heavy, skeptical of city leadership, checking in casually.
+        They want the gist fast in plain language. No government jargon.
+
+        Write in editorial voice: skeptical of process and decisions (not of
+        people), editorialize early, surface patterns, note deferrals, flag
+        when framing doesn't match outcomes. Criticize decisions and
+        processes, not individuals.
+      ROLE
 
       prompt = <<~PROMPT
-        Analyze the provided #{type} text and return a JSON analysis plan.
+        Analyze the provided #{type} text and return a JSON object with the
+        structure specified below.
 
         #{kb_context}
         #{prepare_committee_context}
 
-        <governance_constraints>
-        - Do not assign motive or speculate about intent.
-        - Treat staff summaries, agenda item titles, and recommended actions as institutional framing, not neutral truth.
-        - Decision hinges must be factual gaps (e.g. "Maintenance cost source not specified"), not editorial judgments.
-        - Describe what is observable. Do not editorialize.
-        </governance_constraints>
+        <guidelines>
+        - Write in plain language a resident would use at a neighborhood
+          gathering. No government jargon ("motion to waive reading and
+          adopt the ordinance to amend..." → "voted to change the rule").
+        - Headline: 1-2 backward-looking sentences, max ~40 words.
+          What happened at this meeting that residents should know.
+        - Highlights: max 3 items, highest resident impact first. Include
+          vote tallies where votes occurred. Each highlight gets a page
+          citation.
+        - Public input: Distinguish general public comment (resident spoke
+          at open comment period, unrelated to specific agenda items) from
+          communication (council/committee member relayed resident contact).
+          Item-specific public hearings go in item_details, NOT here.
+          Redact residential addresses: "[Address redacted]".
+        - Item details: Cover substantive agenda items only. Each gets 2-4
+          sentences of editorial summary explaining what happened and why it
+          matters. Include public_hearing note for items with formal public
+          input (Wisconsin law three-calls). Include decision and vote tally
+          where applicable. Anchor citations to page numbers.
+        </guidelines>
 
-        <long_context_handling>
-        - The document text below may be long.
-        - First, internally scan for: Financial commitments, Regulatory changes, and "Decision Hinges" (unknowns).
-        - Anchor your analysis to specific sections or pages.
-        </long_context_handling>
+        <procedural_filter>
+        EXCLUDE these procedural items from item_details entirely:
+        - Adjournment motions
+        - Minutes approval
+        - Consent agenda approval (unless a specific item was pulled for
+          separate discussion)
+        - Remote participation approval
+        - Treasurer's report acceptance
+        - Reconvene in open session
+
+        DO NOT EXCLUDE closed session motions — they contain statutory
+        justification (Wis. Stats 19.85) that residents need for open
+        meetings law transparency.
+        </procedural_filter>
 
         DOCUMENT TEXT:
-        #{doc_text.truncate(100000)}
+        #{doc_text.truncate(100_000)}
 
-        <extraction_spec>
-        Structure the output as a JSON object matching this schema exactly.
+        <output_schema>
+        Return a JSON object matching this schema exactly:
 
-        Schema:
         {
-          "top_topics": [
+          "headline": "1-2 sentences summarizing what happened at this meeting.",
+          "highlights": [
             {
-              "title": "Short descriptive title",
-              "impact_level": "High|Medium|Low",
-              "description": "One sentence summary.",
-              "why_it_matters": "Plain language explanation of resident impact.",
-              "key_details": "Specifics: $ amounts, dates, votes required.",
-              "citations": ["Page X"]
+              "text": "What happened and why it matters to residents.",
+              "citation": "Page X",
+              "vote": "6-3 or null if no vote",
+              "impact": "high|medium|low"
             }
           ],
-          "other_topics": [
-            { "title": "Topic Name", "summary": "Very brief summary." }
+          "public_input": [
+            {
+              "speaker": "Speaker Name",
+              "type": "public_comment|communication",
+              "summary": "What they said or relayed, in plain language."
+            }
           ],
-          "framing_notes": [
-            "Observation about how the city presents or frames an issue (e.g. staff summary language, recommended action wording)."
-          ],
-          "public_comments": [
-            { "speaker": "Name", "summary": "What they said (Address redacted)." }
-          ],
-          "decision_hinges": [
-            "Statement of a key unknown or critical verification point."
-          ],
-          "official_discussion": [
-             "Key point raised by a council member (if applicable)."
+          "item_details": [
+            {
+              "agenda_item_title": "Title as it appears on the agenda",
+              "summary": "2-4 sentences: what happened, why it matters, editorial context.",
+              "public_hearing": "Description of public hearing input, or null",
+              "decision": "Passed|Failed|Tabled|Referred|null",
+              "vote": "7-0 or null",
+              "citations": ["Page X"]
+            }
           ]
         }
-        </extraction_spec>
 
-        <investigative_guidelines>
-        - Note costs, timelines, or details that are not explicitly stated in the document.
-        - "Decision Hinges" must be factual gaps, not speculation about why information is missing.
-        - Redact all residential addresses in public comments: "[Address redacted]".
-        </investigative_guidelines>
+        highlights: max 3 items. Order by resident impact (highest first).
+        public_input: include all speakers. Empty array if none.
+        item_details: substantive items only (see procedural_filter above).
+        All text fields: plain language, no jargon.
+        </output_schema>
       PROMPT
 
       response = @client.chat(
