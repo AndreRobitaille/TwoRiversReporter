@@ -2007,6 +2007,140 @@ th.sortable-header:hover {
   margin-top: var(--space-1);
 }
 
+/* === Meeting Show — Structured Sections === */
+
+.meeting-headline {
+  font-size: var(--font-size-lg);
+  line-height: 1.4;
+  color: var(--color-text);
+  margin-bottom: var(--space-6);
+}
+
+.meeting-highlights {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--space-2) 0;
+}
+
+.meeting-highlights li {
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+  line-height: 1.5;
+}
+
+.meeting-highlights li:last-child {
+  border-bottom: none;
+}
+
+.highlight-citation {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-left: var(--space-2);
+}
+
+.highlight-vote {
+  font-weight: 600;
+}
+
+/* Public Input */
+.public-input-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.public-input-item {
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.public-input-item:last-child {
+  border-bottom: none;
+}
+
+.public-input-speaker {
+  font-weight: 600;
+}
+
+.public-input-type {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-left: var(--space-2);
+}
+
+/* Agenda Item Cards */
+.meeting-item-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  margin-bottom: var(--space-4);
+}
+
+.meeting-item-card-title {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  margin-bottom: var(--space-3);
+}
+
+.meeting-item-card-summary {
+  line-height: 1.6;
+  margin-bottom: var(--space-3);
+}
+
+.meeting-item-card-hearing {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-style: italic;
+  margin-bottom: var(--space-3);
+}
+
+.meeting-item-card-decision {
+  margin-bottom: var(--space-3);
+}
+
+.decision-badge {
+  display: inline-block;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+}
+
+.decision-badge--passed {
+  background: var(--color-success-bg, #dcfce7);
+  color: var(--color-success-text, #166534);
+}
+
+.decision-badge--failed {
+  background: var(--color-danger-bg, #fee2e2);
+  color: var(--color-danger-text, #991b1b);
+}
+
+.decision-badge--tabled {
+  background: var(--color-warning-bg, #fef3c7);
+  color: var(--color-warning-text, #92400e);
+}
+
+.decision-badge--default {
+  background: var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+.meeting-item-card-citations {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.meeting-item-card .tags {
+  margin-top: var(--space-3);
+}
+
+/* Legacy prose fallback */
+.meeting-legacy-recap {
+  margin-top: var(--space-4);
+}
+
 /* Section empty states — inline with sections */
 .section-empty {
   color: var(--color-text-muted);
