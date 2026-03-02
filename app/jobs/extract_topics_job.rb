@@ -166,17 +166,31 @@ class ExtractTopicsJob < ApplicationJob
       .where(agenda_item_id: items.map(&:id))
       .pluck(:meeting_document_id)
 
-    # Load meeting-level documents (packet/minutes) NOT linked to any item
-    meeting_docs = meeting.meeting_documents
-      .where(document_type: %w[packet_pdf minutes_pdf])
+    # Prefer minutes over packet — minutes are authoritative and clean.
+    # Packet text (especially for council) contains consent agenda noise
+    # (embedded committee minutes, financial reports, check registers).
+    minutes_doc = meeting.meeting_documents
+      .where(document_type: "minutes_pdf")
       .where.not(id: linked_doc_ids)
       .where.not(extracted_text: [ nil, "" ])
+      .first
 
-    return "" if meeting_docs.empty?
+    if minutes_doc
+      return "minutes_pdf: #{minutes_doc.extracted_text.truncate(25_000, separator: ' ')}"
+    end
 
-    meeting_docs.map do |doc|
-      "#{doc.document_type}: #{doc.extracted_text.truncate(8000, separator: ' ')}"
-    end.join("\n---\n")
+    # Fall back to packet if no minutes
+    packet_doc = meeting.meeting_documents
+      .where(document_type: "packet_pdf")
+      .where.not(id: linked_doc_ids)
+      .where.not(extracted_text: [ nil, "" ])
+      .first
+
+    if packet_doc
+      return "packet_pdf: #{packet_doc.extracted_text.truncate(8_000, separator: ' ')}"
+    end
+
+    ""
   end
 
   def retrieve_community_context
