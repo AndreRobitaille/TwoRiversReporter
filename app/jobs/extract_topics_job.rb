@@ -151,10 +151,16 @@ class ExtractTopicsJob < ApplicationJob
       parts << doc.extracted_text.truncate(2000, separator: " ")
     end
 
-    # Meeting-level packet/minutes
-    meeting.meeting_documents.where(document_type: %w[packet_pdf minutes_pdf]).each do |doc|
-      next if doc.extracted_text.blank?
-      parts << doc.extracted_text.truncate(4000, separator: " ")
+    # Meeting-level context: prefer minutes over packet
+    minutes_doc = meeting.meeting_documents
+      .find_by(document_type: "minutes_pdf")
+    if minutes_doc&.extracted_text.present?
+      parts << minutes_doc.extracted_text.truncate(4000, separator: " ")
+    else
+      meeting.meeting_documents.where(document_type: "packet_pdf").each do |doc|
+        next if doc.extracted_text.blank?
+        parts << doc.extracted_text.truncate(4000, separator: " ")
+      end
     end
 
     parts.join("\n---\n")

@@ -444,6 +444,62 @@ class ExtractTopicsJobTest < ActiveJob::TestCase
     mock_ai.verify
   end
 
+  test "catch-all refinement uses minutes over packet for document text" do
+    meeting = Meeting.create!(
+      body_name: "Zoning Board", meeting_type: "Regular",
+      starts_at: 1.day.from_now, status: "agenda_posted",
+      detail_page_url: "http://example.com/m/catchall-minutes"
+    )
+    item = AgendaItem.create!(meeting: meeting, number: "1", title: "PUBLIC HEARING", order_index: 1)
+
+    MeetingDocument.create!(
+      meeting: meeting, document_type: "packet_pdf",
+      extracted_text: "PACKET_NOISE consent agenda financial reports"
+    )
+    MeetingDocument.create!(
+      meeting: meeting, document_type: "minutes_pdf",
+      extracted_text: "MINUTES_CONTENT appeal to construct commercial structure at 456 Oak Ave"
+    )
+
+    catchall_topic = Topic.create!(name: "height and area exceptions", status: :approved, review_status: :approved)
+
+    extract_response = {
+      "items" => [ {
+        "id" => item.id,
+        "category" => "Zoning",
+        "tags" => [ "height and area exceptions" ],
+        "topic_worthy" => true,
+        "confidence" => 0.8
+      } ]
+    }.to_json
+
+    captured_refine_kwargs = nil
+    refine_response = { "action" => "replace", "topic_name" => "commercial zoning appeal" }.to_json
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_topics, extract_response do |text, **kwargs|
+      true
+    end
+    mock_ai.expect :refine_catchall_topic, refine_response do |**kwargs|
+      captured_refine_kwargs = kwargs
+      true
+    end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        ExtractTopicsJob.perform_now(meeting.id)
+      end
+    end
+
+    assert_includes captured_refine_kwargs[:document_text], "MINUTES_CONTENT"
+    refute_includes captured_refine_kwargs[:document_text], "PACKET_NOISE"
+    mock_ai.verify
+  end
+
   test "keeps catch-all topic when refinement says minor" do
     meeting = Meeting.create!(
       body_name: "Zoning Board", meeting_type: "Regular",
