@@ -85,4 +85,22 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "h2", text: "Issues in This Meeting", count: 0
   end
+
+  test "show assigns summary with generation_data" do
+    summary = MeetingSummary.create!(
+      meeting: @meeting,
+      summary_type: "minutes_recap",
+      generation_data: { "headline" => "Test headline" }
+    )
+
+    get meeting_url(@meeting)
+    assert_response :success
+    assert_equal summary, assigns(:summary)
+  end
+
+  test "show assigns nil summary when none exists" do
+    get meeting_url(@meeting)
+    assert_response :success
+    assert_nil assigns(:summary)
+  end
 end

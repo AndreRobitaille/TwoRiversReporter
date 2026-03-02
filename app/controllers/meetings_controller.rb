@@ -19,5 +19,9 @@ class MeetingsController < ApplicationController
     @ongoing_topics, @new_topics = approved_topics.partition do |topic|
       topic.topic_appearances.size > 1
     end
+
+    # Prefer minutes_recap over packet_analysis
+    @summary = @meeting.meeting_summaries.find_by(summary_type: "minutes_recap") ||
+               @meeting.meeting_summaries.find_by(summary_type: "packet_analysis")
   end
 end
