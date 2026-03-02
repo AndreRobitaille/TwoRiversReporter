@@ -1767,10 +1767,11 @@ th.sortable-header:hover {
 }
 
 /* Section titles — subtle bottom border for clear start markers */
+.topic-watch .section-title,
 .topic-upcoming .section-title,
-.topic-briefing-editorial .section-title,
-.topic-briefing-record .section-title,
-.topic-decisions .section-title {
+.topic-story .section-title,
+.topic-decisions .section-title,
+.topic-record .section-title {
   padding-bottom: var(--space-3);
   border-bottom: 2px solid var(--color-primary);
   display: inline-block;
