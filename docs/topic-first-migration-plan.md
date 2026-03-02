@@ -74,11 +74,11 @@ This is a living note for future actions, not an implementation log.
    - [x] Broad topic quality: extraction prompt blocks category names as topics,
      blocklist prevents recreation, `topics:split_broad_topic` rake task for cleanup.
      See `docs/plans/2026-02-28-broad-topic-prevention-design.md`.
-8) Add semantic color tokens for light/dark modes.
-9) Apply theme color tokens to Topics + Home.
-10) Topic lifecycle status chips.
-11) Topic page: add identity accents to top cards.
-12) Theme QA: verify tokenized light/dark modes.
+8) [x] Add semantic color tokens for light/dark modes.
+9) [x] Apply theme color tokens to Topics + Home.
+10) [x] ~~Topic lifecycle status chips.~~ Closed — lifecycle_status is already precomputed and used for grouping; chips don't enable any admin or resident workflow.
+11) [x] ~~Topic page: add identity accents to top cards.~~ Closed — topic pages already have deliberate visual hierarchy (warm/cool accents, section dividers, color-coded votes, raised surfaces) built incrementally.
+12) [x] Theme QA: verify tokenized light/dark modes. Fixed dark mode muted text contrast, added :focus-visible, tokenized remaining hardcoded footer colors, defined --color-surface-hover.
 13) [x] Home page reoriented to Topic-first modules.
 
 ## Backfill Strategy (Draft)

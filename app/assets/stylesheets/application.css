@@ -33,6 +33,7 @@
   --color-bg: #f5f3ef;
   --color-surface: #ffffff;
   --color-surface-raised: #faf9f7;
+  --color-surface-hover: rgba(0, 0, 0, 0.03);
   --color-border: #e0ddd7;
   --color-border-strong: #c8c4bc;
 
@@ -146,6 +147,7 @@
   --color-bg: #1a1a1e;
   --color-surface: #26262a;
   --color-surface-raised: #323236;
+  --color-surface-hover: rgba(255, 255, 255, 0.04);
   --color-border: #3a3a3e;
   --color-border-strong: #4a4a4e;
 
@@ -157,7 +159,7 @@
 
   --color-text: #e8e8ec;
   --color-text-secondary: #a0a0a4;
-  --color-text-muted: #6c6c70;
+  --color-text-muted: #909094;
   --color-text-inverse: #1a1a1e;
 
   --color-ai-bg: #1e2d3d;
@@ -193,6 +195,7 @@
     --color-bg: #1a1a1e;
     --color-surface: #26262a;
     --color-surface-raised: #323236;
+    --color-surface-hover: rgba(255, 255, 255, 0.04);
     --color-border: #3a3a3e;
     --color-border-strong: #4a4a4e;
 
@@ -204,7 +207,7 @@
 
     --color-text: #e8e8ec;
     --color-text-secondary: #a0a0a4;
-    --color-text-muted: #6c6c70;
+    --color-text-muted: #909094;
     --color-text-inverse: #1a1a1e;
 
     --color-ai-bg: #1e2d3d;
@@ -269,6 +272,12 @@ a {
 a:hover {
   color: var(--color-accent-hover);
   text-decoration: underline;
+}
+
+/* Global focus-visible — consistent keyboard focus ring for all interactive elements */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 strong, b {
@@ -460,7 +469,7 @@ small {
 .footer-brand h3 {
   font-size: var(--font-size-lg);
   margin-bottom: var(--space-2);
-  color: #ffffff;
+  color: var(--color-header-text);
 }
 
 .footer-brand p {
@@ -480,7 +489,7 @@ small {
 }
 
 .footer-links a:hover {
-  color: #ffffff;
+  color: var(--color-header-text);
 }
 
 .footer-copyright {
@@ -673,9 +682,9 @@ tbody tr:hover {
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-.form-input:focus,
-.form-select:focus,
-.form-textarea:focus {
+.form-input:focus-visible,
+.form-select:focus-visible,
+.form-textarea:focus-visible {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px var(--color-primary-light);
@@ -1730,7 +1739,7 @@ th.sortable-header:hover {
 }
 
 .topic-headline-item:hover {
-  background-color: var(--color-surface-hover, rgba(0, 0, 0, 0.02));
+  background-color: var(--color-surface-hover);
 }
 
 .topic-headline-item__name {
