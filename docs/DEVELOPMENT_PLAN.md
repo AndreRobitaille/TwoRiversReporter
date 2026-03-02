@@ -524,7 +524,6 @@ The system must:
     - **`docs/topics/TOPIC_GOVERNANCE.md`** — Binding rules for all
       topic extraction, classification, summarization, and lifecycle
       logic.
-- The next engineering work must start with `docs/topic-first-migration-plan.md`.
 - Treat `docs/topics/TOPIC_GOVERNANCE.md` as binding for all Topic
     logic.
 - Meetings are inputs. Topics are the organizing layer.
