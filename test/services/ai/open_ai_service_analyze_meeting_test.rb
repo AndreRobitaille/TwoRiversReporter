@@ -24,10 +24,18 @@ class OpenAiServiceAnalyzeMeetingTest < ActiveSupport::TestCase
       }
     end
 
+    result = nil
     @service.instance_variable_get(:@client).stub :chat, mock_chat do
       result = @service.send(:analyze_meeting_content, "Test minutes text", "kb context", "minutes")
-      assert result.present?
     end
+
+    # Verify return value structure
+    assert result.present?
+    parsed = JSON.parse(result)
+    assert parsed.key?("headline")
+    assert parsed.key?("highlights")
+    assert parsed.key?("public_input")
+    assert parsed.key?("item_details")
 
     # Verify prompt content
     messages = captured_params[:messages]
