@@ -248,105 +248,137 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to topics_path
   end
 
-  test "show loads upcoming appearances for future meetings" do
-    future_meeting = Meeting.create!(
-      body_name: "Plan Commission",
-      meeting_type: "Regular",
-      starts_at: 7.days.from_now,
-      status: "parsed",
-      detail_page_url: "http://example.com/future",
-      location: "City Hall"
-    )
-    future_item = AgendaItem.create!(meeting: future_meeting, title: "Future Discussion")
-    AgendaItemTopic.create!(topic: @active_topic, agenda_item: future_item)
-    TopicAppearance.create!(
-      topic: @active_topic, meeting: future_meeting,
-      agenda_item: future_item, appeared_at: future_meeting.starts_at,
-      evidence_type: "agenda_item"
-    )
-
+  test "show always renders all six sections" do
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-upcoming", minimum: 1
+    assert_select ".topic-watch", 1
+    assert_select ".topic-upcoming", 1
+    assert_select ".topic-story", 1
+    assert_select ".topic-decisions", 1
+    assert_select ".topic-record", 1
   end
 
-  test "show hides upcoming section when no future meetings" do
+  test "show displays empty state for what to watch when no briefing" do
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-upcoming", count: 0
+    assert_select ".topic-watch .section-empty", text: /No analysis available/
   end
 
-  test "show displays briefing headline when present" do
+  test "show displays empty state for coming up when no future meetings" do
+    get topic_url(@active_topic)
+    assert_response :success
+    assert_select ".topic-upcoming .section-empty", text: /No upcoming meetings/
+  end
+
+  test "show displays empty state for story when no briefing" do
+    get topic_url(@active_topic)
+    assert_response :success
+    assert_select ".topic-story .section-empty", text: /hasn't been fully analyzed/
+  end
+
+  test "show displays empty state for key decisions when no motions" do
+    get topic_url(@active_topic)
+    assert_response :success
+    assert_select ".topic-decisions .section-empty", text: /No votes or motions/
+  end
+
+  test "show displays empty state for record when no generation data" do
+    get topic_url(@active_topic)
+    assert_response :success
+    assert_select ".topic-record .section-empty", text: /No meeting activity/
+  end
+
+  test "show displays what to watch from generation_data" do
     TopicBriefing.create!(
       topic: @active_topic,
-      headline: "Street repairs approved for downtown",
-      generation_tier: "headline_only"
-    )
-
-    get topic_url(@active_topic)
-    assert_response :success
-    assert_select ".topic-briefing-headline", minimum: 1
-    assert_select ".briefing-headline-text", text: "Street repairs approved for downtown"
-  end
-
-  test "show hides briefing sections when no briefing exists" do
-    get topic_url(@active_topic)
-    assert_response :success
-    assert_select ".topic-briefing-headline", count: 0
-    assert_select ".topic-briefing-editorial", count: 0
-    assert_select ".topic-briefing-record", count: 0
-  end
-
-  test "show displays editorial and record sections for full briefing" do
-    TopicBriefing.create!(
-      topic: @active_topic,
-      headline: "Street repairs approved",
-      editorial_content: "The council voted to fund repairs.\n\nWork begins in spring.",
-      record_content: "- Approved $50k budget\n- Timeline: March 2026",
+      headline: "Budget approved",
+      generation_data: {
+        "headline" => "Budget approved",
+        "editorial_analysis" => {
+          "what_to_watch" => "Watch for implementation timeline.",
+          "current_state" => "Council approved the budget.",
+          "process_concerns" => [],
+          "pattern_observations" => []
+        },
+        "factual_record" => [],
+        "resident_impact" => { "score" => 3, "rationale" => "Affects taxes." }
+      },
       generation_tier: "full"
     )
 
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-briefing-editorial", minimum: 1
-    assert_select ".topic-briefing-record", minimum: 1
+    assert_select ".topic-watch-callout", text: /Watch for implementation timeline/
   end
 
-  test "show loads decisions with motions and votes" do
-    item_with_motion = AgendaItem.create!(meeting: @meeting, title: "Vote Item")
-    AgendaItemTopic.create!(topic: @active_topic, agenda_item: item_with_motion)
-    motion = Motion.create!(
-      meeting: @meeting, agenda_item: item_with_motion,
-      description: "Approve street plan", outcome: "Passed"
-    )
-    member = Member.create!(name: "Ald. Smith")
-    Vote.create!(motion: motion, member: member, value: "yes")
-    TopicAppearance.create!(
-      topic: @active_topic, meeting: @meeting,
-      agenda_item: item_with_motion, appeared_at: @meeting.starts_at,
-      evidence_type: "agenda_item"
+  test "show displays story from generation_data current_state" do
+    TopicBriefing.create!(
+      topic: @active_topic,
+      headline: "Budget approved",
+      editorial_content: "Fallback editorial.",
+      generation_data: {
+        "headline" => "Budget approved",
+        "editorial_analysis" => {
+          "what_to_watch" => "Watch for timeline.",
+          "current_state" => "The council voted 5-2 to approve.",
+          "process_concerns" => ["Rushed through without public comment."],
+          "pattern_observations" => []
+        },
+        "factual_record" => [],
+        "resident_impact" => { "score" => 4, "rationale" => "Tax impact." }
+      },
+      generation_tier: "full"
     )
 
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-decisions", minimum: 1
+    assert_select ".topic-story .briefing-editorial-content", text: /voted 5-2/
+    assert_select ".topic-concerns-callout li", text: /Rushed through/
   end
 
-  test "show hides decisions section when no motions exist" do
+  test "show displays story from editorial_content fallback when no generation_data" do
+    TopicBriefing.create!(
+      topic: @active_topic,
+      headline: "Budget approved",
+      editorial_content: "Fallback editorial content here.",
+      generation_tier: "headline_only"
+    )
+
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-decisions", count: 0
+    assert_select ".topic-story .briefing-editorial-content", text: /Fallback editorial/
   end
 
-  test "show displays empty state when topic has no activity at all" do
-    empty_topic = Topic.create!(name: "Empty Topic", status: "approved", lifecycle_status: "active")
+  test "show renders timeline from generation_data factual_record" do
+    TopicBriefing.create!(
+      topic: @active_topic,
+      headline: "Street repairs",
+      generation_data: {
+        "headline" => "Street repairs",
+        "editorial_analysis" => {
+          "what_to_watch" => "Watch for contract award.",
+          "current_state" => "Repairs approved.",
+          "process_concerns" => [],
+          "pattern_observations" => []
+        },
+        "factual_record" => [
+          { "date" => "2025-09-02", "event" => "Council approved plan.", "meeting" => "City Council, Sep 2" },
+          { "date" => "2025-11-05", "event" => "Contractor selected.", "meeting" => "Public Works, Nov 5" }
+        ],
+        "resident_impact" => { "score" => 3, "rationale" => "Road closures." }
+      },
+      generation_tier: "full"
+    )
 
-    get topic_url(empty_topic)
+    get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-empty-state", minimum: 1
+    assert_select ".topic-timeline-entry", 2
+    assert_select ".topic-timeline-date", text: /Sep 2, 2025/
+    assert_select ".topic-timeline-content", text: /Council approved plan/
+    assert_select ".topic-timeline-meeting", text: /City Council, Sep 2/
   end
 
-  test "show upcoming cards are links to meeting pages" do
+  test "show loads upcoming appearances for future meetings" do
     future_meeting = Meeting.create!(
       body_name: "Plan Commission",
       meeting_type: "Regular",
@@ -368,16 +400,19 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".topic-upcoming a.card-link", minimum: 1
   end
 
-  test "show briefing freshness badge displays New for recent briefings" do
-    TopicBriefing.create!(
-      topic: @active_topic,
-      headline: "New development on topic",
-      generation_tier: "headline_only"
+  test "show loads decisions with motions and votes" do
+    item_with_motion = AgendaItem.create!(meeting: @meeting, title: "Vote Item")
+    AgendaItemTopic.create!(topic: @active_topic, agenda_item: item_with_motion)
+    motion = Motion.create!(
+      meeting: @meeting, agenda_item: item_with_motion,
+      description: "Approve street plan", outcome: "Passed"
     )
+    member = Member.create!(name: "Ald. Smith")
+    Vote.create!(motion: motion, member: member, value: "yes")
 
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".badge--primary", text: "New"
+    assert_select ".topic-decisions .topic-decision-item", minimum: 1
   end
 
   test "show key decisions displays vote label" do
@@ -395,9 +430,27 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".votes-label", text: "How they voted"
   end
 
+  test "show briefing freshness badge displays New for recent briefings" do
+    TopicBriefing.create!(
+      topic: @active_topic,
+      headline: "New development on topic",
+      generation_tier: "headline_only"
+    )
+
+    get topic_url(@active_topic)
+    assert_response :success
+    assert_select ".badge--primary", text: "New"
+  end
+
   test "show has back to topics button" do
     get topic_url(@active_topic)
     assert_response :success
     assert_select "a.btn", text: /Back to Topics/
+  end
+
+  test "show displays lifecycle badge" do
+    get topic_url(@active_topic)
+    assert_response :success
+    assert_select ".badge", text: "Active"
   end
 end
