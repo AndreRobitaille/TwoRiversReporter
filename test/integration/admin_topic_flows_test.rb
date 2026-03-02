@@ -27,7 +27,7 @@ class AdminTopicFlowsTest < ActionDispatch::IntegrationTest
   test "can view topics list with sorting" do
     get admin_topics_url
     assert_response :success
-    assert_select "tr", count: 4 # header + 3 rows
+    assert_select "tr", count: 7 # header + 3 topics × 2 rows (data + hidden preview)
 
     # Default sort by last_seen_at desc (Topic A is most recent seen)
     # Actually wait, topic1 seen 1 day ago, topic2 2 days ago, topic3 3 days ago.
@@ -40,7 +40,7 @@ class AdminTopicFlowsTest < ActionDispatch::IntegrationTest
     # I can check order by checking ids or content order.
 
     # Simple check:
-    rows = css_select("tbody tr")
+    rows = css_select("tbody tr:first-child")
     assert_match /topic c/i, rows[0].text
     assert_match /topic a/i, rows[1].text
     assert_match /topic b/i, rows[2].text
