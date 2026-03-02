@@ -27,4 +27,35 @@ module MeetingsHelper
     return nil if badges.empty?
     safe_join(badges, " ")
   end
+
+  # --- generation_data extraction helpers ---
+
+  def meeting_headline(generation_data)
+    return nil if generation_data.blank?
+    generation_data["headline"]
+  end
+
+  def meeting_highlights(generation_data)
+    return [] if generation_data.blank?
+    generation_data["highlights"] || []
+  end
+
+  def meeting_public_input(generation_data)
+    return [] if generation_data.blank?
+    generation_data["public_input"] || []
+  end
+
+  def meeting_item_details(generation_data)
+    return [] if generation_data.blank?
+    generation_data["item_details"] || []
+  end
+
+  def decision_badge_class(decision)
+    case decision&.downcase
+    when "passed" then "decision-badge--passed"
+    when "failed" then "decision-badge--failed"
+    when "tabled", "referred" then "decision-badge--tabled"
+    else "decision-badge--default"
+    end
+  end
 end

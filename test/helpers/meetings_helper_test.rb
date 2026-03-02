@@ -49,4 +49,89 @@ class MeetingsHelperTest < ActionView::TestCase
     result = meeting_status_badge(meeting)
     assert_includes result, "Agenda posted"
   end
+
+  # --- generation_data extraction helpers ---
+
+  setup do
+    @generation_data = {
+      "headline" => "Council approved $2.5M borrowing 6-3, tabled property assessment policy.",
+      "highlights" => [
+        { "text" => "Adopted intent-to-reimburse resolution", "citation" => "Page 3", "vote" => "6-3", "impact" => "high" },
+        { "text" => "Tabled property assessment ordinance", "citation" => "Page 2", "vote" => nil, "impact" => "high" }
+      ],
+      "public_input" => [
+        { "speaker" => "Jim Smith", "type" => "public_comment", "summary" => "Raised concerns about building condition" },
+        { "speaker" => "Councilmember Jones", "type" => "communication", "summary" => "Contacted by resident about parking" }
+      ],
+      "item_details" => [
+        {
+          "agenda_item_title" => "Rezoning at 3204 Lincoln Ave",
+          "summary" => "Plan Commission recommended approval.",
+          "public_hearing" => "Three calls for public input. No one spoke.",
+          "decision" => "Passed",
+          "vote" => "7-0",
+          "citations" => ["Page 2"]
+        },
+        {
+          "agenda_item_title" => "Property Assessment Ordinance",
+          "summary" => "Council chose to table rather than vote.",
+          "public_hearing" => nil,
+          "decision" => "Tabled",
+          "vote" => nil,
+          "citations" => ["Page 2"]
+        }
+      ]
+    }
+  end
+
+  test "meeting_headline extracts headline" do
+    assert_equal "Council approved $2.5M borrowing 6-3, tabled property assessment policy.",
+      meeting_headline(@generation_data)
+  end
+
+  test "meeting_headline returns nil for missing data" do
+    assert_nil meeting_headline(nil)
+    assert_nil meeting_headline({})
+  end
+
+  test "meeting_highlights extracts highlights array" do
+    highlights = meeting_highlights(@generation_data)
+    assert_equal 2, highlights.size
+    assert_equal "6-3", highlights.first["vote"]
+  end
+
+  test "meeting_highlights returns empty array for missing data" do
+    assert_equal [], meeting_highlights(nil)
+    assert_equal [], meeting_highlights({})
+  end
+
+  test "meeting_public_input extracts public input array" do
+    inputs = meeting_public_input(@generation_data)
+    assert_equal 2, inputs.size
+    assert_equal "public_comment", inputs.first["type"]
+  end
+
+  test "meeting_public_input returns empty array for missing data" do
+    assert_equal [], meeting_public_input(nil)
+  end
+
+  test "meeting_item_details extracts item details array" do
+    items = meeting_item_details(@generation_data)
+    assert_equal 2, items.size
+    assert_equal "Passed", items.first["decision"]
+    assert_equal "7-0", items.first["vote"]
+  end
+
+  test "meeting_item_details returns empty array for missing data" do
+    assert_equal [], meeting_item_details(nil)
+  end
+
+  test "decision_badge_class returns correct CSS class" do
+    assert_equal "decision-badge--passed", decision_badge_class("Passed")
+    assert_equal "decision-badge--failed", decision_badge_class("Failed")
+    assert_equal "decision-badge--tabled", decision_badge_class("Tabled")
+    assert_equal "decision-badge--tabled", decision_badge_class("Referred")
+    assert_equal "decision-badge--default", decision_badge_class("Other")
+    assert_equal "decision-badge--default", decision_badge_class(nil)
+  end
 end
