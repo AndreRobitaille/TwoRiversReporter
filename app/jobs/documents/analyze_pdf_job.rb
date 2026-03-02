@@ -87,10 +87,11 @@ module Documents
           SummarizeMeetingJob.perform_later(document.meeting_id)
         end
 
-        # Trigger Vote and Membership Extraction for minutes
+        # Trigger Vote, Membership, and Topic Extraction for minutes
         if document.document_type == "minutes_pdf"
           ExtractVotesJob.perform_later(document.meeting_id)
           ExtractCommitteeMembersJob.perform_later(document.meeting_id)
+          ExtractTopicsJob.perform_later(document.meeting_id)
         end
       end
     rescue StandardError => e
