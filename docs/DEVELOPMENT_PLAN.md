@@ -206,8 +206,11 @@ AI-generated content grounded in documents and Topic context.
 3. Download documents
 4. Extract text (classify quality)
 5. Parse packet HTML (if available)
-6. Associate agenda items to Topics
+6. Associate agenda items to Topics (initial extraction from agenda)
 7. Update Topic continuity metrics
+8. When minutes PDF arrives (weeks/months later): re-extract topics with
+   minutes context (prefers minutes over packet text; additive — existing
+   associations preserved)
 
 ------------------------------------------------------------------------
 

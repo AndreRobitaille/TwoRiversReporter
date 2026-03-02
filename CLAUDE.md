@@ -55,7 +55,7 @@ CI (`bin/ci` / `config/ci.rb`) runs: setup, rubocop, bundler-audit, importmap au
 ```
 City Website → Scraper Jobs (discover/parse meetings)
   → Document Download → PDF Text Extraction (+ OCR if image scan)
-  → Topic Detection & Association (AI)
+  → Topic Detection & Association (AI) ← runs on agenda parse AND minutes arrival
   → Topic Continuity Analysis (lifecycle derivation)
   → Summarization (topic-aware, with citations)
   → Resident-Facing Pages
@@ -89,7 +89,7 @@ City Website → Scraper Jobs (discover/parse meetings)
 - `Scrapers::` — Meeting discovery and page/agenda parsing
 - `Documents::` — Download, PDF analysis, OCR
 - `Topics::` — Continuity updates, backfills, description generation (`GenerateDescriptionJob`, `RefreshDescriptionsJob`)
-- Top-level: `ExtractTopicsJob`, `ExtractVotesJob`, `ExtractCommitteeMembersJob`, `SummarizeMeetingJob`, `IngestKnowledgeSourceJob`
+- Top-level: `ExtractTopicsJob` (runs on agenda parse AND minutes arrival; prefers minutes text over packet), `ExtractVotesJob`, `ExtractCommitteeMembersJob`, `SummarizeMeetingJob`, `IngestKnowledgeSourceJob`
 
 ### Routes
 
