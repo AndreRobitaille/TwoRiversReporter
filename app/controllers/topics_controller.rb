@@ -20,7 +20,7 @@ class TopicsController < ApplicationController
                         .where.not(id: hero_ids)
                         .order(last_activity_at: :desc)
 
-    @pagy, @topics = pagy(remaining_scope, limit: 20)
+    @pagy, @topics = pagy(:offset, remaining_scope, limit: 20)
 
     # Preload briefings to avoid N+1 on cards
     ActiveRecord::Associations::Preloader.new(

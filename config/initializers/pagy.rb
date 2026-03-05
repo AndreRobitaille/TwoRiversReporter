@@ -1,3 +1,1 @@
-require "pagy/extras/overflow"
-
-Pagy::DEFAULT[:overflow] = :last_page
+# Pagy 43+ serves empty pages by default on overflow (no extra needed)
