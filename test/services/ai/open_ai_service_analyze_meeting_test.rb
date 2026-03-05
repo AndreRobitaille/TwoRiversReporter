@@ -11,7 +11,7 @@ class OpenAiServiceAnalyzeMeetingTest < ActiveSupport::TestCase
     mock_chat = lambda do |parameters:|
       captured_params = parameters
       {
-        "choices" => [{
+        "choices" => [ {
           "message" => {
             "content" => {
               "headline" => "Test headline",
@@ -20,7 +20,7 @@ class OpenAiServiceAnalyzeMeetingTest < ActiveSupport::TestCase
               "item_details" => []
             }.to_json
           }
-        }]
+        } ]
       }
     end
 

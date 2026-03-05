@@ -321,7 +321,7 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
         "editorial_analysis" => {
           "what_to_watch" => "Watch for timeline.",
           "current_state" => "The council voted 5-2 to approve.",
-          "process_concerns" => ["Rushed through without public comment."],
+          "process_concerns" => [ "Rushed through without public comment." ],
           "pattern_observations" => []
         },
         "factual_record" => [],

@@ -8,7 +8,7 @@ class Ai::OpenAiServiceExtractTopicsTest < ActiveSupport::TestCase
   test "prompt forbids category names as topic tags" do
     captured_prompt = nil
     mock_response = {
-      "choices" => [{ "message" => { "content" => '{"items":[]}' } }]
+      "choices" => [ { "message" => { "content" => '{"items":[]}' } } ]
     }
 
     client = @service.instance_variable_get(:@client)
@@ -26,7 +26,7 @@ class Ai::OpenAiServiceExtractTopicsTest < ActiveSupport::TestCase
   test "re_extract_item_topics returns tags and topic_worthy for a single item" do
     captured_prompt = nil
     mock_response = {
-      "choices" => [{ "message" => { "content" => '{"tags":["fence setback rules"],"topic_worthy":true}' } }]
+      "choices" => [ { "message" => { "content" => '{"tags":["fence setback rules"],"topic_worthy":true}' } } ]
     }
 
     client = @service.instance_variable_get(:@client)
@@ -36,7 +36,7 @@ class Ai::OpenAiServiceExtractTopicsTest < ActiveSupport::TestCase
         item_summary: nil,
         document_text: "Amending Section 10-1-15 to regulate fences in front yards",
         broad_topic_name: "zoning",
-        existing_topics: ["conditional use permits", "downtown redevelopment"]
+        existing_topics: [ "conditional use permits", "downtown redevelopment" ]
       )
 
       parsed = JSON.parse(result)

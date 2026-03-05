@@ -48,7 +48,7 @@ namespace :topics do
   end
 
   desc "Re-extract items from a broad topic into specific topics"
-  task :split_broad_topic, [:topic_name] => :environment do |_t, args|
+  task :split_broad_topic, [ :topic_name ] => :environment do |_t, args|
     topic_name = args[:topic_name]
     abort "Usage: bin/rails topics:split_broad_topic[topic_name]" if topic_name.blank?
 

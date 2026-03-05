@@ -35,7 +35,7 @@ class CreateCommitteesAndRelatedTables < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :committee_memberships, [:committee_id, :member_id, :ended_on],
+    add_index :committee_memberships, [ :committee_id, :member_id, :ended_on ],
               name: "idx_committee_memberships_unique_active",
               unique: true,
               where: "ended_on IS NULL"

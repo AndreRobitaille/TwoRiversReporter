@@ -70,7 +70,7 @@ class MeetingsHelperTest < ActionView::TestCase
           "public_hearing" => "Three calls for public input. No one spoke.",
           "decision" => "Passed",
           "vote" => "7-0",
-          "citations" => ["Page 2"]
+          "citations" => [ "Page 2" ]
         },
         {
           "agenda_item_title" => "Property Assessment Ordinance",
@@ -78,7 +78,7 @@ class MeetingsHelperTest < ActionView::TestCase
           "public_hearing" => nil,
           "decision" => "Tabled",
           "vote" => nil,
-          "citations" => ["Page 2"]
+          "citations" => [ "Page 2" ]
         }
       ]
     }

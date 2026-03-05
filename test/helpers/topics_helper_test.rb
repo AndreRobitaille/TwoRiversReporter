@@ -128,9 +128,9 @@ class TopicsHelperTest < ActionView::TestCase
 
   test "briefing_process_concerns extracts from generation_data" do
     briefing = OpenStruct.new(generation_data: {
-      "editorial_analysis" => { "process_concerns" => ["No public input.", "Rushed timeline."] }
+      "editorial_analysis" => { "process_concerns" => [ "No public input.", "Rushed timeline." ] }
     })
-    assert_equal ["No public input.", "Rushed timeline."], briefing_process_concerns(briefing)
+    assert_equal [ "No public input.", "Rushed timeline." ], briefing_process_concerns(briefing)
   end
 
   test "briefing_process_concerns returns empty array when missing" do
