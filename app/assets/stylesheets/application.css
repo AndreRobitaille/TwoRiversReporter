@@ -460,6 +460,7 @@ small {
 .card-title {
   margin: 0;
   font-family: var(--font-display);
+  font-weight: 700;
   font-size: var(--font-size-lg);
 }
 
@@ -519,10 +520,10 @@ th, td {
 }
 
 th {
-  background: var(--color-bg);
+  background: var(--color-surface-raised);
   font-family: var(--font-data);
-  font-weight: var(--font-weight-semibold);
-  font-size: var(--font-size-sm);
+  font-weight: 500;
+  font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -569,7 +570,8 @@ tbody tr:hover {
 
 .form-label {
   display: block;
-  font-weight: var(--font-weight-medium);
+  font-family: var(--font-body);
+  font-weight: 500;
   margin-bottom: var(--space-2);
   font-size: var(--font-size-sm);
 }
@@ -580,7 +582,7 @@ tbody tr:hover {
   width: 100%;
   padding: var(--space-2) var(--space-3);
   font-size: var(--font-size-base);
-  font-family: inherit;
+  font-family: var(--font-body);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
@@ -592,7 +594,7 @@ tbody tr:hover {
 .form-select:focus-visible,
 .form-textarea:focus-visible {
   outline: none;
-  border-color: var(--color-primary);
+  border-color: var(--color-teal);
   box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
@@ -973,9 +975,13 @@ details[open] summary {
 .page-title {
   margin-bottom: var(--space-2);
   font-family: var(--font-display);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
 }
 
 .page-subtitle {
+  font-family: var(--font-body);
   color: var(--color-text-secondary);
   font-size: var(--font-size-lg);
   margin: 0;
