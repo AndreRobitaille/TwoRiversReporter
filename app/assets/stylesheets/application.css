@@ -2070,18 +2070,18 @@ th.sortable-header:hover {
 }
 
 .decision-badge--passed {
-  background: var(--color-success-bg, #dcfce7);
-  color: var(--color-success-text, #166534);
+  background: var(--color-success-light);
+  color: var(--color-success);
 }
 
 .decision-badge--failed {
-  background: var(--color-danger-bg, #fee2e2);
-  color: var(--color-danger-text, #991b1b);
+  background: var(--color-danger-light);
+  color: var(--color-danger);
 }
 
 .decision-badge--tabled {
-  background: var(--color-warning-bg, #fef3c7);
-  color: var(--color-warning-text, #92400e);
+  background: var(--color-warning-light);
+  color: var(--color-warning);
 }
 
 .decision-badge--default {
