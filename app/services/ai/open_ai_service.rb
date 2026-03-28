@@ -34,46 +34,19 @@ module Ai
     end
 
     def extract_votes(text)
-      prompt = <<~PROMPT
-        <extraction_spec>
-        You are a data extraction assistant. Extract formal motions and voting records from meeting minutes into JSON.
-
-        - Always follow this schema exactly (no extra fields).
-        - If a field is not present, set it to null.
-        - Before returning, re-scan to ensure no motions were missed.
-
-        Schema:
-        {
-          "motions": [
-            {
-              "description": "Text of the motion (e.g. 'Motion to approve the minutes')",
-              "outcome": "passed" | "failed" | "tabled" | "other",
-              "votes": [
-                { "member": "Member Name", "value": "yes" | "no" | "abstain" | "absent" | "recused" }
-              ]
-            }
-          ]
-        }
-        </extraction_spec>
-
-        <ambiguity_handling>
-        - For "roll call" votes, list every member.
-        - For "voice votes", leave "votes" empty unless exceptions are named.
-        - Infer "yes" from "Present" members on unanimous votes ONLY if confident.
-        </ambiguity_handling>
-
-        Text:
-        #{text.truncate(50000)}
-      PROMPT
+      template = PromptTemplate.find_by!(key: "extract_votes")
+      system_role = template.system_role
+      prompt = template.interpolate(text: text.truncate(50_000))
+      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 
       response = @client.chat(
         parameters: {
-          model: DEFAULT_MODEL,
+          model: model,
           response_format: { type: "json_object" },
           messages: [
-            { role: "system", content: "You are a data extraction assistant." },
+            (system_role.present? ? { role: "system", content: system_role } : nil),
             { role: "user", content: prompt }
-          ],
+          ].compact,
           temperature: 0.1
         }
       )
@@ -81,154 +54,45 @@ module Ai
     end
 
     def extract_committee_members(text)
-      prompt = <<~PROMPT
-        <extraction_spec>
-        Extract the roll call / attendance information from these meeting minutes into JSON.
-
-        Meeting minutes use various formats for roll call. Common patterns:
-        - "Present: Name1, Name2" / "Absent: Name3"
-        - "Councilmembers: Name1, Name2" / "Absent and Excused: Name3"
-        - "Also Present: Title, Name" (non-voting staff)
-        - "Guests: Name" (visitors, not committee members)
-        - Sometimes just a list of names with no labels (assume all present)
-
-        Rules:
-        - Committee/board members listed in the main roll call are voting members.
-        - People listed under "Also Present", with government titles (Director, Manager,
-          Chief, Clerk, Attorney, Secretary, Supervisor), or explicitly labeled as staff
-          are non_voting_staff. Include their title/capacity.
-        - People listed under "Guests" or "Visitors" are guests.
-        - If someone has a title like "Recording Secretary" they are non_voting_staff.
-        - Return full names as written. Do not abbreviate or alter names.
-        - If no absent members are listed, return an empty array for voting_members_absent.
-
-        Schema:
-        {
-          "voting_members_present": ["Full Name", ...],
-          "voting_members_absent": ["Full Name", ...],
-          "non_voting_staff": [{"name": "Full Name", "capacity": "Title"}, ...],
-          "guests": [{"name": "Full Name"}]
-        }
-        </extraction_spec>
-
-        Text:
-        #{text.truncate(50_000)}
-      PROMPT
+      template = PromptTemplate.find_by!(key: "extract_committee_members")
+      system_role = template.system_role
+      prompt = template.interpolate(text: text.truncate(50_000))
+      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 
       response = @client.chat(
         parameters: {
-          model: LIGHTWEIGHT_MODEL,
+          model: model,
           response_format: { type: "json_object" },
           messages: [
-            { role: "system", content: "You are a data extraction assistant. Return only valid JSON." },
+            (system_role.present? ? { role: "system", content: system_role } : nil),
             { role: "user", content: prompt }
-          ]
+          ].compact
         }
       )
       response.dig("choices", 0, "message", "content")
     end
 
     def extract_topics(items_text, community_context: "", existing_topics: [], meeting_documents_context: "")
-      existing_topics_text = if existing_topics.any?
-        "\n<existing_topics>\nThese topics already exist in the system. Prefer tagging items to these existing topics rather than creating new similar names:\n#{existing_topics.join("\n")}\n</existing_topics>\n"
-      else
-        ""
-      end
+      existing_topics_list = existing_topics.join("\n")
 
-      community_context_text = if community_context.present?
-        "\n<community_context>\n#{community_context}\n</community_context>\n"
-      else
-        ""
-      end
-
-      meeting_docs_text = if meeting_documents_context.present?
-        "\n<meeting_documents>\nThe following text comes from meeting packet/minutes PDFs. Use this to identify substantive topics when agenda item titles are generic (e.g. \"PUBLIC HEARING\"). Match document content to the agenda items above.\n#{meeting_documents_context.truncate(30000, separator: ' ')}\n</meeting_documents>\n"
-      else
-        ""
-      end
-
-      prompt = <<~PROMPT
-        <governance_constraints>
-        - Topics are long-lived civic concerns that may span multiple meetings, bodies, and extended periods.
-        - Prefer agenda items as structural anchors for topic detection.
-        - Distinguish routine procedural items from substantive civic issues.
-        - If confidence in topic classification is low, set confidence below 0.5 and classify as "Other".
-        - Do not infer motive or speculate about intent behind agenda item placement or wording.
-        </governance_constraints>
-        <topic_granularity>
-        Category names (Infrastructure, Public Safety, Parks & Rec, Finance, Zoning,
-        Licensing, Personnel, Governance) describe process DOMAINS, not topics.
-
-        NEVER use a category name as a topic tag. The "category" field already captures
-        the domain. The "tags" array must name the SPECIFIC civic concern.
-
-        Good topic names (specific enough to tell a coherent story over time):
-        - "conditional use permits" (recurring zoning process residents track)
-        - "fence setback rules" (specific ordinance change affecting homeowners)
-        - "downtown redevelopment" (ongoing planning effort)
-        - "bus route subsidy" (specific budget/service issue)
-
-        Bad topic names (too broad — contain dozens of unrelated concerns):
-        - "zoning" (covers CUPs, variances, rezoning, ordinances, land sales)
-        - "infrastructure" (covers roads, sewers, water, buildings)
-        - "finance" (covers budgets, borrowing, grants, fees)
-
-        Not topic-worthy (set topic_worthy: false):
-        - One-off procedural actions (a single plat review, routine survey map)
-        - Standard approvals with no controversy or recurring significance
-        - Items that happen once and are done
-
-        Ask yourself: "Would a resident follow this topic across multiple meetings?"
-        If the answer only makes sense for a SPECIFIC concern within the category,
-        name that concern. If the item is routine, mark it not topic-worthy.
-        </topic_granularity>
-        #{community_context_text}
-        #{existing_topics_text}
-        <extraction_spec>
-        Classify agenda items into high-level topics. Return JSON matching the schema below.
-
-        - Ignore "Minutes of Meetings" items if they refer to *previous* meetings (e.g. "Approve minutes of X"). Classify these as "Administrative".
-        - Do NOT extract topics from the titles of previous meeting minutes (e.g. if item is "Minutes of Public Works", do not tag "Public Works").
-        - If an item is purely administrative (Call to Order, Roll Call, Adjournment), classify as "Administrative".
-        - If an item is routine institutional business (individual license renewals, standard report acceptances, routine personnel actions, proclamations), classify as "Routine".
-        - When an agenda item title is generic (e.g. "PUBLIC HEARING", "NEW BUSINESS"), use attached document text or meeting document context to identify the actual substantive topic.
-        - When an agenda item references a catch-all ordinance section (e.g. "Height and Area Exceptions"), also identify the substantive civic concern if one exists.
-        - Topic names should be at a "neighborhood conversation" level — not hyper-specific (no addresses or applicant details in the topic name).
-        - For each tag, decide whether it represents a persistent civic concern worth tracking as a topic (topic_worthy: true) or a one-time routine item (topic_worthy: false).
-        - When a tag matches or is very similar to an existing topic name, use the existing topic name exactly.
-
-        Schema:
-        {
-          "items": [
-            {
-              "id": 123,
-              "category": "Infrastructure|Public Safety|Parks & Rec|Finance|Zoning|Licensing|Personnel|Governance|Other|Administrative|Routine",
-              "tags": ["Tag1", "Tag2"],
-              "topic_worthy": true,
-              "confidence": 0.9
-            }
-          ]
-        }
-
-        - "confidence" must be between 0.0 and 1.0.
-        - "topic_worthy" must be true or false. Set to false for routine, one-off, or procedural items.
-        - Use high confidence (>= 0.8) for clear, unambiguous civic topics.
-        - Use low confidence (< 0.5) for items where the topic is unclear or could be procedural.
-        </extraction_spec>
-
-        Agenda Items:
-        #{items_text.truncate(50000)}
-        #{meeting_docs_text}
-      PROMPT
+      template = PromptTemplate.find_by!(key: "extract_topics")
+      system_role = template.system_role
+      prompt = template.interpolate(
+        items_text: items_text.truncate(50_000),
+        community_context: community_context,
+        existing_topics: existing_topics_list,
+        meeting_documents_context: meeting_documents_context.to_s.truncate(30_000, separator: " ")
+      )
+      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 
       response = @client.chat(
         parameters: {
-          model: DEFAULT_MODEL,
+          model: model,
           response_format: { type: "json_object" },
           messages: [
-            { role: "system", content: "You are a civic data classifier for Two Rivers, WI." },
+            (system_role.present? ? { role: "system", content: system_role } : nil),
             { role: "user", content: prompt }
-          ],
+          ].compact,
           temperature: 0.1
         }
       )
@@ -236,37 +100,25 @@ module Ai
     end
 
     def refine_catchall_topic(item_title:, item_summary:, catchall_topic:, document_text:, existing_topics: [])
-      existing_topics_text = if existing_topics.any?
-        "Existing topics (prefer reusing these): #{existing_topics.join(', ')}"
-      else
-        ""
-      end
-
-      prompt = <<~PROMPT
-        An agenda item was tagged with "#{catchall_topic}", which is a catch-all ordinance section covering miscellaneous zoning exceptions.
-
-        Agenda item title: #{item_title}
-        #{item_summary.present? ? "Summary: #{item_summary}" : ""}
-
-        Document text:
-        #{document_text.truncate(6000, separator: ' ')}
-
-        #{existing_topics_text}
-
-        Decide: is this a minor/routine variance request, or a significant civic issue?
-
-        - Minor (standard fence permit, simple setback request): return {"action": "keep"}
-        - Significant (appeal, commercial construction, contested variance, public hearing): return {"action": "replace", "topic_name": "..."} with a topic name at the "neighborhood conversation" level (e.g. "zoning appeal", not "Riverside Seafood Inc 12x12 structure"). No addresses or applicant names in the topic name. Prefer reusing an existing topic name if one fits.
-      PROMPT
+      template = PromptTemplate.find_by!(key: "refine_catchall_topic")
+      system_role = template.system_role
+      prompt = template.interpolate(
+        item_title: item_title,
+        item_summary: item_summary.to_s,
+        catchall_topic: catchall_topic,
+        document_text: document_text.to_s.truncate(6000, separator: " "),
+        existing_topics: existing_topics.join(", ")
+      )
+      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 
       response = @client.chat(
         parameters: {
-          model: DEFAULT_MODEL,
+          model: model,
           response_format: { type: "json_object" },
           messages: [
-            { role: "system", content: "You are a civic topic classifier for Two Rivers, WI. Respond with JSON." },
+            (system_role.present? ? { role: "system", content: system_role } : nil),
             { role: "user", content: prompt }
-          ],
+          ].compact,
           temperature: 0.1
         }
       )
@@ -274,45 +126,25 @@ module Ai
     end
 
     def re_extract_item_topics(item_title:, item_summary:, document_text:, broad_topic_name:, existing_topics: [])
-      existing_topics_text = if existing_topics.any?
-        "Existing topics (prefer reusing these when appropriate): #{existing_topics.join(', ')}"
-      else
-        ""
-      end
-
-      prompt = <<~PROMPT
-        An agenda item was tagged with "#{broad_topic_name}", which is too broad to be
-        a useful topic. It's a process category, not a specific civic concern.
-
-        Re-classify this item. Return JSON with:
-        - "tags": array of specific topic names (0-2 tags), or empty if not topic-worthy
-        - "topic_worthy": true if this represents a persistent civic concern residents
-          would follow across meetings, false if it's routine/one-off
-
-        Agenda item title: #{item_title}
-        #{item_summary.present? ? "Summary: #{item_summary}" : ""}
-
-        Document text:
-        #{document_text.to_s.truncate(6000, separator: ' ')}
-
-        #{existing_topics_text}
-
-        Topic names should be at a "neighborhood conversation" level:
-        - Good: "conditional use permits", "fence setback rules", "downtown redevelopment"
-        - Bad: "zoning" (too broad), "123 Main St fence variance" (too narrow)
-        - If this is a routine one-off action, set topic_worthy to false and tags to []
-
-        Return JSON: {"tags": [...], "topic_worthy": true/false}
-      PROMPT
+      template = PromptTemplate.find_by!(key: "re_extract_item_topics")
+      system_role = template.system_role
+      prompt = template.interpolate(
+        item_title: item_title,
+        item_summary: item_summary.to_s,
+        document_text: document_text.to_s.truncate(6000, separator: " "),
+        broad_topic_name: broad_topic_name,
+        existing_topics: existing_topics.join(", ")
+      )
+      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 
       response = @client.chat(
         parameters: {
-          model: DEFAULT_MODEL,
+          model: model,
           response_format: { type: "json_object" },
           messages: [
-            { role: "system", content: "You are a civic data classifier for Two Rivers, WI." },
+            (system_role.present? ? { role: "system", content: system_role } : nil),
             { role: "user", content: prompt }
-          ],
+          ].compact,
           temperature: 0.1
         }
       )
@@ -322,159 +154,90 @@ module Ai
     def triage_topics(context_json)
       community_context = context_json.delete(:community_context) || context_json.delete("community_context") || ""
 
-      community_section = if community_context.present?
-        "\n<community_context>\nUse this context about Two Rivers residents to inform your approval and blocking decisions. Topics that matter to residents should be approved; routine institutional items should be blocked.\n#{community_context}\n</community_context>\n"
-      else
-        ""
-      end
-
-      prompt = <<~PROMPT
-        You are assisting a civic transparency system. Propose topic merges, approvals, and procedural blocks.
-
-        <governance_constraints>
-        - Topic Governance is binding.
-        - Prefer resident-facing canonical topics over granular variations (e.g., "Alcohol licensing" over "Beer"/"Wine").
-        - Do NOT merge if scope is ambiguous or evidence conflicts.
-        - Procedural/admin items should be blocked (Roberts Rules, roll call, adjournment, agenda approval, minutes).
-        </governance_constraints>
-        #{community_section}
-        <input>
-        The JSON includes:
-        - topics: list of topic records with recent agenda items.
-        - similarity_candidates: suggested similar topics.
-        - procedural_keywords: keywords that indicate procedural items.
-        </input>
-
-        <output_schema>
-        Return JSON with the exact schema below.
-        {
-          "merge_map": [
-            { "canonical": "Topic Name", "aliases": ["Alt1", "Alt2"], "confidence": 0.0, "rationale": "..." }
-          ],
-          "approvals": [
-            { "topic": "Topic Name", "approve": true, "confidence": 0.0, "rationale": "..." }
-          ],
-          "blocks": [
-            { "topic": "Topic Name", "block": true, "confidence": 0.0, "rationale": "..." }
-          ]
-        }
-        </output_schema>
-
-        <rules>
-        - "confidence" must be between 0.0 and 1.0.
-        - Only include items you are confident about.
-        - If unsure, omit the entry.
-        - Rationale should be short and cite the evidence signals (agenda items/titles).
-        </rules>
-
-        INPUT JSON:
-        #{context_json.to_json}
-      PROMPT
-
       if use_gemini?
+        community_section = if community_context.present?
+          "\n<community_context>\nUse this context about Two Rivers residents to inform your approval and blocking decisions. Topics that matter to residents should be approved; routine institutional items should be blocked.\n#{community_context}\n</community_context>\n"
+        else
+          ""
+        end
+
+        prompt = <<~PROMPT
+          You are assisting a civic transparency system. Propose topic merges, approvals, and procedural blocks.
+
+          <governance_constraints>
+          - Topic Governance is binding.
+          - Prefer resident-facing canonical topics over granular variations (e.g., "Alcohol licensing" over "Beer"/"Wine").
+          - Do NOT merge if scope is ambiguous or evidence conflicts.
+          - Procedural/admin items should be blocked (Roberts Rules, roll call, adjournment, agenda approval, minutes).
+          </governance_constraints>
+          #{community_section}
+          <input>
+          The JSON includes:
+          - topics: list of topic records with recent agenda items.
+          - similarity_candidates: suggested similar topics.
+          - procedural_keywords: keywords that indicate procedural items.
+          </input>
+
+          <output_schema>
+          Return JSON with the exact schema below.
+          {
+            "merge_map": [
+              { "canonical": "Topic Name", "aliases": ["Alt1", "Alt2"], "confidence": 0.0, "rationale": "..." }
+            ],
+            "approvals": [
+              { "topic": "Topic Name", "approve": true, "confidence": 0.0, "rationale": "..." }
+            ],
+            "blocks": [
+              { "topic": "Topic Name", "block": true, "confidence": 0.0, "rationale": "..." }
+            ]
+          }
+          </output_schema>
+
+          <rules>
+          - "confidence" must be between 0.0 and 1.0.
+          - Only include items you are confident about.
+          - If unsure, omit the entry.
+          - Rationale should be short and cite the evidence signals (agenda items/titles).
+          </rules>
+
+          INPUT JSON:
+          #{context_json.to_json}
+        PROMPT
+
         gemini_generate(prompt, temperature: 0.1)
       else
+        template = PromptTemplate.find_by!(key: "triage_topics")
+        system_role = template.system_role
+        prompt = template.interpolate(context_json: context_json.to_json)
+        model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
+
         response = @client.chat(
           parameters: {
-            model: DEFAULT_MODEL,
+            model: model,
             response_format: { type: "json_object" },
             messages: [
-              { role: "system", content: "You are a careful civic topic triage assistant." },
+              (system_role.present? ? { role: "system", content: system_role } : nil),
               { role: "user", content: prompt }
-            ],
+            ].compact,
             temperature: 0.1
           }
         )
-
         response.dig("choices", 0, "message", "content")
       end
     end
 
     def analyze_topic_summary(context_json)
-      system_role = "You are a civic analyst writing for residents of Two Rivers, WI. You separate factual record from institutional framing and civic sentiment. You are skeptical of institutional process but do not ascribe bad intent to individuals. Use 'residents' not 'locals.'"
-
-      prompt = <<~PROMPT
-        Analyze the provided Topic Context and return a JSON analysis plan.
-
-        <governance_constraints>
-        - Topic Governance is binding.
-        - Factual Record: Must have citations. If no document evidence, do not state as fact.
-        - Institutional Framing: Label staff summaries/titles as framing, not truth.
-        - Civic Sentiment: Use observational language ("appears to", "residents expressed"). No unanimity claims.
-        - Continuity: Explicitly note recurrence, deferrals, and cross-body progression.
-        </governance_constraints>
-
-        #{prepare_committee_context}
-        TOPIC CONTEXT (JSON):
-        #{context_json.to_json}
-
-        <citation_rules>
-        - You must include citations for all claims in "factual_record" and "institutional_framing".
-        - Use the "citation_id" provided in the input context (e.g. "doc-123").
-        - The "citations" array in the output should contain objects: { "citation_id": "doc-123", "label": "Packet Page 12" }.
-        - If no citation is available for a claim, do not include it in the factual record.
-        </citation_rules>
-
-        <resident_reported_rules>
-        - If "resident_reported_context" is present in the input, include it only in the "resident_reported_context" section.
-        - Never place resident-reported information into factual_record.
-        - Always preserve the label "Resident-reported (no official record)".
-        </resident_reported_rules>
-
-        <headline_rules>
-        - Write one plain-language sentence that a Two Rivers resident would understand without context.
-        - Focus on what happened or what is coming, not on committee process or institutional mechanics.
-        - Be specific: "Council approves $2.1M senior center contract in 5-2 vote" not "Senior center topic discussed."
-        </headline_rules>
-
-        <resident_impact_rules>
-        - Score resident impact 1-5 based on how directly this affects the daily lives, property, finances, community identity, or public services of Two Rivers residents.
-        - 1: Routine procedural item, no direct resident impact.
-        - 2: Minor administrative matter with indirect effects.
-        - 3: Moderate impact — affects a specific group or neighborhood.
-        - 4: Significant impact — affects most residents (taxes, major infrastructure, services).
-        - 5: Major impact — community-wide financial, identity, or quality-of-life change.
-        - Consider: public comment volume, financial impact on residents, physical changes to the community, threats to community identity or services, and whether residents have expressed concern.
-        - Two Rivers is a small post-industrial city. Residents care about property taxes, development changes, community services, and whether their leaders are listening.
-        </resident_impact_rules>
-
-        <extraction_spec>
-        Return a JSON object matching this schema exactly.
-
-        Schema:
-        {
-          "topic_name": "Canonical name",
-          "lifecycle_status": "active|dormant|resolved|recurring",
-          "factual_record": [
-            { "statement": "Verified claim.", "citations": [{ "citation_id": "...", "label": "..." }] }
-          ],
-          "institutional_framing": [
-             { "statement": "How the city frames this.", "source": "Staff Summary", "citations": [{ "citation_id": "...", "label": "..." }] }
-          ],
-          "civic_sentiment": [
-             { "observation": "Observed resident feedback.", "evidence": "Public Comment", "citations": [{ "citation_id": "...", "label": "..." }] }
-          ],
-          "resident_reported_context": [
-             { "statement": "Resident-reported context.", "label": "Resident-reported (no official record)" }
-          ],
-          "continuity_signals": [
-             { "signal": "recurrence|deferral|disappearance|cross_body_progression", "details": "Explanation", "citations": [{ "citation_id": "...", "label": "..." }] }
-          ],
-          "decision_hinges": ["Unknowns or key dependencies"],
-          "ambiguities": ["Conflicting info"],
-          "verification_notes": ["What to check"],
-          "headline": "One plain-language sentence a resident would understand without context. Focus on what happened or what is coming, not on committee process.",
-          "resident_impact": {
-            "score": 3,
-            "rationale": "Brief explanation of why this matters to Two Rivers residents"
-          }
-        }
-        </extraction_spec>
-      PROMPT
+      template = PromptTemplate.find_by!(key: "analyze_topic_summary")
+      system_role = template.interpolate_system_role(committee_context: prepare_committee_context)
+      prompt = template.interpolate(
+        committee_context: prepare_committee_context,
+        context_json: context_json.to_json
+      )
+      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 
       response = @client.chat(
         parameters: {
-          model: DEFAULT_MODEL,
+          model: model,
           response_format: { type: "json_object" },
           messages: [
             { role: "system", content: system_role },
@@ -488,42 +251,14 @@ module Ai
     end
 
     def render_topic_summary(plan_json)
-      system_role = "You are a civic engagement writer for residents of Two Rivers, WI. Write in a direct, skeptical-but-fair editorial voice. Help residents understand what is happening and why it matters. Use 'residents' not 'locals.'"
-
-      prompt = <<~PROMPT
-        Using the provided TOPIC ANALYSIS (JSON), write a Markdown summary for this Topic's appearance in the meeting.
-
-        <style_guide>
-        - Heading 2 (##) for the Topic Name.
-        - Section: **Factual Record** (Bulleted). Append citations like [Packet Page 12].
-        - Section: **Institutional Framing** (Bulleted). Note where framing diverges from outcomes or resident concerns.
-        - Section: **Civic Sentiment** (Bulleted, if any). Use observational language.
-        - Section: **Resident-reported (no official record)** (Bulleted, if any).
-        - Section: **Continuity** (If signals exist). Note deferrals, recurrence, disappearance.
-        - Do NOT mix these categories.
-        - Be direct and plain-spoken. No government jargon.
-        - Use "residents" not "locals."
-        - If a section is empty, omit it (except Factual Record, which should note "No new factual record" if empty).
-        </style_guide>
-
-        <citation_rendering>
-        - When rendering citations, use the "label" field from the citation object.
-        - Format: Statement [Label].
-        </citation_rendering>
-
-        <resident_reported_rendering>
-        - If resident_reported_context is present, render it under the exact heading:
-          **Resident-reported (no official record)**.
-        - Do not add citations to this section.
-        </resident_reported_rendering>
-
-        INPUT (JSON):
-        #{plan_json}
-      PROMPT
+      template = PromptTemplate.find_by!(key: "render_topic_summary")
+      system_role = template.interpolate_system_role
+      prompt = template.interpolate(plan_json: plan_json.to_s)
+      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 
       response = @client.chat(
         parameters: {
-          model: DEFAULT_MODEL,
+          model: model,
           messages: [
             { role: "system", content: system_role },
             { role: "user", content: prompt }
@@ -536,82 +271,17 @@ module Ai
     end
 
     def analyze_topic_briefing(context)
-      system_role = <<~ROLE
-        You are a neighborhood reporter writing for residents of Two Rivers, WI.
-        Your readers are mostly 35+, many over 60. They scan on their phones.
-        They want the gist fast — what happened, why it matters, what to watch.
-        Write like you're explaining it to a neighbor, not writing a policy memo.
-        Never use government jargon. Never say "locals" — say "residents."
-      ROLE
-
-      prompt = <<~PROMPT
-        Analyze this topic's history across meetings. Return a JSON analysis.
-
-        <voice>
-        - Write like a sharp neighbor who reads the agendas, not a policy analyst.
-        - Be skeptical of process and decisions, not of people.
-        - Translate jargon: "general obligation promissory notes" → "borrowing",
-          "land disposition" → "selling city land", "parameters" → "limits".
-        - NEVER reference your own source limitations. Don't say "the record
-          provided does not show" or "in the materials provided." If you don't
-          know the outcome, say "No vote has been reported yet" or "Still pending."
-        - Keep it short. These readers scan, they don't study.
-        - Note who benefits from decisions when relevant.
-        - Do not ascribe malice or bad intent to individuals.
-        </voice>
-
-        <constraints>
-        - Factual claims must be grounded in the source data. No evidence = don't state it.
-        - Civic sentiment: observational ("residents pushed back", "drew complaints").
-        - Note deferrals, recurrence, disappearance — these are patterns residents care about.
-        - Don't invent continuity that isn't in the data.
-        - For citations, use the meeting/committee name and date — NOT internal IDs.
-          Good: "City Council, Nov 17" or "Public Works Committee, Jan 27"
-          Bad: "[agenda-309]" or "[appearance-2481]"
-        </constraints>
-
-        #{prepare_committee_context}
-
-        TOPIC CONTEXT (JSON):
-        #{context.to_json}
-
-        <extraction_spec>
-        Return a JSON object matching this schema:
-        {
-          "headline": "1-2 short sentences, 20 words max total. Like a newspaper headline.
-            Backward-looking: what just happened or where things stand.
-            Good: 'City wants to cut bus subsidy paid by property taxes. No plan yet.'
-            Bad: 'The City has discussed reducing Two Rivers property-tax support for Maritime Metro Transit Route 1 and separately set 2026 borrowing parameters'",
-          "upcoming_headline": "Forward-looking headline (20 words max) if the topic has upcoming meetings.
-            Focus on what's next — the vote, hearing, or decision coming up.
-            Include the committee name and date.
-            Example: 'Council votes on paving list, Mar 4'
-            Return null if no upcoming meetings in the context.",
-          "editorial_analysis": {
-            "current_state": "1-2 sentences. Plain language. What just happened or where it stands.",
-            "pattern_observations": ["Short observations about patterns, if any"],
-            "process_concerns": ["Process red flags, if any — keep brief"],
-            "what_to_watch": "One sentence about what's next, or null"
-          },
-          "factual_record": [
-            {"event": "What happened — plain language", "date": "YYYY-MM-DD", "meeting": "City Council or committee name"}
-          ],
-          "civic_sentiment": [
-            {"observation": "What residents said/want", "evidence": "Source", "meeting": "meeting name"}
-          ],
-          "continuity_signals": [
-            {"signal": "recurrence|deferral|disappearance|cross_body_progression", "details": "...", "meeting": "meeting name"}
-          ],
-          "resident_impact": {"score": 1, "rationale": "One sentence — why residents should care"},
-          "ambiguities": ["What's still unclear"],
-          "verification_notes": ["What to check"]
-        }
-        </extraction_spec>
-      PROMPT
+      template = PromptTemplate.find_by!(key: "analyze_topic_briefing")
+      system_role = template.interpolate_system_role(committee_context: prepare_committee_context)
+      prompt = template.interpolate(
+        committee_context: prepare_committee_context,
+        context: context.to_json
+      )
+      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 
       response = @client.chat(
         parameters: {
-          model: DEFAULT_MODEL,
+          model: model,
           response_format: { type: "json_object" },
           messages: [
             { role: "system", content: system_role },
@@ -625,75 +295,14 @@ module Ai
     end
 
     def render_topic_briefing(analysis_json)
-      system_role = <<~ROLE
-        You are a neighborhood reporter writing for residents of Two Rivers, WI.
-        Your readers are mostly 35+, many over 60, reading on their phones.
-        They scan — they don't study. They want the gist in 30 seconds.
-        Write like you're explaining it to a neighbor over the fence.
-        Never use government jargon. Never say "locals" — say "residents."
-      ROLE
-
-      prompt = <<~PROMPT
-        Using the TOPIC ANALYSIS below, generate two pieces of content.
-        Return a JSON object with keys "editorial_content" and "record_content".
-
-        <editorial_content_guide>
-        "What's Going On" — the quick version residents actually need.
-
-        STRUCTURE:
-        - Start with what happened or where things stand.
-        - Then the "so what" — why this matters, who it affects, what's unclear.
-        - End with **Worth watching:** if there's something coming up.
-        - Total: 100-200 words. Say enough to give context, then stop.
-
-        TONE:
-        - Neighborhood conversation, not policy memo. But not snarky either.
-        - Clear, direct sentences. Don't force them to be choppy — just avoid
-          run-on bureaucratic constructions.
-        - Short paragraphs (2-4 sentences each).
-        - No jargon: say "borrowing" not "general obligation promissory notes."
-        - NEVER reference your sources meta-textually. Don't say "the record
-          shows" or "in the materials provided" or "the provided documents."
-          Just state what happened. If you don't know the outcome, say so plainly:
-          "No vote yet" or "Still waiting on a decision."
-        - Be analytical but fair. Point out what's missing or unclear, but don't
-          editorialize with words like "sketchy" or loaded characterizations.
-        - "The City wants to..." not "The City has indicated a desire to..."
-
-        FORMATTING:
-        - Use **bold** for key phrases that help scanners find the point fast.
-        - Do NOT use section headers (##, ###) — just paragraphs.
-        - Do NOT include inline citations like [agenda-123]. The "Record" section
-          below provides all sourcing. The editorial should read cleanly without
-          reference codes cluttering it up.
-        </editorial_content_guide>
-
-        <record_content_guide>
-        Chronological bullet list. Just the facts.
-
-        CRITICAL: Return a plain markdown string with bullet lines. Each line
-        starts with "- ". Do NOT return a JSON array — return a string.
-
-        Format each bullet exactly like this:
-        - Nov 17, 2025 — Council discussed cutting Route 1 bus subsidy (City Council)
-        - Jan 27, 2026 — Committee reviewed land pricing (BIDC-CDA)
-
-        Rules:
-        - Plain language. "Council approved 4-3" not "motion carried with a vote of 4-3."
-        - Oldest first, newest last.
-        - End each bullet with the meeting/committee name in parentheses.
-          Do NOT use internal IDs like [agenda-309]. Use the meeting name.
-        - No editorializing — just what happened and when.
-        - Use readable dates (e.g., "Nov 17, 2025") not ISO format.
-        </record_content_guide>
-
-        TOPIC ANALYSIS (JSON):
-        #{analysis_json}
-      PROMPT
+      template = PromptTemplate.find_by!(key: "render_topic_briefing")
+      system_role = template.interpolate_system_role
+      prompt = template.interpolate(analysis_json: analysis_json.to_s)
+      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 
       response = @client.chat(
         parameters: {
-          model: DEFAULT_MODEL,
+          model: model,
           response_format: { type: "json_object" },
           messages: [
             { role: "system", content: system_role },
@@ -709,32 +318,25 @@ module Ai
     end
 
     def generate_briefing_interim(context)
-      prompt = <<~PROMPT
-        You are updating a topic briefing headline and adding a brief note
-        about an upcoming meeting. Return a JSON object with keys "headline"
-        and "upcoming_note".
-
-        Topic: #{context[:topic_name]}
-        Current headline: #{context[:current_headline]}
-        Meeting: #{context[:meeting_body]} on #{context[:meeting_date]}
-        Agenda items: #{context[:agenda_items].to_json}
-
-        <rules>
-        - "headline": One sentence, plain language. Focus on what's coming.
-          Example: "Council to vote on modified parking plan, Mar 4"
-        - "upcoming_note": 1-2 sentences about what to expect at the meeting
-          based on agenda items. Plain language, no jargon.
-        - Use "residents" not "locals."
-        </rules>
-      PROMPT
+      template = PromptTemplate.find_by!(key: "generate_briefing_interim")
+      system_role = template.system_role
+      prompt = template.interpolate(
+        topic_name: context[:topic_name].to_s,
+        current_headline: context[:current_headline].to_s,
+        meeting_body: context[:meeting_body].to_s,
+        meeting_date: context[:meeting_date].to_s,
+        agenda_items: context[:agenda_items].to_json
+      )
+      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 
       response = @client.chat(
         parameters: {
-          model: LIGHTWEIGHT_MODEL,
+          model: model,
           response_format: { type: "json_object" },
           messages: [
+            (system_role.present? ? { role: "system", content: system_role } : nil),
             { role: "user", content: prompt }
-          ]
+          ].compact
         }
       )
 
@@ -751,44 +353,23 @@ module Ai
       activity_text = agenda_items.map { |ai| "- #{ai[:title]}#{ai[:summary].present? ? ": #{ai[:summary]}" : ""}" }.join("\n")
       headlines_text = headlines.any? ? "\nRecent headlines:\n#{headlines.map { |h| "- #{h}" }.join("\n")}" : ""
 
-      if agenda_items.size >= 3
-        user_prompt = <<~PROMPT
-          Describe what the civic topic "#{topic_name}" covers based on the following activity:
-
-          #{activity_text}
-          #{headlines_text}
-
-          Rules:
-          - One sentence, max 80 characters
-          - Describe the scope, not a specific event
-          - No addresses, applicant names, dates, or vote counts
-          - Plain neighborhood language, not bureaucratic jargon
-          - Don't start with "This topic" or "Covers"
-          - Return ONLY the sentence, no quotes
-        PROMPT
-      else
-        user_prompt = <<~PROMPT
-          Write a broad civic-concept description for the topic "#{topic_name}".
-          #{activity_text.present? ? "\nKnown activity:\n#{activity_text}" : ""}
-          #{headlines_text}
-
-          Rules:
-          - One sentence, max 80 characters
-          - Describe the scope, not a specific event
-          - No addresses, applicant names, dates, or vote counts
-          - Plain neighborhood language, not bureaucratic jargon
-          - Don't start with "This topic" or "Covers"
-          - Return ONLY the sentence, no quotes
-        PROMPT
-      end
+      key = agenda_items.size >= 3 ? "generate_topic_description_detailed" : "generate_topic_description_broad"
+      template = PromptTemplate.find_by!(key: key)
+      system_role = template.system_role
+      user_prompt = template.interpolate(
+        topic_name: topic_name,
+        activity_text: activity_text,
+        headlines_text: headlines_text
+      )
+      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 
       response = @client.chat(
         parameters: {
-          model: LIGHTWEIGHT_MODEL,
+          model: model,
           messages: [
-            { role: "system", content: "You are a concise civic topic describer for Two Rivers, WI." },
+            (system_role.present? ? { role: "system", content: system_role } : nil),
             { role: "user", content: user_prompt }
-          ]
+          ].compact
         }
       )
 
@@ -799,106 +380,19 @@ module Ai
     # Structured meeting analysis — produces JSON for direct rendering.
     # Called by SummarizeMeetingJob to store structured JSON in generation_data.
     def analyze_meeting_content(doc_text, kb_context, type)
-      system_role = <<~ROLE
-        You are a civic journalist covering Two Rivers, WI city government
-        for a community news site. Your audience is residents — mostly 35+,
-        mobile-heavy, skeptical of city leadership, checking in casually.
-        They want the gist fast in plain language. No government jargon.
-
-        Write in editorial voice: skeptical of process and decisions (not of
-        people), editorialize early, surface patterns, note deferrals, flag
-        when framing doesn't match outcomes. Criticize decisions and
-        processes, not individuals.
-      ROLE
-
-      prompt = <<~PROMPT
-        Analyze the provided #{type} text and return a JSON object with the
-        structure specified below.
-
-        #{kb_context}
-        #{prepare_committee_context}
-
-        <guidelines>
-        - Write in plain language a resident would use at a neighborhood
-          gathering. No government jargon ("motion to waive reading and
-          adopt the ordinance to amend..." → "voted to change the rule").
-        - Headline: 1-2 backward-looking sentences, max ~40 words.
-          What happened at this meeting that residents should know.
-        - Highlights: max 3 items, highest resident impact first. Include
-          vote tallies where votes occurred. Each highlight gets a page
-          citation.
-        - Public input: Distinguish general public comment (resident spoke
-          at open comment period, unrelated to specific agenda items) from
-          communication (council/committee member relayed resident contact).
-          Item-specific public hearings go in item_details, NOT here.
-          Redact residential addresses: "[Address redacted]".
-        - Item details: Cover substantive agenda items only. Each gets 2-4
-          sentences of editorial summary explaining what happened and why it
-          matters. Include public_hearing note for items with formal public
-          input (Wisconsin law three-calls). Include decision and vote tally
-          where applicable. Anchor citations to page numbers.
-        </guidelines>
-
-        <procedural_filter>
-        EXCLUDE these procedural items from item_details entirely:
-        - Adjournment motions
-        - Minutes approval
-        - Consent agenda approval (unless a specific item was pulled for
-          separate discussion)
-        - Remote participation approval
-        - Treasurer's report acceptance
-        - Reconvene in open session
-
-        DO NOT EXCLUDE closed session motions — they contain statutory
-        justification (Wis. Stats 19.85) that residents need for open
-        meetings law transparency.
-        </procedural_filter>
-
-        DOCUMENT TEXT:
-        #{doc_text.truncate(100_000)}
-
-        <output_schema>
-        Return a JSON object matching this schema exactly:
-
-        {
-          "headline": "1-2 sentences summarizing what happened at this meeting.",
-          "highlights": [
-            {
-              "text": "What happened and why it matters to residents.",
-              "citation": "Page X",
-              "vote": "6-3 or null if no vote",
-              "impact": "high|medium|low"
-            }
-          ],
-          "public_input": [
-            {
-              "speaker": "Speaker Name",
-              "type": "public_comment|communication",
-              "summary": "What they said or relayed, in plain language."
-            }
-          ],
-          "item_details": [
-            {
-              "agenda_item_title": "Title as it appears on the agenda",
-              "summary": "2-4 sentences: what happened, why it matters, editorial context.",
-              "public_hearing": "Description of public hearing input, or null",
-              "decision": "Passed|Failed|Tabled|Referred|null",
-              "vote": "7-0 or null",
-              "citations": ["Page X"]
-            }
-          ]
-        }
-
-        highlights: max 3 items. Order by resident impact (highest first).
-        public_input: include all speakers. Empty array if none.
-        item_details: substantive items only (see procedural_filter above).
-        All text fields: plain language, no jargon.
-        </output_schema>
-      PROMPT
+      template = PromptTemplate.find_by!(key: "analyze_meeting_content")
+      system_role = template.interpolate_system_role(committee_context: prepare_committee_context)
+      prompt = template.interpolate(
+        kb_context: kb_context.to_s,
+        committee_context: prepare_committee_context,
+        type: type.to_s,
+        doc_text: doc_text.truncate(100_000)
+      )
+      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 
       response = @client.chat(
         parameters: {
-          model: DEFAULT_MODEL,
+          model: model,
           response_format: { type: "json_object" },
           messages: [
             { role: "system", content: system_role },
@@ -989,68 +483,17 @@ module Ai
 
     # PASS 2: Rendering (legacy — used by summarize_minutes/packet wrappers)
     def render_meeting_summary(doc_text, plan_json, type)
-      system_role = "You are a civic engagement assistant for Two Rivers, WI. Write clear, neutral, truth-seeking summaries."
-
-      prompt = <<~PROMPT
-        Using the provided ANALYSIS PLAN (JSON), write a final Markdown summary.
-
-        <output_verbosity_spec>
-        - Follow the structure below EXACTLY.
-        - TL;DR: Max 3 bullets.
-        - Top Topics: Max 5 items.
-        - Other Topics: 1 line per item.
-        - Public Comment: Summarize key points, keep it neutral.
-        - Use standard Markdown headers (##, ###).
-        </output_verbosity_spec>
-
-        <structure_enforcement>
-        ## TL;DR (Highest impact first)
-        (Bulleted list of top 3 critical items. Include citations [Page X].)
-
-        ## Top Topics (Detailed)
-        (Iterate 'top_topics'. Format:)
-        ### 1) [Title] — Impact: [Level]
-        *   **Proposal:** [Description] [Citations]
-        *   **Why it matters:** [Why It Matters]
-        *   **Key Details:** [Key Details]
-
-        ## Other Topics (Brief)
-        (Bulleted list of 'other_topics'.)
-
-        ## Institutional Framing
-        (If 'framing_notes' exist, render as a bulleted list. These are observations about how the city presents or frames issues — not neutral facts. Omit this section if empty.)
-
-        ## Public Comment
-        (Summarize 'public_comments'. Redact addresses.)
-
-        ## Official Discussion
-        (Summarize 'official_discussion'.)
-
-        ## Decision Hinges (Key Unknowns)
-        (Bulleted list of 'decision_hinges'.)
-
-        ## Verification Notes
-        (List documents/pages to check.)
-        </structure_enforcement>
-
-        <uncertainty_and_ambiguity>
-        - Do not speculate. Do not assign motive or infer intent. Describe what is observable.
-        - Treat staff recommendations and agenda titles as institutional framing, not neutral description.
-        - If a detail is missing in the JSON plan, do not invent it.
-        - Use "Not specified" for missing data.
-        </uncertainty_and_ambiguity>
-
-        INPUTS:
-        ANALYSIS PLAN (JSON):
-        #{plan_json}
-
-        ORIGINAL TEXT (For reference):
-        #{doc_text.truncate(50000)}
-      PROMPT
+      template = PromptTemplate.find_by!(key: "render_meeting_summary")
+      system_role = template.interpolate_system_role
+      prompt = template.interpolate(
+        plan_json: plan_json.to_s,
+        doc_text: doc_text.truncate(50_000)
+      )
+      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 
       response = @client.chat(
         parameters: {
-          model: DEFAULT_MODEL,
+          model: model,
           messages: [
             { role: "system", content: system_role },
             { role: "user", content: prompt }
