@@ -81,7 +81,7 @@ City Website → Scraper Jobs (discover/parse meetings)
 
 ### Key Services
 
-- **`Ai::OpenAiService`** — All OpenAI calls centralized here. Handles summarization, topic extraction, vote extraction, triage, topic analysis, topic description generation. Two model constants: `DEFAULT_MODEL` (gpt-5.2, reasoning) and `LIGHTWEIGHT_MODEL` (gpt-5-mini, for cheap tasks like description generation). Note: `gpt-5-mini` does not support the `temperature` parameter. Key summary methods use a two-pass architecture: `analyze_topic_briefing` / `render_topic_briefing` (rolling briefings) and `analyze_topic_summary` / `render_topic_summary` (per-meeting snapshots). Prompts loaded from `PromptTemplate` (database) with fallback to hardcoded heredocs.
+- **`Ai::OpenAiService`** — All OpenAI calls centralized here. Handles summarization, topic extraction, vote extraction, triage, topic analysis, topic description generation. Two model constants: `DEFAULT_MODEL` (gpt-5.2, reasoning) and `LIGHTWEIGHT_MODEL` (gpt-5-mini, for cheap tasks like description generation). Note: `gpt-5-mini` does not support the `temperature` parameter. Key summary methods use a two-pass architecture: `analyze_topic_briefing` / `render_topic_briefing` (rolling briefings) and `analyze_topic_summary` / `render_topic_summary` (per-meeting snapshots). Prompts loaded from `PromptTemplate` (database); no hardcoded fallback — missing templates raise `RecordNotFound`.
 - **`RetrievalService`** — RAG implementation using pgvector. Retrieves context chunks for AI prompts.
 - **`VectorService`** — Low-level pgvector operations (embed, search).
 - **`Topics::ContinuityService`** — Derives lifecycle status from agenda anchors and resolution signals.
