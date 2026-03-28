@@ -34,20 +34,6 @@
   --color-danger: var(--color-brick);
   --color-danger-light: #fce8e8;
 
-  /* Neutrals — warm instead of blue-gray */
-  --color-bg: #f5f3ef;
-  --color-surface: #ffffff;
-  --color-surface-raised: #faf9f7;
-  --color-surface-hover: rgba(0, 0, 0, 0.03);
-  --color-border: #e0ddd7;
-  --color-border-strong: #c8c4bc;
-
-  /* Text */
-  --color-text: #2c2c2c;
-  --color-text-secondary: #5c5c5c;
-  --color-text-muted: #8c8c8c;
-  --color-text-inverse: #ffffff;
-
   /* Header / Footer chrome */
   --color-header-bg: var(--color-teal);
   --color-header-text: #ffffff;
@@ -124,6 +110,40 @@
   /* Transitions */
   --transition-fast: 150ms ease;
   --transition-normal: 200ms ease;
+}
+
+/* ============================================
+   Theme: Living Room (warm cream — public site)
+   ============================================ */
+
+.theme-living-room {
+  --color-bg: #faf5eb;
+  --color-surface: #ffffff;
+  --color-surface-raised: #f0e8d8;
+  --color-surface-hover: rgba(0, 0, 0, 0.03);
+  --color-border: #e0d5c3;
+  --color-border-strong: #c8bda8;
+  --color-text: #2c2520;
+  --color-text-secondary: #6b5e50;
+  --color-text-muted: #9a8d7e;
+  --color-text-inverse: #ffffff;
+}
+
+/* ============================================
+   Theme: Silo (cool concrete — admin)
+   ============================================ */
+
+.theme-silo {
+  --color-bg: #f2f5f5;
+  --color-surface: #ffffff;
+  --color-surface-raised: #e4eaea;
+  --color-surface-hover: rgba(0, 0, 0, 0.03);
+  --color-border: #c5d0d0;
+  --color-border-strong: #a0b0b0;
+  --color-text: #1a2e35;
+  --color-text-secondary: #5a7a80;
+  --color-text-muted: #8a9fa3;
+  --color-text-inverse: #ffffff;
 }
 
 /* ============================================
