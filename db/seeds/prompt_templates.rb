@@ -1,9 +1,8 @@
 # db/seeds/prompt_templates.rb
 #
-# Seeds the 15 AI prompt templates with metadata.
-# Actual prompt text must be populated via the admin UI at /admin/prompt_templates
-# by copying from the heredocs in app/services/ai/open_ai_service.rb.
-# Idempotent — skips existing keys.
+# Seeds the 15 AI prompt templates with metadata, then populates them with
+# real prompt text via the prompt_templates:populate rake task.
+# Idempotent — skips existing keys, populate updates in place.
 
 PROMPT_TEMPLATES_DATA = [
   {
@@ -190,4 +189,7 @@ PROMPT_TEMPLATES_DATA.each do |data|
 end
 
 puts "Done. #{PromptTemplate.count} prompt templates in database."
-puts "Next: visit /admin/prompt_templates to populate each prompt with text from OpenAiService."
+
+# Populate with real prompt text from the populate rake task data
+puts "Populating prompt text..."
+Rake::Task["prompt_templates:populate"].invoke
