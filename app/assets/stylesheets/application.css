@@ -1049,11 +1049,35 @@ details[open] summary {
   margin-bottom: var(--space-12);
 }
 
+/* Section headers — atom marker + label + trailing line */
 .section-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--space-6);
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.section-header__label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-teal);
+  white-space: nowrap;
+}
+
+.section-header__line {
+  flex: 1;
+  height: 1px;
+}
+
+.theme-living-room .section-header__line {
+  background: linear-gradient(to right, var(--color-terra-cotta), transparent);
+}
+
+.theme-silo .section-header__line {
+  background: linear-gradient(to right, var(--color-border), transparent);
 }
 
 .section-title {
