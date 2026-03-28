@@ -15,6 +15,8 @@ Civic transparency site for Two Rivers, WI. Ingests official city meeting docume
 
 - Rails 8.1, Ruby 4.0, PostgreSQL (with pgvector for embeddings)
 - Server-rendered HTML, Turbo/Stimulus, ImportMap, Propshaft
+- Atomic-era design system with two themes: Living Room (public) and Silo (admin)
+- Typography: Outfit (display), Space Grotesk (body), DM Mono (data) via Google Fonts
 - Solid Queue (jobs), Solid Cache, Solid Cable
 - OpenAI API via `ruby-openai` for summarization/extraction
 - Minitest for testing, RuboCop Rails Omakase for style
@@ -144,3 +146,6 @@ The meeting show page (`meetings/show.html.erb`) uses a **fixed inverted-pyramid
 - **Style** — RuboCop Rails Omakase (`.rubocop.yml`). No Sorbet. Prefer clarity over metaprogramming.
 - **Topic granularity** — Category names (Zoning, Infrastructure, Finance, etc.) are blocked as topic names. Topics must name specific civic concerns at "neighborhood conversation" level. See `docs/plans/2026-02-28-broad-topic-prevention-design.md`. Use `topics:split_broad_topic[name]` to re-extract items from an overly-broad topic.
 - **Documentation** — When adding features, update `docs/DEVELOPMENT_PLAN.md` (authoritative spec), this file (CLAUDE.md), and any relevant GitHub issues. Documentation must be useful to any developer, not just AI tools.
+- **Design system** — All colors via CSS custom properties, never hardcoded hex. Two themes: `.theme-living-room` (public, warm cream) and `.theme-silo` (admin, cool concrete). Spec at `docs/plans/2026-03-28-atomic-design-system-spec.md`.
+- **SVG motifs** — Reusable partials in `app/views/shared/` (`_atom_marker`, `_diamond_divider`, `_starburst`, `_boomerang`, `_radar_sweep`). Atom marker and diamond divider used in both themes; starburst/boomerang are Living Room only; radar sweep is Silo only.
+- **Typography roles** — Outfit (display: headings, stats, nav labels, always uppercase), Space Grotesk (body: paragraphs, buttons, forms), DM Mono (data: metadata, timestamps, status chips, always uppercase with wide tracking).
