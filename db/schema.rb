@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_02_054830) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_28_200228) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -277,6 +277,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_02_054830) do
     t.datetime "updated_at", null: false
     t.index ["agenda_item_id"], name: "index_motions_on_agenda_item_id"
     t.index ["meeting_id"], name: "index_motions_on_meeting_id"
+  end
+
+  create_table "prompt_templates", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.text "instructions", null: false
+    t.string "key", null: false
+    t.string "model_tier", default: "default", null: false
+    t.string "name", null: false
+    t.jsonb "placeholders", default: [], null: false
+    t.text "system_role"
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_prompt_templates_on_key", unique: true
+  end
+
+  create_table "prompt_versions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "editor_note"
+    t.text "instructions", null: false
+    t.string "model_tier", null: false
+    t.bigint "prompt_template_id", null: false
+    t.text "system_role"
+    t.index ["prompt_template_id", "created_at"], name: "index_prompt_versions_on_prompt_template_id_and_created_at"
+    t.index ["prompt_template_id"], name: "index_prompt_versions_on_prompt_template_id"
   end
 
   create_table "sessions", force: :cascade do |t|
@@ -595,6 +619,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_02_054830) do
   add_foreign_key "member_aliases", "members"
   add_foreign_key "motions", "agenda_items"
   add_foreign_key "motions", "meetings"
+  add_foreign_key "prompt_versions", "prompt_templates"
   add_foreign_key "sessions", "users"
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
