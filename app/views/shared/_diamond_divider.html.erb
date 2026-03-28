@@ -1,0 +1,18 @@
+<%# Diamond divider for section breaks. Pass theme: "living-room" or "silo" %>
+<% theme = local_assigns.fetch(:theme, "living-room") %>
+<% color = theme == "silo" ? "var(--color-border)" : "var(--color-terra-cotta)" %>
+<svg class="diamond-divider" width="100%" height="20" viewBox="0 0 300 20" preserveAspectRatio="xMidYMid meet" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <line x1="10" y1="10" x2="133" y2="10" stroke="url(#dd-fade-in)" stroke-width="1.5"/>
+  <polygon points="150,2 158,10 150,18 142,10" fill="<%= color %>"/>
+  <line x1="167" y1="10" x2="290" y2="10" stroke="url(#dd-fade-out)" stroke-width="1.5"/>
+  <defs>
+    <linearGradient id="dd-fade-in" x1="10" y1="10" x2="133" y2="10">
+      <stop stop-color="transparent"/>
+      <stop offset="1" stop-color="<%= color %>"/>
+    </linearGradient>
+    <linearGradient id="dd-fade-out" x1="167" y1="10" x2="290" y2="10">
+      <stop stop-color="<%= color %>"/>
+      <stop offset="1" stop-color="transparent"/>
+    </linearGradient>
+  </defs>
+</svg>

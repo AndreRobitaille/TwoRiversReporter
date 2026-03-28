@@ -1,0 +1,11 @@
+<%# Radar sweep background decoration. Silo only. %>
+<% size = local_assigns.fetch(:size, 80) %>
+<% opacity = local_assigns.fetch(:opacity, 0.08) %>
+<svg width="<%= size %>" height="<%= size %>" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="opacity: <%= opacity %>">
+  <circle cx="50" cy="50" r="36" stroke="#004a59" stroke-width="1"/>
+  <circle cx="50" cy="50" r="24" stroke="#004a59" stroke-width="1"/>
+  <circle cx="50" cy="50" r="12" stroke="#004a59" stroke-width="1"/>
+  <line x1="50" y1="50" x2="50" y2="14" stroke="#004a59" stroke-width="1.5"/>
+  <path d="M50 50 L50 14 A36 36 0 0 1 80 32 Z" fill="#004a59" opacity="0.5"/>
+  <circle cx="50" cy="50" r="3" fill="#004a59"/>
+</svg>

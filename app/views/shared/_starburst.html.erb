@@ -1,0 +1,20 @@
+<%# Starburst decoration. Living Room only. %>
+<% size = local_assigns.fetch(:size, 64) %>
+<% opacity = local_assigns.fetch(:opacity, 1.0) %>
+<svg width="<%= size %>" height="<%= size %>" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="opacity: <%= opacity %>">
+  <defs>
+    <polygon id="sb-long-ray" points="0,0 2.5,-42 -2.5,-42"/>
+    <polygon id="sb-short-ray" points="0,0 1.5,-16 -1.5,-16"/>
+  </defs>
+  <g transform="translate(50,50)" fill="#c2522a">
+    <use href="#sb-long-ray" transform="rotate(0)"/>
+    <use href="#sb-long-ray" transform="rotate(90)"/>
+    <use href="#sb-long-ray" transform="rotate(180)"/>
+    <use href="#sb-long-ray" transform="rotate(270)"/>
+    <use href="#sb-short-ray" transform="rotate(45)"/>
+    <use href="#sb-short-ray" transform="rotate(135)"/>
+    <use href="#sb-short-ray" transform="rotate(225)"/>
+    <use href="#sb-short-ray" transform="rotate(315)"/>
+    <circle r="5" fill="#004a59"/>
+  </g>
+</svg>
