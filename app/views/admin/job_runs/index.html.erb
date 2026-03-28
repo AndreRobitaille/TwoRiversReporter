@@ -1,0 +1,132 @@
+<%# app/views/admin/job_runs/index.html.erb %>
+
+<div class="page-header">
+  <div class="section-header">
+    <svg class="atom-marker" viewBox="0 0 100 100" width="20" height="20">
+      <ellipse cx="50" cy="50" rx="38" ry="12" transform="rotate(-30, 50, 50)" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"/>
+      <ellipse cx="50" cy="50" rx="38" ry="12" transform="rotate(30, 50, 50)" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"/>
+      <ellipse cx="50" cy="50" rx="38" ry="12" transform="rotate(90, 50, 50)" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"/>
+      <circle cx="50" cy="50" r="5" fill="currentColor"/>
+    </svg>
+    <span class="section-header-label">Job Re-Run Console</span>
+    <div class="section-header-line"></div>
+  </div>
+  <p class="page-subtitle">Select a job type and targets, then enqueue.</p>
+</div>
+
+<%= form_with url: admin_job_runs_path, method: :post, local: true, data: { controller: "job-run" } do |form| %>
+  <div class="card mb-6">
+    <div class="card-body">
+      <h2 class="card-title mb-4">1. Select Job Type</h2>
+
+      <div class="job-category-label">Extraction</div>
+      <div class="job-type-grid mb-4">
+        <label class="job-type-card" data-action="click->job-run#selectType" data-job-run-scope-param="meeting">
+          <input type="radio" name="job_type" value="extract_topics" class="hidden" data-job-run-target="typeRadio">
+          <div class="job-type-card-name">Extract Topics</div>
+          <div class="job-type-card-desc">Classify agenda items into civic topics</div>
+        </label>
+        <label class="job-type-card" data-action="click->job-run#selectType" data-job-run-scope-param="meeting">
+          <input type="radio" name="job_type" value="extract_votes" class="hidden" data-job-run-target="typeRadio">
+          <div class="job-type-card-name">Extract Votes</div>
+          <div class="job-type-card-desc">Extract motions and vote records from minutes</div>
+        </label>
+        <label class="job-type-card" data-action="click->job-run#selectType" data-job-run-scope-param="meeting">
+          <input type="radio" name="job_type" value="extract_committee_members" class="hidden" data-job-run-target="typeRadio">
+          <div class="job-type-card-name">Extract Members</div>
+          <div class="job-type-card-desc">Extract roll call and attendance from minutes</div>
+        </label>
+      </div>
+
+      <div class="job-category-label">Summarization</div>
+      <div class="job-type-grid mb-4">
+        <label class="job-type-card" data-action="click->job-run#selectType" data-job-run-scope-param="meeting">
+          <input type="radio" name="job_type" value="summarize_meeting" class="hidden" data-job-run-target="typeRadio">
+          <div class="job-type-card-name">Summarize Meeting</div>
+          <div class="job-type-card-desc">Generate structured meeting summary</div>
+        </label>
+        <label class="job-type-card" data-action="click->job-run#selectType" data-job-run-scope-param="topic">
+          <input type="radio" name="job_type" value="generate_topic_briefing" class="hidden" data-job-run-target="typeRadio">
+          <div class="job-type-card-name">Topic Briefing</div>
+          <div class="job-type-card-desc">Generate rolling topic briefing</div>
+        </label>
+        <label class="job-type-card" data-action="click->job-run#selectType" data-job-run-scope-param="topic">
+          <input type="radio" name="job_type" value="generate_description" class="hidden" data-job-run-target="typeRadio">
+          <div class="job-type-card-name">Topic Description</div>
+          <div class="job-type-card-desc">Generate short scope descriptions</div>
+        </label>
+      </div>
+
+      <div class="job-category-label">Other</div>
+      <div class="job-type-grid">
+        <label class="job-type-card" data-action="click->job-run#selectType" data-job-run-scope-param="none">
+          <input type="radio" name="job_type" value="auto_triage" class="hidden" data-job-run-target="typeRadio">
+          <div class="job-type-card-name">Topic Triage</div>
+          <div class="job-type-card-desc">Run auto-approval on proposed topics</div>
+        </label>
+        <label class="job-type-card" data-action="click->job-run#selectType" data-job-run-scope-param="none">
+          <input type="radio" name="job_type" value="discover_meetings" class="hidden" data-job-run-target="typeRadio">
+          <div class="job-type-card-name">Scrape City Website</div>
+          <div class="job-type-card-desc">Check for new meetings and documents</div>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-6 hidden" data-job-run-target="meetingTargets">
+    <div class="card-body">
+      <h2 class="card-title mb-4">2. Select Meetings</h2>
+      <div class="flex gap-4 flex-wrap">
+        <div class="form-group grow">
+          <label class="form-label">From</label>
+          <input type="date" name="date_from" class="form-input" data-job-run-target="dateFrom" data-action="change->job-run#updateCount">
+        </div>
+        <div class="form-group grow">
+          <label class="form-label">To</label>
+          <input type="date" name="date_to" class="form-input" data-job-run-target="dateTo" data-action="change->job-run#updateCount">
+        </div>
+        <div class="form-group grow">
+          <label class="form-label">Committee (optional)</label>
+          <select name="committee_id" class="form-select" data-job-run-target="committeeFilter" data-action="change->job-run#updateCount">
+            <option value="">All committees</option>
+            <% @committees.each do |committee| %>
+              <option value="<%= committee.id %>"><%= committee.name %></option>
+            <% end %>
+          </select>
+        </div>
+      </div>
+      <div class="target-preview" data-job-run-target="countPreview">
+        Select a date range to see matching meetings.
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-6 hidden" data-job-run-target="topicTargets">
+    <div class="card-body">
+      <h2 class="card-title mb-4">2. Select Topics</h2>
+      <div class="form-group">
+        <label class="flex items-center gap-2" style="cursor: pointer;">
+          <input type="checkbox" name="all_topics" value="1" data-action="change->job-run#toggleAllTopics" data-job-run-target="allTopics">
+          <span>All approved topics (<%= Topic.approved.count %>)</span>
+        </label>
+      </div>
+      <div class="form-group" data-job-run-target="topicSelect">
+        <label class="form-label">Or select specific topics:</label>
+        <select name="topic_ids[]" multiple class="form-select" size="8">
+          <% Topic.approved.order(:name).each do |topic| %>
+            <option value="<%= topic.id %>"><%= topic.name %></option>
+          <% end %>
+        </select>
+        <p class="form-hint">Hold Ctrl/Cmd to select multiple topics.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <button type="submit" class="btn btn--primary">
+        Enqueue Jobs
+      </button>
+    </div>
+  </div>
+<% end %>

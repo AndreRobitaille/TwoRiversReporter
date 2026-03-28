@@ -2,6 +2,7 @@ require "test_helper"
 
 class Ai::OpenAiServiceBriefingTest < ActiveSupport::TestCase
   setup do
+    seed_prompt_templates
     @service = Ai::OpenAiService.new
   end
 

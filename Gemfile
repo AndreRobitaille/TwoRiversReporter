@@ -76,3 +76,4 @@ gem "ruby-openai", "~> 8.3"
 
 gem "kramdown", "~> 2.5"
 gem "redcarpet", "~> 3.6"
+gem "diffy", "~> 3.4"

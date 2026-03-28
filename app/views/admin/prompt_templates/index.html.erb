@@ -1,0 +1,51 @@
+<%# app/views/admin/prompt_templates/index.html.erb %>
+
+<div class="page-header">
+  <div class="section-header">
+    <svg class="atom-marker" viewBox="0 0 100 100" width="20" height="20">
+      <ellipse cx="50" cy="50" rx="38" ry="12" transform="rotate(-30, 50, 50)" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"/>
+      <ellipse cx="50" cy="50" rx="38" ry="12" transform="rotate(30, 50, 50)" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"/>
+      <ellipse cx="50" cy="50" rx="38" ry="12" transform="rotate(90, 50, 50)" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"/>
+      <circle cx="50" cy="50" r="5" fill="currentColor"/>
+    </svg>
+    <span class="section-header-label">Prompt Templates</span>
+    <div class="section-header-line"></div>
+  </div>
+  <p class="page-subtitle">Edit the AI prompts that drive topic extraction, summarization, and analysis.</p>
+</div>
+
+<div class="table-wrapper">
+  <table>
+    <thead>
+      <tr>
+        <th>Prompt</th>
+        <th>Model</th>
+        <th>Last Edited</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @templates.each do |template| %>
+        <tr>
+          <td>
+            <%= link_to template.name, edit_admin_prompt_template_path(template), class: "table-name" %>
+            <% if template.description.present? %>
+              <div class="table-desc"><%= template.description %></div>
+            <% end %>
+          </td>
+          <td>
+            <span class="chip <%= template.model_tier == 'lightweight' ? 'chip--amber' : 'chip--teal' %>">
+              <%= template.model_tier.capitalize %>
+            </span>
+          </td>
+          <td>
+            <span class="timestamp"><%= time_ago_in_words(template.updated_at) %> ago</span>
+          </td>
+          <td>
+            <%= link_to "Edit", edit_admin_prompt_template_path(template), class: "btn btn--ghost btn--sm" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

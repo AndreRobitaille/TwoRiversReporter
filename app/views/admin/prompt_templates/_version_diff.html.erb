@@ -1,0 +1,15 @@
+<%# app/views/admin/prompt_templates/_version_diff.html.erb %>
+
+<div class="diff-container">
+  <div class="diff-header">Instructions — comparing to current</div>
+  <% diff.each_chunk do |chunk| %>
+    <% chunk.each_line do |line| %>
+      <% css_class = case line[0]
+        when '+' then 'diff-add'
+        when '-' then 'diff-remove'
+        else 'diff-context'
+      end %>
+      <div class="diff-line <%= css_class %>"><%= line.chomp %></div>
+    <% end %>
+  <% end %>
+</div>
