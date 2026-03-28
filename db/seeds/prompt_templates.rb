@@ -1,0 +1,193 @@
+# db/seeds/prompt_templates.rb
+#
+# Seeds the 15 AI prompt templates with metadata.
+# Actual prompt text must be populated via the admin UI at /admin/prompt_templates
+# by copying from the heredocs in app/services/ai/open_ai_service.rb.
+# Idempotent — skips existing keys.
+
+PROMPT_TEMPLATES_DATA = [
+  {
+    key: "extract_votes",
+    name: "Vote Extraction",
+    description: "Extracts motions and vote records from meeting minutes",
+    model_tier: "default",
+    placeholders: [
+      { "name" => "text", "description" => "Meeting minutes text (truncated to 50k chars)" }
+    ]
+  },
+  {
+    key: "extract_committee_members",
+    name: "Committee Member Extraction",
+    description: "Extracts roll call and attendance from meeting minutes",
+    model_tier: "lightweight",
+    placeholders: [
+      { "name" => "text", "description" => "Meeting minutes text (truncated to 50k chars)" }
+    ]
+  },
+  {
+    key: "extract_topics",
+    name: "Topic Extraction",
+    description: "Classifies agenda items into civic topics",
+    model_tier: "default",
+    placeholders: [
+      { "name" => "existing_topics", "description" => "All approved topic names" },
+      { "name" => "community_context", "description" => "Knowledge base context" },
+      { "name" => "meeting_documents_context", "description" => "Extracted text from meeting documents" },
+      { "name" => "items_text", "description" => "Formatted agenda items to classify" }
+    ]
+  },
+  {
+    key: "refine_catchall_topic",
+    name: "Catchall Topic Refinement",
+    description: "Refines broad ordinance topics into specific civic concerns",
+    model_tier: "default",
+    placeholders: [
+      { "name" => "item_title", "description" => "Agenda item title" },
+      { "name" => "item_summary", "description" => "Agenda item summary" },
+      { "name" => "catchall_topic", "description" => "The broad topic being refined" },
+      { "name" => "document_text", "description" => "Related document text (6k truncated)" },
+      { "name" => "existing_topics", "description" => "All approved topic names" }
+    ]
+  },
+  {
+    key: "re_extract_item_topics",
+    name: "Topic Re-extraction",
+    description: "Re-extracts topics when splitting a broad topic",
+    model_tier: "default",
+    placeholders: [
+      { "name" => "item_title", "description" => "Agenda item title" },
+      { "name" => "item_summary", "description" => "Agenda item summary" },
+      { "name" => "document_text", "description" => "Related document text (6k truncated)" },
+      { "name" => "broad_topic_name", "description" => "The broad topic being split" },
+      { "name" => "existing_topics", "description" => "All approved topic names" }
+    ]
+  },
+  {
+    key: "triage_topics",
+    name: "Topic Triage",
+    description: "AI-assisted approval, blocking, and merging of proposed topics",
+    model_tier: "default",
+    placeholders: [
+      { "name" => "context_json", "description" => "JSON with topic data, similarities, and community context" }
+    ]
+  },
+  {
+    key: "analyze_topic_summary",
+    name: "Topic Summary Analysis",
+    description: "Structured analysis of a topic's activity in a single meeting",
+    model_tier: "default",
+    placeholders: [
+      { "name" => "committee_context", "description" => "Active committees and descriptions" },
+      { "name" => "context_json", "description" => "Topic context JSON with meeting data" }
+    ]
+  },
+  {
+    key: "render_topic_summary",
+    name: "Topic Summary Rendering",
+    description: "Renders structured topic analysis into editorial prose",
+    model_tier: "default",
+    placeholders: [
+      { "name" => "plan_json", "description" => "Structured analysis JSON from pass 1" }
+    ]
+  },
+  {
+    key: "analyze_topic_briefing",
+    name: "Topic Briefing Analysis",
+    description: "Rolling briefing — structured analysis across all meetings for a topic",
+    model_tier: "default",
+    placeholders: [
+      { "name" => "committee_context", "description" => "Active committees and descriptions" },
+      { "name" => "context", "description" => "Topic briefing context with all meeting data" }
+    ]
+  },
+  {
+    key: "render_topic_briefing",
+    name: "Topic Briefing Rendering",
+    description: "Renders briefing analysis into editorial content",
+    model_tier: "default",
+    placeholders: [
+      { "name" => "analysis_json", "description" => "Structured briefing analysis JSON from pass 1" }
+    ]
+  },
+  {
+    key: "generate_briefing_interim",
+    name: "Interim Briefing",
+    description: "Quick headline generation for newly approved topics",
+    model_tier: "lightweight",
+    placeholders: [
+      { "name" => "topic_name", "description" => "Name of the topic" },
+      { "name" => "current_headline", "description" => "Current headline if any" },
+      { "name" => "meeting_body", "description" => "Committee/body name" },
+      { "name" => "meeting_date", "description" => "Meeting date" },
+      { "name" => "agenda_items", "description" => "Related agenda items" }
+    ]
+  },
+  {
+    key: "generate_topic_description_detailed",
+    name: "Topic Description (Detailed)",
+    description: "Generates scope descriptions for topics with 3+ agenda items",
+    model_tier: "lightweight",
+    placeholders: [
+      { "name" => "topic_name", "description" => "Name of the topic" },
+      { "name" => "activity_text", "description" => "Formatted agenda item activity" },
+      { "name" => "headlines_text", "description" => "Recent headlines if any" }
+    ]
+  },
+  {
+    key: "generate_topic_description_broad",
+    name: "Topic Description (Broad)",
+    description: "Generates scope descriptions for topics with fewer than 3 agenda items",
+    model_tier: "lightweight",
+    placeholders: [
+      { "name" => "topic_name", "description" => "Name of the topic" },
+      { "name" => "activity_text", "description" => "Formatted agenda item activity (may be empty)" },
+      { "name" => "headlines_text", "description" => "Recent headlines if any" }
+    ]
+  },
+  {
+    key: "analyze_meeting_content",
+    name: "Meeting Content Analysis",
+    description: "Single-pass structured analysis of full meeting content",
+    model_tier: "default",
+    placeholders: [
+      { "name" => "kb_context", "description" => "Knowledge base context chunks" },
+      { "name" => "committee_context", "description" => "Active committees and descriptions" },
+      { "name" => "type", "description" => "Document type: packet or minutes" },
+      { "name" => "doc_text", "description" => "Meeting document text (truncated to 50k)" }
+    ]
+  },
+  {
+    key: "render_meeting_summary",
+    name: "Meeting Summary Rendering",
+    description: "Renders meeting analysis into editorial prose (legacy)",
+    model_tier: "default",
+    placeholders: [
+      { "name" => "plan_json", "description" => "Structured analysis JSON from pass 1" },
+      { "name" => "doc_text", "description" => "Original document text for reference" }
+    ]
+  }
+].freeze
+
+puts "Seeding prompt templates..."
+
+PROMPT_TEMPLATES_DATA.each do |data|
+  data = data.dup
+  placeholders = data.delete(:placeholders)
+  existing = PromptTemplate.find_by(key: data[:key])
+
+  if existing
+    puts "  PromptTemplate '#{data[:key]}' already exists, skipping."
+    next
+  end
+
+  template = PromptTemplate.create!(
+    **data,
+    placeholders: placeholders,
+    system_role: "TODO: Copy from OpenAiService heredoc via admin UI at /admin/prompt_templates",
+    instructions: "TODO: Copy from OpenAiService heredoc via admin UI at /admin/prompt_templates"
+  )
+  puts "  Created PromptTemplate '#{data[:key]}' (ID: #{template.id})"
+end
+
+puts "Done. #{PromptTemplate.count} prompt templates in database."
+puts "Next: visit /admin/prompt_templates to populate each prompt with text from OpenAiService."

@@ -10,3 +10,4 @@
 
 load Rails.root.join("db/seeds/community_context.rb")
 load Rails.root.join("db/seeds/committees.rb")
+load Rails.root.join("db/seeds/prompt_templates.rb")
