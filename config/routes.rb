@@ -65,6 +65,18 @@ Rails.application.routes.draw do
         post :merge
       end
     end
+
+    resources :prompt_templates, controller: "admin/prompt_templates", as: :admin_prompt_templates, only: [:index, :edit, :update] do
+      member do
+        get :diff
+      end
+    end
+
+    resources :job_runs, controller: "admin/job_runs", as: :admin_job_runs, only: [:index, :create] do
+      collection do
+        get :count
+      end
+    end
   end
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

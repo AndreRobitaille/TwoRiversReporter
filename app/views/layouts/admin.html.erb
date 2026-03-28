@@ -52,6 +52,8 @@
             <%= link_to "Committees", admin_committees_path, class: ("active" if controller_name == "committees") %>
             <%= link_to "Members", admin_members_path, class: ("active" if controller_name == "members") %>
             <%= link_to "Knowledge Sources", admin_knowledge_sources_path, class: ("active" if controller_name == "knowledge_sources") %>
+            <%= link_to "Prompts", admin_prompt_templates_path, class: ("active" if controller_name == "prompt_templates") %>
+            <%= link_to "Job Runs", admin_job_runs_path, class: ("active" if controller_name == "job_runs") %>
             <%= link_to "Jobs", admin_jobs_path, class: ("active" if controller_name == "jobs") %>
           </nav>
         </div>
