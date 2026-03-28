@@ -3,6 +3,7 @@ require "minitest/mock"
 
 class Ai::OpenAiServiceGenerateDescriptionTest < ActiveSupport::TestCase
   setup do
+    seed_prompt_templates
     @service = Ai::OpenAiService.new
   end
 
