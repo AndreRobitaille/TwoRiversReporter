@@ -10,6 +10,7 @@ Civic transparency site for Two Rivers, WI. Ingests official city meeting docume
 
 - **`docs/DEVELOPMENT_PLAN.md`** — Authoritative product spec and architectural constraints. Treat as binding.
 - **`docs/topics/TOPIC_GOVERNANCE.md`** — Non-negotiable rules for all topic extraction, classification, summarization, and lifecycle logic. Read before any topic-related work.
+- **`docs/plans/2026-03-28-atomic-design-system-spec.md`** — Authoritative visual design spec. Covers color palette, typography, graphic motifs (with SVG path data), component patterns, spacing, CSS architecture, and anti-patterns. Read before any UI/styling work.
 
 ## Tech Stack
 
