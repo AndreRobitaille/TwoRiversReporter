@@ -13,20 +13,26 @@
    ============================================ */
 
 :root {
-  /* Color Palette */
-  --color-primary: #1a4480;
-  --color-primary-hover: #0f2d52;
-  --color-primary-light: #e8f0f8;
-  --color-accent: #0076d6;
-  --color-accent-hover: #005ea2;
+  /* Identity colors — shared across both themes */
+  --color-teal: #004a59;
+  --color-terra-cotta: #c2522a;
+  --color-amber: #d4872a;
+  --color-forest: #2a7a4a;
+  --color-brick: #9e2a2a;
 
-  /* Semantic Colors */
-  --color-success: #168821;
-  --color-success-light: #ecf3ec;
-  --color-warning: #b76300;
-  --color-warning-light: #fef0e3;
-  --color-danger: #b50909;
-  --color-danger-light: #f8e5e5;
+  /* Map semantic names to identity colors */
+  --color-primary: var(--color-teal);
+  --color-primary-hover: #003440;
+  --color-primary-light: #e0f0f4;
+  --color-accent: var(--color-terra-cotta);
+  --color-accent-hover: #a3421f;
+
+  --color-success: var(--color-forest);
+  --color-success-light: #e6f2ee;
+  --color-warning: var(--color-amber);
+  --color-warning-light: #fef3e2;
+  --color-danger: var(--color-brick);
+  --color-danger-light: #fce8e8;
 
   /* Neutrals — warm instead of blue-gray */
   --color-bg: #f5f3ef;
@@ -43,21 +49,22 @@
   --color-text-inverse: #ffffff;
 
   /* Header / Footer chrome */
-  --color-header-bg: #1a4480;
+  --color-header-bg: var(--color-teal);
   --color-header-text: #ffffff;
   --color-header-text-muted: rgba(255, 255, 255, 0.7);
-  --color-footer-bg: #2c3e50;
+  --color-footer-bg: #1a2e35;
   --color-footer-text: #cbd5e1;
 
   /* Accent Colors — visual variety for topic cards */
-  --color-accent-warm: #b45309;
+  --color-accent-warm: var(--color-terra-cotta);
   --color-accent-warm-light: #fef3e2;
   --color-accent-warm-bg: #fffbf5;
-  --color-accent-warm-hover: #92400e;
-  --color-accent-cool: #0e7490;
-  --color-accent-cool-light: #e0f7fa;
+  --color-accent-warm-hover: #a3421f;
+
+  --color-accent-cool: var(--color-teal);
+  --color-accent-cool-light: #e0f0f4;
   --color-accent-cool-bg: #f5fcfd;
-  --color-accent-cool-hover: #155e75;
+  --color-accent-cool-hover: #003440;
 
   /* AI Content Indicator */
   --color-ai-bg: #f0f7ff;
