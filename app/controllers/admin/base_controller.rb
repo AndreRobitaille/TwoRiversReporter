@@ -2,6 +2,8 @@ module Admin
   class BaseController < ApplicationController
     include Authentication
 
+    layout "admin"
+
     before_action :require_admin
     before_action :require_admin_mfa
 
