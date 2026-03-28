@@ -1,5 +1,5 @@
 class Admin::PromptTemplatesController < Admin::BaseController
-  before_action :set_template, only: [:edit, :update, :diff]
+  before_action :set_template, only: [ :edit, :update, :diff ]
 
   def index
     @templates = PromptTemplate.order(:name)

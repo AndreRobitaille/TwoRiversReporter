@@ -22,6 +22,6 @@ class CreatePromptTemplates < ActiveRecord::Migration[8.1]
       t.datetime :created_at, null: false
     end
 
-    add_index :prompt_versions, [:prompt_template_id, :created_at]
+    add_index :prompt_versions, [ :prompt_template_id, :created_at ]
   end
 end

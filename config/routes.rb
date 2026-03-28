@@ -66,13 +66,13 @@ Rails.application.routes.draw do
       end
     end
 
-    resources :prompt_templates, controller: "admin/prompt_templates", as: :admin_prompt_templates, only: [:index, :edit, :update] do
+    resources :prompt_templates, controller: "admin/prompt_templates", as: :admin_prompt_templates, only: [ :index, :edit, :update ] do
       member do
         get :diff
       end
     end
 
-    resources :job_runs, controller: "admin/job_runs", as: :admin_job_runs, only: [:index, :create] do
+    resources :job_runs, controller: "admin/job_runs", as: :admin_job_runs, only: [ :index, :create ] do
       collection do
         get :count
       end
