@@ -706,35 +706,58 @@ tbody tr:hover {
   display: inline-flex;
   align-items: center;
   padding: var(--space-1) var(--space-2);
+  font-family: var(--font-data);
   font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   border-radius: var(--radius-full);
-  text-transform: capitalize;
+  line-height: 1;
+}
+
+/* Silo chips get a subtle border for crispness */
+.theme-silo .badge {
+  border: 1px solid transparent;
 }
 
 .badge--default {
-  background: var(--color-bg);
+  background: var(--color-surface-raised);
   color: var(--color-text-secondary);
+}
+.theme-silo .badge--default {
+  border-color: var(--color-border);
 }
 
 .badge--primary {
   background: var(--color-primary-light);
   color: var(--color-primary);
 }
+.theme-silo .badge--primary {
+  border-color: #b0d0d8;
+}
 
 .badge--success {
   background: var(--color-success-light);
   color: var(--color-success);
+}
+.theme-silo .badge--success {
+  border-color: #b5d5cf;
 }
 
 .badge--warning {
   background: var(--color-warning-light);
   color: var(--color-warning);
 }
+.theme-silo .badge--warning {
+  border-color: #f0d9b5;
+}
 
 .badge--danger {
   background: var(--color-danger-light);
   color: var(--color-danger);
+}
+.theme-silo .badge--danger {
+  border-color: #f0c5c5;
 }
 
 .badge--info {
