@@ -1,0 +1,153 @@
+<%# app/views/admin/prompt_templates/edit.html.erb %>
+
+<div class="breadcrumb">
+  <%= link_to "Prompt Templates", admin_prompt_templates_path %> &rsaquo;
+  <span><%= @template.name %></span>
+</div>
+
+<div class="page-header">
+  <div class="page-header-row">
+    <div>
+      <h1 class="page-title" style="margin-bottom: var(--space-2);"><%= @template.name %></h1>
+      <p class="page-subtitle"><%= @template.description %></p>
+    </div>
+  </div>
+</div>
+
+<div class="tab-bar" data-controller="prompt-editor">
+  <button class="tab active" data-action="click->prompt-editor#showTab" data-prompt-editor-tab-param="editor">Editor</button>
+  <button class="tab" data-action="click->prompt-editor#showTab" data-prompt-editor-tab-param="history">Version History</button>
+</div>
+
+<div id="tab-editor" data-prompt-editor-target="panel" data-tab="editor">
+  <div class="card">
+    <div class="card-body">
+      <%= form_with model: [:admin, @template], method: :patch, local: true do |form| %>
+        <% if @template.errors.any? %>
+          <div class="flash flash--danger mb-4">
+            <%= @template.errors.full_messages.to_sentence %>
+          </div>
+        <% end %>
+
+        <div class="form-group">
+          <div class="flex items-center gap-4">
+            <%= form.label :model_tier, "Model Tier", class: "form-label", style: "margin-bottom: 0;" %>
+            <%= form.select :model_tier, [["Default (GPT-5.2)", "default"], ["Lightweight (GPT-5-mini)", "lightweight"]], {}, class: "form-select", style: "width: auto;" %>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :system_role, "System Role", class: "form-label" %>
+          <%= form.text_area :system_role, class: "form-textarea form-textarea--code", rows: 5 %>
+          <% if @template.placeholders.present? %>
+            <div class="placeholder-ref">
+              <button type="button" class="placeholder-toggle" data-action="click->prompt-editor#togglePlaceholders" aria-expanded="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M9 18l6-6-6-6"/></svg>
+                Available placeholders
+              </button>
+              <div class="placeholder-list">
+                <% @template.placeholders.each do |p| %>
+                  <div class="placeholder-item">
+                    <code>{{<%= p["name"] %>}}</code>
+                    <%= p["description"] %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :instructions, "Instructions", class: "form-label" %>
+          <%= form.text_area :instructions, class: "form-textarea form-textarea--code", rows: 25 %>
+          <% if @template.placeholders.present? %>
+            <div class="placeholder-ref">
+              <button type="button" class="placeholder-toggle" data-action="click->prompt-editor#togglePlaceholders" aria-expanded="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M9 18l6-6-6-6"/></svg>
+                Available placeholders
+              </button>
+              <div class="placeholder-list">
+                <% @template.placeholders.each do |p| %>
+                  <div class="placeholder-item">
+                    <code>{{<%= p["name"] %>}}</code>
+                    <%= p["description"] %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">
+            Edit note <span style="font-weight: 400; color: var(--color-text-muted);">(optional)</span>
+          </label>
+          <input type="text" name="prompt_template[editor_note]" class="form-input" placeholder="What did you change?" style="max-width: 500px;">
+        </div>
+
+        <div class="flex gap-2 items-center mt-6" style="padding-top: var(--space-4); border-top: 1px solid var(--color-border);">
+          <%= form.submit "Save Changes", class: "btn btn--primary" %>
+          <%= link_to "Cancel", admin_prompt_templates_path, class: "btn btn--ghost" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<div id="tab-history" data-prompt-editor-target="panel" data-tab="history" class="hidden">
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Version</th>
+          <th>Date</th>
+          <th>Note</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @versions.each_with_index do |version, index| %>
+          <tr>
+            <td>
+              <% if index == 0 %>
+                <span class="badge badge--primary">Current</span>
+              <% else %>
+                <span class="timestamp">v<%= @versions.size - index %></span>
+              <% end %>
+            </td>
+            <td><span class="timestamp"><%= version.created_at.strftime("%b %d, %Y · %l:%M %p") %></span></td>
+            <td>
+              <% if version.editor_note.present? %>
+                <span><%= version.editor_note %></span>
+              <% else %>
+                <span style="color: var(--color-text-muted); font-style: italic;">No note</span>
+              <% end %>
+            </td>
+            <td class="text-right">
+              <% unless index == 0 %>
+                <button class="btn btn--ghost btn--sm"
+                        data-action="click->prompt-editor#loadDiff"
+                        data-prompt-editor-url-param="<%= diff_admin_prompt_template_path(@template, version_id: version.id) %>"
+                        data-prompt-editor-version-param="<%= version.id %>">
+                  Diff
+                </button>
+                <button class="btn btn--ghost btn--sm"
+                        data-action="click->prompt-editor#restore"
+                        data-prompt-editor-system-role-param="<%= version.system_role %>"
+                        data-prompt-editor-instructions-param="<%= version.instructions %>"
+                        data-prompt-editor-model-tier-param="<%= version.model_tier %>">
+                  Restore
+                </button>
+              <% end %>
+            </td>
+          </tr>
+          <tr class="hidden" id="diff-row-<%= version.id %>">
+            <td colspan="4" style="padding: 0;">
+              <div id="diff-content-<%= version.id %>"></div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
