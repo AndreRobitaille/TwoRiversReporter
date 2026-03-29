@@ -2573,3 +2573,98 @@ th.sortable-header:hover {
   border-radius: var(--radius-md);
   margin-top: var(--space-3);
 }
+
+/* Prompt editor — examples tab */
+.prompt-examples {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.prompt-run-card {
+  overflow: hidden;
+}
+
+.prompt-run-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-4);
+  cursor: pointer;
+  user-select: none;
+}
+
+.prompt-run-header:hover {
+  background: var(--color-surface-hover, rgba(0, 0, 0, 0.02));
+}
+
+.prompt-run-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.prompt-run-source {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+
+.prompt-run-details {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.prompt-run-chevron {
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.prompt-run-card.expanded .prompt-run-chevron {
+  transform: rotate(90deg);
+}
+
+.prompt-run-body {
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-4);
+}
+
+.prompt-run-sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.prompt-run-message-role {
+  font-family: var(--font-data);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-1);
+}
+
+.prompt-run-message-content {
+  font-family: var(--font-data);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  background: var(--color-surface-raised, rgba(0, 0, 0, 0.03));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 4px);
+  padding: var(--space-3);
+  max-height: 300px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.prompt-run-actions {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.prompt-run-comparison {
+  margin-top: var(--space-4);
+}

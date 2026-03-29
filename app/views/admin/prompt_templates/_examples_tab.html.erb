@@ -1,0 +1,13 @@
+<% if examples.any? %>
+  <div class="prompt-examples">
+    <% examples.each do |run| %>
+      <%= render "prompt_run_card", run: run, template: template %>
+    <% end %>
+  </div>
+<% else %>
+  <div class="card">
+    <div class="card-body">
+      <p class="section-empty">No examples yet. This prompt will capture examples the next time it runs in the pipeline.</p>
+    </div>
+  </div>
+<% end %>

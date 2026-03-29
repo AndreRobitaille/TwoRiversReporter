@@ -16,6 +16,12 @@
 
 <div class="tab-bar" data-controller="prompt-editor">
   <button class="tab active" data-action="click->prompt-editor#showTab" data-prompt-editor-tab-param="editor">Editor</button>
+  <button class="tab" data-action="click->prompt-editor#showTab" data-prompt-editor-tab-param="examples">
+    Examples
+    <% if @examples.any? %>
+      <span class="badge badge--muted"><%= @examples.size %></span>
+    <% end %>
+  </button>
   <button class="tab" data-action="click->prompt-editor#showTab" data-prompt-editor-tab-param="history">Version History</button>
 </div>
 
@@ -92,6 +98,10 @@
       <% end %>
     </div>
   </div>
+</div>
+
+<div id="tab-examples" data-prompt-editor-target="panel" data-tab="examples" class="hidden">
+  <%= render "examples_tab", examples: @examples, template: @template %>
 </div>
 
 <div id="tab-history" data-prompt-editor-target="panel" data-tab="history" class="hidden">

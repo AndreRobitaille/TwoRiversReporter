@@ -47,6 +47,15 @@ export default class extends Controller {
     }
   }
 
+  toggleRunCard(event) {
+    const card = event.currentTarget.closest(".prompt-run-card")
+    const body = card.querySelector(".prompt-run-body")
+    const isExpanded = card.classList.contains("expanded")
+
+    card.classList.toggle("expanded", !isExpanded)
+    body.classList.toggle("hidden", isExpanded)
+  }
+
   restore(event) {
     const systemRole = event.params.systemRole
     const instructions = event.params.instructions

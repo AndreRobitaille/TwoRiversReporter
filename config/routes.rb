@@ -69,6 +69,7 @@ Rails.application.routes.draw do
     resources :prompt_templates, controller: "admin/prompt_templates", as: :admin_prompt_templates, only: [ :index, :edit, :update ] do
       member do
         get :diff
+        post :test_run
       end
     end
 

@@ -7,6 +7,7 @@ class Admin::PromptTemplatesController < Admin::BaseController
 
   def edit
     @versions = @template.versions.recent.limit(20)
+    @examples = load_diverse_examples(@template.key)
   end
 
   def update
@@ -39,5 +40,15 @@ class Admin::PromptTemplatesController < Admin::BaseController
 
   def template_params
     params.require(:prompt_template).permit(:system_role, :instructions, :model_tier)
+  end
+
+  def load_diverse_examples(template_key)
+    runs = PromptRun.for_template(template_key).recent.limit(10).to_a
+    return runs if runs.size <= 5
+
+    # Prefer diversity: one per source, fill remaining with recency
+    grouped = runs.group_by { |r| [r.source_type, r.source_id] }
+    diverse = grouped.values.map(&:first).sort_by(&:created_at).reverse
+    diverse.first(5)
   end
 end

@@ -1,0 +1,43 @@
+<%# Each card is collapsible — header always visible, body toggled %>
+<div class="card prompt-run-card" data-prompt-run-id="<%= run.id %>">
+  <div class="prompt-run-header" data-action="click->prompt-editor#toggleRunCard">
+    <div class="prompt-run-meta">
+      <span class="prompt-run-source"><%= run.source_label %></span>
+      <span class="prompt-run-details">
+        <span class="timestamp"><%= time_ago_in_words(run.created_at) %> ago</span>
+        <span class="badge badge--muted"><%= run.ai_model %></span>
+        <% if run.duration_ms %>
+          <span class="timestamp"><%= (run.duration_ms / 1000.0).round(1) %>s</span>
+        <% end %>
+      </span>
+    </div>
+    <svg class="prompt-run-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 18l6-6-6-6"/></svg>
+  </div>
+
+  <div class="prompt-run-body hidden">
+    <div class="prompt-run-sections">
+      <% run.messages.each do |msg| %>
+        <div class="prompt-run-message">
+          <h4 class="prompt-run-message-role"><%= msg["role"]&.titleize %></h4>
+          <pre class="prompt-run-message-content"><%= msg["content"]&.truncate(5000) %></pre>
+        </div>
+      <% end %>
+
+      <div class="prompt-run-message">
+        <h4 class="prompt-run-message-role">Output</h4>
+        <pre class="prompt-run-message-content"><% if run.response_format == "json_object" %><%= JSON.pretty_generate(JSON.parse(run.response_body)).truncate(5000) rescue run.response_body.truncate(5000) %><% else %><%= run.response_body.truncate(5000) %><% end %></pre>
+      </div>
+    </div>
+
+    <div class="prompt-run-actions">
+      <button class="btn btn--primary btn--sm"
+              data-action="click->prompt-editor#testRun"
+              data-prompt-editor-run-id-param="<%= run.id %>"
+              data-prompt-editor-test-url-param="<%= test_run_admin_prompt_template_path(template) %>">
+        Test with this example
+      </button>
+    </div>
+
+    <div class="prompt-run-comparison hidden" id="comparison-<%= run.id %>"></div>
+  </div>
+</div>

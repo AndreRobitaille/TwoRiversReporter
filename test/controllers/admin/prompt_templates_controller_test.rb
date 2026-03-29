@@ -68,6 +68,26 @@ class Admin::PromptTemplatesControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "edit loads prompt run examples" do
+    PromptRun.create!(
+      prompt_template_key: @template.key,
+      ai_model: "gpt-5.2",
+      messages: [{ "role" => "user", "content" => "test" }],
+      response_body: '{"result": "test"}',
+      response_format: "json_object"
+    )
+
+    get edit_admin_prompt_template_url(@template)
+    assert_response :success
+    assert_select "[data-tab='examples']"
+  end
+
+  test "edit shows empty state when no examples exist" do
+    get edit_admin_prompt_template_url(@template)
+    assert_response :success
+    assert_select "[data-tab='examples']"
+  end
+
   test "diff returns version comparison" do
     @template.update!(instructions: "v2 instructions", editor_note: "v2")
     version = @template.versions.recent.last
