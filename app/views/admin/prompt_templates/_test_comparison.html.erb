@@ -1,0 +1,22 @@
+<div class="test-comparison">
+  <h3 class="test-comparison-header">Test Results</h3>
+
+  <% if error %>
+    <div class="test-comparison-error"><%= error %></div>
+  <% else %>
+    <% if duration_ms %>
+      <p class="timestamp" style="margin-bottom: var(--space-3);">Completed in <%= (duration_ms / 1000.0).round(1) %>s</p>
+    <% end %>
+
+    <div class="test-comparison-grid">
+      <div class="test-comparison-panel">
+        <h4>Original Output</h4>
+        <pre><% if run.response_format == "json_object" %><%= JSON.pretty_generate(JSON.parse(original)).truncate(8000) rescue original.truncate(8000) %><% else %><%= original.truncate(8000) %><% end %></pre>
+      </div>
+      <div class="test-comparison-panel">
+        <h4>Test Output</h4>
+        <pre><% if run.response_format == "json_object" %><%= JSON.pretty_generate(JSON.parse(result)).truncate(8000) rescue result.truncate(8000) %><% else %><%= result.truncate(8000) %><% end %></pre>
+      </div>
+    </div>
+  <% end %>
+</div>

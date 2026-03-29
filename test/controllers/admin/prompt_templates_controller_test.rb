@@ -88,6 +88,52 @@ class Admin::PromptTemplatesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-tab='examples']"
   end
 
+  test "test_run re-runs prompt and returns comparison" do
+    run = PromptRun.create!(
+      prompt_template_key: @template.key,
+      ai_model: "gpt-5.2",
+      messages: [
+        { "role" => "system", "content" => "You are a test assistant" },
+        { "role" => "user", "content" => "Do something with stuff" }
+      ],
+      response_body: '{"original": true}',
+      response_format: "json_object",
+      temperature: 0.1,
+      placeholder_values: { "thing" => "something", "stuff" => "stuff" }
+    )
+
+    # Stub OpenAI client to avoid real API calls
+    mock_response = {
+      "choices" => [{ "message" => { "content" => '{"test": true}' } }]
+    }
+    mock_client = Minitest::Mock.new
+    mock_client.expect :chat, mock_response do |parameters:|
+      true
+    end
+
+    OpenAI::Client.stub :new, mock_client do
+      post test_run_admin_prompt_template_url(@template), params: {
+        prompt_run_id: run.id,
+        system_role: "You are an updated assistant",
+        instructions: "Do {{thing}} with {{stuff}} differently"
+      }, headers: { "Accept" => "text/html" }
+
+      assert_response :success
+    end
+
+    mock_client.verify
+  end
+
+  test "test_run returns error for missing prompt run" do
+    post test_run_admin_prompt_template_url(@template), params: {
+      prompt_run_id: 999999,
+      system_role: "test",
+      instructions: "test"
+    }, headers: { "Accept" => "text/html" }
+
+    assert_response :not_found
+  end
+
   test "diff returns version comparison" do
     @template.update!(instructions: "v2 instructions", editor_note: "v2")
     version = @template.versions.recent.last

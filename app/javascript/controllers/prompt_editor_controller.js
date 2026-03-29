@@ -56,6 +56,58 @@ export default class extends Controller {
     body.classList.toggle("hidden", isExpanded)
   }
 
+  async testRun(event) {
+    event.stopPropagation()
+    const runId = event.params.runId
+    const testUrl = event.params.testUrl
+    const button = event.currentTarget
+    const comparisonDiv = document.getElementById(`comparison-${runId}`)
+
+    // Grab current form values (possibly edited, unsaved)
+    const systemRole = document.querySelector("textarea[name='prompt_template[system_role]']")?.value || ""
+    const instructions = document.querySelector("textarea[name='prompt_template[instructions]']")?.value || ""
+
+    // Show loading state
+    const originalText = button.textContent
+    button.textContent = "Running..."
+    button.disabled = true
+
+    try {
+      const response = await fetch(testUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Accept": "text/html",
+          "X-CSRF-Token": document.querySelector("meta[name='csrf-token']")?.content
+        },
+        body: new URLSearchParams({
+          prompt_run_id: runId,
+          system_role: systemRole,
+          instructions: instructions
+        })
+      })
+
+      const html = await response.text()
+      // Use template element + replaceChildren for safe DOM insertion
+      // (template.innerHTML sets content on a detached DocumentFragment, not the live DOM)
+      const tmpl = document.createElement("template")
+      tmpl.innerHTML = html  // safe: sets on detached DocumentFragment, same pattern as loadDiff above
+      comparisonDiv.replaceChildren(tmpl.content)
+      comparisonDiv.classList.remove("hidden")
+      comparisonDiv.scrollIntoView({ behavior: "smooth", block: "start" })
+    } catch (err) {
+      // Use safe textContent for error display
+      const errorDiv = document.createElement("div")
+      errorDiv.className = "test-comparison-error"
+      errorDiv.textContent = `Request failed: ${err.message}`
+      comparisonDiv.replaceChildren(errorDiv)
+      comparisonDiv.classList.remove("hidden")
+    } finally {
+      button.textContent = originalText
+      button.disabled = false
+    }
+  }
+
   restore(event) {
     const systemRole = event.params.systemRole
     const instructions = event.params.instructions

@@ -2668,3 +2668,61 @@ th.sortable-header:hover {
 .prompt-run-comparison {
   margin-top: var(--space-4);
 }
+
+/* Test comparison side-by-side */
+.test-comparison {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-4);
+}
+
+.test-comparison-header {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: var(--space-3);
+}
+
+.test-comparison-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+@media (max-width: 768px) {
+  .test-comparison-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.test-comparison-panel h4 {
+  font-family: var(--font-data);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.test-comparison-panel pre {
+  font-family: var(--font-data);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  background: var(--color-surface-raised, rgba(0, 0, 0, 0.03));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 4px);
+  padding: var(--space-3);
+  max-height: 500px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.test-comparison-error {
+  color: var(--color-danger, #c0392b);
+  font-family: var(--font-data);
+  font-size: var(--text-sm);
+  padding: var(--space-3);
+  background: var(--color-danger-bg, #fdf0ed);
+  border-radius: var(--radius-sm, 4px);
+}
