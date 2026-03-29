@@ -33,125 +33,224 @@ module Ai
       render_meeting_summary(text, plan_json, "minutes")
     end
 
-    def extract_votes(text)
+    def extract_votes(text, source: nil)
       template = PromptTemplate.find_by!(key: "extract_votes")
       system_role = template.system_role
-      prompt = template.interpolate(text: text.truncate(50_000))
+      placeholders = { text: text.truncate(50_000) }
+      prompt = template.interpolate(**placeholders)
       model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 
+      messages = [
+        (system_role.present? ? { role: "system", content: system_role } : nil),
+        { role: "user", content: prompt }
+      ].compact
+
+      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       response = @client.chat(
         parameters: {
           model: model,
           response_format: { type: "json_object" },
-          messages: [
-            (system_role.present? ? { role: "system", content: system_role } : nil),
-            { role: "user", content: prompt }
-          ].compact,
+          messages: messages,
           temperature: 0.1
         }
       )
-      response.dig("choices", 0, "message", "content")
+      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
+
+      content = response.dig("choices", 0, "message", "content")
+
+      record_prompt_run(
+        template_key: "extract_votes",
+        messages: messages,
+        response_content: content,
+        model: model,
+        response_format: "json_object",
+        temperature: 0.1,
+        duration_ms: duration_ms,
+        source: source,
+        placeholder_values: placeholders.transform_keys(&:to_s)
+      )
+
+      content
     end
 
-    def extract_committee_members(text)
+    def extract_committee_members(text, source: nil)
       template = PromptTemplate.find_by!(key: "extract_committee_members")
       system_role = template.system_role
-      prompt = template.interpolate(text: text.truncate(50_000))
+      placeholders = { text: text.truncate(50_000) }
+      prompt = template.interpolate(**placeholders)
       model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 
+      messages = [
+        (system_role.present? ? { role: "system", content: system_role } : nil),
+        { role: "user", content: prompt }
+      ].compact
+
+      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       response = @client.chat(
         parameters: {
           model: model,
           response_format: { type: "json_object" },
-          messages: [
-            (system_role.present? ? { role: "system", content: system_role } : nil),
-            { role: "user", content: prompt }
-          ].compact
+          messages: messages
         }
       )
-      response.dig("choices", 0, "message", "content")
+      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
+
+      content = response.dig("choices", 0, "message", "content")
+
+      record_prompt_run(
+        template_key: "extract_committee_members",
+        messages: messages,
+        response_content: content,
+        model: model,
+        response_format: "json_object",
+        duration_ms: duration_ms,
+        source: source,
+        placeholder_values: placeholders.transform_keys(&:to_s)
+      )
+
+      content
     end
 
-    def extract_topics(items_text, community_context: "", existing_topics: [], meeting_documents_context: "")
+    def extract_topics(items_text, community_context: "", existing_topics: [], meeting_documents_context: "", source: nil)
       existing_topics_list = existing_topics.join("\n")
 
       template = PromptTemplate.find_by!(key: "extract_topics")
       system_role = template.system_role
-      prompt = template.interpolate(
+      placeholders = {
         items_text: items_text.truncate(50_000),
         community_context: community_context,
         existing_topics: existing_topics_list,
         meeting_documents_context: meeting_documents_context.to_s.truncate(30_000, separator: " ")
-      )
+      }
+      prompt = template.interpolate(**placeholders)
       model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 
+      messages = [
+        (system_role.present? ? { role: "system", content: system_role } : nil),
+        { role: "user", content: prompt }
+      ].compact
+
+      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       response = @client.chat(
         parameters: {
           model: model,
           response_format: { type: "json_object" },
-          messages: [
-            (system_role.present? ? { role: "system", content: system_role } : nil),
-            { role: "user", content: prompt }
-          ].compact,
+          messages: messages,
           temperature: 0.1
         }
       )
-      response.dig("choices", 0, "message", "content")
+      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
+
+      content = response.dig("choices", 0, "message", "content")
+
+      record_prompt_run(
+        template_key: "extract_topics",
+        messages: messages,
+        response_content: content,
+        model: model,
+        response_format: "json_object",
+        temperature: 0.1,
+        duration_ms: duration_ms,
+        source: source,
+        placeholder_values: placeholders.transform_keys(&:to_s)
+      )
+
+      content
     end
 
-    def refine_catchall_topic(item_title:, item_summary:, catchall_topic:, document_text:, existing_topics: [])
+    def refine_catchall_topic(item_title:, item_summary:, catchall_topic:, document_text:, existing_topics: [], source: nil)
       template = PromptTemplate.find_by!(key: "refine_catchall_topic")
       system_role = template.system_role
-      prompt = template.interpolate(
+      placeholders = {
         item_title: item_title,
         item_summary: item_summary.to_s,
         catchall_topic: catchall_topic,
         document_text: document_text.to_s.truncate(6000, separator: " "),
         existing_topics: existing_topics.join(", ")
-      )
+      }
+      prompt = template.interpolate(**placeholders)
       model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 
+      messages = [
+        (system_role.present? ? { role: "system", content: system_role } : nil),
+        { role: "user", content: prompt }
+      ].compact
+
+      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       response = @client.chat(
         parameters: {
           model: model,
           response_format: { type: "json_object" },
-          messages: [
-            (system_role.present? ? { role: "system", content: system_role } : nil),
-            { role: "user", content: prompt }
-          ].compact,
+          messages: messages,
           temperature: 0.1
         }
       )
-      response.dig("choices", 0, "message", "content")
+      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
+
+      content = response.dig("choices", 0, "message", "content")
+
+      record_prompt_run(
+        template_key: "refine_catchall_topic",
+        messages: messages,
+        response_content: content,
+        model: model,
+        response_format: "json_object",
+        temperature: 0.1,
+        duration_ms: duration_ms,
+        source: source,
+        placeholder_values: placeholders.transform_keys(&:to_s)
+      )
+
+      content
     end
 
-    def re_extract_item_topics(item_title:, item_summary:, document_text:, broad_topic_name:, existing_topics: [])
+    def re_extract_item_topics(item_title:, item_summary:, document_text:, broad_topic_name:, existing_topics: [], source: nil)
       template = PromptTemplate.find_by!(key: "re_extract_item_topics")
       system_role = template.system_role
-      prompt = template.interpolate(
+      placeholders = {
         item_title: item_title,
         item_summary: item_summary.to_s,
         document_text: document_text.to_s.truncate(6000, separator: " "),
         broad_topic_name: broad_topic_name,
         existing_topics: existing_topics.join(", ")
-      )
+      }
+      prompt = template.interpolate(**placeholders)
       model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 
+      messages = [
+        (system_role.present? ? { role: "system", content: system_role } : nil),
+        { role: "user", content: prompt }
+      ].compact
+
+      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       response = @client.chat(
         parameters: {
           model: model,
           response_format: { type: "json_object" },
-          messages: [
-            (system_role.present? ? { role: "system", content: system_role } : nil),
-            { role: "user", content: prompt }
-          ].compact,
+          messages: messages,
           temperature: 0.1
         }
       )
-      response.dig("choices", 0, "message", "content")
+      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
+
+      content = response.dig("choices", 0, "message", "content")
+
+      record_prompt_run(
+        template_key: "re_extract_item_topics",
+        messages: messages,
+        response_content: content,
+        model: model,
+        response_format: "json_object",
+        temperature: 0.1,
+        duration_ms: duration_ms,
+        source: source,
+        placeholder_values: placeholders.transform_keys(&:to_s)
+      )
+
+      content
     end
 
-    def triage_topics(context_json)
+    def triage_topics(context_json, source: nil)
       community_context = context_json.delete(:community_context) || context_json.delete("community_context") || ""
 
       if use_gemini?
@@ -208,144 +307,253 @@ module Ai
       else
         template = PromptTemplate.find_by!(key: "triage_topics")
         system_role = template.system_role
-        prompt = template.interpolate(context_json: context_json.to_json)
+        placeholders = { context_json: context_json.to_json }
+        prompt = template.interpolate(**placeholders)
         model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 
+        messages = [
+          (system_role.present? ? { role: "system", content: system_role } : nil),
+          { role: "user", content: prompt }
+        ].compact
+
+        start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
         response = @client.chat(
           parameters: {
             model: model,
             response_format: { type: "json_object" },
-            messages: [
-              (system_role.present? ? { role: "system", content: system_role } : nil),
-              { role: "user", content: prompt }
-            ].compact,
+            messages: messages,
             temperature: 0.1
           }
         )
-        response.dig("choices", 0, "message", "content")
+        duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
+
+        content = response.dig("choices", 0, "message", "content")
+
+        record_prompt_run(
+          template_key: "triage_topics",
+          messages: messages,
+          response_content: content,
+          model: model,
+          response_format: "json_object",
+          temperature: 0.1,
+          duration_ms: duration_ms,
+          source: source,
+          placeholder_values: placeholders.transform_keys(&:to_s)
+        )
+
+        content
       end
     end
 
-    def analyze_topic_summary(context_json)
+    def analyze_topic_summary(context_json, source: nil)
       template = PromptTemplate.find_by!(key: "analyze_topic_summary")
-      system_role = template.interpolate_system_role(committee_context: prepare_committee_context)
-      prompt = template.interpolate(
-        committee_context: prepare_committee_context,
-        context_json: context_json.to_json
-      )
+      committee_ctx = prepare_committee_context
+      system_role = template.interpolate_system_role(committee_context: committee_ctx)
+      placeholders = { committee_context: committee_ctx, context_json: context_json.to_json }
+      prompt = template.interpolate(**placeholders)
       model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 
+      messages = [
+        { role: "system", content: system_role },
+        { role: "user", content: prompt }
+      ]
+
+      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       response = @client.chat(
         parameters: {
           model: model,
           response_format: { type: "json_object" },
-          messages: [
-            { role: "system", content: system_role },
-            { role: "user", content: prompt }
-          ],
+          messages: messages,
           temperature: 0.1
         }
       )
+      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
 
-      response.dig("choices", 0, "message", "content")
+      content = response.dig("choices", 0, "message", "content")
+
+      record_prompt_run(
+        template_key: "analyze_topic_summary",
+        messages: messages,
+        response_content: content,
+        model: model,
+        response_format: "json_object",
+        temperature: 0.1,
+        duration_ms: duration_ms,
+        source: source,
+        placeholder_values: placeholders.transform_keys(&:to_s)
+      )
+
+      content
     end
 
-    def render_topic_summary(plan_json)
+    def render_topic_summary(plan_json, source: nil)
       template = PromptTemplate.find_by!(key: "render_topic_summary")
       system_role = template.interpolate_system_role
-      prompt = template.interpolate(plan_json: plan_json.to_s)
+      placeholders = { plan_json: plan_json.to_s }
+      prompt = template.interpolate(**placeholders)
       model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 
+      messages = [
+        { role: "system", content: system_role },
+        { role: "user", content: prompt }
+      ]
+
+      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       response = @client.chat(
         parameters: {
           model: model,
-          messages: [
-            { role: "system", content: system_role },
-            { role: "user", content: prompt }
-          ],
+          messages: messages,
           temperature: 0.2
         }
       )
+      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
 
-      response.dig("choices", 0, "message", "content")
+      content = response.dig("choices", 0, "message", "content")
+
+      record_prompt_run(
+        template_key: "render_topic_summary",
+        messages: messages,
+        response_content: content,
+        model: model,
+        temperature: 0.2,
+        duration_ms: duration_ms,
+        source: source,
+        placeholder_values: placeholders.transform_keys(&:to_s)
+      )
+
+      content
     end
 
-    def analyze_topic_briefing(context)
+    def analyze_topic_briefing(context, source: nil)
       template = PromptTemplate.find_by!(key: "analyze_topic_briefing")
-      system_role = template.interpolate_system_role(committee_context: prepare_committee_context)
-      prompt = template.interpolate(
-        committee_context: prepare_committee_context,
-        context: context.to_json
-      )
+      committee_ctx = prepare_committee_context
+      system_role = template.interpolate_system_role(committee_context: committee_ctx)
+      placeholders = { committee_context: committee_ctx, context: context.to_json }
+      prompt = template.interpolate(**placeholders)
       model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 
+      messages = [
+        { role: "system", content: system_role },
+        { role: "user", content: prompt }
+      ]
+
+      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       response = @client.chat(
         parameters: {
           model: model,
           response_format: { type: "json_object" },
-          messages: [
-            { role: "system", content: system_role },
-            { role: "user", content: prompt }
-          ],
+          messages: messages,
           temperature: 0.1
         }
       )
+      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
 
-      response.dig("choices", 0, "message", "content")
+      content = response.dig("choices", 0, "message", "content")
+
+      record_prompt_run(
+        template_key: "analyze_topic_briefing",
+        messages: messages,
+        response_content: content,
+        model: model,
+        response_format: "json_object",
+        temperature: 0.1,
+        duration_ms: duration_ms,
+        source: source,
+        placeholder_values: placeholders.transform_keys(&:to_s)
+      )
+
+      content
     end
 
-    def render_topic_briefing(analysis_json)
+    def render_topic_briefing(analysis_json, source: nil)
       template = PromptTemplate.find_by!(key: "render_topic_briefing")
       system_role = template.interpolate_system_role
-      prompt = template.interpolate(analysis_json: analysis_json.to_s)
+      placeholders = { analysis_json: analysis_json.to_s }
+      prompt = template.interpolate(**placeholders)
       model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 
+      messages = [
+        { role: "system", content: system_role },
+        { role: "user", content: prompt }
+      ]
+
+      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       response = @client.chat(
         parameters: {
           model: model,
           response_format: { type: "json_object" },
-          messages: [
-            { role: "system", content: system_role },
-            { role: "user", content: prompt }
-          ],
+          messages: messages,
           temperature: 0.2
         }
       )
+      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
 
-      JSON.parse(response.dig("choices", 0, "message", "content"))
+      content = response.dig("choices", 0, "message", "content")
+
+      record_prompt_run(
+        template_key: "render_topic_briefing",
+        messages: messages,
+        response_content: content,
+        model: model,
+        response_format: "json_object",
+        temperature: 0.2,
+        duration_ms: duration_ms,
+        source: source,
+        placeholder_values: placeholders.transform_keys(&:to_s)
+      )
+
+      JSON.parse(content)
     rescue JSON::ParserError
       { "editorial_content" => "", "record_content" => "" }
     end
 
-    def generate_briefing_interim(context)
+    def generate_briefing_interim(context, source: nil)
       template = PromptTemplate.find_by!(key: "generate_briefing_interim")
       system_role = template.system_role
-      prompt = template.interpolate(
+      placeholders = {
         topic_name: context[:topic_name].to_s,
         current_headline: context[:current_headline].to_s,
         meeting_body: context[:meeting_body].to_s,
         meeting_date: context[:meeting_date].to_s,
         agenda_items: context[:agenda_items].to_json
-      )
+      }
+      prompt = template.interpolate(**placeholders)
       model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 
+      messages = [
+        (system_role.present? ? { role: "system", content: system_role } : nil),
+        { role: "user", content: prompt }
+      ].compact
+
+      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       response = @client.chat(
         parameters: {
           model: model,
           response_format: { type: "json_object" },
-          messages: [
-            (system_role.present? ? { role: "system", content: system_role } : nil),
-            { role: "user", content: prompt }
-          ].compact
+          messages: messages
         }
       )
+      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
 
-      JSON.parse(response.dig("choices", 0, "message", "content"))
+      content = response.dig("choices", 0, "message", "content")
+
+      record_prompt_run(
+        template_key: "generate_briefing_interim",
+        messages: messages,
+        response_content: content,
+        model: model,
+        response_format: "json_object",
+        duration_ms: duration_ms,
+        source: source,
+        placeholder_values: placeholders.transform_keys(&:to_s)
+      )
+
+      JSON.parse(content)
     rescue JSON::ParserError
       { "headline" => context[:current_headline], "upcoming_note" => "" }
     end
 
-    def generate_topic_description(topic_context)
+    def generate_topic_description(topic_context, source: nil)
       topic_name = topic_context[:topic_name]
       agenda_items = topic_context[:agenda_items] || []
       headlines = topic_context[:headlines] || []
@@ -356,53 +564,85 @@ module Ai
       key = agenda_items.size >= 3 ? "generate_topic_description_detailed" : "generate_topic_description_broad"
       template = PromptTemplate.find_by!(key: key)
       system_role = template.system_role
-      user_prompt = template.interpolate(
-        topic_name: topic_name,
-        activity_text: activity_text,
-        headlines_text: headlines_text
-      )
+      placeholders = { topic_name: topic_name, activity_text: activity_text, headlines_text: headlines_text }
+      user_prompt = template.interpolate(**placeholders)
       model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 
+      messages = [
+        (system_role.present? ? { role: "system", content: system_role } : nil),
+        { role: "user", content: user_prompt }
+      ].compact
+
+      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       response = @client.chat(
         parameters: {
           model: model,
-          messages: [
-            (system_role.present? ? { role: "system", content: system_role } : nil),
-            { role: "user", content: user_prompt }
-          ].compact
+          messages: messages
         }
       )
+      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
 
       content = response.dig("choices", 0, "message", "content")
+
+      record_prompt_run(
+        template_key: key,
+        messages: messages,
+        response_content: content,
+        model: model,
+        duration_ms: duration_ms,
+        source: source,
+        placeholder_values: placeholders.transform_keys(&:to_s)
+      )
+
       content.present? ? content.strip : nil
     end
 
     # Structured meeting analysis — produces JSON for direct rendering.
     # Called by SummarizeMeetingJob to store structured JSON in generation_data.
-    def analyze_meeting_content(doc_text, kb_context, type)
+    def analyze_meeting_content(doc_text, kb_context, type, source: nil)
       template = PromptTemplate.find_by!(key: "analyze_meeting_content")
-      system_role = template.interpolate_system_role(committee_context: prepare_committee_context)
-      prompt = template.interpolate(
+      committee_ctx = prepare_committee_context
+      system_role = template.interpolate_system_role(committee_context: committee_ctx)
+      placeholders = {
         kb_context: kb_context.to_s,
-        committee_context: prepare_committee_context,
+        committee_context: committee_ctx,
         type: type.to_s,
         doc_text: doc_text.truncate(100_000)
-      )
+      }
+      prompt = template.interpolate(**placeholders)
       model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 
+      messages = [
+        { role: "system", content: system_role },
+        { role: "user", content: prompt }
+      ]
+
+      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       response = @client.chat(
         parameters: {
           model: model,
           response_format: { type: "json_object" },
-          messages: [
-            { role: "system", content: system_role },
-            { role: "user", content: prompt }
-          ],
+          messages: messages,
           temperature: 0.1
         }
       )
+      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
 
-      response.dig("choices", 0, "message", "content")
+      content = response.dig("choices", 0, "message", "content")
+
+      record_prompt_run(
+        template_key: "analyze_meeting_content",
+        messages: messages,
+        response_content: content,
+        model: model,
+        response_format: "json_object",
+        temperature: 0.1,
+        duration_ms: duration_ms,
+        source: source,
+        placeholder_values: placeholders.transform_keys(&:to_s)
+      )
+
+      content
     end
 
     def prepare_doc_context(extractions)
@@ -446,6 +686,22 @@ module Ai
       CONTEXT
     end
 
+    def record_prompt_run(template_key:, messages:, response_content:, model:, response_format: nil, temperature: nil, duration_ms: nil, source: nil, placeholder_values: nil)
+      PromptRun.create!(
+        prompt_template_key: template_key,
+        ai_model: model,
+        messages: messages,
+        response_body: response_content,
+        response_format: response_format,
+        temperature: temperature,
+        duration_ms: duration_ms,
+        source: source,
+        placeholder_values: placeholder_values
+      )
+    rescue => e
+      Rails.logger.warn("Failed to record prompt run for #{template_key}: #{e.message}")
+    end
+
     def gemini_api_key
       Rails.application.credentials.gemini_access_token || ENV["GEMINI_ACCESS_TOKEN"]
     end
@@ -482,27 +738,42 @@ module Ai
     end
 
     # PASS 2: Rendering (legacy — used by summarize_minutes/packet wrappers)
-    def render_meeting_summary(doc_text, plan_json, type)
+    def render_meeting_summary(doc_text, plan_json, type, source: nil)
       template = PromptTemplate.find_by!(key: "render_meeting_summary")
       system_role = template.interpolate_system_role
-      prompt = template.interpolate(
-        plan_json: plan_json.to_s,
-        doc_text: doc_text.truncate(50_000)
-      )
+      placeholders = { plan_json: plan_json.to_s, doc_text: doc_text.truncate(50_000) }
+      prompt = template.interpolate(**placeholders)
       model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 
+      messages = [
+        { role: "system", content: system_role },
+        { role: "user", content: prompt }
+      ]
+
+      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       response = @client.chat(
         parameters: {
           model: model,
-          messages: [
-            { role: "system", content: system_role },
-            { role: "user", content: prompt }
-          ],
+          messages: messages,
           temperature: 0.2
         }
       )
+      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
 
-      response.dig("choices", 0, "message", "content")
+      content = response.dig("choices", 0, "message", "content")
+
+      record_prompt_run(
+        template_key: "render_meeting_summary",
+        messages: messages,
+        response_content: content,
+        model: model,
+        temperature: 0.2,
+        duration_ms: duration_ms,
+        source: source,
+        placeholder_values: placeholders.transform_keys(&:to_s)
+      )
+
+      content
     end
   end
 end
