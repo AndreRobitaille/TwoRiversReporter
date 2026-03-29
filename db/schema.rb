@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_28_200228) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_29_133555) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -277,6 +277,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_28_200228) do
     t.datetime "updated_at", null: false
     t.index ["agenda_item_id"], name: "index_motions_on_agenda_item_id"
     t.index ["meeting_id"], name: "index_motions_on_meeting_id"
+  end
+
+  create_table "prompt_runs", force: :cascade do |t|
+    t.string "ai_model", null: false
+    t.datetime "created_at", null: false
+    t.integer "duration_ms"
+    t.jsonb "messages", default: [], null: false
+    t.jsonb "placeholder_values"
+    t.string "prompt_template_key", null: false
+    t.text "response_body", null: false
+    t.string "response_format"
+    t.bigint "source_id"
+    t.string "source_type"
+    t.float "temperature"
+    t.index ["prompt_template_key", "created_at"], name: "index_prompt_runs_on_prompt_template_key_and_created_at"
+    t.index ["source_type", "source_id"], name: "index_prompt_runs_on_source_type_and_source_id"
   end
 
   create_table "prompt_templates", force: :cascade do |t|
