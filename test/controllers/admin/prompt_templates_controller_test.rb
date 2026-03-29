@@ -72,7 +72,7 @@ class Admin::PromptTemplatesControllerTest < ActionDispatch::IntegrationTest
     PromptRun.create!(
       prompt_template_key: @template.key,
       ai_model: "gpt-5.2",
-      messages: [{ "role" => "user", "content" => "test" }],
+      messages: [ { "role" => "user", "content" => "test" } ],
       response_body: '{"result": "test"}',
       response_format: "json_object"
     )
@@ -104,7 +104,7 @@ class Admin::PromptTemplatesControllerTest < ActionDispatch::IntegrationTest
 
     # Stub OpenAI client to avoid real API calls
     mock_response = {
-      "choices" => [{ "message" => { "content" => '{"test": true}' } }]
+      "choices" => [ { "message" => { "content" => '{"test": true}' } } ]
     }
     mock_client = Minitest::Mock.new
     mock_client.expect :chat, mock_response do |parameters:|

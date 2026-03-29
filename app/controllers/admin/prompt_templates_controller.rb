@@ -118,7 +118,7 @@ class Admin::PromptTemplatesController < Admin::BaseController
     return runs if runs.size <= 5
 
     # Prefer diversity: one per source, fill remaining with recency
-    grouped = runs.group_by { |r| [r.source_type, r.source_id] }
+    grouped = runs.group_by { |r| [ r.source_type, r.source_id ] }
     diverse = grouped.values.map(&:first).sort_by(&:created_at).reverse
     diverse.first(5)
   end
