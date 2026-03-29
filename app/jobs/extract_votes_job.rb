@@ -14,7 +14,7 @@ class ExtractVotesJob < ApplicationJob
     meeting.motions.destroy_all
 
     ai_service = ::Ai::OpenAiService.new
-    json_response = ai_service.extract_votes(minutes_doc.extracted_text)
+    json_response = ai_service.extract_votes(minutes_doc.extracted_text, source: meeting)
 
     begin
       data = JSON.parse(json_response)

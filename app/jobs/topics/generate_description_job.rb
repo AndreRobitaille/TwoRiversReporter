@@ -17,7 +17,7 @@ module Topics
       end
 
       context = build_context(topic)
-      description = Ai::OpenAiService.new.generate_topic_description(context)
+      description = Ai::OpenAiService.new.generate_topic_description(context, source: topic)
 
       return if description.nil?
 

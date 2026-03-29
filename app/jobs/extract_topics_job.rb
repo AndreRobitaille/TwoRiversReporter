@@ -40,7 +40,8 @@ class ExtractTopicsJob < ApplicationJob
       items_text,
       community_context: community_context,
       existing_topics: existing_topics,
-      meeting_documents_context: meeting_docs_context
+      meeting_documents_context: meeting_docs_context,
+      source: meeting
     )
 
     begin
@@ -120,7 +121,8 @@ class ExtractTopicsJob < ApplicationJob
           item_summary: item.summary,
           catchall_topic: link.topic.name,
           document_text: doc_text,
-          existing_topics: existing_topics
+          existing_topics: existing_topics,
+          source: meeting
         )
 
         data = JSON.parse(result)

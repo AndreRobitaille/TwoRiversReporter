@@ -14,11 +14,11 @@ module Topics
       retrieval_service = RetrievalService.new
 
       context = build_briefing_context(topic, meeting, retrieval_service)
-      analysis_json_str = ai_service.analyze_topic_briefing(context)
+      analysis_json_str = ai_service.analyze_topic_briefing(context, source: topic)
       analysis_json = parse_json_safely(analysis_json_str, topic)
       return if analysis_json.empty?
 
-      rendered = ai_service.render_topic_briefing(analysis_json.to_json)
+      rendered = ai_service.render_topic_briefing(analysis_json.to_json, source: topic)
 
       save_briefing(topic, meeting, analysis_json, rendered)
       propagate_impact(topic, analysis_json)

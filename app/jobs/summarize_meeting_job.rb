@@ -24,7 +24,7 @@ class SummarizeMeetingJob < ApplicationJob
     # Prefer minutes (authoritative) over packet
     minutes_doc = meeting.meeting_documents.find_by(document_type: "minutes_pdf")
     if minutes_doc&.extracted_text.present?
-      json_str = ai_service.analyze_meeting_content(minutes_doc.extracted_text, kb_context, "minutes")
+      json_str = ai_service.analyze_meeting_content(minutes_doc.extracted_text, kb_context, "minutes", source: meeting)
       save_summary(meeting, "minutes_recap", json_str)
       return
     end
@@ -39,7 +39,7 @@ class SummarizeMeetingJob < ApplicationJob
       end
 
       if doc_text
-        json_str = ai_service.analyze_meeting_content(doc_text, kb_context, "packet")
+        json_str = ai_service.analyze_meeting_content(doc_text, kb_context, "packet", source: meeting)
         save_summary(meeting, "packet_analysis", json_str)
       end
     end
@@ -58,7 +58,7 @@ class SummarizeMeetingJob < ApplicationJob
       builder = Topics::SummaryContextBuilder.new(topic, meeting)
       context_json = builder.build_context_json(kb_context_chunks: formatted_context)
 
-      analysis_json_str = ai_service.analyze_topic_summary(context_json)
+      analysis_json_str = ai_service.analyze_topic_summary(context_json, source: topic)
 
       # Parse safely for storage
       analysis_json = begin
@@ -71,7 +71,7 @@ class SummarizeMeetingJob < ApplicationJob
       # Validate citations
       analysis_json = validate_analysis_json(analysis_json, context_json[:citation_ids])
 
-      markdown_content = ai_service.render_topic_summary(analysis_json.to_json)
+      markdown_content = ai_service.render_topic_summary(analysis_json.to_json, source: topic)
 
       save_topic_summary(meeting, topic, markdown_content, analysis_json)
 
