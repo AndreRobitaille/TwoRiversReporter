@@ -1,0 +1,223 @@
+<%# Rendered preview of prompt output — shows how it appears on the site %>
+<%# Only renders for templates whose output maps directly to visible page content %>
+
+<% parsed = begin; JSON.parse(run.response_body); rescue; nil; end %>
+<% return unless parsed %>
+
+<% case run.prompt_template_key %>
+<% when "analyze_meeting_content" %>
+  <div class="prompt-run-message">
+    <h4 class="prompt-run-message-role">Rendered Preview — Meeting Page</h4>
+    <div class="rendered-preview">
+      <% headline = parsed["headline"] %>
+      <% if headline.present? %>
+        <div class="rendered-preview-section">
+          <div class="rendered-preview-label">Headline</div>
+          <p class="meeting-headline"><%= headline %></p>
+        </div>
+      <% end %>
+
+      <% highlights = parsed["highlights"] || [] %>
+      <% if highlights.any? %>
+        <div class="rendered-preview-section">
+          <div class="rendered-preview-label">Highlights</div>
+          <ul class="meeting-highlights">
+            <% highlights.each do |h| %>
+              <li>
+                <%= h["text"] %>
+                <% if h["vote"].present? %>
+                  <span class="highlight-vote">(<%= h["vote"] %>)</span>
+                <% end %>
+                <% if h["citation"].present? %>
+                  <span class="highlight-citation">[<%= h["citation"] %>]</span>
+                <% end %>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <% public_inputs = parsed["public_input"] || [] %>
+      <% if public_inputs.any? %>
+        <div class="rendered-preview-section">
+          <div class="rendered-preview-label">Public Input</div>
+          <ul class="public-input-list">
+            <% public_inputs.each do |pi| %>
+              <li class="public-input-item">
+                <span class="public-input-speaker"><%= pi["speaker"] %></span>
+                <span class="public-input-type">
+                  <%= pi["type"] == "communication" ? "Communication" : "Public Comment" %>
+                </span>
+                <p><%= pi["summary"] %></p>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <% items = parsed["item_details"] || [] %>
+      <% if items.any? %>
+        <div class="rendered-preview-section">
+          <div class="rendered-preview-label">Agenda Items (<%= items.size %>)</div>
+          <% items.first(5).each do |item| %>
+            <div class="meeting-item-card">
+              <div class="meeting-item-card-title"><%= item["agenda_item_title"] %></div>
+              <% if item["summary"].present? %>
+                <div class="meeting-item-card-summary"><%= item["summary"] %></div>
+              <% end %>
+              <% if item["decision"].present? %>
+                <div class="meeting-item-card-decision">
+                  <span class="decision-badge <%= decision_badge_class(item["decision"]) %>">
+                    <%= item["decision"] %>
+                    <%= " #{item["vote"]}" if item["vote"].present? %>
+                  </span>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+          <% if items.size > 5 %>
+            <p class="rendered-preview-truncated">+ <%= items.size - 5 %> more items</p>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+<% when "analyze_topic_briefing" %>
+  <div class="prompt-run-message">
+    <h4 class="prompt-run-message-role">Rendered Preview — Topic Page</h4>
+    <div class="rendered-preview">
+      <% editorial = parsed["editorial_analysis"] || {} %>
+
+      <% watch = editorial["what_to_watch"] %>
+      <% if watch.present? %>
+        <div class="rendered-preview-section">
+          <div class="rendered-preview-label">What to Watch</div>
+          <div class="topic-watch-callout">
+            <p><%= render_inline_markdown(watch) %></p>
+          </div>
+        </div>
+      <% end %>
+
+      <% story = editorial["current_state"] %>
+      <% if story.present? %>
+        <div class="rendered-preview-section">
+          <div class="rendered-preview-label">The Story</div>
+          <div class="briefing-editorial-content">
+            <%= sanitize(render_briefing_editorial(story)) %>
+          </div>
+        </div>
+      <% end %>
+
+      <% concerns = editorial["process_concerns"] || [] %>
+      <% if concerns.any? %>
+        <div class="rendered-preview-section">
+          <div class="rendered-preview-label">Process Concerns</div>
+          <div class="topic-concerns-callout">
+            <div class="concerns-label">Worth noting</div>
+            <ul>
+              <% concerns.each do |concern| %>
+                <li><%= concern %></li>
+              <% end %>
+            </ul>
+          </div>
+        </div>
+      <% end %>
+
+      <% record = parsed["factual_record"] || [] %>
+      <% if record.any? %>
+        <div class="rendered-preview-section">
+          <div class="rendered-preview-label">Record (<%= record.size %> entries)</div>
+          <div class="topic-timeline">
+            <% record.first(5).each do |entry| %>
+              <div class="topic-timeline-entry">
+                <div class="topic-timeline-date"><%= format_record_date(entry["date"]) %></div>
+                <div class="topic-timeline-content">
+                  <%= entry["event"] %>
+                  <span class="topic-timeline-meeting"><%= entry["meeting"] %></span>
+                </div>
+              </div>
+            <% end %>
+          </div>
+          <% if record.size > 5 %>
+            <p class="rendered-preview-truncated">+ <%= record.size - 5 %> more entries</p>
+          <% end %>
+        </div>
+      <% end %>
+
+      <% headline = parsed.dig("headlines", "headline") || parsed["headline"] %>
+      <% upcoming = parsed.dig("headlines", "upcoming_headline") || parsed["upcoming_headline"] %>
+      <% if headline.present? || upcoming.present? %>
+        <div class="rendered-preview-section">
+          <div class="rendered-preview-label">Homepage Cards</div>
+          <% if headline.present? %>
+            <div class="rendered-preview-card">
+              <span class="rendered-preview-card-label">What Happened</span>
+              <p><%= headline %></p>
+            </div>
+          <% end %>
+          <% if upcoming.present? %>
+            <div class="rendered-preview-card">
+              <span class="rendered-preview-card-label">Coming Up</span>
+              <p><%= upcoming %></p>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+<% when "generate_briefing_interim" %>
+  <div class="prompt-run-message">
+    <h4 class="prompt-run-message-role">Rendered Preview — Homepage Cards</h4>
+    <div class="rendered-preview">
+      <% if parsed["headline"].present? %>
+        <div class="rendered-preview-card">
+          <span class="rendered-preview-card-label">What Happened</span>
+          <p><%= parsed["headline"] %></p>
+        </div>
+      <% end %>
+      <% if parsed["upcoming_headline"].present? %>
+        <div class="rendered-preview-card">
+          <span class="rendered-preview-card-label">Coming Up</span>
+          <p><%= parsed["upcoming_headline"] %></p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+<% when "analyze_topic_summary" %>
+  <div class="prompt-run-message">
+    <h4 class="prompt-run-message-role">Rendered Preview — Topic Page (per-meeting snapshot)</h4>
+    <div class="rendered-preview">
+      <% if parsed["summary"].present? %>
+        <div class="rendered-preview-section">
+          <div class="rendered-preview-label">Summary</div>
+          <p><%= parsed["summary"] %></p>
+        </div>
+      <% end %>
+      <% if parsed["key_actions"].is_a?(Array) && parsed["key_actions"].any? %>
+        <div class="rendered-preview-section">
+          <div class="rendered-preview-label">Key Actions</div>
+          <ul>
+            <% parsed["key_actions"].each do |action| %>
+              <li><%= action.is_a?(Hash) ? action["description"] || action["text"] : action %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+<% when "generate_topic_description_detailed", "generate_topic_description_broad" %>
+  <div class="prompt-run-message">
+    <h4 class="prompt-run-message-role">Rendered Preview — Topic Cards</h4>
+    <div class="rendered-preview">
+      <div class="rendered-preview-section">
+        <div class="rendered-preview-label">Description on topic cards</div>
+        <p class="table-desc"><%= run.response_body.strip %></p>
+      </div>
+    </div>
+  </div>
+
+<% end %>

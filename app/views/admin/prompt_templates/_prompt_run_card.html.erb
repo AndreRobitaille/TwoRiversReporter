@@ -24,9 +24,11 @@
       <% end %>
 
       <div class="prompt-run-message">
-        <h4 class="prompt-run-message-role">Output</h4>
+        <h4 class="prompt-run-message-role">Raw Output</h4>
         <pre class="prompt-run-message-content"><% if run.response_format == "json_object" %><%= JSON.pretty_generate(JSON.parse(run.response_body)).truncate(5000) rescue run.response_body.truncate(5000) %><% else %><%= run.response_body.truncate(5000) %><% end %></pre>
       </div>
+
+      <%= render "rendered_preview", run: run %>
     </div>
 
     <div class="prompt-run-actions">
