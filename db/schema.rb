@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_29_133555) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_29_185015) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -305,6 +305,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_29_133555) do
     t.jsonb "placeholders", default: [], null: false
     t.text "system_role"
     t.datetime "updated_at", null: false
+    t.text "usage_context"
     t.index ["key"], name: "index_prompt_templates_on_key", unique: true
   end
 

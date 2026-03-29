@@ -10,6 +10,9 @@
     <div>
       <h1 class="page-title" style="margin-bottom: var(--space-2);"><%= @template.name %></h1>
       <p class="page-subtitle"><%= @template.description %></p>
+      <% if @template.usage_context.present? %>
+        <p class="page-subtitle" style="margin-top: var(--space-1); color: var(--color-text-muted); font-size: var(--text-sm);"><%= @template.usage_context %></p>
+      <% end %>
     </div>
   </div>
 </div>

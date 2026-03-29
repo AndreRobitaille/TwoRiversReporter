@@ -32,6 +32,9 @@
             <% if template.description.present? %>
               <div class="table-desc"><%= template.description %></div>
             <% end %>
+            <% if template.usage_context.present? %>
+              <div class="table-desc" style="margin-top: var(--space-1); color: var(--color-text-muted);"><%= template.usage_context %></div>
+            <% end %>
           </td>
           <td>
             <span class="chip <%= template.model_tier == 'lightweight' ? 'chip--amber' : 'chip--teal' %>">
