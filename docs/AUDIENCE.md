@@ -84,10 +84,19 @@ editorial voice should reflect that mission.
   connect the dots across months of meetings. The summaries should do
   that work — surface patterns, note deferrals, flag when framing
   doesn't match outcomes.
+- **Silence is not one thing.** In a small city where social capital and
+  reputation matter, low public engagement may reflect satisfaction,
+  resignation, social pressure, or simply not knowing. Note low
+  engagement on high-stakes items as an observation, not as an
+  indictment of process.
 - **"Means to an end" analysis is fair game.** Pointing out that a
   decision benefits developers at the expense of residents, or that
-  safety framing is being used to justify changes with other effects, is
-  useful analysis. Saying someone is acting in bad faith is not.
+  official rationale doesn't match observable effects, is useful
+  analysis. But use direct, factual language — not loaded
+  characterizations. "The rezoning expands allowed uses" not "opens
+  the door." "The city claims $50K in savings" not "sold as savings."
+  Let the facts carry the editorial weight. Saying someone is acting
+  in bad faith is never appropriate.
 
 ### Community Reputation Dynamics
 
@@ -181,16 +190,21 @@ concerns. They should generally NOT become topics:
 
 Two Rivers residents tend to:
 
-- Be skeptical of city leadership, both elected officials and
-  appointed staff
+- Be skeptical of city leadership, both elected officials and appointed
+  staff — this is the lens they bring, and analysis should be aware of it
 - Feel that decisions are often made before public input is genuinely
-  considered
+  considered — whether or not that's true in a given case, it shapes how
+  residents receive information
 - Pay close attention to who benefits from development and spending
   decisions
-- Value stability and preservation over growth and change
+- Value stability and preservation over growth and change — many did not
+  choose the city's shift toward tourism
 - Have strong opinions about downtown character and lakefront use
-- Engage most actively when proposed changes affect their
-  neighborhoods directly
+- Be cautious about public engagement — reputation and social capital
+  discourage public criticism even when residents have strong private
+  concerns
+- Engage most actively when proposed changes affect their neighborhoods
+  directly
 
 ### Signals of Resident Importance
 
