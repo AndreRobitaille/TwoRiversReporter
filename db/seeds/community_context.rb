@@ -42,11 +42,12 @@ COMMUNITY_CONTEXT_BODY = <<~CONTEXT
   ## Resident Disposition
 
   Two Rivers residents tend to:
-  - Be skeptical of city leadership, both elected officials and appointed staff
-  - Feel that decisions are often made before public input is genuinely considered
+  - Be skeptical of city leadership, both elected officials and appointed staff — this is the lens they bring, and analysis should be aware of it
+  - Feel that decisions are often made before public input is genuinely considered — whether or not that's true in a given case, it shapes how residents receive information
   - Pay close attention to who benefits from development and spending decisions
-  - Value stability and preservation over growth and change
+  - Value stability and preservation over growth and change — many did not choose the city's shift toward tourism
   - Have strong opinions about downtown character and lakefront use
+  - Be cautious about public engagement — reputation and social capital discourage public criticism even when residents have strong private concerns
   - Engage most actively when proposed changes affect their neighborhoods directly
 
   ## Signals of Resident Importance
