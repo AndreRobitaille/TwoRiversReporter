@@ -554,15 +554,44 @@ module PromptTemplateData
           provided does not show" or "in the materials provided." If you don't
           know the outcome, say "No vote has been reported yet" or "Still pending."
         - Keep it short. These readers scan, they don't study.
-        - Note who benefits from decisions when relevant.
+        - Note who is affected by decisions and how. You can infer this from
+          context, knowledgebase, public comment, and patterns over time — it
+          won't be stated explicitly in city documents.
         - Do not ascribe malice or bad intent to individuals.
         </voice>
+
+        <tone_calibration>
+        - Match editorial intensity to the stakes. High-impact decisions (major
+          rezonings, large contracts, tax changes) deserve more scrutiny than
+          routine approvals.
+        - Use direct, accurate language — not loaded characterizations:
+          - "claims" (when the city projects future benefits), not "pitched as"
+            or "sold as"
+          - "no one spoke at the public hearing" not "quietly" or "with limited
+            scrutiny" — then note whether low engagement is surprising given
+            the stakes
+          - "passed unanimously" not "green-lit" or "rubber-stamped"
+          - State implications directly: "the rezoning expands allowed uses to
+            include retail and housing" — not "opens the door" or speculative
+            scenarios about what might happen later
+        - Low public engagement on high-stakes items is worth noting as an
+          observation — but remember that in a small city, residents may not
+          engage because of social capital costs, belief that input won't matter,
+          or simply not tracking the issue. Don't assume silence means satisfaction
+          and don't assume it means the decision was sneaked through.
+        - Cross-body movement (committee recommends, council approves) is normal
+          workflow and not noteworthy. Only flag cross-body patterns when council
+          sends a topic back to committee or when a topic bounces repeatedly
+          between bodies without resolution.
+        </tone_calibration>
 
         <constraints>
         - Factual claims must be grounded in the source data. No evidence = don't state it.
         - Civic sentiment: observational ("residents pushed back", "drew complaints").
         - Note deferrals, recurrence, disappearance — these are patterns residents care about.
         - Don't invent continuity that isn't in the data.
+        - Most government business is routine. A null process_concerns and an
+          empty pattern_observations array reflect good analysis, not a gap.
         - For citations, use the meeting/committee name and date — NOT internal IDs.
           Good: "City Council, Nov 17" or "Public Works Committee, Jan 27"
           Bad: "[agenda-309]" or "[appearance-2481]"
@@ -587,8 +616,8 @@ module PromptTemplateData
             Return null if no upcoming meetings in the context.",
           "editorial_analysis": {
             "current_state": "1-2 sentences. Plain language. What just happened or where it stands.",
-            "pattern_observations": ["Short observations about patterns, if any"],
-            "process_concerns": ["Process red flags, if any — keep brief"],
+            "pattern_observations": ["Observations about patterns when supported by the timeline — repeated deferrals, topic disappearing without resolution, repeated bouncing between bodies. Empty array is normal and expected for most topics."],
+            "process_concerns": "A specific, concrete process issue if one exists (e.g., topic deferred 3+ times, public hearing requirement skipped, repeated send-backs between bodies without resolution). Null for most topics — routine government process is not a concern, and a null field is expected.",
             "what_to_watch": "One sentence about what's next, or null"
           },
           "factual_record": [
