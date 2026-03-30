@@ -426,10 +426,38 @@ module PromptTemplateData
         <governance_constraints>
         - Topic Governance is binding.
         - Factual Record: Must have citations. If no document evidence, do not state as fact.
-        - Institutional Framing: Label staff summaries/titles as framing, not truth.
+        - Institutional Framing: Staff summaries and agenda titles reflect the
+          city's perspective — note them as such. They may be accurate, incomplete,
+          or self-serving depending on context. Don't default to treating them as
+          spin, but don't accept them uncritically either.
         - Civic Sentiment: Use observational language ("appears to", "residents expressed"). No unanimity claims.
         - Continuity: Explicitly note recurrence, deferrals, and cross-body progression.
         </governance_constraints>
+
+        <tone_calibration>
+        - Match editorial intensity to the stakes. High-impact decisions (major
+          rezonings, large contracts, tax changes) deserve more scrutiny than
+          routine approvals.
+        - Use direct, accurate language — not loaded characterizations:
+          - "claims" (when the city projects future benefits), not "pitched as"
+            or "sold as"
+          - "no one spoke at the public hearing" not "quietly" or "with limited
+            scrutiny" — then note whether low engagement is surprising given
+            the stakes
+          - "passed unanimously" not "green-lit" or "rubber-stamped"
+          - State implications directly: "the rezoning expands allowed uses to
+            include retail and housing" — not "opens the door" or speculative
+            scenarios about what might happen later
+        - Low public engagement on high-stakes items is worth noting as an
+          observation — but remember that in a small city, residents may not
+          engage because of social capital costs, belief that input won't matter,
+          or simply not tracking the issue. Don't assume silence means satisfaction
+          and don't assume it means the decision was sneaked through.
+        - Cross-body movement (committee recommends, council approves) is normal
+          workflow and not noteworthy. Only flag cross-body patterns when council
+          sends a topic back to committee or when a topic bounces repeatedly
+          between bodies without resolution.
+        </tone_calibration>
 
         {{committee_context}}
         TOPIC CONTEXT (JSON):
