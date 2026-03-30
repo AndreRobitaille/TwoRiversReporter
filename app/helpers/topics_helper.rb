@@ -76,7 +76,12 @@ module TopicsHelper
   end
 
   def briefing_process_concerns(briefing)
-    briefing&.generation_data&.dig("editorial_analysis", "process_concerns") || []
+    value = briefing&.generation_data&.dig("editorial_analysis", "process_concerns")
+    case value
+    when Array then value
+    when String then [ value ]
+    else []
+    end
   end
 
   def briefing_factual_record(briefing)

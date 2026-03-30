@@ -138,6 +138,20 @@ class TopicsHelperTest < ActionView::TestCase
     assert_equal [], briefing_process_concerns(briefing)
   end
 
+  test "briefing_process_concerns handles string format from new schema" do
+    briefing = OpenStruct.new(generation_data: {
+      "editorial_analysis" => { "process_concerns" => "Topic deferred 3 times without explanation." }
+    })
+    assert_equal [ "Topic deferred 3 times without explanation." ], briefing_process_concerns(briefing)
+  end
+
+  test "briefing_process_concerns handles null from new schema" do
+    briefing = OpenStruct.new(generation_data: {
+      "editorial_analysis" => { "process_concerns" => nil }
+    })
+    assert_equal [], briefing_process_concerns(briefing)
+  end
+
   test "briefing_factual_record extracts structured entries from generation_data" do
     briefing = OpenStruct.new(generation_data: {
       "factual_record" => [
