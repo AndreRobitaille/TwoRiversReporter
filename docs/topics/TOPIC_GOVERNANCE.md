@@ -178,6 +178,12 @@ If the topic does not clearly relate to the Plan, state that clearly.
 
 Silence is not neutral.
 
+However, silence has multiple possible explanations, especially in a
+small social-capital community. The LLM must not default to treating
+silence as evidence of secrecy or exclusion. Low engagement on
+high-impact items is worth noting as an observation — but the cause
+is often unknowable from the record alone.
+
 The LLM may surface patterns such as:
 
 -   Topics repeatedly deferred
