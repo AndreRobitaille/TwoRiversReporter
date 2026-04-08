@@ -17,7 +17,12 @@ class SummarizeMeetingJob < ApplicationJob
 
   def generate_meeting_summary(meeting, ai_service, retrieval_service)
     query = build_retrieval_query(meeting)
-    retrieved_chunks = retrieval_service.retrieve_context(query)
+    retrieved_chunks = begin
+      retrieval_service.retrieve_context(query)
+    rescue => e
+      Rails.logger.warn("Context retrieval failed for Meeting #{meeting.id}: #{e.message}")
+      []
+    end
     formatted_context = retrieval_service.format_context(retrieved_chunks).split("\n\n")
     kb_context = ai_service.prepare_kb_context(formatted_context)
 
@@ -41,6 +46,8 @@ class SummarizeMeetingJob < ApplicationJob
       if doc_text
         json_str = ai_service.analyze_meeting_content(doc_text, kb_context, "packet", source: meeting)
         save_summary(meeting, "packet_analysis", json_str)
+      else
+        Rails.logger.warn("No extractable text for packet document on Meeting #{meeting.id}")
       end
     end
   end
@@ -59,6 +66,11 @@ class SummarizeMeetingJob < ApplicationJob
       context_json = builder.build_context_json(kb_context_chunks: formatted_context)
 
       analysis_json_str = ai_service.analyze_topic_summary(context_json, source: topic)
+
+      unless analysis_json_str.present?
+        Rails.logger.error("Empty response from analyze_topic_summary for Topic #{topic.id}")
+        next
+      end
 
       # Parse safely for storage
       analysis_json = begin

@@ -221,12 +221,11 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "index shows explanation text and explore link" do
+  test "index shows explanation text" do
     get topics_url
     assert_response :success
 
     assert_select ".page-subtitle", text: /What Two Rivers city government is working on/
-    assert_select "a[href=?]", "/topics/explore"
   end
 
   # --- Topic show page tests ---

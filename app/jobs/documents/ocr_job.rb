@@ -60,12 +60,14 @@ module Documents
         )
 
         # Trigger Downstream Jobs
-        if document.document_type.include?("minutes") || document.document_type.include?("packet")
+        if document.document_type.include?("packet")
           SummarizeMeetingJob.perform_later(document.meeting_id)
         end
         if document.document_type == "minutes_pdf"
           ExtractVotesJob.perform_later(document.meeting_id)
           ExtractCommitteeMembersJob.perform_later(document.meeting_id)
+          ExtractTopicsJob.perform_later(document.meeting_id)
+          SummarizeMeetingJob.set(wait: 10.minutes).perform_later(document.meeting_id)
         end
 
         Rails.logger.info "OCR completed for Document #{document_id} (#{images.count} pages)"

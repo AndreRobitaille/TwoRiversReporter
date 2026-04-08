@@ -82,16 +82,18 @@ module Documents
           return
         end
 
-        # Trigger Summarization if this was a minutes or packet document
-        if document.document_type.include?("minutes") || document.document_type.include?("packet")
+        # Trigger Summarization for packet documents immediately
+        if document.document_type.include?("packet")
           SummarizeMeetingJob.perform_later(document.meeting_id)
         end
 
         # Trigger Vote, Membership, and Topic Extraction for minutes
+        # SummarizeMeetingJob is delayed to run after extraction + triage complete
         if document.document_type == "minutes_pdf"
           ExtractVotesJob.perform_later(document.meeting_id)
           ExtractCommitteeMembersJob.perform_later(document.meeting_id)
           ExtractTopicsJob.perform_later(document.meeting_id)
+          SummarizeMeetingJob.set(wait: 10.minutes).perform_later(document.meeting_id)
         end
       end
     rescue StandardError => e

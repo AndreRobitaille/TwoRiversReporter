@@ -30,7 +30,7 @@ class Topic < ApplicationRecord
   scope :proposed, -> { where(status: "proposed") }
   scope :blocked, -> { where(status: "blocked") }
   scope :pinned, -> { where(pinned: true) }
-  scope :publicly_visible, -> { where(status: "approved").or(where(pinned: true)) }
+  scope :publicly_visible, -> { where(status: "approved") }
 
   scope :active, -> { where(lifecycle_status: "active") }
   scope :dormant, -> { where(lifecycle_status: "dormant") }

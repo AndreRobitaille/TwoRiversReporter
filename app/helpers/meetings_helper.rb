@@ -2,6 +2,8 @@ module MeetingsHelper
   MEETING_BUFFER = 3.hours
 
   def meeting_status_badge(meeting)
+    return [] unless meeting.starts_at
+
     upcoming = meeting.starts_at > Time.current - MEETING_BUFFER
     badges = []
 

@@ -49,7 +49,7 @@
               when 'upcoming' then 'badge--primary'
               else 'badge--default'
             end %>">
-              <%= meeting.status.titleize %>
+              <%= meeting.status&.titleize || "Unknown" %>
             </span>
           </td>
           <td>

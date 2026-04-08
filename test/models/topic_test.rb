@@ -10,15 +10,18 @@ class TopicTest < ActiveSupport::TestCase
     assert_equal "foo bar", topic.name
   end
 
-  test "publicly_visible scope" do
+  test "publicly_visible scope only includes approved topics" do
     Topic.create!(name: "approved", status: "approved")
-    Topic.create!(name: "pinned", pinned: true, status: "proposed")
+    Topic.create!(name: "pinned-proposed", pinned: true, status: "proposed")
+    Topic.create!(name: "pinned approved", pinned: true, status: "approved")
     Topic.create!(name: "blocked", status: "blocked")
     Topic.create!(name: "proposed", status: "proposed")
 
-    assert_equal 2, Topic.publicly_visible.count
-    assert_includes Topic.publicly_visible.map(&:name), "approved"
-    assert_includes Topic.publicly_visible.map(&:name), "pinned"
+    visible = Topic.publicly_visible
+    assert_equal 2, visible.count
+    assert_includes visible.map(&:name), "approved"
+    assert_includes visible.map(&:name), "pinned approved"
+    assert_not_includes visible.map(&:name), "pinned-proposed"
   end
 
   test "maintains derived fields on create" do

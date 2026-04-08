@@ -238,7 +238,12 @@ module Topics
           end
         end
 
-        source_topic.destroy!
+        # Transfer appearances, status events, and summaries before destroying source
+        source_topic.topic_appearances.update_all(topic_id: target_topic.id)
+        source_topic.topic_status_events.update_all(topic_id: target_topic.id)
+        source_topic.topic_summaries.update_all(topic_id: target_topic.id)
+
+        source_topic.reload.destroy!
       end
     end
 
