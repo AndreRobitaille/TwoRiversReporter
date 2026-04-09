@@ -12,6 +12,28 @@ namespace :backfill do
     puts "DiscoverMeetingsJob enqueued. Monitor progress with: bin/rails backfill:status"
   end
 
+  desc "Re-enqueue AI pipeline (topics, votes, members, summaries) for all meetings with extracted text since 2025-01-01"
+  task reprocess: :environment do
+    since = Date.new(2025, 1, 1)
+    meetings = Meeting.where("starts_at >= ?", since)
+                      .joins(:meeting_documents)
+                      .where.not(meeting_documents: { extracted_text: nil })
+                      .distinct
+
+    count = meetings.count
+    puts "Re-enqueuing AI pipeline for #{count} meetings with extracted text since #{since}..."
+
+    meetings.find_each.with_index do |meeting, i|
+      ExtractTopicsJob.perform_later(meeting.id)
+      ExtractVotesJob.perform_later(meeting.id)
+      ExtractCommitteeMembersJob.perform_later(meeting.id)
+      SummarizeMeetingJob.perform_later(meeting.id)
+      puts "  Enqueued #{i + 1}/#{count}: #{meeting.body_name} (#{meeting.starts_at&.to_date})" if (i + 1) % 10 == 0
+    end
+
+    puts "Done. #{count * 4} jobs enqueued. Monitor with: bin/rails backfill:status"
+  end
+
   desc "Show backfill pipeline progress"
   task status: :environment do
     since = Date.new(2025, 1, 1)
