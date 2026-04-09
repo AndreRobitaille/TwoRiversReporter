@@ -16,4 +16,4 @@ production:
   refresh_topic_descriptions:
     class: Topics::RefreshDescriptionsJob
     queue: default
-    schedule: every week on Monday at 3am
+    schedule: every Monday at 3am
