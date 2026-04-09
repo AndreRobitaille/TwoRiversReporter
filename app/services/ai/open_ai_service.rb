@@ -608,12 +608,12 @@ module Ai
       today = Date.current
 
       temporal_framing = if meeting_date && meeting_date > today
-                           "preview"
-                         elsif type.to_s == "minutes" || type.to_s == "transcript"
-                           "recap"
-                         else
-                           "stale_preview"
-                         end
+        "preview"
+      elsif type.to_s == "minutes" || type.to_s == "transcript"
+        "recap"
+      else
+        "stale_preview"
+      end
 
       placeholders = {
         kb_context: kb_context.to_s,
