@@ -21,6 +21,9 @@ module Scrapers
 
         page = next_link.click
       end
+
+      # Check for YouTube transcripts for recent council meetings
+      Scrapers::DiscoverTranscriptsJob.perform_later
     end
 
     private
