@@ -287,6 +287,142 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     assert_nil @meeting.meeting_summaries.find_by(summary_type: "transcript_recap"), "Should NOT create transcript_recap"
   end
 
+  test "stores preview framing in generation_data for future meeting with packet" do
+    @meeting.update!(starts_at: 3.days.from_now)
+
+    @meeting.meeting_documents.create!(
+      document_type: "packet_pdf",
+      source_url: "http://example.com/packet.pdf",
+      extracted_text: "Agenda: Budget review scheduled."
+    )
+
+    generation_data = {
+      "headline" => "Council will consider the budget",
+      "highlights" => [],
+      "public_input" => [],
+      "item_details" => []
+    }
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
+    mock_ai.expect :prepare_doc_context, "Agenda text" do |arg| true end
+    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |text, kb, type, **kwargs|
+      type == "packet"
+    end
+    # Topic-level mocks
+    mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg| arg.is_a?(Hash) end
+    mock_ai.expect :render_topic_summary, "## Summary" do |arg| arg.is_a?(String) end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+    def retrieval_stub.retrieve_topic_context(*args, **kwargs); []; end
+    def retrieval_stub.format_topic_context(*args); []; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        SummarizeMeetingJob.perform_now(@meeting.id)
+      end
+    end
+
+    summary = @meeting.meeting_summaries.find_by(summary_type: "packet_analysis")
+    assert summary, "Should create a packet_analysis summary"
+    assert_equal "preview", summary.generation_data["framing"]
+  end
+
+  test "cleans up packet_analysis when minutes_recap is created" do
+    # Pre-existing packet preview
+    @meeting.meeting_summaries.create!(
+      summary_type: "packet_analysis",
+      generation_data: { "headline" => "Old preview", "framing" => "preview" }
+    )
+
+    @meeting.meeting_documents.create!(
+      document_type: "minutes_pdf",
+      source_url: "http://example.com/minutes.pdf",
+      extracted_text: "Page 1: The council approved the budget 5-2."
+    )
+
+    generation_data = {
+      "headline" => "Council approved the budget",
+      "highlights" => [],
+      "public_input" => [],
+      "item_details" => []
+    }
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
+    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |text, kb, type, **kwargs|
+      type == "minutes"
+    end
+    # Topic-level mocks
+    mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg| arg.is_a?(Hash) end
+    mock_ai.expect :render_topic_summary, "## Summary" do |arg| arg.is_a?(String) end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+    def retrieval_stub.retrieve_topic_context(*args, **kwargs); []; end
+    def retrieval_stub.format_topic_context(*args); []; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        SummarizeMeetingJob.perform_now(@meeting.id)
+      end
+    end
+
+    assert_nil @meeting.meeting_summaries.find_by(summary_type: "packet_analysis"),
+      "packet_analysis should be cleaned up when minutes_recap arrives"
+    assert @meeting.meeting_summaries.find_by(summary_type: "minutes_recap"),
+      "minutes_recap should exist"
+  end
+
+  test "cleans up packet_analysis when transcript_recap is created" do
+    @meeting.meeting_summaries.create!(
+      summary_type: "packet_analysis",
+      generation_data: { "headline" => "Old preview", "framing" => "stale_preview" }
+    )
+
+    @meeting.meeting_documents.create!(
+      document_type: "transcript",
+      source_url: "http://example.com/transcript.txt",
+      extracted_text: "Transcript: The council discussed the budget."
+    )
+
+    generation_data = {
+      "headline" => "Council discussed the budget",
+      "highlights" => [],
+      "public_input" => [],
+      "item_details" => []
+    }
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
+    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |text, kb, type, **kwargs|
+      type == "transcript"
+    end
+    # Topic-level mocks
+    mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg| arg.is_a?(Hash) end
+    mock_ai.expect :render_topic_summary, "## Summary" do |arg| arg.is_a?(String) end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+    def retrieval_stub.retrieve_topic_context(*args, **kwargs); []; end
+    def retrieval_stub.format_topic_context(*args); []; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        SummarizeMeetingJob.perform_now(@meeting.id)
+      end
+    end
+
+    assert_nil @meeting.meeting_summaries.find_by(summary_type: "packet_analysis"),
+      "packet_analysis should be cleaned up when transcript_recap arrives"
+    assert @meeting.meeting_summaries.find_by(summary_type: "transcript_recap"),
+      "transcript_recap should exist"
+  end
+
   test "enqueues GenerateTopicBriefingJob after topic summary generation" do
     mock_ai = Minitest::Mock.new
     # Meeting-level: prepare_kb_context called (no docs, so no analyze call)

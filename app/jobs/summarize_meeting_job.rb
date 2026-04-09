@@ -41,17 +41,21 @@ class SummarizeMeetingJob < ApplicationJob
       end
 
       json_str = ai_service.analyze_meeting_content(input_text, kb_context, "minutes", source: meeting)
-      summary = save_summary(meeting, "minutes_recap", json_str, source_type: source_type)
+      summary = save_summary(meeting, "minutes_recap", json_str, source_type: source_type, framing: compute_framing(meeting, "minutes"))
 
-      # Clean up any old transcript-only summary now that minutes exist
+      # Clean up superseded summaries now that minutes exist
       meeting.meeting_summaries.where(summary_type: "transcript_recap").destroy_all
+      meeting.meeting_summaries.where(summary_type: "packet_analysis").destroy_all
       return
     end
 
     # Priority 2: Transcript (when no minutes available)
     if transcript_doc&.extracted_text.present?
       json_str = ai_service.analyze_meeting_content(transcript_doc.extracted_text, kb_context, "transcript", source: meeting)
-      save_summary(meeting, "transcript_recap", json_str, source_type: "transcript")
+      save_summary(meeting, "transcript_recap", json_str, source_type: "transcript", framing: compute_framing(meeting, "transcript"))
+
+      # Clean up superseded packet preview
+      meeting.meeting_summaries.where(summary_type: "packet_analysis").destroy_all
       return
     end
 
@@ -66,7 +70,7 @@ class SummarizeMeetingJob < ApplicationJob
 
       if doc_text
         json_str = ai_service.analyze_meeting_content(doc_text, kb_context, "packet", source: meeting)
-        save_summary(meeting, "packet_analysis", json_str)
+        save_summary(meeting, "packet_analysis", json_str, framing: compute_framing(meeting, "packet"))
       else
         Rails.logger.warn("No extractable text for packet document on Meeting #{meeting.id}")
       end
@@ -163,6 +167,17 @@ class SummarizeMeetingJob < ApplicationJob
   end
 
 
+  def compute_framing(meeting, type)
+    meeting_date = meeting.starts_at&.to_date
+    if meeting_date && meeting_date > Date.current
+      "preview"
+    elsif type == "minutes" || type == "transcript"
+      "recap"
+    else
+      "stale_preview"
+    end
+  end
+
   def build_retrieval_query(meeting)
     parts = [ "#{meeting.body_name} meeting on #{meeting.starts_at&.to_date}" ]
 
@@ -174,7 +189,7 @@ class SummarizeMeetingJob < ApplicationJob
     parts.join("\n")
   end
 
-  def save_summary(meeting, type, json_str, source_type: nil)
+  def save_summary(meeting, type, json_str, source_type: nil, framing: nil)
     generation_data = begin
       JSON.parse(json_str)
     rescue JSON::ParserError => e
@@ -183,6 +198,7 @@ class SummarizeMeetingJob < ApplicationJob
     end
 
     generation_data["source_type"] = source_type if source_type
+    generation_data["framing"] = framing if framing
 
     summary = meeting.meeting_summaries.find_or_initialize_by(summary_type: type)
     summary.generation_data = generation_data
