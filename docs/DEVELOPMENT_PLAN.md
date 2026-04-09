@@ -550,6 +550,51 @@ The system must:
 
 ------------------------------------------------------------------------
 
+## Production Deployment
+
+The site is live at `https://tworiversmatters.com`, deployed via Kamal 2
+to a Hetzner VPS. See `CLAUDE.md` for full infrastructure details.
+
+### Current Status (as of 2026-04-08)
+
+The production server runs the full application: public-facing pages,
+admin interface, and Solid Queue job processing (in-process via Puma).
+The production database was seeded from the development database and
+contains all meetings, topics, members, and summaries.
+
+### Operational Priorities
+
+GitHub issues now affect the live production server. Priority areas:
+
+1. **Scraper reliability** — `Scrapers::DiscoverMeetingsJob` must run
+   on a recurring schedule to keep the site current. This is the
+   primary driver of all downstream data: document downloads, text
+   extraction, topic detection, and summarization. Not yet scheduled
+   in `config/recurring.yml`.
+
+2. **Full pipeline automation** — The ingestion pipeline
+   (discover → parse → download → extract → topics → summarize)
+   should run end-to-end without manual intervention. Each job
+   enqueues the next, but the entry point (discovery) needs a cron
+   trigger.
+
+3. **Monitoring** — Job failures on production should be visible.
+   The admin dashboard at `/admin/job_runs` shows job history.
+
+4. **Data safety** — Production database backups are not yet
+   automated. The Postgres data lives in a Docker volume
+   (`two_rivers_reporter_pgdata`). A `pg_dump` cron should be
+   set up.
+
+### Jobs That Need Recurring Schedules
+
+| Job | Suggested Schedule | Why |
+|-----|--------------------|-----|
+| `Scrapers::DiscoverMeetingsJob` | Every 6 hours | Discover new meetings from city website |
+| Database backup (`pg_dump`) | Daily at 2am | Disaster recovery |
+
+------------------------------------------------------------------------
+
 ## Instructions for AI Coding Tools
 
 - Treat this document as authoritative.
