@@ -795,7 +795,12 @@ module Ai
         The following information comes from the city knowledgebase.
         Use it to identify glossed-over details, but distinguish it from document content.
 
-        #{chunks.join("\n\n")}
+        **Trust levels:**
+        - [ADMIN NOTE]: Authoritative background context from site administrators.
+        - [DOCUMENT-DERIVED]: Background context extracted from meeting documents. Reference as "based on meeting records" — do not state as established fact.
+        - [PATTERN-DERIVED]: System-identified pattern across meetings. Reference as "the system has noticed..." — do not state as confirmed fact.
+
+        #{chunks.is_a?(Array) ? chunks.join("\n\n") : chunks}
         </context_handling>
       CONTEXT
     end
