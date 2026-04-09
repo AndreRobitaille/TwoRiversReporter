@@ -50,6 +50,7 @@
           </button>
 
           <nav class="site-nav">
+            <%= link_to "Home", root_path, class: ("active" if controller_name == "home") %>
             <%= link_to "Meetings", meetings_path, class: ("active" if controller_name == "meetings") %>
             <%= link_to "Topics", topics_path, class: ("active" if controller_name == "topics") %>
             <%= link_to "City Officials", members_path, class: ("active" if controller_name == "members") %>
