@@ -34,6 +34,17 @@
   </div>
 </div>
 
+<% if @summary&.generation_data&.dig("source_type") == "transcript" %>
+  <div class="transcript-banner">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="12" y1="8" x2="12" y2="12"></line>
+      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+    </svg>
+    This summary is based on the meeting's video recording. It will be updated when official minutes are published.
+  </div>
+<% end %>
+
 <% gd = @summary&.generation_data.presence %>
 
 <% if gd %>
@@ -218,11 +229,15 @@
                     - Quality: <%= doc.text_quality.humanize %>
                   <% end %>
                 </span>
+              <% elsif doc.document_type == "transcript" %>
+                <span class="document-meta">Source: Video Recording</span>
               <% end %>
             </div>
             <div>
               <% if doc.file.attached? && doc.document_type.include?("pdf") %>
                 <%= link_to "Download PDF", rails_blob_path(doc.file, disposition: "attachment"), class: "btn btn--secondary btn--sm" %>
+              <% elsif doc.document_type == "transcript" && doc.source_url.present? %>
+                <%= link_to "Watch Recording", safe_external_url(doc.source_url), target: "_blank", rel: "noopener", class: "btn btn--secondary btn--sm" %>
               <% else %>
                 <%= link_to "View Original", safe_external_url(doc.source_url), target: "_blank", rel: "noopener", class: "btn btn--secondary btn--sm" %>
               <% end %>

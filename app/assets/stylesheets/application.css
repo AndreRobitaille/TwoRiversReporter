@@ -1971,6 +1971,26 @@ th.sortable-header:hover {
 
 /* === Meeting Show — Structured Sections === */
 
+.transcript-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-6);
+  background: var(--color-accent-cool-bg);
+  border: 1px solid color-mix(in srgb, var(--color-accent-cool) 30%, var(--color-border));
+  border-left: 3px solid var(--color-accent-cool);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+}
+
+.transcript-banner svg {
+  flex-shrink: 0;
+  color: var(--color-accent-cool);
+}
+
 .meeting-headline {
   font-size: var(--font-size-lg);
   line-height: 1.4;

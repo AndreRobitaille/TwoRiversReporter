@@ -63,7 +63,8 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
 
     summary = @meeting.meeting_summaries.find_by(summary_type: "minutes_recap")
     assert summary, "Should create a minutes_recap summary"
-    assert_equal generation_data, summary.generation_data
+    assert_equal "minutes", summary.generation_data["source_type"]
+    assert_equal generation_data["headline"], summary.generation_data["headline"]
     assert_nil summary.content
   end
 
@@ -192,6 +193,98 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     assert_equal 5, @topic.resident_impact_score
 
     mock_ai.verify
+  end
+
+  test "generates meeting summary from transcript when no minutes exist" do
+    doc = @meeting.meeting_documents.create!(
+      document_type: "transcript",
+      source_url: "http://example.com/transcript.txt",
+      extracted_text: "Transcript of meeting: The council discussed the budget at length."
+    )
+
+    generation_data = {
+      "headline" => "Council discussed the budget",
+      "highlights" => [
+        { "text" => "Budget discussed", "citation" => "Transcript", "impact" => "medium" }
+      ],
+      "public_input" => [],
+      "item_details" => [],
+      "source_type" => "transcript"
+    }
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
+    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |text, kb, type, **kwargs|
+      type == "transcript"
+    end
+    # Topic-level mocks
+    mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg| arg.is_a?(Hash) end
+    mock_ai.expect :render_topic_summary, "## Summary" do |arg| arg.is_a?(String) end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+    def retrieval_stub.retrieve_topic_context(*args, **kwargs); []; end
+    def retrieval_stub.format_topic_context(*args); []; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        SummarizeMeetingJob.perform_now(@meeting.id)
+      end
+    end
+
+    summary = @meeting.meeting_summaries.find_by(summary_type: "transcript_recap")
+    assert summary, "Should create a transcript_recap summary"
+    assert_equal "transcript", summary.generation_data["source_type"]
+    assert_nil @meeting.meeting_summaries.find_by(summary_type: "minutes_recap")
+  end
+
+  test "minutes take priority over transcript" do
+    @meeting.meeting_documents.create!(
+      document_type: "minutes_pdf",
+      source_url: "http://example.com/minutes.pdf",
+      extracted_text: "Page 1: The council approved the budget 5-2."
+    )
+    @meeting.meeting_documents.create!(
+      document_type: "transcript",
+      source_url: "http://example.com/transcript.txt",
+      extracted_text: "Transcript of meeting: The council discussed the budget."
+    )
+
+    generation_data = {
+      "headline" => "Council approved the budget",
+      "highlights" => [
+        { "text" => "Budget approved", "citation" => "Page 1", "vote" => "5-2", "impact" => "high" }
+      ],
+      "public_input" => [],
+      "item_details" => []
+    }
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
+    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |text, kb, type, **kwargs|
+      type == "minutes"
+    end
+    # Topic-level mocks
+    mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg| arg.is_a?(Hash) end
+    mock_ai.expect :render_topic_summary, "## Summary" do |arg| arg.is_a?(String) end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+    def retrieval_stub.retrieve_topic_context(*args, **kwargs); []; end
+    def retrieval_stub.format_topic_context(*args); []; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        SummarizeMeetingJob.perform_now(@meeting.id)
+      end
+    end
+
+    summary = @meeting.meeting_summaries.find_by(summary_type: "minutes_recap")
+    assert summary, "Should create minutes_recap"
+    assert_equal "minutes_with_transcript", summary.generation_data["source_type"]
+    assert_nil @meeting.meeting_summaries.find_by(summary_type: "transcript_recap"), "Should NOT create transcript_recap"
   end
 
   test "enqueues GenerateTopicBriefingJob after topic summary generation" do

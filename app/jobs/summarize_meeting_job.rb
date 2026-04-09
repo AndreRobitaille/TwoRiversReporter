@@ -26,15 +26,36 @@ class SummarizeMeetingJob < ApplicationJob
     formatted_context = retrieval_service.format_context(retrieved_chunks).split("\n\n")
     kb_context = ai_service.prepare_kb_context(formatted_context)
 
-    # Prefer minutes (authoritative) over packet
     minutes_doc = meeting.meeting_documents.find_by(document_type: "minutes_pdf")
+    transcript_doc = meeting.meeting_documents.find_by(document_type: "transcript")
+
+    # Priority 1: Minutes (authoritative), optionally supplemented by transcript
     if minutes_doc&.extracted_text.present?
-      json_str = ai_service.analyze_meeting_content(minutes_doc.extracted_text, kb_context, "minutes", source: meeting)
-      save_summary(meeting, "minutes_recap", json_str)
+      input_text = minutes_doc.extracted_text
+      source_type = "minutes"
+
+      if transcript_doc&.extracted_text.present?
+        input_text += "\n\n--- Additional context from meeting recording transcript ---\n\n" +
+          transcript_doc.extracted_text.truncate(15_000)
+        source_type = "minutes_with_transcript"
+      end
+
+      json_str = ai_service.analyze_meeting_content(input_text, kb_context, "minutes", source: meeting)
+      summary = save_summary(meeting, "minutes_recap", json_str, source_type: source_type)
+
+      # Clean up any old transcript-only summary now that minutes exist
+      meeting.meeting_summaries.where(summary_type: "transcript_recap").destroy_all
       return
     end
 
-    # Fall back to packet
+    # Priority 2: Transcript (when no minutes available)
+    if transcript_doc&.extracted_text.present?
+      json_str = ai_service.analyze_meeting_content(transcript_doc.extracted_text, kb_context, "transcript", source: meeting)
+      save_summary(meeting, "transcript_recap", json_str, source_type: "transcript")
+      return
+    end
+
+    # Priority 3: Fall back to packet
     packet_doc = meeting.meeting_documents.where("document_type LIKE ?", "%packet%").first
     if packet_doc
       doc_text = if packet_doc.extractions.any?
@@ -153,7 +174,7 @@ class SummarizeMeetingJob < ApplicationJob
     parts.join("\n")
   end
 
-  def save_summary(meeting, type, json_str)
+  def save_summary(meeting, type, json_str, source_type: nil)
     generation_data = begin
       JSON.parse(json_str)
     rescue JSON::ParserError => e
@@ -161,10 +182,13 @@ class SummarizeMeetingJob < ApplicationJob
       {}
     end
 
+    generation_data["source_type"] = source_type if source_type
+
     summary = meeting.meeting_summaries.find_or_initialize_by(summary_type: type)
     summary.generation_data = generation_data
     summary.content = nil
     summary.save!
+    summary
   end
 
   def save_topic_summary(meeting, topic, content, generation_data)

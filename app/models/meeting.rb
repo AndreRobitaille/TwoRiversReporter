@@ -22,6 +22,8 @@ class Meeting < ApplicationRecord
       :minutes
     elsif docs.any? { |d| d.document_type == "packet_pdf" }
       :packet
+    elsif docs.any? { |d| d.document_type == "transcript" }
+      :transcript
     elsif docs.any? { |d| d.document_type == "agenda_pdf" }
       :agenda
     else
