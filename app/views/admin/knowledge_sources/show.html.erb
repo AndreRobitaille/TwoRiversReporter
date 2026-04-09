@@ -35,6 +35,9 @@
       <% if @source.confidence %>
         <span class="text-sm text-secondary">Confidence: <%= (@source.confidence * 100).round %>%</span>
       <% end %>
+      <% if @source.stated_at %>
+        <span class="text-sm text-secondary">Stated: <%= @source.stated_at %></span>
+      <% end %>
     </div>
     <% if @source.reasoning.present? %>
       <div class="mt-2">

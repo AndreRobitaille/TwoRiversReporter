@@ -800,6 +800,8 @@ module Ai
         - [DOCUMENT-DERIVED]: Background context extracted from meeting documents. Reference as "based on meeting records" — do not state as established fact.
         - [PATTERN-DERIVED]: System-identified pattern across meetings. Reference as "the system has noticed..." — do not state as confirmed fact.
 
+        **Dates in labels:** Entries include a date in parentheses (e.g., "(2026-04-06)") indicating when the fact was stated. Older facts may be outdated — qualify with "as of [date]" when referencing time-sensitive information like counts, dollar figures, or who holds a position.
+
         #{chunks.is_a?(Array) ? chunks.join("\n\n") : chunks}
         </context_handling>
       CONTEXT

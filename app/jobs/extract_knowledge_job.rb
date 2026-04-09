@@ -34,7 +34,7 @@ class ExtractKnowledgeJob < ApplicationJob
     parsed.each do |entry|
       next if entry["confidence"].to_f < CONFIDENCE_THRESHOLD
 
-      source = create_knowledge_source(entry)
+      source = create_knowledge_source(entry, meeting)
       link_topics(source, entry["topic_names"])
       created_ids << source.id
     end
@@ -77,7 +77,7 @@ class ExtractKnowledgeJob < ApplicationJob
     []
   end
 
-  def create_knowledge_source(entry)
+  def create_knowledge_source(entry, meeting)
     KnowledgeSource.create!(
       title: entry["title"].to_s.truncate(255),
       body: entry["body"].to_s,
@@ -86,7 +86,8 @@ class ExtractKnowledgeJob < ApplicationJob
       status: "proposed",
       active: true,
       reasoning: entry["reasoning"].to_s,
-      confidence: entry["confidence"].to_f
+      confidence: entry["confidence"].to_f,
+      stated_at: meeting.starts_at&.to_date
     )
   end
 

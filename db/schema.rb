@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_09_202910) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_09_205838) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -190,6 +190,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_09_202910) do
     t.string "origin", default: "manual", null: false
     t.text "reasoning"
     t.string "source_type"
+    t.date "stated_at"
     t.string "status", default: "approved"
     t.string "title"
     t.datetime "updated_at", null: false
