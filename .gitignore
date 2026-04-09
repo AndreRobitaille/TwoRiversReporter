@@ -36,6 +36,7 @@
 # Local AI agent notes
 /CLAUDE.md
 .superpowers/
+.worktrees/
 
 # Dangerous local-only scripts
 /bin/clone-production-db
