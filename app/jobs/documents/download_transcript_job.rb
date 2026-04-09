@@ -4,7 +4,14 @@ module Documents
   class DownloadTranscriptJob < ApplicationJob
     queue_as :default
 
+    YOUTUBE_URL_PATTERN = %r{\Ahttps://www\.youtube\.com/watch\?v=[A-Za-z0-9_-]+\z}
+
     def perform(meeting_id, video_url)
+      unless video_url.match?(YOUTUBE_URL_PATTERN)
+        Rails.logger.error "DownloadTranscriptJob: invalid video URL: #{video_url}"
+        return
+      end
+
       meeting = Meeting.find(meeting_id)
 
       # Idempotency: skip if transcript already exists

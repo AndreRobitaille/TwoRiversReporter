@@ -1,0 +1,10 @@
+{
+  "ignored_warnings": [
+    {
+      "fingerprint": "3e4893630b06b15e5d9d65ba5da1d33eb340b31840f53bcdef92240b27b28217",
+      "note": "Open3.capture3 with array arguments does not use a shell. URL is validated against YOUTUBE_URL_PATTERN before use."
+    }
+  ],
+  "updated": "2026-04-09",
+  "brakeman_version": "7.0.2"
+}
