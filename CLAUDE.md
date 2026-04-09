@@ -49,6 +49,8 @@ Civic transparency site for Two Rivers, WI. Ingests official city meeting docume
 | Auto-merge single-word members | `bin/rails members:cleanup` |
 | List duplicate members | `bin/rails members:list_duplicates` |
 | Validate prompt templates | `bin/rails prompt_templates:validate` |
+| Backfill all meetings since 2025 | `bin/rails backfill:run` |
+| Check backfill progress | `bin/rails backfill:status` |
 
 CI (`bin/ci` / `config/ci.rb`) runs: setup, rubocop, bundler-audit, importmap audit, brakeman. Note: CI does **not** run tests currently.
 
