@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_29_185015) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_09_202910) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -185,13 +185,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_29_185015) do
   create_table "knowledge_sources", force: :cascade do |t|
     t.boolean "active"
     t.text "body"
+    t.float "confidence"
     t.datetime "created_at", null: false
+    t.string "origin", default: "manual", null: false
+    t.text "reasoning"
     t.string "source_type"
-    t.string "status"
+    t.string "status", default: "approved"
     t.string "title"
     t.datetime "updated_at", null: false
     t.text "verification_notes"
     t.date "verified_on"
+    t.index ["origin"], name: "index_knowledge_sources_on_origin"
+    t.index ["status"], name: "index_knowledge_sources_on_status"
   end
 
   create_table "meeting_attendances", force: :cascade do |t|
