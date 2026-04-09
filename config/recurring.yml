@@ -21,3 +21,7 @@ production:
     class: Scrapers::DiscoverMeetingsJob
     queue: default
     schedule: every day at 11pm
+  extract_knowledge_patterns:
+    class: ExtractKnowledgePatternsJob
+    queue: default
+    schedule: every Monday at 3:30am
