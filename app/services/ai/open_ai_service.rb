@@ -603,10 +603,12 @@ module Ai
       template = PromptTemplate.find_by!(key: "analyze_meeting_content")
       committee_ctx = prepare_committee_context
       system_role = template.interpolate_system_role(committee_context: committee_ctx)
+      body_name = source.respond_to?(:body_name) ? source.body_name.to_s : ""
       placeholders = {
         kb_context: kb_context.to_s,
         committee_context: committee_ctx,
         type: type.to_s,
+        body_name: body_name,
         doc_text: doc_text.truncate(100_000)
       }
       prompt = template.interpolate(**placeholders)
