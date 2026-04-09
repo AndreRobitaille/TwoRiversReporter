@@ -11,6 +11,9 @@ class SummarizeMeetingJob < ApplicationJob
 
     # 2. Topic-Level Summaries
     generate_topic_summaries(meeting, ai_service, retrieval_service)
+
+    # 3. Knowledge Extraction (downstream, never blocks summarization)
+    ExtractKnowledgeJob.perform_later(meeting.id)
   end
 
   private
