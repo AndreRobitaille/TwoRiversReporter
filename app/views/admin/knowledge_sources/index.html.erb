@@ -8,12 +8,47 @@
   </div>
 </div>
 
+<div class="card mb-6">
+  <% proposed_active = params[:status] == "proposed" %>
+  <% approved_active = params[:status] == "approved" %>
+  <% blocked_active = params[:status] == "blocked" %>
+  <% all_active = params[:status].blank? && params[:origin].blank? %>
+
+  <div class="flex items-center justify-between flex-wrap gap-4">
+    <div>
+      <div class="text-sm text-secondary">Status</div>
+      <div class="flex gap-2 flex-wrap mt-2">
+        <%= link_to "Proposed", admin_knowledge_sources_path(status: "proposed"), class: "btn #{proposed_active ? 'btn--primary' : 'btn--secondary'}" %>
+        <%= link_to "Approved", admin_knowledge_sources_path(status: "approved"), class: "btn #{approved_active ? 'btn--primary' : 'btn--secondary'}" %>
+        <%= link_to "Blocked", admin_knowledge_sources_path(status: "blocked"), class: "btn #{blocked_active ? 'btn--primary' : 'btn--secondary'}" %>
+        <%= link_to "All", admin_knowledge_sources_path, class: "btn #{all_active ? 'btn--primary' : 'btn--secondary'}" %>
+      </div>
+    </div>
+    <div>
+      <div class="text-sm text-secondary">Origin</div>
+      <div class="flex gap-2 flex-wrap mt-2">
+        <%= link_to "Document-Derived", admin_knowledge_sources_path(origin: "extracted", status: params[:status]), class: "btn #{params[:origin] == 'extracted' ? 'btn--primary' : 'btn--secondary'}" %>
+        <%= link_to "Pattern-Derived", admin_knowledge_sources_path(origin: "pattern", status: params[:status]), class: "btn #{params[:origin] == 'pattern' ? 'btn--primary' : 'btn--secondary'}" %>
+        <%= link_to "Admin Notes", admin_knowledge_sources_path(origin: "manual", status: params[:status]), class: "btn #{params[:origin] == 'manual' ? 'btn--primary' : 'btn--secondary'}" %>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-4 text-sm text-secondary">
+    <%= KnowledgeSource.proposed.count %> proposed &middot;
+    <%= KnowledgeSource.approved.count %> approved &middot;
+    <%= KnowledgeSource.blocked.count %> blocked &middot;
+    <%= KnowledgeSource.where("created_at > ?", 30.days.ago).count %> new in last 30 days
+  </div>
+</div>
+
 <div class="table-wrapper">
   <table>
     <thead>
       <tr>
         <th>Title</th>
         <th>Type</th>
+        <th>Origin</th>
         <th>Status</th>
         <th>Chunks</th>
         <th>Created</th>
@@ -30,10 +65,16 @@
             <span class="badge badge--default"><%= source.source_type.upcase %></span>
           </td>
           <td>
-            <% if source.active? %>
-              <span class="badge badge--success">Active</span>
-            <% else %>
-              <span class="badge badge--default">Inactive</span>
+            <span class="badge badge--info"><%= source.origin.humanize %></span>
+          </td>
+          <td>
+            <% case source.status %>
+            <% when "approved" %>
+              <span class="badge badge--success">Approved</span>
+            <% when "blocked" %>
+              <span class="badge badge--danger">Blocked</span>
+            <% when "proposed" %>
+              <span class="badge badge--warning">Proposed</span>
             <% end %>
           </td>
           <td><%= source.knowledge_chunks.count %></td>
