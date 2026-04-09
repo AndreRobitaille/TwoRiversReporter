@@ -229,11 +229,15 @@
                     - Quality: <%= doc.text_quality.humanize %>
                   <% end %>
                 </span>
+              <% elsif doc.document_type == "transcript" %>
+                <span class="document-meta">Source: Video Recording</span>
               <% end %>
             </div>
             <div>
               <% if doc.file.attached? && doc.document_type.include?("pdf") %>
                 <%= link_to "Download PDF", rails_blob_path(doc.file, disposition: "attachment"), class: "btn btn--secondary btn--sm" %>
+              <% elsif doc.document_type == "transcript" && doc.source_url.present? %>
+                <%= link_to "Watch Recording", safe_external_url(doc.source_url), target: "_blank", rel: "noopener", class: "btn btn--secondary btn--sm" %>
               <% else %>
                 <%= link_to "View Original", safe_external_url(doc.source_url), target: "_blank", rel: "noopener", class: "btn btn--secondary btn--sm" %>
               <% end %>
