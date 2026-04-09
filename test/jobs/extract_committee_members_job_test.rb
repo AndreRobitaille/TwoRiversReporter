@@ -373,6 +373,48 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
     mock_service.verify
   end
 
+  test "skips duplicate when two names resolve to same member" do
+    member = Member.create!(name: "Smith")
+    MemberAlias.create!(member: member, name: "Councilmember Smith")
+
+    ai_response = {
+      "voting_members_present" => [ "Smith", "Councilmember Smith" ],
+      "voting_members_absent" => [],
+      "non_voting_staff" => [],
+      "guests" => []
+    }
+    mock_service = stub_ai_response(ai_response)
+
+    Ai::OpenAiService.stub :new, mock_service do
+      assert_difference "MeetingAttendance.count", 1 do
+        ExtractCommitteeMembersJob.perform_now(@meeting.id)
+      end
+    end
+    mock_service.verify
+  end
+
+  test "skips duplicate when same member appears across categories" do
+    member = Member.create!(name: "Kyle Kordell")
+
+    ai_response = {
+      "voting_members_present" => [ "Kyle Kordell" ],
+      "voting_members_absent" => [],
+      "non_voting_staff" => [ { "name" => "Kyle Kordell", "capacity" => "City Manager" } ],
+      "guests" => []
+    }
+    mock_service = stub_ai_response(ai_response)
+
+    Ai::OpenAiService.stub :new, mock_service do
+      assert_difference "MeetingAttendance.count", 1 do
+        ExtractCommitteeMembersJob.perform_now(@meeting.id)
+      end
+    end
+
+    attendance = @meeting.meeting_attendances.find_by(member: member)
+    assert_equal "voting_member", attendance.attendee_type
+    mock_service.verify
+  end
+
   test "handles JSON parse error gracefully" do
     mock_service = Minitest::Mock.new
     mock_service.expect :extract_committee_members, "not valid json" do |text|

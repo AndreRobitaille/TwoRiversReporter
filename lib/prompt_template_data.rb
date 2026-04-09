@@ -804,11 +804,23 @@ module PromptTemplateData
         get more scrutiny.
       ROLE
       instructions: <<~PROMPT.strip
-        Analyze the provided {{type}} text and return a JSON object with the
-        structure specified below.
+        Analyze the provided {{type}} text for a **{{body_name}}** and return
+        a JSON object with the structure specified below.
 
         {{kb_context}}
         {{committee_context}}
+
+        <document_scope>
+        This document is for a {{body_name}}. It may contain embedded minutes
+        from other committees or commissions (e.g., Plan Commission, Room Tax
+        Commission, Park & Rec Board) that were included as consent agenda
+        items for acceptance or approval.
+
+        ONLY extract headline, highlights, public_input, and item_details from
+        the {{body_name}} proceedings. Ignore all content from embedded minutes
+        of other bodies — their public comments, motions, discussions, and
+        roll calls belong to those other meetings, not this one.
+        </document_scope>
 
         <guidelines>
         - Write in plain language a resident would use at a neighborhood

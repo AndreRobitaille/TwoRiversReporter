@@ -166,6 +166,7 @@ PROMPT_TEMPLATES_DATA = [
       { "name" => "kb_context", "description" => "Knowledge base context chunks" },
       { "name" => "committee_context", "description" => "Active committees and descriptions" },
       { "name" => "type", "description" => "Document type: packet or minutes" },
+      { "name" => "body_name", "description" => "Meeting body name (e.g. City Council Meeting)" },
       { "name" => "doc_text", "description" => "Meeting document text (truncated to 50k)" }
     ]
   },

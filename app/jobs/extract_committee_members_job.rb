@@ -37,6 +37,7 @@ class ExtractCommitteeMembersJob < ApplicationJob
 
       member = Member.resolve(name)
       next unless member
+      next if meeting.meeting_attendances.exists?(member: member)
 
       meeting.meeting_attendances.create!(
         member: member, status: "present", attendee_type: "voting_member"
@@ -48,6 +49,7 @@ class ExtractCommitteeMembersJob < ApplicationJob
 
       member = Member.resolve(name)
       next unless member
+      next if meeting.meeting_attendances.exists?(member: member)
 
       meeting.meeting_attendances.create!(
         member: member, status: "absent", attendee_type: "voting_member"
@@ -60,6 +62,7 @@ class ExtractCommitteeMembersJob < ApplicationJob
 
       member = Member.resolve(name)
       next unless member
+      next if meeting.meeting_attendances.exists?(member: member)
 
       meeting.meeting_attendances.create!(
         member: member, status: "present", attendee_type: "non_voting_staff",
@@ -73,6 +76,7 @@ class ExtractCommitteeMembersJob < ApplicationJob
 
       member = Member.resolve(name)
       next unless member
+      next if meeting.meeting_attendances.exists?(member: member)
 
       meeting.meeting_attendances.create!(
         member: member, status: "present", attendee_type: "guest"

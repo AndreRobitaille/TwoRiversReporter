@@ -59,4 +59,40 @@ class OpenAiServiceAnalyzeMeetingTest < ActiveSupport::TestCase
     assert prompt_text.include?("procedural") || prompt_text.include?("adjourn"),
       "Prompt must mention procedural filtering"
   end
+
+  test "analyze_meeting_content includes body_name in prompt to scope content extraction" do
+    captured_params = nil
+
+    mock_chat = lambda do |parameters:|
+      captured_params = parameters
+      {
+        "choices" => [ {
+          "message" => {
+            "content" => {
+              "headline" => "Test headline",
+              "highlights" => [],
+              "public_input" => [],
+              "item_details" => []
+            }.to_json
+          }
+        } ]
+      }
+    end
+
+    meeting = Meeting.create!(body_name: "City Council Meeting", starts_at: Time.current, detail_page_url: "https://example.com/meeting/1")
+
+    @service.instance_variable_get(:@client).stub :chat, mock_chat do
+      @service.send(:analyze_meeting_content, "Test packet text", "kb context", "packet", source: meeting)
+    end
+
+    prompt_text = captured_params[:messages].map { |m| m[:content] }.join(" ")
+
+    # Must include the body name so AI knows which meeting's content to extract
+    assert prompt_text.include?("City Council Meeting"),
+      "Prompt must include body_name to scope extraction to the primary meeting"
+
+    # Must instruct AI to ignore embedded committee minutes
+    assert prompt_text.downcase.include?("embedded") || prompt_text.downcase.include?("subordinate") || prompt_text.downcase.include?("other committee"),
+      "Prompt must warn about embedded minutes from other committees"
+  end
 end
