@@ -20,6 +20,13 @@ namespace :backfill do
                       .where.not(meeting_documents: { extracted_text: nil })
                       .distinct
 
+    # Clear any stale failed jobs before starting fresh
+    failed_count = SolidQueue::FailedExecution.count rescue 0
+    if failed_count > 0
+      puts "Clearing #{failed_count} failed jobs..."
+      SolidQueue::FailedExecution.delete_all
+    end
+
     count = meetings.count
     puts "Re-enqueuing AI pipeline for #{count} meetings with extracted text since #{since}..."
 
