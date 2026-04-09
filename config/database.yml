@@ -90,6 +90,7 @@ production:
     database: two_rivers_reporter_production
     username: two_rivers_reporter
     password: <%= ENV["TWO_RIVERS_REPORTER_DATABASE_PASSWORD"] %>
+    host: <%= ENV.fetch("DB_HOST", "localhost") %>
   cache:
     <<: *primary_production
     database: two_rivers_reporter_production_cache
