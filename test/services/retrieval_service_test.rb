@@ -99,27 +99,18 @@ class RetrievalServiceTest < ActiveSupport::TestCase
     assert_equal second_id, results[1][:chunk].id
   end
 
-  test "format_topic_context includes detailed provenance" do
-    # Result for Topic 1 (Source 1) - Verified Source, Verified Link
+  test "format_topic_context uses origin-based labels" do
     result1 = { chunk: @chunk1, score: 0.9, topic: @topic1 }
-
-    # Result for Topic 2 (Source 2) - Unverified Source, Unverified Link
     result2 = { chunk: @chunk3, score: 0.8, topic: @topic2 }
 
     formatted = @service.format_topic_context([ result1, result2 ])
 
     assert_equal 2, formatted.size
 
-    # Verify Source 1
-    assert_match /Source: City Plan/, formatted[0]
-    assert_match /Source Trust: VERIFIED/, formatted[0]
-    assert_match /Topic Link: VERIFIED/, formatted[0]
-    assert_match /ID: #{@source1.id}/, formatted[0]
+    # Source 1 is manual origin
+    assert_match /ADMIN NOTE: City Plan/, formatted[0]
 
-    # Verify Source 2
-    assert_match /Source: Resident Note/, formatted[1]
-    assert_match /Source Trust: UNVERIFIED/, formatted[1]
-    assert_match /Topic Link: UNVERIFIED/, formatted[1]
-    assert_match /ID: #{@source2.id}/, formatted[1]
+    # Source 2 is manual origin
+    assert_match /ADMIN NOTE: Resident Note/, formatted[1]
   end
 end
