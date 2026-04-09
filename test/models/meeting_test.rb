@@ -50,4 +50,42 @@ class MeetingTest < ActiveSupport::TestCase
 
     assert_equal :none, meeting.document_status
   end
+
+  test "document_status returns :transcript when transcript exists but no minutes or packet" do
+    meeting = Meeting.create!(
+      detail_page_url: "http://example.com/transcript-1",
+      starts_at: Time.current
+    )
+    meeting.meeting_documents.create!(
+      document_type: "transcript",
+      source_url: "https://www.youtube.com/watch?v=test123"
+    )
+    assert_equal :transcript, meeting.document_status
+  end
+
+  test "document_status returns :minutes even when transcript exists" do
+    meeting = Meeting.create!(
+      detail_page_url: "http://example.com/transcript-2",
+      starts_at: Time.current
+    )
+    meeting.meeting_documents.create!(document_type: "minutes_pdf")
+    meeting.meeting_documents.create!(
+      document_type: "transcript",
+      source_url: "https://www.youtube.com/watch?v=test123"
+    )
+    assert_equal :minutes, meeting.document_status
+  end
+
+  test "document_status returns :transcript above :agenda" do
+    meeting = Meeting.create!(
+      detail_page_url: "http://example.com/transcript-3",
+      starts_at: Time.current
+    )
+    meeting.meeting_documents.create!(document_type: "agenda_pdf")
+    meeting.meeting_documents.create!(
+      document_type: "transcript",
+      source_url: "https://www.youtube.com/watch?v=test123"
+    )
+    assert_equal :transcript, meeting.document_status
+  end
 end
