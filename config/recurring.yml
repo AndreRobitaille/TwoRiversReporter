@@ -17,3 +17,7 @@ production:
     class: Topics::RefreshDescriptionsJob
     queue: default
     schedule: every Monday at 3am
+  daily_meeting_discovery:
+    class: Scrapers::DiscoverMeetingsJob
+    queue: default
+    schedule: every day at 11pm

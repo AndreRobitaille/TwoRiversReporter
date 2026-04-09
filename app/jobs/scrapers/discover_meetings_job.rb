@@ -4,7 +4,10 @@ module Scrapers
 
     MEETINGS_URL = "https://www.two-rivers.org/meetings"
 
+    DEFAULT_LOOKBACK = 90.days
+
     def perform(since: nil)
+      since ||= DEFAULT_LOOKBACK.ago
       agent = Mechanize.new
       agent.user_agent_alias = "Mac Safari"
       page = agent.get(MEETINGS_URL)
