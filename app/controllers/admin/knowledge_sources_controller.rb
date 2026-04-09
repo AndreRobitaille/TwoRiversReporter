@@ -3,7 +3,7 @@ module Admin
     before_action :set_source, only: %i[ show edit update destroy reingest ]
 
     def index
-      @sources = KnowledgeSource.all.order(created_at: :desc)
+      @sources = KnowledgeSource.includes(:knowledge_chunks).order(created_at: :desc)
       @sources = @sources.where(status: params[:status]) if params[:status].present?
       @sources = @sources.where(origin: params[:origin]) if params[:origin].present?
     end
