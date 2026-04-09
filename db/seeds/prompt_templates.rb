@@ -180,6 +180,41 @@ PROMPT_TEMPLATES_DATA = [
       { "name" => "plan_json", "description" => "Structured analysis JSON from pass 1" },
       { "name" => "doc_text", "description" => "Original document text for reference" }
     ]
+  },
+  {
+    key: "extract_knowledge",
+    name: "Knowledge Extraction",
+    description: "Extracts durable civic facts from meeting summaries and raw document text",
+    usage_context: "Pipeline: after meeting summarization, identifies institutional knowledge worth remembering — business ownership, relationships, sentiment signals, historical context. Never shown to residents; injected into future AI prompts as background context",
+    model_tier: "default",
+    placeholders: [
+      { "name" => "summary_json", "description" => "Meeting summary generation_data JSON" },
+      { "name" => "raw_text", "description" => "Raw meeting document text (truncated to 25k chars)" },
+      { "name" => "existing_kb", "description" => "Existing relevant knowledge entries to avoid duplication" }
+    ]
+  },
+  {
+    key: "extract_knowledge_patterns",
+    name: "Knowledge Pattern Detection",
+    description: "Detects cross-meeting patterns from accumulated knowledge entries",
+    usage_context: "Pipeline: weekly analysis of accumulated per-meeting knowledge entries to find behavioral patterns, escalation signals, and relationship inferences. Pattern entries are labeled differently in prompts to prevent compounding",
+    model_tier: "default",
+    placeholders: [
+      { "name" => "knowledge_entries", "description" => "All approved extracted + manual knowledge entries" },
+      { "name" => "recent_summaries", "description" => "Recent topic briefing data (last 90 days)" },
+      { "name" => "topic_metadata", "description" => "Topic appearance counts, lifecycle status, committees" }
+    ]
+  },
+  {
+    key: "triage_knowledge",
+    name: "Knowledge Triage",
+    description: "Auto-approves or blocks proposed knowledge entries",
+    usage_context: "Pipeline: evaluates whether extracted knowledge entries are grounded, durable, non-duplicative, and not misreading normal civic process. Blocked entries never enter prompts; approved entries become available for retrieval",
+    model_tier: "default",
+    placeholders: [
+      { "name" => "entries_json", "description" => "Proposed knowledge entries with title, body, reasoning, confidence" },
+      { "name" => "existing_kb", "description" => "Existing approved knowledge entries to check for duplicates" }
+    ]
   }
 ].freeze
 
