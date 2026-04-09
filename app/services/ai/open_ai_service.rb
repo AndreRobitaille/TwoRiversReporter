@@ -604,11 +604,25 @@ module Ai
       committee_ctx = prepare_committee_context
       system_role = template.interpolate_system_role(committee_context: committee_ctx)
       body_name = source.respond_to?(:body_name) ? source.body_name.to_s : ""
+      meeting_date = source.respond_to?(:starts_at) ? source.starts_at&.to_date : nil
+      today = Date.current
+
+      temporal_framing = if meeting_date && meeting_date > today
+                           "preview"
+                         elsif type.to_s == "minutes" || type.to_s == "transcript"
+                           "recap"
+                         else
+                           "stale_preview"
+                         end
+
       placeholders = {
         kb_context: kb_context.to_s,
         committee_context: committee_ctx,
         type: type.to_s,
         body_name: body_name,
+        meeting_date: meeting_date.to_s,
+        today: today.to_s,
+        temporal_framing: temporal_framing,
         doc_text: doc_text.truncate(100_000)
       }
       prompt = template.interpolate(**placeholders)

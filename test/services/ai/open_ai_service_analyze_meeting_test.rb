@@ -95,4 +95,109 @@ class OpenAiServiceAnalyzeMeetingTest < ActiveSupport::TestCase
     assert prompt_text.downcase.include?("embedded") || prompt_text.downcase.include?("subordinate") || prompt_text.downcase.include?("other committee"),
       "Prompt must warn about embedded minutes from other committees"
   end
+
+  test "analyze_meeting_content includes temporal context for future meeting" do
+    captured_params = nil
+
+    mock_chat = lambda do |parameters:|
+      captured_params = parameters
+      {
+        "choices" => [ {
+          "message" => {
+            "content" => {
+              "headline" => "Test headline",
+              "highlights" => [],
+              "public_input" => [],
+              "item_details" => []
+            }.to_json
+          }
+        } ]
+      }
+    end
+
+    meeting = Meeting.create!(
+      body_name: "City Council Meeting",
+      starts_at: 3.days.from_now,
+      detail_page_url: "https://example.com/meeting/future"
+    )
+
+    @service.instance_variable_get(:@client).stub :chat, mock_chat do
+      @service.send(:analyze_meeting_content, "Agenda text", "kb context", "packet", source: meeting)
+    end
+
+    prompt_text = captured_params[:messages].map { |m| m[:content] }.join(" ")
+
+    assert prompt_text.include?("preview"), "Prompt must include 'preview' framing for future meeting"
+    assert prompt_text.include?(meeting.starts_at.to_date.to_s), "Prompt must include meeting date"
+    assert prompt_text.include?(Date.current.to_s), "Prompt must include today's date"
+    assert prompt_text.include?("HAS NOT OCCURRED"), "Prompt must include preview instructions"
+  end
+
+  test "analyze_meeting_content includes recap framing for past meeting with minutes" do
+    captured_params = nil
+
+    mock_chat = lambda do |parameters:|
+      captured_params = parameters
+      {
+        "choices" => [ {
+          "message" => {
+            "content" => {
+              "headline" => "Test headline",
+              "highlights" => [],
+              "public_input" => [],
+              "item_details" => []
+            }.to_json
+          }
+        } ]
+      }
+    end
+
+    meeting = Meeting.create!(
+      body_name: "City Council Meeting",
+      starts_at: 3.days.ago,
+      detail_page_url: "https://example.com/meeting/past"
+    )
+
+    @service.instance_variable_get(:@client).stub :chat, mock_chat do
+      @service.send(:analyze_meeting_content, "Minutes text", "kb context", "minutes", source: meeting)
+    end
+
+    prompt_text = captured_params[:messages].map { |m| m[:content] }.join(" ")
+
+    assert prompt_text.include?("recap"), "Prompt must include 'recap' framing for past meeting with minutes"
+  end
+
+  test "analyze_meeting_content includes stale_preview framing for past meeting with only packet" do
+    captured_params = nil
+
+    mock_chat = lambda do |parameters:|
+      captured_params = parameters
+      {
+        "choices" => [ {
+          "message" => {
+            "content" => {
+              "headline" => "Test headline",
+              "highlights" => [],
+              "public_input" => [],
+              "item_details" => []
+            }.to_json
+          }
+        } ]
+      }
+    end
+
+    meeting = Meeting.create!(
+      body_name: "City Council Meeting",
+      starts_at: 3.days.ago,
+      detail_page_url: "https://example.com/meeting/stale"
+    )
+
+    @service.instance_variable_get(:@client).stub :chat, mock_chat do
+      @service.send(:analyze_meeting_content, "Packet text", "kb context", "packet", source: meeting)
+    end
+
+    prompt_text = captured_params[:messages].map { |m| m[:content] }.join(" ")
+
+    assert prompt_text.include?("stale_preview"), "Prompt must include 'stale_preview' framing for past meeting with only packet"
+  end
 end
