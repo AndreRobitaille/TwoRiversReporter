@@ -37,7 +37,7 @@ module Scrapers
     def candidate_meetings
       Meeting
         .where(body_name: COUNCIL_BODY_NAMES)
-        .where("starts_at >= ?", LOOKBACK_WINDOW.ago)
+        .where("starts_at >= ? AND starts_at <= ?", LOOKBACK_WINDOW.ago, Time.current)
         .includes(:meeting_documents)
         .reject { |m| m.meeting_documents.any? { |d| d.document_type == "transcript" } }
     end

@@ -281,7 +281,9 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
       end
     end
 
-    assert @meeting.meeting_summaries.find_by(summary_type: "minutes_recap"), "Should create minutes_recap"
+    summary = @meeting.meeting_summaries.find_by(summary_type: "minutes_recap")
+    assert summary, "Should create minutes_recap"
+    assert_equal "minutes_with_transcript", summary.generation_data["source_type"]
     assert_nil @meeting.meeting_summaries.find_by(summary_type: "transcript_recap"), "Should NOT create transcript_recap"
   end
 

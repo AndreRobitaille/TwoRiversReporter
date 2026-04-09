@@ -151,5 +151,14 @@ module Documents
         Dir.define_singleton_method(:mktmpdir, original_mktmpdir)
       end
     end
+
+    # -----------------------------------------------------------------------
+    # Test 6: rejects invalid video URLs
+    # -----------------------------------------------------------------------
+    test "rejects invalid video URL without creating a document" do
+      assert_no_difference "MeetingDocument.count" do
+        DownloadTranscriptJob.perform_now(@meeting.id, "https://evil.com/malicious?v=abc")
+      end
+    end
   end
 end
