@@ -153,8 +153,12 @@ module PromptTemplateData
       placeholders: [
         { "name" => "kb_context", "description" => "Knowledge base context chunks" },
         { "name" => "committee_context", "description" => "Active committees and descriptions" },
-        { "name" => "type", "description" => "Document type: packet or minutes" },
-        { "name" => "doc_text", "description" => "Meeting document text (truncated to 50k)" }
+        { "name" => "type", "description" => "Document type: packet, minutes, or transcript" },
+        { "name" => "body_name", "description" => "Name of the governing body" },
+        { "name" => "meeting_date", "description" => "Date of the meeting (YYYY-MM-DD)" },
+        { "name" => "today", "description" => "Current date (YYYY-MM-DD)" },
+        { "name" => "temporal_framing", "description" => "preview, recap, or stale_preview" },
+        { "name" => "doc_text", "description" => "Meeting document text (truncated to 100k)" }
       ]
     },
     {
@@ -822,12 +826,37 @@ module PromptTemplateData
         roll calls belong to those other meetings, not this one.
         </document_scope>
 
+        <temporal_context>
+        Today's date: {{today}}. This meeting is scheduled for {{meeting_date}}.
+
+        {{temporal_framing}} is one of: preview, recap, stale_preview.
+
+        If "preview": This meeting HAS NOT OCCURRED. You are writing a preview
+        based on the agenda/packet. Do not infer outcomes, reactions, decisions,
+        debate, or public input — none of that has happened yet. Frame everything
+        as what is proposed, what is at stake, and what residents should watch for.
+        Use future tense ("will consider", "is expected to", "is proposed").
+        headline should be forward-looking. highlights become "what to watch"
+        items. item_details describe what is being proposed and why it matters,
+        not what happened. decision and vote fields must be null.
+
+        If "recap": This meeting has occurred. Summarize what happened.
+
+        If "stale_preview": This meeting's date has passed, but only agenda/packet
+        text is available — no minutes or transcript. Do not fabricate outcomes.
+        Frame as: here is what was on the agenda. Note that official results are
+        not yet available. Use past tense for the scheduling ("was scheduled")
+        but do not state or imply any decisions, votes, or discussion occurred.
+        headline should note that results are pending. decision and vote fields
+        must be null.
+        </temporal_context>
+
         <guidelines>
         - Write in plain language a resident would use at a neighborhood
           gathering. No government jargon ("motion to waive reading and
           adopt the ordinance to amend..." -> "voted to change the rule").
-        - Headline: 1-2 backward-looking sentences, max ~40 words.
-          What happened at this meeting that residents should know.
+        - Headline: 1-2 sentences, max ~40 words. Follow the temporal_context
+          framing for tense and posture.
         - Highlights: max 3 items, highest resident impact first. Include
           vote tallies where votes occurred. Each highlight gets a page
           citation.
