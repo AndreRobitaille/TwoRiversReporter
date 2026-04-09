@@ -8,10 +8,14 @@
       </div>
       <div class="flex gap-2">
         <span class="badge badge--default"><%= @source.source_type.upcase %></span>
-        <% if @source.active? %>
-          <span class="badge badge--success">Active</span>
-        <% else %>
-          <span class="badge badge--warning">Inactive</span>
+        <span class="badge badge--info"><%= @source.origin.humanize %></span>
+        <% case @source.status %>
+        <% when "approved" %>
+          <span class="badge badge--success">Approved</span>
+        <% when "blocked" %>
+          <span class="badge badge--danger">Blocked</span>
+        <% when "proposed" %>
+          <span class="badge badge--warning">Proposed</span>
         <% end %>
       </div>
     </div>
@@ -22,6 +26,27 @@
     </div>
   </div>
 </div>
+
+<% if @source.origin != "manual" %>
+  <div class="card mb-4">
+    <div class="flex items-center gap-2 mb-2">
+      <span class="badge badge--info"><%= @source.origin.humanize %></span>
+      <span class="badge badge--<%= @source.status == 'approved' ? 'success' : (@source.status == 'blocked' ? 'danger' : 'warning') %>"><%= @source.status.humanize %></span>
+      <% if @source.confidence %>
+        <span class="text-sm text-secondary">Confidence: <%= (@source.confidence * 100).round %>%</span>
+      <% end %>
+      <% if @source.stated_at %>
+        <span class="text-sm text-secondary">Stated: <%= @source.stated_at %></span>
+      <% end %>
+    </div>
+    <% if @source.reasoning.present? %>
+      <div class="mt-2">
+        <div class="text-sm font-medium text-secondary mb-1">AI Reasoning</div>
+        <div class="prose prose--sm"><%= @source.reasoning %></div>
+      </div>
+    <% end %>
+  </div>
+<% end %>
 
 <div class="card mb-6">
   <div class="card-header">

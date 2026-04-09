@@ -3,7 +3,9 @@ module Admin
     before_action :set_source, only: %i[ show edit update destroy reingest ]
 
     def index
-      @sources = KnowledgeSource.all.order(created_at: :desc)
+      @sources = KnowledgeSource.includes(:knowledge_chunks).order(created_at: :desc)
+      @sources = @sources.where(status: params[:status]) if params[:status].present?
+      @sources = @sources.where(origin: params[:origin]) if params[:origin].present?
     end
 
     def show
@@ -15,7 +17,9 @@ module Admin
 
     def create
       @source = KnowledgeSource.new(source_params)
-      @source.active = true # Default to active
+      @source.active = true
+      @source.origin = "manual"
+      @source.status = "approved"
 
       if @source.save
         redirect_to admin_knowledge_source_path(@source), notice: "Knowledge source created. Ingestion queued."
@@ -28,6 +32,10 @@ module Admin
     end
 
     def update
+      if @source.origin != "manual" && source_params[:body].present? && source_params[:body] != @source.body
+        @source.origin = "manual"
+      end
+
       if @source.update(source_params)
         redirect_to admin_knowledge_source_path(@source), notice: "Knowledge source updated. Re-ingestion queued if content changed."
       else

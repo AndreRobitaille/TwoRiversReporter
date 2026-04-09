@@ -667,6 +667,126 @@ module Ai
       end.join("\n\n")
     end
 
+    def extract_knowledge(summary_json:, raw_text:, existing_kb:, source: nil)
+      template = PromptTemplate.find_by!(key: "extract_knowledge")
+      system_role = template.system_role
+      placeholders = { summary_json: summary_json.to_s, raw_text: raw_text.to_s.truncate(25_000), existing_kb: existing_kb.to_s }
+      prompt = template.interpolate(**placeholders)
+      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
+
+      messages = [
+        (system_role.present? ? { role: "system", content: system_role } : nil),
+        { role: "user", content: prompt }
+      ].compact
+
+      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      response = @client.chat(
+        parameters: {
+          model: model,
+          response_format: { type: "json_object" },
+          messages: messages,
+          temperature: 0.1
+        }
+      )
+      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
+
+      content = response.dig("choices", 0, "message", "content")
+
+      record_prompt_run(
+        template_key: "extract_knowledge",
+        messages: messages,
+        response_content: content,
+        model: model,
+        response_format: "json_object",
+        temperature: 0.1,
+        duration_ms: duration_ms,
+        source: source,
+        placeholder_values: placeholders.transform_keys(&:to_s)
+      )
+
+      content
+    end
+
+    def triage_knowledge(entries_json:, existing_kb:, source: nil)
+      template = PromptTemplate.find_by!(key: "triage_knowledge")
+      system_role = template.system_role
+      placeholders = { entries_json: entries_json.to_s, existing_kb: existing_kb.to_s }
+      prompt = template.interpolate(**placeholders)
+      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
+
+      messages = [
+        (system_role.present? ? { role: "system", content: system_role } : nil),
+        { role: "user", content: prompt }
+      ].compact
+
+      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      response = @client.chat(
+        parameters: {
+          model: model,
+          response_format: { type: "json_object" },
+          messages: messages,
+          temperature: 0.1
+        }
+      )
+      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
+
+      content = response.dig("choices", 0, "message", "content")
+
+      record_prompt_run(
+        template_key: "triage_knowledge",
+        messages: messages,
+        response_content: content,
+        model: model,
+        response_format: "json_object",
+        temperature: 0.1,
+        duration_ms: duration_ms,
+        source: source,
+        placeholder_values: placeholders.transform_keys(&:to_s)
+      )
+
+      content
+    end
+
+    def extract_knowledge_patterns(knowledge_entries:, recent_summaries:, topic_metadata:, source: nil)
+      template = PromptTemplate.find_by!(key: "extract_knowledge_patterns")
+      system_role = template.system_role
+      placeholders = { knowledge_entries: knowledge_entries.to_s, recent_summaries: recent_summaries.to_s.truncate(50_000), topic_metadata: topic_metadata.to_s }
+      prompt = template.interpolate(**placeholders)
+      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
+
+      messages = [
+        (system_role.present? ? { role: "system", content: system_role } : nil),
+        { role: "user", content: prompt }
+      ].compact
+
+      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      response = @client.chat(
+        parameters: {
+          model: model,
+          response_format: { type: "json_object" },
+          messages: messages,
+          temperature: 0.1
+        }
+      )
+      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
+
+      content = response.dig("choices", 0, "message", "content")
+
+      record_prompt_run(
+        template_key: "extract_knowledge_patterns",
+        messages: messages,
+        response_content: content,
+        model: model,
+        response_format: "json_object",
+        temperature: 0.1,
+        duration_ms: duration_ms,
+        source: source,
+        placeholder_values: placeholders.transform_keys(&:to_s)
+      )
+
+      content
+    end
+
     def prepare_kb_context(chunks)
       return "" if chunks.empty?
       <<~CONTEXT
@@ -675,7 +795,14 @@ module Ai
         The following information comes from the city knowledgebase.
         Use it to identify glossed-over details, but distinguish it from document content.
 
-        #{chunks.join("\n\n")}
+        **Trust levels:**
+        - [ADMIN NOTE]: Authoritative background context from site administrators.
+        - [DOCUMENT-DERIVED]: Background context extracted from meeting documents. Reference as "based on meeting records" — do not state as established fact.
+        - [PATTERN-DERIVED]: System-identified pattern across meetings. Reference as "the system has noticed..." — do not state as confirmed fact.
+
+        **Dates in labels:** Entries include a date in parentheses (e.g., "(2026-04-06)") indicating when the fact was stated. Older facts may be outdated — qualify with "as of [date]" when referencing time-sensitive information like counts, dollar figures, or who holds a position.
+
+        #{chunks.is_a?(Array) ? chunks.join("\n\n") : chunks}
         </context_handling>
       CONTEXT
     end

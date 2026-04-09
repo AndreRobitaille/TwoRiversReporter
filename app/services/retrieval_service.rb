@@ -9,7 +9,8 @@ class RetrievalService
     query_embedding = @embedding_service.embed(query_text)
 
     # Base scope: Active knowledge chunks
-    scope = KnowledgeChunk.joins(:knowledge_source).where(knowledge_sources: { active: true })
+    scope = KnowledgeChunk.joins(:knowledge_source)
+                        .where(knowledge_sources: { active: true, status: "approved" })
 
     # Apply candidate scope if provided (e.g. topic filter)
     scope = scope.merge(candidate_scope) if candidate_scope
@@ -68,15 +69,16 @@ class RetrievalService
     results.map do |result|
       chunk = result[:chunk]
       source = chunk.knowledge_source
+      label = origin_label(source)
 
       <<~TEXT
-        [Source: #{source.title}] (Trust: #{source.verification_notes.present? ? 'Verified' : 'Unverified'})
+        #{label}
         #{chunk.content}
       TEXT
     end.join("\n\n")
   end
 
-  # Formatter for topic context with strict provenance labeling
+  # Formatter for topic context with origin-based labeling
   # Returns an Array of strings, not joined, for safer handling
   def format_topic_context(results)
     return [] if results.empty?
@@ -84,22 +86,28 @@ class RetrievalService
     results.map do |result|
       chunk = result[:chunk]
       source = chunk.knowledge_source
-      topic = result[:topic]
-
-      # Source Verification
-      source_trust = source.verification_notes.present? ? "VERIFIED" : "UNVERIFIED"
-
-      # Link Verification (if topic context is available)
-      link_trust = "UNVERIFIED"
-      if topic
-        link = source.knowledge_source_topics.find { |kst| kst.topic_id == topic.id }
-        link_trust = (link && link.verified?) ? "VERIFIED" : "UNVERIFIED"
-      end
+      label = origin_label(source)
 
       <<~TEXT
-        [Source: #{source.title} | ID: #{source.id} | Source Trust: #{source_trust} | Topic Link: #{link_trust}]
+        #{label}
         #{chunk.content}
       TEXT
+    end
+  end
+
+  private
+
+  def origin_label(source)
+    date_suffix = source.stated_at ? " (#{source.stated_at})" : ""
+    case source.origin
+    when "manual"
+      "[ADMIN NOTE: #{source.title}#{date_suffix}]"
+    when "extracted"
+      "[DOCUMENT-DERIVED: #{source.title}#{date_suffix}]"
+    when "pattern"
+      "[PATTERN-DERIVED: #{source.title}#{date_suffix}]"
+    else
+      "[#{source.title}#{date_suffix}]"
     end
   end
 end
