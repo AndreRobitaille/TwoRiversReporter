@@ -895,6 +895,13 @@ module PromptTemplateData
         DO NOT EXCLUDE closed session motions — they contain statutory
         justification (Wis. Stats 19.85) that residents need for open
         meetings law transparency.
+
+        CONSENT AGENDA SCRUTINY: Most consent agenda items are routine,
+        but occasionally substantive decisions (appointments, contracts,
+        policy changes) are placed on the consent agenda with minimal
+        discussion. If you notice something noteworthy buried in the
+        consent agenda, include it in item_details as you would any
+        other substantive item.
         </procedural_filter>
 
         <tone_calibration>
