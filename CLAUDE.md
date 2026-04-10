@@ -142,12 +142,14 @@ The topic show page (`topics/show.html.erb`) uses a **fixed inverted-pyramid lay
 
 **Design doc:** `docs/plans/2026-03-01-topic-show-consistent-layout-design.md`
 
-**Known issues (Apr 2026):**
-- **Key Decisions empty for all topics** — `Motion.agenda_item_id` is always nil, so votes can't be traced to topics. Fix: #76 (link motions to agenda items in `ExtractVotesJob`).
-- **Record entries are low-information** — most say "appeared on the agenda" instead of summarizing what happened. Fix: #89 (enrich Record entries with meeting content).
-- **Record entries don't link to meetings** — committee names are plain text, not links. Fix: #89.
-- **Coming Up empty most of the time** — agendas not published far in advance. No fallback like "typically discussed at [committee]."
-- **Overall UX**: #63 tracks the full topic page overhaul needed to make it the primary homepage destination.
+**Resolved issues (Apr 2026):**
+- **Key Decisions populated** — `ExtractVotesJob` now links motions to agenda items via `agenda_item_ref`. Backfill needed for existing meetings.
+- **Record entries enriched** — view-layer enrichment replaces "appeared on the agenda" with MeetingSummary item_details. Meeting names are links.
+- **Adaptive empty states** — Key Decisions hidden when empty. Coming Up shows "typically discussed at [committee]" fallback.
+
+**Remaining issues:**
+- **Coming Up empty most of the time** — agendas not published far in advance. Fallback shows typical committee, but no scheduled date.
+- **Overall UX**: #63 visual work shipped; homepage link targets still go to meetings until topic pages prove out.
 
 ### Meeting Show Page
 
