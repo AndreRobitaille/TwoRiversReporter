@@ -113,14 +113,24 @@ Admin: `/admin` namespace with dashboard, session/MFA auth, topic management (ap
 
 Topic cards (`topics/_topic_card` partial) are the primary navigation element to topic pages. The same partial is reused on the topics index (hero + list) and meeting show page ("Issues in This Meeting" section). Meeting show page splits topics into "Ongoing" (2+ appearances) and "New This Meeting" (1 appearance) subsections. Homepage meeting row topic pills are filtered to `resident_impact_score >= 2`.
 
-### Homepage Headline Cards
+### Homepage — Newspaper Layout (Apr 2026)
 
-The homepage has two topic headline cards (`home/_topic_headline_item` partial):
+The homepage uses a newspaper-style inverted pyramid layout. Four zones, top to bottom:
 
-- **"What Happened"** (left, cool-themed): Topics with recent motions/status events (30 days, impact ≥ 2). Shows `TopicBriefing.headline` (backward-looking).
-- **"Coming Up"** (right, warm-themed): Topics in future meetings (impact ≥ 3). Shows `TopicBriefing.upcoming_headline` (forward-looking). Falls back to `topic.description`.
-- **Meeting diversity**: "Coming Up" caps at 2 topics per meeting to prevent related topics from dominating. Over-fetches 15 candidates, applies diversity filter, takes top 5.
-- Headlines come from `TopicBriefing` (not `TopicSummary`). Each section uses its own headlines hash passed as a local to the partial.
+1. **Top Stories (1-2 items)**: Highest-impact topics with recent activity. Full cards with topic name, description, briefing headline, meeting reference, "Meeting details →" button. Uses `_top_story.html.erb` partial.
+2. **The Wire (4 cards + 6 rows)**: Next tier by impact. Mid-tier cards in 2-col grid (`_wire_card.html.erb`), compact rows below (`_wire_row.html.erb`). Cards link to meetings; rows link to topics.
+3. **Next Up (1-2)**: Next council meeting and/or work session. Calendar-style date slabs with terra-cotta (council) or teal (work session) coloring. Uses `_next_up.html.erb`.
+4. **Escape Hatches**: "Browse All Topics →" and "All Meetings →" buttons.
+
+**Data flow**: `HomeController` builds `@top_stories` (impact ≥ 4, 30d window), `@wire_cards`/`@wire_rows` (impact ≥ 2, excludes top stories), `@next_up` (council/work session patterns), `@headlines` (from `TopicBriefing`), `@meeting_refs` (most recent meeting appearance per topic).
+
+**Sort order**: Impact score descending, then recency. NOT chronological.
+
+**CSS**: `app/assets/stylesheets/home.css` — homepage-specific styles. Three visual tiers with decreasing card weight. Atomic motifs (starburst, diamond dividers, atom markers). Explicit click affordances on all interactive elements.
+
+**Known issue**: Top story and wire card links go to meeting pages, which may have thin content (no minutes/transcript). Plan to switch to topic page links once topic pages are improved (see #63, #76, #89).
+
+**Design spec**: `docs/superpowers/specs/2026-04-10-homepage-redesign-design.md`
 
 ### Topic Show Page
 
@@ -131,6 +141,13 @@ The topic show page (`topics/show.html.erb`) uses a **fixed inverted-pyramid lay
 **Key CSS classes:** `.topic-watch` (What to Watch section), `.topic-watch-callout` (warm callout card), `.topic-story` (The Story section), `.topic-concerns-callout` (process concerns), `.topic-record` (Record section), `.topic-timeline` / `.topic-timeline-entry` (timeline layout), `.section-empty` (empty state text).
 
 **Design doc:** `docs/plans/2026-03-01-topic-show-consistent-layout-design.md`
+
+**Known issues (Apr 2026):**
+- **Key Decisions empty for all topics** — `Motion.agenda_item_id` is always nil, so votes can't be traced to topics. Fix: #76 (link motions to agenda items in `ExtractVotesJob`).
+- **Record entries are low-information** — most say "appeared on the agenda" instead of summarizing what happened. Fix: #89 (enrich Record entries with meeting content).
+- **Record entries don't link to meetings** — committee names are plain text, not links. Fix: #89.
+- **Coming Up empty most of the time** — agendas not published far in advance. No fallback like "typically discussed at [committee]."
+- **Overall UX**: #63 tracks the full topic page overhaul needed to make it the primary homepage destination.
 
 ### Meeting Show Page
 

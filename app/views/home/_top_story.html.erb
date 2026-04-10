@@ -2,8 +2,7 @@
 <% variant ||= :primary %>
 <% card_class = variant == :primary ? "top-story" : "second-story" %>
 
-<% story_url = meeting_ref ? meeting_path(meeting_ref[:meeting_id]) : topic_path(topic) %>
-<%= link_to story_url, class: card_class do %>
+<%= link_to topic_path(topic), class: card_class do %>
   <div class="story-accent"></div>
   <div class="story-inner">
     <% if variant == :primary %>
@@ -22,7 +21,7 @@
       <% else %>
         <span class="story-meta"></span>
       <% end %>
-      <span class="read-more">Meeting details →</span>
+      <span class="read-more">Full story →</span>
     </div>
   </div>
 <% end %>
