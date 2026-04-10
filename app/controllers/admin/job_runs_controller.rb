@@ -69,7 +69,7 @@ class Admin::JobRunsController < Admin::BaseController
     when :topic
       if config[:job] == Topics::GenerateTopicBriefingJob
         targets.each do |topic|
-          latest_meeting_id = topic.meetings.order(starts_at: :desc).pick(:id)
+          latest_meeting_id = Meeting.where(id: topic.agenda_items.select(:meeting_id)).order(starts_at: :desc).pick(:id)
           config[:job].perform_later(topic_id: topic.id, meeting_id: latest_meeting_id) if latest_meeting_id
         end
       else
