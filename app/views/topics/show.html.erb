@@ -16,32 +16,33 @@
   </div>
 </div>
 
-<%# === 2. What to Watch (warm callout) === %>
-<section class="topic-watch section">
-  <h2 class="section-title">What to Watch</h2>
-  <% watch_text = briefing_what_to_watch(@briefing) %>
-  <% if watch_text.present? %>
+<%# === 2. What to Watch (warm callout) — hidden when no data === %>
+<% watch_text = briefing_what_to_watch(@briefing) %>
+<% if watch_text.present? %>
+  <section class="topic-watch section">
+    <h2 class="section-title">What to Watch</h2>
     <div class="topic-watch-callout">
       <p><%= render_inline_markdown(watch_text) %></p>
     </div>
-  <% else %>
-    <p class="section-empty">No analysis available yet for this topic.</p>
-  <% end %>
-</section>
+  </section>
+  <%= render "shared/diamond_divider" %>
+<% end %>
 
-<%# === 3. Coming Up (meeting cards) === %>
-<section class="topic-upcoming section topic-section">
-  <h2 class="section-title">Coming Up</h2>
-  <% if @upcoming.any? %>
+<%# === 3. Coming Up (meeting cards or fallback) === %>
+<% if @upcoming.any? %>
+  <section class="topic-upcoming section topic-section">
+    <h2 class="section-title">Coming Up</h2>
     <div class="card-grid">
       <% @upcoming.each do |appearance| %>
+        <% is_council = appearance.meeting.body_name.include?("Council") && !appearance.meeting.body_name.include?("Work Session") %>
         <%= link_to meeting_path(appearance.meeting), class: "card card-link card-link--upcoming" do %>
+          <div class="date-slab <%= 'council' if is_council %>">
+            <span class="date-month"><%= appearance.meeting.starts_at.strftime("%b") %></span>
+            <span class="date-day"><%= appearance.meeting.starts_at.strftime("%-d") %></span>
+          </div>
           <div class="card-body">
             <div class="text-sm text-secondary mb-1">
               <%= appearance.meeting.body_name %>
-            </div>
-            <div class="font-bold mb-1">
-              <%= appearance.meeting.starts_at.strftime("%A, %B %-d at %-I:%M %p") %>
             </div>
             <% if appearance.meeting.location.present? %>
               <div class="text-sm text-secondary mb-2">
@@ -63,16 +64,24 @@
         <% end %>
       <% end %>
     </div>
-  <% else %>
-    <p class="section-empty">No upcoming meetings scheduled for this topic.</p>
-  <% end %>
-</section>
+  </section>
+  <%= render "shared/diamond_divider" %>
+<% elsif @typical_committee.present? %>
+  <section class="topic-upcoming section topic-section">
+    <h2 class="section-title">Coming Up</h2>
+    <p class="topic-coming-up-fallback">
+      This topic is typically discussed at <strong><%= @typical_committee %></strong>.
+      Check back when the next agenda is published.
+    </p>
+  </section>
+  <%= render "shared/diamond_divider" %>
+<% end %>
 
-<%# === 4. The Story (editorial) === %>
-<section class="topic-story section topic-section">
-  <h2 class="section-title">The Story</h2>
-  <% story_text = briefing_current_state(@briefing) %>
-  <% if story_text.present? %>
+<%# === 4. The Story (editorial) — hidden when no data === %>
+<% story_text = briefing_current_state(@briefing) %>
+<% if story_text.present? %>
+  <section class="topic-story section topic-section">
+    <h2 class="section-title">The Story</h2>
     <div class="card">
       <div class="card-body briefing-editorial-content">
         <%= sanitize(render_briefing_editorial(story_text)) %>
@@ -89,33 +98,26 @@
         </ul>
       </div>
     <% end %>
-  <% else %>
-    <p class="section-empty">This topic is being tracked but hasn't been fully analyzed yet. Check back after the next meeting.</p>
-  <% end %>
-</section>
+  </section>
+  <%= render "shared/diamond_divider" %>
+<% end %>
 
-<%# === 5. Key Decisions (votes) === %>
-<section class="topic-decisions section topic-section">
-  <h2 class="section-title">Key Decisions</h2>
-  <% if @decisions.any? %>
+<%# === 5. Key Decisions (votes) — hidden when no linked motions === %>
+<% if @decisions.any? %>
+  <section class="topic-decisions section topic-section">
+    <h2 class="section-title">Key Decisions</h2>
     <% @decisions.each do |motion| %>
       <div class="topic-decision-item">
         <div class="flex justify-between items-center mb-1">
-          <span class="font-bold"><%= motion.meeting.body_name %></span>
-          <span class="text-sm text-secondary">
+          <span class="decision-badge <%= decision_badge_class(motion.outcome) %>">
+            <%= motion_outcome_text(motion) %>
+          </span>
+          <span class="topic-decision-meeting-ref">
+            <%= link_to motion.meeting.body_name, meeting_path(motion.meeting) %>,
             <%= motion.meeting.starts_at.strftime("%B %-d, %Y") %>
           </span>
         </div>
         <div class="mb-2"><%= motion.description %></div>
-        <div class="mb-2">
-          <span class="badge <%= case motion.outcome&.downcase
-            when 'passed', 'adopted', 'approved' then 'badge--success'
-            when 'failed', 'defeated' then 'badge--danger'
-            else 'badge--default'
-          end %>">
-            <%= motion_outcome_text(motion) %>
-          </span>
-        </div>
         <% if motion.votes.any? %>
           <div class="votes-label text-sm font-medium text-secondary">How they voted</div>
           <div class="votes-grid">
@@ -129,12 +131,11 @@
         <% end %>
       </div>
     <% end %>
-  <% else %>
-    <p class="section-empty">No votes or motions recorded for this topic.</p>
-  <% end %>
-</section>
+  </section>
+  <%= render "shared/diamond_divider" %>
+<% end %>
 
-<%# === 6. Record (timeline) === %>
+<%# === 6. Record (timeline) — always shown === %>
 <section class="topic-record section topic-section">
   <h2 class="section-title">Record</h2>
   <% record_entries = briefing_factual_record(@briefing) %>

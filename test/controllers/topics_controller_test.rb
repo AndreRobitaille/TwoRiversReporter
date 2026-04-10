@@ -247,38 +247,48 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to topics_path
   end
 
-  test "show always renders all six sections" do
+  test "show hides sections with no data instead of showing empty state" do
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-watch", 1
-    assert_select ".topic-upcoming", 1
-    assert_select ".topic-story", 1
-    assert_select ".topic-decisions", 1
-    assert_select ".topic-record", 1
+    # What to Watch: hidden when no briefing
+    assert_select ".topic-watch", 0
+    # Key Decisions: hidden when no motions
+    assert_select ".topic-decisions", 0
+    # Story: hidden when no briefing
+    assert_select ".topic-story", 0
+    # Record: always shown, with empty state when no generation_data
+    assert_select ".topic-record .section-empty", text: /No meeting activity/
   end
 
-  test "show displays empty state for what to watch when no briefing" do
+  test "show hides what to watch when no briefing" do
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-watch .section-empty", text: /No analysis available/
+    assert_select ".topic-watch", 0
   end
 
-  test "show displays empty state for coming up when no future meetings" do
+  test "show shows typical committee fallback when no upcoming meetings" do
+    # Create a past appearance so typical_committee is derived
+    TopicAppearance.create!(
+      topic: @active_topic, meeting: @meeting,
+      appeared_at: @meeting.starts_at,
+      evidence_type: "agenda_item"
+    )
+
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-upcoming .section-empty", text: /No upcoming meetings/
+    assert_select ".topic-coming-up-fallback", text: /typically discussed at/i
   end
 
-  test "show displays empty state for story when no briefing" do
+  test "show hides story when no briefing" do
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-story .section-empty", text: /hasn't been fully analyzed/
+    assert_select ".topic-story", 0
   end
 
-  test "show displays empty state for key decisions when no motions" do
+  test "show hides key decisions when no motions" do
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-decisions .section-empty", text: /No votes or motions/
+    assert_select ".topic-decisions", 0
   end
 
   test "show displays empty state for record when no generation data" do
