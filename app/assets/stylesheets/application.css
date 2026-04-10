@@ -2037,8 +2037,7 @@ th.sortable-header:hover {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   overflow: hidden;
-  padding: var(--space-6) var(--space-7) var(--space-5);
-  max-width: 760px;
+  padding: var(--space-6) var(--space-8) var(--space-5);
 }
 
 .topic-story-accent {
