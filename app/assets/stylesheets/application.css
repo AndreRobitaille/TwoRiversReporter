@@ -1812,77 +1812,345 @@ th.sortable-header:hover {
   margin-top: var(--space-1);
 }
 
-/* === Topic page affordances === */
+/* ============================================
+   Topic Show Page — Newspaper-style Showpiece
+   Matches homepage visual vocabulary:
+   - home-section-header pattern (atom marker + label + line)
+   - home-zone spacing
+   - Story accent strips + decorative motifs
+   - Constrained reading measure for editorial text
+   ============================================ */
 
-/* Links in topic content should be clearly clickable */
-.topic-timeline-meeting-link {
-  color: var(--color-primary);
-  text-decoration: underline;
-  text-decoration-color: var(--color-border);
-  text-underline-offset: 2px;
+/* ---- Topic Header (showpiece, centered) ---- */
+
+.topic-header {
+  text-align: center;
+  margin-bottom: var(--space-8);
+  padding: var(--space-5) 0 var(--space-4);
+  position: relative;
 }
 
-.topic-timeline-meeting-link:hover {
-  text-decoration-color: var(--color-primary);
+.topic-header-topline {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-bottom: var(--space-2);
+}
+
+.topic-header-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-teal);
+  margin: 0 0 var(--space-2);
+  line-height: 1.1;
+}
+
+.topic-header-desc {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+  max-width: 55ch;
+  margin: 0 auto;
+}
+
+/* ---- Topic Zones (match home-zone spacing) ---- */
+
+.topic-zone {
+  margin-bottom: var(--space-10);
+}
+
+.topic-zone:last-of-type {
+  margin-bottom: var(--space-6);
+}
+
+/* ---- What to Watch (warm callout) ---- */
+
+.topic-watch-card {
+  background: var(--color-accent-warm-bg, #fff4ec);
+  border-left: 5px solid var(--color-terra-cotta);
+  border-radius: var(--radius-md);
+  padding: var(--space-5) var(--space-6);
+  box-shadow: var(--shadow-sm);
+}
+
+.topic-watch-card p {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  line-height: 1.65;
+  margin: 0;
+  max-width: 65ch;
   color: var(--color-text);
 }
 
-/* Card hover states */
-.card-link--upcoming {
+/* ---- Coming Up (card grid or fallback) ---- */
+
+.topic-upcoming-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+}
+
+@media (min-width: 768px) {
+  .topic-upcoming-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.topic-upcoming-card {
   display: flex;
-  gap: 1rem;
-  align-items: flex-start;
-  transition: box-shadow 0.15s ease, transform 0.15s ease;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow var(--transition-normal), transform var(--transition-fast);
+  position: relative;
+  overflow: hidden;
 }
 
-.card-link--upcoming:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+.topic-upcoming-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--color-teal);
+  opacity: 0.5;
+  transition: opacity var(--transition-fast);
+}
+
+.topic-upcoming-card:hover {
+  box-shadow: var(--shadow-md);
   transform: translateY(-1px);
+  text-decoration: none;
+  color: inherit;
 }
 
-/* Date slab for Coming Up (reuse from homepage) */
-.topic-upcoming .date-slab {
-  min-width: 60px;
-  text-align: center;
-  padding: 0.5rem;
-  background: var(--color-primary);
-  color: var(--color-bg);
-  border-radius: 4px;
+.topic-upcoming-card:hover::before {
+  opacity: 1;
+}
+
+.topic-upcoming-card .date-slab {
   flex-shrink: 0;
+  min-width: 64px;
+  text-align: center;
+  padding: 0.6rem 0.4rem;
+  background: var(--color-teal);
+  color: var(--color-text-inverse, #fff);
+  border-radius: var(--radius-md);
 }
 
-.topic-upcoming .date-slab.council {
+.topic-upcoming-card .date-slab.council {
   background: var(--color-terra-cotta);
 }
 
-.topic-upcoming .date-month {
+.topic-upcoming-card .date-month {
   display: block;
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.85;
+}
+
+.topic-upcoming-card .date-day {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  font-weight: 800;
+  line-height: 1;
+  margin-top: 0.1rem;
+}
+
+.topic-upcoming-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.topic-upcoming-committee {
   font-family: var(--font-data);
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  color: var(--color-text-muted, var(--color-text-secondary));
+  margin-bottom: 0.3rem;
 }
 
-.topic-upcoming .date-day {
-  display: block;
+.topic-upcoming-item {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.4;
+  color: var(--color-text);
+  margin-bottom: 0.25rem;
+}
+
+.topic-upcoming-location {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+}
+
+.topic-upcoming-arrow {
   font-family: var(--font-display);
-  font-size: 1.5rem;
-  font-weight: 700;
-  line-height: 1;
+  font-size: 1.4rem;
+  color: var(--color-teal);
+  flex-shrink: 0;
+  transition: transform var(--transition-fast);
 }
 
-/* Coming Up fallback text */
+.topic-upcoming-card:hover .topic-upcoming-arrow {
+  transform: translateX(3px);
+}
+
 .topic-coming-up-fallback {
+  font-family: var(--font-body);
+  font-size: 1rem;
   color: var(--color-text-secondary);
   font-style: italic;
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  max-width: 65ch;
 }
 
-/* Key Decisions: meeting reference link */
+.topic-coming-up-fallback strong {
+  color: var(--color-teal);
+  font-style: normal;
+}
+
+/* ---- The Story (showpiece card) ---- */
+
+.topic-story-card {
+  position: relative;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  padding: var(--space-6) var(--space-7) var(--space-5);
+  max-width: 760px;
+}
+
+.topic-story-accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, var(--color-terra-cotta), var(--color-amber, var(--color-terra-cotta)));
+}
+
+.topic-story-deco {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+.topic-story-body {
+  max-width: 65ch;
+}
+
+.topic-story-body p {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: var(--color-text);
+  margin: 0 0 1em;
+}
+
+.topic-story-body p:last-child {
+  margin-bottom: 0;
+}
+
+.topic-story-body strong {
+  color: var(--color-teal);
+  font-weight: 700;
+}
+
+.topic-story-concerns {
+  margin-top: var(--space-5);
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-surface-raised, #faf6f0);
+  border-left: 3px solid var(--color-text-muted, var(--color-text-secondary));
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  max-width: 65ch;
+}
+
+.topic-story-concerns-label {
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-text-muted, var(--color-text-secondary));
+  margin-bottom: 0.5rem;
+}
+
+.topic-story-concerns ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.topic-story-concerns li {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--color-text);
+  margin-bottom: 0.3rem;
+}
+
+.topic-story-concerns li:last-child {
+  margin-bottom: 0;
+}
+
+/* ---- Key Decisions ---- */
+
+.topic-zone--decisions .topic-decision-item {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-3);
+}
+
+.topic-zone--decisions .topic-decision-item:last-child {
+  margin-bottom: 0;
+}
+
+.topic-decision-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.topic-decision-description {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--color-text);
+  margin-bottom: var(--space-3);
+  max-width: 65ch;
+}
+
 .topic-decision-meeting-ref {
   font-family: var(--font-data);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   color: var(--color-text-secondary);
 }
 
@@ -1894,19 +2162,56 @@ th.sortable-header:hover {
 }
 
 .topic-decision-meeting-ref a:hover {
-  color: var(--color-primary);
-  text-decoration-color: var(--color-primary);
+  color: var(--color-teal);
+  text-decoration-color: var(--color-teal);
 }
 
-/* Section titles — consistent Outfit uppercase treatment */
-.topic-section .section-title {
-  font-family: var(--font-display);
+/* ---- Record Timeline ---- */
+
+.topic-zone--record .topic-timeline {
+  max-width: 760px;
+}
+
+.topic-timeline-entry .topic-timeline-event {
+  font-family: var(--font-body);
+  font-size: 0.98rem;
+  line-height: 1.55;
+  color: var(--color-text);
+  margin: 0 0 0.25rem;
+  max-width: 62ch;
+}
+
+.topic-timeline-meeting-link {
+  font-family: var(--font-data);
+  font-size: 0.72rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid var(--color-primary);
-  display: inline-block;
-  margin-bottom: 1.5rem;
+  letter-spacing: 0.06em;
+  color: var(--color-teal);
+  text-decoration: underline;
+  text-decoration-color: var(--color-border);
+  text-underline-offset: 3px;
+}
+
+.topic-timeline-meeting-link:hover {
+  text-decoration-color: var(--color-teal);
+  color: var(--color-text);
+}
+
+.topic-timeline-entry .topic-timeline-meeting {
+  font-family: var(--font-data);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted, var(--color-text-secondary));
+}
+
+/* ---- Footer ---- */
+
+.topic-footer {
+  margin-top: var(--space-10);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--color-border);
+  text-align: center;
 }
 
 /* === Meeting Show — Structured Sections === */

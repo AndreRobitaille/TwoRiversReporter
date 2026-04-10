@@ -251,19 +251,19 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     get topic_url(@active_topic)
     assert_response :success
     # What to Watch: hidden when no briefing
-    assert_select ".topic-watch", 0
+    assert_select ".topic-zone--watch", 0
     # Key Decisions: hidden when no motions
-    assert_select ".topic-decisions", 0
+    assert_select ".topic-zone--decisions", 0
     # Story: hidden when no briefing
-    assert_select ".topic-story", 0
+    assert_select ".topic-zone--story", 0
     # Record: always shown, with empty state when no generation_data
-    assert_select ".topic-record .section-empty", text: /No meeting activity/
+    assert_select ".topic-zone--record .section-empty", text: /No meeting activity/
   end
 
   test "show hides what to watch when no briefing" do
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-watch", 0
+    assert_select ".topic-zone--watch", 0
   end
 
   test "show shows typical committee fallback when no upcoming meetings" do
@@ -282,19 +282,19 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
   test "show hides story when no briefing" do
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-story", 0
+    assert_select ".topic-zone--story", 0
   end
 
   test "show hides key decisions when no motions" do
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-decisions", 0
+    assert_select ".topic-zone--decisions", 0
   end
 
   test "show displays empty state for record when no generation data" do
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-record .section-empty", text: /No meeting activity/
+    assert_select ".topic-zone--record .section-empty", text: /No meeting activity/
   end
 
   test "show displays what to watch from generation_data" do
@@ -317,7 +317,7 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
 
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-watch-callout", text: /Watch for implementation timeline/
+    assert_select ".topic-watch-card", text: /Watch for implementation timeline/
   end
 
   test "show displays story from generation_data current_state" do
@@ -341,8 +341,8 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
 
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-story .briefing-editorial-content", text: /voted 5-2/
-    assert_select ".topic-concerns-callout li", text: /Rushed through/
+    assert_select ".topic-story-body", text: /voted 5-2/
+    assert_select ".topic-story-concerns li", text: /Rushed through/
   end
 
   test "show displays story from editorial_content fallback when no generation_data" do
@@ -355,7 +355,7 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
 
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-story .briefing-editorial-content", text: /Fallback editorial/
+    assert_select ".topic-story-body", text: /Fallback editorial/
   end
 
   test "show renders timeline from generation_data factual_record" do
@@ -406,7 +406,7 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
 
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-upcoming a.card-link", minimum: 1
+    assert_select "a.topic-upcoming-card", minimum: 1
   end
 
   test "show loads decisions with motions and votes" do
@@ -421,7 +421,7 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
 
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-decisions .topic-decision-item", minimum: 1
+    assert_select ".topic-zone--decisions .topic-decision-item", minimum: 1
   end
 
   test "show key decisions displays vote label" do
