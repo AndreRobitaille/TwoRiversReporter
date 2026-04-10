@@ -177,4 +177,68 @@ class TopicsHelperTest < ActionView::TestCase
   test "format_record_date returns original string for unparseable dates" do
     assert_equal "not a date", format_record_date("not a date")
   end
+
+  test "enrich_record_entry returns meeting when appearance found" do
+    meeting = OpenStruct.new(id: 1, body_name: "City Council")
+    appearance = OpenStruct.new(meeting: meeting, agenda_item: nil)
+    record_meetings = { "2025-09-02:City Council" => appearance }
+
+    entry = { "date" => "2025-09-02", "event" => "Council approved plan.", "meeting" => "City Council" }
+    result = enrich_record_entry(entry, record_meetings)
+
+    assert_equal "Council approved plan.", result[:event]
+    assert_equal meeting, result[:meeting]
+    assert_equal "City Council", result[:meeting_name]
+  end
+
+  test "enrich_record_entry returns nil meeting when no appearance found" do
+    record_meetings = {}
+    entry = { "date" => "2025-09-02", "event" => "Something happened.", "meeting" => "Unknown Board" }
+    result = enrich_record_entry(entry, record_meetings)
+
+    assert_nil result[:meeting]
+    assert_equal "Unknown Board", result[:meeting_name]
+  end
+
+  test "enrich_record_entry replaces appeared on the agenda with item summary" do
+    summary = MeetingSummary.new(
+      generation_data: {
+        "item_details" => [
+          { "agenda_item_title" => "Lead Service Lines", "summary" => "Council approved $2.4M contract with Northern Pipe for replacement." }
+        ]
+      }
+    )
+    meeting = OpenStruct.new(id: 1, body_name: "City Council", meeting_summaries: [ summary ])
+    agenda_item = OpenStruct.new(title: "Lead Service Lines")
+    appearance = OpenStruct.new(meeting: meeting, agenda_item: agenda_item)
+    record_meetings = { "2025-09-02:City Council" => appearance }
+
+    entry = { "date" => "2025-09-02", "event" => "Appeared on the agenda.", "meeting" => "City Council" }
+    result = enrich_record_entry(entry, record_meetings)
+
+    assert_includes result[:event], "Council approved $2.4M contract"
+  end
+
+  test "enrich_record_entry falls back to agenda item title when no summary match" do
+    meeting = OpenStruct.new(id: 1, body_name: "City Council", meeting_summaries: [])
+    agenda_item = OpenStruct.new(title: "Lead Service Line Replacement Program")
+    appearance = OpenStruct.new(meeting: meeting, agenda_item: agenda_item)
+    record_meetings = { "2025-09-02:City Council" => appearance }
+
+    entry = { "date" => "2025-09-02", "event" => "Appeared on the agenda.", "meeting" => "City Council" }
+    result = enrich_record_entry(entry, record_meetings)
+
+    assert_equal "Lead Service Line Replacement Program", result[:event]
+  end
+
+  test "enrich_record_entry keeps original event text when not appeared on the agenda" do
+    meeting = OpenStruct.new(id: 1, body_name: "City Council", meeting_summaries: [])
+    appearance = OpenStruct.new(meeting: meeting, agenda_item: nil)
+    record_meetings = { "2025-09-02:City Council" => appearance }
+
+    entry = { "date" => "2025-09-02", "event" => "Council voted 5-2 to approve.", "meeting" => "City Council" }
+    result = enrich_record_entry(entry, record_meetings)
+
+    assert_equal "Council voted 5-2 to approve.", result[:event]
+  end
 end

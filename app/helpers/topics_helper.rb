@@ -116,4 +116,42 @@ module TopicsHelper
     return "" if items.empty?
     content_tag(:ul, items.join.html_safe, class: "topic-summary-list")
   end
+
+  def enrich_record_entry(entry, record_meetings)
+    key = "#{entry['date']}:#{entry['meeting']}"
+    appearance = record_meetings[key]
+    meeting = appearance&.meeting
+
+    event_text = entry["event"]
+    if event_text&.match?(/appeared on the agenda/i) && appearance
+      enriched = extract_meeting_item_summary(meeting, appearance.agenda_item)
+      event_text = enriched if enriched.present?
+    end
+
+    { event: event_text, meeting_name: entry["meeting"], meeting: meeting }
+  end
+
+  private
+
+  def extract_meeting_item_summary(meeting, agenda_item)
+    return agenda_item&.title unless meeting
+
+    meeting.meeting_summaries.each do |summary|
+      items = summary.generation_data&.dig("item_details")
+      next unless items.is_a?(Array)
+
+      target_title = agenda_item&.title&.downcase
+      next unless target_title
+
+      matched_item = items.find { |item|
+        item_title = item["agenda_item_title"]&.downcase
+        next false unless item_title
+        item_title.include?(target_title) || target_title.include?(item_title)
+      }
+
+      return matched_item["summary"].truncate(200) if matched_item&.dig("summary").present?
+    end
+
+    agenda_item&.title
+  end
 end
