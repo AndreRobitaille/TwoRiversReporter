@@ -1,0 +1,109 @@
+<div class="page-header">
+  <h1 class="page-title">Knowledge Search</h1>
+  <p class="page-subtitle">Ask questions about your civic data</p>
+</div>
+
+<div class="card mb-6">
+  <%= form_with url: admin_search_path, method: :get, local: true, class: "search-form" do |f| %>
+    <input type="text" name="q" value="<%= @query %>" placeholder="Search knowledge base and meeting documents..." class="form-input" style="flex: 1; max-width: none;" autofocus>
+    <button type="submit" class="btn btn--secondary">Search</button>
+    <button type="submit" name="ask_ai" value="1" class="btn btn--primary">Ask AI</button>
+  <% end %>
+</div>
+
+<% if @query.blank? %>
+  <div class="card">
+    <p class="section-empty">Enter a search to query the knowledge base and meeting documents.</p>
+  </div>
+<% else %>
+
+  <%# AI Answer (conditional) %>
+  <% if @ai_answer.present? %>
+    <div class="card card--ai-answer mb-6">
+      <div class="card-header">
+        <span class="badge badge--info">AI Answer</span>
+      </div>
+      <div class="prose">
+        <%= simple_format @ai_answer %>
+      </div>
+      <% if @kb_results.present? %>
+        <div class="mt-4" style="border-top: 1px solid var(--color-border); padding-top: var(--space-4);">
+          <div class="text-sm font-medium text-secondary mb-2">Sources</div>
+          <ol class="text-sm" style="padding-left: var(--space-4); margin: 0;">
+            <% @kb_results.each_with_index do |result, i| %>
+              <% source = result[:chunk].knowledge_source %>
+              <li style="margin-bottom: var(--space-1);">
+                <%= link_to source.title, admin_knowledge_source_path(source) %>
+                <span class="badge badge--<%= source.origin == 'manual' ? 'default' : (source.origin == 'extracted' ? 'info' : 'warning') %>" style="font-size: 0.65rem;"><%= source.origin %></span>
+                <% if source.stated_at %>
+                  <span class="text-muted" style="font-family: var(--font-data); font-size: 0.7rem;"><%= source.stated_at %></span>
+                <% end %>
+                <% if source.meeting %>
+                  &middot; from <%= link_to source.meeting.body_name, meeting_path(source.meeting) %>
+                <% end %>
+              </li>
+            <% end %>
+          </ol>
+        </div>
+      <% end %>
+      <div class="mt-4 text-sm text-muted">
+        Based on <%= @kb_results.size %> knowledge sources &middot; gpt-5.2
+      </div>
+    </div>
+  <% end %>
+
+  <%# Knowledge Base Results %>
+  <div class="card mb-6">
+    <div class="card-header">
+      <h2 class="card-title">Knowledge Base Results (<%= @kb_results&.size || 0 %>)</h2>
+    </div>
+    <% if @kb_results.blank? %>
+      <p class="section-empty">No matching knowledge base entries found.</p>
+    <% else %>
+      <% @kb_results.each do |result| %>
+        <% chunk = result[:chunk] %>
+        <% source = chunk.knowledge_source %>
+        <% score_pct = (result[:score] * 100).round %>
+        <div style="padding: var(--space-3) 0; border-bottom: 1px solid var(--color-border);">
+          <div class="flex items-center gap-2 mb-1">
+            <span style="font-family: var(--font-data); font-size: 0.75rem; color: var(--color-text-muted); letter-spacing: 0.05em; min-width: 3em;"><%= score_pct %>%</span>
+            <strong><%= link_to source.title, admin_knowledge_source_path(source) %></strong>
+            <span class="badge badge--<%= source.origin == 'manual' ? 'default' : (source.origin == 'extracted' ? 'info' : 'warning') %>"><%= source.origin.humanize %></span>
+            <% if source.stated_at %>
+              <span style="font-family: var(--font-data); font-size: 0.7rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em;"><%= source.stated_at %></span>
+            <% end %>
+          </div>
+          <p class="text-sm text-secondary" style="margin: 0;"><%= chunk.content.truncate(200) %></p>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+
+  <%# Meeting Document Results %>
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Meeting Documents (<%= @document_results&.size || 0 %>)</h2>
+    </div>
+    <% if @document_results.blank? %>
+      <p class="section-empty">No matching meeting documents found.</p>
+    <% else %>
+      <% @document_results.each do |doc| %>
+        <div style="padding: var(--space-3) 0; border-bottom: 1px solid var(--color-border);">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="badge badge--default"><%= doc.document_type.humanize.upcase %></span>
+            <% if doc.meeting %>
+              <strong><%= link_to doc.meeting.body_name, meeting_path(doc.meeting) %></strong>
+              <span class="text-muted"><%= doc.meeting.starts_at&.strftime("%b %d, %Y") %></span>
+            <% end %>
+          </div>
+          <% if doc.respond_to?(:headline_excerpt) && doc.headline_excerpt.present? %>
+            <p class="text-sm text-secondary" style="margin: 0;"><%= raw doc.headline_excerpt %></p>
+          <% else %>
+            <p class="text-sm text-secondary" style="margin: 0;"><%= doc.extracted_text.to_s.truncate(200) %></p>
+          <% end %>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+
+<% end %>

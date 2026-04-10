@@ -430,6 +430,10 @@ small {
   box-shadow: var(--shadow-md);
 }
 
+.card--ai-answer {
+  border-left: 3px solid var(--color-teal);
+}
+
 .card--clickable {
   cursor: pointer;
   text-decoration: none;
