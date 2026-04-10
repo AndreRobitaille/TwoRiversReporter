@@ -78,6 +78,8 @@ Rails.application.routes.draw do
         get :count
       end
     end
+
+    get "search", to: "admin/searches#index", as: :admin_search
   end
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
