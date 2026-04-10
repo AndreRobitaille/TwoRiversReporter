@@ -12,7 +12,8 @@ PROMPT_TEMPLATES_DATA = [
     usage_context: "Meeting page: the motion text and pass/fail/tabled vote badges on each agenda item card",
     model_tier: "default",
     placeholders: [
-      { "name" => "text", "description" => "Meeting minutes text (truncated to 50k chars)" }
+      { "name" => "text", "description" => "Meeting minutes text (truncated to 50k chars)" },
+      { "name" => "agenda_items", "description" => "Numbered agenda items for the meeting (for motion-to-item linking)" }
     ]
   },
   {
