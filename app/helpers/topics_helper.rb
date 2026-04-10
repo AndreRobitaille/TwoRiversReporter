@@ -118,8 +118,9 @@ module TopicsHelper
   end
 
   def enrich_record_entry(entry, record_meetings)
-    key = "#{entry['date']}:#{entry['meeting']}"
-    appearance = record_meetings[key]
+    candidates = record_meetings[entry["date"]] || []
+    target_norm = normalize_meeting_name(entry["meeting"])
+    appearance = candidates.find { |a| normalize_meeting_name(a.meeting.body_name) == target_norm }
     meeting = appearance&.meeting
 
     event_text = entry["event"]
@@ -132,6 +133,22 @@ module TopicsHelper
   end
 
   private
+
+  # Normalize meeting name strings for matching between AI-generated
+  # factual_record "meeting" labels and real Meeting body_name values.
+  # AI labels often append date suffixes (", Nov 20 2025") and use different
+  # separators (" / " vs " - "). Real body_name values sometimes carry
+  # status suffixes like "(CANCELED - NO QUORUM)" or " Meeting" endings.
+  def normalize_meeting_name(name)
+    name.to_s.downcase
+        .gsub(/\([^)]*\)/, "")            # strip parentheticals: (CANCELED...)
+        .gsub(/,.*\z/, "")                # strip trailing ", Nov 20 2025"
+        .strip
+        .sub(/\s+-\s+no quorum.*\z/, "")  # strip trailing " - NO QUORUM"
+        .sub(/\s+meeting\z/, "")          # strip trailing " meeting"
+        .gsub(/[^a-z0-9]+/, " ")
+        .split.sort.join(" ")
+  end
 
   def extract_meeting_item_summary(meeting, agenda_item)
     return agenda_item&.title unless meeting

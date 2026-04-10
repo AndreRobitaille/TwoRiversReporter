@@ -181,7 +181,7 @@ class TopicsHelperTest < ActionView::TestCase
   test "enrich_record_entry returns meeting when appearance found" do
     meeting = OpenStruct.new(id: 1, body_name: "City Council")
     appearance = OpenStruct.new(meeting: meeting, agenda_item: nil)
-    record_meetings = { "2025-09-02:City Council" => appearance }
+    record_meetings = { "2025-09-02" => [ appearance ] }
 
     entry = { "date" => "2025-09-02", "event" => "Council approved plan.", "meeting" => "City Council" }
     result = enrich_record_entry(entry, record_meetings)
@@ -211,7 +211,7 @@ class TopicsHelperTest < ActionView::TestCase
     meeting = OpenStruct.new(id: 1, body_name: "City Council", meeting_summaries: [ summary ])
     agenda_item = OpenStruct.new(title: "Lead Service Lines")
     appearance = OpenStruct.new(meeting: meeting, agenda_item: agenda_item)
-    record_meetings = { "2025-09-02:City Council" => appearance }
+    record_meetings = { "2025-09-02" => [ appearance ] }
 
     entry = { "date" => "2025-09-02", "event" => "Appeared on the agenda.", "meeting" => "City Council" }
     result = enrich_record_entry(entry, record_meetings)
@@ -223,7 +223,7 @@ class TopicsHelperTest < ActionView::TestCase
     meeting = OpenStruct.new(id: 1, body_name: "City Council", meeting_summaries: [])
     agenda_item = OpenStruct.new(title: "Lead Service Line Replacement Program")
     appearance = OpenStruct.new(meeting: meeting, agenda_item: agenda_item)
-    record_meetings = { "2025-09-02:City Council" => appearance }
+    record_meetings = { "2025-09-02" => [ appearance ] }
 
     entry = { "date" => "2025-09-02", "event" => "Appeared on the agenda.", "meeting" => "City Council" }
     result = enrich_record_entry(entry, record_meetings)
@@ -234,11 +234,65 @@ class TopicsHelperTest < ActionView::TestCase
   test "enrich_record_entry keeps original event text when not appeared on the agenda" do
     meeting = OpenStruct.new(id: 1, body_name: "City Council", meeting_summaries: [])
     appearance = OpenStruct.new(meeting: meeting, agenda_item: nil)
-    record_meetings = { "2025-09-02:City Council" => appearance }
+    record_meetings = { "2025-09-02" => [ appearance ] }
 
     entry = { "date" => "2025-09-02", "event" => "Council voted 5-2 to approve.", "meeting" => "City Council" }
     result = enrich_record_entry(entry, record_meetings)
 
     assert_equal "Council voted 5-2 to approve.", result[:event]
+  end
+
+  test "enrich_record_entry matches when AI appends date suffix to meeting label" do
+    meeting = OpenStruct.new(id: 1, body_name: "City Council Meeting", meeting_summaries: [])
+    appearance = OpenStruct.new(meeting: meeting, agenda_item: nil)
+    record_meetings = { "2025-09-02" => [ appearance ] }
+
+    # AI-generated label with date suffix
+    entry = { "date" => "2025-09-02", "event" => "Council voted.", "meeting" => "City Council, Sep 2 2025" }
+    result = enrich_record_entry(entry, record_meetings)
+
+    assert_equal meeting, result[:meeting]
+  end
+
+  test "enrich_record_entry matches when body_name has parenthetical status suffix" do
+    meeting = OpenStruct.new(id: 1, body_name: "Library Board Meeting (CANCELED - NO QUORUM)", meeting_summaries: [])
+    appearance = OpenStruct.new(meeting: meeting, agenda_item: nil)
+    record_meetings = { "2025-09-02" => [ appearance ] }
+
+    entry = { "date" => "2025-09-02", "event" => "Scheduled but cancelled.", "meeting" => "Library Board" }
+    result = enrich_record_entry(entry, record_meetings)
+
+    assert_equal meeting, result[:meeting]
+  end
+
+  test "enrich_record_entry matches when separators differ (slash vs dash)" do
+    meeting = OpenStruct.new(
+      id: 1,
+      body_name: "Business and Industrial Development Committee - Community Development Authority Meeting",
+      meeting_summaries: []
+    )
+    appearance = OpenStruct.new(meeting: meeting, agenda_item: nil)
+    record_meetings = { "2025-11-25" => [ appearance ] }
+
+    entry = {
+      "date" => "2025-11-25",
+      "event" => "Topic discussed.",
+      "meeting" => "Business and Industrial Development Committee / Community Development Authority"
+    }
+    result = enrich_record_entry(entry, record_meetings)
+
+    assert_equal meeting, result[:meeting]
+  end
+
+  test "enrich_record_entry does not match when committee is genuinely different" do
+    meeting = OpenStruct.new(id: 1, body_name: "Public Works Committee", meeting_summaries: [])
+    appearance = OpenStruct.new(meeting: meeting, agenda_item: nil)
+    record_meetings = { "2025-09-02" => [ appearance ] }
+
+    # AI hallucinated "City Council" when the real appearance is at Public Works
+    entry = { "date" => "2025-09-02", "event" => "Council voted.", "meeting" => "City Council" }
+    result = enrich_record_entry(entry, record_meetings)
+
+    assert_nil result[:meeting], "should not link when committee name doesn't match"
   end
 end
