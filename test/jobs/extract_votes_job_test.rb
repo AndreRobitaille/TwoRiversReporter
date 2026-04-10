@@ -46,6 +46,30 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     mock_ai.verify
   end
 
+  test "links motion to agenda item when agenda_item_ref is bare number without delimiter" do
+    ai_response = {
+      "motions" => [ {
+        "description" => "Approve lead service line contract",
+        "outcome" => "passed",
+        "agenda_item_ref" => "7a",
+        "votes" => []
+      } ]
+    }.to_json
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_votes, ai_response do |text, **kwargs|
+      true
+    end
+
+    Ai::OpenAiService.stub :new, mock_ai do
+      ExtractVotesJob.perform_now(@meeting.id)
+    end
+
+    motion = @meeting.motions.reload.first
+    assert_equal @item_7a, motion.agenda_item
+    mock_ai.verify
+  end
+
   test "links motion to agenda item by title similarity when no number match" do
     item_no_number = AgendaItem.create!(
       meeting: @meeting, number: nil,

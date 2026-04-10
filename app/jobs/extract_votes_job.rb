@@ -10,7 +10,7 @@ class ExtractVotesJob < ApplicationJob
       return
     end
 
-    agenda_items = meeting.agenda_items.to_a
+    agenda_items = meeting.agenda_items.order(:order_index).to_a
     agenda_items_text = build_agenda_items_text(agenda_items)
 
     ai_service = ::Ai::OpenAiService.new
@@ -70,8 +70,8 @@ class ExtractVotesJob < ApplicationJob
   private
 
   def build_agenda_items_text(agenda_items)
-    agenda_items.map { |ai|
-      ai.number.present? ? "#{ai.number}: #{ai.title}" : ai.title
+    agenda_items.map { |item|
+      item.number.present? ? "#{item.number}: #{item.title}" : item.title
     }.join("\n")
   end
 
@@ -79,10 +79,10 @@ class ExtractVotesJob < ApplicationJob
     return nil if ref.blank?
 
     # Try matching by item number first
-    number_match = ref.match(/\A(\S+?)[\s:]/i)
+    number_match = ref.match(/\A(\S+?)(?:[\s:]|\z)/i)
     if number_match
       candidate = number_match[1]
-      by_number = agenda_items.find { |ai| ai.number&.downcase == candidate.downcase }
+      by_number = agenda_items.find { |item| item.number&.downcase == candidate.downcase }
       return by_number if by_number
     end
 
@@ -93,9 +93,9 @@ class ExtractVotesJob < ApplicationJob
     best_match = nil
     best_score = 0.0
 
-    agenda_items.each do |ai|
-      next if ai.title.blank?
-      item_words = ai.title.downcase.gsub(/[^a-z0-9\s]/, "").split
+    agenda_items.each do |item|
+      next if item.title.blank?
+      item_words = item.title.downcase.gsub(/[^a-z0-9\s]/, "").split
       next if item_words.empty?
 
       overlap = (ref_words & item_words).size
@@ -103,7 +103,7 @@ class ExtractVotesJob < ApplicationJob
 
       if score > best_score
         best_score = score
-        best_match = ai
+        best_match = item
       end
     end
 
