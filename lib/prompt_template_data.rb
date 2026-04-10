@@ -305,7 +305,7 @@ module PromptTemplateData
         - Ignore "Minutes of Meetings" items if they refer to *previous* meetings (e.g. "Approve minutes of X"). Classify these as "Administrative".
         - Do NOT extract topics from the titles of previous meeting minutes (e.g. if item is "Minutes of Public Works", do not tag "Public Works").
         - If an item is purely administrative (Call to Order, Roll Call, Adjournment), classify as "Administrative".
-        - If an item is routine institutional business (individual license renewals, standard report acceptances, routine personnel actions, proclamations), classify as "Routine".
+        - If an item is routine institutional business (individual license renewals, standard report acceptances, routine personnel actions, proclamations), classify as "Routine". However, appointments or personnel actions that involve unusually long tenures, family relationships, or potential conflicts of interest are NOT routine — classify and tag those as topic-worthy.
         - When an agenda item title is generic (e.g. "PUBLIC HEARING", "NEW BUSINESS"), use attached document text or meeting document context to identify the actual substantive topic.
         - When an agenda item references a catch-all ordinance section (e.g. "Height and Area Exceptions"), also identify the substantive civic concern if one exists.
         - Topic names should be at a "neighborhood conversation" level — not hyper-specific (no addresses or applicant details in the topic name).
