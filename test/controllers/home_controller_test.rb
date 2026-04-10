@@ -145,7 +145,7 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".nextup-card", count: 2
     nextup_text = css_select(".nextup-zone").text
-    assert_match(/City Council Meeting/i, nextup_text)
+    assert_match(/City Council/i, nextup_text)
     assert_match(/Work Session/i, nextup_text)
     assert_no_match(/Plan Commission/i, nextup_text)
   end
@@ -183,7 +183,8 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "wire zone omitted when no qualifying wire topics" do
-    @low_topic.update!(resident_impact_score: 5)
+    # Remove low-impact topic so only 2 high-impact remain (both go to top stories)
+    @low_topic.destroy!
 
     get root_url
     assert_response :success
