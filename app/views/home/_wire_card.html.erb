@@ -1,5 +1,6 @@
 <%# Mid-tier wire card. Locals: topic, headline, meeting_ref %>
-<%= link_to topic_path(topic), class: "wire-card" do %>
+<% card_url = meeting_ref ? meeting_path(meeting_ref[:meeting_id]) : topic_path(topic) %>
+<%= link_to card_url, class: "wire-card" do %>
   <div class="wire-topic"><%= topic.name %></div>
   <% if topic.description.present? %>
     <div class="wire-desc"><%= topic.description %></div>
@@ -13,6 +14,6 @@
     <% else %>
       <span class="wire-meta"></span>
     <% end %>
-    <span class="wire-read">Read →</span>
+    <span class="wire-read">Meeting details →</span>
   </div>
 <% end %>

@@ -73,7 +73,7 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".top-story .story-topic", text: /lead service lines/i
     assert_select ".top-story .story-headline", text: /Lead line headline/
-    assert_select ".top-story .read-more"
+    assert_select ".top-story .read-more", text: /Meeting details/
   end
 
   test "top stories limited to 2 items" do

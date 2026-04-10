@@ -92,6 +92,7 @@
 .top-story:hover {
   box-shadow: 0 12px 32px rgb(44 37 32 / 0.16), 0 4px 12px rgb(44 37 32 / 0.10);
   transform: translateY(-2px);
+  text-decoration: none;
   color: inherit;
 }
 
@@ -190,6 +191,7 @@
   box-shadow: var(--shadow-lg);
   transform: translateY(-1px);
   color: inherit;
+  text-decoration: none;
 }
 
 .second-story .story-accent {
@@ -288,6 +290,7 @@
   box-shadow: var(--shadow-md);
   transform: translateY(-1px);
   color: inherit;
+  text-decoration: none;
 }
 
 .wire-card:hover::before {
@@ -346,7 +349,7 @@
 }
 
 .wire-card:hover .wire-read {
-  text-decoration: underline;
+  color: var(--color-teal);
 }
 
 /* Compact grouped rows */
@@ -370,6 +373,7 @@
 
 .wire-list-item:hover {
   background: var(--color-primary-light);
+  text-decoration: none;
   color: inherit;
 }
 
@@ -439,6 +443,7 @@
   box-shadow: var(--shadow-md);
   transform: translateY(-1px);
   color: inherit;
+  text-decoration: none;
 }
 
 .nextup-card .date-slab {
