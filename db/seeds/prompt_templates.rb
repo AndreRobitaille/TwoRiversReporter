@@ -215,6 +215,17 @@ PROMPT_TEMPLATES_DATA = [
       { "name" => "entries_json", "description" => "Proposed knowledge entries with title, body, reasoning, confidence" },
       { "name" => "existing_kb", "description" => "Existing approved knowledge entries to check for duplicates" }
     ]
+  },
+  {
+    key: "knowledge_search_answer",
+    name: "Knowledge Search Answer",
+    description: "Synthesizes an answer to admin questions using knowledge base context",
+    usage_context: "Admin tool: on-demand Q&A over the knowledge base. Admin types a question, top-10 KB chunks are retrieved by vector similarity, and this prompt synthesizes a prose answer with numbered citations. Not part of the automated pipeline — triggered only by manual admin search",
+    model_tier: "default",
+    placeholders: [
+      { "name" => "context", "description" => "Numbered knowledge base chunks with origin labels" },
+      { "name" => "question", "description" => "The admin's search query" }
+    ]
   }
 ].freeze
 

@@ -19,7 +19,7 @@ module ActiveSupport
     # Loads the seed data and the populate rake task data.
     # Call in setup for tests that exercise OpenAiService methods.
     def seed_prompt_templates
-      return if PromptTemplate.count >= 15
+      return if PromptTemplate.count >= 16
 
       require_relative "support/prompt_template_seeds"
       PromptTemplateSeeds.create_all!

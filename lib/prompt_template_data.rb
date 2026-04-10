@@ -170,6 +170,16 @@ module PromptTemplateData
         { "name" => "plan_json", "description" => "Structured analysis JSON from pass 1" },
         { "name" => "doc_text", "description" => "Original document text for reference" }
       ]
+    },
+    {
+      key: "knowledge_search_answer",
+      name: "Knowledge Search Answer",
+      description: "Synthesizes an answer to admin questions using knowledge base context",
+      model_tier: "default",
+      placeholders: [
+        { "name" => "context", "description" => "Numbered knowledge base chunks with origin labels" },
+        { "name" => "question", "description" => "The admin's search query" }
+      ]
     }
   ].freeze
 
@@ -1012,6 +1022,26 @@ module PromptTemplateData
 
         ORIGINAL TEXT (For reference):
         {{doc_text}}
+      PROMPT
+    },
+
+    "knowledge_search_answer" => {
+      system_role: "You are a research assistant for a civic transparency project in Two Rivers, WI. Answer questions using only the provided knowledge base context. Cite sources by number in brackets (e.g. [1], [2]). If the context doesn't contain enough information to answer confidently, say so clearly. Be direct and specific.",
+      instructions: <<~PROMPT.strip
+        The following numbered entries come from the city knowledge base. Each entry has an origin label indicating its trust level:
+        - [ADMIN NOTE]: Authoritative background context from site administrators.
+        - [DOCUMENT-DERIVED]: Background context extracted from meeting documents.
+        - [PATTERN-DERIVED]: System-identified pattern across meetings. Treat with appropriate skepticism.
+
+        Dates in parentheses indicate when the fact was stated. Older facts may be outdated.
+
+        {{context}}
+
+        ---
+
+        Question: {{question}}
+
+        Answer the question based only on the context above. Cite each factual claim with the source number in [brackets]. If multiple sources support a claim, cite all of them. If the context doesn't contain enough information, say "I don't have enough information in the knowledge base to answer this confidently" and explain what's missing.
       PROMPT
     }
   }.freeze
