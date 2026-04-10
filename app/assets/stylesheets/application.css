@@ -1812,6 +1812,103 @@ th.sortable-header:hover {
   margin-top: var(--space-1);
 }
 
+/* === Topic page affordances === */
+
+/* Links in topic content should be clearly clickable */
+.topic-timeline-meeting-link {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-decoration-color: var(--color-border);
+  text-underline-offset: 2px;
+}
+
+.topic-timeline-meeting-link:hover {
+  text-decoration-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+/* Card hover states */
+.card-link--upcoming {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.card-link--upcoming:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Date slab for Coming Up (reuse from homepage) */
+.topic-upcoming .date-slab {
+  min-width: 60px;
+  text-align: center;
+  padding: 0.5rem;
+  background: var(--color-primary);
+  color: var(--color-bg);
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.topic-upcoming .date-slab.council {
+  background: var(--color-terra-cotta);
+}
+
+.topic-upcoming .date-month {
+  display: block;
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.topic-upcoming .date-day {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Coming Up fallback text */
+.topic-coming-up-fallback {
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+/* Key Decisions: meeting reference link */
+.topic-decision-meeting-ref {
+  font-family: var(--font-data);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+}
+
+.topic-decision-meeting-ref a {
+  color: var(--color-text-secondary);
+  text-decoration: underline;
+  text-decoration-color: var(--color-border);
+  text-underline-offset: 2px;
+}
+
+.topic-decision-meeting-ref a:hover {
+  color: var(--color-primary);
+  text-decoration-color: var(--color-primary);
+}
+
+/* Section titles — consistent Outfit uppercase treatment */
+.topic-section .section-title {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--color-primary);
+  display: inline-block;
+  margin-bottom: 1.5rem;
+}
+
 /* === Meeting Show — Structured Sections === */
 
 .transcript-banner {
