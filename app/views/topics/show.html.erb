@@ -141,13 +141,19 @@
   <% if record_entries.any? %>
     <div class="topic-timeline">
       <% record_entries.each do |entry| %>
+        <% enriched = enrich_record_entry(entry, @record_meetings || {}) %>
         <div class="topic-timeline-entry">
           <div class="topic-timeline-date">
             <%= format_record_date(entry["date"]) %>
           </div>
           <div class="topic-timeline-content">
-            <%= entry["event"] %>
-            <span class="topic-timeline-meeting"><%= entry["meeting"] %></span>
+            <%= enriched[:event] %>
+            <% if enriched[:meeting] %>
+              <%= link_to enriched[:meeting_name], meeting_path(enriched[:meeting]),
+                  class: "topic-timeline-meeting-link" %>
+            <% else %>
+              <span class="topic-timeline-meeting"><%= enriched[:meeting_name] %></span>
+            <% end %>
           </div>
         </div>
       <% end %>
