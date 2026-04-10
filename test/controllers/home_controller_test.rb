@@ -2,204 +2,174 @@ require "test_helper"
 
 class HomeControllerTest < ActionDispatch::IntegrationTest
   setup do
-    # Future meeting with topics
-    @future_meeting = Meeting.create!(
-      body_name: "City Council",
-      meeting_type: "Regular",
-      starts_at: 3.days.from_now,
-      status: "upcoming",
-      detail_page_url: "http://example.com/future"
+    @council_meeting = Meeting.create!(
+      body_name: "City Council Meeting",
+      starts_at: 5.days.ago,
+      detail_page_url: "http://example.com/council"
     )
 
-    # Past meeting with topics
-    @past_meeting = Meeting.create!(
-      body_name: "Plan Commission",
-      meeting_type: "Regular",
-      starts_at: 3.days.ago,
-      status: "minutes_posted",
-      detail_page_url: "http://example.com/past"
-    )
-
-    # Meeting outside the windows
-    @old_meeting = Meeting.create!(
-      body_name: "City Council",
-      meeting_type: "Regular",
-      starts_at: 60.days.ago,
-      status: "minutes_posted",
-      detail_page_url: "http://example.com/old"
-    )
-
-    # Topics
-    @active_topic = Topic.create!(
-      name: "downtown tif district",
+    @high_topic = Topic.create!(
+      name: "lead service lines",
       status: "approved",
       lifecycle_status: "active",
-      last_activity_at: 2.days.ago
+      resident_impact_score: 5,
+      last_activity_at: 3.days.ago,
+      description: "Replacing aging lead water pipes"
     )
 
-    @recurring_topic = Topic.create!(
-      name: "Water Utility Rates",
+    @mid_topic = Topic.create!(
+      name: "municipal borrowing",
       status: "approved",
-      lifecycle_status: "recurring",
-      last_activity_at: 5.days.ago
+      lifecycle_status: "active",
+      resident_impact_score: 4,
+      last_activity_at: 4.days.ago,
+      description: "How the city funds big projects"
     )
 
-    @blocked_topic = Topic.create!(
-      name: "Blocked Topic",
-      status: "blocked",
-      lifecycle_status: "active"
+    @low_topic = Topic.create!(
+      name: "building permits",
+      status: "approved",
+      lifecycle_status: "active",
+      resident_impact_score: 2,
+      last_activity_at: 6.days.ago,
+      description: "Permit fees and process"
     )
 
-    # Agenda items linking topics to meetings
-    @future_agenda_item = AgendaItem.create!(meeting: @future_meeting, title: "TIF Discussion")
-    AgendaItemTopic.create!(topic: @active_topic, agenda_item: @future_agenda_item)
-
-    @past_agenda_item = AgendaItem.create!(meeting: @past_meeting, title: "Water Rates Review")
-    AgendaItemTopic.create!(topic: @recurring_topic, agenda_item: @past_agenda_item)
-
-    # Topic appearance for active topic on future meeting
+    # Appearances linking topics to meetings
+    item1 = AgendaItem.create!(meeting: @council_meeting, title: "Lead Lines")
+    AgendaItemTopic.create!(topic: @high_topic, agenda_item: item1)
     TopicAppearance.create!(
-      topic: @active_topic,
-      meeting: @future_meeting,
-      agenda_item: @future_agenda_item,
-      appeared_at: @future_meeting.starts_at,
-      body_name: @future_meeting.body_name,
+      topic: @high_topic, meeting: @council_meeting, agenda_item: item1,
+      appeared_at: @council_meeting.starts_at, body_name: @council_meeting.body_name,
+      evidence_type: "agenda_item"
+    )
+
+    item2 = AgendaItem.create!(meeting: @council_meeting, title: "Borrowing")
+    AgendaItemTopic.create!(topic: @mid_topic, agenda_item: item2)
+    TopicAppearance.create!(
+      topic: @mid_topic, meeting: @council_meeting, agenda_item: item2,
+      appeared_at: @council_meeting.starts_at, body_name: @council_meeting.body_name,
+      evidence_type: "agenda_item"
+    )
+
+    item3 = AgendaItem.create!(meeting: @council_meeting, title: "Permits")
+    AgendaItemTopic.create!(topic: @low_topic, agenda_item: item3)
+    TopicAppearance.create!(
+      topic: @low_topic, meeting: @council_meeting, agenda_item: item3,
+      appeared_at: @council_meeting.starts_at, body_name: @council_meeting.body_name,
       evidence_type: "agenda_item"
     )
   end
 
-  test "renders successfully with data" do
+  test "renders successfully" do
     get root_url
     assert_response :success
   end
 
-  test "coming up card shows high-impact topics with upcoming_headline" do
-    @active_topic.update!(resident_impact_score: 4)
-    TopicBriefing.create!(
-      topic: @active_topic,
-      headline: "TIF district expanded last month",
-      upcoming_headline: "TIF district expansion vote at Council, Mar 3",
-      generation_tier: "full"
-    )
+  test "top stories show highest impact topics" do
+    TopicBriefing.create!(topic: @high_topic, headline: "Lead line headline", generation_tier: "full")
 
     get root_url
     assert_response :success
-    assert_match "Coming Up", response.body
-    assert_match "TIF district expansion vote at Council, Mar 3", response.body
-    # Should NOT show the backward-looking headline in Coming Up
-    assert_no_match "expanded last month", response.body.split("What Happened").last.to_s
+    assert_select ".top-story .story-topic", text: /lead service lines/i
+    assert_select ".top-story .story-headline", text: /Lead line headline/
+    assert_select ".top-story .read-more", text: /Meeting details/
   end
 
-  test "coming up card hidden when no qualifying topics" do
+  test "top stories limited to 2 items" do
+    third = Topic.create!(
+      name: "property taxes", status: "approved", lifecycle_status: "active",
+      resident_impact_score: 5, last_activity_at: 2.days.ago
+    )
+
     get root_url
     assert_response :success
-    assert_no_match "Coming Up", response.body
+    assert_select ".top-story, .second-story", count: 2
   end
 
-  test "coming up falls back to description when no upcoming_headline" do
-    @active_topic.update!(resident_impact_score: 4, description: "Tax incentive district downtown")
-    TopicBriefing.create!(
-      topic: @active_topic,
-      headline: "Some past headline",
-      upcoming_headline: nil,
-      generation_tier: "full"
-    )
+  test "top stories require impact >= 4" do
+    @high_topic.update!(resident_impact_score: 3)
+    @mid_topic.update!(resident_impact_score: 3)
 
     get root_url
     assert_response :success
-    assert_match "Tax incentive district downtown", response.body
+    assert_select ".top-story", count: 0
   end
 
-  test "what happened card shows recent high-impact decisions with headline" do
-    @recurring_topic.update!(resident_impact_score: 3)
-    agenda_item = AgendaItem.create!(meeting: @past_meeting, title: "Rate Vote")
-    AgendaItemTopic.create!(topic: @recurring_topic, agenda_item: agenda_item)
-    Motion.create!(
-      agenda_item: agenda_item, meeting: @past_meeting,
-      description: "Approve rate increase", outcome: "approved"
-    )
-    TopicBriefing.create!(
-      topic: @recurring_topic,
-      headline: "Water rates increased 8% for all residents",
-      generation_tier: "full"
-    )
-
+  test "wire shows mid-impact topics excluding top stories" do
     get root_url
     assert_response :success
-    assert_match "What Happened", response.body
-    assert_match "Water rates increased 8% for all residents", response.body
+
+    assert_select ".wire-card .wire-topic, .wire-list-item .list-topic", minimum: 1
+    wire_text = css_select(".wire-zone").text
+    assert_no_match(/lead service lines/i, wire_text)
   end
 
-  test "what happened card hidden when no qualifying topics" do
-    get root_url
-    assert_response :success
-    assert_no_match "What Happened", response.body
-  end
-
-  test "what happened card appears before coming up card" do
-    @active_topic.update!(resident_impact_score: 4)
-    @recurring_topic.update!(resident_impact_score: 3)
-    agenda_item = AgendaItem.create!(meeting: @past_meeting, title: "Vote")
-    AgendaItemTopic.create!(topic: @recurring_topic, agenda_item: agenda_item)
-    Motion.create!(agenda_item: agenda_item, meeting: @past_meeting, description: "Vote", outcome: "approved")
-
-    get root_url
-    assert_response :success
-
-    what_happened_pos = response.body.index("What Happened")
-    coming_up_pos = response.body.index("Coming Up")
-    assert what_happened_pos < coming_up_pos, "What Happened should appear before Coming Up"
-  end
-
-  test "coming up applies meeting diversity — max 2 per meeting" do
-    # Create 4 topics all in the same future meeting
-    topics = 4.times.map do |i|
-      topic = Topic.create!(
-        name: "topic #{i}",
-        status: "approved",
-        lifecycle_status: "active",
-        resident_impact_score: 5 - i
-      )
-      item = AgendaItem.create!(meeting: @future_meeting, title: "Item #{i}")
-      AgendaItemTopic.create!(topic: topic, agenda_item: item)
-      TopicAppearance.create!(
-        topic: topic, meeting: @future_meeting, agenda_item: item,
-        appeared_at: @future_meeting.starts_at, body_name: @future_meeting.body_name,
-        evidence_type: "agenda_item"
-      )
-      topic
-    end
-
-    # Create a topic in a different meeting
-    other_meeting = Meeting.create!(
-      body_name: "Plan Commission", starts_at: 5.days.from_now,
-      detail_page_url: "http://example.com/other"
+  test "wire items sorted by impact desc" do
+    wire_topic_a = Topic.create!(
+      name: "sidewalk program", status: "approved", lifecycle_status: "active",
+      resident_impact_score: 3, last_activity_at: 5.days.ago
     )
-    other_topic = Topic.create!(
-      name: "other meeting topic", status: "approved",
-      lifecycle_status: "active", resident_impact_score: 3
-    )
-    other_item = AgendaItem.create!(meeting: other_meeting, title: "Other Item")
-    AgendaItemTopic.create!(topic: other_topic, agenda_item: other_item)
-    TopicAppearance.create!(
-      topic: other_topic, meeting: other_meeting, agenda_item: other_item,
-      appeared_at: other_meeting.starts_at, body_name: other_meeting.body_name,
-      evidence_type: "agenda_item"
+    wire_topic_b = Topic.create!(
+      name: "dnr grant", status: "approved", lifecycle_status: "active",
+      resident_impact_score: 2, last_activity_at: 4.days.ago
     )
 
     get root_url
-    assert_response :success
-
-    # Extract just the Coming Up card content
-    assert_select ".card--warm .card-body" do |card|
-      card_text = card.text
-      same_meeting_count = topics.count { |t| card_text.include?(t.name) }
-      assert same_meeting_count <= 2, "Expected at most 2 topics from same meeting in Coming Up, got #{same_meeting_count}"
-      assert_includes card_text, "other meeting topic"
+    body = response.body
+    sidewalk_pos = body.index("sidewalk program")
+    dnr_pos = body.index("dnr grant")
+    if sidewalk_pos && dnr_pos
+      assert sidewalk_pos < dnr_pos, "Higher impact topic should appear first in wire"
     end
   end
 
-  test "renders successfully with no data" do
+  test "next up shows council meetings and work sessions" do
+    council = Meeting.create!(
+      body_name: "City Council Meeting",
+      starts_at: 10.days.from_now,
+      detail_page_url: "http://example.com/next-council"
+    )
+    work_session = Meeting.create!(
+      body_name: "City Council Work Session",
+      starts_at: 17.days.from_now,
+      detail_page_url: "http://example.com/next-ws"
+    )
+    Meeting.create!(
+      body_name: "Plan Commission Meeting",
+      starts_at: 8.days.from_now,
+      detail_page_url: "http://example.com/plan"
+    )
+
+    get root_url
+    assert_response :success
+    assert_select ".nextup-card", count: 2
+    nextup_text = css_select(".nextup-zone").text
+    assert_match(/City Council/i, nextup_text)
+    assert_match(/Work Session/i, nextup_text)
+    assert_no_match(/Plan Commission/i, nextup_text)
+  end
+
+  test "next up limited to 2 meetings" do
+    3.times do |i|
+      Meeting.create!(
+        body_name: (i.even? ? "City Council Meeting" : "City Council Work Session"),
+        starts_at: (10 + i * 7).days.from_now,
+        detail_page_url: "http://example.com/next-#{i}"
+      )
+    end
+
+    get root_url
+    assert_select ".nextup-card", maximum: 2
+  end
+
+  test "escape hatches link to topics and meetings" do
+    get root_url
+    assert_select "a[href='#{topics_path}']", minimum: 1
+    assert_select "a[href='#{meetings_path}']", minimum: 1
+  end
+
+  test "renders with no data" do
     TopicAppearance.destroy_all
     AgendaItemTopic.destroy_all
     AgendaItem.destroy_all
@@ -210,105 +180,39 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
 
     get root_url
     assert_response :success
-    assert_no_match "Coming Up", response.body
-    assert_no_match "What Happened", response.body
-    assert_select "p", text: /No upcoming meetings scheduled/
-    assert_select "p", text: /No recent meetings/
   end
 
-  test "shows upcoming meetings grouped by week" do
-    get root_url
-    assert_response :success
-
-    # Future meeting should appear in upcoming section
-    assert_match "City Council", response.body
-    assert_select "h3", text: /This Week|Next Week|#{@future_meeting.starts_at.strftime('%b')}/
-  end
-
-  test "shows recent meetings grouped by week" do
-    get root_url
-    assert_response :success
-
-    # Past meeting should appear
-    assert_match "Plan Commission", response.body
-  end
-
-  test "shows topic tags on meeting rows" do
-    @active_topic.update!(resident_impact_score: 3)
-    get root_url
-    assert_response :success
-
-    assert_select ".tag", text: "downtown tif district"
-  end
-
-  test "does not show meetings outside time windows" do
-    get root_url
-    assert_response :success
-
-    old_url = meeting_path(@old_meeting)
-    assert_select "a[href='#{old_url}']", count: 0
-  end
-
-  test "shows search all meetings link" do
-    get root_url
-    assert_response :success
-
-    assert_select "a[href='#{meetings_path}']", minimum: 1
-  end
-
-  test "meeting row shows only topics with impact >= 2" do
-    low_impact_topic = Topic.create!(
-      name: "minor procedure change",
-      status: "approved",
-      lifecycle_status: "active",
-      resident_impact_score: 1
-    )
-    high_impact_topic = Topic.create!(
-      name: "major road closure",
-      status: "approved",
-      lifecycle_status: "active",
-      resident_impact_score: 3
-    )
-
-    item_low = AgendaItem.create!(meeting: @future_meeting, title: "Procedure")
-    AgendaItemTopic.create!(topic: low_impact_topic, agenda_item: item_low)
-
-    item_high = AgendaItem.create!(meeting: @future_meeting, title: "Road Work")
-    AgendaItemTopic.create!(topic: high_impact_topic, agenda_item: item_high)
+  test "wire zone omitted when no qualifying wire topics" do
+    # Remove low-impact topic so only 2 high-impact remain (both go to top stories)
+    @low_topic.destroy!
 
     get root_url
     assert_response :success
-
-    assert_select ".tag--topic", text: "major road closure"
-    assert_select ".tag--topic", text: "minor procedure change", count: 0
+    assert_select ".wire-zone", count: 0
   end
 
-  test "meeting row shows no pills when no topics meet impact threshold" do
-    # All existing topics have nil impact score
+  test "topics outside 30-day window excluded" do
+    @high_topic.update!(last_activity_at: 45.days.ago)
+    @mid_topic.update!(last_activity_at: 45.days.ago)
+
     get root_url
-    assert_response :success
-
-    # No "No topics yet" text should appear
-    assert_select ".meeting-topics-col .text-muted", count: 0
+    assert_select ".top-story", count: 0
   end
 
-  test "meeting within 3-hour buffer stays in upcoming section" do
-    # Create a meeting that started 2 hours ago (within 3-hour buffer)
-    recent_meeting = Meeting.create!(
-      body_name: "Zoning Board",
-      meeting_type: "Regular",
-      starts_at: 2.hours.ago,
-      status: "upcoming",
-      detail_page_url: "http://example.com/recent-buffer"
+  test "blocked topics excluded" do
+    blocked = Topic.create!(
+      name: "blocked thing", status: "blocked", lifecycle_status: "active",
+      resident_impact_score: 5, last_activity_at: 1.day.ago
     )
 
     get root_url
-    assert_response :success
+    assert_no_match(/blocked thing/, response.body)
+  end
 
-    # The meeting should appear in upcoming, not recently completed
-    assert_select "section" do |sections|
-      upcoming_section = sections.find { |s| s.text.include?("Upcoming Meetings") }
-      assert upcoming_section.text.include?("Zoning Board"), "Expected Zoning Board in upcoming section"
-    end
+  test "topic description shown when present" do
+    TopicBriefing.create!(topic: @high_topic, headline: "headline", generation_tier: "full")
+
+    get root_url
+    assert_select ".story-desc", text: /Replacing aging lead water pipes/
   end
 end

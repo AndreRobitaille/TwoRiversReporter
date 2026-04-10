@@ -1,0 +1,634 @@
+/*
+ * home.css — Homepage-specific styles
+ *
+ * Newspaper-style layout with three-tier visual hierarchy.
+ * All colors via CSS custom properties; no hardcoded hex.
+ * Requires: .theme-living-room context (public site).
+ */
+
+/* ============================================
+   Page Header
+   ============================================ */
+
+.home-header {
+  text-align: center;
+  margin-bottom: var(--space-6);
+  position: relative;
+  padding: var(--space-4) 0;
+}
+
+.home-header .page-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-teal);
+  margin: 0;
+}
+
+.home-header .tagline {
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-text-secondary);
+  margin-top: var(--space-1);
+}
+
+/* ============================================
+   Section Headers (atom marker pattern)
+   ============================================ */
+
+.home-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: var(--space-4);
+}
+
+.home-section-header .section-label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-teal);
+  white-space: nowrap;
+}
+
+.home-section-header .section-line {
+  flex: 1;
+  height: 1.5px;
+  background: linear-gradient(90deg, var(--color-terra-cotta), transparent);
+}
+
+/* ============================================
+   Zone Spacing
+   ============================================ */
+
+.home-zone {
+  margin-bottom: var(--space-10);
+}
+
+/* ============================================
+   Zone 1 — Top Stories
+   ============================================ */
+
+.top-story {
+  position: relative;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  margin-bottom: var(--space-5);
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: box-shadow var(--transition-normal), transform var(--transition-fast);
+}
+
+.top-story:hover {
+  box-shadow: 0 12px 32px rgb(44 37 32 / 0.16), 0 4px 12px rgb(44 37 32 / 0.10);
+  transform: translateY(-2px);
+  text-decoration: none;
+  color: inherit;
+}
+
+.top-story .story-accent {
+  height: 5px;
+  background: linear-gradient(90deg, var(--color-terra-cotta), var(--color-amber));
+}
+
+.top-story .story-inner {
+  padding: var(--space-5) var(--space-6);
+  position: relative;
+}
+
+.top-story .story-deco {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+.top-story .story-topic {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--font-size-2xl);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--color-terra-cotta);
+  margin: 0 0 0.15rem;
+}
+
+.top-story .story-desc {
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin: 0 0 0.7rem;
+}
+
+.top-story .story-headline {
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  line-height: 1.6;
+  margin: 0 0 0.85rem;
+}
+
+.top-story .story-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.top-story .story-meta {
+  font-family: var(--font-data);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+
+/* Read More button — used in both .top-story and .second-story */
+.read-more {
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-semibold);
+  font-size: 0.82rem;
+  color: var(--color-teal);
+  background: var(--color-primary-light);
+  padding: 0.35rem 0.9rem;
+  border-radius: var(--radius-md);
+  white-space: nowrap;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.top-story:hover .read-more,
+.second-story:hover .read-more {
+  background: var(--color-teal);
+  color: var(--color-text-inverse);
+}
+
+/* Second story — teal accent, slightly smaller */
+.second-story {
+  position: relative;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: box-shadow var(--transition-normal), transform var(--transition-fast);
+}
+
+.second-story:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-1px);
+  color: inherit;
+  text-decoration: none;
+}
+
+.second-story .story-accent {
+  height: 4px;
+  background: linear-gradient(90deg, var(--color-teal), #3d7b8a);
+}
+
+.second-story .story-inner {
+  padding: var(--space-4) var(--space-5);
+}
+
+.second-story .story-topic {
+  font-family: var(--font-display);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-xl);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--color-teal);
+  margin: 0 0 0.1rem;
+}
+
+.second-story .story-desc {
+  font-family: var(--font-data);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin: 0 0 0.55rem;
+}
+
+.second-story .story-headline {
+  font-size: var(--font-size-sm);
+  line-height: 1.55;
+  margin: 0 0 0.7rem;
+}
+
+.second-story .story-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.second-story .story-meta {
+  font-family: var(--font-data);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+
+.second-story .read-more {
+  font-size: 0.78rem;
+  padding: 0.3rem 0.75rem;
+}
+
+/* ============================================
+   Zone 2 — The Wire
+   ============================================ */
+
+/* 2-col grid for card-style entries */
+.wire-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  margin-bottom: 0.85rem;
+}
+
+.wire-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-4);
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow var(--transition-normal), transform var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+.wire-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--color-teal);
+  opacity: 0.5;
+  transition: opacity var(--transition-fast);
+}
+
+.wire-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+  color: inherit;
+  text-decoration: none;
+}
+
+.wire-card:hover::before {
+  opacity: 1;
+}
+
+.wire-card .wire-topic {
+  font-family: var(--font-display);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--color-teal);
+  margin: 0 0 0.1rem;
+}
+
+.wire-card .wire-desc {
+  font-family: var(--font-data);
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin: 0 0 0.45rem;
+}
+
+.wire-card .wire-headline {
+  font-size: 0.84rem;
+  line-height: 1.45;
+  flex: 1;
+  margin: 0;
+}
+
+.wire-card .wire-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.55rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.wire-card .wire-meta {
+  font-family: var(--font-data);
+  font-size: 0.56rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+
+.wire-card .wire-read {
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-semibold);
+  font-size: 0.72rem;
+  color: var(--color-teal);
+  transition: text-decoration var(--transition-fast);
+}
+
+.wire-card:hover .wire-read {
+  color: var(--color-teal);
+}
+
+/* Compact grouped rows */
+.wire-list {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.wire-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0.65rem var(--space-4);
+  text-decoration: none;
+  color: inherit;
+  transition: background var(--transition-fast);
+}
+
+.wire-list-item:hover {
+  background: var(--color-primary-light);
+  text-decoration: none;
+  color: inherit;
+}
+
+.wire-list-item + .wire-list-item {
+  border-top: 1px solid var(--color-border);
+}
+
+.wire-list-item .list-topic {
+  font-family: var(--font-display);
+  font-weight: var(--font-weight-semibold);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--color-teal);
+  flex-shrink: 0;
+}
+
+.wire-list-item .list-desc {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wire-list-item .list-arrow {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  transition: transform var(--transition-fast), color var(--transition-fast);
+}
+
+.wire-list-item:hover .list-arrow {
+  color: var(--color-teal);
+  transform: translateX(3px);
+}
+
+/* ============================================
+   Zone 3 — Next Up
+   ============================================ */
+
+.nextup-zone {
+  /* Inherits .home-zone spacing */
+}
+
+.nextup-strip {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.nextup-card {
+  flex: 1;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  transition: box-shadow var(--transition-normal), transform var(--transition-fast);
+}
+
+.nextup-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+  color: inherit;
+  text-decoration: none;
+}
+
+.nextup-card .date-slab {
+  font-family: var(--font-display);
+  font-weight: 800;
+  padding: 0.65rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.25rem;
+  line-height: 1.1;
+  color: var(--color-text-inverse);
+  background: var(--color-teal);
+  box-shadow: inset -2px 0 6px rgb(0 0 0 / 0.15);
+}
+
+.nextup-card .date-slab.council {
+  background: var(--color-terra-cotta);
+}
+
+.nextup-card .date-month {
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  opacity: 0.85;
+}
+
+.nextup-card .date-day {
+  font-size: var(--font-size-2xl);
+}
+
+.nextup-card .meeting-info {
+  padding: 0.55rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+}
+
+.nextup-card .meeting-name {
+  font-family: var(--font-display);
+  font-weight: var(--font-weight-semibold);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+.nextup-card .meeting-note {
+  font-family: var(--font-data);
+  font-size: 0.58rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 0.15rem;
+}
+
+.nextup-card .meeting-arrow {
+  display: flex;
+  align-items: center;
+  padding: 0 0.85rem;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  transition: color var(--transition-fast), transform var(--transition-fast);
+}
+
+.nextup-card:hover .meeting-arrow {
+  color: var(--color-teal);
+  transform: translateX(3px);
+}
+
+.nextup-empty {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  padding: var(--space-4) 0;
+}
+
+/* ============================================
+   Zone 4 — Escape Hatches
+   ============================================ */
+
+.home-escape {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.home-escape-btn {
+  font-family: var(--font-display);
+  font-weight: var(--font-weight-bold);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  padding: 0.65rem var(--space-5);
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, var(--color-teal) 0%, #003a47 100%);
+  color: var(--color-text-inverse);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgb(255 255 255 / 0.2);
+  border: 1px solid #003040;
+  transition: all var(--transition-fast);
+}
+
+.home-escape-btn:hover {
+  background: linear-gradient(180deg, #005a6b 0%, var(--color-teal) 100%);
+  box-shadow: var(--shadow-md), inset 0 1px 0 rgb(255 255 255 / 0.2);
+  transform: translateY(-1px);
+  color: var(--color-text-inverse);
+}
+
+.home-escape-btn:active {
+  transform: translateY(0);
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.2);
+}
+
+/* ============================================
+   Empty States
+   ============================================ */
+
+.home-quiet {
+  text-align: center;
+  color: var(--color-text-secondary);
+  padding: var(--space-8) 0;
+  font-size: var(--font-size-sm);
+}
+
+/* ============================================
+   Mobile (≤600px)
+   ============================================ */
+
+@media (max-width: 600px) {
+  .home-header .page-title {
+    font-size: 1.35rem;
+  }
+
+  .top-story .story-inner {
+    padding: var(--space-4) var(--space-4);
+  }
+
+  .top-story .story-topic {
+    font-size: var(--font-size-xl);
+  }
+
+  .top-story .story-headline {
+    font-size: var(--font-size-sm);
+  }
+
+  .second-story .story-inner {
+    padding: 0.85rem var(--space-4);
+  }
+
+  .second-story .story-topic {
+    font-size: 0.95rem;
+  }
+
+  .wire-grid {
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
+
+  .wire-list-item {
+    padding: 0.75rem var(--space-4);
+  }
+
+  .wire-list-item .list-desc {
+    display: none;
+  }
+
+  .wire-list-item .list-topic {
+    flex: 1;
+    font-size: 0.82rem;
+  }
+
+  .nextup-strip {
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .home-escape {
+    flex-direction: column;
+  }
+
+  .home-escape-btn {
+    text-align: center;
+    padding: 0.75rem var(--space-4);
+  }
+}
