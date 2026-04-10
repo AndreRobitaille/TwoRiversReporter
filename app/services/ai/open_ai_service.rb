@@ -747,6 +747,42 @@ module Ai
       content
     end
 
+    def answer_question(query, numbered_context, source: nil)
+      template = PromptTemplate.find_by!(key: "knowledge_search_answer")
+      system_role = template.system_role
+      context_text = numbered_context.join("\n\n")
+      placeholders = { context: context_text, question: query }
+      prompt = template.interpolate(**placeholders)
+
+      messages = [
+        (system_role.present? ? { role: "system", content: system_role } : nil),
+        { role: "user", content: prompt }
+      ].compact
+
+      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      response = @client.chat(
+        parameters: {
+          model: DEFAULT_MODEL,
+          messages: messages
+        }
+      )
+      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
+
+      content = response.dig("choices", 0, "message", "content")
+
+      record_prompt_run(
+        template_key: "knowledge_search_answer",
+        messages: messages,
+        response_content: content,
+        model: DEFAULT_MODEL,
+        duration_ms: duration_ms,
+        source: source,
+        placeholder_values: placeholders.transform_keys(&:to_s)
+      )
+
+      content
+    end
+
     def extract_knowledge_patterns(knowledge_entries:, recent_summaries:, topic_metadata:, source: nil)
       template = PromptTemplate.find_by!(key: "extract_knowledge_patterns")
       system_role = template.system_role
