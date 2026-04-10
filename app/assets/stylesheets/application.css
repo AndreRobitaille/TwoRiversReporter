@@ -1813,259 +1813,243 @@ th.sortable-header:hover {
 }
 
 /* ============================================
-   Topic Show Page — Newspaper-style Showpiece
-   Matches homepage visual vocabulary:
-   - home-section-header pattern (atom marker + label + line)
-   - home-zone spacing
-   - Story accent strips + decorative motifs
-   - Constrained reading measure for editorial text
+   Topic Show Page — Editorial Longform
+   Print-magazine feature-story aesthetic. One reading column,
+   typography does the differentiation work, no competing card
+   containers. Variation comes from typographic treatment and
+   spacing, not backgrounds.
    ============================================ */
 
-/* ---- Topic Header (showpiece, centered) ---- */
+/* ---- One reading column for everything ---- */
 
-.topic-header {
-  text-align: center;
+.topic-article {
+  max-width: 45rem;     /* ~720px, the reading column */
+  margin: 0 auto;
+  padding: var(--space-6) 0 var(--space-8);
+}
+
+.topic-article-section {
+  margin-top: var(--space-10);
+}
+
+.topic-article-section:first-of-type {
+  margin-top: var(--space-8);
+}
+
+.topic-article-section + .topic-article-section {
+  padding-top: var(--space-8);
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+}
+
+/* Section header (home-section-header) overrides inside the article —
+   tighter bottom margin so eyebrows sit close to their content. */
+.topic-article-section .home-section-header {
+  margin-bottom: var(--space-5);
+}
+
+/* ---- Header ---- */
+
+.topic-article-header {
+  text-align: left;
+  padding-bottom: var(--space-6);
+  border-bottom: 2px solid var(--color-terra-cotta);
   margin-bottom: var(--space-8);
-  padding: var(--space-5) 0 var(--space-4);
+}
+
+.topic-article-topline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: var(--space-3);
+}
+
+.topic-article-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  color: var(--color-teal);
+  margin: 0;
+}
+
+.topic-article-dek {
+  font-family: var(--font-body);
+  font-size: 1.15rem;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+  margin: var(--space-3) 0 0;
+  max-width: 38em;
+}
+
+/* ---- What to Watch (pullquote) ---- */
+
+.topic-watch-quote {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-style: italic;
+  font-size: clamp(1.2rem, 2.4vw, 1.5rem);
+  line-height: 1.4;
+  color: var(--color-terra-cotta);
+  margin: 0;
+  padding: 0 0 0 1.2rem;
+  border-left: 3px solid var(--color-terra-cotta);
+  max-width: 32em;
   position: relative;
 }
 
-.topic-header-topline {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: center;
-  margin-bottom: var(--space-2);
+.topic-watch-quote::before {
+  content: "“";
+  position: absolute;
+  left: 0.1rem;
+  top: -0.55em;
+  font-family: var(--font-display);
+  font-size: 3.6rem;
+  font-weight: 900;
+  font-style: normal;
+  line-height: 1;
+  color: var(--color-terra-cotta);
+  opacity: 0.18;
+  pointer-events: none;
 }
 
-.topic-header-title {
-  font-family: var(--font-display);
-  font-weight: 900;
-  font-size: clamp(1.8rem, 4vw, 2.6rem);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+/* ---- Coming Up (structured list, no cards) ---- */
+
+.topic-upcoming-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.topic-upcoming-entry {
+  padding: 0;
+}
+
+.topic-upcoming-entry + .topic-upcoming-entry {
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+}
+
+.topic-upcoming-link {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+  text-decoration: none;
+  color: inherit;
+  transition: transform var(--transition-fast), color var(--transition-fast);
+}
+
+.topic-upcoming-link:hover {
+  color: inherit;
+  text-decoration: none;
+  transform: translateX(2px);
+}
+
+.topic-upcoming-date {
+  flex-shrink: 0;
+  min-width: 56px;
+  text-align: center;
+  padding: 0.45rem 0.25rem;
+  border: 2px solid var(--color-teal);
+  border-radius: var(--radius-sm);
+  background: transparent;
   color: var(--color-teal);
-  margin: 0 0 var(--space-2);
+}
+
+.topic-upcoming-date.council {
+  border-color: var(--color-terra-cotta);
+  color: var(--color-terra-cotta);
+}
+
+.topic-upcoming-month {
+  display: block;
+  font-family: var(--font-data);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
   line-height: 1.1;
 }
 
-.topic-header-desc {
-  font-family: var(--font-body);
-  font-size: 1.05rem;
-  line-height: 1.5;
-  color: var(--color-text-secondary);
-  max-width: 55ch;
-  margin: 0 auto;
-}
-
-/* ---- Topic Zones (match home-zone spacing) ---- */
-
-.topic-zone {
-  margin-bottom: var(--space-10);
-}
-
-.topic-zone:last-of-type {
-  margin-bottom: var(--space-6);
-}
-
-/* ---- What to Watch (warm callout) ---- */
-
-.topic-watch-card {
-  background: var(--color-accent-warm-bg, #fff4ec);
-  border-left: 5px solid var(--color-terra-cotta);
-  border-radius: var(--radius-md);
-  padding: var(--space-5) var(--space-6);
-  box-shadow: var(--shadow-sm);
-}
-
-.topic-watch-card p {
-  font-family: var(--font-body);
-  font-size: 1.05rem;
-  line-height: 1.65;
-  margin: 0;
-  max-width: 65ch;
-  color: var(--color-text);
-}
-
-/* ---- Coming Up (card grid or fallback) ---- */
-
-.topic-upcoming-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-3);
-}
-
-@media (min-width: 768px) {
-  .topic-upcoming-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-.topic-upcoming-card {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-4);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  text-decoration: none;
-  color: inherit;
-  transition: box-shadow var(--transition-normal), transform var(--transition-fast);
-  position: relative;
-  overflow: hidden;
-}
-
-.topic-upcoming-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--color-teal);
-  opacity: 0.5;
-  transition: opacity var(--transition-fast);
-}
-
-.topic-upcoming-card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
-  text-decoration: none;
-  color: inherit;
-}
-
-.topic-upcoming-card:hover::before {
-  opacity: 1;
-}
-
-.topic-upcoming-card .date-slab {
-  flex-shrink: 0;
-  min-width: 64px;
-  text-align: center;
-  padding: 0.6rem 0.4rem;
-  background: var(--color-teal);
-  color: var(--color-text-inverse, #fff);
-  border-radius: var(--radius-md);
-}
-
-.topic-upcoming-card .date-slab.council {
-  background: var(--color-terra-cotta);
-}
-
-.topic-upcoming-card .date-month {
-  display: block;
-  font-family: var(--font-data);
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  opacity: 0.85;
-}
-
-.topic-upcoming-card .date-day {
+.topic-upcoming-day {
   display: block;
   font-family: var(--font-display);
-  font-size: 1.7rem;
-  font-weight: 800;
+  font-size: 1.6rem;
+  font-weight: 900;
   line-height: 1;
-  margin-top: 0.1rem;
+  margin-top: 0.15rem;
 }
 
-.topic-upcoming-body {
+.topic-upcoming-detail {
   flex: 1;
   min-width: 0;
 }
 
 .topic-upcoming-committee {
-  font-family: var(--font-data);
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--color-text-muted, var(--color-text-secondary));
-  margin-bottom: 0.3rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--color-text);
+  margin-bottom: 0.15rem;
+  line-height: 1.3;
 }
 
 .topic-upcoming-item {
   font-family: var(--font-body);
   font-size: 0.95rem;
-  line-height: 1.4;
+  line-height: 1.45;
   color: var(--color-text);
   margin-bottom: 0.25rem;
 }
 
-.topic-upcoming-location {
-  font-family: var(--font-body);
-  font-size: 0.82rem;
-  color: var(--color-text-secondary);
+.topic-upcoming-meta {
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted, var(--color-text-secondary));
 }
 
 .topic-upcoming-arrow {
-  font-family: var(--font-display);
-  font-size: 1.4rem;
-  color: var(--color-teal);
+  align-self: center;
   flex-shrink: 0;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  color: var(--color-teal);
   transition: transform var(--transition-fast);
 }
 
-.topic-upcoming-card:hover .topic-upcoming-arrow {
-  transform: translateX(3px);
+.topic-upcoming-link:hover .topic-upcoming-arrow {
+  transform: translateX(4px);
 }
 
-.topic-coming-up-fallback {
+.topic-upcoming-fallback {
   font-family: var(--font-body);
   font-size: 1rem;
+  line-height: 1.6;
   color: var(--color-text-secondary);
   font-style: italic;
-  padding: var(--space-4) var(--space-5);
-  background: var(--color-surface);
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-md);
-  max-width: 65ch;
+  margin: 0;
+  max-width: 38em;
 }
 
-.topic-coming-up-fallback strong {
+.topic-upcoming-fallback strong {
   color: var(--color-teal);
   font-style: normal;
+  font-weight: 600;
 }
 
-/* ---- The Story (showpiece card) ---- */
-
-.topic-story-card {
-  position: relative;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  overflow: hidden;
-  padding: var(--space-6) var(--space-8) var(--space-5);
-}
-
-.topic-story-accent {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 5px;
-  background: linear-gradient(90deg, var(--color-terra-cotta), var(--color-amber, var(--color-terra-cotta)));
-}
-
-.topic-story-deco {
-  position: absolute;
-  top: 16px;
-  right: 20px;
-  opacity: 0.08;
-  pointer-events: none;
-}
+/* ---- The Story (longform body with drop cap) ---- */
 
 .topic-story-body {
-  max-width: 65ch;
+  font-family: var(--font-body);
+  font-size: 1.08rem;
+  line-height: 1.75;
+  color: var(--color-text);
+  max-width: 38em;
 }
 
 .topic-story-body p {
-  font-family: var(--font-body);
-  font-size: 1.05rem;
-  line-height: 1.7;
-  color: var(--color-text);
   margin: 0 0 1em;
 }
 
@@ -2073,144 +2057,241 @@ th.sortable-header:hover {
   margin-bottom: 0;
 }
 
+.topic-story-body p:first-child::first-letter {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 4.2rem;
+  line-height: 0.85;
+  float: left;
+  margin: 0.15rem 0.5rem -0.1rem 0;
+  color: var(--color-terra-cotta);
+  text-transform: uppercase;
+}
+
 .topic-story-body strong {
   color: var(--color-teal);
   font-weight: 700;
 }
 
-.topic-story-concerns {
-  margin-top: var(--space-5);
-  padding: var(--space-4) var(--space-5);
-  background: var(--color-surface-raised, #faf6f0);
-  border-left: 3px solid var(--color-text-muted, var(--color-text-secondary));
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
-  max-width: 65ch;
+.topic-story-body em {
+  font-style: italic;
+  color: inherit;
 }
 
-.topic-story-concerns-label {
+/* Worth noting — lightweight sidebar aside, not a card */
+.topic-aside {
+  margin-top: var(--space-6);
+  padding-left: var(--space-4);
+  border-left: 2px solid var(--color-text-muted, var(--color-text-secondary));
+  max-width: 36em;
+}
+
+.topic-aside-label {
+  display: block;
   font-family: var(--font-data);
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.14em;
   color: var(--color-text-muted, var(--color-text-secondary));
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
 }
 
-.topic-story-concerns ul {
+.topic-aside ul {
   margin: 0;
-  padding-left: 1.2rem;
+  padding: 0;
+  list-style: none;
 }
 
-.topic-story-concerns li {
+.topic-aside li {
   font-family: var(--font-body);
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   line-height: 1.55;
-  color: var(--color-text);
-  margin-bottom: 0.3rem;
+  color: var(--color-text-secondary);
+  font-style: italic;
+  margin-bottom: 0.4rem;
 }
 
-.topic-story-concerns li:last-child {
+.topic-aside li:last-child {
   margin-bottom: 0;
 }
 
-/* ---- Key Decisions ---- */
+/* ---- Key Decisions (inline blocks, no cards) ---- */
 
-.topic-zone--decisions .topic-decision-item {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-4) var(--space-5);
-  margin-bottom: var(--space-3);
+.topic-decisions-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  counter-reset: decision;
 }
 
-.topic-zone--decisions .topic-decision-item:last-child {
-  margin-bottom: 0;
+.topic-decision {
+  padding: 0;
+}
+
+.topic-decision + .topic-decision {
+  margin-top: var(--space-5);
+  padding-top: var(--space-5);
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
 }
 
 .topic-decision-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  align-items: center;
+  gap: var(--space-3);
   margin-bottom: var(--space-2);
 }
 
-.topic-decision-description {
+.topic-decision-ref {
+  font-family: var(--font-data);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted, var(--color-text-secondary));
+}
+
+.topic-decision-ref a {
+  color: var(--color-teal);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-teal) 30%, transparent);
+  transition: border-color var(--transition-fast);
+}
+
+.topic-decision-ref a:hover {
+  border-bottom-color: var(--color-teal);
+}
+
+.topic-decision-sep {
+  opacity: 0.4;
+  margin: 0 0.2rem;
+}
+
+.topic-decision-desc {
   font-family: var(--font-body);
   font-size: 1rem;
   line-height: 1.55;
   color: var(--color-text);
-  margin-bottom: var(--space-3);
-  max-width: 65ch;
+  margin: 0 0 var(--space-3);
+  max-width: 38em;
 }
 
-.topic-decision-meeting-ref {
-  font-family: var(--font-data);
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--color-text-secondary);
-}
-
-.topic-decision-meeting-ref a {
-  color: var(--color-text-secondary);
-  text-decoration: underline;
-  text-decoration-color: var(--color-border);
-  text-underline-offset: 2px;
-}
-
-.topic-decision-meeting-ref a:hover {
-  color: var(--color-teal);
-  text-decoration-color: var(--color-teal);
+.topic-decision .votes-grid {
+  margin-top: var(--space-2);
 }
 
 /* ---- Record Timeline ---- */
 
-.topic-zone--record .topic-timeline {
-  max-width: 760px;
+.topic-timeline {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
-.topic-timeline-entry .topic-timeline-event {
+.topic-timeline-entry {
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+  position: relative;
+}
+
+.topic-timeline-entry + .topic-timeline-entry {
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+}
+
+.topic-timeline-date {
+  font-family: var(--font-data);
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted, var(--color-text-secondary));
+  padding-top: 0.2rem;
+  text-align: right;
+}
+
+.topic-timeline-content {
+  min-width: 0;
+}
+
+.topic-timeline-event {
   font-family: var(--font-body);
-  font-size: 0.98rem;
-  line-height: 1.55;
+  font-size: 1rem;
+  line-height: 1.6;
   color: var(--color-text);
-  margin: 0 0 0.25rem;
-  max-width: 62ch;
+  margin: 0 0 0.4rem;
 }
 
 .topic-timeline-meeting-link {
   font-family: var(--font-data);
-  font-size: 0.72rem;
+  font-size: 0.66rem;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.1em;
   color: var(--color-teal);
-  text-decoration: underline;
-  text-decoration-color: var(--color-border);
-  text-underline-offset: 3px;
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-teal) 30%, transparent);
+  transition: border-color var(--transition-fast);
 }
 
 .topic-timeline-meeting-link:hover {
-  text-decoration-color: var(--color-teal);
-  color: var(--color-text);
+  border-bottom-color: var(--color-teal);
+  color: var(--color-teal);
 }
 
 .topic-timeline-entry .topic-timeline-meeting {
   font-family: var(--font-data);
-  font-size: 0.72rem;
+  font-size: 0.66rem;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.1em;
   color: var(--color-text-muted, var(--color-text-secondary));
+}
+
+@media (max-width: 560px) {
+  .topic-timeline-entry {
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+  }
+
+  .topic-timeline-date {
+    text-align: left;
+    padding-top: 0;
+  }
 }
 
 /* ---- Footer ---- */
 
-.topic-footer {
-  margin-top: var(--space-10);
+.topic-article-footer {
+  max-width: 45rem;
+  margin: var(--space-10) auto 0;
   padding-top: var(--space-5);
   border-top: 1px solid var(--color-border);
-  text-align: center;
+  text-align: left;
+}
+
+/* ---- Page load reveal animation ---- */
+
+@media (prefers-reduced-motion: no-preference) {
+  .topic-article > * {
+    animation: topic-reveal 0.55s ease-out both;
+  }
+  .topic-article > *:nth-child(1) { animation-delay: 0ms; }
+  .topic-article > *:nth-child(2) { animation-delay: 80ms; }
+  .topic-article > *:nth-child(3) { animation-delay: 160ms; }
+  .topic-article > *:nth-child(4) { animation-delay: 240ms; }
+  .topic-article > *:nth-child(5) { animation-delay: 320ms; }
+  .topic-article > *:nth-child(6) { animation-delay: 400ms; }
+  .topic-article > *:nth-child(7) { animation-delay: 480ms; }
+}
+
+@keyframes topic-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* === Meeting Show — Structured Sections === */
