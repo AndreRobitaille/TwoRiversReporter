@@ -6,6 +6,7 @@ class KnowledgeSource < ApplicationRecord
   has_many :knowledge_source_topics, dependent: :destroy
   has_many :topics, through: :knowledge_source_topics
   has_one_attached :file
+  belongs_to :meeting, optional: true
 
   validates :title, presence: true
   validates :source_type, presence: true, inclusion: { in: %w[note pdf] }

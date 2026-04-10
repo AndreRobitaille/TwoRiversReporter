@@ -87,7 +87,8 @@ class ExtractKnowledgeJob < ApplicationJob
       active: true,
       reasoning: entry["reasoning"].to_s,
       confidence: entry["confidence"].to_f,
-      stated_at: meeting.starts_at&.to_date
+      stated_at: meeting.starts_at&.to_date,
+      meeting: meeting
     )
   end
 

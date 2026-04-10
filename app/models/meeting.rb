@@ -6,6 +6,7 @@ class Meeting < ApplicationRecord
   has_many :topic_summaries, dependent: :destroy
   has_many :motions, dependent: :destroy
   has_many :meeting_attendances, dependent: :destroy
+  has_many :knowledge_sources, dependent: :nullify
   belongs_to :committee, optional: true
 
   validates :detail_page_url, presence: true, uniqueness: true
