@@ -58,6 +58,19 @@ class TopicsController < ApplicationController
                        .where(agenda_item_topics: { topic_id: @topic.id })
                        .includes(:meeting, votes: :member)
                        .order("meetings.starts_at DESC")
+
+    # Record enrichment: map (date, body_name) → TopicAppearance for linking
+    @record_meetings = @topic.topic_appearances
+                             .includes(meeting: :meeting_summaries, agenda_item: [])
+                             .index_by { |a| "#{a.appeared_at.to_date}:#{a.meeting.body_name}" }
+
+    # Coming Up fallback: most frequent committee for this topic
+    @typical_committee = @topic.topic_appearances
+                               .joins(:meeting)
+                               .group("meetings.body_name")
+                               .order(Arel.sql("COUNT(*) DESC"))
+                               .limit(1)
+                               .pick("meetings.body_name")
   rescue ActiveRecord::RecordNotFound
     redirect_to topics_path, alert: "Topic not found."
   end
