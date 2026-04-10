@@ -90,7 +90,7 @@ YouTube Channel → DiscoverTranscriptsJob (match videos to recent council meeti
 ### Key Services
 
 - **`Ai::OpenAiService`** — All OpenAI calls centralized here. Handles summarization, topic extraction, vote extraction, triage, topic analysis, topic description generation. Two model constants: `DEFAULT_MODEL` (gpt-5.2, reasoning) and `LIGHTWEIGHT_MODEL` (gpt-5-mini, for cheap tasks like description generation). Note: `gpt-5-mini` does not support the `temperature` parameter. Key summary methods use a two-pass architecture: `analyze_topic_briefing` / `render_topic_briefing` (rolling briefings) and `analyze_topic_summary` / `render_topic_summary` (per-meeting snapshots). Prompts loaded from `PromptTemplate` (database); no hardcoded fallback — missing templates raise `RecordNotFound`.
-- **`RetrievalService`** — RAG implementation using pgvector. Retrieves context chunks for AI prompts.
+- **`RetrievalService`** — RAG implementation using pgvector. Retrieves context chunks for AI prompts and admin knowledge search.
 - **`VectorService`** — Low-level pgvector operations (embed, search).
 - **`Topics::ContinuityService`** — Derives lifecycle status from agenda anchors and resolution signals.
 - **`Topics::FindOrCreateService`** — Creates topics with blocklist/alias resolution.
@@ -107,7 +107,7 @@ YouTube Channel → DiscoverTranscriptsJob (match videos to recent council meeti
 ### Routes
 
 Public: `/ (home#index)`, `/meetings`, `/topics`, `/members` (all read-only index+show).
-Admin: `/admin` namespace with dashboard, session/MFA auth, topic management (approve/block/merge/alias), committees (CRUD with alias management), knowledge sources, summaries, job monitoring, `/admin/prompt_templates` (edit AI prompts), `/admin/job_runs` (re-run pipeline jobs with targeting).
+Admin: `/admin` namespace with dashboard, session/MFA auth, topic management (approve/block/merge/alias), committees (CRUD with alias management), knowledge sources, summaries, job monitoring, `/admin/prompt_templates` (edit AI prompts), `/admin/job_runs` (re-run pipeline jobs with targeting), `/admin/search` (knowledge search with RAG-powered Q&A).
 
 ### Topic Navigation Pattern
 
