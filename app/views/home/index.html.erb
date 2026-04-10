@@ -1,98 +1,86 @@
-<% content_for(:title) { "Two Rivers Matters - What's Happening" } %>
+<% content_for(:title) { "Two Rivers Matters — What's Happening" } %>
 
-<div class="home-intro">
-  <h1 class="page-title">Two Rivers Matters</h1>
-  <p class="page-subtitle">
-    What's happening in Two Rivers city government
-    <%= link_to meetings_path, class: "search-link" do %>
-      Search all meetings &#8594;
+<div class="home-header">
+  <h1 class="page-title">What's Happening</h1>
+  <p class="tagline">Two Rivers city government at a glance</p>
+</div>
+
+<%= render "shared/diamond_divider" %>
+
+<%# === ZONE 1: TOP STORIES === %>
+<% if @top_stories.any? %>
+  <div class="home-zone">
+    <% @top_stories.each_with_index do |topic, i| %>
+      <%= render "top_story",
+            topic: topic,
+            headline: @headlines&.dig(topic.id),
+            meeting_ref: @meeting_refs&.dig(topic.id),
+            variant: i == 0 ? :primary : :secondary %>
     <% end %>
-  </p>
-</div>
-
-<%# === Topic Headline Cards === %>
-<div class="card-grid mb-8" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
-  <% if @what_happened.any? %>
-    <div class="card card--cool">
-      <div class="card-header">
-        <h2 class="card-title">What Happened</h2>
-      </div>
-      <div class="card-body">
-        <% @what_happened.each do |topic| %>
-          <%= render "topic_headline_item", topic: topic, headlines: @what_happened_headlines %>
-        <% end %>
-      </div>
-      <div class="card-footer">
-        <%= link_to "All topics →", topics_path, class: "btn btn--secondary btn--sm" %>
-      </div>
-    </div>
-  <% end %>
-
-  <% if @coming_up.any? %>
-    <div class="card card--warm">
-      <div class="card-header">
-        <h2 class="card-title">Coming Up</h2>
-      </div>
-      <div class="card-body">
-        <% @coming_up.each do |topic| %>
-          <%= render "topic_headline_item", topic: topic, headlines: @coming_up_headlines %>
-        <% end %>
-      </div>
-      <div class="card-footer">
-        <%= link_to "All topics →", topics_path, class: "btn btn--secondary btn--sm" %>
-      </div>
-    </div>
-  <% end %>
-</div>
-
-<% unless @coming_up.any? || @what_happened.any? %>
-  <div class="empty-state mb-8">
-    <p class="mb-0">No hot topics right now. Check the meetings below to see what's scheduled.</p>
+  </div>
+<% else %>
+  <div class="home-quiet">
+    Things are quiet at city hall. Check back after the next council meeting.
   </div>
 <% end %>
 
-<% if @coming_up.any? || @what_happened.any? %>
-  <hr class="home-divider">
+<%= render "shared/diamond_divider" %>
+
+<%# === ZONE 2: THE WIRE === %>
+<% if @wire_cards.any? || @wire_rows.any? %>
+  <div class="home-zone wire-zone">
+    <div class="home-section-header">
+      <%= render "shared/atom_marker", size: 20 %>
+      <span class="section-label">The Wire</span>
+      <span class="section-line"></span>
+    </div>
+
+    <% if @wire_cards.any? %>
+      <div class="wire-grid">
+        <% @wire_cards.each do |topic| %>
+          <%= render "wire_card",
+                topic: topic,
+                headline: @headlines&.dig(topic.id),
+                meeting_ref: @meeting_refs&.dig(topic.id) %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <% if @wire_rows.any? %>
+      <div class="wire-list">
+        <% @wire_rows.each do |topic| %>
+          <%= render "wire_row", topic: topic %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <%= render "shared/diamond_divider" %>
 <% end %>
 
-<%# === Upcoming Meetings === %>
-<section class="section">
-  <div class="section-header">
-    <h2 class="section-title">Upcoming Meetings</h2>
-    <span class="section-time-badge">Next 30 days</span>
+<%# === ZONE 3: NEXT UP === %>
+<div class="home-zone nextup-zone">
+  <div class="home-section-header">
+    <%= render "shared/atom_marker", size: 20 %>
+    <span class="section-label">Next Up</span>
+    <span class="section-line"></span>
   </div>
 
-  <% if @upcoming_meeting_groups.any? %>
-    <% @upcoming_meeting_groups.each do |group| %>
-      <%= render "meeting_week_group", group: group %>
-    <% end %>
-  <% else %>
-    <div class="empty-state">
-      <p class="mb-0">No upcoming meetings scheduled.</p>
+  <% if @next_up.any? %>
+    <div class="nextup-strip">
+      <% @next_up.each do |meeting| %>
+        <%= render "next_up", meeting: meeting %>
+      <% end %>
     </div>
-  <% end %>
-</section>
-
-<%# === Recently Completed === %>
-<section class="section">
-  <div class="section-header">
-    <h2 class="section-title">Recently Completed</h2>
-    <span class="section-time-badge">Past 14 days</span>
-  </div>
-
-  <% if @recent_meeting_groups.any? %>
-    <% @recent_meeting_groups.each do |group| %>
-      <%= render "meeting_week_group", group: group %>
-    <% end %>
   <% else %>
-    <div class="empty-state">
-      <p class="mb-0">No recent meetings.</p>
-    </div>
+    <p class="nextup-empty">No council meetings scheduled</p>
   <% end %>
+</div>
 
-  <div class="mt-6">
-    <%= link_to meetings_path, class: "btn btn--secondary" do %>
-      Search all meetings &#8594;
-    <% end %>
-  </div>
-</section>
+<%= render "shared/diamond_divider" %>
+
+<%# === ZONE 4: ESCAPE HATCHES === %>
+<div class="home-escape">
+  <%= link_to "Browse All Topics →", topics_path, class: "home-escape-btn" %>
+  <%= link_to "All Meetings →", meetings_path, class: "home-escape-btn" %>
+</div>

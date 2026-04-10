@@ -1,0 +1,18 @@
+<%# Next Up meeting card. Locals: meeting %>
+<% is_council = meeting.body_name.include?("Council") && !meeting.body_name.include?("Work Session") %>
+<%= link_to meeting_path(meeting), class: "nextup-card" do %>
+  <div class="date-slab <%= 'council' if is_council %>">
+    <span class="date-month"><%= meeting.starts_at.strftime("%b") %></span>
+    <span class="date-day"><%= meeting.starts_at.strftime("%-d") %></span>
+  </div>
+  <div class="meeting-info">
+    <span class="meeting-name"><%= meeting.body_name.sub(/ Meeting$/, "").sub(/^City Council /, "") %></span>
+    <% topic_count = meeting.agenda_items.flat_map(&:topics).uniq.select(&:approved?).size %>
+    <% if topic_count > 0 %>
+      <span class="meeting-note"><%= pluralize(topic_count, "topic") %> on agenda</span>
+    <% else %>
+      <span class="meeting-note">Agenda not yet posted</span>
+    <% end %>
+  </div>
+  <span class="meeting-arrow">→</span>
+<% end %>

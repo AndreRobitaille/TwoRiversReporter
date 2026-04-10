@@ -1,0 +1,27 @@
+<%# Renders a top story card. Locals: topic, headline, meeting_ref, variant (:primary or :secondary) %>
+<% variant ||= :primary %>
+<% card_class = variant == :primary ? "top-story" : "second-story" %>
+
+<%= link_to topic_path(topic), class: card_class do %>
+  <% if variant == :primary %>
+    <%= render "shared/starburst", size: 48, opacity: 0.08 %>
+  <% end %>
+  <div class="story-accent"></div>
+  <div class="story-inner">
+    <div class="story-topic"><%= topic.name %></div>
+    <% if topic.description.present? %>
+      <div class="story-desc"><%= topic.description %></div>
+    <% end %>
+    <% if headline.present? %>
+      <p class="story-headline"><%= headline %></p>
+    <% end %>
+    <div class="story-footer">
+      <% if meeting_ref %>
+        <span class="story-meta"><%= meeting_ref[:date]&.strftime("%b %-d") %> · <%= meeting_ref[:body_name]&.sub(/ Meeting$/, "") %></span>
+      <% else %>
+        <span class="story-meta"></span>
+      <% end %>
+      <span class="read-more">Read more →</span>
+    </div>
+  </div>
+<% end %>
