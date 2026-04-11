@@ -117,6 +117,19 @@ module TopicsHelper
     content_tag(:ul, items.join.html_safe, class: "topic-summary-list")
   end
 
+  # Clean a meeting name for display. Strips trailing " Meeting", parenthetical
+  # status suffixes, date suffixes the AI sometimes appends, and " - NO QUORUM".
+  # Safe to call with either canonical Meeting.body_name values or raw AI text.
+  def clean_meeting_display(name)
+    return "" if name.blank?
+    name.to_s
+        .gsub(/\s*\([^)]*\)\s*\z/, "")    # strip trailing "(CANCELED - NO QUORUM)"
+        .gsub(/,\s*[A-Z][a-z]{2,}\s+\d{1,2}(?:,?\s+\d{4})?\z/, "")  # strip ", Nov 20 2025"
+        .sub(/\s+Meeting\z/, "")          # strip trailing " Meeting"
+        .sub(/\s+-\s+NO QUORUM.*\z/i, "") # strip trailing " - NO QUORUM"
+        .strip
+  end
+
   def enrich_record_entry(entry, record_meetings)
     candidates = record_meetings[entry["date"]] || []
     target_norm = normalize_meeting_name(entry["meeting"])
@@ -129,16 +142,24 @@ module TopicsHelper
       event_text = enriched if enriched.present?
     end
 
-    { event: event_text, meeting_name: entry["meeting"], meeting: meeting }
+    # Prefer the canonical Meeting body_name (cleaned) when we have a match,
+    # so display is consistent regardless of how the AI labeled the entry.
+    # Falls back to cleaning the AI's text when there's no matched Meeting.
+    display_name = if meeting
+      clean_meeting_display(meeting.body_name)
+    else
+      clean_meeting_display(entry["meeting"])
+    end
+
+    { event: event_text, meeting_name: display_name, meeting: meeting }
   end
 
   private
 
-  # Normalize meeting name strings for matching between AI-generated
+  # Normalize meeting name strings for MATCHING between AI-generated
   # factual_record "meeting" labels and real Meeting body_name values.
-  # AI labels often append date suffixes (", Nov 20 2025") and use different
-  # separators (" / " vs " - "). Real body_name values sometimes carry
-  # status suffixes like "(CANCELED - NO QUORUM)" or " Meeting" endings.
+  # Returns a word-set representation — use clean_meeting_display for
+  # human-readable output.
   def normalize_meeting_name(name)
     name.to_s.downcase
         .gsub(/\([^)]*\)/, "")            # strip parentheticals: (CANCELED...)

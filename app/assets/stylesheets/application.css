@@ -1837,8 +1837,7 @@ th.sortable-header:hover {
 }
 
 .topic-article-section + .topic-article-section {
-  padding-top: var(--space-8);
-  border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+  padding-top: var(--space-6);
 }
 
 /* Section header (home-section-header) overrides inside the article —
@@ -1879,7 +1878,7 @@ th.sortable-header:hover {
   line-height: 1.55;
   color: var(--color-text-secondary);
   margin: var(--space-3) 0 0;
-  max-width: 38em;
+  max-width: 36rem;
 }
 
 /* ---- What to Watch (pullquote) ---- */
@@ -1894,7 +1893,7 @@ th.sortable-header:hover {
   margin: 0;
   padding: 0 0 0 1.2rem;
   border-left: 3px solid var(--color-terra-cotta);
-  max-width: 32em;
+  max-width: 28rem;
 }
 
 /* ---- Coming Up (structured list, no cards) ---- */
@@ -2028,7 +2027,7 @@ th.sortable-header:hover {
   font-size: 1.13rem;
   line-height: 1.72;
   color: var(--color-text);
-  max-width: 36em;
+  max-width: 36rem;
 }
 
 .topic-story-body p {
@@ -2058,8 +2057,8 @@ th.sortable-header:hover {
 
 @supports (initial-letter: 2) or (-webkit-initial-letter: 2) {
   .topic-story-body p:first-child::first-letter {
-    -webkit-initial-letter: 2 1;
-    initial-letter: 2 1;
+    -webkit-initial-letter: 2;
+    initial-letter: 2;
     float: none;
     margin: 0 0.1em 0 0;
     line-height: normal;
@@ -2082,7 +2081,7 @@ th.sortable-header:hover {
   margin-top: var(--space-6);
   padding: 0.2rem 0 0.2rem var(--space-4);
   border-left: 3px solid var(--color-terra-cotta);
-  max-width: 36em;
+  max-width: 28rem;
 }
 
 .topic-aside-label {
@@ -2172,7 +2171,7 @@ th.sortable-header:hover {
   line-height: 1.6;
   color: var(--color-text);
   margin: 0 0 var(--space-3);
-  max-width: 38em;
+  max-width: 36rem;
 }
 
 .topic-decision .votes-grid {

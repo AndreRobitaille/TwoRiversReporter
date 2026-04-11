@@ -284,6 +284,38 @@ class TopicsHelperTest < ActionView::TestCase
     assert_equal meeting, result[:meeting]
   end
 
+  test "enrich_record_entry uses canonical body_name for display when meeting matches" do
+    meeting = OpenStruct.new(id: 1, body_name: "City Council Meeting", meeting_summaries: [])
+    appearance = OpenStruct.new(meeting: meeting, agenda_item: nil)
+    record_meetings = { "2025-09-02" => [ appearance ] }
+
+    # AI wrote the meeting label with a date suffix
+    entry = { "date" => "2025-09-02", "event" => "Council voted.", "meeting" => "City Council, Sep 2 2025" }
+    result = enrich_record_entry(entry, record_meetings)
+
+    # Display name should be the cleaned canonical body_name, not the AI's raw text
+    assert_equal "City Council", result[:meeting_name]
+  end
+
+  test "enrich_record_entry strips trailing date from ai text when no meeting match" do
+    entry = { "date" => "2025-09-02", "event" => "Something.", "meeting" => "Unknown Board, Sep 2 2025" }
+    result = enrich_record_entry(entry, {})
+
+    assert_nil result[:meeting]
+    assert_equal "Unknown Board", result[:meeting_name]
+  end
+
+  test "enrich_record_entry strips trailing Meeting suffix from canonical body_name" do
+    meeting = OpenStruct.new(id: 1, body_name: "Library Board Meeting (CANCELED - NO QUORUM)", meeting_summaries: [])
+    appearance = OpenStruct.new(meeting: meeting, agenda_item: nil)
+    record_meetings = { "2025-09-02" => [ appearance ] }
+
+    entry = { "date" => "2025-09-02", "event" => "Scheduled.", "meeting" => "Library Board" }
+    result = enrich_record_entry(entry, record_meetings)
+
+    assert_equal "Library Board", result[:meeting_name]
+  end
+
   test "enrich_record_entry does not match when committee is genuinely different" do
     meeting = OpenStruct.new(id: 1, body_name: "Public Works Committee", meeting_summaries: [])
     appearance = OpenStruct.new(meeting: meeting, agenda_item: nil)

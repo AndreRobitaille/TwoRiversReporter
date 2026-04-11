@@ -51,7 +51,7 @@
                 <span class="topic-upcoming-day"><%= appearance.meeting.starts_at.strftime("%-d") %></span>
               </time>
               <div class="topic-upcoming-detail">
-                <div class="topic-upcoming-committee"><%= appearance.meeting.body_name %></div>
+                <div class="topic-upcoming-committee"><%= clean_meeting_display(appearance.meeting.body_name) %></div>
                 <% if appearance.agenda_item %>
                   <div class="topic-upcoming-item"><%= appearance.agenda_item.title %></div>
                 <% end %>
@@ -79,7 +79,7 @@
         <span class="section-line"></span>
       </div>
       <p class="topic-upcoming-fallback">
-        Typically discussed at <strong><%= @typical_committee %></strong>. Check back when the next agenda is published.
+        Typically discussed at <strong><%= clean_meeting_display(@typical_committee) %></strong>. Check back when the next agenda is published.
       </p>
     </section>
   <% end %>
@@ -126,7 +126,7 @@
                 <%= motion_outcome_text(motion) %>
               </span>
               <span class="topic-decision-ref">
-                <%= link_to motion.meeting.body_name, meeting_path(motion.meeting) %>
+                <%= link_to clean_meeting_display(motion.meeting.body_name), meeting_path(motion.meeting) %>
                 <span class="topic-decision-sep">·</span>
                 <%= motion.meeting.starts_at.strftime("%b %-d, %Y") %>
               </span>

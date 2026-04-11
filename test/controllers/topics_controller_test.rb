@@ -384,7 +384,8 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".topic-timeline-entry", 2
     assert_select ".topic-timeline-date", text: /Sep 2, 2025/
     assert_select ".topic-timeline-content", text: /Council approved plan/
-    assert_select ".topic-timeline-meeting", text: /City Council, Sep 2/
+    # Meeting name is cleaned for display (trailing date suffix stripped)
+    assert_select ".topic-timeline-meeting", text: /\ACity Council\z/
   end
 
   test "show loads upcoming appearances for future meetings" do
