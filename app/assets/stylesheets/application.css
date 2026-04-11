@@ -1851,8 +1851,7 @@ th.sortable-header:hover {
 
 .topic-article-header {
   text-align: left;
-  padding-bottom: var(--space-6);
-  border-bottom: 2px solid var(--color-terra-cotta);
+  padding-bottom: var(--space-4);
   margin-bottom: var(--space-8);
 }
 
@@ -1889,10 +1888,10 @@ th.sortable-header:hover {
   font-family: var(--font-display);
   font-weight: 500;
   font-style: italic;
-  font-size: clamp(1.2rem, 2.4vw, 1.5rem);
-  line-height: 1.4;
+  font-size: clamp(1.25rem, 2.4vw, 1.55rem);
+  line-height: 1.45;
   color: var(--color-terra-cotta);
-  margin: 0;
+  margin: 1.4rem 0 0;          /* breathing room above for the quote glyph */
   padding: 0 0 0 1.2rem;
   border-left: 3px solid var(--color-terra-cotta);
   max-width: 32em;
@@ -1902,15 +1901,15 @@ th.sortable-header:hover {
 .topic-watch-quote::before {
   content: "“";
   position: absolute;
-  left: 0.1rem;
-  top: -0.55em;
+  left: 0.2rem;
+  top: -0.9em;
   font-family: var(--font-display);
-  font-size: 3.6rem;
+  font-size: 4rem;
   font-weight: 900;
   font-style: normal;
   line-height: 1;
   color: var(--color-terra-cotta);
-  opacity: 0.18;
+  opacity: 0.22;
   pointer-events: none;
 }
 
@@ -2043,10 +2042,10 @@ th.sortable-header:hover {
 
 .topic-story-body {
   font-family: var(--font-body);
-  font-size: 1.08rem;
-  line-height: 1.75;
+  font-size: 1.13rem;
+  line-height: 1.72;
   color: var(--color-text);
-  max-width: 38em;
+  max-width: 36em;
 }
 
 .topic-story-body p {
@@ -2057,15 +2056,31 @@ th.sortable-header:hover {
   margin-bottom: 0;
 }
 
+/* Drop cap — use initial-letter where supported (Safari/Chrome 110+/Firefox 115+),
+   fall back to float + tuned margins elsewhere. */
 .topic-story-body p:first-child::first-letter {
   font-family: var(--font-display);
   font-weight: 900;
-  font-size: 4.2rem;
-  line-height: 0.85;
-  float: left;
-  margin: 0.15rem 0.5rem -0.1rem 0;
   color: var(--color-terra-cotta);
   text-transform: uppercase;
+  padding-right: 0.08em;
+
+  /* Fallback (float) */
+  font-size: 4.6rem;
+  line-height: 0.82;
+  float: left;
+  margin: 0.3rem 0.08em -0.15rem 0;
+}
+
+@supports (initial-letter: 3) or (-webkit-initial-letter: 3) {
+  .topic-story-body p:first-child::first-letter {
+    -webkit-initial-letter: 3 2;
+    initial-letter: 3 2;
+    float: none;
+    margin: 0 0.08em 0 0;
+    line-height: normal;
+    font-size: inherit;
+  }
 }
 
 .topic-story-body strong {
@@ -2078,22 +2093,23 @@ th.sortable-header:hover {
   color: inherit;
 }
 
-/* Worth noting — lightweight sidebar aside, not a card */
+/* Worth noting — sidebar aside with stronger visual presence for older readers */
 .topic-aside {
   margin-top: var(--space-6);
-  padding-left: var(--space-4);
-  border-left: 2px solid var(--color-text-muted, var(--color-text-secondary));
+  padding: 0.2rem 0 0.2rem var(--space-4);
+  border-left: 3px solid var(--color-terra-cotta);
   max-width: 36em;
 }
 
 .topic-aside-label {
   display: block;
   font-family: var(--font-data);
-  font-size: 0.64rem;
+  font-size: 0.72rem;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--color-text-muted, var(--color-text-secondary));
-  margin-bottom: 0.4rem;
+  letter-spacing: 0.12em;
+  color: var(--color-terra-cotta);
+  margin-bottom: 0.5rem;
 }
 
 .topic-aside ul {
@@ -2104,11 +2120,11 @@ th.sortable-header:hover {
 
 .topic-aside li {
   font-family: var(--font-body);
-  font-size: 0.92rem;
-  line-height: 1.55;
-  color: var(--color-text-secondary);
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--color-text);
   font-style: italic;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.5rem;
 }
 
 .topic-aside li:last-child {
@@ -2168,8 +2184,8 @@ th.sortable-header:hover {
 
 .topic-decision-desc {
   font-family: var(--font-body);
-  font-size: 1rem;
-  line-height: 1.55;
+  font-size: 1.05rem;
+  line-height: 1.6;
   color: var(--color-text);
   margin: 0 0 var(--space-3);
   max-width: 38em;
@@ -2216,7 +2232,7 @@ th.sortable-header:hover {
 
 .topic-timeline-event {
   font-family: var(--font-body);
-  font-size: 1rem;
+  font-size: 1.03rem;
   line-height: 1.6;
   color: var(--color-text);
   margin: 0 0 0.4rem;
