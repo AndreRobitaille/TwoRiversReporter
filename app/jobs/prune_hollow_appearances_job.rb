@@ -63,11 +63,16 @@ class PruneHollowAppearancesJob < ApplicationJob
       next nil unless entry.is_a?(Hash)
       title = entry["agenda_item_title"]
       next nil unless title.is_a?(String)
-      [normalize_title(title), entry]
+      [ normalize_title(title), entry ]
     end
 
     agenda_items.each_with_object({}) do |ai, map|
       target = normalize_title(ai.title.to_s)
+      # If two agenda items normalize to the same title (e.g., scraper
+      # artifacts duplicating section headers), both map to the first
+      # matching entry. The safe failure direction: neither gets
+      # spuriously pruned. A real duplicate with real activity would
+      # still be rescued by the Motion.exists? check in `hollow?`.
       match = normalized_entries.find { |norm, _e| norm == target }
       map[ai.id] = match&.last
     end
@@ -76,7 +81,7 @@ class PruneHollowAppearancesJob < ApplicationJob
   def normalize_title(title)
     return "" if title.nil? || title.strip.empty?
     title.to_s
-      .gsub(/\A\s*\d+[a-z]?\.?\s*/i, "")
+      .gsub(/\A\s*\d+(-\d+)?[a-z]?\.?\s*/i, "")
       .gsub(/\s*,?\s*as needed\s*\z/i, "")
       .gsub(/\s*,?\s*if applicable\s*\z/i, "")
       .gsub(/\s+/, " ")

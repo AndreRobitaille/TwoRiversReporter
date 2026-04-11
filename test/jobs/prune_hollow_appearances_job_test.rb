@@ -8,7 +8,7 @@ class PruneHollowAppearancesJobTest < ActiveJob::TestCase
       detail_page_url: "http://example.com/m#{SecureRandom.hex(4)}"
     )
     item = meeting.agenda_items.create!(title: title, order_index: 1)
-    [meeting, item]
+    [ meeting, item ]
   end
 
   def create_summary(meeting, item_details:)
@@ -34,7 +34,7 @@ class PruneHollowAppearancesJobTest < ActiveJob::TestCase
         "vote" => nil,
         "decision" => nil,
         "public_hearing" => nil,
-        "citations" => ["Page 4"]
+        "citations" => [ "Page 4" ]
       }
     ])
     topic = link_topic(item, topic_name: "garbage and recycling service changes")
@@ -58,7 +58,7 @@ class PruneHollowAppearancesJobTest < ActiveJob::TestCase
         "vote" => nil,
         "decision" => nil,
         "public_hearing" => nil,
-        "citations" => ["Page 3"]
+        "citations" => [ "Page 3" ]
       }
     ])
     topic = link_topic(item, topic_name: "lead service line replacement")
@@ -78,7 +78,7 @@ class PruneHollowAppearancesJobTest < ActiveJob::TestCase
         "vote" => nil,
         "decision" => nil,
         "public_hearing" => nil,
-        "citations" => ["Page 4"]
+        "citations" => [ "Page 4" ]
       }
     ])
     topic = link_topic(item, topic_name: "garbage and recycling service changes")
@@ -107,7 +107,7 @@ class PruneHollowAppearancesJobTest < ActiveJob::TestCase
         "vote" => nil,
         "decision" => nil,
         "public_hearing" => "Two residents testified against the rate increase.",
-        "citations" => ["Page 2"]
+        "citations" => [ "Page 2" ]
       }
     ])
     topic = link_topic(item, topic_name: "utility rates")
@@ -129,7 +129,7 @@ class PruneHollowAppearancesJobTest < ActiveJob::TestCase
         "vote" => nil,
         "decision" => nil,
         "public_hearing" => nil,
-        "citations" => ["Page 1"]
+        "citations" => [ "Page 1" ]
       }
     ])
     topic = link_topic(item, topic_name: "adjournment")
@@ -137,6 +137,7 @@ class PruneHollowAppearancesJobTest < ActiveJob::TestCase
     PruneHollowAppearancesJob.perform_now(meeting.id)
 
     assert_equal 0, topic.reload.agenda_item_topics.count
+    assert_equal 0, topic.reload.topic_appearances.count
   end
 
   test "skips entirely when summary is old-format (no entry has activity_level)" do
@@ -149,7 +150,7 @@ class PruneHollowAppearancesJobTest < ActiveJob::TestCase
         "vote" => nil,
         "decision" => nil,
         "public_hearing" => nil,
-        "citations" => ["Page 4"]
+        "citations" => [ "Page 4" ]
       }
     ])
     topic = link_topic(item, topic_name: "garbage and recycling service changes")
@@ -167,5 +168,29 @@ class PruneHollowAppearancesJobTest < ActiveJob::TestCase
       PruneHollowAppearancesJob.perform_now(meeting.id)
     end
     assert_equal 1, topic.reload.agenda_item_topics.count
+  end
+
+  test "normalizes YY-NNN council agenda numbering correctly" do
+    meeting, item = create_meeting_with_item(title: "26-001 Public hearing on zoning")
+    create_summary(meeting, item_details: [
+      {
+        "agenda_item_title" => "26-001 Public hearing on zoning",
+        "summary" => "Residents testified on proposed zoning change.",
+        "activity_level" => "discussion",
+        "vote" => nil,
+        "decision" => nil,
+        "public_hearing" => "Three residents spoke in favor, one opposed.",
+        "citations" => [ "Page 2" ]
+      }
+    ])
+    topic = link_topic(item, topic_name: "zoning change discussion")
+
+    PruneHollowAppearancesJob.perform_now(meeting.id)
+
+    # Should be preserved — YY-NNN normalization matches correctly,
+    # the entry is found, activity_level is "discussion", public_hearing
+    # is non-null, none of the hollow conditions apply.
+    assert_equal 1, topic.reload.agenda_item_topics.count
+    assert_equal 1, topic.reload.topic_appearances.count
   end
 end
