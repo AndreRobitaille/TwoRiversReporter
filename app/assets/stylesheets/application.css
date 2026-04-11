@@ -1812,6 +1812,487 @@ th.sortable-header:hover {
   margin-top: var(--space-1);
 }
 
+/* ============================================
+   Topic Show Page — Editorial Longform
+   Print-magazine feature-story aesthetic. One reading column,
+   typography does the differentiation work, no competing card
+   containers. Variation comes from typographic treatment and
+   spacing, not backgrounds.
+   ============================================ */
+
+/* ---- One reading column for everything ----
+   The article container IS the reading measure. Body prose, eyebrows,
+   dek, fallback, record entries all fill this width. Only pullquote
+   and aside are intentionally narrower within it. */
+
+.topic-article {
+  max-width: 38rem;     /* ~608px, one consistent reading measure */
+  margin: 0 auto;
+  padding: var(--space-6) 0 var(--space-8);
+}
+
+.topic-article-section {
+  margin-top: var(--space-10);
+}
+
+.topic-article-section:first-of-type {
+  margin-top: var(--space-8);
+}
+
+.topic-article-section + .topic-article-section {
+  padding-top: var(--space-6);
+}
+
+/* Section header (home-section-header) overrides inside the article —
+   tighter bottom margin so eyebrows sit close to their content. */
+.topic-article-section .home-section-header {
+  margin-bottom: var(--space-5);
+}
+
+/* ---- Header ---- */
+
+.topic-article-header {
+  text-align: left;
+  padding-bottom: var(--space-4);
+  margin-bottom: var(--space-8);
+}
+
+.topic-article-topline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: var(--space-3);
+}
+
+.topic-article-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  color: var(--color-teal);
+  margin: 0;
+}
+
+.topic-article-dek {
+  font-family: var(--font-body);
+  font-size: 1.15rem;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+  margin: var(--space-3) 0 0;
+}
+
+/* ---- What to Watch (pullquote) ---- */
+
+.topic-watch-quote {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-style: italic;
+  font-size: clamp(1.25rem, 2.4vw, 1.55rem);
+  line-height: 1.45;
+  color: var(--color-terra-cotta);
+  margin: 0;
+  padding: 0 0 0 1.2rem;
+  border-left: 3px solid var(--color-terra-cotta);
+  max-width: 30rem;
+}
+
+/* ---- Coming Up (structured list, no cards) ---- */
+
+.topic-upcoming-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.topic-upcoming-entry {
+  padding: 0;
+}
+
+.topic-upcoming-entry + .topic-upcoming-entry {
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+}
+
+.topic-upcoming-link {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+  text-decoration: none;
+  color: inherit;
+  transition: transform var(--transition-fast), color var(--transition-fast);
+}
+
+.topic-upcoming-link:hover {
+  color: inherit;
+  text-decoration: none;
+  transform: translateX(2px);
+}
+
+.topic-upcoming-date {
+  flex-shrink: 0;
+  min-width: 56px;
+  text-align: center;
+  padding: 0.45rem 0.25rem;
+  border: 2px solid var(--color-teal);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-teal);
+}
+
+.topic-upcoming-date.council {
+  border-color: var(--color-terra-cotta);
+  color: var(--color-terra-cotta);
+}
+
+.topic-upcoming-month {
+  display: block;
+  font-family: var(--font-data);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  line-height: 1.1;
+}
+
+.topic-upcoming-day {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 900;
+  line-height: 1;
+  margin-top: 0.15rem;
+}
+
+.topic-upcoming-detail {
+  flex: 1;
+  min-width: 0;
+}
+
+.topic-upcoming-committee {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--color-text);
+  margin-bottom: 0.15rem;
+  line-height: 1.3;
+}
+
+.topic-upcoming-item {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: var(--color-text);
+  margin-bottom: 0.25rem;
+}
+
+.topic-upcoming-meta {
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted, var(--color-text-secondary));
+}
+
+.topic-upcoming-arrow {
+  align-self: center;
+  flex-shrink: 0;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  color: var(--color-teal);
+  transition: transform var(--transition-fast);
+}
+
+.topic-upcoming-link:hover .topic-upcoming-arrow {
+  transform: translateX(4px);
+}
+
+.topic-upcoming-fallback {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  font-style: italic;
+  margin: 0;
+}
+
+.topic-upcoming-fallback strong {
+  color: var(--color-teal);
+  font-style: normal;
+  font-weight: 600;
+}
+
+/* ---- The Story (longform body with drop cap) ---- */
+
+.topic-story-body {
+  font-family: var(--font-body);
+  font-size: 1.13rem;
+  line-height: 1.72;
+  color: var(--color-text);
+}
+
+.topic-story-body p {
+  margin: 0 0 1em;
+}
+
+.topic-story-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* Drop cap — 2-line sunken cap. 2 lines (instead of 3) avoids the
+   "T drop cap problem" where the narrow stem leaves dead space alongside
+   body lines. Uses initial-letter where supported, float fallback elsewhere. */
+.topic-story-body p:first-child::first-letter {
+  font-family: var(--font-display);
+  font-weight: 900;
+  color: var(--color-terra-cotta);
+  text-transform: uppercase;
+  padding-right: 0.05em;
+
+  /* Fallback (float) — tuned for 2 lines at body line-height 1.72 */
+  font-size: 3.2rem;
+  line-height: 0.82;
+  float: left;
+  margin: 0.38rem 0.1em -0.05rem 0;
+}
+
+@supports (initial-letter: 2) or (-webkit-initial-letter: 2) {
+  .topic-story-body p:first-child::first-letter {
+    -webkit-initial-letter: 2;
+    initial-letter: 2;
+    float: none;
+    margin: 0 0.1em 0 0;
+    line-height: normal;
+    font-size: inherit;
+  }
+}
+
+.topic-story-body strong {
+  color: var(--color-teal);
+  font-weight: 700;
+}
+
+.topic-story-body em {
+  font-style: italic;
+  color: inherit;
+}
+
+/* Worth noting — sidebar aside with stronger visual presence for older readers */
+.topic-aside {
+  margin-top: var(--space-6);
+  padding: 0.2rem 0 0.2rem var(--space-4);
+  border-left: 3px solid var(--color-terra-cotta);
+  max-width: 30rem;
+}
+
+.topic-aside-label {
+  display: block;
+  font-family: var(--font-data);
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-terra-cotta);
+  margin-bottom: 0.5rem;
+}
+
+.topic-aside ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.topic-aside li {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--color-text);
+  font-style: italic;
+  margin-bottom: 0.5rem;
+}
+
+.topic-aside li:last-child {
+  margin-bottom: 0;
+}
+
+/* ---- Key Decisions (inline blocks, no cards) ---- */
+
+.topic-decisions-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  counter-reset: decision;
+}
+
+.topic-decision {
+  padding: 0;
+}
+
+.topic-decision + .topic-decision {
+  margin-top: var(--space-5);
+  padding-top: var(--space-5);
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+}
+
+.topic-decision-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.topic-decision-ref {
+  font-family: var(--font-data);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted, var(--color-text-secondary));
+}
+
+.topic-decision-ref a {
+  color: var(--color-teal);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-teal) 30%, transparent);
+  transition: border-color var(--transition-fast);
+}
+
+.topic-decision-ref a:hover {
+  border-bottom-color: var(--color-teal);
+}
+
+.topic-decision-sep {
+  opacity: 0.4;
+  margin: 0 0.2rem;
+}
+
+.topic-decision-desc {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--color-text);
+  margin: 0 0 var(--space-3);
+}
+
+.topic-decision .votes-grid {
+  margin-top: var(--space-2);
+}
+
+/* ---- Record Timeline ---- */
+
+.topic-timeline {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.topic-timeline-entry {
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+  position: relative;
+}
+
+.topic-timeline-entry + .topic-timeline-entry {
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+}
+
+.topic-timeline-date {
+  font-family: var(--font-data);
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted, var(--color-text-secondary));
+  padding-top: 0.2rem;
+  text-align: right;
+}
+
+.topic-timeline-content {
+  min-width: 0;
+}
+
+.topic-timeline-event {
+  font-family: var(--font-body);
+  font-size: 1.03rem;
+  line-height: 1.6;
+  color: var(--color-text);
+  margin: 0 0 0.4rem;
+}
+
+.topic-timeline-meeting-link {
+  font-family: var(--font-data);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-teal);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-teal) 30%, transparent);
+  transition: border-color var(--transition-fast);
+}
+
+.topic-timeline-meeting-link:hover {
+  border-bottom-color: var(--color-teal);
+  color: var(--color-teal);
+}
+
+.topic-timeline-entry .topic-timeline-meeting {
+  font-family: var(--font-data);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-text-muted, var(--color-text-secondary));
+}
+
+@media (max-width: 560px) {
+  .topic-timeline-entry {
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+  }
+
+  .topic-timeline-date {
+    text-align: left;
+    padding-top: 0;
+  }
+}
+
+/* ---- Footer ---- */
+
+.topic-article-footer {
+  max-width: 38rem;
+  margin: var(--space-10) auto 0;
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--color-border);
+  text-align: left;
+}
+
+/* ---- Page load reveal animation ---- */
+
+@media (prefers-reduced-motion: no-preference) {
+  .topic-article > * {
+    animation: topic-reveal 0.55s ease-out both;
+  }
+  .topic-article > *:nth-child(1) { animation-delay: 0ms; }
+  .topic-article > *:nth-child(2) { animation-delay: 80ms; }
+  .topic-article > *:nth-child(3) { animation-delay: 160ms; }
+  .topic-article > *:nth-child(4) { animation-delay: 240ms; }
+  .topic-article > *:nth-child(5) { animation-delay: 320ms; }
+  .topic-article > *:nth-child(6) { animation-delay: 400ms; }
+  .topic-article > *:nth-child(7) { animation-delay: 480ms; }
+}
+
+@keyframes topic-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* === Meeting Show — Structured Sections === */
 
 .transcript-banner {

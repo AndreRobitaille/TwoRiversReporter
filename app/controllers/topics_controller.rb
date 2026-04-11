@@ -58,6 +58,21 @@ class TopicsController < ApplicationController
                        .where(agenda_item_topics: { topic_id: @topic.id })
                        .includes(:meeting, votes: :member)
                        .order("meetings.starts_at DESC")
+
+    # Record enrichment: group appearances by date for fuzzy name matching in the view helper.
+    # AI-generated factual_record "meeting" labels don't exactly match Meeting body_name
+    # (date suffixes, separator differences, status annotations) — see enrich_record_entry.
+    @record_meetings = @topic.topic_appearances
+                             .includes(meeting: :meeting_summaries, agenda_item: [])
+                             .group_by { |a| a.appeared_at.to_date.to_s }
+
+    # Coming Up fallback: most frequent committee for this topic
+    @typical_committee = @topic.topic_appearances
+                               .joins(:meeting)
+                               .group("meetings.body_name")
+                               .order(Arel.sql("COUNT(*) DESC"))
+                               .limit(1)
+                               .pick("meetings.body_name")
   rescue ActiveRecord::RecordNotFound
     redirect_to topics_path, alert: "Topic not found."
   end

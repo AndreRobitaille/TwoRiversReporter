@@ -201,6 +201,7 @@ module PromptTemplateData
             {
               "description": "Text of the motion (e.g. 'Motion to approve the minutes')",
               "outcome": "passed" | "failed" | "tabled" | "other",
+              "agenda_item_ref": "Item number and/or title from the agenda list below, or null",
               "votes": [
                 { "member": "Member Name", "value": "yes" | "no" | "abstain" | "absent" | "recused" }
               ]
@@ -209,11 +210,22 @@ module PromptTemplateData
         }
         </extraction_spec>
 
+        <agenda_item_ref_rules>
+        - Match each motion to the agenda item it belongs to using the agenda items list below.
+        - Use the item number and/or title as written in the list (e.g. "7a: Lead Service Line Replacement").
+        - For consent agenda batch motions (one motion covering multiple routine items), set agenda_item_ref to null.
+        - For procedural motions (adjournment, minutes approval, recess), set agenda_item_ref to null.
+        - When a motion clearly relates to one agenda item, reference that item.
+        </agenda_item_ref_rules>
+
         <ambiguity_handling>
         - For "roll call" votes, list every member.
         - For "voice votes", leave "votes" empty unless exceptions are named.
         - Infer "yes" from "Present" members on unanimous votes ONLY if confident.
         </ambiguity_handling>
+
+        Agenda Items:
+        {{agenda_items}}
 
         Text:
         {{text}}

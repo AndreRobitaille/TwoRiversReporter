@@ -33,10 +33,10 @@ module Ai
       render_meeting_summary(text, plan_json, "minutes")
     end
 
-    def extract_votes(text, source: nil)
+    def extract_votes(text, agenda_items_text: "", source: nil)
       template = PromptTemplate.find_by!(key: "extract_votes")
       system_role = template.system_role
-      placeholders = { text: text.truncate(50_000) }
+      placeholders = { text: text.truncate(50_000), agenda_items: agenda_items_text }
       prompt = template.interpolate(**placeholders)
       model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
 

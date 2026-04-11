@@ -247,44 +247,54 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to topics_path
   end
 
-  test "show always renders all six sections" do
+  test "show hides sections with no data instead of showing empty state" do
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-watch", 1
-    assert_select ".topic-upcoming", 1
-    assert_select ".topic-story", 1
-    assert_select ".topic-decisions", 1
-    assert_select ".topic-record", 1
+    # What to Watch: hidden when no briefing
+    assert_select ".topic-article-section--watch", 0
+    # Key Decisions: hidden when no motions
+    assert_select ".topic-article-section--decisions", 0
+    # Story: hidden when no briefing
+    assert_select ".topic-article-section--story", 0
+    # Record: always shown, with empty state when no generation_data
+    assert_select ".topic-article-section--record .section-empty", text: /No meeting activity/
   end
 
-  test "show displays empty state for what to watch when no briefing" do
+  test "show hides what to watch when no briefing" do
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-watch .section-empty", text: /No analysis available/
+    assert_select ".topic-article-section--watch", 0
   end
 
-  test "show displays empty state for coming up when no future meetings" do
+  test "show shows typical committee fallback when no upcoming meetings" do
+    # Create a past appearance so typical_committee is derived
+    TopicAppearance.create!(
+      topic: @active_topic, meeting: @meeting,
+      appeared_at: @meeting.starts_at,
+      evidence_type: "agenda_item"
+    )
+
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-upcoming .section-empty", text: /No upcoming meetings/
+    assert_select ".topic-upcoming-fallback", text: /typically discussed at/i
   end
 
-  test "show displays empty state for story when no briefing" do
+  test "show hides story when no briefing" do
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-story .section-empty", text: /hasn't been fully analyzed/
+    assert_select ".topic-article-section--story", 0
   end
 
-  test "show displays empty state for key decisions when no motions" do
+  test "show hides key decisions when no motions" do
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-decisions .section-empty", text: /No votes or motions/
+    assert_select ".topic-article-section--decisions", 0
   end
 
   test "show displays empty state for record when no generation data" do
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-record .section-empty", text: /No meeting activity/
+    assert_select ".topic-article-section--record .section-empty", text: /No meeting activity/
   end
 
   test "show displays what to watch from generation_data" do
@@ -307,7 +317,7 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
 
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-watch-callout", text: /Watch for implementation timeline/
+    assert_select ".topic-watch-quote", text: /Watch for implementation timeline/
   end
 
   test "show displays story from generation_data current_state" do
@@ -331,8 +341,8 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
 
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-story .briefing-editorial-content", text: /voted 5-2/
-    assert_select ".topic-concerns-callout li", text: /Rushed through/
+    assert_select ".topic-story-body", text: /voted 5-2/
+    assert_select ".topic-aside li", text: /Rushed through/
   end
 
   test "show displays story from editorial_content fallback when no generation_data" do
@@ -345,7 +355,7 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
 
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-story .briefing-editorial-content", text: /Fallback editorial/
+    assert_select ".topic-story-body", text: /Fallback editorial/
   end
 
   test "show renders timeline from generation_data factual_record" do
@@ -374,7 +384,76 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".topic-timeline-entry", 2
     assert_select ".topic-timeline-date", text: /Sep 2, 2025/
     assert_select ".topic-timeline-content", text: /Council approved plan/
-    assert_select ".topic-timeline-meeting", text: /City Council, Sep 2/
+    # Meeting name is cleaned for display (trailing date suffix stripped)
+    assert_select ".topic-timeline-meeting", text: /\ACity Council\z/
+  end
+
+  test "show enriches record entry with meeting summary content and links to meeting" do
+    # Past meeting that the topic appeared at, with a MeetingSummary whose
+    # item_details contain substantive content for this topic's agenda item.
+    past_meeting = Meeting.create!(
+      body_name: "Public Utilities Committee",
+      meeting_type: "Regular",
+      starts_at: Time.zone.parse("2025-09-02 18:00"),
+      status: "parsed",
+      detail_page_url: "http://example.com/pu/2025-09-02"
+    )
+    agenda_item = AgendaItem.create!(meeting: past_meeting, title: "Lead Service Line Replacement")
+    AgendaItemTopic.create!(topic: @active_topic, agenda_item: agenda_item)
+    TopicAppearance.create!(
+      topic: @active_topic, meeting: past_meeting, agenda_item: agenda_item,
+      appeared_at: past_meeting.starts_at, evidence_type: "agenda_item"
+    )
+    MeetingSummary.create!(
+      meeting: past_meeting,
+      summary_type: "minutes_recap",
+      content: nil,
+      generation_data: {
+        "item_details" => [
+          {
+            "agenda_item_title" => "Lead Service Line Replacement",
+            "summary" => "Council approved a $2.4M contract with Northern Pipe for 2026 LSL replacement work."
+          }
+        ]
+      }
+    )
+
+    # Briefing with a generic "appeared on the agenda" factual_record entry
+    # whose "meeting" label has the AI's typical date suffix.
+    TopicBriefing.create!(
+      topic: @active_topic,
+      headline: "LSL update",
+      generation_data: {
+        "headline" => "LSL update",
+        "editorial_analysis" => {
+          "what_to_watch" => "Watch for contract execution.",
+          "current_state" => "Contract approved.",
+          "process_concerns" => [],
+          "pattern_observations" => []
+        },
+        "factual_record" => [
+          {
+            "date" => "2025-09-02",
+            "event" => "Topic appeared on the agenda.",
+            "meeting" => "Public Utilities Committee, Sep 2 2025"
+          }
+        ],
+        "resident_impact" => { "score" => 4, "rationale" => "Water safety." }
+      },
+      generation_tier: "full"
+    )
+
+    get topic_url(@active_topic)
+    assert_response :success
+
+    # Event text is enriched: "appeared on the agenda" replaced with the
+    # matched item_details summary.
+    assert_select ".topic-timeline-event", text: /Northern Pipe/
+    refute_match(/appeared on the agenda/i, css_select(".topic-timeline-event").text)
+
+    # Meeting name is rendered as a link to the canonical meeting page,
+    # with the cleaned body_name (no date suffix from the AI's raw label).
+    assert_select "a.topic-timeline-meeting-link[href=?]", meeting_path(past_meeting), text: /\APublic Utilities Committee\z/
   end
 
   test "show loads upcoming appearances for future meetings" do
@@ -396,7 +475,7 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
 
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-upcoming a.card-link", minimum: 1
+    assert_select "a.topic-upcoming-link", minimum: 1
   end
 
   test "show loads decisions with motions and votes" do
@@ -411,10 +490,10 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
 
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".topic-decisions .topic-decision-item", minimum: 1
+    assert_select ".topic-article-section--decisions .topic-decision", minimum: 1
   end
 
-  test "show key decisions displays vote label" do
+  test "show key decisions displays vote grid" do
     item_with_motion = AgendaItem.create!(meeting: @meeting, title: "Vote Item")
     AgendaItemTopic.create!(topic: @active_topic, agenda_item: item_with_motion)
     motion = Motion.create!(
@@ -426,7 +505,7 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
 
     get topic_url(@active_topic)
     assert_response :success
-    assert_select ".votes-label", text: "How they voted"
+    assert_select ".votes-grid .vote-card", minimum: 1
   end
 
   test "show briefing freshness badge displays New for recent briefings" do
@@ -444,7 +523,7 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
   test "show has back to topics button" do
     get topic_url(@active_topic)
     assert_response :success
-    assert_select "a.btn", text: /Back to Topics/
+    assert_select "a.btn", text: /All topics/
   end
 
   test "show displays lifecycle badge" do

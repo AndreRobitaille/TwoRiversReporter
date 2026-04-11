@@ -94,26 +94,90 @@ module TopicsHelper
     date_string.to_s
   end
 
-  def render_topic_summary_content(markdown_content)
-    return "" if markdown_content.blank?
+  # Clean a meeting name for display. Strips trailing " Meeting", parenthetical
+  # status suffixes, date suffixes the AI sometimes appends, and " - NO QUORUM".
+  # Safe to call with either canonical Meeting.body_name values or raw AI text.
+  def clean_meeting_display(name)
+    return "" if name.blank?
+    name.to_s
+        .gsub(/\s*\([^)]*\)\s*\z/, "")    # strip trailing "(CANCELED - NO QUORUM)"
+        .gsub(/,\s*[A-Z][a-z]{2,}\s+\d{1,2}(?:,?\s+\d{4})?\z/, "")  # strip ", Nov 20 2025"
+        .sub(/\s+Meeting\z/, "")          # strip trailing " Meeting"
+        .sub(/\s+-\s+NO QUORUM.*\z/i, "") # strip trailing " - NO QUORUM"
+        .strip
+  end
 
-    lines = markdown_content.lines.map(&:chomp)
+  def enrich_record_entry(entry, record_meetings)
+    candidates = record_meetings[entry["date"]] || []
+    target_norm = normalize_meeting_name(entry["meeting"])
+    appearance = candidates.find { |a| normalize_meeting_name(a.meeting.body_name) == target_norm }
+    meeting = appearance&.meeting
 
-    # Remove heading lines and internal section headers
-    filtered = lines.reject do |line|
-      line.match?(/\A##\s/) ||
-        line.match?(/\A\*\*(Factual Record|Institutional Framing|Civic Sentiment|Continuity|Resident-reported)/i) ||
-        line.strip.empty?
+    event_text = entry["event"]
+    if event_text&.match?(/appeared on the agenda/i) && appearance
+      enriched = extract_meeting_item_summary(meeting, appearance.agenda_item)
+      event_text = enriched if enriched.present?
     end
 
-    # Convert markdown bullets to HTML list items
-    items = filtered.map do |line|
-      text = line.sub(/\A\s*[-*]\s*/, "").strip
-      next if text.empty?
-      content_tag(:li, text)
-    end.compact
+    # Prefer the canonical Meeting body_name (cleaned) when we have a match,
+    # so display is consistent regardless of how the AI labeled the entry.
+    # Falls back to cleaning the AI's text when there's no matched Meeting.
+    display_name = if meeting
+      clean_meeting_display(meeting.body_name)
+    else
+      clean_meeting_display(entry["meeting"])
+    end
 
-    return "" if items.empty?
-    content_tag(:ul, items.join.html_safe, class: "topic-summary-list")
+    { event: event_text, meeting_name: display_name, meeting: meeting }
+  end
+
+  private
+
+  # Normalize meeting name strings for MATCHING between AI-generated
+  # factual_record "meeting" labels and real Meeting body_name values.
+  # Returns a word-set representation — use clean_meeting_display for
+  # human-readable output.
+  def normalize_meeting_name(name)
+    name.to_s.downcase
+        .gsub(/\([^)]*\)/, "")            # strip parentheticals: (CANCELED...)
+        .gsub(/,.*\z/, "")                # strip trailing ", Nov 20 2025"
+        .strip
+        .sub(/\s+-\s+no quorum.*\z/, "")  # strip trailing " - NO QUORUM"
+        .sub(/\s+meeting\z/, "")          # strip trailing " meeting"
+        .gsub(/[^a-z0-9]+/, " ")
+        .split.sort.join(" ")
+  end
+
+  # Attempts to replace a generic "appeared on the agenda" Record entry with
+  # real content, in this order:
+  #   1. Matching item_details.summary from the meeting's MeetingSummary
+  #   2. The agenda_item title as a cleaner fallback
+  #   3. nil — let the caller keep the original event text
+  #
+  # TopicAppearance.agenda_item is optional (some appearances are linked to
+  # meetings without a specific agenda item). When agenda_item is nil we can't
+  # identify which item summary to pull, so we fall through the summary loop
+  # and return nil at the end. The caller's `if enriched.present?` guard then
+  # preserves the original event text instead of replacing it with nothing.
+  def extract_meeting_item_summary(meeting, agenda_item)
+    return agenda_item&.title unless meeting
+
+    meeting.meeting_summaries.each do |summary|
+      items = summary.generation_data&.dig("item_details")
+      next unless items.is_a?(Array)
+
+      target_title = agenda_item&.title&.downcase
+      next unless target_title
+
+      matched_item = items.find { |item|
+        item_title = item["agenda_item_title"]&.downcase
+        next false unless item_title
+        item_title.include?(target_title) || target_title.include?(item_title)
+      }
+
+      return matched_item["summary"].truncate(200) if matched_item&.dig("summary").present?
+    end
+
+    agenda_item&.title
   end
 end
