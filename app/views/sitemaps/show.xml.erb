@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc><%= root_url %></loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc><%= meetings_url %></loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc><%= topics_url %></loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc><%= members_url %></loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+<% @topics.each do |topic| %>
+  <url>
+    <loc><%= topic_url(topic) %></loc>
+    <lastmod><%= (topic.last_activity_at || topic.updated_at).iso8601 %></lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+<% end %>
+<% @meetings.each do |meeting| %>
+  <url>
+    <loc><%= meeting_url(meeting) %></loc>
+    <lastmod><%= meeting.updated_at.iso8601 %></lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+<% end %>
+<% @members.each do |member| %>
+  <url>
+    <loc><%= member_url(member) %></loc>
+    <lastmod><%= member.updated_at.iso8601 %></lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+<% end %>
+</urlset>

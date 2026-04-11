@@ -1,9 +1,14 @@
 Rails.application.routes.draw do
   root "home#index"
+  # NOTE: when adding a new public resource, update SitemapsController so the
+  # new pages appear in /sitemap.xml. Internal nav links handle most crawler
+  # discovery, but the sitemap is the explicit signal.
   resources :meetings, only: %i[index show]
   resources :members, only: %i[index show]
   get "topics/explore", to: "topics#explore", as: :topics_explore
   resources :topics, only: %i[index show]
+
+  get "sitemap.xml", to: "sitemaps#show", as: :sitemap, defaults: { format: :xml }
 
   get "admin" => "admin/dashboard#show", as: :admin_root
 
