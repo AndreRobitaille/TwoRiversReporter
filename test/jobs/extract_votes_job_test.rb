@@ -174,6 +174,45 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     end
   end
 
+  test "prefers specific sub-item over section header for hierarchical agendas" do
+    # Simulates the real production case: a council work session agenda with a
+    # "7. ACTION ITEMS" section header and a sub-item "A. 26-045 Harbor Resolution"
+    # under it. AI may return a multi-line ref with both the parent and the child.
+    # The resolver should pick the specific sub-item, not the section header.
+    section_header = AgendaItem.create!(
+      meeting: @meeting, number: "7.", title: "ACTION ITEMS", order_index: 10
+    )
+    sub_item = AgendaItem.create!(
+      meeting: @meeting, number: "A.",
+      title: "26-045 Resolution Adopting Three-Year Harbor Development Statement of Intentions for 2027-2029",
+      order_index: 11
+    )
+
+    ai_response = {
+      "motions" => [ {
+        "description" => "Motion to waive reading and adopt Resolution 26-045",
+        "outcome" => "passed",
+        "agenda_item_ref" => "7.: ACTION ITEMS\nA.: 26-045 Resolution Adopting Three-Year Harbor Development Statement of Intentions for 2027-2029",
+        "votes" => []
+      } ]
+    }.to_json
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_votes, ai_response do |text, **kwargs|
+      true
+    end
+
+    Ai::OpenAiService.stub :new, mock_ai do
+      ExtractVotesJob.perform_now(@meeting.id)
+    end
+
+    motion = @meeting.motions.reload.first
+    assert_equal sub_item, motion.agenda_item,
+                 "Expected resolver to pick specific sub-item, not the ACTION ITEMS section header"
+    refute_equal section_header, motion.agenda_item
+    mock_ai.verify
+  end
+
   test "is idempotent — clears and rebuilds motions" do
     Motion.create!(meeting: @meeting, description: "Old motion", outcome: "passed")
 

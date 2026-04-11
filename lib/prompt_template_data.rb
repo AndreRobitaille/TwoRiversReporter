@@ -211,11 +211,15 @@ module PromptTemplateData
         </extraction_spec>
 
         <agenda_item_ref_rules>
-        - Match each motion to the agenda item it belongs to using the agenda items list below.
-        - Use the item number and/or title as written in the list (e.g. "7a: Lead Service Line Replacement").
+        - Match each motion to the MOST SPECIFIC agenda item it belongs to using the list below.
+        - Return ONE line from the agenda list, verbatim. Include the number and the title from that single line.
+        - Agendas are often hierarchical: numbered section headers like "6: DISCUSSION ITEMS" or "7: ACTION ITEMS" contain lettered sub-items (A, B) that are the actual substantive items.
+          - When a motion acts on a lettered sub-item, reference THE SUB-ITEM (e.g., "A: 26-045 Harbor Resolution"), NOT the parent section header.
+          - Never return two lines combined. Never include both the section header and the sub-item in one ref.
+        - Ignore informational/non-item lines at the top or bottom of the list (disability notices, phone numbers, legal boilerplate). They are not agenda items.
         - For consent agenda batch motions (one motion covering multiple routine items), set agenda_item_ref to null.
-        - For procedural motions (adjournment, minutes approval, recess), set agenda_item_ref to null.
-        - When a motion clearly relates to one agenda item, reference that item.
+        - For procedural motions (approving minutes, recess, entering closed session, reconvening, adjournment), set agenda_item_ref to null.
+        - For roll-call votes that aren't tied to a specific substantive item (e.g., voting to enter closed session), set agenda_item_ref to null.
         </agenda_item_ref_rules>
 
         <ambiguity_handling>

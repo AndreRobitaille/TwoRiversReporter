@@ -75,18 +75,19 @@ class ExtractVotesJob < ApplicationJob
     }.join("\n")
   end
 
+  # Resolve the AI's agenda_item_ref to a real AgendaItem record.
+  #
+  # Strategy: fuzzy title match FIRST. Number match is only a fallback for
+  # bare refs like "7a" where there's no title text. This ordering matters —
+  # when the AI returns a multi-line ref that includes a parent section
+  # header plus a sub-item ("7.: ACTION ITEMS\nA.: 26-045 Resolution..."),
+  # number-first matching extracts "7." and binds to the section header
+  # (2-word title) instead of the specific sub-item (14-word title).
+  # Fuzzy-first naturally prefers the content-rich specific match.
   def resolve_agenda_item(ref, agenda_items)
     return nil if ref.blank?
 
-    # Try matching by item number first
-    number_match = ref.match(/\A(\S+?)(?:[\s:]|\z)/i)
-    if number_match
-      candidate = number_match[1]
-      by_number = agenda_items.find { |item| item.number&.downcase == candidate.downcase }
-      return by_number if by_number
-    end
-
-    # Fall back to title similarity (word overlap)
+    # Fuzzy title match (word overlap)
     ref_words = ref.downcase.gsub(/[^a-z0-9\s]/, "").split
     return nil if ref_words.empty?
 
@@ -107,6 +108,17 @@ class ExtractVotesJob < ApplicationJob
       end
     end
 
-    best_score >= 0.5 ? best_match : nil
+    return best_match if best_score >= 0.5
+
+    # Fall back to exact item-number match (handles bare refs like "7a" with
+    # no title text). Uses the first token before space or colon.
+    number_match = ref.match(/\A(\S+?)(?:[\s:]|\z)/i)
+    if number_match
+      candidate = number_match[1]
+      by_number = agenda_items.find { |item| item.number&.downcase == candidate.downcase }
+      return by_number if by_number
+    end
+
+    nil
   end
 end
