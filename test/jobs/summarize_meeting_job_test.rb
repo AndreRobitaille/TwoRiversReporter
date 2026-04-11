@@ -477,4 +477,39 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
       end
     end
   end
+
+  test "enqueues PruneHollowAppearancesJob after summarization" do
+    doc = @meeting.meeting_documents.create!(
+      document_type: "minutes_pdf",
+      source_url: "http://example.com/minutes.pdf",
+      extracted_text: "Page 1: routine content."
+    )
+
+    generation_data = {
+      "headline" => "Routine",
+      "highlights" => [],
+      "public_input" => [],
+      "item_details" => []
+    }
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
+    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |_t, _k, type| type == "minutes" end
+    mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg| arg.is_a?(Hash) end
+    mock_ai.expect :render_topic_summary, "## Summary" do |arg| arg.is_a?(String) end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+    def retrieval_stub.retrieve_topic_context(*args, **kwargs); []; end
+    def retrieval_stub.format_topic_context(*args); []; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        assert_enqueued_with(job: PruneHollowAppearancesJob, args: [ @meeting.id ]) do
+          SummarizeMeetingJob.perform_now(@meeting.id)
+        end
+      end
+    end
+  end
 end

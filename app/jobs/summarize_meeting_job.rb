@@ -12,7 +12,12 @@ class SummarizeMeetingJob < ApplicationJob
     # 2. Topic-Level Summaries
     generate_topic_summaries(meeting, ai_service, retrieval_service)
 
-    # 3. Knowledge Extraction (downstream, never blocks summarization)
+    # 3. Prune hollow topic appearances based on the new summary's
+    #    activity_level signal. Runs before knowledge extraction so
+    #    downstream jobs see the cleaned-up appearance set.
+    PruneHollowAppearancesJob.perform_later(meeting.id)
+
+    # 4. Knowledge Extraction (downstream, never blocks summarization)
     ExtractKnowledgeJob.perform_later(meeting.id)
   end
 
