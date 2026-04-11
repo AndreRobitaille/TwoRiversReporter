@@ -253,7 +253,10 @@ class PruneHollowAppearancesJobTest < ActiveJob::TestCase
 
     assert_equal 2, topic.reload.topic_appearances.count
 
-    assert_enqueued_with(job: Topics::GenerateTopicBriefingJob) do
+    assert_enqueued_with(
+      job: Topics::GenerateTopicBriefingJob,
+      args: [ { topic_id: topic.id, meeting_id: meeting_a.id } ]
+    ) do
       PruneHollowAppearancesJob.perform_now(meeting_a.id)
     end
 
@@ -290,7 +293,10 @@ class PruneHollowAppearancesJobTest < ActiveJob::TestCase
     AgendaItemTopic.create!(agenda_item: item_b, topic: topic)
     AgendaItemTopic.create!(agenda_item: item_c, topic: topic)
 
-    assert_enqueued_with(job: Topics::GenerateTopicBriefingJob) do
+    assert_enqueued_with(
+      job: Topics::GenerateTopicBriefingJob,
+      args: [ { topic_id: topic.id, meeting_id: meeting_a.id } ]
+    ) do
       PruneHollowAppearancesJob.perform_now(meeting_a.id)
     end
 

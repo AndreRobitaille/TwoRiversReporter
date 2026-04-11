@@ -54,7 +54,7 @@ class PruneHollowAppearancesJob < ApplicationJob
     affected_topic_ids.each do |topic_id|
       topic = Topic.find_by(id: topic_id)
       next unless topic
-      demote_topic(topic)
+      demote_topic(topic, meeting_id)
     end
   end
 
@@ -107,7 +107,7 @@ class PruneHollowAppearancesJob < ApplicationJob
       entry["public_hearing"].nil?
   end
 
-  def demote_topic(topic)
+  def demote_topic(topic, meeting_id)
     remaining = topic.topic_appearances.count
     new_last_activity = topic.topic_appearances.maximum(:appeared_at)
 
@@ -143,7 +143,7 @@ class PruneHollowAppearancesJob < ApplicationJob
     # homepage. The 0-remaining case skips this because there's nothing
     # to brief about.
     if remaining >= 1 && !topic.resident_impact_admin_locked?
-      Topics::GenerateTopicBriefingJob.perform_later(topic_id: topic.id)
+      Topics::GenerateTopicBriefingJob.perform_later(topic_id: topic.id, meeting_id: meeting_id)
     end
   end
 
