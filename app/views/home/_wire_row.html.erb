@@ -1,8 +1,9 @@
-<%# Compact wire row. Locals: topic %>
+<%# Compact wire row. Locals: topic, headline %>
 <%= link_to topic_path(topic), class: "wire-list-item" do %>
   <span class="list-topic"><%= topic.name %></span>
-  <% if topic.description.present? %>
-    <span class="list-desc"><%= topic.description %></span>
+  <% latest = headline.presence || topic.description %>
+  <% if latest.present? %>
+    <span class="list-desc"><%= latest %></span>
   <% end %>
   <span class="list-arrow">→</span>
 <% end %>

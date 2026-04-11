@@ -19,7 +19,7 @@ class HomeController < ApplicationController
     @wire_cards = wire_all.first(WIRE_CARD_COUNT)
     @wire_rows = wire_all.drop(WIRE_CARD_COUNT).first(WIRE_ROW_LIMIT)
     @next_up = build_next_up
-    load_headlines(@top_stories + @wire_cards)
+    load_headlines(@top_stories + @wire_cards + @wire_rows)
     load_meeting_refs(@top_stories + @wire_cards + @wire_rows)
   end
 

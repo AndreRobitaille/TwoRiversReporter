@@ -49,7 +49,7 @@
     <% if @wire_rows.any? %>
       <div class="wire-list">
         <% @wire_rows.each do |topic| %>
-          <%= render "wire_row", topic: topic %>
+          <%= render "wire_row", topic: topic, headline: @headlines&.dig(topic.id) %>
         <% end %>
       </div>
     <% end %>
