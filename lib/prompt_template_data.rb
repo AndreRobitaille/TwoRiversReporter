@@ -1002,6 +1002,23 @@ module PromptTemplateData
           matters. Include public_hearing note for items with formal public
           input (Wisconsin law three-calls). Include decision and vote tally
           where applicable. Anchor citations to page numbers.
+        - Each item_details entry must include an activity_level field with
+          one of three values:
+          - "decision" — a motion, vote, formal action, approval, adoption,
+            binding commitment, or public hearing occurred on this item.
+          - "discussion" — substantive conversation, deliberation, or public
+            input occurred, OR the item has clear forward-looking implications
+            (a commitment to follow up, a policy question still to resolve,
+            a deadline or dependency residents should track) even if no
+            formal vote took place. This is the normal category for informal
+            subcommittee work.
+          - "status_update" — routine informational report only: numbers
+            reported, operations status, "nothing new," acknowledgments with
+            no decisions and no forward-looking significance. Items a resident
+            could safely skip.
+          When in doubt, choose "discussion". Use "status_update" only when
+          there is genuinely nothing for a resident to act on, follow, or
+          care about.
         </guidelines>
 
         <procedural_filter>
@@ -1081,6 +1098,7 @@ module PromptTemplateData
               "public_hearing": "Description of public hearing input, or null",
               "decision": "Passed|Failed|Tabled|Referred|null",
               "vote": "7-0 or null",
+              "activity_level": "decision|discussion|status_update",
               "citations": ["Page X"]
             }
           ]
