@@ -181,4 +181,26 @@ class Topics::RecentItemDetailsBuilderTest < ActiveSupport::TestCase
     assert_equal "Older meeting content.", result[0][:summary]
     assert_equal "Newer meeting content.", result[1][:summary]
   end
+
+  test "handles nil meeting.starts_at by emitting nil meeting_date" do
+    @meeting.update!(starts_at: nil)
+    @meeting.meeting_summaries.create!(
+      summary_type: "minutes_recap",
+      generation_data: {
+        "item_details" => [
+          {
+            "agenda_item_title" => "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED",
+            "summary" => "Something real.",
+            "activity_level" => "discussion"
+          }
+        ]
+      }
+    )
+
+    result = Topics::RecentItemDetailsBuilder.new(@topic, [ @meeting ]).build
+
+    assert_equal 1, result.length
+    assert_nil result.first[:meeting_date],
+      "safe-nav chain should emit nil meeting_date when starts_at is nil"
+  end
 end
