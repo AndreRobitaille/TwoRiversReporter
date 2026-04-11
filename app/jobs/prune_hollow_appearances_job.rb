@@ -51,6 +51,23 @@ class PruneHollowAppearancesJob < ApplicationJob
       end
     end
 
+    # After destroying hollow appearances, any TopicSummary for a
+    # (topic, meeting) pair where no appearance remains is stale and
+    # must be destroyed. Otherwise GenerateTopicBriefingJob keeps
+    # feeding it as prior_meeting_analyses and the briefing regenerates
+    # "appeared on the agenda" factual_record entries from pruned data.
+    # If a topic has multiple appearances on the same meeting via
+    # different agenda items and only some were pruned, the TopicSummary
+    # must be preserved — use an existence check per (topic, meeting).
+    affected_topic_ids.each do |topic_id|
+      still_has_appearance = TopicAppearance
+        .where(topic_id: topic_id, meeting_id: meeting.id)
+        .exists?
+      unless still_has_appearance
+        TopicSummary.where(topic_id: topic_id, meeting_id: meeting.id).destroy_all
+      end
+    end
+
     affected_topic_ids.each do |topic_id|
       topic = Topic.find_by(id: topic_id)
       next unless topic

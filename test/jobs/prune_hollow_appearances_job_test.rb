@@ -373,4 +373,90 @@ class PruneHollowAppearancesJobTest < ActiveJob::TestCase
     assert_equal 1, topic.topic_appearances.count
     assert_equal "dormant", topic.lifecycle_status
   end
+
+  test "destroys orphaned TopicSummary when all of a topic's appearances on a meeting are pruned" do
+    meeting, item = create_meeting_with_item(title: "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED")
+    create_summary(meeting, item_details: [
+      {
+        "agenda_item_title" => "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED",
+        "summary" => "Leaf totals; nothing substantive.",
+        "activity_level" => "status_update",
+        "vote" => nil, "decision" => nil, "public_hearing" => nil,
+        "citations" => []
+      }
+    ])
+    topic = link_topic(item, topic_name: "garbage and recycling service changes")
+
+    # Per-meeting topic digest created by SummarizeMeetingJob. When the
+    # appearance is pruned this row is stale and must go with it.
+    TopicSummary.create!(
+      topic: topic,
+      meeting: meeting,
+      summary_type: "topic_digest",
+      content: "stale digest",
+      generation_data: { "factual_record" => [ { "statement" => "agenda included this topic" } ] }
+    )
+
+    assert_equal 1, TopicSummary.where(topic: topic, meeting: meeting).count
+
+    PruneHollowAppearancesJob.perform_now(meeting.id)
+
+    assert_equal 0, TopicAppearance.where(topic_id: topic.id, meeting_id: meeting.id).count
+    assert_equal 0, TopicSummary.where(topic: topic, meeting: meeting).count,
+      "stale TopicSummary should be destroyed alongside its pruned appearances"
+  end
+
+  test "preserves TopicSummary when topic still has another appearance on the same meeting" do
+    meeting = Meeting.create!(
+      body_name: "Public Utilities Committee",
+      starts_at: 1.day.ago,
+      detail_page_url: "http://example.com/m#{SecureRandom.hex(4)}"
+    )
+    hollow_item = meeting.agenda_items.create!(
+      title: "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED",
+      order_index: 1
+    )
+    substantive_item = meeting.agenda_items.create!(
+      title: "11. Garbage & Recycling Discussion",
+      order_index: 2
+    )
+
+    create_summary(meeting, item_details: [
+      {
+        "agenda_item_title" => "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED",
+        "summary" => "Routine.",
+        "activity_level" => "status_update",
+        "vote" => nil, "decision" => nil, "public_hearing" => nil,
+        "citations" => []
+      },
+      {
+        "agenda_item_title" => "11. Garbage & Recycling Discussion",
+        "summary" => "Committee reviewed proposed changes and deferred a vote.",
+        "activity_level" => "discussion",
+        "vote" => nil, "decision" => nil, "public_hearing" => nil,
+        "citations" => []
+      }
+    ])
+
+    topic = Topic.create!(name: "garbage and recycling service changes", status: "approved")
+    AgendaItemTopic.create!(agenda_item: hollow_item, topic: topic)
+    AgendaItemTopic.create!(agenda_item: substantive_item, topic: topic)
+
+    TopicSummary.create!(
+      topic: topic,
+      meeting: meeting,
+      summary_type: "topic_digest",
+      content: "live digest",
+      generation_data: { "factual_record" => [ { "statement" => "committee deferred" } ] }
+    )
+
+    assert_equal 2, TopicAppearance.where(topic_id: topic.id, meeting_id: meeting.id).count
+
+    PruneHollowAppearancesJob.perform_now(meeting.id)
+
+    assert_equal 1, TopicAppearance.where(topic_id: topic.id, meeting_id: meeting.id).count,
+      "hollow appearance should be pruned"
+    assert_equal 1, TopicSummary.where(topic: topic, meeting: meeting).count,
+      "TopicSummary must survive because substantive appearance still exists"
+  end
 end
