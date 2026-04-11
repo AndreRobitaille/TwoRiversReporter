@@ -102,7 +102,7 @@ YouTube Channel → DiscoverTranscriptsJob (match videos to recent council meeti
 - `Scrapers::` — Meeting discovery, page/agenda parsing, transcript discovery (`DiscoverTranscriptsJob`)
 - `Documents::` — Download, PDF analysis, OCR, transcript download (`DownloadTranscriptJob`)
 - `Topics::` — Continuity updates, backfills, description generation (`GenerateDescriptionJob`, `RefreshDescriptionsJob`)
-- Top-level: `ExtractTopicsJob` (runs on agenda parse AND minutes arrival; prefers minutes text over packet), `ExtractVotesJob`, `ExtractCommitteeMembersJob`, `SummarizeMeetingJob`, `IngestKnowledgeSourceJob`
+- Top-level: `ExtractTopicsJob` (runs on agenda parse AND minutes arrival; prefers minutes text over packet), `ExtractVotesJob`, `ExtractCommitteeMembersJob`, `SummarizeMeetingJob`, `PruneHollowAppearancesJob` (detaches hollow standing-slot topic appearances using the `activity_level` field in `item_details`; enqueued automatically at the end of `SummarizeMeetingJob`), `IngestKnowledgeSourceJob`
 
 ### Routes
 
