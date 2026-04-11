@@ -1891,26 +1891,10 @@ th.sortable-header:hover {
   font-size: clamp(1.25rem, 2.4vw, 1.55rem);
   line-height: 1.45;
   color: var(--color-terra-cotta);
-  margin: 1.4rem 0 0;          /* breathing room above for the quote glyph */
+  margin: 0;
   padding: 0 0 0 1.2rem;
   border-left: 3px solid var(--color-terra-cotta);
   max-width: 32em;
-  position: relative;
-}
-
-.topic-watch-quote::before {
-  content: "“";
-  position: absolute;
-  left: 0.2rem;
-  top: -0.9em;
-  font-family: var(--font-display);
-  font-size: 4rem;
-  font-weight: 900;
-  font-style: normal;
-  line-height: 1;
-  color: var(--color-terra-cotta);
-  opacity: 0.22;
-  pointer-events: none;
 }
 
 /* ---- Coming Up (structured list, no cards) ---- */
@@ -2024,12 +2008,11 @@ th.sortable-header:hover {
 
 .topic-upcoming-fallback {
   font-family: var(--font-body);
-  font-size: 1rem;
+  font-size: 1.05rem;
   line-height: 1.6;
   color: var(--color-text-secondary);
   font-style: italic;
   margin: 0;
-  max-width: 38em;
 }
 
 .topic-upcoming-fallback strong {
@@ -2056,28 +2039,29 @@ th.sortable-header:hover {
   margin-bottom: 0;
 }
 
-/* Drop cap — use initial-letter where supported (Safari/Chrome 110+/Firefox 115+),
-   fall back to float + tuned margins elsewhere. */
+/* Drop cap — 2-line sunken cap. 2 lines (instead of 3) avoids the
+   "T drop cap problem" where the narrow stem leaves dead space alongside
+   body lines. Uses initial-letter where supported, float fallback elsewhere. */
 .topic-story-body p:first-child::first-letter {
   font-family: var(--font-display);
   font-weight: 900;
   color: var(--color-terra-cotta);
   text-transform: uppercase;
-  padding-right: 0.08em;
+  padding-right: 0.05em;
 
-  /* Fallback (float) */
-  font-size: 4.6rem;
+  /* Fallback (float) — tuned for 2 lines at body line-height 1.72 */
+  font-size: 3.2rem;
   line-height: 0.82;
   float: left;
-  margin: 0.3rem 0.08em -0.15rem 0;
+  margin: 0.38rem 0.1em -0.05rem 0;
 }
 
-@supports (initial-letter: 3) or (-webkit-initial-letter: 3) {
+@supports (initial-letter: 2) or (-webkit-initial-letter: 2) {
   .topic-story-body p:first-child::first-letter {
-    -webkit-initial-letter: 3 2;
-    initial-letter: 3 2;
+    -webkit-initial-letter: 2 1;
+    initial-letter: 2 1;
     float: none;
-    margin: 0 0.08em 0 0;
+    margin: 0 0.1em 0 0;
     line-height: normal;
     font-size: inherit;
   }
