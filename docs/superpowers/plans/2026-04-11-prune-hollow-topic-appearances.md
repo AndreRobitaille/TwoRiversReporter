@@ -831,434 +831,25 @@ EOF
 
 ---
 
-## Task 5: Backfill Rake Task
+## Task 5: Fix Demotion Bug in `PruneHollowAppearancesJob`
+
+**Status:** DONE — implemented and committed as part of the backfill task revert.
 
 **Files:**
-- Modify: `lib/tasks/topics.rake` (append `prune_hollow_appearances` task)
-- Create: `test/lib/tasks/topics_prune_hollow_appearances_test.rb`
+- Modify: `app/jobs/prune_hollow_appearances_job.rb`
+- Modify: `test/jobs/prune_hollow_appearances_job_test.rb`
 
-The backfill uses a rule-based heuristic on existing `item_details` structure because old summaries don't have `activity_level`. It targets standing-slot appearances (by title pattern or repeated-title detection) and confirms hollowness using null structured fields plus prose-length and motion-keyword checks.
+The original `demote_topic` method had two correctness gaps discovered during the dry-run review of the now-reverted backfill rake task:
 
-- [ ] **Step 1: Write the failing test**
+1. **`last_activity_at` was never recomputed after pruning.** `HomeController` filters topics by `last_activity_at > 30.days.ago` (not by `lifecycle_status`), so a topic with pruned appearances still showed on the homepage until 30 days after the (now-deleted) most-recent appearance aged out naturally.
 
-Create `test/lib/tasks/topics_prune_hollow_appearances_test.rb`:
+2. **The 1-remaining case did not enqueue `GenerateTopicBriefingJob`.** Without a re-rate, a topic's `resident_impact_score` stayed at its pre-prune value (e.g., 4 for topic 513), and the homepage continued surfacing it as a Top Story.
 
-```ruby
-require "test_helper"
-require "rake"
+**Fix applied:**
 
-class TopicsPruneHollowAppearancesRakeTest < ActiveSupport::TestCase
-  setup do
-    Rails.application.load_tasks if Rake::Task.tasks.empty?
-    @task = Rake::Task["topics:prune_hollow_appearances"]
-    @task.reenable
-    ENV.delete("DRY_RUN")
-    ENV["CONFIRM"] = "1"  # default to live mode for tests that need to assert side effects
-  end
-
-  teardown do
-    ENV.delete("CONFIRM")
-    ENV.delete("DRY_RUN")
-  end
-
-  def create_meeting_with_item(title:)
-    meeting = Meeting.create!(
-      body_name: "Public Utilities Committee",
-      starts_at: rand(1..200).days.ago,
-      detail_page_url: "http://example.com/m#{SecureRandom.hex(4)}"
-    )
-    item = meeting.agenda_items.create!(title: title, order_index: 1)
-    [meeting, item]
-  end
-
-  def create_old_format_summary(meeting, entry_title:, summary_text: "Routine status update with no decisions.")
-    meeting.meeting_summaries.create!(
-      summary_type: "minutes_recap",
-      generation_data: {
-        "item_details" => [
-          {
-            "agenda_item_title" => entry_title,
-            "summary" => summary_text,
-            "vote" => nil,
-            "decision" => nil,
-            "public_hearing" => nil,
-            "citations" => []
-          }
-        ]
-      }
-    )
-  end
-
-  test "prunes appearances on standing-slot title matches for old-format summaries" do
-    topic = Topic.create!(name: "garbage and recycling service changes", status: "approved", lifecycle_status: "active")
-
-    3.times do
-      meeting, item = create_meeting_with_item(title: "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED")
-      create_old_format_summary(meeting, entry_title: "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED")
-      AgendaItemTopic.create!(agenda_item: item, topic: topic)
-    end
-
-    assert_equal 3, topic.reload.topic_appearances.count
-
-    @task.invoke
-
-    assert_equal 0, topic.reload.topic_appearances.count
-    assert_equal "blocked", topic.status
-    assert_equal "dormant", topic.lifecycle_status
-  end
-
-  test "preserves standing-slot appearance when a motion is linked" do
-    topic = Topic.create!(name: "real garbage decision", status: "approved", lifecycle_status: "active")
-
-    meeting, item = create_meeting_with_item(title: "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED")
-    create_old_format_summary(meeting, entry_title: "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED",
-                              summary_text: "Committee voted to adopt a new fee schedule. Motion carried 4-0.")
-    AgendaItemTopic.create!(agenda_item: item, topic: topic)
-    Motion.create!(meeting: meeting, agenda_item: item, motion_text: "Approve fee schedule", outcome: "passed")
-
-    @task.invoke
-
-    assert_equal 1, topic.reload.topic_appearances.count
-  end
-
-  test "preserves appearance when summary prose contains action verbs (no Motion row)" do
-    topic = Topic.create!(name: "action verb topic", status: "approved", lifecycle_status: "active")
-
-    # Standing-slot title matches, no Motion row exists, but the summary
-    # text contains "voted" — the expanded motion-keyword check should
-    # rescue it from pruning. This guards against the backfill
-    # overcorrecting on real decisions that weren't captured as Motion rows.
-    3.times do
-      meeting, item = create_meeting_with_item(title: "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED")
-      create_old_format_summary(meeting, entry_title: "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED",
-                                summary_text: "Committee voted 5-0 to raise residential rates.")
-      AgendaItemTopic.create!(agenda_item: item, topic: topic)
-    end
-
-    @task.invoke
-
-    assert_equal 3, topic.reload.topic_appearances.count
-  end
-
-  test "preserves non-standing-slot appearances" do
-    topic = Topic.create!(name: "specific rezoning", status: "approved", lifecycle_status: "active")
-
-    meeting, item = create_meeting_with_item(title: "5. REZONING OF 1234 MAIN STREET")
-    create_old_format_summary(meeting, entry_title: "5. REZONING OF 1234 MAIN STREET")
-    AgendaItemTopic.create!(agenda_item: item, topic: topic)
-
-    @task.invoke
-
-    assert_equal 1, topic.reload.topic_appearances.count
-  end
-
-  test "DRY_RUN mode does not modify the database" do
-    topic = Topic.create!(name: "dry run topic", status: "approved", lifecycle_status: "active")
-
-    3.times do
-      meeting, item = create_meeting_with_item(title: "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED")
-      create_old_format_summary(meeting, entry_title: "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED")
-      AgendaItemTopic.create!(agenda_item: item, topic: topic)
-    end
-
-    ENV.delete("CONFIRM")
-    ENV["DRY_RUN"] = "1"
-    @task.invoke
-
-    assert_equal 3, topic.reload.topic_appearances.count
-    assert_equal "active", topic.lifecycle_status
-  end
-
-  test "refuses to run without DRY_RUN or CONFIRM" do
-    ENV.delete("CONFIRM")
-    ENV.delete("DRY_RUN")
-
-    assert_raises(SystemExit) do
-      @task.invoke
-    end
-  end
-
-  test "auto-detects repeated titles as standing slots without explicit pattern match" do
-    topic = Topic.create!(name: "repeated title topic", status: "approved", lifecycle_status: "active")
-
-    # Title doesn't match the explicit standing-slot pattern list, but it
-    # repeats 3+ times across the topic's appearances. Auto-detection
-    # should kick in.
-    3.times do
-      meeting, item = create_meeting_with_item(title: "PARKING LOT MAINTENANCE REPORT")
-      create_old_format_summary(meeting, entry_title: "PARKING LOT MAINTENANCE REPORT")
-      AgendaItemTopic.create!(agenda_item: item, topic: topic)
-    end
-
-    @task.invoke
-
-    assert_equal 0, topic.reload.topic_appearances.count
-  end
-end
-```
-
-- [ ] **Step 2: Run the test to verify it fails**
-
-```bash
-bin/rails test test/lib/tasks/topics_prune_hollow_appearances_test.rb
-```
-
-Expected: FAIL — either "Don't know how to build task 'topics:prune_hollow_appearances'" or all tests fail because the task doesn't exist.
-
-- [ ] **Step 3: Append the rake task**
-
-Open `lib/tasks/topics.rake` and add a new task at the end of the `namespace :topics do` block (just before the final `end` on line 155). Insert:
-
-```ruby
-  desc "One-time backfill: detach hollow topic appearances from standing-slot agenda items"
-  task prune_hollow_appearances: :environment do
-    dry_run = ENV["DRY_RUN"].present?
-    confirmed = ENV["CONFIRM"].present?
-
-    unless dry_run || confirmed
-      puts "Refusing to run without DRY_RUN=1 or CONFIRM=1."
-      puts "  Preview:   DRY_RUN=1 bin/rails topics:prune_hollow_appearances"
-      puts "  Execute:   CONFIRM=1 bin/rails topics:prune_hollow_appearances"
-      exit 1
-    end
-
-    standing_patterns = [
-      "updates and action",
-      "director update",
-      "director's report",
-      "directors report",
-      "administrator's report",
-      "administrators report",
-      "chief's report",
-      "chiefs report",
-      "any other items",
-      "any other matters",
-      "council communications",
-      "communications",
-      "citizens' comments",
-      "open forum"
-    ].freeze
-
-    motion_keywords = %w[
-      motion seconded carried adopted approved approve
-      ayes nays resolution ordinance
-      voted vote unanimously rejected denied defeated
-      tabled referred recommend recommended
-    ].freeze
-
-    normalize = ->(title) {
-      title.to_s
-        .gsub(/\A\s*\d+[a-z]?\.?\s*/i, "")
-        .gsub(/\s*,?\s*as needed\s*\z/i, "")
-        .gsub(/\s*,?\s*if applicable\s*\z/i, "")
-        .gsub(/\s+/, " ")
-        .downcase
-        .strip
-    }
-
-    matches_pattern = ->(title) {
-      standing_patterns.any? { |pat| title.include?(pat) }
-    }
-
-    puts "[#{dry_run ? 'DRY RUN' : 'LIVE'}] Scanning AgendaItemTopic rows for hollow appearances..."
-
-    # Pre-compute normalized-title frequency per topic for auto-detection
-    title_counts_by_topic = Hash.new { |h, k| h[k] = Hash.new(0) }
-    AgendaItemTopic.includes(:agenda_item).find_each do |ait|
-      next unless ait.agenda_item
-      norm = normalize.call(ait.agenda_item.title)
-      title_counts_by_topic[ait.topic_id][norm] += 1
-    end
-
-    # PASS 1: collect planned prunes. No destructive writes in this loop.
-    planned = []
-
-    AgendaItemTopic.includes(agenda_item: :meeting).find_each do |ait|
-      item = ait.agenda_item
-      next unless item
-
-      norm = normalize.call(item.title)
-      repeats = title_counts_by_topic[ait.topic_id][norm] >= 3
-      candidate = matches_pattern.call(norm) || repeats
-      next unless candidate
-
-      next if Motion.where(agenda_item_id: item.id).exists?
-
-      meeting = item.meeting
-      next unless meeting
-
-      summary = meeting.meeting_summaries.order(created_at: :desc).first
-      entry = nil
-      if summary&.generation_data.is_a?(Hash)
-        details = summary.generation_data["item_details"]
-        if details.is_a?(Array)
-          entry = details.find do |e|
-            next false unless e.is_a?(Hash)
-            e_title = e["agenda_item_title"]
-            e_title.is_a?(String) && normalize.call(e_title) == norm
-          end
-        end
-      end
-
-      if entry
-        next unless entry["vote"].nil? && entry["decision"].nil? && entry["public_hearing"].nil?
-
-        summary_text = entry["summary"].to_s
-        next unless summary_text.length < 600
-        lowered = summary_text.downcase
-        next if motion_keywords.any? { |kw| lowered.include?(kw) } || lowered.include?("public hearing")
-      end
-
-      planned << {
-        agenda_item_topic_id: ait.id,
-        topic_id: ait.topic_id,
-        agenda_item_id: item.id,
-        meeting_id: meeting.id,
-        title: item.title
-      }
-      puts "  PRUNE: topic=#{ait.topic_id} meeting=#{meeting.id} item=\"#{item.title}\""
-    end
-
-    # Per-topic aggregate preview — gives the operator a "what will actually
-    # happen to each topic" view before any destructive action.
-    planned_by_topic = planned.group_by { |p| p[:topic_id] }
-    puts "\n=== Per-Topic Summary ==="
-    planned_by_topic.each do |topic_id, rows|
-      topic = Topic.find_by(id: topic_id)
-      next unless topic
-      total = topic.topic_appearances.count
-      to_prune = rows.size
-      remaining = total - to_prune
-      outcome = case remaining
-                when 0 then "BLOCK"
-                when 1 then "DORMANT"
-                else "REBRIEF (#{remaining} remain)"
-                end
-      puts "  topic=#{topic_id} \"#{topic.name}\" — #{total} total, #{to_prune} prune, outcome=#{outcome}"
-    end
-    puts "Total: #{planned.size} appearances across #{planned_by_topic.size} topics."
-
-    if dry_run
-      puts "\nDRY RUN — no changes made."
-      next
-    end
-
-    # LIVE: write snapshot before any destroys, so rollback is possible.
-    snapshot_dir = Rails.root.join("tmp")
-    FileUtils.mkdir_p(snapshot_dir)
-    snapshot_path = snapshot_dir.join("hollow_prune_snapshot_#{Time.current.strftime('%Y%m%d_%H%M%S')}.json")
-    snapshot = {
-      created_at: Time.current.iso8601,
-      appearances: planned,
-      affected_topics: planned_by_topic.keys.map do |topic_id|
-        t = Topic.find_by(id: topic_id)
-        next nil unless t
-        {
-          topic_id: t.id,
-          name: t.name,
-          status_before: t.status,
-          lifecycle_status_before: t.lifecycle_status,
-          resident_impact_score_before: t.resident_impact_score
-        }
-      end.compact
-    }
-    File.write(snapshot_path, JSON.pretty_generate(snapshot))
-    puts "\nSnapshot written: #{snapshot_path}"
-    puts "  (Keep this file for rollback. To manually recreate, re-run ExtractTopicsJob for affected meetings.)"
-
-    # Execute destroys inside one transaction per AgendaItemTopic.
-    planned.each do |row|
-      ActiveRecord::Base.transaction do
-        ait = AgendaItemTopic.find_by(id: row[:agenda_item_topic_id])
-        next unless ait
-        ait.destroy!
-        TopicAppearance.where(topic_id: row[:topic_id], agenda_item_id: row[:agenda_item_id]).destroy_all
-      end
-    end
-
-    puts "\nPruned #{planned.size} appearances."
-
-    # Apply demotion rules per affected topic.
-    planned_by_topic.each_key do |topic_id|
-      topic = Topic.find_by(id: topic_id)
-      next unless topic
-
-      remaining = topic.topic_appearances.count
-      case remaining
-      when 0
-        topic.update!(status: "blocked", lifecycle_status: "dormant")
-        TopicStatusEvent.create!(
-          topic: topic,
-          lifecycle_status: "dormant",
-          occurred_at: Time.current,
-          evidence_type: "hollow_appearance_backfill",
-          notes: "Blocked — 0 appearances remaining after backfill pruning."
-        )
-        puts "  BLOCK: #{topic.name} (0 left)"
-      when 1
-        topic.update!(lifecycle_status: "dormant")
-        TopicStatusEvent.create!(
-          topic: topic,
-          lifecycle_status: "dormant",
-          occurred_at: Time.current,
-          evidence_type: "hollow_appearance_backfill",
-          notes: "Demoted — only 1 appearance remaining after backfill pruning."
-        )
-        puts "  DORMANT: #{topic.name} (1 left)"
-      else
-        unless topic.resident_impact_admin_locked?
-          Topics::GenerateTopicBriefingJob.perform_later(topic_id: topic.id)
-        end
-        puts "  REBRIEF: #{topic.name} (#{remaining} left)"
-      end
-    end
-
-    puts "\nDone."
-  end
-```
-
-- [ ] **Step 4: Run the test and verify it passes**
-
-```bash
-bin/rails test test/lib/tasks/topics_prune_hollow_appearances_test.rb
-```
-
-Expected: all 5 tests pass.
-
-- [ ] **Step 5: Sanity-check against real dev data with DRY_RUN**
-
-```bash
-DRY_RUN=1 bin/rails topics:prune_hollow_appearances
-```
-
-Expected: prints a list of PRUNE lines including several for topic 513's appearances (Solid Waste Utility rows), no database changes. Verify topic 513 is still intact:
-
-```bash
-bin/rails runner 'puts Topic.find(513).topic_appearances.count'
-```
-
-Expected: still 8 (unchanged — it was a dry run).
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add lib/tasks/topics.rake test/lib/tasks/topics_prune_hollow_appearances_test.rb
-git commit -m "$(cat <<'EOF'
-feat(tasks): topics:prune_hollow_appearances backfill rake task
-
-One-time cleanup of historical hollow topic appearances. Uses a
-rule-based heuristic on existing item_details structure (no AI
-regeneration): standing-slot title pattern OR repeated-title
-auto-detection, plus no-motion and null-structured-field confirmation
-with a prose-length + motion-keyword safety check. Supports DRY_RUN=1
-for preview. Applies the same 0/1/2+ demotion rules as the
-going-forward job and uses evidence_type "hollow_appearance_backfill"
-for audit events.
-
-Refs: docs/superpowers/specs/2026-04-11-prune-hollow-topic-appearances-design.md
-EOF
-)"
-```
+- All demotion cases now recompute `last_activity_at` from remaining `TopicAppearance` rows (`nil` when 0 remain).
+- `GenerateTopicBriefingJob` is enqueued for both 1-remaining and 2+-remaining cases, unless the topic's impact score is admin-locked within the 180-day window.
+- New test added for the admin-locked + 1-remaining path (13 total tests on the job).
 
 ---
 
@@ -1333,70 +924,17 @@ bin/rubocop
 
 Expected: no offenses. Fix any style issues in the files this branch touches.
 
-- [ ] **Step 3: Manual DRY_RUN in dev to preview the backfill**
+- [ ] **Step 3: Run the full test suite and confirm all changes pass before committing to deployment**
 
 ```bash
-DRY_RUN=1 bin/rails topics:prune_hollow_appearances 2>&1 | tee /tmp/prune_dry_run.log
+bin/rails test test/jobs/prune_hollow_appearances_job_test.rb
 ```
 
-Scan the output. Expected: the 8 topic-513 appearances and any similar standing-slot appearances show up as PRUNE lines. Nothing else (e.g., specific rezoning topics, named project topics) should be flagged.
+Expected: 13 runs, all pass. The backfill rake task has been reverted (see Task 5). The going-forward job and its tests are the only deliverable for this task set.
 
-- [ ] **Step 4: Manual spot-check of the dry-run output**
+- [ ] **Step 4: Final commit (if anything changed during the smoke check)**
 
-**Do not skip this step.** Open `/tmp/prune_dry_run.log` and pick 3 random PRUNE lines that are NOT on topic 513. For each one:
-
-1. Note the `topic=` id and `meeting=` id from the line.
-2. Open the meeting page in a browser (`http://localhost:3000/meetings/<meeting_id>`) or fetch the minutes text:
-   ```bash
-   bin/rails runner 'puts Meeting.find(MEETING_ID).meeting_documents.where(document_type: "minutes_pdf").first.extracted_text[0, 3000]'
-   ```
-3. Search for the agenda item title in the minutes. Read the text under that heading.
-4. Ask: did anything substantive actually happen on that item? If "yes" → **abort the backfill**, debug the heuristic (probably needs another keyword, or the standing-slot pattern is too aggressive). If "no" → fine.
-
-Also skim the `=== Per-Topic Summary ===` block. For each topic with outcome `BLOCK` or `DORMANT`, ask: does it make sense that this topic has no real civic life? If any BLOCK outcome surprises you, investigate before proceeding.
-
-- [ ] **Step 5: Live backfill run in dev**
-
-Only proceed if Step 4 passed cleanly.
-
-```bash
-CONFIRM=1 bin/rails topics:prune_hollow_appearances 2>&1 | tee /tmp/prune_live.log
-```
-
-The output will include a `Snapshot written: tmp/hollow_prune_snapshot_<timestamp>.json` line. Keep this file — it's the rollback artifact.
-
-- [ ] **Step 6: Verify topic 513 is gone from the homepage query**
-
-```bash
-bin/rails runner '
-t = Topic.find_by(id: 513)
-if t
-  puts "name: #{t.name}"
-  puts "status: #{t.status}"
-  puts "lifecycle: #{t.lifecycle_status}"
-  puts "appearances: #{t.topic_appearances.count}"
-  puts "impact: #{t.resident_impact_score}"
-else
-  puts "topic 513 not found"
-end
-'
-```
-
-Expected: topic 513 has 0 or 1 appearances remaining (depending on whether the July 2025 Council Communications appearance matches) and is either blocked+dormant or dormant.
-
-- [ ] **Step 7: Boot the app and visually confirm the homepage**
-
-```bash
-bin/dev
-```
-
-Open `http://localhost:3000` in a browser. Expected: "garbage and recycling service changes" no longer appears in Top Stories or The Wire. Other topics surface naturally.
-
-Stop the server with Ctrl-C when done.
-
-- [ ] **Step 8: Final commit (if anything changed during the smoke check)**
-
-Only needed if tests, cop, or smoke-check surfaced fixups. Otherwise skip.
+Only needed if tests or cop surfaced fixups. Otherwise skip.
 
 ```bash
 git status
@@ -1411,32 +949,39 @@ git commit -m "fix: smoke-check fixups for hollow appearance pruning"
 
 After merging to `master` and deploying:
 
-1. **Sync the prompt template on prod** — the app image ships with the new `lib/prompt_template_data.rb`, but the DB row is only updated by running the rake task:
+1. **Sync the prompt template on prod:**
    ```bash
    source .env && export TWO_RIVERS_REPORTER_DATABASE_PASSWORD
    bin/kamal app exec "bin/rails prompt_templates:populate"
    ```
-2. **Run backfill on prod in dry-run first:**
-   ```bash
-   bin/kamal app exec "DRY_RUN=1 bin/rails topics:prune_hollow_appearances"
-   ```
-3. **Review the prod dry-run output** — per-topic summary and at least 3 random non-513 PRUNE lines spot-checked against the minutes via `bin/kamal dbc` or the admin UI. Do NOT proceed if anything looks off.
-4. **Run for real:**
-   ```bash
-   bin/kamal app exec "CONFIRM=1 bin/rails topics:prune_hollow_appearances"
-   ```
-   The command prints a `Snapshot written: tmp/hollow_prune_snapshot_<timestamp>.json` line. Copy that file off the container so we have a rollback artifact:
-   ```bash
-   bin/kamal app exec "cat /rails/tmp/hollow_prune_snapshot_<timestamp>.json" > prod_snapshot.json
-   ```
-5. **Spot-check production homepage** at https://tworiversmatters.com.
 
-**Rollback path (manual):** If the backfill pruned something it shouldn't have, open `prod_snapshot.json`. Each `appearances` entry has `agenda_item_id`, `topic_id`, `meeting_id`. For a specific bad prune, recreate the link in the Rails console:
-```ruby
-AgendaItemTopic.create!(agenda_item_id: X, topic_id: Y)
-# the after_create callback rebuilds TopicAppearance automatically
-```
-For blanket recovery, re-run `ExtractTopicsJob.perform_later(meeting_id)` for each affected meeting — ExtractTopicsJob is additive (`find_or_create_by!`) and will rebuild what was removed. Note that `resident_impact_score` and `lifecycle_status` changes need to be restored from the `affected_topics` section of the snapshot; they aren't reconstructed by ExtractTopicsJob.
+2. **Re-summarize meetings that contain concerning topic appearances.** These 17 topics were identified via a heuristic scan and include topic 513 (the motivating case) plus 16 others that look phantom-like. Re-running `SummarizeMeetingJob` for their 38 unique meetings will regenerate summaries using the new `activity_level` prompt, and the auto-wired `PruneHollowAppearancesJob` will correctly classify each item with AI signals (not heuristics).
+
+   Approximate cost: ~$38. Approximate time: ~40 minutes.
+
+   ```bash
+   bin/kamal console
+   ```
+   Inside the console:
+   ```ruby
+   concerning_topic_ids = [29, 45, 46, 385, 428, 513, 582, 583, 613, 669, 683, 684, 743, 762, 764, 774, 816]
+   meeting_ids = Topic.where(id: concerning_topic_ids)
+                      .joins(:topic_appearances)
+                      .pluck("topic_appearances.meeting_id")
+                      .uniq
+   puts "Enqueuing #{meeting_ids.size} meetings for re-summarization"
+   meeting_ids.each { |mid| SummarizeMeetingJob.perform_later(mid) }
+   ```
+
+3. **Wait for the Solid Queue workers to process the jobs.** Monitor via `bin/kamal app logs | grep SummarizeMeetingJob` or the admin job monitoring page.
+
+4. **Verify topic 513 is no longer on the homepage** at https://tworiversmatters.com — it should drop off Top Stories once the prune job has run for each of its meetings and `GenerateTopicBriefingJob` has re-rated its impact score.
+
+5. **Spot-check the other 16 concerning topics:** visit `https://tworiversmatters.com/topics/29` etc. to verify they still look correct (they shouldn't have been wrongly pruned — the AI classification is per-item, not heuristic).
+
+**Rollback path (manual):** If any of the re-summarized meetings produces unexpected results, the changes are isolated per meeting. You can inspect each via `bin/kamal console` and manually fix `AgendaItemTopic` / `TopicAppearance` rows as needed. There is no automated rollback; the going-forward job is idempotent, so re-running `SummarizeMeetingJob` for a meeting will re-evaluate its hollow-ness.
+
+**If further cleanup is needed:** re-summarize additional meetings by expanding the `concerning_topic_ids` list. The same mechanism works for any topic. Total system-wide re-summarization (all 123 meetings) would cost ~$123 and take ~2 hours, but the incremental/selective approach is almost always sufficient.
 
 ## Self-Review Notes (plan author, not executor)
 
