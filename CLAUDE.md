@@ -134,22 +134,39 @@ The homepage uses a newspaper-style inverted pyramid layout. Four zones, top to 
 
 ### Topic Show Page
 
-The topic show page (`topics/show.html.erb`) uses a **fixed inverted-pyramid layout** — all sections always render, with empty state messages when data is absent. Section order: Header → What to Watch → Coming Up → The Story → Key Decisions → Record.
+The topic show page (`topics/show.html.erb`) uses an **editorial longform layout** — a single 38rem centered reading column, section visibility adapts to data availability, typography (not container chrome) differentiates sections. Section order: Header → What to Watch → Coming Up → The Story → Key Decisions → Record.
 
-**Structured JSON rendering:** Briefing content renders from `TopicBriefing.generation_data` (pass 1 structured JSON) instead of pass 2 markdown. Helper methods in `TopicsHelper` extract fields: `briefing_what_to_watch`, `briefing_current_state`, `briefing_process_concerns`, `briefing_factual_record`, `format_record_date`. Markdown fields (`editorial_content`, `record_content`) are fallbacks for briefings without `generation_data`.
+**Layout structure:** `<article class="topic-article">` wraps all content in a 38rem max-width column. Two reading measures:
+- **38rem (container)** — eyebrows, dek, story body, decision desc, Coming Up fallback, Record events
+- **30rem (narrower)** — pullquote (What to Watch) and aside (Worth noting). Clearly pulled-out indented content.
 
-**Key CSS classes:** `.topic-watch` (What to Watch section), `.topic-watch-callout` (warm callout card), `.topic-story` (The Story section), `.topic-concerns-callout` (process concerns), `.topic-record` (Record section), `.topic-timeline` / `.topic-timeline-entry` (timeline layout), `.section-empty` (empty state text).
+**Section visibility** is adaptive. Sections render only when they have content:
+- `What to Watch` — hidden when no briefing
+- `Coming Up` — renders meeting cards when future meetings exist; shows "typically discussed at [committee]" fallback (from `@typical_committee`) when no upcoming but appearance history exists; hidden if neither
+- `The Story` — hidden when no briefing
+- `Key Decisions` — hidden when `@decisions.any?` is false (motion→agenda_item linking via `agenda_item_ref` required)
+- `Record` — always shown (every topic has ≥1 appearance). Empty state only when `factual_record` is empty.
 
-**Design doc:** `docs/plans/2026-03-01-topic-show-consistent-layout-design.md`
+**Structured JSON rendering:** Briefing content renders from `TopicBriefing.generation_data` (pass 1 structured JSON). Helpers in `TopicsHelper`: `briefing_what_to_watch`, `briefing_current_state`, `briefing_process_concerns`, `briefing_factual_record`, `format_record_date`, `enrich_record_entry`, `clean_meeting_display`. Markdown fields (`editorial_content`, `record_content`) are fallbacks for briefings without `generation_data`.
 
-**Resolved issues (Apr 2026):**
-- **Key Decisions populated** — `ExtractVotesJob` now links motions to agenda items via `agenda_item_ref`. Backfill needed for existing meetings.
-- **Record entries enriched** — view-layer enrichment replaces "appeared on the agenda" with MeetingSummary item_details. Meeting names are links.
-- **Adaptive empty states** — Key Decisions hidden when empty. Coming Up shows "typically discussed at [committee]" fallback.
+**Record enrichment:** `enrich_record_entry` cross-references each factual_record entry with `TopicAppearance` records (grouped by date in `@record_meetings`) using `normalize_meeting_name` for fuzzy matching (strips trailing " Meeting", `(CANCELED)`, date suffixes, separator differences). When matched, "appeared on the agenda" placeholder text is replaced with the matching `MeetingSummary.generation_data["item_details"]` summary (truncated 200 chars) or the agenda item title as a fallback. Meeting name renders as a link to the canonical `meeting_path` with the cleaned body_name.
+
+**Motion→agenda_item linking:** `ExtractVotesJob` passes `agenda_items_text` to the `extract_votes` prompt template. AI returns `agenda_item_ref` per motion (item number and/or title). `resolve_agenda_item` matches refs against real `AgendaItem` records: item number exact match first (handles bare numbers like "7a"), then word-overlap title similarity with 0.5 threshold. Unmatched motions (consent agenda batches, procedural) keep `agenda_item_id: nil`. Enables the Key Decisions section on topic pages.
+
+**Key CSS classes** (`application.css`, ~1815–2200): `.topic-article` (container), `.topic-article-header`, `.topic-article-title`, `.topic-article-dek`, `.topic-article-section--watch/upcoming/story/decisions/record`, `.home-section-header` (reused from homepage — atom marker + label + gradient line), `.topic-watch-quote` (italic pullquote), `.topic-upcoming-list` / `.topic-upcoming-link` / `.date-slab`, `.topic-upcoming-fallback`, `.topic-story-body` (with `::first-letter` drop cap via `initial-letter: 2`), `.topic-aside` / `.topic-aside-label` (Worth noting), `.topic-decisions-list` / `.topic-decision`, `.topic-timeline` / `.topic-timeline-entry` / `.topic-timeline-date` / `.topic-timeline-event` / `.topic-timeline-meeting-link`, `.topic-article-footer`.
+
+**Design spec:** `docs/superpowers/specs/2026-04-10-topic-page-overhaul-design.md`
+**Implementation plan:** `docs/superpowers/plans/2026-04-10-topic-page-overhaul.md`
+
+**Resolved (Apr 2026):**
+- **Key Decisions populated** — `ExtractVotesJob` now links motions to agenda items via `agenda_item_ref`. **Backfill needed for existing meetings** — run `ExtractVotesJob.perform_later(m.id)` for every meeting with minutes after the deploy to populate historical `Motion.agenda_item_id`.
+- **Record entries enriched** — view-layer enrichment replaces "appeared on the agenda" with MeetingSummary item_details. Meeting names are cleaned + linked.
+- **Adaptive empty states** — sections hide when empty rather than showing "no data" messages.
+- **Editorial longform redesign** — single reading column, typography-driven differentiation, drop cap, 30rem/38rem consistent tiering.
 
 **Remaining issues:**
 - **Coming Up empty most of the time** — agendas not published far in advance. Fallback shows typical committee, but no scheduled date.
-- **Overall UX**: #63 visual work shipped; homepage link targets still go to meetings until topic pages prove out.
+- **Homepage link targets still go to meetings** — can switch to topic page links now that topic pages are credible, but that's a separate change.
 
 ### Meeting Show Page
 
