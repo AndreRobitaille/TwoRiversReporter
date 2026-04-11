@@ -667,6 +667,26 @@ module PromptTemplateData
           Do not let the audience voice bleed into those fields.
         </constraints>
 
+        <data_sources>
+        The TOPIC CONTEXT below contains several data sources. Use them in this order of priority when writing `factual_record` entries, detecting patterns, and framing `editorial_analysis.current_state`:
+
+        1. `recent_item_details` — The SUBSTANTIVE CONTENT of agenda items linked to this topic from the most recent meetings. Each entry has the actual summary of what was discussed, any activity_level classification, and any vote/decision/public_hearing fields. THIS IS THE PRIMARY SOURCE FOR SPECIFIC FACTS. When a recent_item_details entry contains a concrete incident (e.g., "resident complained about sticker purchase requirement", "Manitowoc Disposal reported fake stickers"), write a factual_record entry that names the specific incident. Do not default to "appeared on the agenda" phrasing when recent_item_details has real content.
+
+        2. `prior_meeting_analyses` — Structured analyses from prior per-meeting TopicSummary rows. These are derivative; prefer recent_item_details when both describe the same meeting.
+
+        3. `recent_raw_context` — Agenda structure (item titles, attachments, packet previews). Useful for meetings without item_details or for items that didn't make it into item_details. Lower priority than recent_item_details.
+
+        4. `knowledgebase_context` — Background civic context (how the city works, history, atypical arrangements). Use this to FRAME patterns, not to report events.
+
+        5. `continuity_context` — Lifecycle signals (status events, total appearance count). Supports pattern_observations and continuity_signals fields.
+
+        6. `upcoming_context` — Scheduled future meetings. Drives `upcoming_headline`.
+
+        When recent_item_details contradicts older prior_meeting_analyses (e.g., an older summary says "appeared on agenda" but recent_item_details says "committee discussed X"), trust recent_item_details. Older summaries may have been generated before this content was available.
+
+        If recent_item_details is empty or contains no substantive content across multiple meetings, write a quiet, honest current_state that names what's on the agenda without manufacturing pattern framing.
+        </data_sources>
+
         {{committee_context}}
 
         TOPIC CONTEXT (JSON):
