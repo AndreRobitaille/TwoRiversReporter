@@ -8,15 +8,17 @@
 # Committee that rarely contains real decisions.
 #
 # Only operates on new-format summaries that have the `activity_level`
-# field on at least one item_details entry. Old summaries are handled
-# by the one-time backfill rake task (topics:prune_hollow_appearances).
+# field on at least one item_details entry.
 #
 # After pruning, demote_topic applies demotion rules based on remaining
-# appearance count:
-#   0 appearances → blocked + dormant (writes TopicStatusEvent audit row)
-#   1 appearance  → dormant, still approved (writes TopicStatusEvent audit row)
-#   2+ appearances → enqueues GenerateTopicBriefingJob to re-rate impact
-#                    against the cleaned set (skipped if admin-locked)
+# appearance count, recomputing last_activity_at in all cases so the
+# homepage filter reflects the cleaned evidence set:
+#   0 appearances → blocked + dormant, last_activity_at: nil (writes TopicStatusEvent)
+#   1 appearance  → dormant, still approved, last_activity_at recomputed (writes TopicStatusEvent)
+#   2+ appearances → last_activity_at recomputed; enqueues GenerateTopicBriefingJob
+#                    to re-rate impact (skipped if admin-locked)
+# Both 1-case and 2+-case enqueue GenerateTopicBriefingJob because without
+# a re-rate, the homepage impact score reflects the stale pre-prune set.
 class PruneHollowAppearancesJob < ApplicationJob
   queue_as :default
 
@@ -107,23 +109,40 @@ class PruneHollowAppearancesJob < ApplicationJob
 
   def demote_topic(topic)
     remaining = topic.topic_appearances.count
+    new_last_activity = topic.topic_appearances.maximum(:appeared_at)
 
     Topic.transaction do
       case remaining
       when 0
-        topic.update!(status: "blocked", lifecycle_status: "dormant")
+        topic.update!(
+          status: "blocked",
+          lifecycle_status: "dormant",
+          last_activity_at: nil
+        )
         record_status_event(topic, lifecycle_status: "dormant",
                             notes: "Blocked — 0 appearances remaining after hollow-appearance pruning.")
       when 1
-        topic.update!(lifecycle_status: "dormant")
+        topic.update!(
+          lifecycle_status: "dormant",
+          last_activity_at: new_last_activity
+        )
         record_status_event(topic, lifecycle_status: "dormant",
                             notes: "Demoted — only 1 appearance remaining after hollow-appearance pruning.")
+      else
+        # 2+ remaining: recompute last_activity_at so homepage reflects the
+        # cleaned appearance set (in case the most recent pruned appearance
+        # was the one driving last_activity_at).
+        topic.update!(last_activity_at: new_last_activity)
       end
     end
 
-    # Enqueue briefing regeneration AFTER the transaction commits.
-    # Must be outside the transaction: job dispatch on rollback would be wrong.
-    if remaining >= 2 && !topic.resident_impact_admin_locked?
+    # Enqueue briefing regeneration AFTER the transaction commits so job
+    # dispatch only happens after a successful write. Runs for both the
+    # 1-remaining and 2+-remaining cases — without recomputing impact, a
+    # topic would stay at its pre-prune score and still surface on the
+    # homepage. The 0-remaining case skips this because there's nothing
+    # to brief about.
+    if remaining >= 1 && !topic.resident_impact_admin_locked?
       Topics::GenerateTopicBriefingJob.perform_later(topic_id: topic.id)
     end
   end

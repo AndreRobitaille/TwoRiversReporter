@@ -207,11 +207,14 @@ class PruneHollowAppearancesJobTest < ActiveJob::TestCase
     ])
     topic = link_topic(item, topic_name: "phantom topic alpha")
 
-    PruneHollowAppearancesJob.perform_now(meeting.id)
+    assert_no_enqueued_jobs(only: Topics::GenerateTopicBriefingJob) do
+      PruneHollowAppearancesJob.perform_now(meeting.id)
+    end
 
     topic.reload
     assert_equal "blocked", topic.status
     assert_equal "dormant", topic.lifecycle_status
+    assert_nil topic.last_activity_at
 
     event = topic.topic_status_events.order(:created_at).last
     refute_nil event, "expected a TopicStatusEvent audit row"
@@ -220,8 +223,19 @@ class PruneHollowAppearancesJobTest < ActiveJob::TestCase
   end
 
   test "demotes topic to dormant when pruning drops it to 1 appearance" do
-    meeting_a, item_a = create_meeting_with_item(title: "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED")
-    meeting_b, item_b = create_meeting_with_item(title: "5. REAL SUBSTANTIVE ITEM")
+    meeting_a = Meeting.create!(
+      body_name: "Public Utilities Committee",
+      starts_at: 10.days.ago,
+      detail_page_url: "http://example.com/m#{SecureRandom.hex(4)}"
+    )
+    item_a = meeting_a.agenda_items.create!(title: "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED", order_index: 1)
+
+    meeting_b = Meeting.create!(
+      body_name: "Public Utilities Committee",
+      starts_at: 2.days.ago,
+      detail_page_url: "http://example.com/m#{SecureRandom.hex(4)}"
+    )
+    item_b = meeting_b.agenda_items.create!(title: "5. REAL SUBSTANTIVE ITEM", order_index: 1)
 
     create_summary(meeting_a, item_details: [
       {
@@ -239,12 +253,16 @@ class PruneHollowAppearancesJobTest < ActiveJob::TestCase
 
     assert_equal 2, topic.reload.topic_appearances.count
 
-    PruneHollowAppearancesJob.perform_now(meeting_a.id)
+    assert_enqueued_with(job: Topics::GenerateTopicBriefingJob) do
+      PruneHollowAppearancesJob.perform_now(meeting_a.id)
+    end
 
     topic.reload
     assert_equal 1, topic.topic_appearances.count
     assert_equal "approved", topic.status
     assert_equal "dormant", topic.lifecycle_status
+    # last_activity_at is recomputed to the remaining (real) appearance's time
+    assert_in_delta meeting_b.starts_at.to_f, topic.last_activity_at.to_f, 1.0
 
     event = topic.topic_status_events.order(:created_at).last
     refute_nil event, "expected a TopicStatusEvent audit row"
@@ -315,5 +333,38 @@ class PruneHollowAppearancesJobTest < ActiveJob::TestCase
 
     topic.reload
     assert_equal 2, topic.topic_appearances.count
+  end
+
+  test "does not enqueue briefing when 1 appearance remains and impact is admin-locked" do
+    meeting_a, item_a = create_meeting_with_item(title: "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED")
+    meeting_b, item_b = create_meeting_with_item(title: "5. REAL ITEM")
+
+    create_summary(meeting_a, item_details: [
+      {
+        "agenda_item_title" => "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED",
+        "summary" => "Nothing substantive.",
+        "activity_level" => "status_update",
+        "vote" => nil, "decision" => nil, "public_hearing" => nil,
+        "citations" => []
+      }
+    ])
+
+    topic = Topic.create!(
+      name: "admin locked 1-remaining topic",
+      status: "approved",
+      lifecycle_status: "active",
+      resident_impact_score: 5,
+      resident_impact_overridden_at: 1.day.ago
+    )
+    AgendaItemTopic.create!(agenda_item: item_a, topic: topic)
+    AgendaItemTopic.create!(agenda_item: item_b, topic: topic)
+
+    assert_no_enqueued_jobs(only: Topics::GenerateTopicBriefingJob) do
+      PruneHollowAppearancesJob.perform_now(meeting_a.id)
+    end
+
+    topic.reload
+    assert_equal 1, topic.topic_appearances.count
+    assert_equal "dormant", topic.lifecycle_status
   end
 end
