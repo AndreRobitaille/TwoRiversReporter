@@ -193,4 +193,121 @@ class PruneHollowAppearancesJobTest < ActiveJob::TestCase
     assert_equal 1, topic.reload.agenda_item_topics.count
     assert_equal 1, topic.reload.topic_appearances.count
   end
+
+  test "demotes topic to blocked + dormant when pruning drops it to 0 appearances" do
+    meeting, item = create_meeting_with_item(title: "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED")
+    create_summary(meeting, item_details: [
+      {
+        "agenda_item_title" => "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED",
+        "summary" => "Nothing substantive.",
+        "activity_level" => "status_update",
+        "vote" => nil, "decision" => nil, "public_hearing" => nil,
+        "citations" => []
+      }
+    ])
+    topic = link_topic(item, topic_name: "phantom topic alpha")
+
+    PruneHollowAppearancesJob.perform_now(meeting.id)
+
+    topic.reload
+    assert_equal "blocked", topic.status
+    assert_equal "dormant", topic.lifecycle_status
+
+    event = topic.topic_status_events.order(:created_at).last
+    refute_nil event, "expected a TopicStatusEvent audit row"
+    assert_equal "hollow_appearance_prune", event.evidence_type
+    assert_equal "dormant", event.lifecycle_status
+  end
+
+  test "demotes topic to dormant when pruning drops it to 1 appearance" do
+    meeting_a, item_a = create_meeting_with_item(title: "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED")
+    meeting_b, item_b = create_meeting_with_item(title: "5. REAL SUBSTANTIVE ITEM")
+
+    create_summary(meeting_a, item_details: [
+      {
+        "agenda_item_title" => "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED",
+        "summary" => "Nothing substantive.",
+        "activity_level" => "status_update",
+        "vote" => nil, "decision" => nil, "public_hearing" => nil,
+        "citations" => []
+      }
+    ])
+
+    topic = Topic.create!(name: "phantom topic beta", status: "approved", lifecycle_status: "active")
+    AgendaItemTopic.create!(agenda_item: item_a, topic: topic)
+    AgendaItemTopic.create!(agenda_item: item_b, topic: topic)
+
+    assert_equal 2, topic.reload.topic_appearances.count
+
+    PruneHollowAppearancesJob.perform_now(meeting_a.id)
+
+    topic.reload
+    assert_equal 1, topic.topic_appearances.count
+    assert_equal "approved", topic.status
+    assert_equal "dormant", topic.lifecycle_status
+  end
+
+  test "leaves topic intact and enqueues briefing when pruning drops it to 2+ appearances" do
+    meeting_a, item_a = create_meeting_with_item(title: "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED")
+    meeting_b, item_b = create_meeting_with_item(title: "5. REAL ITEM ONE")
+    meeting_c, item_c = create_meeting_with_item(title: "6. REAL ITEM TWO")
+
+    create_summary(meeting_a, item_details: [
+      {
+        "agenda_item_title" => "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED",
+        "summary" => "Nothing substantive.",
+        "activity_level" => "status_update",
+        "vote" => nil, "decision" => nil, "public_hearing" => nil,
+        "citations" => []
+      }
+    ])
+
+    topic = Topic.create!(name: "mixed topic", status: "approved", lifecycle_status: "active")
+    AgendaItemTopic.create!(agenda_item: item_a, topic: topic)
+    AgendaItemTopic.create!(agenda_item: item_b, topic: topic)
+    AgendaItemTopic.create!(agenda_item: item_c, topic: topic)
+
+    assert_enqueued_with(job: Topics::GenerateTopicBriefingJob) do
+      PruneHollowAppearancesJob.perform_now(meeting_a.id)
+    end
+
+    topic.reload
+    assert_equal 2, topic.topic_appearances.count
+    assert_equal "approved", topic.status
+    assert_equal "active", topic.lifecycle_status
+  end
+
+  test "does not enqueue briefing when resident_impact is admin-locked" do
+    meeting_a, item_a = create_meeting_with_item(title: "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED")
+    meeting_b, item_b = create_meeting_with_item(title: "5. REAL ITEM ONE")
+    meeting_c, item_c = create_meeting_with_item(title: "6. REAL ITEM TWO")
+
+    create_summary(meeting_a, item_details: [
+      {
+        "agenda_item_title" => "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED",
+        "summary" => "Nothing substantive.",
+        "activity_level" => "status_update",
+        "vote" => nil, "decision" => nil, "public_hearing" => nil,
+        "citations" => []
+      }
+    ])
+
+    topic = Topic.create!(
+      name: "admin locked topic",
+      status: "approved",
+      lifecycle_status: "active",
+      resident_impact_score: 5,
+      resident_impact_overridden_at: 1.day.ago
+    )
+    AgendaItemTopic.create!(agenda_item: item_a, topic: topic)
+    AgendaItemTopic.create!(agenda_item: item_b, topic: topic)
+    AgendaItemTopic.create!(agenda_item: item_c, topic: topic)
+
+    assert_no_enqueued_jobs(only: Topics::GenerateTopicBriefingJob) do
+      PruneHollowAppearancesJob.perform_now(meeting_a.id)
+    end
+
+    topic.reload
+    assert_equal 2, topic.topic_appearances.count
+  end
 end

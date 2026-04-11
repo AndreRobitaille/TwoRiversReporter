@@ -11,9 +11,12 @@
 # field on at least one item_details entry. Old summaries are handled
 # by the one-time backfill rake task (topics:prune_hollow_appearances).
 #
-# Topic demotion rules live in Task 3 of the plan — this file initially
-# handles detection and pruning only. The demote_topic method is a
-# placeholder that gets filled in during Task 3.
+# After pruning, demote_topic applies demotion rules based on remaining
+# appearance count:
+#   0 appearances → blocked + dormant (writes TopicStatusEvent audit row)
+#   1 appearance  → dormant, still approved (writes TopicStatusEvent audit row)
+#   2+ appearances → enqueues GenerateTopicBriefingJob to re-rate impact
+#                    against the cleaned set (skipped if admin-locked)
 class PruneHollowAppearancesJob < ApplicationJob
   queue_as :default
 
@@ -102,8 +105,32 @@ class PruneHollowAppearancesJob < ApplicationJob
       entry["public_hearing"].nil?
   end
 
-  # Placeholder — real implementation lands in Task 3.
   def demote_topic(topic)
-    # intentionally empty for Task 2
+    remaining = topic.topic_appearances.count
+
+    case remaining
+    when 0
+      topic.update!(status: "blocked", lifecycle_status: "dormant")
+      record_status_event(topic, lifecycle_status: "dormant",
+                          notes: "Blocked — 0 appearances remaining after hollow-appearance pruning.")
+    when 1
+      topic.update!(lifecycle_status: "dormant")
+      record_status_event(topic, lifecycle_status: "dormant",
+                          notes: "Demoted — only 1 appearance remaining after hollow-appearance pruning.")
+    else
+      unless topic.resident_impact_admin_locked?
+        Topics::GenerateTopicBriefingJob.perform_later(topic_id: topic.id)
+      end
+    end
+  end
+
+  def record_status_event(topic, lifecycle_status:, notes:)
+    TopicStatusEvent.create!(
+      topic: topic,
+      lifecycle_status: lifecycle_status,
+      occurred_at: Time.current,
+      evidence_type: "hollow_appearance_prune",
+      notes: notes
+    )
   end
 end
