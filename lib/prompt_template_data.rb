@@ -719,7 +719,8 @@ module PromptTemplateData
            - "Keep showing up" / "keeps showing up"
            - "Contract execution concerns"
            - "Discussion expected"
-           If there is no concrete update, use the space for a stronger noun instead. Do not fill space with meta-commentary about the agenda process. "Umbrella topic" framings that list multiple sub-items without a specific lead are banned — pick the single strongest specific fact.
+           - "Stayed high-level" / "remained high-level" / "stayed general" / "stayed vague" (or any meta-commentary about the agenda itself being vague)
+           If there is no concrete update, use the space for a stronger noun instead. Do not fill space with meta-commentary about the agenda process or about the agenda items being vague, high-level, or unspecific. Meta-commentary about the agenda is banned even when the source data is thin — in that case, just state what was on the agenda quietly, without editorializing about its specificity. "Umbrella topic" framings that list multiple sub-items without a specific lead are banned — pick the single strongest specific fact.
 
         7. NO MANUFACTURED PROCESS CONCERNS. A headline may not imply a process problem unless `editorial_analysis.process_concerns` is a non-null value that explicitly supports it. Specifically, the following second-beat phrases are FORBIDDEN unless `process_concerns` or `pattern_observations` directly establishes them:
            - "Picked before the vote"

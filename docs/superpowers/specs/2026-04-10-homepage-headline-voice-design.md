@@ -100,7 +100,7 @@ Key structural differences vs. the current `instructions`:
   4. Name a stake a resident recognizes (cost, street, rates, neighborhood, who benefits).
   4a. When multiple concrete details compete, prefer resident-proximate (street, walk, cost) over implementation mechanism (contractor, technique). Only lead with mechanism when the mechanism IS the story (e.g., 0% financing).
   5. Interesting-ness comes from specificity, not from framing.
-  6. Banned closers (explicit list): "No vote has been reported yet", "Vote unclear", "Still pending", "Still no clear decision", "Keeps coming back", "Keeps circling", "Keeps popping up", "Contract execution concerns", "Discussion expected".
+  6. Banned closers (explicit list): "No vote has been reported yet", "Vote unclear", "Still pending", "Still no clear decision", "Keeps coming back", "Keeps circling", "Keeps popping up", "Contract execution concerns", "Discussion expected", "Stayed high-level" / "remained high-level" / "stayed vague" / "stayed general" (meta-commentary about agenda vagueness — banned even when source data is thin).
   7. No manufactured process concerns — forbidden second-beat phrases ("picked before the vote", "hasn't been spelled out", "hasn't been released", "now a question", "nobody has said", "still not clear why") unless `process_concerns` or `pattern_observations` explicitly supports them.
   8. No asserted causality or sequence — connectors "so", "to fund", "in order to", "because", "after", "before" require direct textual support in the analysis.
   9. No adjectives of outrage ("shocking", "controversial", "wasteful", "rushed", "sneaky", "rubber-stamped", "green-lit", "sold as", "pitched as").
@@ -299,7 +299,8 @@ The `headline`, `upcoming_headline`, and `editorial_analysis.current_state` fiel
    - "Keep showing up" / "keeps showing up"
    - "Contract execution concerns"
    - "Discussion expected"
-   If there is no concrete update, use the space for a stronger noun instead. Do not fill space with meta-commentary about the agenda process. "Umbrella topic" framings that list multiple sub-items without a specific lead are banned — pick the single strongest specific fact.
+   - "Stayed high-level" / "remained high-level" / "stayed general" / "stayed vague" (or any meta-commentary about the agenda itself being vague)
+   If there is no concrete update, use the space for a stronger noun instead. Do not fill space with meta-commentary about the agenda process or about the agenda items being vague, high-level, or unspecific. Meta-commentary about the agenda is banned even when the source data is thin — in that case, just state what was on the agenda quietly, without editorializing about its specificity. "Umbrella topic" framings that list multiple sub-items without a specific lead are banned — pick the single strongest specific fact.
 
 7. NO MANUFACTURED PROCESS CONCERNS. A headline may not imply a process problem unless `editorial_analysis.process_concerns` is a non-null value that explicitly supports it. Specifically, the following second-beat phrases are FORBIDDEN unless `process_concerns` or `pattern_observations` directly establishes them:
    - "Picked before the vote"
