@@ -131,6 +131,9 @@
                 <%= motion.meeting.starts_at.strftime("%b %-d, %Y") %>
               </span>
             </header>
+            <% if motion.agenda_item&.title.present? %>
+              <h3 class="topic-decision-title"><%= motion.agenda_item.title %></h3>
+            <% end %>
             <p class="topic-decision-desc"><%= motion.description %></p>
             <% if motion.votes.any? %>
               <div class="votes-grid">
