@@ -25,11 +25,16 @@ class HomeController < ApplicationController
 
   private
 
+  # `id: :desc` tiebreaker is load-bearing — topic last_activity_at values
+  # cluster on meeting-start hours (multiple topics share the exact same
+  # timestamp). Without a stable tiebreaker, the same topic can appear in
+  # both @top_stories and @wire_cards across the same request's queries.
+
   def build_top_stories
     Topic.approved
       .where("resident_impact_score >= ?", TOP_STORY_MIN_IMPACT)
       .where("last_activity_at > ?", ACTIVITY_WINDOW.ago)
-      .order(resident_impact_score: :desc, last_activity_at: :desc)
+      .order(resident_impact_score: :desc, last_activity_at: :desc, id: :desc)
       .limit(TOP_STORY_LIMIT)
       .to_a
   end
@@ -38,7 +43,7 @@ class HomeController < ApplicationController
     scope = Topic.approved
       .where("resident_impact_score >= ?", WIRE_MIN_IMPACT)
       .where("last_activity_at > ?", ACTIVITY_WINDOW.ago)
-      .order(resident_impact_score: :desc, last_activity_at: :desc)
+      .order(resident_impact_score: :desc, last_activity_at: :desc, id: :desc)
 
     scope = scope.where.not(id: exclude_ids) if exclude_ids.any?
     scope.limit(WIRE_CARD_COUNT + WIRE_ROW_LIMIT).to_a

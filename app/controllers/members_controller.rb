@@ -38,7 +38,7 @@ class MembersController < ApplicationController
       .joins(agenda_item_topics: { agenda_item: :meeting })
       .where(meetings: { committee_id: committee_ids })
       .select("topics.*, meetings.committee_id AS assoc_committee_id")
-      .order("topics.last_activity_at DESC NULLS LAST")
+      .order("topics.last_activity_at DESC NULLS LAST, topics.id DESC")
 
     result = Hash.new { |h, k| h[k] = [] }
     seen = Hash.new { |h, k| h[k] = Set.new }
