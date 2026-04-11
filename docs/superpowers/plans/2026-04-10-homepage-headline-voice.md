@@ -1,5 +1,30 @@
 # Homepage Headline Voice Implementation Plan
 
+> **⚠ Post-execution note (2026-04-11):** This plan was written with a dev-first execution assumption that turned out to be wrong for this change. Tasks 4-7 as written below describe creating `tmp/` scripts and running them against local dev. In actual execution, Tasks 4-6 were re-scoped mid-flight to:
+>
+> 1. Create **committed rake tasks** (`lib/tasks/headline_voice.rake` with `headline_voice:backfill` and `headline_voice:verify`) instead of `tmp/` scripts
+> 2. Deploy via `bin/kamal deploy`
+> 3. Run the rake tasks directly on prod via `bin/kamal app exec "bin/rails headline_voice:backfill"` and `bin/kamal app exec "bin/rails headline_voice:verify"`
+>
+> **Why the pivot:** local dev is a recent clone of prod, so running the backfill locally first doubles the API cost (~$5 local + ~$5 prod) for the same outcome. The dev-first pattern only adds value when local dev differs meaningfully from prod (e.g., testing a schema migration against dev data first). For a pure prompt change where the goal is "get the new headlines onto the live site," running directly on prod via committed rake tasks is the right pattern.
+>
+> **For future prompt rewrites:** follow the revised pattern — write rake tasks in `lib/tasks/`, commit them, deploy via Kamal, run via `bin/kamal app exec`. Skip the `tmp/` script step entirely. The `tmp/headline_validation.rb` harness (for A/B testing old vs. new prompt against real topic context) is still a useful dev-local tool and can stay in `tmp/`, but anything that mutates production state should live in a committed rake task.
+>
+> **Commits from this plan's execution (all on master):**
+> - `0929606` docs: spec for homepage headline voice
+> - `436e854` docs: implementation plan (this file)
+> - `d6e6ccf` feat(prompts): rewrite `analyze_topic_briefing` for homepage headline voice
+> - `1f44220` fix(prompts): ban agenda-vagueness meta-commentary in headlines (added during Task 3 smoke test)
+> - `f49724a` chore(tasks): add `headline_voice:backfill` and `headline_voice:verify` rake tasks
+>
+> **Follow-up issues filed:**
+> - AndreRobitaille/TwoRiversReporter#90 — Triage pipeline letting near-duplicate sidewalk topics through (caught during backfill)
+> - AndreRobitaille/TwoRiversReporter#91 — `headline_voice:verify` `CONCRETE_LEAD_PATTERNS` regex produces false negatives (verifier improvement for next prompt rewrite)
+>
+> The original plan text below is preserved unchanged for historical reference. Treat Tasks 4-7 as illustrative of the dev-first flow; use the rake-task + Kamal flow described above for future work.
+
+---
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace the meta-commentary homepage headlines ("keeps coming back, vote not reported yet") with specific, stake-forward news by rewriting the `analyze_topic_briefing` prompt, then backfill existing briefings so the change lands on the live homepage.
