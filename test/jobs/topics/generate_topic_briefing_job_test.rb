@@ -88,12 +88,8 @@ class Topics::GenerateTopicBriefingJobTest < ActiveJob::TestCase
       detail_page_url: "http://example.com/future"
     )
     future_item = future_meeting.agenda_items.create!(title: "Parking Review", order_index: 1)
+    # AgendaItemTopic#after_create callback creates the TopicAppearance.
     AgendaItemTopic.create!(topic: @topic, agenda_item: future_item)
-    TopicAppearance.create!(
-      topic: @topic, meeting: future_meeting, agenda_item: future_item,
-      appeared_at: future_meeting.starts_at, body_name: future_meeting.body_name,
-      evidence_type: "agenda_item"
-    )
 
     analysis_json = {
       "headline" => "Council approved parking plan 4-3",

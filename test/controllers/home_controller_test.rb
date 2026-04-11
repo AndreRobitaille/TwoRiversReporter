@@ -35,30 +35,16 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
       description: "Permit fees and process"
     )
 
-    # Appearances linking topics to meetings
+    # Appearances linking topics to meetings — AgendaItemTopic#after_create
+    # callback creates the TopicAppearance, no explicit create needed.
     item1 = AgendaItem.create!(meeting: @council_meeting, title: "Lead Lines")
     AgendaItemTopic.create!(topic: @high_topic, agenda_item: item1)
-    TopicAppearance.create!(
-      topic: @high_topic, meeting: @council_meeting, agenda_item: item1,
-      appeared_at: @council_meeting.starts_at, body_name: @council_meeting.body_name,
-      evidence_type: "agenda_item"
-    )
 
     item2 = AgendaItem.create!(meeting: @council_meeting, title: "Borrowing")
     AgendaItemTopic.create!(topic: @mid_topic, agenda_item: item2)
-    TopicAppearance.create!(
-      topic: @mid_topic, meeting: @council_meeting, agenda_item: item2,
-      appeared_at: @council_meeting.starts_at, body_name: @council_meeting.body_name,
-      evidence_type: "agenda_item"
-    )
 
     item3 = AgendaItem.create!(meeting: @council_meeting, title: "Permits")
     AgendaItemTopic.create!(topic: @low_topic, agenda_item: item3)
-    TopicAppearance.create!(
-      topic: @low_topic, meeting: @council_meeting, agenda_item: item3,
-      appeared_at: @council_meeting.starts_at, body_name: @council_meeting.body_name,
-      evidence_type: "agenda_item"
-    )
   end
 
   test "renders successfully" do

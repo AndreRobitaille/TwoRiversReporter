@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_10_022521) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_11_013910) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -499,6 +499,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_10_022521) do
     t.index ["committee_id"], name: "index_topic_appearances_on_committee_id"
     t.index ["meeting_id"], name: "index_topic_appearances_on_meeting_id"
     t.index ["topic_id", "appeared_at"], name: "index_topic_appearances_on_topic_id_and_appeared_at"
+    t.index ["topic_id", "meeting_id", "agenda_item_id"], name: "idx_topic_appearances_unique_triple", unique: true
     t.index ["topic_id"], name: "index_topic_appearances_on_topic_id"
   end
 

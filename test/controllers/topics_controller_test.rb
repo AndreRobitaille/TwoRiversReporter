@@ -399,11 +399,8 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
       detail_page_url: "http://example.com/pu/2025-09-02"
     )
     agenda_item = AgendaItem.create!(meeting: past_meeting, title: "Lead Service Line Replacement")
+    # AgendaItemTopic#after_create callback creates the TopicAppearance.
     AgendaItemTopic.create!(topic: @active_topic, agenda_item: agenda_item)
-    TopicAppearance.create!(
-      topic: @active_topic, meeting: past_meeting, agenda_item: agenda_item,
-      appeared_at: past_meeting.starts_at, evidence_type: "agenda_item"
-    )
     MeetingSummary.create!(
       meeting: past_meeting,
       summary_type: "minutes_recap",
@@ -466,12 +463,8 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
       location: "City Hall"
     )
     future_item = AgendaItem.create!(meeting: future_meeting, title: "Future Discussion")
+    # AgendaItemTopic#after_create callback creates the TopicAppearance.
     AgendaItemTopic.create!(topic: @active_topic, agenda_item: future_item)
-    TopicAppearance.create!(
-      topic: @active_topic, meeting: future_meeting,
-      agenda_item: future_item, appeared_at: future_meeting.starts_at,
-      evidence_type: "agenda_item"
-    )
 
     get topic_url(@active_topic)
     assert_response :success

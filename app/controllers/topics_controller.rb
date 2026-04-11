@@ -44,12 +44,16 @@ class TopicsController < ApplicationController
   def show
     @topic = Topic.publicly_visible.find(params[:id])
 
-    # Upcoming: future meetings where this topic is on the agenda
+    # Upcoming: future meetings where this topic is on the agenda.
+    # Deduplicate on (meeting_id, agenda_item_id) as a view-layer safety net;
+    # paired with the unique DB index idx_topic_appearances_unique_triple and
+    # the model-level uniqueness validation on TopicAppearance.
     @upcoming = @topic.topic_appearances
                       .includes(meeting: [], agenda_item: [])
                       .joins(:meeting)
                       .where("meetings.starts_at > ?", Time.current)
                       .order("meetings.starts_at ASC")
+                      .uniq { |a| [ a.meeting_id, a.agenda_item_id ] }
 
     @briefing = @topic.topic_briefing
 

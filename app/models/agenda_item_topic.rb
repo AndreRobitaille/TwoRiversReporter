@@ -7,9 +7,16 @@ class AgendaItemTopic < ApplicationRecord
   private
 
   def create_appearance_and_update_continuity
-    # Create Appearance if it doesn't exist
-    unless TopicAppearance.exists?(topic: topic, agenda_item: agenda_item)
-      meeting = agenda_item.meeting
+    # Create the appearance idempotently. The previous `unless exists?` +
+    # `create!` sequence was racy — two concurrent AgendaItemTopic creations
+    # for the same (topic, agenda_item) could both pass the exists? check
+    # before either inserted, producing duplicate TopicAppearance rows.
+    #
+    # Now relies on the unique DB index on (topic_id, meeting_id,
+    # agenda_item_id) and swallows ActiveRecord::RecordNotUnique /
+    # RecordInvalid, which the concurrent second writer will hit.
+    meeting = agenda_item.meeting
+    begin
       TopicAppearance.create!(
         topic: topic,
         meeting: meeting,
@@ -20,6 +27,8 @@ class AgendaItemTopic < ApplicationRecord
         evidence_type: "agenda_item",
         source_ref: { agenda_item_id: agenda_item.id, title: agenda_item.title }
       )
+    rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid
+      # Already exists — another writer raced us. Safe to ignore.
     end
 
     # Trigger Continuity Update

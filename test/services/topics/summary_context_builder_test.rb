@@ -17,16 +17,9 @@ module Topics
         recommended_action: "Approve.",
         order_index: 1
       )
+      # Creating the AgendaItemTopic link also creates the TopicAppearance
+      # via AgendaItemTopic#create_appearance_and_update_continuity callback.
       @agenda_item.topics << @topic
-
-      # Continuity link
-      @topic.topic_appearances.create!(
-        meeting: @meeting,
-        agenda_item: @agenda_item,
-        appeared_at: @meeting.starts_at,
-        evidence_type: "agenda_item",
-        body_name: "City Council"
-      )
 
       # Prior appearance
       @prior_meeting = Meeting.create!(
