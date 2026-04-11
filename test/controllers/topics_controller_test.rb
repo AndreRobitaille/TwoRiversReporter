@@ -388,6 +388,74 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".topic-timeline-meeting", text: /\ACity Council\z/
   end
 
+  test "show enriches record entry with meeting summary content and links to meeting" do
+    # Past meeting that the topic appeared at, with a MeetingSummary whose
+    # item_details contain substantive content for this topic's agenda item.
+    past_meeting = Meeting.create!(
+      body_name: "Public Utilities Committee",
+      meeting_type: "Regular",
+      starts_at: Time.zone.parse("2025-09-02 18:00"),
+      status: "parsed",
+      detail_page_url: "http://example.com/pu/2025-09-02"
+    )
+    agenda_item = AgendaItem.create!(meeting: past_meeting, title: "Lead Service Line Replacement")
+    AgendaItemTopic.create!(topic: @active_topic, agenda_item: agenda_item)
+    TopicAppearance.create!(
+      topic: @active_topic, meeting: past_meeting, agenda_item: agenda_item,
+      appeared_at: past_meeting.starts_at, evidence_type: "agenda_item"
+    )
+    MeetingSummary.create!(
+      meeting: past_meeting,
+      summary_type: "minutes_recap",
+      content: nil,
+      generation_data: {
+        "item_details" => [
+          {
+            "agenda_item_title" => "Lead Service Line Replacement",
+            "summary" => "Council approved a $2.4M contract with Northern Pipe for 2026 LSL replacement work."
+          }
+        ]
+      }
+    )
+
+    # Briefing with a generic "appeared on the agenda" factual_record entry
+    # whose "meeting" label has the AI's typical date suffix.
+    TopicBriefing.create!(
+      topic: @active_topic,
+      headline: "LSL update",
+      generation_data: {
+        "headline" => "LSL update",
+        "editorial_analysis" => {
+          "what_to_watch" => "Watch for contract execution.",
+          "current_state" => "Contract approved.",
+          "process_concerns" => [],
+          "pattern_observations" => []
+        },
+        "factual_record" => [
+          {
+            "date" => "2025-09-02",
+            "event" => "Topic appeared on the agenda.",
+            "meeting" => "Public Utilities Committee, Sep 2 2025"
+          }
+        ],
+        "resident_impact" => { "score" => 4, "rationale" => "Water safety." }
+      },
+      generation_tier: "full"
+    )
+
+    get topic_url(@active_topic)
+    assert_response :success
+
+    # Event text is enriched: "appeared on the agenda" replaced with the
+    # matched item_details summary.
+    assert_select ".topic-timeline-event", text: /Northern Pipe/
+    refute_match(/appeared on the agenda/i, css_select(".topic-timeline-event").text)
+
+    # Meeting name is rendered as a link to the canonical meeting page,
+    # with the cleaned body_name (no date suffix from the AI's raw label).
+    assert_select "a.topic-timeline-meeting-link[href=?]", meeting_path(past_meeting), text: /\APublic Utilities Committee\z/
+  end
+
   test "show loads upcoming appearances for future meetings" do
     future_meeting = Meeting.create!(
       body_name: "Plan Commission",

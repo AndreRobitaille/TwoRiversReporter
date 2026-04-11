@@ -94,29 +94,6 @@ module TopicsHelper
     date_string.to_s
   end
 
-  def render_topic_summary_content(markdown_content)
-    return "" if markdown_content.blank?
-
-    lines = markdown_content.lines.map(&:chomp)
-
-    # Remove heading lines and internal section headers
-    filtered = lines.reject do |line|
-      line.match?(/\A##\s/) ||
-        line.match?(/\A\*\*(Factual Record|Institutional Framing|Civic Sentiment|Continuity|Resident-reported)/i) ||
-        line.strip.empty?
-    end
-
-    # Convert markdown bullets to HTML list items
-    items = filtered.map do |line|
-      text = line.sub(/\A\s*[-*]\s*/, "").strip
-      next if text.empty?
-      content_tag(:li, text)
-    end.compact
-
-    return "" if items.empty?
-    content_tag(:ul, items.join.html_safe, class: "topic-summary-list")
-  end
-
   # Clean a meeting name for display. Strips trailing " Meeting", parenthetical
   # status suffixes, date suffixes the AI sometimes appends, and " - NO QUORUM".
   # Safe to call with either canonical Meeting.body_name values or raw AI text.
@@ -171,6 +148,17 @@ module TopicsHelper
         .split.sort.join(" ")
   end
 
+  # Attempts to replace a generic "appeared on the agenda" Record entry with
+  # real content, in this order:
+  #   1. Matching item_details.summary from the meeting's MeetingSummary
+  #   2. The agenda_item title as a cleaner fallback
+  #   3. nil — let the caller keep the original event text
+  #
+  # TopicAppearance.agenda_item is optional (some appearances are linked to
+  # meetings without a specific agenda item). When agenda_item is nil we can't
+  # identify which item summary to pull, so we fall through the summary loop
+  # and return nil at the end. The caller's `if enriched.present?` guard then
+  # preserves the original event text instead of replacing it with nothing.
   def extract_meeting_item_summary(meeting, agenda_item)
     return agenda_item&.title unless meeting
 
