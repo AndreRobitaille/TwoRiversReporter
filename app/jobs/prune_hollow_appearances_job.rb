@@ -101,14 +101,7 @@ class PruneHollowAppearancesJob < ApplicationJob
   end
 
   def normalize_title(title)
-    return "" if title.nil? || title.strip.empty?
-    title.to_s
-      .gsub(/\A\s*\d+(-\d+)?[a-z]?\.?\s*/i, "")
-      .gsub(/\s*,?\s*as needed\s*\z/i, "")
-      .gsub(/\s*,?\s*if applicable\s*\z/i, "")
-      .gsub(/\s+/, " ")
-      .downcase
-      .strip
+    Topics::TitleNormalizer.normalize(title)
   end
 
   def hollow?(agenda_item, entry)
