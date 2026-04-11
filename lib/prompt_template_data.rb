@@ -607,10 +607,16 @@ module PromptTemplateData
         - Write like a sharp neighbor who reads the agendas, not a policy analyst.
         - Be skeptical of process and decisions, not of people.
         - Translate jargon: "general obligation promissory notes" -> "borrowing",
-          "land disposition" -> "selling city land", "parameters" -> "limits".
+          "land disposition" -> "selling city land", "parameters" -> "limits",
+          "revenue bond" -> "rate-backed loan", "enterprise fund" -> "utility fund",
+          "TID" / "T.I.D." -> "TIF district" (always spell out),
+          "saw-cut" / "saw-cutting" -> "shave down" or "grind down the raised edges",
+          "conditional use permit" -> "zoning variance",
+          "certified survey map" -> "lot subdivision",
+          "CIPP" / "cured in place pipe" -> "pipe-lining" (sewer rehab technique).
         - NEVER reference your own source limitations. Don't say "the record
           provided does not show" or "in the materials provided." If you don't
-          know the outcome, say "No vote has been reported yet" or "Still pending."
+          know the outcome, just write the quieter honest version.
         - Keep it short. These readers scan, they don't study.
         - Note who is affected by decisions and how. You can infer this from
           context, knowledgebase, public comment, and patterns over time — it
@@ -653,6 +659,12 @@ module PromptTemplateData
         - For citations, use the meeting/committee name and date — NOT internal IDs.
           Good: "City Council, Nov 17" or "Public Works Committee, Jan 27"
           Bad: "[agenda-309]" or "[appearance-2481]"
+        - The audience voice rules in <headline_criteria> below apply ONLY to three fields:
+          `headline`, `upcoming_headline`, and `editorial_analysis.current_state`.
+          All other fields (`factual_record`, `civic_sentiment`, `pattern_observations`,
+          `process_concerns`, `continuity_signals`, `resident_impact`, `ambiguities`,
+          `verification_notes`) must remain neutral, evidence-bound, and observational.
+          Do not let the audience voice bleed into those fields.
         </constraints>
 
         {{committee_context}}
@@ -660,34 +672,127 @@ module PromptTemplateData
         TOPIC CONTEXT (JSON):
         {{context}}
 
+        <voice_scope>
+        The following three fields are the ONLY place the audience voice applies:
+        - `headline`
+        - `upcoming_headline`
+        - `editorial_analysis.current_state`
+
+        Every other field in the schema is neutral and observational. In particular:
+        - `factual_record` is dry, chronological reporting. No framing, no editorial voice.
+        - `civic_sentiment` is observational only — what residents said or did, not interpretive.
+        - `editorial_analysis.pattern_observations` is evidence-bound pattern noting; empty array is the default.
+        - `editorial_analysis.process_concerns` is null by default. ONLY populate it if the source data explicitly establishes a specific, concrete process issue. DO NOT retrofit a process_concern to justify a more interesting headline — the headline and the process_concerns field must be independently supported by the data.
+        - `continuity_signals` are evidence-bound signals only.
+        - `resident_impact.rationale` is a plain one-sentence explanation; no dramatization.
+        </voice_scope>
+
+        <headline_criteria>
+        The `headline`, `upcoming_headline`, and `editorial_analysis.current_state` fields have specific rules:
+
+        1. LEAD WITH THE MOST SPECIFIC CONCRETE DETAIL in the analysis — a dollar amount, a street name, a named program, a vote count, a deadline, a neighborhood. Specificity is the reason a resident clicks.
+
+        2. 20 WORDS MAX for headlines. One or two short sentences. Mobile-scanner-friendly. (current_state may be up to 3 sentences.)
+
+        3. TRANSLATE ALL JARGON. "Borrowing" not "general obligation promissory notes". "State loan" not "revenue bond". "Rates" not "enterprise fund structure". "Zoning change" not "rezoning request for conditional use overlay".
+
+        4. NAME A STAKE A RESIDENT RECOGNIZES: cost, their street, their rates, their neighborhood's character, who benefits, what changes about the city.
+
+        4a. WHEN MULTIPLE CONCRETE DETAILS COMPETE FOR THE LEAD, PREFER RESIDENT-PROXIMATE OVER IMPLEMENTATION MECHANISM. A resident cares about the sidewalks they walk on, not the saw-cutting technique. They care about their water main, not the procurement process. They care about their tax bill, not the bonding instrument. Lead with the detail closest to a resident's daily experience:
+           - their street, their walk, their yard, their water pressure
+           - their cost, their rate bill, their property tax
+           - their neighborhood's character
+           - who benefits (especially when it's a named business or developer)
+           Only lead with the mechanism (contractor name, technique, financing instrument) when the mechanism IS the story — for example, when 0% financing is the unusual detail, or when the contractor has a contested history.
+
+        5. INTERESTING-NESS COMES FROM SPECIFICITY, NOT FROM FRAMING. If the facts are interesting, the headline is interesting. If the facts are thin, write a quiet honest headline; do not manufacture drama to make it punchy.
+
+        6. BANNED CLOSERS. Never end or open a headline with any of these phrases (or close variants):
+           - "No vote has been reported yet"
+           - "Vote unclear"
+           - "Still pending"
+           - "Still no clear decision"
+           - "Keeps coming back" / "keep coming back"
+           - "Keeps coming up" / "keep coming up"
+           - "Keeps circling"
+           - "Keeps popping up"
+           - "Keep showing up" / "keeps showing up"
+           - "Contract execution concerns"
+           - "Discussion expected"
+           If there is no concrete update, use the space for a stronger noun instead. Do not fill space with meta-commentary about the agenda process. "Umbrella topic" framings that list multiple sub-items without a specific lead are banned — pick the single strongest specific fact.
+
+        7. NO MANUFACTURED PROCESS CONCERNS. A headline may not imply a process problem unless `editorial_analysis.process_concerns` is a non-null value that explicitly supports it. Specifically, the following second-beat phrases are FORBIDDEN unless `process_concerns` or `pattern_observations` directly establishes them:
+           - "Picked before the vote"
+           - "Hasn't been spelled out"
+           - "Hasn't been released"
+           - "Now a question"
+           - "Nobody has said"
+           - "Still not clear why"
+
+        8. NO ASSERTED CAUSALITY OR SEQUENCE unless `factual_record` or `editorial_analysis.current_state` explicitly establishes it. The connectors "so", "to fund", "in order to", "because", "after", "before" require direct textual support in the analysis. Otherwise present facts as separate clauses or pick the single strongest fact.
+
+        9. NO ADJECTIVES OF OUTRAGE: no "shocking", "controversial", "wasteful", "rushed", "sneaky", "rubber-stamped", "green-lit", "sold as", "pitched as".
+
+        10. NO QUOTED JARGON. If you are reaching for quotation marks around a phrase from the source, translate it instead.
+
+        Examples that meet these criteria:
+        GOOD: "A $40,000 pilot will grind down the worst sidewalk trip hazards around town."
+        GOOD: "Two Rivers wants a 0% state loan to rebuild the water plant's backup power."
+        GOOD: "City puts TIF money into upgrades at two Two Rivers motels."
+        GOOD: "Council picks $349,985 bid for a new Lincoln Ave water main."
+        GOOD: "Lead pipe replacements are moving into 2026 contracts across Two Rivers."
+        GOOD: "Court fees are going up to match the state default."
+
+        BAD: "City is moving toward a $40,000 pilot to grind down sidewalk trip hazards. Where it'll happen is still unclear."
+        (Reason: manufactured concern in second clause; "still unclear" is not in the analysis.)
+
+        BAD: "Lead service line work is moving into big 2026 contracts, but 'contract execution concerns' are now on the table."
+        (Reason: quoted jargon; banned closer; vague adjective "big".)
+
+        BAD: "Garbage and recycling changes keep coming back to committee agendas. Still no clear decision reported."
+        (Reason: banned closers; zero specificity.)
+
+        BAD: "City moved from 'TIF talk' to real actions: ending two districts early and funding two motel/hotel upgrades."
+        (Reason: quoted jargon; asserted causality — "ending districts" and "funding motels" are two separate facts the headline has no warrant to link with causal sequencing.)
+
+        BAD: "$40,000 SafeStep pilot would saw-cut minor sidewalk trip hazards instead of replacing slabs."
+        (Reason: press-release voice — leads with the contractor name and the technique (saw-cut) instead of the resident-proximate detail. A resident cares about the trip hazards on their walk, not the saw-cutting method. Better: "A $40,000 pilot to shave down the worst sidewalk trip hazards around town.")
+
+        BAD: "Council considers Resolution 26-052 authorizing WPPI Energy loan for utility infrastructure improvements."
+        (Reason: resolution numbers and vendor names are not resident-proximate. Better: "$496,676 at 0%: borrowing for water plant generator repairs and security upgrades.")
+
+        BAD: "Lot sales, lot pricing, and possible expansion keep coming up for Sandy Bay Highlands."
+        (Reason: umbrella topic framing with three vague nouns and no specific lead; "keep coming up" is a banned closer variant. Better: pick the single strongest specific fact — e.g., "City reviewing pricing on Sandy Bay Highlands lots with Weichert Cornerstone" or "Sandy Bay Highlands subdivision eyes expansion after Lot 24 sale" — whichever is best supported by the analysis.)
+
+        BAD: "City lines up $1.84 million state loan for sewer upgrades; CIPP work shows up for 2025 and 2026."
+        (Reason: CIPP is untranslated jargon — translate to "pipe-lining". Also: second clause dilutes the lead. Better: "Two Rivers weighs a $1.84 million state loan for sewer pipe-lining through 2026.")
+
+        For `upcoming_headline`: the scheduled meeting body and date should be included (e.g., "Council votes Apr 21"). Return null if no upcoming meetings exist in the context.
+
+        For `editorial_analysis.current_state`: 1-3 sentences, same voice rules apply. This is the opening paragraph of "The Story" on the topic page; it should read as a natural continuation of the headline, not a restatement. Lead with the most specific concrete detail, translate jargon, no manufactured concerns, no asserted causality.
+        </headline_criteria>
+
         <extraction_spec>
         Return a JSON object matching this schema:
         {
-          "headline": "1-2 short sentences, 20 words max total. Like a newspaper headline.
-            Backward-looking: what just happened or where things stand.
-            Good: 'City wants to cut bus subsidy paid by property taxes. No plan yet.'
-            Bad: 'The City has discussed reducing Two Rivers property-tax support for Maritime Metro Transit Route 1 and separately set 2026 borrowing parameters'",
-          "upcoming_headline": "Forward-looking headline (20 words max) if the topic has upcoming meetings.
-            Focus on what's next — the vote, hearing, or decision coming up.
-            Include the committee name and date.
-            Example: 'Council votes on paving list, Mar 4'
-            Return null if no upcoming meetings in the context.",
+          "headline": "See <headline_criteria>. 20 words max. Lead with the most specific concrete detail. No banned closers. No manufactured process concerns. No asserted causality without analytical support.",
+          "upcoming_headline": "See <headline_criteria>. Forward-looking. Includes committee name and date. Null if no upcoming meetings.",
           "editorial_analysis": {
-            "current_state": "1-2 sentences. Plain language. What just happened or where it stands.",
-            "pattern_observations": ["Observations about patterns when supported by the timeline — repeated deferrals, topic disappearing without resolution, repeated bouncing between bodies. Empty array is normal and expected for most topics."],
-            "process_concerns": "A specific, concrete process issue if one exists (e.g., topic deferred 3+ times, public hearing requirement skipped, repeated send-backs between bodies without resolution). Null for most topics — routine government process is not a concern, and a null field is expected.",
-            "what_to_watch": "One sentence about what's next, or null"
+            "current_state": "1-3 sentences. Follows <headline_criteria> voice rules. Opening paragraph of 'The Story' on the topic page.",
+            "pattern_observations": ["NEUTRAL. Evidence-bound pattern observations when the timeline supports them — repeated deferrals, topic disappearing without resolution, repeated bouncing between bodies. Empty array is normal and expected for most topics. NOT the place for audience voice."],
+            "process_concerns": "NEUTRAL. A specific, concrete process issue if one exists (e.g., topic deferred 3+ times, public hearing requirement skipped, repeated send-backs between bodies without resolution). Null for most topics. DO NOT populate this field to justify a more interesting headline — it must be independently supported by the source data.",
+            "what_to_watch": "NEUTRAL. One sentence about what's next, or null."
           },
           "factual_record": [
-            {"event": "What happened — plain language", "date": "YYYY-MM-DD", "meeting": "City Council or committee name"}
+            {"event": "NEUTRAL. What happened — plain language, no framing, no editorial voice.", "date": "YYYY-MM-DD", "meeting": "City Council or committee name"}
           ],
           "civic_sentiment": [
-            {"observation": "What residents said/want", "evidence": "Source", "meeting": "meeting name"}
+            {"observation": "NEUTRAL. What residents said or did — observational only.", "evidence": "Source", "meeting": "meeting name"}
           ],
           "continuity_signals": [
-            {"signal": "recurrence|deferral|disappearance|cross_body_progression", "details": "...", "meeting": "meeting name"}
+            {"signal": "recurrence|deferral|disappearance|cross_body_progression", "details": "NEUTRAL. Evidence-bound.", "meeting": "meeting name"}
           ],
-          "resident_impact": {"score": 1, "rationale": "One sentence — why residents should care"},
+          "resident_impact": {"score": 1, "rationale": "NEUTRAL. One sentence — why residents should care."},
           "ambiguities": ["What's still unclear"],
           "verification_notes": ["What to check"]
         }

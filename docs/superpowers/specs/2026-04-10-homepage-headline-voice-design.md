@@ -178,7 +178,7 @@ The change is successful if, after the backfill:
 
 ## Appendix A: New `instructions` text
 
-This is the canonical new value for the `analyze_topic_briefing` PromptTemplate's `instructions` field. Paste verbatim into the admin UI and into `lib/prompt_template_data.rb`. Preserves `{{committee_context}}` and `{{context}}` placeholders so `PromptTemplate#interpolate` continues to work unchanged.
+This is the canonical new value for the `analyze_topic_briefing` PromptTemplate's `instructions` field. Paste verbatim into the admin UI and into `lib/prompt_template_data.rb`. Preserves `{{committee_context}}` and `{{context}}` placeholders so `PromptTemplate#interpolate` continues to work unchanged. This is the iteration-2 version — Plan Task 1's pre-deploy validation against four structurally different topics (extraterritorial review, fee schedule, sandy bay highlands, wastewater utility planning) caught two additional failure modes (CIPP/pipe-lining jargon, umbrella topic framing) and added fixes to the `<voice>` translation list, the rule 6 banned closers, and two new BAD examples.
 
 ```
 Analyze this topic's history across meetings. Return a JSON analysis.
@@ -192,7 +192,8 @@ Analyze this topic's history across meetings. Return a JSON analysis.
   "TID" / "T.I.D." -> "TIF district" (always spell out),
   "saw-cut" / "saw-cutting" -> "shave down" or "grind down the raised edges",
   "conditional use permit" -> "zoning variance",
-  "certified survey map" -> "lot subdivision".
+  "certified survey map" -> "lot subdivision",
+  "CIPP" / "cured in place pipe" -> "pipe-lining" (sewer rehab technique).
 - NEVER reference your own source limitations. Don't say "the record
   provided does not show" or "in the materials provided." If you don't
   know the outcome, just write the quieter honest version.
@@ -286,17 +287,19 @@ The `headline`, `upcoming_headline`, and `editorial_analysis.current_state` fiel
 
 5. INTERESTING-NESS COMES FROM SPECIFICITY, NOT FROM FRAMING. If the facts are interesting, the headline is interesting. If the facts are thin, write a quiet honest headline; do not manufacture drama to make it punchy.
 
-6. BANNED CLOSERS. Never end a headline with any of these phrases:
+6. BANNED CLOSERS. Never end or open a headline with any of these phrases (or close variants):
    - "No vote has been reported yet"
    - "Vote unclear"
    - "Still pending"
    - "Still no clear decision"
-   - "Keeps coming back"
+   - "Keeps coming back" / "keep coming back"
+   - "Keeps coming up" / "keep coming up"
    - "Keeps circling"
    - "Keeps popping up"
+   - "Keep showing up" / "keeps showing up"
    - "Contract execution concerns"
    - "Discussion expected"
-   If there is no concrete update, use the space for a stronger noun instead. Do not fill space with meta-commentary about the agenda process.
+   If there is no concrete update, use the space for a stronger noun instead. Do not fill space with meta-commentary about the agenda process. "Umbrella topic" framings that list multiple sub-items without a specific lead are banned — pick the single strongest specific fact.
 
 7. NO MANUFACTURED PROCESS CONCERNS. A headline may not imply a process problem unless `editorial_analysis.process_concerns` is a non-null value that explicitly supports it. Specifically, the following second-beat phrases are FORBIDDEN unless `process_concerns` or `pattern_observations` directly establishes them:
    - "Picked before the vote"
@@ -337,6 +340,12 @@ BAD: "$40,000 SafeStep pilot would saw-cut minor sidewalk trip hazards instead o
 
 BAD: "Council considers Resolution 26-052 authorizing WPPI Energy loan for utility infrastructure improvements."
 (Reason: resolution numbers and vendor names are not resident-proximate. Better: "$496,676 at 0%: borrowing for water plant generator repairs and security upgrades.")
+
+BAD: "Lot sales, lot pricing, and possible expansion keep coming up for Sandy Bay Highlands."
+(Reason: umbrella topic framing with three vague nouns and no specific lead; "keep coming up" is a banned closer variant. Better: pick the single strongest specific fact — e.g., "City reviewing pricing on Sandy Bay Highlands lots with Weichert Cornerstone" or "Sandy Bay Highlands subdivision eyes expansion after Lot 24 sale" — whichever is best supported by the analysis.)
+
+BAD: "City lines up $1.84 million state loan for sewer upgrades; CIPP work shows up for 2025 and 2026."
+(Reason: CIPP is untranslated jargon — translate to "pipe-lining". Also: second clause dilutes the lead. Better: "Two Rivers weighs a $1.84 million state loan for sewer pipe-lining through 2026.")
 
 For `upcoming_headline`: the scheduled meeting body and date should be included (e.g., "Council votes Apr 21"). Return null if no upcoming meetings exist in the context.
 
