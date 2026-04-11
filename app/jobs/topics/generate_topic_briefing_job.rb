@@ -38,11 +38,21 @@ module Topics
         .limit(RAW_CONTEXT_MEETING_LIMIT)
         .pluck(:meeting_id)
 
-      recent_meetings = Meeting.where(id: recent_meeting_ids)
-      recent_raw_context = recent_meetings.flat_map do |meeting|
-        builder = Topics::SummaryContextBuilder.new(topic, meeting)
+      recent_meetings = Meeting.where(id: recent_meeting_ids).order(starts_at: :desc)
+      recent_raw_context = recent_meetings.flat_map do |m|
+        builder = Topics::SummaryContextBuilder.new(topic, m)
         builder.build_context_json[:agenda_items]
       end
+
+      # Pull per-item substantive content from each recent meeting's
+      # MeetingSummary. Without this, the briefing AI sees only agenda
+      # structure (item titles + empty `item.summary` fields) and
+      # regenerates "appeared on the agenda" factual_record entries.
+      # The content already exists in generation_data["item_details"];
+      # we just filter to agenda items linked to this topic.
+      recent_item_details = Topics::RecentItemDetailsBuilder
+        .new(topic, recent_meetings.to_a)
+        .build
 
       query = "#{topic.canonical_name} #{topic.topic_aliases.pluck(:name).join(' ')}"
       kb_chunks = retrieval_service.retrieve_topic_context(
@@ -61,6 +71,7 @@ module Topics
         },
         prior_meeting_analyses: prior_summaries,
         recent_raw_context: recent_raw_context,
+        recent_item_details: recent_item_details,
         knowledgebase_context: formatted_kb,
         continuity_context: {
           status_events: topic.topic_status_events.order(occurred_at: :desc).limit(5).map do |e|

@@ -168,6 +168,66 @@ class Topics::GenerateTopicBriefingJobTest < ActiveJob::TestCase
     assert_nil @topic.reload.topic_briefing
   end
 
+  test "context passed to analyze_topic_briefing includes recent_item_details from linked agenda items" do
+    # Attach a MeetingSummary with item_details for the linked agenda item
+    @meeting.meeting_summaries.create!(
+      summary_type: "minutes_recap",
+      generation_data: {
+        "item_details" => [
+          {
+            "agenda_item_title" => "Parking Plan Vote",
+            "summary" => "Council converted 8 downtown spots to 15-minute loading.",
+            "activity_level" => "discussion",
+            "vote" => "4-3",
+            "decision" => nil,
+            "public_hearing" => nil
+          }
+        ]
+      }
+    )
+
+    captured_context = nil
+    analysis_json = {
+      "headline" => "h", "upcoming_headline" => nil,
+      "editorial_analysis" => { "current_state" => "c" },
+      "factual_record" => [],
+      "resident_impact" => { "score" => 3, "rationale" => "r" }
+    }.to_json
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :analyze_topic_briefing, analysis_json do |arg|
+      captured_context = arg
+      arg.is_a?(Hash)
+    end
+    mock_ai.expect :render_topic_briefing, {
+      "editorial_content" => "e", "record_content" => "r"
+    } do |_| true end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_topic_context(*args, **kwargs); []; end
+    def retrieval_stub.format_topic_context(*args); []; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        Topics::GenerateTopicBriefingJob.perform_now(
+          topic_id: @topic.id,
+          meeting_id: @meeting.id
+        )
+      end
+    end
+
+    assert captured_context.key?(:recent_item_details),
+      "briefing context must include :recent_item_details key"
+    assert_kind_of Array, captured_context[:recent_item_details]
+    assert_equal 1, captured_context[:recent_item_details].length
+    entry = captured_context[:recent_item_details].first
+    assert_equal "Parking Plan Vote", entry[:agenda_item_title]
+    assert_includes entry[:summary], "15-minute loading"
+    assert_equal "4-3", entry[:vote]
+
+    mock_ai.verify
+  end
+
   test "is idempotent — updates existing briefing" do
     TopicBriefing.create!(
       topic: @topic,
