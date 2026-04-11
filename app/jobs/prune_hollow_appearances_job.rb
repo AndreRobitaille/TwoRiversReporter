@@ -108,19 +108,23 @@ class PruneHollowAppearancesJob < ApplicationJob
   def demote_topic(topic)
     remaining = topic.topic_appearances.count
 
-    case remaining
-    when 0
-      topic.update!(status: "blocked", lifecycle_status: "dormant")
-      record_status_event(topic, lifecycle_status: "dormant",
-                          notes: "Blocked — 0 appearances remaining after hollow-appearance pruning.")
-    when 1
-      topic.update!(lifecycle_status: "dormant")
-      record_status_event(topic, lifecycle_status: "dormant",
-                          notes: "Demoted — only 1 appearance remaining after hollow-appearance pruning.")
-    else
-      unless topic.resident_impact_admin_locked?
-        Topics::GenerateTopicBriefingJob.perform_later(topic_id: topic.id)
+    Topic.transaction do
+      case remaining
+      when 0
+        topic.update!(status: "blocked", lifecycle_status: "dormant")
+        record_status_event(topic, lifecycle_status: "dormant",
+                            notes: "Blocked — 0 appearances remaining after hollow-appearance pruning.")
+      when 1
+        topic.update!(lifecycle_status: "dormant")
+        record_status_event(topic, lifecycle_status: "dormant",
+                            notes: "Demoted — only 1 appearance remaining after hollow-appearance pruning.")
       end
+    end
+
+    # Enqueue briefing regeneration AFTER the transaction commits.
+    # Must be outside the transaction: job dispatch on rollback would be wrong.
+    if remaining >= 2 && !topic.resident_impact_admin_locked?
+      Topics::GenerateTopicBriefingJob.perform_later(topic_id: topic.id)
     end
   end
 

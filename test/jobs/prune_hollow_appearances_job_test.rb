@@ -245,6 +245,11 @@ class PruneHollowAppearancesJobTest < ActiveJob::TestCase
     assert_equal 1, topic.topic_appearances.count
     assert_equal "approved", topic.status
     assert_equal "dormant", topic.lifecycle_status
+
+    event = topic.topic_status_events.order(:created_at).last
+    refute_nil event, "expected a TopicStatusEvent audit row"
+    assert_equal "hollow_appearance_prune", event.evidence_type
+    assert_equal "dormant", event.lifecycle_status
   end
 
   test "leaves topic intact and enqueues briefing when pruning drops it to 2+ appearances" do
@@ -275,6 +280,7 @@ class PruneHollowAppearancesJobTest < ActiveJob::TestCase
     assert_equal 2, topic.topic_appearances.count
     assert_equal "approved", topic.status
     assert_equal "active", topic.lifecycle_status
+    assert_equal 0, topic.topic_status_events.count
   end
 
   test "does not enqueue briefing when resident_impact is admin-locked" do
