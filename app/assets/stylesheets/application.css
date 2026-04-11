@@ -1820,10 +1820,13 @@ th.sortable-header:hover {
    spacing, not backgrounds.
    ============================================ */
 
-/* ---- One reading column for everything ---- */
+/* ---- One reading column for everything ----
+   The article container IS the reading measure. Body prose, eyebrows,
+   dek, fallback, record entries all fill this width. Only pullquote
+   and aside are intentionally narrower within it. */
 
 .topic-article {
-  max-width: 45rem;     /* ~720px, the reading column */
+  max-width: 38rem;     /* ~608px, one consistent reading measure */
   margin: 0 auto;
   padding: var(--space-6) 0 var(--space-8);
 }
@@ -1878,7 +1881,6 @@ th.sortable-header:hover {
   line-height: 1.55;
   color: var(--color-text-secondary);
   margin: var(--space-3) 0 0;
-  max-width: 36rem;
 }
 
 /* ---- What to Watch (pullquote) ---- */
@@ -1893,7 +1895,7 @@ th.sortable-header:hover {
   margin: 0;
   padding: 0 0 0 1.2rem;
   border-left: 3px solid var(--color-terra-cotta);
-  max-width: 28rem;
+  max-width: 30rem;
 }
 
 /* ---- Coming Up (structured list, no cards) ---- */
@@ -2027,7 +2029,6 @@ th.sortable-header:hover {
   font-size: 1.13rem;
   line-height: 1.72;
   color: var(--color-text);
-  max-width: 36rem;
 }
 
 .topic-story-body p {
@@ -2081,7 +2082,7 @@ th.sortable-header:hover {
   margin-top: var(--space-6);
   padding: 0.2rem 0 0.2rem var(--space-4);
   border-left: 3px solid var(--color-terra-cotta);
-  max-width: 28rem;
+  max-width: 30rem;
 }
 
 .topic-aside-label {
@@ -2171,7 +2172,6 @@ th.sortable-header:hover {
   line-height: 1.6;
   color: var(--color-text);
   margin: 0 0 var(--space-3);
-  max-width: 36rem;
 }
 
 .topic-decision .votes-grid {
@@ -2260,7 +2260,7 @@ th.sortable-header:hover {
 /* ---- Footer ---- */
 
 .topic-article-footer {
-  max-width: 45rem;
+  max-width: 38rem;
   margin: var(--space-10) auto 0;
   padding-top: var(--space-5);
   border-top: 1px solid var(--color-border);
