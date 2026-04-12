@@ -60,4 +60,23 @@ module MeetingsHelper
     else "decision-badge--default"
     end
   end
+
+  COUNCIL_PATTERNS = [
+    "City Council Meeting",
+    "City Council Work Session",
+    "City Council Special Meeting"
+  ].freeze
+
+  def council_meeting?(meeting)
+    meeting.body_name.in?(COUNCIL_PATTERNS) ||
+      (meeting.body_name.include?("Council") && !meeting.body_name.include?("Work Session"))
+  end
+
+  def best_headline(meeting)
+    summary = meeting.meeting_summaries.find { |s| s.summary_type == "minutes_recap" } ||
+              meeting.meeting_summaries.find { |s| s.summary_type == "transcript_recap" } ||
+              meeting.meeting_summaries.find { |s| s.summary_type == "packet_analysis" }
+    return nil unless summary
+    meeting_headline(summary.generation_data)
+  end
 end

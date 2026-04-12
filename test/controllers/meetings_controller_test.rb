@@ -53,6 +53,48 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     AgendaItemTopic.create!(topic: @blocked_topic, agenda_item: item3)
   end
 
+  # --- Index tests ---
+
+  test "index assigns upcoming meetings ordered ascending" do
+    upcoming = Meeting.create!(
+      body_name: "Plan Commission Meeting",
+      meeting_type: "Regular",
+      starts_at: 5.days.from_now,
+      status: "upcoming",
+      detail_page_url: "http://example.com/upcoming-1"
+    )
+    get meetings_url
+    assert_response :success
+    assert_includes assigns(:upcoming), upcoming
+  end
+
+  test "index assigns recent meetings from last 21 days" do
+    get meetings_url
+    assert_response :success
+    # @meeting from setup is 3.days.ago — should be in recent
+    assert_includes assigns(:recent), @meeting
+  end
+
+  test "index excludes meetings older than 21 days from recent" do
+    get meetings_url
+    assert_response :success
+    # other_meeting from setup is 30.days.ago — should NOT be in recent
+    old_meeting = Meeting.find_by(detail_page_url: "http://example.com/old-meeting-nav")
+    refute_includes assigns(:recent), old_meeting
+  end
+
+  test "index assigns search_results when q param present" do
+    get meetings_url, params: { q: "City Council" }
+    assert_response :success
+    assert assigns(:search_results).any?
+  end
+
+  test "index search_results is nil when no q param" do
+    get meetings_url
+    assert_response :success
+    assert_nil assigns(:search_results)
+  end
+
   test "show assigns ongoing and new topics" do
     get meeting_url(@meeting)
     assert_response :success

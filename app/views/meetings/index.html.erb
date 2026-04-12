@@ -34,7 +34,7 @@
       </tr>
     </thead>
     <tbody>
-      <% @meetings.each do |meeting| %>
+      <% @recent || Meeting.none.each do |meeting| %>
         <tr>
           <td>
             <strong><%= meeting.starts_at&.strftime("%b %d, %Y") %></strong>
@@ -82,7 +82,7 @@
   </table>
 </div>
 
-<% if @meetings.empty? %>
+<% if @recent || Meeting.none.empty? %>
   <div class="card text-center" style="padding: var(--space-12);">
     <p class="text-secondary mb-4">No meetings found.</p>
     <% if params[:q].present? %>

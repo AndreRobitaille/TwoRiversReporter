@@ -1,11 +1,20 @@
 class MeetingsController < ApplicationController
+  UPCOMING_WINDOW = 21.days
+  RECENT_WINDOW = 21.days
+
   def index
-    @meetings = if params[:q].present?
-                  # Find meetings that have documents matching the query
-                  matching_doc_ids = MeetingDocument.search(params[:q]).pluck(:meeting_id)
-                  Meeting.where(id: matching_doc_ids).includes(:meeting_documents, :meeting_summaries, :motions).order(starts_at: :desc)
-    else
-                  Meeting.includes(:meeting_documents, :meeting_summaries, :motions).order(starts_at: :desc)
+    @upcoming = Meeting
+      .where(starts_at: Time.current..UPCOMING_WINDOW.from_now)
+      .includes(:committee, :meeting_documents, :meeting_summaries, agenda_items: :topics)
+      .order(starts_at: :asc)
+
+    @recent = Meeting
+      .where(starts_at: (RECENT_WINDOW.ago)..Time.current)
+      .includes(:committee, :meeting_documents, :meeting_summaries, agenda_items: :topics)
+      .order(starts_at: :desc)
+
+    if params[:q].present?
+      @pagy, @search_results = pagy(:offset, Meeting.search_multi(params[:q]), limit: 15)
     end
   end
 
