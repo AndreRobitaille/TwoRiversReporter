@@ -1,12 +1,52 @@
-<% content_for(:title) { "#{@member.name} - City Officials - Two Rivers Matters" } %>
+<% content_for(:title) { "#{@member.name} - Two Rivers Matters" } %>
 
 <div class="page-header">
   <h1 class="page-title"><%= @member.name %></h1>
-  <p class="page-subtitle"><%= @votes.count %> votes recorded</p>
 </div>
 
 <section class="section">
-  <h2>Voting History</h2>
+  <div class="home-section-header">
+    <%= render "shared/atom_marker" %>
+    <span class="home-section-label">Committees</span>
+    <div class="home-section-line"></div>
+  </div>
+
+  <div class="member-committees">
+    <% @memberships.each do |cm| %>
+      <%= link_to committee_path(cm.committee.slug), class: "member-committee #{"member-committee--council" if cm.committee.name == "City Council"}" do %>
+        <span class="member-committee-name"><%= cm.committee.name %></span>
+        <% if cm.role.present? && cm.role.in?(%w[chair vice_chair]) %>
+          <span class="badge badge--primary"><%= cm.role.titleize.tr("_", " ") %></span>
+        <% elsif cm.committee.name == "City Council" %>
+          <span class="badge badge--info">Elected</span>
+        <% else %>
+          <span class="badge badge--default">Member</span>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+</section>
+
+<% if @attendance %>
+  <section class="section">
+    <div class="home-section-header">
+      <%= render "shared/atom_marker" %>
+      <span class="home-section-label">Attendance</span>
+      <div class="home-section-line"></div>
+    </div>
+
+    <div class="member-attendance">
+      <p><%= attendance_sentence(@attendance) %></p>
+    </div>
+  </section>
+<% end %>
+
+<section class="section">
+  <div class="home-section-header">
+    <%= render "shared/atom_marker" %>
+    <span class="home-section-label">Voting Record</span>
+    <div class="home-section-line"></div>
+  </div>
 
   <% if @votes.any? %>
     <div class="table-wrapper">
@@ -23,26 +63,16 @@
         <tbody>
           <% @votes.each do |vote| %>
             <tr>
-              <td>
-                <strong><%= vote.motion.meeting.starts_at&.strftime("%b %d, %Y") %></strong>
-              </td>
+              <td><strong><%= vote.motion.meeting.starts_at&.strftime("%b %d, %Y") %></strong></td>
               <td><%= vote.motion.meeting.body_name %></td>
-              <td>
-                <%= link_to truncate(vote.motion.description, length: 80), meeting_path(vote.motion.meeting) %>
-              </td>
-              <td>
-                <span class="vote-value vote-value--<%= vote.value %>">
-                  <%= vote.value.titleize %>
-                </span>
-              </td>
+              <td><%= link_to truncate(vote.motion.description, length: 80), meeting_path(vote.motion.meeting) %></td>
+              <td><span class="vote-value vote-value--<%= vote.value %>"><%= vote.value.titleize %></span></td>
               <td>
                 <span class="badge <%= case vote.motion.outcome&.downcase
                   when 'passed' then 'badge--success'
                   when 'failed' then 'badge--danger'
                   else 'badge--default'
-                end %>">
-                  <%= vote.motion.outcome&.titleize || "Unknown" %>
-                </span>
+                end %>"><%= vote.motion.outcome&.titleize || "Unknown" %></span>
               </td>
             </tr>
           <% end %>
@@ -50,16 +80,14 @@
       </table>
     </div>
   <% else %>
-    <div class="card text-center" style="padding: var(--space-12);">
-      <p class="text-secondary mb-0">No voting history found for this official.</p>
-    </div>
+    <p class="section-empty">No voting record found for this official.</p>
   <% end %>
 </section>
 
-<%= link_to members_path, class: "back-link" do %>
+<%= link_to committees_path, class: "back-link" do %>
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <line x1="19" y1="12" x2="5" y2="12"></line>
     <polyline points="12 19 5 12 12 5"></polyline>
   </svg>
-  Back to City Officials
+  All Committees
 <% end %>
