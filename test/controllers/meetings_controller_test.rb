@@ -249,10 +249,10 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".section-label", text: "What Happened"
   end
 
-  test "index hides coming up when no enriched upcoming" do
+  test "index shows empty note when no enriched upcoming" do
     get meetings_url
     assert_response :success
-    refute_select ".section-label", text: "Coming Up"
+    assert_select ".meetings-empty-note"
   end
 
   test "index renders headline in recent card" do
@@ -263,7 +263,7 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     )
     get meetings_url
     assert_response :success
-    assert_select ".meetings-recent-headline", text: /Big news from council/
+    assert_select ".meetings-card-headline", text: /Big news from council/
   end
 
   test "index renders topic pills on upcoming card" do

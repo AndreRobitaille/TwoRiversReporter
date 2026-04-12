@@ -1053,35 +1053,38 @@ details[open] summary {
   padding-left: 2.5rem;
 }
 
-/* --- Zone Spacing --- */
+/* --- Two-Column Layout --- */
+
+.meetings-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.meetings-column {
+  min-width: 0;
+}
 
 .meetings-zone {
   margin-bottom: var(--space-10);
 }
 
-/* --- Thin meeting counts --- */
+/* --- Unified Meeting Card (date slab + detail) --- */
 
-.meetings-thin-note {
-  font-family: var(--font-data);
-  font-size: var(--font-size-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--color-text-muted);
-  text-align: center;
-  margin-top: var(--space-4);
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--color-border);
-}
-
-/* --- Coming Up: Date Slab Cards --- */
-
-.meetings-upcoming-list {
+.meetings-stack {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
 }
 
-.meetings-upcoming-card {
+.meetings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.meetings-card {
   display: flex;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -1093,7 +1096,7 @@ details[open] summary {
   transition: box-shadow var(--transition-normal), transform var(--transition-fast);
 }
 
-.meetings-upcoming-card:hover {
+.meetings-card:hover {
   box-shadow: 0 8px 24px rgb(44 37 32 / 0.12), 0 2px 8px rgb(44 37 32 / 0.08);
   transform: translateY(-2px);
   color: inherit;
@@ -1103,12 +1106,12 @@ details[open] summary {
 .meetings-date-slab {
   font-family: var(--font-display);
   font-weight: 800;
-  padding: 0.75rem 1rem;
+  padding: 0.65rem 0.75rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 4.5rem;
+  min-width: 3.8rem;
   line-height: 1.1;
   color: var(--color-text-inverse);
   background: var(--color-teal);
@@ -1120,70 +1123,99 @@ details[open] summary {
 }
 
 .meetings-date-month {
-  font-size: 0.6rem;
+  font-size: 0.5rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   opacity: 0.85;
 }
 
 .meetings-date-day {
-  font-size: var(--font-size-2xl);
+  font-size: var(--font-size-xl);
   font-weight: 900;
 }
 
 .meetings-date-dow {
   font-family: var(--font-data);
-  font-size: 0.55rem;
+  font-size: 0.48rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   opacity: 0.8;
   margin-top: 0.1rem;
 }
 
-.meetings-upcoming-detail {
-  padding: var(--space-3) var(--space-4);
+.meetings-card-detail {
+  padding: var(--space-2) var(--space-3);
   display: flex;
   flex-direction: column;
   justify-content: center;
   flex: 1;
-  gap: var(--space-1);
+  min-width: 0;
+  gap: 0.15rem;
 }
 
-.meetings-upcoming-name {
+.meetings-card-name {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: var(--font-size-base);
+  font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.02em;
   color: var(--color-teal);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.meetings-upcoming-meta {
+.meetings-card-meta {
   font-family: var(--font-data);
-  font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
+  font-size: 0.6rem;
+  color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
-.meetings-upcoming-empty {
+.meetings-card-headline {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  color: var(--color-text);
+  margin: 0;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.meetings-card-empty {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+}
+
+/* --- Aside counts (thin meetings) --- */
+
+.meetings-aside {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-md);
+  line-height: var(--line-height-normal);
+}
+
+.meetings-aside-count {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--font-size-base);
+  color: var(--color-teal);
+}
+
+.meetings-empty-note {
   font-family: var(--font-body);
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
-}
-
-.meetings-card-arrow {
-  display: flex;
-  align-items: center;
-  padding: 0 var(--space-4);
-  color: var(--color-text-muted);
-  font-size: var(--font-size-base);
-  transition: color var(--transition-fast), transform var(--transition-fast);
-}
-
-.meetings-upcoming-card:hover .meetings-card-arrow {
-  color: var(--color-teal);
-  transform: translateX(3px);
+  padding: var(--space-4) 0;
 }
 
 /* --- Topic Pills (shared across zones) --- */
@@ -1197,16 +1229,15 @@ details[open] summary {
 
 .meetings-topic-pill {
   font-family: var(--font-body);
-  font-size: 0.7rem;
-  padding: 0.15rem 0.5rem;
+  font-size: 0.62rem;
+  padding: 0.1rem 0.45rem;
   border-radius: 99px;
   background: var(--color-primary-light);
   color: var(--color-teal);
-}
-
-.meetings-topic-pills--warm .meetings-topic-pill {
-  background: var(--color-warning-light);
-  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 14rem;
 }
 
 .meetings-topic-pill--more {
@@ -1215,141 +1246,7 @@ details[open] summary {
   font-style: italic;
 }
 
-/* --- What Happened: Recent Cards --- */
-
-.meetings-recent-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.meetings-recent-card {
-  display: block;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  text-decoration: none;
-  color: inherit;
-  position: relative;
-  transition: box-shadow var(--transition-normal), transform var(--transition-fast);
-}
-
-.meetings-recent-card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
-  color: inherit;
-  text-decoration: none;
-}
-
-.meetings-recent-accent {
-  height: 3px;
-  background: linear-gradient(90deg, var(--color-teal), #3d7b8a);
-  opacity: 0.5;
-  transition: opacity var(--transition-fast);
-}
-
-.meetings-recent-card:hover .meetings-recent-accent {
-  opacity: 1;
-}
-
-.meetings-recent-body {
-  padding: var(--space-3) var(--space-4) var(--space-4);
-}
-
-.meetings-recent-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-}
-
-.meetings-recent-name {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: var(--font-size-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  color: var(--color-teal);
-}
-
-.meetings-recent-date {
-  font-family: var(--font-data);
-  font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.meetings-recent-headline {
-  font-family: var(--font-body);
-  font-size: var(--font-size-sm);
-  color: var(--color-text);
-  margin: var(--space-2) 0 0;
-  line-height: var(--line-height-relaxed);
-}
-
-/* --- Search Results --- */
-
-.meetings-search-results {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-
-.meetings-search-row {
-  display: block;
-  padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--color-border);
-  text-decoration: none;
-  color: inherit;
-  transition: background var(--transition-fast);
-}
-
-.meetings-search-row:last-child {
-  border-bottom: none;
-}
-
-.meetings-search-row:hover {
-  background: var(--color-primary-light);
-  text-decoration: none;
-  color: inherit;
-}
-
-.meetings-search-row--muted {
-  opacity: 0.6;
-}
-
-.meetings-search-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-}
-
-.meetings-search-name {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: var(--font-size-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  color: var(--color-teal);
-}
-
-.meetings-search-date {
-  font-family: var(--font-data);
-  font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.meetings-search-headline {
-  font-family: var(--font-body);
-  font-size: var(--font-size-sm);
-  color: var(--color-text);
-  margin: var(--space-1) 0 0;
-  line-height: var(--line-height-normal);
-}
+/* --- Search Results (grid of meeting cards) --- */
 
 .meetings-search-empty {
   text-align: center;
@@ -1374,18 +1271,20 @@ details[open] summary {
 
 /* --- Responsive --- */
 
+@media (max-width: 768px) {
+  .meetings-columns {
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+  }
+
+  .meetings-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 600px) {
   .meetings-header .page-title {
     font-size: 1.35rem;
-  }
-
-  .meetings-date-slab {
-    min-width: 3.5rem;
-    padding: 0.5rem 0.65rem;
-  }
-
-  .meetings-date-day {
-    font-size: var(--font-size-xl);
   }
 
   .meetings-search-form {

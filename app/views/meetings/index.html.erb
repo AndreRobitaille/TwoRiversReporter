@@ -5,7 +5,7 @@
   <p class="meetings-tagline">What happened and what's next</p>
 </div>
 
-<%# === SEARCH — always visible, right under header === %>
+<%# === SEARCH — always visible === %>
 <div class="meetings-search-bar">
   <%= form_with url: meetings_path, method: :get, local: true, class: "meetings-search-form" do |form| %>
     <div class="meetings-search-field">
@@ -34,9 +34,9 @@
     </div>
 
     <% if @search_results.any? %>
-      <div class="meetings-search-results">
+      <div class="meetings-grid">
         <% @search_results.each do |meeting| %>
-          <%= render "meetings/search_result", meeting: meeting %>
+          <%= render "meetings/meeting_card", meeting: meeting %>
         <% end %>
       </div>
       <% if @pagy.next %>
@@ -53,46 +53,59 @@
   </section>
 
 <% else %>
-  <%# === COMING UP — only enriched meetings === %>
-  <% if @upcoming_enriched.any? %>
-    <section class="meetings-zone">
+
+  <%# === TWO-COLUMN LAYOUT === %>
+  <div class="meetings-columns">
+
+    <%# === LEFT: COMING UP === %>
+    <section class="meetings-column">
       <div class="home-section-header">
         <%= render "shared/atom_marker", size: 20 %>
         <span class="section-label">Coming Up</span>
         <span class="section-line"></span>
       </div>
 
-      <div class="meetings-upcoming-list">
-        <% @upcoming_enriched.each do |meeting| %>
-          <%= render "meetings/upcoming_card", meeting: meeting %>
+      <% if @upcoming_enriched.any? %>
+        <div class="meetings-stack">
+          <% @upcoming_enriched.each do |meeting| %>
+            <%= render "meetings/meeting_card", meeting: meeting %>
+          <% end %>
+        </div>
+        <% if @upcoming_thin_count > 0 %>
+          <div class="meetings-aside">
+            <span class="meetings-aside-count"><%= @upcoming_thin_count %></span>
+            other <%= "meeting".pluralize(@upcoming_thin_count) %> scheduled — agendas not yet posted
+          </div>
         <% end %>
-      </div>
-
-      <% if @upcoming_thin_count > 0 %>
-        <p class="meetings-thin-note"><%= @upcoming_thin_count %> other <%= "meeting".pluralize(@upcoming_thin_count) %> scheduled — agendas not yet posted</p>
+      <% else %>
+        <p class="meetings-empty-note">No upcoming meetings with posted agendas</p>
       <% end %>
     </section>
-  <% end %>
 
-  <%# === WHAT HAPPENED — only meetings with summaries === %>
-  <% if @recent_enriched.any? %>
-    <section class="meetings-zone">
+    <%# === RIGHT: WHAT HAPPENED === %>
+    <section class="meetings-column">
       <div class="home-section-header">
         <%= render "shared/atom_marker", size: 20 %>
         <span class="section-label">What Happened</span>
         <span class="section-line"></span>
       </div>
 
-      <div class="meetings-recent-list">
-        <% @recent_enriched.each do |meeting| %>
-          <%= render "meetings/recent_card", meeting: meeting %>
+      <% if @recent_enriched.any? %>
+        <div class="meetings-stack">
+          <% @recent_enriched.each do |meeting| %>
+            <%= render "meetings/meeting_card", meeting: meeting %>
+          <% end %>
+        </div>
+        <% if @recent_thin_count > 0 %>
+          <div class="meetings-aside">
+            <span class="meetings-aside-count"><%= @recent_thin_count %></span>
+            other recent <%= "meeting".pluralize(@recent_thin_count) %> — no summaries yet
+          </div>
         <% end %>
-      </div>
-
-      <% if @recent_thin_count > 0 %>
-        <p class="meetings-thin-note"><%= @recent_thin_count %> other recent <%= "meeting".pluralize(@recent_thin_count) %> — no summaries yet</p>
+      <% else %>
+        <p class="meetings-empty-note">No recent meetings with summaries yet</p>
       <% end %>
     </section>
-  <% end %>
 
+  </div>
 <% end %>
