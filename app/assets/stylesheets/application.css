@@ -2580,6 +2580,474 @@ th.sortable-header:hover {
 }
 
 /* ============================================
+   Committees Index
+   ============================================ */
+
+.committees-diagram {
+  width: 100%;
+  max-width: 800px;
+  height: auto;
+  display: block;
+  margin: 0 auto var(--space-8);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: #fff;
+}
+
+.committees-type-divider {
+  margin: var(--space-8) 0 var(--space-5);
+}
+
+.committees-type-divider:first-of-type {
+  margin-top: 0;
+}
+
+.committees-type-label {
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  margin: 0 0 var(--space-1) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.committees-type-label::after {
+  content: "";
+  flex: 1;
+  height: 1.5px;
+  background: linear-gradient(90deg, var(--color-terra-cotta), transparent);
+}
+
+.committees-type-explanation {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: var(--space-2) 0 0 0;
+}
+
+.committees-card {
+  display: block;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-3);
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+
+.committees-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-border-strong);
+  text-decoration: none;
+  color: inherit;
+}
+
+.committees-card--council {
+  border-left: 3px solid var(--color-primary);
+}
+
+.committees-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.committees-card-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--font-size-lg);
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.committees-member-count {
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding-top: var(--space-1);
+}
+
+.committees-card-desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: var(--line-height-relaxed);
+}
+
+/* ============================================
+   Committee Show Page
+   ============================================ */
+
+.committee-description {
+  font-size: var(--font-size-base);
+  color: var(--color-text);
+  line-height: var(--line-height-relaxed);
+  margin-bottom: var(--space-8);
+  max-width: 42rem;
+}
+
+.committee-description p {
+  margin-bottom: var(--space-3);
+}
+
+.committee-description p:last-child {
+  margin-bottom: 0;
+}
+
+.committee-description a {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.committee-description a:hover {
+  color: var(--color-terra-cotta);
+}
+
+.committee-roster {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.committee-member {
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.committee-member:last-child {
+  border-bottom: none;
+}
+
+.committee-member-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.committee-member-name {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.committee-member-name:hover {
+  color: var(--color-terra-cotta);
+  text-decoration: underline;
+}
+
+.committee-member-badges {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.committee-activity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.committee-activity-item {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+}
+
+.committee-activity-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-bottom: var(--space-1);
+}
+
+.committee-activity-topic {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+  text-decoration: none;
+  text-transform: capitalize;
+}
+
+.committee-activity-topic:hover {
+  color: var(--color-terra-cotta);
+  text-decoration: underline;
+}
+
+.committee-activity-date {
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.committee-activity-desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: var(--line-height-relaxed);
+}
+
+.committee-activity-footer {
+  text-align: center;
+  margin-top: var(--space-4);
+}
+
+.committee-activity-footer a {
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.committee-activity-footer a:hover {
+  text-decoration: underline;
+}
+
+/* ============================================
+   Member Show Page
+   ============================================ */
+
+.member-committees {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.member-committee {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-5);
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+
+.member-committee:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-border-strong);
+  text-decoration: none;
+  color: inherit;
+}
+
+.member-committee--council {
+  border-left: 3px solid var(--color-primary);
+}
+
+.member-committee-name {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+}
+
+.member-attendance {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+}
+
+.member-attendance p {
+  margin: 0;
+  font-size: var(--font-size-base);
+  color: var(--color-text);
+  line-height: var(--line-height-relaxed);
+}
+
+.member-topic-group {
+  margin-bottom: var(--space-5);
+}
+
+.member-topic-name {
+  font-family: var(--font-display);
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin: 0 0 var(--space-2) 0;
+}
+
+.member-topic-name a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.member-topic-name a:hover {
+  color: var(--color-terra-cotta);
+  text-decoration: underline;
+}
+
+.member-topic-votes {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.member-vote-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--font-size-sm);
+}
+
+.member-vote-row:last-child {
+  border-bottom: none;
+}
+
+.member-vote-motion {
+  flex: 1;
+  min-width: 0;
+}
+
+.member-vote-motion a {
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.member-vote-motion a:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.member-vote-date {
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-right: var(--space-2);
+}
+
+.member-vote-result {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.member-vote-split {
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+}
+
+.vote-value--yes {
+  color: var(--color-success);
+  font-weight: var(--font-weight-bold);
+}
+
+.vote-value--no {
+  color: var(--color-danger);
+  font-weight: var(--font-weight-bold);
+}
+
+.vote-value--neutral {
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+}
+
+.member-other-votes {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  margin-top: var(--space-5);
+}
+
+.member-other-votes summary {
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.member-other-votes summary:hover {
+  color: var(--color-primary);
+}
+
+.member-other-votes-desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-style: italic;
+  padding: 0 var(--space-4);
+  margin: 0 0 var(--space-3) 0;
+}
+
+.member-other-votes-list {
+  border-top: 1px solid var(--color-border);
+}
+
+.member-vote-row--compact {
+  padding: var(--space-2) var(--space-4);
+}
+
+/* ============================================
+   Committees & Members — Mobile
+   ============================================ */
+
+@media (max-width: 640px) {
+  .committees-card-header {
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .committees-member-count {
+    padding-top: 0;
+  }
+
+  .committee-member {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .committee-activity-header {
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .member-committee {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .member-vote-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+    padding: var(--space-3);
+  }
+
+  .member-vote-result {
+    align-self: flex-end;
+  }
+}
+
+/* ============================================
    Attention Cards (Silo — action-required items)
    ============================================ */
 

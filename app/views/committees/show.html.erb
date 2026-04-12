@@ -17,8 +17,8 @@
 <section class="section">
   <div class="home-section-header">
     <%= render "shared/atom_marker" %>
-    <span class="home-section-label">Current Members</span>
-    <div class="home-section-line"></div>
+    <span class="section-label">Current Members</span>
+    <div class="section-line"></div>
     <span class="committees-member-count"><%= @memberships.size %> members</span>
   </div>
 
@@ -48,8 +48,8 @@
 <section class="section">
   <div class="home-section-header">
     <%= render "shared/atom_marker" %>
-    <span class="home-section-label">What They've Been Working On</span>
-    <div class="home-section-line"></div>
+    <span class="section-label">What They've Been Working On</span>
+    <div class="section-line"></div>
   </div>
 
   <% if @recent_topics.any? %>
