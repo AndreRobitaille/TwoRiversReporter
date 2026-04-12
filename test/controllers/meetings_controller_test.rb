@@ -179,6 +179,38 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".meeting-legacy-recap"
   end
 
+  test "index search matches on body_name" do
+    get meetings_url, params: { q: "City Council" }
+    assert_response :success
+    assert assigns(:search_results).include?(@meeting)
+  end
+
+  test "index search matches on topic name" do
+    get meetings_url, params: { q: "downtown tif" }
+    assert_response :success
+    assert assigns(:search_results).include?(@meeting)
+  end
+
+  test "index search matches on year" do
+    year = @meeting.starts_at.year.to_s
+    get meetings_url, params: { q: year }
+    assert_response :success
+    assert assigns(:search_results).include?(@meeting)
+  end
+
+  test "index search matches on month name" do
+    month = @meeting.starts_at.strftime("%B").downcase
+    get meetings_url, params: { q: month }
+    assert_response :success
+    assert assigns(:search_results).include?(@meeting)
+  end
+
+  test "index search returns empty for no matches" do
+    get meetings_url, params: { q: "xyznonexistent999" }
+    assert_response :success
+    assert assigns(:search_results).empty?
+  end
+
   test "show renders documents section with empty state" do
     @meeting.meeting_documents.destroy_all
     get meeting_url(@meeting)
