@@ -61,7 +61,10 @@ class MembersController < ApplicationController
       by_committee[committee] = { total: total, present: present, pct: pct, avg_rate: avg_rate }
     end
 
-    by_committee.any? ? by_committee : nil
+    return nil if by_committee.empty?
+
+    # Sort: City Council first, then alphabetical
+    by_committee.sort_by { |c, _| [ c.name == "City Council" ? 0 : 1, c.name ] }
   end
 
   def build_vote_groups(votes)
