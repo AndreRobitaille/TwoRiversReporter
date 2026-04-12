@@ -106,7 +106,7 @@ YouTube Channel → DiscoverTranscriptsJob (match videos to recent council meeti
 
 ### Routes
 
-Public: `/ (home#index)`, `/meetings`, `/topics`, `/members` (all read-only index+show).
+Public: `/ (home#index)`, `/about`, `/meetings`, `/topics`, `/members` (all read-only index+show).
 Admin: `/admin` namespace with dashboard, session/MFA auth, topic management (approve/block/merge/alias), committees (CRUD with alias management), knowledge sources, summaries, job monitoring, `/admin/prompt_templates` (edit AI prompts), `/admin/job_runs` (re-run pipeline jobs with targeting), `/admin/search` (knowledge search with RAG-powered Q&A).
 
 ### Topic Navigation Pattern
