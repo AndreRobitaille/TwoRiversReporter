@@ -55,7 +55,7 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
 
   # --- Index tests ---
 
-  test "index assigns upcoming meetings ordered ascending" do
+  test "index assigns enriched upcoming meetings with topics" do
     upcoming = Meeting.create!(
       body_name: "Plan Commission Meeting",
       meeting_type: "Regular",
@@ -63,24 +63,28 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
       status: "upcoming",
       detail_page_url: "http://example.com/upcoming-1"
     )
+    # Add a topic so it's "enriched"
+    topic = Topic.create!(name: "test upcoming topic", status: "approved", lifecycle_status: "active", last_activity_at: 1.day.ago)
+    item = AgendaItem.create!(meeting: upcoming, title: "Test")
+    AgendaItemTopic.create!(topic: topic, agenda_item: item)
+
     get meetings_url
     assert_response :success
-    assert_includes assigns(:upcoming), upcoming
+    assert_includes assigns(:upcoming_enriched), upcoming
   end
 
-  test "index assigns recent meetings from last 21 days" do
+  test "index assigns enriched recent meetings with summaries" do
+    MeetingSummary.create!(meeting: @meeting, summary_type: "minutes_recap", generation_data: { "headline" => "Test" })
     get meetings_url
     assert_response :success
-    # @meeting from setup is 3.days.ago — should be in recent
-    assert_includes assigns(:recent), @meeting
+    assert_includes assigns(:recent_enriched), @meeting
   end
 
-  test "index excludes meetings older than 21 days from recent" do
+  test "index counts thin meetings without summaries" do
     get meetings_url
     assert_response :success
-    # other_meeting from setup is 30.days.ago — should NOT be in recent
-    old_meeting = Meeting.find_by(detail_page_url: "http://example.com/old-meeting-nav")
-    refute_includes assigns(:recent), old_meeting
+    # @meeting has no summary, so it's thin
+    assert assigns(:recent_thin_count) >= 1
   end
 
   test "index assigns search_results when q param present" do
@@ -221,23 +225,31 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
 
   # --- Index view integration tests ---
 
-  test "index renders section headers" do
-    # Create an upcoming meeting so Coming Up section appears
-    Meeting.create!(
+  test "index renders Coming Up when enriched upcoming exist" do
+    upcoming = Meeting.create!(
       body_name: "City Council Meeting",
       meeting_type: "Regular",
       starts_at: 3.days.from_now,
       status: "upcoming",
       detail_page_url: "http://example.com/upcoming-render"
     )
+    topic = Topic.create!(name: "render test topic", status: "approved", lifecycle_status: "active", last_activity_at: 1.day.ago)
+    item = AgendaItem.create!(meeting: upcoming, title: "Test")
+    AgendaItemTopic.create!(topic: topic, agenda_item: item)
+
     get meetings_url
     assert_response :success
     assert_select ".section-label", text: "Coming Up"
-    assert_select ".section-label", text: "What Happened"
-    assert_select ".section-label", text: "Find a Meeting"
   end
 
-  test "index hides coming up when no upcoming meetings" do
+  test "index renders What Happened when enriched recent exist" do
+    MeetingSummary.create!(meeting: @meeting, summary_type: "minutes_recap", generation_data: { "headline" => "Test" })
+    get meetings_url
+    assert_response :success
+    assert_select ".section-label", text: "What Happened"
+  end
+
+  test "index hides coming up when no enriched upcoming" do
     get meetings_url
     assert_response :success
     refute_select ".section-label", text: "Coming Up"
@@ -281,5 +293,13 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".meetings-search-empty"
     assert_select ".meetings-search-hint"
+  end
+
+  test "index search replaces zones with results" do
+    get meetings_url, params: { q: "City Council" }
+    assert_response :success
+    assert_select ".section-label", text: "Results"
+    refute_select ".section-label", text: "Coming Up"
+    refute_select ".section-label", text: "What Happened"
   end
 end

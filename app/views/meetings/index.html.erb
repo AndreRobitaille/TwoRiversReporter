@@ -1,64 +1,38 @@
 <% content_for(:title) { "Meetings - Two Rivers Matters" } %>
 
-<div class="page-header">
+<div class="meetings-header">
   <h1 class="page-title">Meetings</h1>
-  <p class="page-subtitle">What happened and what's next</p>
+  <p class="meetings-tagline">What happened and what's next</p>
 </div>
 
-<%# === COMING UP === %>
-<% if @upcoming.any? %>
-  <section class="meetings-zone">
-    <div class="home-section-header">
-      <%= render "shared/atom_marker", size: 20 %>
-      <span class="section-label">Coming Up</span>
-      <span class="section-line"></span>
-    </div>
-
-    <div class="meetings-upcoming-list">
-      <% @upcoming.each do |meeting| %>
-        <%= render "meetings/upcoming_card", meeting: meeting %>
-      <% end %>
-    </div>
-  </section>
-<% end %>
-
-<%# === WHAT HAPPENED === %>
-<% if @recent.any? %>
-  <section class="meetings-zone">
-    <div class="home-section-header">
-      <%= render "shared/atom_marker", size: 20 %>
-      <span class="section-label">What Happened</span>
-      <span class="section-line"></span>
-    </div>
-
-    <div class="meetings-recent-list">
-      <% @recent.each do |meeting| %>
-        <%= render "meetings/recent_card", meeting: meeting %>
-      <% end %>
-    </div>
-  </section>
-<% end %>
-
-<%# === FIND A MEETING === %>
-<section class="meetings-zone">
-  <div class="home-section-header">
-    <%= render "shared/atom_marker", size: 20 %>
-    <span class="section-label">Find a Meeting</span>
-    <span class="section-line"></span>
-  </div>
-
+<%# === SEARCH — always visible, right under header === %>
+<div class="meetings-search-bar">
   <%= form_with url: meetings_path, method: :get, local: true, class: "meetings-search-form" do |form| %>
-    <%= form.text_field :q,
-        value: params[:q],
-        placeholder: "Search by committee, topic, date, or keyword...",
-        class: "form-input meetings-search-input" %>
+    <div class="meetings-search-field">
+      <svg class="meetings-search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="6.5" cy="6.5" r="5.5"/><line x1="10.5" y1="10.5" x2="15" y2="15"/>
+      </svg>
+      <%= form.text_field :q,
+          value: params[:q],
+          placeholder: "Search by committee, topic, date, or keyword...",
+          class: "form-input meetings-search-input" %>
+    </div>
     <%= form.submit "Search", class: "btn btn--primary" %>
     <% if params[:q].present? %>
       <%= link_to "Clear", meetings_path, class: "btn btn--ghost" %>
     <% end %>
   <% end %>
+</div>
 
-  <% if params[:q].present? %>
+<% if params[:q].present? %>
+  <%# === SEARCH RESULTS === %>
+  <section class="meetings-zone">
+    <div class="home-section-header">
+      <%= render "shared/atom_marker", size: 20 %>
+      <span class="section-label">Results</span>
+      <span class="section-line"></span>
+    </div>
+
     <% if @search_results.any? %>
       <div class="meetings-search-results">
         <% @search_results.each do |meeting| %>
@@ -76,5 +50,49 @@
         <p class="meetings-search-hint">Try a different spelling, a committee name, or a year like 2025.</p>
       </div>
     <% end %>
+  </section>
+
+<% else %>
+  <%# === COMING UP — only enriched meetings === %>
+  <% if @upcoming_enriched.any? %>
+    <section class="meetings-zone">
+      <div class="home-section-header">
+        <%= render "shared/atom_marker", size: 20 %>
+        <span class="section-label">Coming Up</span>
+        <span class="section-line"></span>
+      </div>
+
+      <div class="meetings-upcoming-list">
+        <% @upcoming_enriched.each do |meeting| %>
+          <%= render "meetings/upcoming_card", meeting: meeting %>
+        <% end %>
+      </div>
+
+      <% if @upcoming_thin_count > 0 %>
+        <p class="meetings-thin-note"><%= @upcoming_thin_count %> other <%= "meeting".pluralize(@upcoming_thin_count) %> scheduled — agendas not yet posted</p>
+      <% end %>
+    </section>
   <% end %>
-</section>
+
+  <%# === WHAT HAPPENED — only meetings with summaries === %>
+  <% if @recent_enriched.any? %>
+    <section class="meetings-zone">
+      <div class="home-section-header">
+        <%= render "shared/atom_marker", size: 20 %>
+        <span class="section-label">What Happened</span>
+        <span class="section-line"></span>
+      </div>
+
+      <div class="meetings-recent-list">
+        <% @recent_enriched.each do |meeting| %>
+          <%= render "meetings/recent_card", meeting: meeting %>
+        <% end %>
+      </div>
+
+      <% if @recent_thin_count > 0 %>
+        <p class="meetings-thin-note"><%= @recent_thin_count %> other recent <%= "meeting".pluralize(@recent_thin_count) %> — no summaries yet</p>
+      <% end %>
+    </section>
+  <% end %>
+
+<% end %>
