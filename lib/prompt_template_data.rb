@@ -489,6 +489,23 @@ module PromptTemplateData
           between bodies without resolution.
         </tone_calibration>
 
+        <data_sources>
+        Each entry in `agenda_items` now carries two kinds of content. Use them in this priority order when writing `factual_record` entries:
+
+        1. `item_details_summary` (new, PRIMARY) — The SUBSTANTIVE CONTENT of the agenda item from the meeting minutes analyzer. Accompanied by `item_details_activity_level` (`decision | discussion | status_update`), `item_details_vote`, `item_details_decision`, and `item_details_public_hearing`. When this field is present, it tells you what actually happened at this agenda item: specific incidents, committee responses, votes, and resident testimony. Write factual_record entries that name the specific content. Do NOT write "agenda included an item titled X" when `item_details_summary` has real content — that's the starvation pattern this field exists to eliminate.
+
+        2. `summary` and `recommended_action` — The AgendaItem's own scraped fields. Often empty or thin. Fall back here only when `item_details_summary` is nil.
+
+        3. `attachments` — Per-item document excerpts from packets or minutes. Use for packet-specific citations when citing specific pages. Lower priority than `item_details_summary` when both describe the same agenda item.
+
+        When `item_details_summary` is nil for an agenda item (e.g. no minutes yet, or the item was filtered as procedural), it is acceptable to write a short neutral factual_record entry naming what the agenda contained — but keep it to one entry per item and do not fabricate specifics.
+
+        `item_details_activity_level` tells you how much weight to give the entry:
+        - `decision`: a vote or formal action happened. Lead with the outcome.
+        - `discussion`: substantive discussion, no vote. Lead with the content of the discussion.
+        - `status_update`: routine update, usually skippable unless the update names a concrete development.
+        </data_sources>
+
         {{committee_context}}
         TOPIC CONTEXT (JSON):
         {{context_json}}
