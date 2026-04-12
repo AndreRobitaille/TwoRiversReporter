@@ -82,4 +82,78 @@ class CommitteesControllerTest < ActionDispatch::IntegrationTest
     assert_response :redirect
     assert_redirected_to committees_path
   end
+
+  test "show returns success" do
+    get committee_url(@council.slug)
+    assert_response :success
+  end
+
+  test "show displays committee name" do
+    get committee_url(@council.slug)
+    assert_response :success
+    assert_select ".committee-name", text: /City Council/
+  end
+
+  test "show displays current members sorted by role" do
+    vice_chair = Member.create!(name: "Alice Vice")
+    CommitteeMembership.create!(
+      committee: @council, member: vice_chair,
+      role: "vice_chair", source: "admin_manual"
+    )
+    regular = Member.create!(name: "Charlie Regular")
+    CommitteeMembership.create!(
+      committee: @council, member: regular,
+      source: "admin_manual"
+    )
+
+    get committee_url(@council.slug)
+    assert_response :success
+
+    # Chair should appear first (Jane Smith), then vice chair (Alice Vice), then regular (Charlie Regular)
+    names = css_select(".committee-member-name").map { |n| n.text.strip }
+    assert_equal "Jane Smith", names.first
+    assert_equal "Alice Vice", names.second
+  end
+
+  test "show excludes ended memberships" do
+    former = Member.create!(name: "Former Member")
+    CommitteeMembership.create!(
+      committee: @council, member: former,
+      source: "admin_manual", ended_on: 1.month.ago
+    )
+
+    get committee_url(@council.slug)
+    assert_response :success
+
+    names = css_select(".committee-member-name").map { |n| n.text.strip }
+    refute_includes names, "Former Member"
+  end
+
+  test "show displays recent topic activity" do
+    meeting = Meeting.create!(
+      body_name: "City Council", meeting_type: "Regular",
+      starts_at: 3.days.ago, status: "minutes_posted",
+      detail_page_url: "http://example.com/show-test",
+      committee: @council
+    )
+    topic = Topic.create!(
+      name: "test topic for show", status: "approved",
+      lifecycle_status: "active", last_activity_at: 2.days.ago
+    )
+    item = AgendaItem.create!(meeting: meeting, title: "Test Item")
+    AgendaItemTopic.create!(topic: topic, agenda_item: item)
+
+    get committee_url(@council.slug)
+    assert_response :success
+
+    assert_select ".committee-activity a", text: /Test Topic For Show/
+  end
+
+  test "show renders description with links" do
+    @council.update!(description: 'Established under [WI Stats](https://example.com).')
+    get committee_url(@council.slug)
+    assert_response :success
+
+    assert_select ".committee-description a[href='https://example.com']", text: "WI Stats"
+  end
 end

@@ -1,0 +1,85 @@
+<% content_for(:title) { "#{@committee.name} - Two Rivers Matters" } %>
+
+<div class="page-header">
+  <span class="badge badge--default"><%= CommitteesController::COMMITTEE_TYPE_LABELS[@committee.committee_type]&.first %></span>
+  <% if @committee.name == "City Council" %>
+    <span class="badge badge--primary">Elected by voters</span>
+  <% end %>
+  <h1 class="page-title committee-name"><%= @committee.name %></h1>
+</div>
+
+<% if @committee.description.present? %>
+  <div class="committee-description">
+    <%= render_committee_description(@committee.description) %>
+  </div>
+<% end %>
+
+<section class="section">
+  <div class="home-section-header">
+    <%= render "shared/atom_marker" %>
+    <span class="home-section-label">Current Members</span>
+    <div class="home-section-line"></div>
+    <span class="committees-member-count"><%= @memberships.size %> members</span>
+  </div>
+
+  <% if @memberships.any? %>
+    <div class="committee-roster">
+      <% sort_memberships(@memberships, @council_member_ids).each do |cm| %>
+        <div class="committee-member">
+          <div class="committee-member-info">
+            <%= link_to cm.member.name, member_path(cm.member), class: "committee-member-name" %>
+            <span class="committee-member-badges">
+              <% if cm.role.present? && cm.role.in?(%w[chair vice_chair]) %>
+                <span class="badge badge--primary"><%= cm.role.titleize.tr("_", " ") %></span>
+              <% end %>
+              <% if @council_member_ids.include?(cm.member_id) %>
+                <span class="badge badge--info">Council Member</span>
+              <% end %>
+            </span>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="section-empty">No current members on record.</p>
+  <% end %>
+</section>
+
+<section class="section">
+  <div class="home-section-header">
+    <%= render "shared/atom_marker" %>
+    <span class="home-section-label">What They've Been Working On</span>
+    <div class="home-section-line"></div>
+  </div>
+
+  <% if @recent_topics.any? %>
+    <div class="committee-activity">
+      <% @recent_topics.each do |topic| %>
+        <div class="committee-activity-item">
+          <div class="committee-activity-header">
+            <%= link_to topic.display_name, topic_path(topic), class: "committee-activity-topic" %>
+            <% if topic.respond_to?(:latest_meeting_date) && topic.latest_meeting_date %>
+              <span class="committee-activity-date"><%= topic.latest_meeting_date.strftime("%b %-d") %></span>
+            <% end %>
+          </div>
+          <% if topic.description.present? %>
+            <p class="committee-activity-desc"><%= truncate(topic.description, length: 160) %></p>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+    <div class="committee-activity-footer">
+      <%= link_to "Browse all topics →", topics_path %>
+    </div>
+  <% else %>
+    <p class="section-empty">No recent activity tracked for this committee.</p>
+  <% end %>
+</section>
+
+<%= link_to committees_path, class: "back-link" do %>
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="19" y1="12" x2="5" y2="12"></line>
+    <polyline points="12 19 5 12 12 5"></polyline>
+  </svg>
+  All Committees
+<% end %>

@@ -24,5 +24,36 @@ class CommitteesController < ApplicationController
   end
 
   def show
+    @committee = Committee.find_by!(slug: params[:slug])
+
+    @memberships = @committee.committee_memberships
+      .where(ended_on: nil)
+      .where.not(role: %w[staff non_voting])
+      .includes(:member)
+
+    city_council = Committee.find_by(name: "City Council")
+    @council_member_ids = if city_council && city_council.id != @committee.id
+      city_council.committee_memberships
+        .where(ended_on: nil)
+        .where.not(role: %w[staff non_voting])
+        .pluck(:member_id)
+        .to_set
+    else
+      Set.new
+    end
+
+    @recent_topics = load_recent_topics
+  end
+
+  private
+
+  def load_recent_topics
+    Topic.approved
+      .joins(agenda_item_topics: { agenda_item: :meeting })
+      .where(meetings: { committee_id: @committee.id })
+      .select("topics.*, MAX(meetings.starts_at) AS latest_meeting_date")
+      .group("topics.id")
+      .order("latest_meeting_date DESC")
+      .limit(8)
   end
 end

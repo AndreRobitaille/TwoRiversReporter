@@ -55,6 +55,10 @@ class Topic < ApplicationRecord
     name.strip.downcase.gsub(/[[:punct:]]/, "").squish
   end
 
+  def display_name
+    name.titleize
+  end
+
   def approved?
     status == "approved"
   end
