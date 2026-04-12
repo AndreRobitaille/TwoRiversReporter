@@ -36,8 +36,13 @@
         <span class="section-line"></span>
       </div>
 
-      <div class="member-attendance">
-        <p><%= attendance_sentence(@attendance) %></p>
+      <div class="member-attendance-list">
+        <% @attendance.each do |committee, data| %>
+          <div class="member-attendance-row">
+            <span class="member-attendance-committee"><%= committee.name %></span>
+            <span class="member-attendance-stat"><%= attendance_comparison(data) %></span>
+          </div>
+        <% end %>
       </div>
     </section>
   <% end %>
@@ -60,7 +65,7 @@
               <div class="member-vote-row">
                 <div class="member-vote-motion">
                   <span class="member-vote-date"><%= vote.motion.meeting.starts_at&.strftime("%b %-d, %Y") %></span>
-                  <%= link_to vote.motion.description, meeting_path(vote.motion.meeting) %>
+                  <%= link_to vote_context(vote), meeting_path(vote.motion.meeting) %>
                 </div>
                 <div class="member-vote-result">
                   <span class="vote-value <%= vote_color_class(vote.value) %>"><%= vote.value.titleize %></span>
@@ -83,7 +88,7 @@
               <div class="member-vote-motion">
                 <span class="member-vote-date"><%= vote.motion.meeting.starts_at&.strftime("%b %-d, %Y") %></span>
                 <span class="member-vote-body"><%= vote.motion.meeting.body_name %></span>
-                <%= link_to vote.motion.description, meeting_path(vote.motion.meeting) %>
+                <%= link_to vote_context(vote), meeting_path(vote.motion.meeting) %>
               </div>
               <div class="member-vote-result">
                 <span class="vote-value <%= vote_color_class(vote.value) %>"><%= vote.value.titleize %></span>

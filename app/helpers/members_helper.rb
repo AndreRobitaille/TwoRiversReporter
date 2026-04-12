@@ -1,20 +1,25 @@
 module MembersHelper
-  def attendance_sentence(attendance)
-    pct = attendance[:pct]
-    sentence = "Present at #{attendance[:present]} of #{attendance[:total]} recorded meetings (#{pct}%)"
+  def attendance_comparison(data)
+    pct = data[:pct]
+    text = "#{data[:present]} of #{data[:total]} (#{pct}%)"
 
-    if attendance[:avg_rate]
-      diff = pct - attendance[:avg_rate]
+    if data[:avg_rate]
+      diff = pct - data[:avg_rate]
       if diff > 5
-        sentence += " — above the #{attendance[:avg_rate]}% average across all officials"
+        text += " — above #{data[:avg_rate]}% avg"
       elsif diff < -5
-        sentence += " — below the #{attendance[:avg_rate]}% average across all officials"
+        text += " — below #{data[:avg_rate]}% avg"
       else
-        sentence += " — near the #{attendance[:avg_rate]}% average across all officials"
+        text += " — near #{data[:avg_rate]}% avg"
       end
     end
 
-    sentence + "."
+    text
+  end
+
+  def vote_context(vote)
+    # Prefer agenda item title over motion description — it's what the vote was actually about
+    vote.motion.agenda_item&.title || vote.motion.description
   end
 
   def vote_split(motion)

@@ -36,11 +36,12 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
     assert_equal "City Council", committee_names.first
   end
 
-  test "show displays attendance when data exists" do
+  test "show displays per-committee attendance" do
     meeting = Meeting.create!(
       body_name: "City Council", meeting_type: "Regular",
       starts_at: 3.days.ago, status: "minutes_posted",
-      detail_page_url: "http://example.com/att-test"
+      detail_page_url: "http://example.com/att-test",
+      committee: @council
     )
     MeetingAttendance.create!(
       meeting: meeting, member: @member,
@@ -50,14 +51,16 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
     get member_url(@member)
     assert_response :success
 
-    assert_select ".member-attendance", text: /Present at 1 of 1/
+    assert_select ".member-attendance-row", minimum: 1
+    assert_select ".member-attendance-committee", text: /City Council/
+    assert_select ".member-attendance-stat", text: /100%/
   end
 
   test "show omits attendance section when no data" do
     get member_url(@member)
     assert_response :success
 
-    assert_select ".member-attendance", count: 0
+    assert_select ".member-attendance-list", count: 0
   end
 
   test "show groups votes by topic for high-impact topics" do

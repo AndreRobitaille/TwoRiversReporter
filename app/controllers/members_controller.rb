@@ -35,24 +35,33 @@ class MembersController < ApplicationController
   private
 
   def load_attendance
-    records = @member.meeting_attendances
+    records = @member.meeting_attendances.includes(meeting: :committee)
     return nil if records.none?
 
-    total = records.count
-    present = records.where(status: "present").count
-    excused = records.where(status: "excused").count
-    absent = records.where(status: "absent").count
-    pct = (present.to_f / total * 100).round
+    # Group by committee for per-committee breakdown with peer comparison
+    by_committee = {}
+    records.group_by { |a| a.meeting.committee }.each do |committee, attendances|
+      next unless committee # skip meetings without committee
 
-    # Compare to peers: all members with attendance records
-    peer_rates = MeetingAttendance
-      .group(:member_id)
-      .having("count(*) >= 3")
-      .pluck(Arel.sql("member_id, count(case when status = 'present' then 1 end)::float / count(*)"))
-      .map { |_, rate| (rate * 100).round }
-    avg_rate = peer_rates.any? ? (peer_rates.sum.to_f / peer_rates.size).round : nil
+      total = attendances.size
+      present = attendances.count { |a| a.status == "present" }
+      pct = (present.to_f / total * 100).round
 
-    { total: total, present: present, excused: excused, absent: absent, pct: pct, avg_rate: avg_rate }
+      # Peer comparison: other members on the same committee
+      peer_rates = MeetingAttendance
+        .joins(:meeting)
+        .where(meetings: { committee_id: committee.id })
+        .where.not(member_id: @member.id)
+        .group(:member_id)
+        .having("count(*) >= 3")
+        .pluck(Arel.sql("member_id, count(case when meeting_attendances.status = 'present' then 1 end)::float / count(*)"))
+        .map { |_, rate| (rate * 100).round }
+      avg_rate = peer_rates.any? ? (peer_rates.sum.to_f / peer_rates.size).round : nil
+
+      by_committee[committee] = { total: total, present: present, pct: pct, avg_rate: avg_rate }
+    end
+
+    by_committee.any? ? by_committee : nil
   end
 
   def build_vote_groups(votes)
