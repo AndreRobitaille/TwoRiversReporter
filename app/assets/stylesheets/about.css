@@ -160,6 +160,53 @@
   margin-top: var(--space-3);
 }
 
+.about-faq-list {
+  padding-left: var(--space-5);
+  margin: var(--space-2) 0 var(--space-3);
+}
+
+.about-faq-list li {
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+/* ---- Update Schedule ---- */
+
+.about-schedule {
+  margin: 0;
+  padding: 0;
+}
+
+.about-schedule-item {
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.about-schedule-item:last-child {
+  border-bottom: none;
+}
+
+.about-schedule-label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-teal);
+  margin: 0 0 var(--space-1);
+}
+
+.about-schedule-detail {
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
 /* ---- Under the Hood (Zone 4) ---- */
 
 .about-hood-zone {

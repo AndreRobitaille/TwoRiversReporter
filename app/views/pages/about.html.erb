@@ -12,16 +12,40 @@
 
   <%# === Anchor Bar === %>
   <nav class="about-anchor-bar" aria-label="Page sections">
+    <a href="#why-this-exists">Why This Exists</a>
+    <span class="about-anchor-sep"><%= render "shared/atom_marker", size: 14 %></span>
     <a href="#how-it-works">How It Works</a>
     <span class="about-anchor-sep"><%= render "shared/atom_marker", size: 14 %></span>
     <a href="#your-questions">Your Questions</a>
     <span class="about-anchor-sep"><%= render "shared/atom_marker", size: 14 %></span>
-    <a href="#why-this-exists">Why This Exists</a>
-    <span class="about-anchor-sep"><%= render "shared/atom_marker", size: 14 %></span>
     <a href="#under-the-hood">Under the Hood</a>
   </nav>
 
-  <%# === Zone 2: How It Works === %>
+  <%# === Why This Exists === %>
+  <section id="why-this-exists" class="topic-article-section">
+    <div class="home-section-header">
+      <%= render "shared/atom_marker" %>
+      <span class="section-label">Why This Exists</span>
+      <span class="section-line"></span>
+    </div>
+
+    <div class="about-faq">
+      <p class="about-faq-answer">Residents deserve to understand what their city government is doing. That shouldn't require attending every meeting, reading every packet, or already knowing how municipal government works.</p>
+      <p class="about-faq-answer">The city posts documents because state law requires it. But posting a 100-page PDF is not the same as helping people understand what's in it. The information is technically public, but it's not practically accessible — not for people with jobs, families, and limited time.</p>
+      <p class="about-faq-answer">This site exists to close that gap. It reads the documents so you don't have to. It explains what happened in plain language. It tracks issues over time so you can see the whole story, not just one meeting's snapshot. And it's built to ask the questions that residents would ask:</p>
+      <ul class="about-faq-list">
+        <li>Who benefits from this decision?</li>
+        <li>Does the city's explanation match what actually happened?</li>
+        <li>Has this been deferred three times without resolution?</li>
+        <li>Why did this quietly disappear from the agenda?</li>
+      </ul>
+      <p class="about-faq-answer">None of that is adversarial. It's what accountability looks like. The city does its job, and residents get to see how it's going.</p>
+    </div>
+  </section>
+
+  <%= render "shared/diamond_divider" %>
+
+  <%# === How It Works === %>
   <section id="how-it-works" class="topic-article-section">
     <div class="home-section-header">
       <%= render "shared/atom_marker" %>
@@ -68,9 +92,33 @@
     </ol>
   </section>
 
+  <%# === Update Schedule === %>
+  <section class="topic-article-section about-schedule-section">
+    <div class="home-section-header">
+      <%= render "shared/atom_marker" %>
+      <span class="section-label">When We Update</span>
+      <span class="section-line"></span>
+    </div>
+
+    <dl class="about-schedule">
+      <div class="about-schedule-item">
+        <dt class="about-schedule-label">Agendas & Packets</dt>
+        <dd class="about-schedule-detail">The city usually posts new meeting dates and documents on <strong>Friday afternoons</strong>. We'll have them summarized by <strong>Saturday morning</strong>.</dd>
+      </div>
+      <div class="about-schedule-item">
+        <dt class="about-schedule-label">Council Meeting Recaps</dt>
+        <dd class="about-schedule-detail">City Council meetings and work sessions are recorded and posted to YouTube, usually <strong>Monday nights</strong>. We pull the transcript and have an early summary ready by <strong>Tuesday morning</strong>. Council meets roughly every other week — a regular meeting one Monday, then a work session two weeks later.</dd>
+      </div>
+      <div class="about-schedule-item">
+        <dt class="about-schedule-label">Official Minutes</dt>
+        <dd class="about-schedule-detail">Official minutes for council meetings are typically posted the <strong>Friday before the next council meeting</strong>. Subcommittee minutes vary — anywhere from weeks to months. When they arrive, we update the summaries with the full official record.</dd>
+      </div>
+    </dl>
+  </section>
+
   <%= render "shared/diamond_divider" %>
 
-  <%# === Zone 3: Your Questions, Answered === %>
+  <%# === Your Questions, Answered === %>
   <section id="your-questions" class="topic-article-section">
     <div class="home-section-header">
       <%= render "shared/atom_marker" %>
@@ -100,7 +148,16 @@
 
       <div class="about-faq-item">
         <dt class="about-faq-question">"Who decides what shows up on the front page?"</dt>
-        <dd class="about-faq-answer">Not a person. The system scores every issue automatically based on how much it matters to residents. The biggest factors: Does it hit your household budget — property taxes, utility rates, new fees? Does it change the physical character of your neighborhood, downtown, or the lakefront? Did residents actually show up to speak about it? Was the vote close or divided? Are there questions about who benefits from a decision?</dd>
+        <dd class="about-faq-answer">Not a person. The system scores every issue automatically based on how much it matters to residents. The biggest factors:</dd>
+        <dd class="about-faq-answer">
+          <ul class="about-faq-list">
+            <li>Does it hit your household budget — property taxes, utility rates, new fees?</li>
+            <li>Does it change the physical character of your neighborhood, downtown, or the lakefront?</li>
+            <li>Did residents actually show up to speak about it?</li>
+            <li>Was the vote close or divided?</li>
+            <li>Are there questions about who benefits from a decision?</li>
+          </ul>
+        </dd>
         <dd class="about-faq-answer">Routine dollar amounts alone don't push something up — a standard loan renewal stays low even if it's half a million dollars. But a rezoning that changes what gets built next to your house, or an appointment to a board that controls spending, scores high because those are the things that actually affect your life.</dd>
       </div>
     </dl>
@@ -108,25 +165,7 @@
 
   <%= render "shared/diamond_divider" %>
 
-  <%# === Why This Exists === %>
-  <section id="why-this-exists" class="topic-article-section">
-    <div class="home-section-header">
-      <%= render "shared/atom_marker" %>
-      <span class="section-label">Why This Exists</span>
-      <span class="section-line"></span>
-    </div>
-
-    <div class="about-faq">
-      <p class="about-faq-answer">Residents deserve to understand what their city government is doing. That shouldn't require attending every meeting, reading every packet, or already knowing how municipal government works.</p>
-      <p class="about-faq-answer">The city posts documents because state law requires it. But posting a 100-page PDF is not the same as helping people understand what's in it. The information is technically public, but it's not practically accessible — not for people with jobs, families, and limited time.</p>
-      <p class="about-faq-answer">This site exists to close that gap. It reads the documents so you don't have to. It explains what happened in plain language. It tracks issues over time so you can see the whole story, not just one meeting's snapshot. And it's built to ask the questions that residents would ask: Who benefits from this decision? Does the city's explanation match what actually happened? Has this been deferred three times without resolution?</p>
-      <p class="about-faq-answer">None of that is adversarial. It's what accountability looks like. The city does its job, and residents get to see how it's going.</p>
-    </div>
-  </section>
-
-  <%= render "shared/diamond_divider" %>
-
-  <%# === Zone 4: Under the Hood === %>
+  <%# === Under the Hood === %>
   <section id="under-the-hood" class="topic-article-section">
     <div class="home-section-header">
       <%= render "shared/atom_marker" %>
@@ -138,7 +177,7 @@
 
       <div class="about-hood-section">
         <h3 class="about-hood-heading">The Pipeline</h3>
-        <p>Every night, the system checks the City of Two Rivers website for new meeting documents. When it finds them, here's what happens:</p>
+        <p>Every night, we check the City of Two Rivers website for new meeting documents. When we find them, here's what happens:</p>
         <ol>
           <li><strong>Discovery</strong> — New meetings, agendas, packets, and minutes are detected and downloaded. The original PDFs are saved as permanent copies.</li>
           <li><strong>Text extraction</strong> — PDFs are run through text extraction (and OCR for scanned documents) to get machine-readable text, page by page.</li>
@@ -147,7 +186,7 @@
           <li><strong>Impact scoring</strong> — Each topic is scored on a 1-5 scale based on how much it affects residents. This score determines what appears on the front page.</li>
           <li><strong>Pruning</strong> — Standing agenda items that had no real activity (no vote, no discussion, no public input) are automatically detached from topics so they don't clutter the record.</li>
         </ol>
-        <p>The pipeline is fully automated. When the city posts a new document, it's typically summarized and on the site within hours.</p>
+        <p>New documents are typically processed and on the site within a day of the city posting them.</p>
       </div>
 
       <div class="about-hood-section">
