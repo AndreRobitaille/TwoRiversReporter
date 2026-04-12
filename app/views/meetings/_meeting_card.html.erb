@@ -1,19 +1,22 @@
 <%# Unified meeting card with date slab. Locals: meeting %>
 <% is_council = council_meeting?(meeting) %>
 <% headline = best_headline(meeting) %>
-<% approved_topics = meeting.agenda_items.flat_map(&:topics).uniq.select(&:approved?) %>
+<% approved_topics = meeting.agenda_items.flat_map(&:topics).uniq.select(&:approved?)
+     .sort_by { |t| [-(t.resident_impact_score || 0), -(t.last_activity_at&.to_i || 0)] } %>
 <% is_upcoming = meeting.starts_at > Time.current %>
 <%= link_to meeting_path(meeting), class: "meetings-card" do %>
   <div class="meetings-date-slab <%= 'meetings-date-slab--council' if is_council %>">
     <span class="meetings-date-month"><%= meeting.starts_at.strftime("%b") %></span>
     <span class="meetings-date-day"><%= meeting.starts_at.strftime("%-d") %></span>
     <span class="meetings-date-dow"><%= meeting.starts_at.strftime("%a") %></span>
-    <% if is_upcoming %>
-      <span class="meetings-date-time"><%= meeting.starts_at.strftime("%-l:%M %p") %></span>
-    <% end %>
   </div>
   <div class="meetings-card-body">
-    <span class="meetings-card-name"><%= meeting.body_name.sub(/ Meeting$/, "") %></span>
+    <div class="meetings-card-top">
+      <span class="meetings-card-name"><%= meeting.body_name.sub(/ Meeting$/, "") %></span>
+      <% if is_upcoming %>
+        <span class="meetings-card-time"><%= meeting.starts_at.strftime("%-l:%M %p") %></span>
+      <% end %>
+    </div>
     <% if headline %>
       <p class="meetings-card-headline"><%= headline %></p>
     <% end %>
