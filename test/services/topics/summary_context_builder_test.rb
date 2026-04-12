@@ -161,5 +161,48 @@ module Topics
         "TitleNormalizer should strip leading '7.' and trailing ', AS NEEDED' to match"
       assert_equal "discussion", item[:item_details_activity_level]
     end
+
+    test "ignores item_details entries whose title does not match any linked agenda item" do
+      # Two item_details entries: one matches the linked agenda item ("Repair Main St"),
+      # one is for an unrelated item that is not in agenda_items for this topic.
+      # The unrelated entry should be silently ignored — not cause an error, not
+      # appear in the returned agenda_items output.
+      @meeting.meeting_summaries.create!(
+        summary_type: "minutes_recap",
+        generation_data: {
+          "item_details" => [
+            {
+              "agenda_item_title" => "Repair Main St",
+              "summary" => "Council approved the paving bid.",
+              "activity_level" => "decision",
+              "vote" => "5-0",
+              "decision" => "approved",
+              "public_hearing" => nil
+            },
+            {
+              "agenda_item_title" => "UNRELATED TOPIC NOBODY LINKED",
+              "summary" => "Some other content that should not leak.",
+              "activity_level" => "discussion",
+              "vote" => nil,
+              "decision" => nil,
+              "public_hearing" => nil
+            }
+          ]
+        }
+      )
+
+      context = @builder.build_context_json
+      items = context[:agenda_items]
+
+      # Only the linked agenda item ("Repair Main St") appears in the output —
+      # the builder filters agenda_items to those with AgendaItemTopic links
+      # to the target topic.
+      assert_equal 1, items.size
+      assert_equal "Council approved the paving bid.", items.first[:item_details_summary]
+      assert_equal "decision", items.first[:item_details_activity_level]
+
+      # The unrelated entry's content should not leak into the output at all.
+      assert_nil(items.find { |i| i[:item_details_summary].to_s.include?("should not leak") })
+    end
   end
 end
