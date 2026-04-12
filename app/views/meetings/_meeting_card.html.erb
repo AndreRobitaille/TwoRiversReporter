@@ -2,19 +2,18 @@
 <% is_council = council_meeting?(meeting) %>
 <% headline = best_headline(meeting) %>
 <% approved_topics = meeting.agenda_items.flat_map(&:topics).uniq.select(&:approved?) %>
+<% is_upcoming = meeting.starts_at > Time.current %>
 <%= link_to meeting_path(meeting), class: "meetings-card" do %>
   <div class="meetings-date-slab <%= 'meetings-date-slab--council' if is_council %>">
     <span class="meetings-date-month"><%= meeting.starts_at.strftime("%b") %></span>
     <span class="meetings-date-day"><%= meeting.starts_at.strftime("%-d") %></span>
     <span class="meetings-date-dow"><%= meeting.starts_at.strftime("%a") %></span>
+    <% if is_upcoming %>
+      <span class="meetings-date-time"><%= meeting.starts_at.strftime("%-l:%M %p") %></span>
+    <% end %>
   </div>
   <div class="meetings-card-body">
-    <div class="meetings-card-top">
-      <span class="meetings-card-name"><%= meeting.body_name.sub(/ Meeting$/, "") %></span>
-      <% if meeting.starts_at > Time.current %>
-        <span class="meetings-card-time"><%= meeting.starts_at.strftime("%-l:%M %p") %></span>
-      <% end %>
-    </div>
+    <span class="meetings-card-name"><%= meeting.body_name.sub(/ Meeting$/, "") %></span>
     <% if headline %>
       <p class="meetings-card-headline"><%= headline %></p>
     <% end %>
@@ -27,7 +26,7 @@
           <span class="meetings-topic-pill meetings-topic-pill--more">+<%= approved_topics.size - 4 %> more</span>
         <% end %>
       </div>
-    <% elsif meeting.starts_at > Time.current %>
+    <% elsif is_upcoming && !headline && meeting.document_status == :none %>
       <span class="meetings-card-note">Agenda not yet posted</span>
     <% end %>
   </div>
