@@ -822,7 +822,7 @@ module PromptTemplateData
             "what_to_watch": "NEUTRAL. One sentence about what's next, or null."
           },
           "factual_record": [
-            {"event": "NEUTRAL. What happened — plain language, no framing, no editorial voice.", "date": "YYYY-MM-DD", "meeting": "City Council or committee name"}
+            {"event": "NEUTRAL. What happened — plain language, no framing, no editorial voice. IMPORTANT: The factual_record is a chronological timeline, not a curated list. Write one entry per distinct substantive event from recent_item_details AND prior_meeting_analyses. If a meeting had multiple substantive events (e.g., staff report plus committee discussion plus public comment), write multiple entries for that meeting. Do NOT drop events because a more recent event is more headline-worthy. Do NOT collapse multiple events into a single summary entry. An entry is required for each substantive event in the source data — missing events is a correctness bug. Only skip events that are purely procedural (adjournment, minutes approval) or have no information beyond agenda structure.", "date": "YYYY-MM-DD", "meeting": "City Council or committee name"}
           ],
           "civic_sentiment": [
             {"observation": "NEUTRAL. What residents said or did — observational only.", "evidence": "Source", "meeting": "meeting name"}
