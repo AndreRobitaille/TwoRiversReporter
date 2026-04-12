@@ -64,6 +64,7 @@
             <%= link_to "Meetings", meetings_path, class: ("active" if controller_name == "meetings") %>
             <%= link_to "Topics", topics_path, class: ("active" if controller_name == "topics") %>
             <%= link_to "City Officials", members_path, class: ("active" if controller_name == "members") %>
+            <%= link_to "About", about_path, class: ("active" if controller_name == "pages") %>
           </nav>
         </div>
       </header>
@@ -85,6 +86,7 @@
             <%= link_to "Meetings", meetings_path %>
             <%= link_to "Topics", topics_path %>
             <%= link_to "City Officials", members_path %>
+            <%= link_to "About", about_path %>
             <%= link_to "City Website", "https://www.two-rivers.org/meetings", target: "_blank", rel: "noopener" %>
           </div>
 

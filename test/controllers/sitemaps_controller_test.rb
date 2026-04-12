@@ -52,6 +52,11 @@ class SitemapsControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, member_url(@member)
   end
 
+  test "includes the about page" do
+    get sitemap_path
+    assert_includes @response.body, about_url
+  end
+
   # Coverage guard: when a new public resource is added (e.g. resources :foo),
   # add a fixture + an `assert_includes` above. This test list IS the contract
   # for what /sitemap.xml must contain. If you add a public model and don't
