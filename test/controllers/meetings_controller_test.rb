@@ -218,4 +218,68 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
 
     assert_select ".section-empty", text: "No documents available for this meeting."
   end
+
+  # --- Index view integration tests ---
+
+  test "index renders section headers" do
+    # Create an upcoming meeting so Coming Up section appears
+    Meeting.create!(
+      body_name: "City Council Meeting",
+      meeting_type: "Regular",
+      starts_at: 3.days.from_now,
+      status: "upcoming",
+      detail_page_url: "http://example.com/upcoming-render"
+    )
+    get meetings_url
+    assert_response :success
+    assert_select ".section-label", text: "Coming Up"
+    assert_select ".section-label", text: "What Happened"
+    assert_select ".section-label", text: "Find a Meeting"
+  end
+
+  test "index hides coming up when no upcoming meetings" do
+    get meetings_url
+    assert_response :success
+    refute_select ".section-label", text: "Coming Up"
+  end
+
+  test "index renders headline in recent card" do
+    MeetingSummary.create!(
+      meeting: @meeting,
+      summary_type: "minutes_recap",
+      generation_data: { "headline" => "Big news from council" }
+    )
+    get meetings_url
+    assert_response :success
+    assert_select ".meetings-recent-headline", text: /Big news from council/
+  end
+
+  test "index renders topic pills on upcoming card" do
+    upcoming = Meeting.create!(
+      body_name: "City Council Meeting",
+      meeting_type: "Regular",
+      starts_at: 3.days.from_now,
+      status: "upcoming",
+      detail_page_url: "http://example.com/upcoming-pills"
+    )
+    topic = Topic.create!(
+      name: "test pill topic",
+      status: "approved",
+      lifecycle_status: "active",
+      last_activity_at: 1.day.ago
+    )
+    item = AgendaItem.create!(meeting: upcoming, title: "Test Item")
+    AgendaItemTopic.create!(topic: topic, agenda_item: item)
+
+    get meetings_url
+    assert_response :success
+    assert_select ".meetings-topic-pill", text: "test pill topic"
+  end
+
+  test "index search shows helpful empty state" do
+    get meetings_url, params: { q: "absolutelynothingtofind" }
+    assert_response :success
+    assert_select ".meetings-search-empty"
+    assert_select ".meetings-search-hint"
+  end
 end
