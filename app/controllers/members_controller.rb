@@ -91,7 +91,7 @@ class MembersController < ApplicationController
         end
 
         unless group[:qualifies]
-          vote_counts = vote.motion.votes.group(:value).count
+          vote_counts = vote.motion.votes.each_with_object(Hash.new(0)) { |v, h| h[v.value] += 1 }
           majority_value = vote_counts.max_by { |_, count| count }&.first
           total = vote_counts.values.sum
           majority_count = vote_counts[majority_value] || 0

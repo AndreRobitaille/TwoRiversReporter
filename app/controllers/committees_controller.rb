@@ -63,14 +63,14 @@ class CommitteesController < ApplicationController
 
     @council = all.find { |c| c.name == "City Council" }
 
-    @member_counts = all.each_with_object({}) do |c, counts|
+    member_counts = all.each_with_object({}) do |c, counts|
       counts[c.id] = c.committee_memberships.count { |cm| cm.ended_on.nil? && !%w[staff non_voting].include?(cm.role) }
     end
 
     # Group into governance categories
     groups = { subcommittees: [], advisory: [], standalone: [], nonprofit: [] }
     all.reject { |c| c.name == "City Council" || EXCLUDED.include?(c.name) }
-       .reject { |c| c.status == "dormant" && @member_counts[c.id] == 0 }
+       .reject { |c| c.status == "dormant" && member_counts[c.id] == 0 }
        .sort_by(&:name)
        .each do |c|
       bucket = if SUBCOMMITTEES.include?(c.name)

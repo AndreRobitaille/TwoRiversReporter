@@ -141,6 +141,29 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
     assert_select ".member-other-votes summary", text: /Other Votes/
   end
 
+  test "show filters procedural votes from other votes" do
+    meeting = Meeting.create!(
+      body_name: "City Council", meeting_type: "Regular",
+      starts_at: 3.days.ago, status: "minutes_posted",
+      detail_page_url: "http://example.com/procedural-test"
+    )
+    procedural = Motion.create!(
+      meeting: meeting, description: "Motion to adjourn", outcome: "passed"
+    )
+    Vote.create!(motion: procedural, member: @member, value: "yes")
+    substantive = Motion.create!(
+      meeting: meeting, description: "Motion to approve engineering contract", outcome: "passed"
+    )
+    Vote.create!(motion: substantive, member: @member, value: "yes")
+
+    get member_url(@member)
+    assert_response :success
+
+    # Substantive vote should appear, procedural should not
+    assert_select ".member-other-votes .member-vote-motion", text: /engineering contract/
+    assert_select ".member-other-votes .member-vote-motion", text: /adjourn/, count: 0
+  end
+
   test "show displays vote split" do
     meeting = Meeting.create!(
       body_name: "City Council", meeting_type: "Regular",

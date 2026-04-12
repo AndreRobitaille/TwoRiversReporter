@@ -23,10 +23,8 @@ module MembersHelper
   end
 
   def vote_split(motion)
-    counts = motion.votes.group(:value).count
-    yes_count = counts["yes"] || 0
-    no_count = counts["no"] || 0
-    "#{yes_count}-#{no_count}"
+    counts = motion.votes.each_with_object(Hash.new(0)) { |v, h| h[v.value] += 1 }
+    "#{counts["yes"]}-#{counts["no"]}"
   end
 
   def vote_color_class(value)

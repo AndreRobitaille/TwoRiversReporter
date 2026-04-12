@@ -2774,15 +2774,6 @@ th.sortable-header:hover {
   margin-top: var(--space-2);
 }
 
-.committees-member-count {
-  font-family: var(--font-data);
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
 
 /* ============================================
    Committee Show Page
