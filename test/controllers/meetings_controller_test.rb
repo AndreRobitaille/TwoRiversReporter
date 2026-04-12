@@ -80,11 +80,11 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     assert_includes assigns(:recent_enriched), @meeting
   end
 
-  test "index counts thin meetings without summaries" do
+  test "index exposes thin meetings without summaries" do
     get meetings_url
     assert_response :success
     # @meeting has no summary, so it's thin
-    assert assigns(:recent_thin_count) >= 1
+    assert assigns(:recent_thin).size >= 1
   end
 
   test "index assigns search_results when q param present" do

@@ -9,8 +9,7 @@ class MeetingsController < ApplicationController
       .order(starts_at: :asc)
 
     # Split upcoming: enriched (has agenda/topics) vs thin (just scheduled)
-    @upcoming_enriched, upcoming_thin = upcoming_all.partition { |m| meeting_has_content?(m, :upcoming) }
-    @upcoming_thin_count = upcoming_thin.size
+    @upcoming_enriched, @upcoming_thin = upcoming_all.partition { |m| meeting_has_content?(m, :upcoming) }
 
     recent_all = Meeting
       .where(starts_at: (RECENT_WINDOW.ago)..Time.current)
@@ -18,8 +17,7 @@ class MeetingsController < ApplicationController
       .order(starts_at: :desc)
 
     # Split recent: enriched (has summary) vs thin (no summary)
-    @recent_enriched, recent_thin = recent_all.partition { |m| meeting_has_content?(m, :recent) }
-    @recent_thin_count = recent_thin.size
+    @recent_enriched, @recent_thin = recent_all.partition { |m| meeting_has_content?(m, :recent) }
 
     if params[:q].present?
       @pagy, @search_results = pagy(:offset, Meeting.search_multi(params[:q]), limit: 15)
