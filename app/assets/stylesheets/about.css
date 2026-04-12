@@ -9,7 +9,6 @@
 .about-hook {
   text-align: center;
   padding: var(--space-6) 0 var(--space-4);
-  border-bottom: 3px solid var(--color-terra-cotta);
   margin-bottom: var(--space-2);
   position: relative;
 }
@@ -199,7 +198,7 @@
   padding: var(--space-5) 0 var(--space-5) var(--space-5);
   border-bottom: 1px solid var(--color-border);
   border-left: 3px solid var(--color-terra-cotta);
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-3);
 }
 
 .about-faq-item:last-child {
