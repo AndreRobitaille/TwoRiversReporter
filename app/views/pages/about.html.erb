@@ -116,6 +116,72 @@
       <p class="about-faq-answer">The person who built this site wrote a detailed description of who Two Rivers residents are — what they care about, what's routine, what local governance quirks matter. Those instructions shape how every summary is written. The goal is informed residents, not gotcha journalism, and not a mouthpiece for city hall.</p>
     </div>
   </section>
-  <section id="under-the-hood"></section>
+  <%= render "shared/diamond_divider" %>
+
+  <%# === Zone 4: Under the Hood === %>
+  <section id="under-the-hood" class="topic-article-section">
+    <div class="home-section-header">
+      <%= render "shared/atom_marker" %>
+      <span class="section-label">Under the Hood</span>
+      <span class="section-line"></span>
+    </div>
+
+    <div class="about-hood-zone">
+
+      <div class="about-hood-section">
+        <h3 class="about-hood-heading">How the AI Is Instructed</h3>
+        <p>The AI that writes summaries follows written rules about how to handle city documents. Three categories of information are kept separate in every summary:</p>
+        <ul>
+          <li><strong>What actually happened</strong> — votes, motions, dollar amounts, dates. These come straight from the official record and must be traceable to a specific document.</li>
+          <li><strong>How the city describes it</strong> — staff summaries, agenda titles, the language in meeting packets. The AI treats this as the city's perspective, not as neutral truth. When the city's description doesn't match the outcome or the observable impact, the AI notes that.</li>
+          <li><strong>What residents seem to care about</strong> — based on who shows up to comment, what keeps coming back meeting after meeting, and how divided the votes are. This is always presented as observation, never as established fact.</li>
+        </ul>
+        <p>The person who built this site also wrote a detailed description of who Two Rivers residents are — what they care about, what's routine, what local governance quirks matter (like how height-and-area exceptions get used, or why CDA agendas aren't always substantive). Those instructions shape how every summary is written.</p>
+      </div>
+
+      <div class="about-hood-section">
+        <h3 class="about-hood-heading">How Issues Are Tracked Across Meetings</h3>
+        <p>When something like "Lead Service Line Replacement" shows up on an agenda in January, then again in a committee meeting in March, then gets voted on by the Council in June — those are all automatically connected. The system notices when an issue is still being discussed, when it hasn't come up in a while, and when it got a final vote.</p>
+        <p>That's how the site can tell you something has been deferred three times, or that an issue reappears every budget cycle. No one is manually connecting those dots — it happens automatically as new documents arrive.</p>
+      </div>
+
+      <div class="about-hood-section">
+        <h3 class="about-hood-heading">What Gets Filtered Out</h3>
+        <p>Summaries skip the procedural business that every meeting has: adjournment motions, approving last meeting's minutes, roll call for remote participation, and truly routine consent agenda items.</p>
+        <p>One exception: when the Council goes into closed session, the motion to close <em>is</em> included. Wisconsin law
+          (<a href="https://docs.legis.wisconsin.gov/statutes/statutes/19/v/85" target="_blank" rel="noopener">&sect;19.85</a>)
+          requires transparency about what gets discussed behind closed doors. Residents should see that.</p>
+      </div>
+
+      <div class="about-hood-section">
+        <h3 class="about-hood-heading">How It Decides What to Show You First</h3>
+        <p>The front page features issues based on automated signals, not anyone's personal judgment. The system weighs:</p>
+        <ul>
+          <li>Whether residents showed up to speak about it (strongest signal)</li>
+          <li>Whether the vote was close or split</li>
+          <li>Whether it affects property taxes, zoning, or infrastructure</li>
+          <li>Whether it's come up across multiple meetings or committees</li>
+          <li>Whether there have been repeated delays or unresolved questions</li>
+        </ul>
+        <p>No one hand-picks what goes on the front page. An issue about sidewalk repair and an issue about a $2 million TIF district go through the same process — the TIF district shows up higher because it triggers more of those signals.</p>
+      </div>
+
+      <div class="about-hood-section">
+        <h3 class="about-hood-heading">The Source Documents</h3>
+        <p>Every meeting page on this site has a "Documents" section with the original PDFs from the city. The city is required by Wisconsin's Open Meetings Law to make these available to the public. This site saves copies because government websites sometimes reorganize, move pages, or remove old documents.</p>
+        <p>Relevant Wisconsin statutes:</p>
+        <ul>
+          <li><a href="https://docs.legis.wisconsin.gov/statutes/statutes/19/v" target="_blank" rel="noopener">Chapter 19, Subchapter V</a> — Open Meetings Law (full text)</li>
+          <li><a href="https://docs.legis.wisconsin.gov/statutes/statutes/19/v/84" target="_blank" rel="noopener">&sect;19.84</a> — Public notice requirements for meetings</li>
+          <li><a href="https://docs.legis.wisconsin.gov/statutes/statutes/19/v/88" target="_blank" rel="noopener">&sect;19.88(3)</a> — Minutes must be available for public inspection</li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
 
 </article>
+
+<div class="topic-article-footer">
+  <%= link_to "← Home", root_path, class: "btn btn--ghost" %>
+</div>
