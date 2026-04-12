@@ -1022,6 +1022,13 @@ details[open] summary {
   margin-top: var(--space-1);
 }
 
+/* --- Content constraint --- */
+
+.meetings-content {
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
 /* --- Search --- */
 
 .meetings-search-wrap {
@@ -1145,7 +1152,7 @@ details[open] summary {
 .meetings-card-name {
   font-family: var(--font-display);
   font-weight: var(--font-weight-bold);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
   text-transform: uppercase;
   letter-spacing: 0.02em;
   color: var(--color-teal);
@@ -1161,7 +1168,7 @@ details[open] summary {
 
 .meetings-card-headline {
   font-family: var(--font-body);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
   color: var(--color-text);
   margin: 0;
   line-height: var(--line-height-normal);
@@ -1169,7 +1176,7 @@ details[open] summary {
 
 .meetings-card-note {
   font-family: var(--font-body);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
   color: var(--color-text-muted);
 }
 
@@ -1183,8 +1190,8 @@ details[open] summary {
 
 .meetings-topic-pill {
   font-family: var(--font-body);
-  font-size: var(--font-size-xs);
-  padding: 0.15rem 0.5rem;
+  font-size: var(--font-size-sm);
+  padding: 0.2rem 0.6rem;
   border-radius: 99px;
   background: var(--color-primary-light);
   color: var(--color-teal);

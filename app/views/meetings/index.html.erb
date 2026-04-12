@@ -5,6 +5,8 @@
   <p class="meetings-tagline">What happened and what's next</p>
 </div>
 
+<div class="meetings-content">
+
 <%# === SEARCH === %>
 <div class="meetings-search-wrap">
   <%= form_with url: meetings_path, method: :get, local: true, class: "meetings-search-form" do |form| %>
@@ -130,3 +132,5 @@
   </section>
 
 <% end %>
+
+</div>
