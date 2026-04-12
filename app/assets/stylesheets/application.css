@@ -2677,7 +2677,7 @@ th.sortable-header:hover {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   padding: var(--space-5) var(--space-6);
-  margin-bottom: var(--space-8);
+  margin: 0 auto var(--space-8);
   max-width: 38rem;
   text-decoration: none;
   color: inherit;
