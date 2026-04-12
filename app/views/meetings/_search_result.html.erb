@@ -1,0 +1,19 @@
+<%# Search result row. Locals: meeting %>
+<% headline = best_headline(meeting) %>
+<%= link_to meeting_path(meeting), class: "meetings-search-row #{'meetings-search-row--muted' unless headline}" do %>
+  <div class="meetings-search-header">
+    <span class="meetings-search-name"><%= meeting.body_name.sub(/ Meeting$/, "") %></span>
+    <span class="meetings-search-date"><%= meeting.starts_at.strftime("%b %-d, %Y") %></span>
+  </div>
+  <% if headline %>
+    <p class="meetings-search-headline"><%= headline %></p>
+  <% end %>
+  <% approved_topics = meeting.agenda_items.flat_map(&:topics).uniq.select(&:approved?) %>
+  <% if approved_topics.any? %>
+    <div class="meetings-topic-pills meetings-topic-pills--warm">
+      <% approved_topics.first(3).each do |topic| %>
+        <span class="meetings-topic-pill"><%= topic.name %></span>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>

@@ -1,92 +1,80 @@
 <% content_for(:title) { "Meetings - Two Rivers Matters" } %>
 
 <div class="page-header">
-  <h1 class="page-title">City Meetings</h1>
-  <p class="page-subtitle">Browse meetings from all city boards and committees</p>
+  <h1 class="page-title">Meetings</h1>
+  <p class="page-subtitle">What happened and what's next</p>
 </div>
 
-<%= form_with url: meetings_path, method: :get, local: true, class: "search-form" do |form| %>
-  <%= form.text_field :q,
-      value: params[:q],
-      placeholder: "Search meetings and documents...",
-      class: "form-input" %>
-  <%= form.submit "Search", class: "btn btn--primary" %>
-  <% if params[:q].present? %>
-    <%= link_to "Clear", meetings_path, class: "btn btn--ghost" %>
-  <% end %>
-<% end %>
+<%# === COMING UP === %>
+<% if @upcoming.any? %>
+  <section class="meetings-zone">
+    <div class="home-section-header">
+      <%= render "shared/atom_marker", size: 20 %>
+      <span class="section-label">Coming Up</span>
+      <span class="section-line"></span>
+    </div>
 
-<% if params[:q].present? %>
-  <p class="text-secondary mb-6">
-    Showing results for "<strong><%= params[:q] %></strong>"
-  </p>
-<% end %>
-
-<div class="table-wrapper">
-  <table>
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Body</th>
-        <th>Status</th>
-        <th>Info</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @recent || Meeting.none.each do |meeting| %>
-        <tr>
-          <td>
-            <strong><%= meeting.starts_at&.strftime("%b %d, %Y") %></strong>
-            <div class="text-muted" style="font-size: var(--font-size-sm);">
-              <%= meeting.starts_at&.strftime("%l:%M %p") %>
-            </div>
-          </td>
-          <td><%= meeting.body_name %></td>
-          <td>
-            <span class="badge <%= case meeting.status
-              when 'minutes_posted' then 'badge--success'
-              when 'upcoming' then 'badge--primary'
-              else 'badge--default'
-            end %>">
-              <%= meeting.status&.titleize || "Unknown" %>
-            </span>
-          </td>
-          <td>
-            <div class="flex gap-2 flex-wrap">
-              <% case meeting.document_status %>
-              <% when :minutes %>
-                <span class="badge badge--success">Has Minutes</span>
-              <% when :packet %>
-                <span class="badge badge--primary">Has Packet</span>
-              <% when :agenda %>
-                <span class="badge badge--primary">Has Agenda</span>
-              <% else %>
-                <span class="badge badge--default">No info yet</span>
-              <% end %>
-
-              <% if meeting.meeting_summaries.any? %>
-                <span class="badge badge--primary">Summary</span>
-              <% end %>
-              <% if meeting.motions.any? %>
-                <span class="badge badge--default"><%= meeting.motions.count %> votes</span>
-              <% end %>
-            </div>
-          </td>
-          <td class="text-right">
-            <%= link_to "View", meeting_path(meeting), class: "btn btn--secondary btn--sm" %>
-          </td>
-        </tr>
+    <div class="meetings-upcoming-list">
+      <% @upcoming.each do |meeting| %>
+        <%= render "meetings/upcoming_card", meeting: meeting %>
       <% end %>
-    </tbody>
-  </table>
-</div>
-
-<% if @recent || Meeting.none.empty? %>
-  <div class="card text-center" style="padding: var(--space-12);">
-    <p class="text-secondary mb-4">No meetings found.</p>
-    <% if params[:q].present? %>
-      <%= link_to "Clear search", meetings_path, class: "btn btn--primary" %>
-    <% end %>
-  </div>
+    </div>
+  </section>
 <% end %>
+
+<%# === WHAT HAPPENED === %>
+<% if @recent.any? %>
+  <section class="meetings-zone">
+    <div class="home-section-header">
+      <%= render "shared/atom_marker", size: 20 %>
+      <span class="section-label">What Happened</span>
+      <span class="section-line"></span>
+    </div>
+
+    <div class="meetings-recent-list">
+      <% @recent.each do |meeting| %>
+        <%= render "meetings/recent_card", meeting: meeting %>
+      <% end %>
+    </div>
+  </section>
+<% end %>
+
+<%# === FIND A MEETING === %>
+<section class="meetings-zone">
+  <div class="home-section-header">
+    <%= render "shared/atom_marker", size: 20 %>
+    <span class="section-label">Find a Meeting</span>
+    <span class="section-line"></span>
+  </div>
+
+  <%= form_with url: meetings_path, method: :get, local: true, class: "meetings-search-form" do |form| %>
+    <%= form.text_field :q,
+        value: params[:q],
+        placeholder: "Search by committee, topic, date, or keyword...",
+        class: "form-input meetings-search-input" %>
+    <%= form.submit "Search", class: "btn btn--primary" %>
+    <% if params[:q].present? %>
+      <%= link_to "Clear", meetings_path, class: "btn btn--ghost" %>
+    <% end %>
+  <% end %>
+
+  <% if params[:q].present? %>
+    <% if @search_results.any? %>
+      <div class="meetings-search-results">
+        <% @search_results.each do |meeting| %>
+          <%= render "meetings/search_result", meeting: meeting %>
+        <% end %>
+      </div>
+      <% if @pagy.next %>
+        <div class="meetings-show-more">
+          <%= link_to "Show more results", meetings_path(q: params[:q], page: @pagy.next), class: "btn btn--secondary" %>
+        </div>
+      <% end %>
+    <% else %>
+      <div class="meetings-search-empty">
+        <p>No meetings found for "<strong><%= params[:q] %></strong>"</p>
+        <p class="meetings-search-hint">Try a different spelling, a committee name, or a year like 2025.</p>
+      </div>
+    <% end %>
+  <% end %>
+</section>
