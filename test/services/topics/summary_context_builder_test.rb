@@ -94,5 +94,72 @@ module Topics
       assert_equal "social_media", resident_context[:source_type]
       assert_equal "Residents raised concerns about data centers", resident_context[:notes]
     end
+
+    test "includes item_details_summary when meeting has a MeetingSummary with matching item_details" do
+      @meeting.meeting_summaries.create!(
+        summary_type: "minutes_recap",
+        generation_data: {
+          "item_details" => [
+            {
+              "agenda_item_title" => "Repair Main St",
+              "summary" => "Council approved a $240,000 bid for Main St repaving from Smith Paving Co.",
+              "activity_level" => "decision",
+              "vote" => "5-0",
+              "decision" => "approved",
+              "public_hearing" => nil
+            }
+          ]
+        }
+      )
+
+      context = @builder.build_context_json
+      item = context[:agenda_items].first
+
+      assert_equal "Council approved a $240,000 bid for Main St repaving from Smith Paving Co.",
+        item[:item_details_summary]
+      assert_equal "decision", item[:item_details_activity_level]
+      assert_equal "5-0", item[:item_details_vote]
+      assert_equal "approved", item[:item_details_decision]
+      assert_nil item[:item_details_public_hearing]
+    end
+
+    test "leaves item_details_* fields nil when meeting has no MeetingSummary" do
+      # @meeting is set up without a MeetingSummary in the default setup
+      context = @builder.build_context_json
+      item = context[:agenda_items].first
+
+      assert_nil item[:item_details_summary]
+      assert_nil item[:item_details_activity_level]
+      assert_nil item[:item_details_vote]
+      assert_nil item[:item_details_decision]
+      assert_nil item[:item_details_public_hearing]
+    end
+
+    test "matches item_details entries by normalized agenda title (numbering + 'as needed')" do
+      # Agenda item has no leading number and no suffix; item_details entry has both.
+      @meeting.meeting_summaries.create!(
+        summary_type: "minutes_recap",
+        generation_data: {
+          "item_details" => [
+            {
+              "agenda_item_title" => "7. REPAIR MAIN ST, AS NEEDED",
+              "summary" => "Committee discussed Main St potholes; no action.",
+              "activity_level" => "discussion",
+              "vote" => nil,
+              "decision" => nil,
+              "public_hearing" => nil
+            }
+          ]
+        }
+      )
+
+      context = @builder.build_context_json
+      item = context[:agenda_items].first
+
+      assert_equal "Committee discussed Main St potholes; no action.",
+        item[:item_details_summary],
+        "TitleNormalizer should strip leading '7.' and trailing ', AS NEEDED' to match"
+      assert_equal "discussion", item[:item_details_activity_level]
+    end
   end
 end

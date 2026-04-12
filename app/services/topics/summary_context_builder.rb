@@ -42,6 +42,15 @@ module Topics
 
       items = @meeting.agenda_items.where(id: item_ids).order(:order_index)
 
+      # Build a normalized-title → item_details entry lookup from the
+      # meeting's latest MeetingSummary. This is the substantive content
+      # the minutes analyzer wrote for each item (e.g. "Council approved
+      # a $240,000 bid for Main St repaving"). Without this, the per-meeting
+      # TopicSummary prompt only sees agenda structure (item.summary, which
+      # is usually nil) and writes generic "agenda includes an item titled..."
+      # factual_record entries. See issue #94.
+      item_details_by_norm_title = build_item_details_index
+
       items.map do |item|
         # Agenda Item Document Attachments
         doc_attachments = item.meeting_documents.flat_map do |doc|
@@ -75,15 +84,38 @@ module Topics
           text_preview: [ item.summary, item.recommended_action ].compact.join("\n")
         }
 
+        matched_details = item_details_by_norm_title[Topics::TitleNormalizer.normalize(item.title.to_s)]
+
         {
           id: item.id,
           number: item.number,
           title: item.title,
           summary: item.summary,
           recommended_action: item.recommended_action,
+          item_details_summary: matched_details&.dig("summary"),
+          item_details_activity_level: matched_details&.dig("activity_level"),
+          item_details_vote: matched_details&.dig("vote"),
+          item_details_decision: matched_details&.dig("decision"),
+          item_details_public_hearing: matched_details&.dig("public_hearing"),
           citation: item_citation,
           attachments: doc_attachments
         }
+      end
+    end
+
+    def build_item_details_index
+      summary = @meeting.meeting_summaries.order(created_at: :desc).first
+      return {} unless summary&.generation_data.is_a?(Hash)
+
+      details = summary.generation_data["item_details"]
+      return {} unless details.is_a?(Array)
+
+      details.each_with_object({}) do |entry, index|
+        next unless entry.is_a?(Hash)
+        title = entry["agenda_item_title"]
+        next unless title.is_a?(String)
+        normalized = Topics::TitleNormalizer.normalize(title)
+        index[normalized] = entry
       end
     end
 
