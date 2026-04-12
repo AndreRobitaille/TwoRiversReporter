@@ -1,22 +1,30 @@
-<%# app/views/pages/about.html.erb %>
 <% content_for(:title) { "About - Two Rivers Matters" } %>
 <% content_for(:description) { "What this site is, where the information comes from, and why it exists. Built by a Two Rivers resident using the city's own public documents." } %>
 
 <article class="topic-article about-page">
 
+  <%# === Zone 1: The Hook === %>
   <header class="about-hook">
+    <div class="about-starburst-watermark">
+      <%= render "shared/starburst", size: 240, opacity: 0.06 %>
+    </div>
     <span class="about-eyebrow">About This Site</span>
-    <h1 class="topic-article-title">Not a City Website. Not the News.</h1>
+    <h1 class="topic-article-title">Not a City Website.<br>Not the News.</h1>
     <p class="topic-article-dek">A Two Rivers resident built this to help you follow what's happening at city hall — using nothing but the city's own public documents.</p>
   </header>
 
-  <nav class="about-anchor-bar">
+  <%# === Anchor Bar === %>
+  <nav class="about-anchor-bar" aria-label="Page sections">
     <a href="#how-it-works">How It Works</a>
+    <span class="about-anchor-sep"><%= render "shared/atom_marker", size: 14 %></span>
     <a href="#your-questions">Your Questions</a>
+    <span class="about-anchor-sep"><%= render "shared/atom_marker", size: 14 %></span>
     <a href="#the-bias">The Bias</a>
+    <span class="about-anchor-sep"><%= render "shared/atom_marker", size: 14 %></span>
     <a href="#under-the-hood">Under the Hood</a>
   </nav>
 
+  <%# Zones 2-4 will be added in subsequent tasks %>
   <section id="how-it-works"></section>
   <section id="your-questions"></section>
   <section id="the-bias"></section>
