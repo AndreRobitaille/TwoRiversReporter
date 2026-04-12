@@ -1,7 +1,7 @@
 /* app/assets/stylesheets/about.css */
 
 /* ============================================
-   About Page
+   About Page — Atomic-era design treatment
    ============================================ */
 
 /* ---- Hook (Zone 1) ---- */
@@ -9,6 +9,24 @@
 .about-hook {
   text-align: center;
   padding: var(--space-6) 0 var(--space-4);
+  border-bottom: 3px solid var(--color-terra-cotta);
+  margin-bottom: var(--space-2);
+  position: relative;
+}
+
+/* Decorative starburst watermark behind the hook */
+.about-hook-decoration {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.about-hook > * {
+  position: relative;
+  z-index: 1;
 }
 
 .about-hook .topic-article-title {
@@ -32,8 +50,6 @@
   margin-bottom: var(--space-3);
 }
 
-/* Boomerang decorations removed — sparse SVGs at this scale looked wrong */
-
 /* ---- Anchor Bar ---- */
 
 .about-anchor-bar {
@@ -42,10 +58,13 @@
   justify-content: center;
   gap: var(--space-4);
   flex-wrap: wrap;
-  padding: var(--space-4) 0;
+  padding: var(--space-4) var(--space-4);
   margin-bottom: var(--space-8);
-  border-top: 1.5px solid var(--color-border);
-  border-bottom: 1.5px solid var(--color-border);
+  border-top: 3px solid var(--color-teal);
+  border-bottom: 3px solid var(--color-teal);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-sm);
 }
 
 .about-anchor-bar a {
@@ -55,13 +74,15 @@
   letter-spacing: 0.12em;
   color: var(--color-teal);
   text-decoration: none;
-  padding-bottom: 2px;
+  padding: var(--space-1) var(--space-2);
   border-bottom: 2px solid transparent;
-  transition: border-color var(--transition-fast);
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
 }
 
 .about-anchor-bar a:hover {
   border-bottom-color: var(--color-terra-cotta);
+  background: var(--color-primary-light);
 }
 
 /* Atom marker separators between anchor links (hidden on wrap) */
@@ -76,11 +97,16 @@
     display: none;
   }
   .about-anchor-bar {
-    gap: var(--space-3);
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-3);
+  }
+  .about-anchor-bar a {
+    font-size: 0.65rem;
+    padding: var(--space-1);
   }
 }
 
-/* ---- Pipeline Steps (Zone 2) ---- */
+/* ---- Pipeline Steps ---- */
 
 .about-pipeline {
   list-style: none;
@@ -88,15 +114,57 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: 0;
+  counter-reset: pipeline-step;
+  position: relative;
+}
+
+/* Continuous vertical line connecting steps */
+.about-pipeline::before {
+  content: "";
+  position: absolute;
+  left: 1.125rem;
+  top: var(--space-4);
+  bottom: var(--space-4);
+  width: 2px;
+  background: linear-gradient(180deg, var(--color-teal), var(--color-terra-cotta));
+  border-radius: 1px;
 }
 
 .about-pipeline-step {
+  counter-increment: pipeline-step;
   background: var(--color-surface);
-  padding: var(--space-4) var(--space-5);
-  border-left: 3px solid var(--color-teal);
+  padding: var(--space-4) var(--space-5) var(--space-4) calc(var(--space-5) + 2.5rem);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-sm);
+  position: relative;
+  margin-bottom: var(--space-4);
+}
+
+/* Numbered counter badge */
+.about-pipeline-step::before {
+  content: counter(pipeline-step);
+  position: absolute;
+  left: var(--space-3);
+  top: var(--space-4);
+  width: 2rem;
+  height: 2rem;
+  background: var(--color-teal);
+  color: var(--color-text-inverse);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  z-index: 1;
+  box-shadow: 0 0 0 3px var(--color-bg);
+}
+
+.about-pipeline-step:last-child::before {
+  background: var(--color-terra-cotta);
 }
 
 .about-pipeline-step strong {
@@ -114,16 +182,12 @@
   color: var(--color-primary-hover);
 }
 
+/* Hide the old arrow connectors */
 .about-pipeline-connector {
-  text-align: center;
-  color: var(--color-text-muted);
-  font-size: var(--font-size-lg);
-  line-height: 1;
-  padding: 0;
-  margin: calc(-1 * var(--space-2)) 0;
+  display: none;
 }
 
-/* ---- FAQ (Zone 3) ---- */
+/* ---- FAQ ---- */
 
 .about-faq {
   list-style: none;
@@ -132,8 +196,10 @@
 }
 
 .about-faq-item {
-  padding: var(--space-5) 0;
+  padding: var(--space-5) 0 var(--space-5) var(--space-5);
   border-bottom: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-terra-cotta);
+  margin-bottom: var(--space-2);
 }
 
 .about-faq-item:last-child {
@@ -144,7 +210,7 @@
   font-family: var(--font-body);
   font-weight: 700;
   font-size: var(--font-size-lg);
-  color: var(--color-text);
+  color: var(--color-teal);
   margin: 0 0 var(--space-2);
 }
 
@@ -181,8 +247,12 @@
 }
 
 .about-schedule-item {
+  display: grid;
+  grid-template-columns: 8rem 1fr;
+  gap: var(--space-4);
   padding: var(--space-4) 0;
   border-bottom: 1px solid var(--color-border);
+  align-items: start;
 }
 
 .about-schedule-item:last-child {
@@ -190,13 +260,15 @@
 }
 
 .about-schedule-label {
-  font-family: var(--font-display);
+  font-family: var(--font-data);
   font-weight: 700;
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--color-teal);
-  margin: 0 0 var(--space-1);
+  letter-spacing: 0.08em;
+  color: var(--color-terra-cotta);
+  margin: 0;
+  padding-top: 0.15rem;
+  line-height: var(--line-height-normal);
 }
 
 .about-schedule-detail {
@@ -207,6 +279,14 @@
   margin: 0;
 }
 
+/* Schedule collapses to stacked on small screens */
+@media (max-width: 480px) {
+  .about-schedule-item {
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+  }
+}
+
 /* ---- Under the Hood (Zone 4) ---- */
 
 .about-hood-zone {
@@ -215,6 +295,22 @@
   margin-right: calc(-1 * var(--space-5));
   padding: var(--space-8) var(--space-5);
   border-radius: var(--radius-md);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Radar sweep watermark */
+.about-hood-radar {
+  position: absolute;
+  bottom: var(--space-4);
+  right: var(--space-4);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.about-hood-zone > :not(.about-hood-radar) {
+  position: relative;
+  z-index: 1;
 }
 
 .about-hood-section {
@@ -233,6 +329,8 @@
   letter-spacing: 0.06em;
   color: var(--color-terra-cotta);
   margin: 0 0 var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1.5px solid var(--color-border);
 }
 
 .about-hood-zone p {
@@ -247,7 +345,8 @@
   margin-bottom: 0;
 }
 
-.about-hood-zone ul {
+.about-hood-zone ul,
+.about-hood-zone ol {
   padding-left: var(--space-5);
   margin: var(--space-2) 0 var(--space-3);
 }
@@ -271,16 +370,32 @@
   color: var(--color-primary-hover);
 }
 
-/* Under the Hood ordered list */
-.about-hood-zone ol {
-  padding-left: var(--space-5);
-  margin: var(--space-2) 0 var(--space-3);
-}
+/* ---- Pipeline: mobile adjustments ---- */
 
-.about-hood-zone ol li {
-  font-family: var(--font-body);
-  font-size: var(--font-size-base);
-  line-height: var(--line-height-relaxed);
-  color: var(--color-text-secondary);
-  margin-bottom: var(--space-2);
+@media (max-width: 480px) {
+  .about-pipeline::before {
+    left: 0.875rem;
+  }
+
+  .about-pipeline-step {
+    padding-left: calc(var(--space-4) + 2rem);
+  }
+
+  .about-pipeline-step::before {
+    left: var(--space-2);
+    width: 1.6rem;
+    height: 1.6rem;
+    font-size: var(--font-size-xs);
+  }
+
+  .about-hood-zone {
+    margin-left: calc(-1 * var(--space-4));
+    margin-right: calc(-1 * var(--space-4));
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .about-hood-radar {
+    bottom: var(--space-2);
+    right: var(--space-2);
+  }
 }
