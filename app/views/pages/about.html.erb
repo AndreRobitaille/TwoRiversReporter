@@ -33,33 +33,39 @@
       <span class="section-line"></span>
     </div>
 
-    <ol class="about-pipeline">
-      <li class="about-pipeline-step">
-        <strong>The city posts meeting documents.</strong>
-        Agendas, meeting packets, and official minutes. Wisconsin's Open Meetings Law
-        (<a href="https://docs.legis.wisconsin.gov/statutes/statutes/19/v/84" target="_blank" rel="noopener">Wis.&nbsp;Stats.&nbsp;&sect;19.84</a>)
-        requires them to be public. That's the only source this site uses — nothing private, nothing leaked.
-      </li>
-      <li class="about-pipeline-connector" aria-hidden="true">&darr;</li>
-      <li class="about-pipeline-step">
-        <strong>This site checks every night for new documents.</strong>
-        New meeting dates, new agendas, new minutes. Copies are saved here so nothing
-        disappears if the city reorganizes its website or removes old files.
-      </li>
-      <li class="about-pipeline-connector" aria-hidden="true">&darr;</li>
-      <li class="about-pipeline-step">
-        <strong>AI reads the documents and writes plain-language summaries.</strong>
-        Not government-speak. Every claim links back to the original document so
-        you can read it yourself and decide if you agree with how it was summarized.
-      </li>
-      <li class="about-pipeline-connector" aria-hidden="true">&darr;</li>
-      <li class="about-pipeline-step">
-        <strong>Issues are tracked across meetings, not just listed by date.</strong>
-        Instead of making you dig through a dozen agendas, the site follows things
-        like "downtown parking" or "lead pipe replacement" across months of meetings
-        and connects them together automatically.
-      </li>
-    </ol>
+    <div style="position: relative;">
+      <div class="about-boomerang-left">
+        <%= render "shared/boomerang", size: 120, opacity: 0.04, rotation: -15 %>
+      </div>
+
+      <ol class="about-pipeline">
+        <li class="about-pipeline-step">
+          <strong>The city posts meeting documents.</strong>
+          Agendas, meeting packets, and official minutes. Wisconsin's Open Meetings Law
+          (<a href="https://docs.legis.wisconsin.gov/statutes/statutes/19/v/84" target="_blank" rel="noopener">Wis.&nbsp;Stats.&nbsp;&sect;19.84</a>)
+          requires them to be public. That's the only source this site uses — nothing private, nothing leaked.
+        </li>
+        <li class="about-pipeline-connector" aria-hidden="true">&darr;</li>
+        <li class="about-pipeline-step">
+          <strong>This site checks every night for new documents.</strong>
+          New meeting dates, new agendas, new minutes. Copies are saved here so nothing
+          disappears if the city reorganizes its website or removes old files.
+        </li>
+        <li class="about-pipeline-connector" aria-hidden="true">&darr;</li>
+        <li class="about-pipeline-step">
+          <strong>AI reads the documents and writes plain-language summaries.</strong>
+          Not government-speak. Every claim links back to the original document so
+          you can read it yourself and decide if you agree with how it was summarized.
+        </li>
+        <li class="about-pipeline-connector" aria-hidden="true">&darr;</li>
+        <li class="about-pipeline-step">
+          <strong>Issues are tracked across meetings, not just listed by date.</strong>
+          Instead of making you dig through a dozen agendas, the site follows things
+          like "downtown parking" or "lead pipe replacement" across months of meetings
+          and connects them together automatically.
+        </li>
+      </ol>
+    </div>
   </section>
   <%= render "shared/diamond_divider" %>
 
