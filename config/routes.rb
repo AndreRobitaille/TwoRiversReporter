@@ -5,7 +5,9 @@ Rails.application.routes.draw do
   # new pages appear in /sitemap.xml. Internal nav links handle most crawler
   # discovery, but the sitemap is the explicit signal.
   resources :meetings, only: %i[index show]
-  resources :members, only: %i[index show]
+  resources :committees, only: %i[index show], param: :slug
+  get "members", to: redirect("/committees", status: 301), as: nil
+  resources :members, only: %i[show]
   get "topics/explore", to: "topics#explore", as: :topics_explore
   resources :topics, only: %i[index show]
 
