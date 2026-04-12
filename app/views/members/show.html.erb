@@ -58,7 +58,7 @@
           <% group[:votes].each do |vote| %>
             <div class="member-vote-row">
               <div class="member-vote-motion">
-                <span class="member-vote-date"><%= vote.motion.meeting.starts_at&.strftime("%b %-d") %></span>
+                <span class="member-vote-date"><%= vote.motion.meeting.starts_at&.strftime("%b %-d, %Y") %></span>
                 <%= link_to truncate(vote.motion.description, length: 100), meeting_path(vote.motion.meeting) %>
               </div>
               <div class="member-vote-result">
@@ -80,10 +80,14 @@
         <% @other_votes.each do |vote| %>
           <div class="member-vote-row member-vote-row--compact">
             <div class="member-vote-motion">
-              <span class="member-vote-date"><%= vote.motion.meeting.starts_at&.strftime("%b %-d") %></span>
+              <span class="member-vote-date"><%= vote.motion.meeting.starts_at&.strftime("%b %-d, %Y") %></span>
+              <span class="member-vote-body"><%= vote.motion.meeting.body_name %></span>
               <%= link_to truncate(vote.motion.description, length: 80), meeting_path(vote.motion.meeting) %>
             </div>
-            <span class="vote-value <%= vote_color_class(vote.value) %>"><%= vote.value.titleize %></span>
+            <div class="member-vote-result">
+              <span class="vote-value <%= vote_color_class(vote.value) %>"><%= vote.value.titleize %></span>
+              <span class="member-vote-split"><%= vote_split(vote.motion) %> · <%= vote.motion.outcome&.titleize || "Unknown" %></span>
+            </div>
           </div>
         <% end %>
       </div>

@@ -5,19 +5,26 @@
   <p class="page-subtitle">The boards and commissions that make decisions in Two Rivers</p>
 </div>
 
-<%= image_tag "committee-connections.png", alt: "Diagram showing how Two Rivers committees relate to each other", class: "committees-diagram" %>
+<details class="committees-diagram-wrap" open>
+  <summary class="committees-diagram-toggle">How committees connect — tap to expand</summary>
+  <%= link_to image_tag("committee-connections.png", alt: "Diagram showing how Two Rivers committees relate to each other", class: "committees-diagram"), image_path("committee-connections.png"), target: "_blank" %>
+</details>
 
 <% current_type = nil %>
 <% @committees.each do |committee| %>
   <% next if committee.status == "dormant" && @member_counts[committee.id] == 0 %>
 
   <% if committee.committee_type != current_type %>
+    <% if current_type %>
+      </div>
+    <% end %>
     <% current_type = committee.committee_type %>
     <% label, explanation = CommitteesController::COMMITTEE_TYPE_LABELS[current_type] %>
     <div class="committees-type-divider">
       <h2 class="committees-type-label"><%= label %></h2>
       <p class="committees-type-explanation"><%= explanation %></p>
     </div>
+    <div class="committees-grid">
   <% end %>
 
   <%= link_to committee_path(committee.slug), class: "committees-card #{"committees-card--council" if committee.name == "City Council"}" do %>
@@ -34,4 +41,7 @@
       <p class="committees-card-desc"><%= truncate(committee.description, length: 150) %></p>
     <% end %>
   <% end %>
+<% end %>
+<% if current_type %>
+  </div>
 <% end %>

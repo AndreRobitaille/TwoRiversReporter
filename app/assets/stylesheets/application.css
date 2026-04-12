@@ -2583,15 +2583,49 @@ th.sortable-header:hover {
    Committees Index
    ============================================ */
 
-.committees-diagram {
-  width: 100%;
-  max-width: 800px;
-  height: auto;
-  display: block;
-  margin: 0 auto var(--space-8);
+.committees-diagram-wrap {
+  margin-bottom: var(--space-8);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  background: #fff;
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.committees-diagram-toggle {
+  display: block;
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.committees-diagram-toggle:hover {
+  color: var(--color-primary);
+}
+
+.committees-diagram-wrap a {
+  display: block;
+}
+
+.committees-diagram {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.committees-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+}
+
+.committees-card--council {
+  grid-column: 1 / -1;
+  border-left: 3px solid var(--color-primary);
 }
 
 .committees-type-divider {
@@ -2645,10 +2679,6 @@ th.sortable-header:hover {
   border-color: var(--color-border-strong);
   text-decoration: none;
   color: inherit;
-}
-
-.committees-card--council {
-  border-left: 3px solid var(--color-primary);
 }
 
 .committees-card-header {
@@ -3008,9 +3038,28 @@ th.sortable-header:hover {
   padding: var(--space-2) var(--space-4);
 }
 
+.member-vote-body {
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-right: var(--space-2);
+}
+
 /* ============================================
    Committees & Members — Mobile
    ============================================ */
+
+@media (max-width: 768px) {
+  .committees-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .committees-card--council {
+    grid-column: 1;
+  }
+}
 
 @media (max-width: 640px) {
   .committees-card-header {
@@ -3032,18 +3081,30 @@ th.sortable-header:hover {
   }
 
   .member-committee {
+    flex-wrap: wrap;
     padding: var(--space-3) var(--space-4);
   }
 
   .member-vote-row {
     flex-direction: column;
     align-items: flex-start;
-    gap: var(--space-1);
+    gap: var(--space-2);
     padding: var(--space-3);
   }
 
   .member-vote-result {
     align-self: flex-end;
+  }
+
+  .member-vote-row--compact {
+    padding: var(--space-3);
+  }
+
+  .member-vote-date,
+  .member-vote-body {
+    display: block;
+    margin-bottom: var(--space-1);
+    margin-right: 0;
   }
 }
 
