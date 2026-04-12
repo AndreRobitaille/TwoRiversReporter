@@ -61,8 +61,61 @@
       </li>
     </ol>
   </section>
-  <section id="your-questions"></section>
-  <section id="the-bias"></section>
+  <%= render "shared/diamond_divider" %>
+
+  <%# === Zone 3: Your Questions, Answered === %>
+  <section id="your-questions" class="topic-article-section">
+    <div class="home-section-header">
+      <%= render "shared/atom_marker" %>
+      <span class="section-label">Your Questions</span>
+      <span class="section-line"></span>
+    </div>
+
+    <dl class="about-faq">
+      <div class="about-faq-item">
+        <dt class="about-faq-question">"Who's behind this?"</dt>
+        <dd class="about-faq-answer">One resident, working independently. Not connected to city hall, not funded by anyone, not affiliated with any political group or candidate. The site costs money to run — that comes out of pocket. No ads, no sponsors.</dd>
+      </div>
+
+      <div class="about-faq-item">
+        <dt class="about-faq-question">"Who's paying for this?"</dt>
+        <dd class="about-faq-answer">Hosting and AI processing — paid by the person who built it. No revenue, no grants, no city funding. If that ever changes, it'll be stated here.</dd>
+      </div>
+
+      <div class="about-faq-item">
+        <dt class="about-faq-question">"Can I trust what the AI writes?"</dt>
+        <dd class="about-faq-answer">The AI reads the same documents you could find on the city's website. It's told to separate what actually happened — votes, motions, dollar amounts — from how the city describes it. Every summary links back to the source so you can read the original yourself. If something looks wrong, check it. That's the whole point.</dd>
+      </div>
+
+      <div class="about-faq-item">
+        <dt class="about-faq-question">"What doesn't this cover?"</dt>
+        <dd class="about-faq-answer">Routine business that doesn't affect your life — license renewals, proclamations, approving last month's minutes, things like that. The site focuses on what hits your taxes, your neighborhood, your streets, your water. If nobody showed up to talk about it and the vote was unanimous on something routine, it probably won't show up here.</dd>
+      </div>
+
+      <div class="about-faq-item">
+        <dt class="about-faq-question">"Who decides what shows up on the front page?"</dt>
+        <dd class="about-faq-answer">Not a person. The system looks at signals: Did people show up to comment? Was the vote close? Does it affect property taxes or zoning? Has it come up at multiple meetings over time? Issues with more of those signals get featured. Issues without them are still on the site — just not on the front page.</dd>
+      </div>
+    </dl>
+  </section>
+
+  <%= render "shared/diamond_divider" %>
+
+  <%# === The Bias (separated for anchor link) === %>
+  <section id="the-bias" class="topic-article-section">
+    <div class="home-section-header">
+      <%= render "shared/atom_marker" %>
+      <span class="section-label">The Bias</span>
+      <span class="section-line"></span>
+    </div>
+
+    <div class="about-faq">
+      <p class="about-faq-answer">This site is not neutral and doesn't pretend to be.</p>
+      <p class="about-faq-answer">It's built with a point of view: residents deserve to understand what's happening at city hall, and the way the city presents information isn't always the full picture.</p>
+      <p class="about-faq-answer">The AI is specifically instructed to question how decisions are framed — not to assume the city's description of something is the whole story. It's also told never to accuse anyone of bad intentions or bad faith. Decisions and processes get questioned. People don't.</p>
+      <p class="about-faq-answer">The person who built this site wrote a detailed description of who Two Rivers residents are — what they care about, what's routine, what local governance quirks matter. Those instructions shape how every summary is written. The goal is informed residents, not gotcha journalism, and not a mouthpiece for city hall.</p>
+    </div>
+  </section>
   <section id="under-the-hood"></section>
 
 </article>
