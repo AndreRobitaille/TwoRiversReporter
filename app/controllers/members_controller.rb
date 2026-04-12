@@ -9,7 +9,13 @@ class MembersController < ApplicationController
       .sort_by { |cm| [ cm.committee.name == "City Council" ? 0 : 1, cm.committee.name ] }
 
     @attendance = load_attendance
-    @votes = @member.votes.joins(motion: :meeting).includes(motion: :meeting).order("meetings.starts_at DESC")
+
+    all_votes = @member.votes
+      .joins(motion: :meeting)
+      .includes(motion: [ :meeting, :votes, { agenda_item: { agenda_item_topics: :topic } } ])
+      .order("meetings.starts_at DESC")
+
+    @topic_groups, @other_votes = build_vote_groups(all_votes)
   end
 
   private
@@ -23,5 +29,60 @@ class MembersController < ApplicationController
     excused = records.where(status: "excused").count
     absent = records.where(status: "absent").count
     { total: total, present: present, excused: excused, absent: absent }
+  end
+
+  def build_vote_groups(votes)
+    topic_votes = Hash.new { |h, k| h[k] = { topic: nil, votes: [], latest_date: nil, qualifies: false } }
+    other_votes = []
+
+    votes.each do |vote|
+      topics = vote.motion.agenda_item&.agenda_item_topics&.map(&:topic)&.select { |t| t.status == "approved" }
+
+      if topics.blank?
+        other_votes << vote
+        next
+      end
+
+      topics.each do |topic|
+        group = topic_votes[topic.id]
+        group[:topic] = topic
+        group[:votes] << vote
+        meeting_date = vote.motion.meeting.starts_at
+        group[:latest_date] = meeting_date if group[:latest_date].nil? || meeting_date > group[:latest_date]
+
+        # Qualifies if high-impact OR member dissented on this motion
+        if topic.resident_impact_score && topic.resident_impact_score >= 3
+          group[:qualifies] = true
+        end
+
+        unless group[:qualifies]
+          vote_counts = vote.motion.votes.group(:value).count
+          majority_value = vote_counts.max_by { |_, count| count }&.first
+          total = vote_counts.values.sum
+          majority_count = vote_counts[majority_value] || 0
+          # Non-unanimous AND this member is in the minority
+          if majority_value && vote.value != majority_value && majority_count < total
+            group[:qualifies] = true
+          end
+        end
+      end
+    end
+
+    qualified = topic_votes.values
+      .select { |g| g[:qualifies] }
+      .sort_by { |g| g[:latest_date] }
+      .reverse
+      .first(5)
+
+    # Move non-qualifying topic votes into other_votes
+    qualified_topic_ids = qualified.map { |g| g[:topic].id }.to_set
+    topic_votes.each do |topic_id, group|
+      unless qualified_topic_ids.include?(topic_id)
+        other_votes.concat(group[:votes])
+      end
+    end
+    other_votes.sort_by! { |v| v.motion.meeting.starts_at }.reverse!
+
+    [ qualified, other_votes ]
   end
 end

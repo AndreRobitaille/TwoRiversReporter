@@ -60,6 +60,112 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
     assert_select ".member-attendance", count: 0
   end
 
+  test "show groups votes by topic for high-impact topics" do
+    meeting = Meeting.create!(
+      body_name: "City Council", meeting_type: "Regular",
+      starts_at: 3.days.ago, status: "minutes_posted",
+      detail_page_url: "http://example.com/vote-group-test"
+    )
+    topic = Topic.create!(
+      name: "important topic", status: "approved",
+      lifecycle_status: "active", resident_impact_score: 4,
+      last_activity_at: 2.days.ago
+    )
+    item = AgendaItem.create!(meeting: meeting, title: "Important Item")
+    AgendaItemTopic.create!(topic: topic, agenda_item: item)
+    motion = Motion.create!(
+      meeting: meeting, agenda_item: item,
+      description: "Motion to approve important thing",
+      outcome: "passed"
+    )
+    Vote.create!(motion: motion, member: @member, value: "yes")
+
+    get member_url(@member)
+    assert_response :success
+
+    assert_select ".member-topic-group", minimum: 1
+    assert_select ".member-topic-name", text: /important topic/
+  end
+
+  test "show includes topics where member dissented" do
+    meeting = Meeting.create!(
+      body_name: "City Council", meeting_type: "Regular",
+      starts_at: 3.days.ago, status: "minutes_posted",
+      detail_page_url: "http://example.com/dissent-test"
+    )
+    topic = Topic.create!(
+      name: "low impact but dissent", status: "approved",
+      lifecycle_status: "active", resident_impact_score: 1,
+      last_activity_at: 2.days.ago
+    )
+    item = AgendaItem.create!(meeting: meeting, title: "Dissent Item")
+    AgendaItemTopic.create!(topic: topic, agenda_item: item)
+    motion = Motion.create!(
+      meeting: meeting, agenda_item: item,
+      description: "Motion that was controversial",
+      outcome: "passed"
+    )
+    # Member voted no (minority)
+    Vote.create!(motion: motion, member: @member, value: "no")
+    # Others voted yes (majority)
+    other1 = Member.create!(name: "Voter One")
+    other2 = Member.create!(name: "Voter Two")
+    Vote.create!(motion: motion, member: other1, value: "yes")
+    Vote.create!(motion: motion, member: other2, value: "yes")
+
+    get member_url(@member)
+    assert_response :success
+
+    assert_select ".member-topic-name", text: /low impact but dissent/
+  end
+
+  test "show puts unlinked votes in other votes section" do
+    meeting = Meeting.create!(
+      body_name: "City Council", meeting_type: "Regular",
+      starts_at: 3.days.ago, status: "minutes_posted",
+      detail_page_url: "http://example.com/other-test"
+    )
+    motion = Motion.create!(
+      meeting: meeting,
+      description: "Motion to approve consent agenda",
+      outcome: "passed"
+    )
+    Vote.create!(motion: motion, member: @member, value: "yes")
+
+    get member_url(@member)
+    assert_response :success
+
+    assert_select ".member-other-votes summary", text: /Other Votes/
+  end
+
+  test "show displays vote split" do
+    meeting = Meeting.create!(
+      body_name: "City Council", meeting_type: "Regular",
+      starts_at: 3.days.ago, status: "minutes_posted",
+      detail_page_url: "http://example.com/split-test"
+    )
+    topic = Topic.create!(
+      name: "split vote topic", status: "approved",
+      lifecycle_status: "active", resident_impact_score: 4,
+      last_activity_at: 2.days.ago
+    )
+    item = AgendaItem.create!(meeting: meeting, title: "Split Item")
+    AgendaItemTopic.create!(topic: topic, agenda_item: item)
+    motion = Motion.create!(
+      meeting: meeting, agenda_item: item,
+      description: "Motion with split vote",
+      outcome: "passed"
+    )
+    Vote.create!(motion: motion, member: @member, value: "yes")
+    other = Member.create!(name: "Dissenter")
+    Vote.create!(motion: motion, member: other, value: "no")
+
+    get member_url(@member)
+    assert_response :success
+
+    assert_select ".member-vote-split", text: /1-1/
+  end
+
   test "show excludes ended memberships" do
     old_committee = Committee.create!(
       name: "Old Committee", slug: "old-committee",

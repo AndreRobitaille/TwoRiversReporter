@@ -48,38 +48,49 @@
     <div class="home-section-line"></div>
   </div>
 
-  <% if @votes.any? %>
-    <div class="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Body</th>
-            <th>Motion</th>
-            <th>Vote</th>
-            <th>Outcome</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @votes.each do |vote| %>
-            <tr>
-              <td><strong><%= vote.motion.meeting.starts_at&.strftime("%b %d, %Y") %></strong></td>
-              <td><%= vote.motion.meeting.body_name %></td>
-              <td><%= link_to truncate(vote.motion.description, length: 80), meeting_path(vote.motion.meeting) %></td>
-              <td><span class="vote-value vote-value--<%= vote.value %>"><%= vote.value.titleize %></span></td>
-              <td>
-                <span class="badge <%= case vote.motion.outcome&.downcase
-                  when 'passed' then 'badge--success'
-                  when 'failed' then 'badge--danger'
-                  else 'badge--default'
-                end %>"><%= vote.motion.outcome&.titleize || "Unknown" %></span>
-              </td>
-            </tr>
+  <% if @topic_groups.any? %>
+    <% @topic_groups.each do |group| %>
+      <div class="member-topic-group">
+        <h3 class="member-topic-name">
+          <%= link_to group[:topic].canonical_name, topic_path(group[:topic]) %>
+        </h3>
+        <div class="member-topic-votes">
+          <% group[:votes].each do |vote| %>
+            <div class="member-vote-row">
+              <div class="member-vote-motion">
+                <span class="member-vote-date"><%= vote.motion.meeting.starts_at&.strftime("%b %-d") %></span>
+                <%= link_to truncate(vote.motion.description, length: 100), meeting_path(vote.motion.meeting) %>
+              </div>
+              <div class="member-vote-result">
+                <span class="vote-value <%= vote_color_class(vote.value) %>"><%= vote.value.titleize %></span>
+                <span class="member-vote-split"><%= vote_split(vote.motion) %> · <%= vote.motion.outcome&.titleize || "Unknown" %></span>
+              </div>
+            </div>
           <% end %>
-        </tbody>
-      </table>
-    </div>
-  <% else %>
+        </div>
+      </div>
+    <% end %>
+  <% end %>
+
+  <% if @other_votes.any? %>
+    <details class="member-other-votes">
+      <summary>Other Votes (<%= @other_votes.size %>)</summary>
+      <p class="member-other-votes-desc">Procedural and routine votes.</p>
+      <div class="member-other-votes-list">
+        <% @other_votes.each do |vote| %>
+          <div class="member-vote-row member-vote-row--compact">
+            <div class="member-vote-motion">
+              <span class="member-vote-date"><%= vote.motion.meeting.starts_at&.strftime("%b %-d") %></span>
+              <%= link_to truncate(vote.motion.description, length: 80), meeting_path(vote.motion.meeting) %>
+            </div>
+            <span class="vote-value <%= vote_color_class(vote.value) %>"><%= vote.value.titleize %></span>
+          </div>
+        <% end %>
+      </div>
+    </details>
+  <% end %>
+
+  <% if @topic_groups.empty? && @other_votes.empty? %>
     <p class="section-empty">No voting record found for this official.</p>
   <% end %>
 </section>
