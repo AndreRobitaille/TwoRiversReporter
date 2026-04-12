@@ -57,7 +57,7 @@
       <% @recent_topics.each do |topic| %>
         <div class="committee-activity-item">
           <div class="committee-activity-header">
-            <%= link_to topic.display_name, topic_path(topic), class: "committee-activity-topic" %>
+            <%= link_to topic.canonical_name, topic_path(topic), class: "committee-activity-topic" %>
             <% if topic.respond_to?(:latest_meeting_date) && topic.latest_meeting_date %>
               <span class="committee-activity-date"><%= topic.latest_meeting_date.strftime("%b %-d") %></span>
             <% end %>

@@ -146,7 +146,7 @@ class CommitteesControllerTest < ActionDispatch::IntegrationTest
     get committee_url(@council.slug)
     assert_response :success
 
-    assert_select ".committee-activity a", text: /Test Topic For Show/
+    assert_select ".committee-activity a", text: /test topic for show/
   end
 
   test "show renders description with links" do
