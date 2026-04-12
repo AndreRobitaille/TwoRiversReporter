@@ -1,65 +1,89 @@
 <% content_for(:title) { "#{@member.name} - Two Rivers Matters" } %>
 
-<div class="page-header">
-  <h1 class="page-title"><%= @member.name %></h1>
-</div>
+<article class="member-article">
+  <header class="member-article-header">
+    <h1 class="member-article-title"><%= @member.name %></h1>
+  </header>
 
-<section class="section">
-  <div class="home-section-header">
-    <%= render "shared/atom_marker" %>
-    <span class="section-label">Committees</span>
-    <div class="section-line"></div>
-  </div>
-
-  <div class="member-committees">
-    <% @memberships.each do |cm| %>
-      <%= link_to committee_path(cm.committee.slug), class: "member-committee #{"member-committee--council" if cm.committee.name == "City Council"}" do %>
-        <span class="member-committee-name"><%= cm.committee.name %></span>
-        <% if cm.role.present? && cm.role.in?(%w[chair vice_chair]) %>
-          <span class="badge badge--primary"><%= cm.role.titleize.tr("_", " ") %></span>
-        <% elsif cm.committee.name == "City Council" %>
-          <span class="badge badge--info">Elected</span>
-        <% else %>
-          <span class="badge badge--default">Member</span>
-        <% end %>
-      <% end %>
-    <% end %>
-  </div>
-</section>
-
-<% if @attendance %>
-  <section class="section">
+  <section class="member-article-section">
     <div class="home-section-header">
       <%= render "shared/atom_marker" %>
-      <span class="section-label">Attendance</span>
-      <div class="section-line"></div>
+      <span class="section-label">Committees</span>
+      <span class="section-line"></span>
     </div>
 
-    <div class="member-attendance">
-      <p><%= attendance_sentence(@attendance) %></p>
+    <div class="member-committees">
+      <% @memberships.each do |cm| %>
+        <%= link_to committee_path(cm.committee.slug), class: "member-committee #{"member-committee--council" if cm.committee.name == "City Council"}" do %>
+          <span class="member-committee-name"><%= cm.committee.name %></span>
+          <% if cm.role.present? && cm.role.in?(%w[chair vice_chair]) %>
+            <span class="badge badge--primary"><%= cm.role.titleize.tr("_", " ") %></span>
+          <% elsif cm.committee.name == "City Council" %>
+            <span class="badge badge--info">Elected</span>
+          <% else %>
+            <span class="badge badge--default">Member</span>
+          <% end %>
+        <% end %>
+      <% end %>
     </div>
   </section>
-<% end %>
 
-<section class="section">
-  <div class="home-section-header">
-    <%= render "shared/atom_marker" %>
-    <span class="section-label">Voting Record</span>
-    <div class="section-line"></div>
-  </div>
+  <% if @attendance %>
+    <section class="member-article-section">
+      <div class="home-section-header">
+        <%= render "shared/atom_marker" %>
+        <span class="section-label">Attendance</span>
+        <span class="section-line"></span>
+      </div>
 
-  <% if @topic_groups.any? %>
-    <% @topic_groups.each do |group| %>
-      <div class="member-topic-group">
-        <h3 class="member-topic-name">
-          <%= link_to group[:topic].canonical_name, topic_path(group[:topic]) %>
-        </h3>
-        <div class="member-topic-votes">
-          <% group[:votes].each do |vote| %>
-            <div class="member-vote-row">
+      <div class="member-attendance">
+        <p><%= attendance_sentence(@attendance) %></p>
+      </div>
+    </section>
+  <% end %>
+
+  <section class="member-article-section">
+    <div class="home-section-header">
+      <%= render "shared/atom_marker" %>
+      <span class="section-label">Voting Record</span>
+      <span class="section-line"></span>
+    </div>
+
+    <% if @topic_groups.any? %>
+      <% @topic_groups.each do |group| %>
+        <div class="member-topic-group">
+          <h3 class="member-topic-name">
+            <%= link_to group[:topic].canonical_name, topic_path(group[:topic]) %>
+          </h3>
+          <div class="member-topic-votes">
+            <% group[:votes].each do |vote| %>
+              <div class="member-vote-row">
+                <div class="member-vote-motion">
+                  <span class="member-vote-date"><%= vote.motion.meeting.starts_at&.strftime("%b %-d, %Y") %></span>
+                  <%= link_to truncate(vote.motion.description, length: 100), meeting_path(vote.motion.meeting) %>
+                </div>
+                <div class="member-vote-result">
+                  <span class="vote-value <%= vote_color_class(vote.value) %>"><%= vote.value.titleize %></span>
+                  <span class="member-vote-split"><%= vote_split(vote.motion) %> · <%= vote.motion.outcome&.titleize || "Unknown" %></span>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    <% end %>
+
+    <% if @other_votes.any? %>
+      <details class="member-other-votes">
+        <summary>Other Votes (<%= @other_votes.size %>)</summary>
+        <p class="member-other-votes-desc">Procedural and routine votes.</p>
+        <div class="member-other-votes-list">
+          <% @other_votes.each do |vote| %>
+            <div class="member-vote-row member-vote-row--compact">
               <div class="member-vote-motion">
                 <span class="member-vote-date"><%= vote.motion.meeting.starts_at&.strftime("%b %-d, %Y") %></span>
-                <%= link_to truncate(vote.motion.description, length: 100), meeting_path(vote.motion.meeting) %>
+                <span class="member-vote-body"><%= vote.motion.meeting.body_name %></span>
+                <%= link_to truncate(vote.motion.description, length: 80), meeting_path(vote.motion.meeting) %>
               </div>
               <div class="member-vote-result">
                 <span class="vote-value <%= vote_color_class(vote.value) %>"><%= vote.value.titleize %></span>
@@ -68,41 +92,19 @@
             </div>
           <% end %>
         </div>
-      </div>
+      </details>
     <% end %>
-  <% end %>
 
-  <% if @other_votes.any? %>
-    <details class="member-other-votes">
-      <summary>Other Votes (<%= @other_votes.size %>)</summary>
-      <p class="member-other-votes-desc">Procedural and routine votes.</p>
-      <div class="member-other-votes-list">
-        <% @other_votes.each do |vote| %>
-          <div class="member-vote-row member-vote-row--compact">
-            <div class="member-vote-motion">
-              <span class="member-vote-date"><%= vote.motion.meeting.starts_at&.strftime("%b %-d, %Y") %></span>
-              <span class="member-vote-body"><%= vote.motion.meeting.body_name %></span>
-              <%= link_to truncate(vote.motion.description, length: 80), meeting_path(vote.motion.meeting) %>
-            </div>
-            <div class="member-vote-result">
-              <span class="vote-value <%= vote_color_class(vote.value) %>"><%= vote.value.titleize %></span>
-              <span class="member-vote-split"><%= vote_split(vote.motion) %> · <%= vote.motion.outcome&.titleize || "Unknown" %></span>
-            </div>
-          </div>
-        <% end %>
-      </div>
-    </details>
-  <% end %>
+    <% if @topic_groups.empty? && @other_votes.empty? %>
+      <p class="section-empty">No voting record found for this official.</p>
+    <% end %>
+  </section>
 
-  <% if @topic_groups.empty? && @other_votes.empty? %>
-    <p class="section-empty">No voting record found for this official.</p>
+  <%= link_to committees_path, class: "back-link" do %>
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="19" y1="12" x2="5" y2="12"></line>
+      <polyline points="12 19 5 12 12 5"></polyline>
+    </svg>
+    All Committees
   <% end %>
-</section>
-
-<%= link_to committees_path, class: "back-link" do %>
-  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <line x1="19" y1="12" x2="5" y2="12"></line>
-    <polyline points="12 19 5 12 12 5"></polyline>
-  </svg>
-  All Committees
-<% end %>
+</article>

@@ -2934,6 +2934,28 @@ th.sortable-header:hover {
    Member Show Page
    ============================================ */
 
+.member-article {
+  max-width: 38rem;
+  margin: 0 auto;
+}
+
+.member-article-header {
+  margin-bottom: var(--space-4);
+}
+
+.member-article-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  color: var(--color-primary);
+  margin: 0;
+}
+
+.member-article-section {
+  margin-bottom: var(--space-8);
+}
+
 .member-committees {
   display: flex;
   flex-direction: column;
