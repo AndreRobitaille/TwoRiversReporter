@@ -14,6 +14,8 @@
   <nav class="about-anchor-bar" aria-label="Page sections">
     <a href="#why-this-exists">Why This Exists</a>
     <span class="about-anchor-sep"><%= render "shared/atom_marker", size: 14 %></span>
+    <a href="#when-we-update">When We Update</a>
+    <span class="about-anchor-sep"><%= render "shared/atom_marker", size: 14 %></span>
     <a href="#how-it-works">How It Works</a>
     <span class="about-anchor-sep"><%= render "shared/atom_marker", size: 14 %></span>
     <a href="#your-questions">Your Questions</a>
@@ -41,6 +43,32 @@
       </ul>
       <p class="about-faq-answer">None of that is adversarial. It's what accountability looks like. The city does its job, and residents get to see how it's going.</p>
     </div>
+  </section>
+
+  <%= render "shared/diamond_divider" %>
+
+  <%# === Update Schedule === %>
+  <section id="when-we-update" class="topic-article-section about-schedule-section">
+    <div class="home-section-header">
+      <%= render "shared/atom_marker" %>
+      <span class="section-label">When We Update</span>
+      <span class="section-line"></span>
+    </div>
+
+    <dl class="about-schedule">
+      <div class="about-schedule-item">
+        <dt class="about-schedule-label">Agendas & Packets</dt>
+        <dd class="about-schedule-detail">The city usually posts new meeting dates and documents on <strong>Friday afternoons</strong>. We'll have them summarized by <strong>Saturday morning</strong>.</dd>
+      </div>
+      <div class="about-schedule-item">
+        <dt class="about-schedule-label">Council Meeting Recaps</dt>
+        <dd class="about-schedule-detail">City Council meetings and work sessions are recorded and posted to YouTube, usually <strong>Monday nights</strong>. We pull the transcript and have an early summary ready by <strong>Tuesday morning</strong>. Council meets roughly every other week — a regular meeting one Monday, then a work session two weeks later.</dd>
+      </div>
+      <div class="about-schedule-item">
+        <dt class="about-schedule-label">Official Minutes</dt>
+        <dd class="about-schedule-detail">Official minutes for council meetings are typically posted the <strong>Friday before the next council meeting</strong>. Subcommittee minutes vary — anywhere from weeks to months. When they arrive, we update the summaries with the full official record.</dd>
+      </div>
+    </dl>
   </section>
 
   <%= render "shared/diamond_divider" %>
@@ -90,30 +118,6 @@
         a 50-page PDF.
       </li>
     </ol>
-  </section>
-
-  <%# === Update Schedule === %>
-  <section class="topic-article-section about-schedule-section">
-    <div class="home-section-header">
-      <%= render "shared/atom_marker" %>
-      <span class="section-label">When We Update</span>
-      <span class="section-line"></span>
-    </div>
-
-    <dl class="about-schedule">
-      <div class="about-schedule-item">
-        <dt class="about-schedule-label">Agendas & Packets</dt>
-        <dd class="about-schedule-detail">The city usually posts new meeting dates and documents on <strong>Friday afternoons</strong>. We'll have them summarized by <strong>Saturday morning</strong>.</dd>
-      </div>
-      <div class="about-schedule-item">
-        <dt class="about-schedule-label">Council Meeting Recaps</dt>
-        <dd class="about-schedule-detail">City Council meetings and work sessions are recorded and posted to YouTube, usually <strong>Monday nights</strong>. We pull the transcript and have an early summary ready by <strong>Tuesday morning</strong>. Council meets roughly every other week — a regular meeting one Monday, then a work session two weeks later.</dd>
-      </div>
-      <div class="about-schedule-item">
-        <dt class="about-schedule-label">Official Minutes</dt>
-        <dd class="about-schedule-detail">Official minutes for council meetings are typically posted the <strong>Friday before the next council meeting</strong>. Subcommittee minutes vary — anywhere from weeks to months. When they arrive, we update the summaries with the full official record.</dd>
-      </div>
-    </dl>
   </section>
 
   <%= render "shared/diamond_divider" %>
