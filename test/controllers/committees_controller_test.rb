@@ -150,7 +150,7 @@ class CommitteesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "show renders description with links" do
-    @council.update!(description: 'Established under [WI Stats](https://example.com).')
+    @council.update!(description: "Established under [WI Stats](https://example.com).")
     get committee_url(@council.slug)
     assert_response :success
 
