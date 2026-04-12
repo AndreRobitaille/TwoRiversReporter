@@ -17,16 +17,11 @@
 
 <%# === City Council — Hero Zone === %>
 <% if @council %>
-  <%= link_to committee_path(@council.slug), class: "committees-council-hero" do %>
-    <div class="committees-council-deco" aria-hidden="true">
-      <%= render "shared/atom_marker", size: 48 %>
-    </div>
-    <div class="committees-council-body">
-      <span class="badge badge--primary">Elected by voters</span>
-      <h2 class="committees-council-name">City Council</h2>
-      <p class="committees-council-desc"><%= CommitteesController::CARD_DESCRIPTIONS["City Council"] %></p>
-    </div>
-  <% end %>
+  <a href="<%= committee_path(@council.slug) %>" class="committees-council-hero">
+    <span class="badge badge--primary">Elected by voters</span>
+    <span class="committees-council-name">City Council</span>
+    <span class="committees-council-desc"><%= CommitteesController::CARD_DESCRIPTIONS["City Council"] %></span>
+  </a>
 <% end %>
 
 <%# === Governance Sections === %>
