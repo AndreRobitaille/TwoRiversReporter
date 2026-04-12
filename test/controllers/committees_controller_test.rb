@@ -92,7 +92,7 @@ class CommitteesControllerTest < ActionDispatch::IntegrationTest
   test "show displays committee name" do
     get committee_url(@council.slug)
     assert_response :success
-    assert_select ".committee-name", text: /City Council/
+    assert_select ".committee-article-title", text: /City Council/
   end
 
   test "show displays current members sorted by role" do

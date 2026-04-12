@@ -2778,12 +2778,37 @@ th.sortable-header:hover {
    Committee Show Page
    ============================================ */
 
+.committee-article {
+  max-width: 38rem;
+  margin: 0 auto;
+}
+
+.committee-article-header {
+  margin-bottom: var(--space-4);
+}
+
+.committee-article-header .badge {
+  margin-right: var(--space-1);
+}
+
+.committee-article-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  color: var(--color-primary);
+  margin: var(--space-2) 0 0 0;
+}
+
+.committee-article-section {
+  margin-bottom: var(--space-8);
+}
+
 .committee-description {
   font-size: var(--font-size-base);
   color: var(--color-text);
   line-height: var(--line-height-relaxed);
   margin-bottom: var(--space-8);
-  max-width: 42rem;
 }
 
 .committee-description p {
@@ -2812,19 +2837,16 @@ th.sortable-header:hover {
 }
 
 .committee-member {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
   padding: var(--space-3) var(--space-5);
   border-bottom: 1px solid var(--color-border);
 }
 
 .committee-member:last-child {
   border-bottom: none;
-}
-
-.committee-member-info {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  flex-wrap: wrap;
 }
 
 .committee-member-name {
