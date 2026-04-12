@@ -2839,25 +2839,28 @@ th.sortable-header:hover {
 .committee-member {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-3);
-  flex-wrap: wrap;
   padding: var(--space-3) var(--space-5);
   border-bottom: 1px solid var(--color-border);
+  text-decoration: none;
+  color: inherit;
+  transition: background var(--transition-fast);
 }
 
 .committee-member:last-child {
   border-bottom: none;
 }
 
+.committee-member:hover {
+  background: var(--color-bg);
+  text-decoration: none;
+  color: inherit;
+}
+
 .committee-member-name {
   font-weight: var(--font-weight-semibold);
   color: var(--color-primary);
-  text-decoration: none;
-}
-
-.committee-member-name:hover {
-  color: var(--color-terra-cotta);
-  text-decoration: underline;
 }
 
 .committee-member-badges {
@@ -2873,10 +2876,21 @@ th.sortable-header:hover {
 }
 
 .committee-activity-item {
+  display: block;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: var(--space-4) var(--space-5);
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+
+.committee-activity-item:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-border-strong);
+  text-decoration: none;
+  color: inherit;
 }
 
 .committee-activity-header {
@@ -2908,11 +2922,28 @@ th.sortable-header:hover {
   white-space: nowrap;
 }
 
+.committee-activity-headline {
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  margin: var(--space-1) 0 0 0;
+  line-height: var(--line-height-relaxed);
+}
+
 .committee-activity-desc {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
-  margin: 0;
+  margin: var(--space-1) 0 0 0;
   line-height: var(--line-height-relaxed);
+}
+
+.committee-activity-cta {
+  display: inline-block;
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  color: var(--color-terra-cotta);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: var(--space-2);
 }
 
 .committee-activity-footer {

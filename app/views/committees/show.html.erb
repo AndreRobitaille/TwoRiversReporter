@@ -25,8 +25,8 @@
     <% if @memberships.any? %>
       <div class="committee-roster">
         <% sort_memberships(@memberships, @council_member_ids).each do |cm| %>
-          <div class="committee-member">
-            <%= link_to cm.member.name, member_path(cm.member), class: "committee-member-name" %>
+          <%= link_to member_path(cm.member), class: "committee-member" do %>
+            <span class="committee-member-name"><%= cm.member.name %></span>
             <span class="committee-member-badges">
               <% if cm.role.present? && cm.role.in?(%w[chair vice_chair]) %>
                 <span class="badge badge--primary"><%= cm.role.titleize.tr("_", " ") %></span>
@@ -35,7 +35,7 @@
                 <span class="badge badge--info">Council Member</span>
               <% end %>
             </span>
-          </div>
+          <% end %>
         <% end %>
       </div>
     <% else %>
@@ -53,17 +53,21 @@
     <% if @recent_topics.any? %>
       <div class="committee-activity">
         <% @recent_topics.each do |topic| %>
-          <div class="committee-activity-item">
+          <% headline = @headlines[topic.id] %>
+          <%= link_to topic_path(topic), class: "committee-activity-item" do %>
             <div class="committee-activity-header">
-              <%= link_to topic.canonical_name, topic_path(topic), class: "committee-activity-topic" %>
+              <span class="committee-activity-topic"><%= topic.canonical_name %></span>
               <% if topic.respond_to?(:latest_meeting_date) && topic.latest_meeting_date %>
                 <span class="committee-activity-date"><%= topic.latest_meeting_date.strftime("%b %-d") %></span>
               <% end %>
             </div>
-            <% if topic.description.present? %>
-              <p class="committee-activity-desc"><%= truncate(topic.description, length: 160) %></p>
+            <% if headline.present? %>
+              <p class="committee-activity-headline"><%= truncate(headline, length: 120) %></p>
+            <% elsif topic.description.present? %>
+              <p class="committee-activity-desc"><%= truncate(topic.description, length: 120) %></p>
             <% end %>
-          </div>
+            <span class="committee-activity-cta">Topic details &rarr;</span>
+          <% end %>
         <% end %>
       </div>
       <div class="committee-activity-footer">
