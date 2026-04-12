@@ -127,7 +127,7 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
     )
     motion = Motion.create!(
       meeting: meeting,
-      description: "Motion to approve consent agenda",
+      description: "Motion to approve the contract with Strand Associates for engineering services",
       outcome: "passed"
     )
     Vote.create!(motion: motion, member: @member, value: "yes")

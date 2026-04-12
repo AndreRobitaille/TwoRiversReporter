@@ -2764,6 +2764,16 @@ th.sortable-header:hover {
   line-height: var(--line-height-relaxed);
 }
 
+.committees-card-cta {
+  display: inline-block;
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  color: var(--color-terra-cotta);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: var(--space-2);
+}
+
 .committees-member-count {
   font-family: var(--font-data);
   font-size: var(--font-size-xs);

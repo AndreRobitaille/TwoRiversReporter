@@ -1,4 +1,18 @@
 class MembersController < ApplicationController
+  # Motion descriptions that are procedural — filter from "Other Votes"
+  PROCEDURAL_PATTERNS = [
+    /adjourn/i,
+    /approve.*minutes/i,
+    /approve.*consent\s+agenda/i,
+    /approve.*agenda\s+as/i,
+    /close.*public\s+hearing/i,
+    /open.*public\s+hearing/i,
+    /enter.*closed\s+session/i,
+    /reconvene/i,
+    /roll\s+call/i,
+    /pledge\s+of\s+allegiance/i
+  ].freeze
+
   def show
     @member = Member.find(params[:id])
 
@@ -28,7 +42,17 @@ class MembersController < ApplicationController
     present = records.where(status: "present").count
     excused = records.where(status: "excused").count
     absent = records.where(status: "absent").count
-    { total: total, present: present, excused: excused, absent: absent }
+    pct = (present.to_f / total * 100).round
+
+    # Compare to peers: all members with attendance records
+    peer_rates = MeetingAttendance
+      .group(:member_id)
+      .having("count(*) >= 3")
+      .pluck(Arel.sql("member_id, count(case when status = 'present' then 1 end)::float / count(*)"))
+      .map { |_, rate| (rate * 100).round }
+    avg_rate = peer_rates.any? ? (peer_rates.sum.to_f / peer_rates.size).round : nil
+
+    { total: total, present: present, excused: excused, absent: absent, pct: pct, avg_rate: avg_rate }
   end
 
   def build_vote_groups(votes)
@@ -50,7 +74,6 @@ class MembersController < ApplicationController
         meeting_date = vote.motion.meeting.starts_at
         group[:latest_date] = meeting_date if group[:latest_date].nil? || meeting_date > group[:latest_date]
 
-        # Qualifies if high-impact OR member dissented on this motion
         if topic.resident_impact_score && topic.resident_impact_score >= 3
           group[:qualifies] = true
         end
@@ -60,7 +83,6 @@ class MembersController < ApplicationController
           majority_value = vote_counts.max_by { |_, count| count }&.first
           total = vote_counts.values.sum
           majority_count = vote_counts[majority_value] || 0
-          # Non-unanimous AND this member is in the minority
           if majority_value && vote.value != majority_value && majority_count < total
             group[:qualifies] = true
           end
@@ -68,21 +90,30 @@ class MembersController < ApplicationController
       end
     end
 
+    # Sort by impact score then recency
     qualified = topic_votes.values
       .select { |g| g[:qualifies] }
-      .sort_by { |g| g[:latest_date] }
-      .reverse
+      .sort_by { |g| [ -(g[:topic].resident_impact_score || 0), g[:latest_date] ? -g[:latest_date].to_i : 0 ] }
       .first(5)
 
     # Move non-qualifying topic votes into other_votes
     qualified_topic_ids = qualified.map { |g| g[:topic].id }.to_set
-    topic_votes.each do |topic_id, group|
-      unless qualified_topic_ids.include?(topic_id)
+    topic_votes.each do |_topic_id, group|
+      unless qualified_topic_ids.include?(group[:topic].id)
         other_votes.concat(group[:votes])
       end
     end
+
+    # Filter out procedural votes from other_votes
+    other_votes.reject! { |v| procedural_vote?(v) }
     other_votes.sort_by! { |v| v.motion.meeting.starts_at }.reverse!
 
     [ qualified, other_votes ]
+  end
+
+  def procedural_vote?(vote)
+    desc = vote.motion.description
+    return true if desc.blank?
+    PROCEDURAL_PATTERNS.any? { |pattern| desc.match?(pattern) }
   end
 end

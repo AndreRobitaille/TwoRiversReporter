@@ -21,6 +21,7 @@
     <span class="badge badge--primary">Elected by voters</span>
     <span class="committees-council-name">City Council</span>
     <span class="committees-council-desc"><%= CommitteesController::CARD_DESCRIPTIONS["City Council"] %></span>
+    <span class="committees-card-cta">View members & activity &rarr;</span>
   </a>
 <% end %>
 
@@ -45,6 +46,7 @@
           <% if desc.present? %>
             <span class="committees-card-desc"><%= desc %></span>
           <% end %>
+          <span class="committees-card-cta">View details &rarr;</span>
         <% end %>
       <% end %>
     </div>

@@ -120,7 +120,7 @@ class CommitteesController < ApplicationController
       .where(meetings: { committee_id: @committee.id })
       .select("topics.*, MAX(meetings.starts_at) AS latest_meeting_date")
       .group("topics.id")
-      .order("latest_meeting_date DESC")
-      .limit(8)
+      .order("topics.resident_impact_score DESC NULLS LAST, latest_meeting_date DESC")
+      .limit(7)
   end
 end
