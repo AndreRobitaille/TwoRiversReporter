@@ -61,10 +61,11 @@ class CommitteesControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", committee_path(@council.slug), text: /City Council/
   end
 
-  test "index shows council member count" do
+  test "index shows council hero card" do
     get committees_url
     assert_response :success
-    assert_select ".committees-council-count", text: /1 member/
+    assert_select ".committees-council-hero"
+    assert_select ".committees-council-name", text: /City Council/
   end
 
   test "index excludes dissolved committees" do

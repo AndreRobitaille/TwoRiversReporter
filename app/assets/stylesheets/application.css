@@ -2618,36 +2618,24 @@ th.sortable-header:hover {
   position: relative;
 }
 
-.committees-diagram-toggle {
-  display: block;
-  width: 100%;
-  padding: var(--space-3) var(--space-4);
+.committees-diagram-caption {
+  padding: var(--space-2) var(--space-4);
   font-family: var(--font-data);
   font-size: var(--font-size-xs);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  border: none;
-  background: none;
-  text-align: left;
-}
-
-.committees-diagram-toggle::before {
-  content: "\25B6\00a0";
-  font-size: 0.6em;
-}
-
-.committees-diagram-wrap.is-expanded .committees-diagram-toggle::before {
-  content: "\25BC\00a0";
-}
-
-.committees-diagram-toggle:hover {
-  color: var(--color-primary);
+  color: var(--color-text-muted);
+  margin: 0;
+  text-align: center;
 }
 
 .committees-diagram-content {
+  cursor: zoom-in;
   border-top: 1px solid var(--color-border);
+}
+
+.committees-diagram-wrap.is-expanded .committees-diagram-content {
+  cursor: zoom-out;
 }
 
 .committees-diagram {
@@ -2656,7 +2644,7 @@ th.sortable-header:hover {
   display: block;
 }
 
-.committees-diagram-overlay {
+.committees-diagram-wrap.is-expanded .committees-diagram-caption {
   display: none;
 }
 
@@ -2669,7 +2657,6 @@ th.sortable-header:hover {
   justify-content: center;
   background: rgba(44, 37, 32, 0.85);
   padding: var(--space-6);
-  cursor: zoom-out;
   border-top: none;
 }
 
@@ -2679,13 +2666,6 @@ th.sortable-header:hover {
   object-fit: contain;
   border-radius: var(--radius-lg);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-}
-
-.committees-diagram-wrap.is-expanded .committees-diagram-overlay {
-  display: block;
-  position: fixed;
-  inset: 0;
-  z-index: 999;
 }
 
 /* Council Hero */
@@ -2738,12 +2718,9 @@ th.sortable-header:hover {
   max-width: 36rem;
 }
 
-.committees-council-count {
-  font-family: var(--font-data);
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+.committees-council-body {
+  position: relative;
+  z-index: 1;
 }
 
 /* Governance sections */
@@ -2756,50 +2733,6 @@ th.sortable-header:hover {
   color: var(--color-text-secondary);
   margin: calc(-1 * var(--space-2)) 0 var(--space-4) 0;
   line-height: var(--line-height-relaxed);
-}
-
-/* Subcommittee rows (compact) */
-.committees-rows {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-
-.committees-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--space-3) var(--space-5);
-  border-bottom: 1px solid var(--color-border);
-  text-decoration: none;
-  color: inherit;
-  transition: background var(--transition-fast);
-}
-
-.committees-row:last-child {
-  border-bottom: none;
-}
-
-.committees-row:hover {
-  background: var(--color-bg);
-  text-decoration: none;
-  color: inherit;
-}
-
-.committees-row-name {
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-primary);
-  font-size: var(--font-size-base);
-}
-
-.committees-row-count {
-  font-family: var(--font-data);
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
 }
 
 /* Card grid */
