@@ -4,6 +4,11 @@
    About Page — Atomic-era design treatment
    ============================================ */
 
+/* Anchor link offset so section headers land below the sticky nav */
+.about-page section[id] {
+  scroll-margin-top: calc(var(--nav-height) + var(--space-4));
+}
+
 /* ---- Hook (Zone 1) ---- */
 
 .about-hook {
