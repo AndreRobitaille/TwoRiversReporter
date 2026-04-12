@@ -15,7 +15,7 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     get about_path
     assert_select "a[href='#how-it-works']"
     assert_select "a[href='#your-questions']"
-    assert_select "a[href='#the-bias']"
+    assert_select "a[href='#why-this-exists']"
     assert_select "a[href='#under-the-hood']"
   end
 
@@ -23,7 +23,7 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     get about_path
     assert_select "#how-it-works"
     assert_select "#your-questions"
-    assert_select "#the-bias"
+    assert_select "#why-this-exists"
     assert_select "#under-the-hood"
   end
 end

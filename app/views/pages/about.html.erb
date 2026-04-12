@@ -5,12 +5,9 @@
 
   <%# === Zone 1: The Hook === %>
   <header class="about-hook">
-    <div class="about-starburst-watermark">
-      <%= render "shared/starburst", size: 240, opacity: 0.06 %>
-    </div>
     <span class="about-eyebrow">About This Site</span>
-    <h1 class="topic-article-title">Not a City Website.<br>Not the News.</h1>
-    <p class="topic-article-dek">A Two Rivers resident built this to help you follow what's happening at city hall — using nothing but the city's own public documents.</p>
+    <h1 class="topic-article-title">Your City Hall.<br>In Plain English.</h1>
+    <p class="topic-article-dek">This is not a city website. It's an independent project built by a Two Rivers resident to help you understand what's actually happening at city hall — using nothing but the city's own public documents.</p>
   </header>
 
   <%# === Anchor Bar === %>
@@ -19,12 +16,11 @@
     <span class="about-anchor-sep"><%= render "shared/atom_marker", size: 14 %></span>
     <a href="#your-questions">Your Questions</a>
     <span class="about-anchor-sep"><%= render "shared/atom_marker", size: 14 %></span>
-    <a href="#the-bias">The Bias</a>
+    <a href="#why-this-exists">Why This Exists</a>
     <span class="about-anchor-sep"><%= render "shared/atom_marker", size: 14 %></span>
     <a href="#under-the-hood">Under the Hood</a>
   </nav>
 
-  <%# Zones 2-4 will be added in subsequent tasks %>
   <%# === Zone 2: How It Works === %>
   <section id="how-it-works" class="topic-article-section">
     <div class="home-section-header">
@@ -33,40 +29,45 @@
       <span class="section-line"></span>
     </div>
 
-    <div style="position: relative;">
-      <div class="about-boomerang-left">
-        <%= render "shared/boomerang", size: 120, opacity: 0.04, rotation: -15 %>
-      </div>
-
-      <ol class="about-pipeline">
-        <li class="about-pipeline-step">
-          <strong>The city posts meeting documents.</strong>
-          Agendas, meeting packets, and official minutes. Wisconsin's Open Meetings Law
-          (<a href="https://docs.legis.wisconsin.gov/statutes/statutes/19/v/84" target="_blank" rel="noopener">Wis.&nbsp;Stats.&nbsp;&sect;19.84</a>)
-          requires them to be public. That's the only source this site uses — nothing private, nothing leaked.
-        </li>
-        <li class="about-pipeline-connector" aria-hidden="true">&darr;</li>
-        <li class="about-pipeline-step">
-          <strong>This site checks every night for new documents.</strong>
-          New meeting dates, new agendas, new minutes. Copies are saved here so nothing
-          disappears if the city reorganizes its website or removes old files.
-        </li>
-        <li class="about-pipeline-connector" aria-hidden="true">&darr;</li>
-        <li class="about-pipeline-step">
-          <strong>AI reads the documents and writes plain-language summaries.</strong>
-          Not government-speak. Every claim links back to the original document so
-          you can read it yourself and decide if you agree with how it was summarized.
-        </li>
-        <li class="about-pipeline-connector" aria-hidden="true">&darr;</li>
-        <li class="about-pipeline-step">
-          <strong>Issues are tracked across meetings, not just listed by date.</strong>
-          Instead of making you dig through a dozen agendas, the site follows things
-          like "downtown parking" or "lead pipe replacement" across months of meetings
-          and connects them together automatically.
-        </li>
-      </ol>
-    </div>
+    <ol class="about-pipeline">
+      <li class="about-pipeline-step">
+        <strong>The city posts meeting documents.</strong>
+        Agendas, meeting packets, and official minutes. Wisconsin's Open Meetings Law
+        (<a href="https://docs.legis.wisconsin.gov/statutes/statutes/19/v/84" target="_blank" rel="noopener">Wis.&nbsp;Stats.&nbsp;&sect;19.84</a>)
+        requires them to be public. That's the only source we use — nothing private, nothing leaked.
+      </li>
+      <li class="about-pipeline-connector" aria-hidden="true">&darr;</li>
+      <li class="about-pipeline-step">
+        <strong>We check the city's website every night.</strong>
+        New meeting dates, new agendas, new minutes — we download and save copies of the original PDFs.
+        If the city ever moves or removes old documents, the copies are still here.
+      </li>
+      <li class="about-pipeline-connector" aria-hidden="true">&darr;</li>
+      <li class="about-pipeline-step">
+        <strong>AI turns 100-page packets into something you can actually read.</strong>
+        City meeting packets are long, technical, and confusing — especially if you're not used to how local government works.
+        The AI reads them and writes plain-language summaries that pull out the parts that matter to residents.
+        Every claim links back to the original document so you can check it yourself.
+      </li>
+      <li class="about-pipeline-connector" aria-hidden="true">&darr;</li>
+      <li class="about-pipeline-step">
+        <strong>Issues are followed across months of meetings.</strong>
+        When the city talks about lead pipe replacement in January, votes on funding in March, and hires
+        a contractor in June — those aren't three separate items buried in three different agendas.
+        They're one story. This site connects them automatically so you can see the whole picture
+        without having to attend every meeting or read every set of minutes.
+      </li>
+      <li class="about-pipeline-connector" aria-hidden="true">&darr;</li>
+      <li class="about-pipeline-step">
+        <strong>You get what the city's website doesn't give you.</strong>
+        The city posts documents. This site reads them for you, explains what happened and why it matters,
+        tracks how issues evolve over time, and surfaces the things that affect your taxes, your neighborhood,
+        and your daily life — without requiring you to sit through a three-hour meeting or decode
+        a 50-page PDF.
+      </li>
+    </ol>
   </section>
+
   <%= render "shared/diamond_divider" %>
 
   <%# === Zone 3: Your Questions, Answered === %>
@@ -80,17 +81,16 @@
     <dl class="about-faq">
       <div class="about-faq-item">
         <dt class="about-faq-question">"Who's behind this?"</dt>
-        <dd class="about-faq-answer">One resident, working independently. Not connected to city hall, not funded by anyone, not affiliated with any political group or candidate. The site costs money to run — that comes out of pocket. No ads, no sponsors.</dd>
-      </div>
-
-      <div class="about-faq-item">
-        <dt class="about-faq-question">"Who's paying for this?"</dt>
-        <dd class="about-faq-answer">Hosting and AI processing — paid by the person who built it. No revenue, no grants, no city funding. If that ever changes, it'll be stated here.</dd>
+        <dd class="about-faq-answer">A Two Rivers resident who believes that residents deserve to know what's happening at city hall — and that right now, there's a real gap between the information leadership has and the information you have.</dd>
+        <dd class="about-faq-answer">This isn't backed by a political group, a business, or a grudge. It comes from a straightforward belief: local government works better when residents can see what's actually happening, and someone with the ability to build that should.</dd>
+        <dd class="about-faq-answer">No ads, no sponsors, no city funding. One person paying out of pocket because this needed to exist.</dd>
       </div>
 
       <div class="about-faq-item">
         <dt class="about-faq-question">"Can I trust what the AI writes?"</dt>
-        <dd class="about-faq-answer">The AI reads the same documents you could find on the city's website. It's told to separate what actually happened — votes, motions, dollar amounts — from how the city describes it. Every summary links back to the source so you can read the original yourself. If something looks wrong, check it. That's the whole point.</dd>
+        <dd class="about-faq-answer">A lot of work went into making sure the AI is fair and grounded. It's given detailed written instructions about Two Rivers — what residents care about, what's routine, how local governance actually works here. Those instructions were written by someone who lives here and pays attention.</dd>
+        <dd class="about-faq-answer">The AI is told to separate facts (votes, motions, dollar amounts) from how the city frames things (staff summaries, agenda titles). It's also told to never accuse anyone of bad faith, never invent conspiracies, and never speculate about people's motives. It questions decisions and processes — it doesn't attack people.</dd>
+        <dd class="about-faq-answer">Every summary links back to the original city document. If something looks off, you can read the source yourself. That's the whole point.</dd>
       </div>
 
       <div class="about-faq-item">
@@ -100,28 +100,30 @@
 
       <div class="about-faq-item">
         <dt class="about-faq-question">"Who decides what shows up on the front page?"</dt>
-        <dd class="about-faq-answer">Not a person. The system looks at signals: Did people show up to comment? Was the vote close? Does it affect property taxes or zoning? Has it come up at multiple meetings over time? Issues with more of those signals get featured. Issues without them are still on the site — just not on the front page.</dd>
+        <dd class="about-faq-answer">Not a person. The system scores every issue automatically based on how much it matters to residents. The biggest factors: Does it hit your household budget — property taxes, utility rates, new fees? Does it change the physical character of your neighborhood, downtown, or the lakefront? Did residents actually show up to speak about it? Was the vote close or divided? Are there questions about who benefits from a decision?</dd>
+        <dd class="about-faq-answer">Routine dollar amounts alone don't push something up — a standard loan renewal stays low even if it's half a million dollars. But a rezoning that changes what gets built next to your house, or an appointment to a board that controls spending, scores high because those are the things that actually affect your life.</dd>
       </div>
     </dl>
   </section>
 
   <%= render "shared/diamond_divider" %>
 
-  <%# === The Bias (separated for anchor link) === %>
-  <section id="the-bias" class="topic-article-section">
+  <%# === Why This Exists === %>
+  <section id="why-this-exists" class="topic-article-section">
     <div class="home-section-header">
       <%= render "shared/atom_marker" %>
-      <span class="section-label">The Bias</span>
+      <span class="section-label">Why This Exists</span>
       <span class="section-line"></span>
     </div>
 
     <div class="about-faq">
-      <p class="about-faq-answer">This site is not neutral and doesn't pretend to be.</p>
-      <p class="about-faq-answer">It's built with a point of view: residents deserve to understand what's happening at city hall, and the way the city presents information isn't always the full picture.</p>
-      <p class="about-faq-answer">The AI is specifically instructed to question how decisions are framed — not to assume the city's description of something is the whole story. It's also told never to accuse anyone of bad intentions or bad faith. Decisions and processes get questioned. People don't.</p>
-      <p class="about-faq-answer">The person who built this site wrote a detailed description of who Two Rivers residents are — what they care about, what's routine, what local governance quirks matter. Those instructions shape how every summary is written. The goal is informed residents, not gotcha journalism, and not a mouthpiece for city hall.</p>
+      <p class="about-faq-answer">Residents deserve to understand what their city government is doing. That shouldn't require attending every meeting, reading every packet, or already knowing how municipal government works.</p>
+      <p class="about-faq-answer">The city posts documents because state law requires it. But posting a 100-page PDF is not the same as helping people understand what's in it. The information is technically public, but it's not practically accessible — not for people with jobs, families, and limited time.</p>
+      <p class="about-faq-answer">This site exists to close that gap. It reads the documents so you don't have to. It explains what happened in plain language. It tracks issues over time so you can see the whole story, not just one meeting's snapshot. And it's built to ask the questions that residents would ask: Who benefits from this decision? Does the city's explanation match what actually happened? Has this been deferred three times without resolution?</p>
+      <p class="about-faq-answer">None of that is adversarial. It's what accountability looks like. The city does its job, and residents get to see how it's going.</p>
     </div>
   </section>
+
   <%= render "shared/diamond_divider" %>
 
   <%# === Zone 4: Under the Hood === %>
@@ -135,52 +137,76 @@
     <div class="about-hood-zone">
 
       <div class="about-hood-section">
-        <h3 class="about-hood-heading">How the AI Is Instructed</h3>
-        <p>The AI that writes summaries follows written rules about how to handle city documents. Three categories of information are kept separate in every summary:</p>
-        <ul>
-          <li><strong>What actually happened</strong> — votes, motions, dollar amounts, dates. These come straight from the official record and must be traceable to a specific document.</li>
-          <li><strong>How the city describes it</strong> — staff summaries, agenda titles, the language in meeting packets. The AI treats this as the city's perspective, not as neutral truth. When the city's description doesn't match the outcome or the observable impact, the AI notes that.</li>
-          <li><strong>What residents seem to care about</strong> — based on who shows up to comment, what keeps coming back meeting after meeting, and how divided the votes are. This is always presented as observation, never as established fact.</li>
-        </ul>
-        <p>The person who built this site also wrote a detailed description of who Two Rivers residents are — what they care about, what's routine, what local governance quirks matter (like how height-and-area exceptions get used, or why CDA agendas aren't always substantive). Those instructions shape how every summary is written.</p>
+        <h3 class="about-hood-heading">The Pipeline</h3>
+        <p>Every night, the system checks the City of Two Rivers website for new meeting documents. When it finds them, here's what happens:</p>
+        <ol>
+          <li><strong>Discovery</strong> — New meetings, agendas, packets, and minutes are detected and downloaded. The original PDFs are saved as permanent copies.</li>
+          <li><strong>Text extraction</strong> — PDFs are run through text extraction (and OCR for scanned documents) to get machine-readable text, page by page.</li>
+          <li><strong>Topic detection</strong> — AI reads each agenda item and identifies which civic issues it relates to. New issues get proposed as topics; existing issues get linked to their ongoing record. This runs twice: once when the agenda is first posted (sparse context), and again when official minutes arrive weeks later (full context).</li>
+          <li><strong>Summarization</strong> — AI generates a structured summary of each meeting, separating key votes, highlights, public input, and per-item analysis. A separate pass generates rolling briefings for each topic that track the issue's full history.</li>
+          <li><strong>Impact scoring</strong> — Each topic is scored on a 1-5 scale based on how much it affects residents. This score determines what appears on the front page.</li>
+          <li><strong>Pruning</strong> — Standing agenda items that had no real activity (no vote, no discussion, no public input) are automatically detached from topics so they don't clutter the record.</li>
+        </ol>
+        <p>The pipeline is fully automated. When the city posts a new document, it's typically summarized and on the site within hours.</p>
       </div>
 
       <div class="about-hood-section">
-        <h3 class="about-hood-heading">How Issues Are Tracked Across Meetings</h3>
-        <p>When something like "Lead Service Line Replacement" shows up on an agenda in January, then again in a committee meeting in March, then gets voted on by the Council in June — those are all automatically connected. The system notices when an issue is still being discussed, when it hasn't come up in a while, and when it got a final vote.</p>
-        <p>That's how the site can tell you something has been deferred three times, or that an issue reappears every budget cycle. No one is manually connecting those dots — it happens automatically as new documents arrive.</p>
+        <h3 class="about-hood-heading">How the AI Is Instructed</h3>
+        <p>The AI follows a set of written rules that govern how it handles city documents. The core principle is epistemic discipline — keeping three categories of information separate:</p>
+        <ul>
+          <li><strong>Factual record</strong> — Votes, motions, dollar amounts, dates. Must be traceable to a specific document. If it can't be tied to a source, it can't be stated as fact.</li>
+          <li><strong>Institutional framing</strong> — Staff summaries, agenda titles, packet narratives, "recommended action" language. The AI treats this as the city's perspective, not as objective truth. When framing doesn't match outcomes or observable impact, the AI notes the discrepancy.</li>
+          <li><strong>Civic sentiment</strong> — What residents appear to care about, based on public comment, repeated agenda appearances, and divided votes. Always presented as observation ("appears to," "recurs," "has been raised repeatedly"), never as established fact.</li>
+        </ul>
+        <p>The AI is also given a detailed community context document that describes what Two Rivers residents care about, what's routine, and what local governance patterns matter — like how height-and-area exceptions can be used to bypass updating actual ordinances, or why the CDA's agenda isn't always substantive. This context shapes how summaries are written and what gets surfaced.</p>
+      </div>
+
+      <div class="about-hood-section">
+        <h3 class="about-hood-heading">Impact Scoring</h3>
+        <p>Each topic is automatically scored on a 1-5 scale that determines front-page placement. The scoring criteria are specific to Two Rivers:</p>
+        <ul>
+          <li><strong>Score 1-2:</strong> Routine procedural or institutional business — scheduled borrowing, vendor contracts at standard terms, routine capital</li>
+          <li><strong>Score 3:</strong> Affects a specific neighborhood, street, or group — or household-proximate services like sidewalks, garbage, snow removal</li>
+          <li><strong>Score 4:</strong> Household-budget impacts residents will feel (tax/rate/fee changes); physical neighborhood change (rezonings, CUPs, lakefront); governance changes on land-use or spending bodies; divided votes on score-3 items</li>
+          <li><strong>Score 5:</strong> Major community-wide impact — rate changes, large rezonings, character-defining development, governance or conflict-of-interest questions</li>
+        </ul>
+        <p>Modifiers: 3+ residents speaking on an item adds +1. A non-unanimous vote on a score-3+ item adds +1. Dollar amount alone does not raise the score — a $500K routine loan stays at 2.</p>
+      </div>
+
+      <div class="about-hood-section">
+        <h3 class="about-hood-heading">Topic Lifecycle</h3>
+        <p>Topics aren't tags — they're living records. Each topic has a lifecycle status that's automatically derived from its agenda appearances:</p>
+        <ul>
+          <li><strong>Active</strong> — appeared on an agenda recently, still being discussed</li>
+          <li><strong>Recurring</strong> — comes back periodically (budget items, seasonal issues)</li>
+          <li><strong>Dormant</strong> — hasn't appeared in a while, no resolution</li>
+          <li><strong>Resolved</strong> — received a final vote or other concluding action</li>
+        </ul>
+        <p>This is how the site can tell you that an issue has been deferred three times, or that something keeps coming back without resolution. The system also detects when topics disappear from agendas without explanation — silence is not automatically treated as resolution.</p>
       </div>
 
       <div class="about-hood-section">
         <h3 class="about-hood-heading">What Gets Filtered Out</h3>
-        <p>Summaries skip the procedural business that every meeting has: adjournment motions, approving last meeting's minutes, roll call for remote participation, and truly routine consent agenda items.</p>
-        <p>One exception: when the Council goes into closed session, the motion to close <em>is</em> included. Wisconsin law
+        <p>Summaries skip procedural business: adjournment motions, minutes approval, roll call for remote participation, routine consent agenda items. One exception: closed session motions are always included. Wisconsin law
           (<a href="https://docs.legis.wisconsin.gov/statutes/statutes/19/v/85" target="_blank" rel="noopener">&sect;19.85</a>)
-          requires transparency about what gets discussed behind closed doors. Residents should see that.</p>
-      </div>
-
-      <div class="about-hood-section">
-        <h3 class="about-hood-heading">How It Decides What to Show You First</h3>
-        <p>The front page features issues based on automated signals, not anyone's personal judgment. The system weighs:</p>
-        <ul>
-          <li>Whether residents showed up to speak about it (strongest signal)</li>
-          <li>Whether the vote was close or split</li>
-          <li>Whether it affects property taxes, zoning, or infrastructure</li>
-          <li>Whether it's come up across multiple meetings or committees</li>
-          <li>Whether there have been repeated delays or unresolved questions</li>
-        </ul>
-        <p>No one hand-picks what goes on the front page. An issue about sidewalk repair and an issue about a $2 million TIF district go through the same process — the TIF district shows up higher because it triggers more of those signals.</p>
+          requires transparency about what gets discussed behind closed doors, and residents should see that.</p>
+        <p>Standing agenda items that had no substantive activity at a meeting (no vote, no discussion, no public input) are automatically pruned from topic records so they don't inflate the history of an issue.</p>
       </div>
 
       <div class="about-hood-section">
         <h3 class="about-hood-heading">The Source Documents</h3>
-        <p>Every meeting page on this site has a "Documents" section with the original PDFs from the city. The city is required by Wisconsin's Open Meetings Law to make these available to the public. This site saves copies because government websites sometimes reorganize, move pages, or remove old documents.</p>
+        <p>Every meeting page on this site has a "Documents" section with the original PDFs from the city. We save copies because government websites sometimes reorganize, move pages, or remove old documents. The originals are always available here.</p>
         <p>Relevant Wisconsin statutes:</p>
         <ul>
           <li><a href="https://docs.legis.wisconsin.gov/statutes/statutes/19/v" target="_blank" rel="noopener">Chapter 19, Subchapter V</a> — Open Meetings Law (full text)</li>
           <li><a href="https://docs.legis.wisconsin.gov/statutes/statutes/19/v/84" target="_blank" rel="noopener">&sect;19.84</a> — Public notice requirements for meetings</li>
           <li><a href="https://docs.legis.wisconsin.gov/statutes/statutes/19/v/88" target="_blank" rel="noopener">&sect;19.88(3)</a> — Minutes must be available for public inspection</li>
         </ul>
+      </div>
+
+      <div class="about-hood-section">
+        <h3 class="about-hood-heading">Technology</h3>
+        <p>This site is built with Ruby on Rails, PostgreSQL, and OpenAI's API for text analysis and summarization. Meeting documents are processed with poppler (PDF text extraction) and Tesseract (OCR for scanned documents). The source code, prompt templates, and editorial guidelines are all part of the same codebase — nothing is hidden behind a black box. YouTube auto-captions from recorded council meetings are used as supplementary context when available.</p>
       </div>
 
     </div>

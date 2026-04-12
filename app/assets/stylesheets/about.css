@@ -8,9 +8,7 @@
 
 .about-hook {
   text-align: center;
-  padding: var(--space-10) 0 var(--space-6);
-  position: relative;
-  overflow: hidden;
+  padding: var(--space-6) 0 var(--space-4);
 }
 
 .about-hook .topic-article-title {
@@ -34,19 +32,7 @@
   margin-bottom: var(--space-3);
 }
 
-.about-starburst-watermark {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.about-hook > * {
-  position: relative;
-  z-index: 1;
-}
+/* Boomerang decorations removed — sparse SVGs at this scale looked wrong */
 
 /* ---- Anchor Bar ---- */
 
@@ -238,29 +224,16 @@
   color: var(--color-primary-hover);
 }
 
-/* Boomerang decorations */
-.about-boomerang-left,
-.about-boomerang-right {
-  position: absolute;
-  pointer-events: none;
-  z-index: 0;
+/* Under the Hood ordered list */
+.about-hood-zone ol {
+  padding-left: var(--space-5);
+  margin: var(--space-2) 0 var(--space-3);
 }
 
-.about-boomerang-left {
-  left: -60px;
-  top: var(--space-8);
-}
-
-.about-boomerang-right {
-  right: -60px;
-  bottom: var(--space-8);
-  transform: scaleX(-1);
-}
-
-/* Hide overflow decorations on narrow screens */
-@media (max-width: 768px) {
-  .about-boomerang-left,
-  .about-boomerang-right {
-    display: none;
-  }
+.about-hood-zone ol li {
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-2);
 }
