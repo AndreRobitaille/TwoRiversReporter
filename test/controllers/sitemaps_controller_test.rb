@@ -20,6 +20,11 @@ class SitemapsControllerTest < ActionDispatch::IntegrationTest
       detail_page_url: "http://example.com/sitemap-test"
     )
     @member = Member.create!(name: "Jane Doe")
+    @committee = Committee.create!(
+      name: "City Council",
+      slug: "city-council",
+      status: "active"
+    )
   end
 
   test "renders xml with correct content type" do
@@ -33,7 +38,7 @@ class SitemapsControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, root_url
     assert_includes @response.body, meetings_url
     assert_includes @response.body, topics_url
-    assert_includes @response.body, members_url
+    assert_includes @response.body, committees_url
   end
 
   test "includes every approved topic and excludes blocked topics" do
@@ -52,6 +57,11 @@ class SitemapsControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, member_url(@member)
   end
 
+  test "includes every committee" do
+    get sitemap_path
+    assert_includes @response.body, committee_url(@committee.slug)
+  end
+
   test "includes the about page" do
     get sitemap_path
     assert_includes @response.body, about_url
@@ -63,7 +73,7 @@ class SitemapsControllerTest < ActionDispatch::IntegrationTest
   # update SitemapsController, internal nav still works but search engines
   # discover the pages later — the sitemap is the explicit signal.
   test "covers all expected publicly visible models" do
-    expected_models = %w[Topic Meeting Member]
+    expected_models = %w[Committee Member Meeting Topic]
     covered = expected_models.select do |m|
       method_defined = self.class.instance_methods.any? { |t| t.to_s.include?(m.downcase) }
       method_defined
