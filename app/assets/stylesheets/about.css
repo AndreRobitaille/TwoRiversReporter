@@ -198,7 +198,7 @@
   padding: var(--space-5) 0 var(--space-5) var(--space-5);
   border-bottom: 1px solid var(--color-border);
   border-left: 3px solid var(--color-terra-cotta);
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-5);
 }
 
 .about-faq-item:last-child {
