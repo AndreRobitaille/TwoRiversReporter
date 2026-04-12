@@ -530,14 +530,134 @@ module PromptTemplateData
         </headline_rules>
 
         <resident_impact_rules>
-        - Score resident impact 1-5 based on how directly this affects the daily lives, property, finances, community identity, or public services of Two Rivers residents.
+        Score resident impact 1-5 based on what actually matters to Two Rivers
+        residents per AUDIENCE.md — not based on dollar amounts, not based on
+        infrastructure categories, not based on whether a committee "sounds
+        important." The question is: would a scanning, skeptical resident on
+        a phone want to know or act on this?
+
+        SCALE:
         - 1: Routine procedural item, no direct resident impact.
-        - 2: Minor administrative matter with indirect effects.
-        - 3: Moderate impact — affects a specific group or neighborhood.
-        - 4: Significant impact — affects most residents (taxes, major infrastructure, services).
-        - 5: Major impact — community-wide financial, identity, or quality-of-life change.
-        - Consider: public comment volume, financial impact on residents, physical changes to the community, threats to community identity or services, and whether residents have expressed concern.
-        - Two Rivers is a small post-industrial city. Residents care about property taxes, development changes, community services, and whether their leaders are listening.
+        - 2: Routine institutional business — borrowing for planned
+          infrastructure, vendor contract at standard terms, routine fee
+          matching a state default, routine grant acceptance, routine
+          capital spend within the multi-year plan.
+        - 3: Affects a specific neighborhood, street, or demographic group;
+          or a household-proximate routine service (sidewalks, garbage, snow
+          removal) in its ordinary form.
+        - 4: Significant impact — household-budget hits residents will feel;
+          physical or character change to a neighborhood / downtown /
+          lakefront; governance or accountability changes on bodies that
+          make land-use or spending decisions; divided or contested votes
+          on items that would otherwise score 3.
+        - 5: Major community-wide impact — rate changes, large rezonings,
+          character-defining development, or a governance/conflict-of-
+          interest question that residents will want to see regardless of
+          dollar amount.
+
+        WHAT RAISES THE SCORE:
+
+        - Household-budget hits residents will actually feel: property tax
+          or reassessment changes; utility rate changes that show up on a
+          bill; new fees on services residents use. → 4
+        - Physical neighborhood or community character change: rezonings,
+          conditional use permits (CUPs), lakefront/harbor/beach decisions,
+          downtown Main Street / Washington Street changes, demolition or
+          preservation of landmarks, school district decisions affecting
+          local families. → 4
+        - Who-benefits questions: development subsidies, TIF disbursements,
+          facade grants to named beneficiaries, contracts or grants to
+          firms with family, social, or political ties to decision-makers.
+          → 3-4 depending on how contested the beneficiary question is.
+        - Governance and accountability: appointments, removals, or
+          personnel moves on boards with land-use, spending, or policy
+          authority (Plan Commission, Library Board, CDA, BIDC, Housing
+          Authority, Personnel and Finance); departures/hiring of key
+          city leadership; code-of-conduct changes; open-meetings-law or
+          transparency decisions. → 4
+        - Family, marriage, business, or employment ties between a person
+          appointed/elected and another officeholder, former officeholder,
+          honoree, or beneficiary of a city decision. The
+          conflict-of-interest question itself is the story, regardless
+          of the underlying dollar amount. → 5
+        - Volume of public comment: 3 or more residents speaking on a
+          single item bumps the score +1.
+        - Divided vote: any non-unanimous council or commission vote on
+          an item at score 3 or above bumps the score +1. Residents pay
+          attention to splits.
+        - AUDIENCE.md explicit high-salience items: lead lateral
+          replacement, shoreline restoration, harbor maintenance,
+          forestry, historic preservation or demolition, Hamilton/Eggers
+          site decisions.
+
+        UNPLANNED OR SHORT-HORIZON CAPITAL SPEND (carve-out):
+
+        A large capital purchase or borrowing that would normally score 2
+        becomes a 3 or 4 IF the source text indicates it was NOT routine:
+        - Not included in the prior year's budget or capital plan
+        - Budgeted at a short planning horizon (e.g. one-year-out) for an
+          asset or project that should have been known years earlier
+        - Driven by an emergency, equipment failure, unexpected obligation,
+          regulatory mandate, or cost overrun
+        Do not infer this from absence — require explicit signals in the
+        source (words like "emergency", "unbudgeted", "unplanned", "not
+        previously identified", "cost overrun", "timeline accelerated").
+        Without such signals, routine capital stays at 2.
+
+        WHAT DOES NOT RAISE THE SCORE:
+
+        - Dollar amount alone. A $496,676 0% WPPI loan for routine
+          water-plant generators is a 2, not a 4. A $349,985 Lincoln
+          Avenue water main contract is a 2.
+        - Infrastructure category alone. "Water", "sewer", "electric",
+          "stormwater" are not automatic 4s. The question is whether
+          residents will feel a change.
+        - Routine vendor contract renewals at standard terms.
+        - Routine facade grants or TID disbursements at established terms
+          from well-funded districts.
+        - Fee adjustments that only match a state default (court fees,
+          etc.).
+        - CDA and BIDC appearances without concrete action. Per
+          AUDIENCE.md, these bodies have been "largely ineffective for
+          years" — do not overweight their agenda appearances.
+        - Committee on Aging items that do not involve binding votes.
+        - Cross-body movement (committee recommends, council approves) is
+          normal workflow, not a signal.
+
+        EXAMPLES:
+
+        - "Council approved a $496,676 0% WPPI loan for water plant
+          backup power" → 2 (routine borrowing, routine infrastructure,
+          no resident rate change)
+        - "Council awarded $349,985 Lincoln Ave water main contract to
+          Vinton" → 2 (routine procurement, scheduled replacement)
+        - "Council adopted revised code of conduct for elected officials"
+          → 4 (governance accountability)
+        - "Tracey Koach appointed to the Plan Commission seat formerly
+          held by her mother Kay Koach" → 5 (family handoff on a
+          land-use body is a conflict-of-interest question)
+        - "Council approves 9% electric rate hike" → 4 (direct household
+          hit)
+        - "Plan Commission grants CUP for new drive-through on Washington
+          Street" → 4 (physical neighborhood change with named
+          beneficiary)
+        - "Emergency $1.2M borrowing for unplanned water main replacement
+          after cascade failure" → 4 (unplanned-capital carve-out
+          applies)
+        - "Sidewalk Safe Step pilot, $40,000, grinds trip hazards across
+          95 miles of sidewalks" → 3 (household-proximate, routine
+          approach)
+        - "Council split 5-4 on selling city land to developer near
+          downtown" → 5 (divided vote + beneficiary + physical character)
+
+        DEFAULT FOR THIN CONTEXT:
+
+        If no substantive content is available for any agenda item (all
+        item_details_* fields are nil), do not rate above 2 unless the
+        agenda item title itself explicitly names a governance trigger,
+        family-tie trigger, rate change, rezoning, or household-budget
+        trigger from the lists above. "Thin context plus big-sounding
+        title" is not a reason to rate high.
         </resident_impact_rules>
 
         <extraction_spec>
@@ -742,6 +862,8 @@ module PromptTemplateData
            - who benefits (especially when it's a named business or developer)
            Only lead with the mechanism (contractor name, technique, financing instrument) when the mechanism IS the story — for example, when 0% financing is the unusual detail, or when the contractor has a contested history.
 
+        4b. ROUTINE CAPITAL AND ROUTINE BORROWING ARE NOT AUTOMATIC HEADLINES. Dollar amounts, vendor selections, infrastructure categories (water main, sewer main, electric, stormwater, facade grant) and state/federal loans are NOT automatically headline-worthy just because they are specific. The headline is only justified when the capital item is genuinely unusual — an unbudgeted emergency, a surprising cost overrun, a contested beneficiary, a divided vote, an unplanned obligation, or a household-felt rate change. If the most specific fact about a topic this week is a routine capital spend at standard terms, write a quiet honest headline or accept that this topic may not deserve a strong headline at all. Do NOT reach for a mechanism, contractor name, dollar amount, or resolution number to manufacture specificity when the underlying item is routine. The test: would a resident scanning the homepage on their phone want to click this, or would they shrug and scroll past? If the answer is "shrug", write the quieter version.
+
         5. INTERESTING-NESS COMES FROM SPECIFICITY, NOT FROM FRAMING. If the facts are interesting, the headline is interesting. If the facts are thin, write a quiet honest headline; do not manufacture drama to make it punchy.
 
         6. BANNED CLOSERS. Never end or open a headline with any of these phrases (or close variants):
@@ -774,12 +896,28 @@ module PromptTemplateData
         10. NO QUOTED JARGON. If you are reaching for quotation marks around a phrase from the source, translate it instead.
 
         Examples that meet these criteria:
-        GOOD: "A $40,000 pilot will grind down the worst sidewalk trip hazards around town."
-        GOOD: "Two Rivers wants a 0% state loan to rebuild the water plant's backup power."
-        GOOD: "City puts TIF money into upgrades at two Two Rivers motels."
-        GOOD: "Council picks $349,985 bid for a new Lincoln Ave water main."
+        GOOD: "Tracey Koach takes her mother Kay's Plan Commission seat the same night council honors Kay."
+        GOOD: "Council splits 5-4 approving TIF money for downtown developer."
+        GOOD: "Electric rates jump 9% starting July 1 — first hike since 2019."
+        GOOD: "Plan Commission approves new drive-through on Washington Street despite neighborhood pushback."
+        GOOD: "Council adopts shorter code of conduct for elected officials, effective after April election."
         GOOD: "Lead pipe replacements are moving into 2026 contracts across Two Rivers."
         GOOD: "Court fees are going up to match the state default."
+        GOOD: "Emergency $1.2M borrowing approved after water main cascade failure."
+
+        (Use routine infrastructure / routine borrowing as a headline ONLY when the fact is genuinely unusual — an emergency, an unplanned cost, a surprising cost overrun, a contested beneficiary, or a divided vote. Routine 0% infrastructure loans, scheduled water main replacements, and standard facade grants are NOT headline-worthy on their own. If the topic's strongest fact is a routine capital spend, write a quiet honest headline; do not dress it up.)
+
+        BAD: "Council picks $349,985 bid for a new Lincoln Ave water main."
+        (Reason: routine procurement framed as news. A scheduled water main replacement is not headline-worthy on its own. Residents know their water main will get replaced eventually; the dollar amount and contractor are not what they care about.)
+
+        BAD: "Two Rivers wants a 0% state loan to rebuild the water plant's backup power."
+        (Reason: routine borrowing for routine infrastructure. 0% is mildly interesting but the story is 'generator repair' — not a headline. If the loan were unusual in some concrete way — late, unplanned, or over budget — the unplanned-capital carve-out in rule 4b would apply. It isn't.)
+
+        BAD: "City puts TIF money into upgrades at two Two Rivers motels."
+        (Reason: facade grant story framed as headline. TID disbursements to named businesses at standard terms are routine. The headline would only be newsworthy if the beneficiary question were contested, the amount were unusual, or residents had objected. None are implied here.)
+
+        BAD: "A $40,000 pilot will grind down the worst sidewalk trip hazards around town."
+        (Reason: routine vendor pilot at a standard scale. Sidewalks are household-proximate but this is a 3, not a 4 or 5 — and the headline reads like a press release. Quiet version: "Safe Step pilot takes on the worst sidewalk trip hazards" without the dollar amount.)
 
         BAD: "City is moving toward a $40,000 pilot to grind down sidewalk trip hazards. Where it'll happen is still unclear."
         (Reason: manufactured concern in second clause; "still unclear" is not in the analysis.)
@@ -794,16 +932,16 @@ module PromptTemplateData
         (Reason: quoted jargon; asserted causality — "ending districts" and "funding motels" are two separate facts the headline has no warrant to link with causal sequencing.)
 
         BAD: "$40,000 SafeStep pilot would saw-cut minor sidewalk trip hazards instead of replacing slabs."
-        (Reason: press-release voice — leads with the contractor name and the technique (saw-cut) instead of the resident-proximate detail. A resident cares about the trip hazards on their walk, not the saw-cutting method. Better: "A $40,000 pilot to shave down the worst sidewalk trip hazards around town.")
+        (Reason: press-release voice — leads with the contractor name and the technique (saw-cut) instead of the resident-proximate detail. A resident cares about the trip hazards on their walk, not the saw-cutting method.)
 
         BAD: "Council considers Resolution 26-052 authorizing WPPI Energy loan for utility infrastructure improvements."
-        (Reason: resolution numbers and vendor names are not resident-proximate. Better: "$496,676 at 0%: borrowing for water plant generator repairs and security upgrades.")
+        (Reason: resolution numbers and vendor names are not resident-proximate. And: routine infrastructure borrowing isn't the story.)
 
         BAD: "Lot sales, lot pricing, and possible expansion keep coming up for Sandy Bay Highlands."
-        (Reason: umbrella topic framing with three vague nouns and no specific lead; "keep coming up" is a banned closer variant. Better: pick the single strongest specific fact — e.g., "City reviewing pricing on Sandy Bay Highlands lots with Weichert Cornerstone" or "Sandy Bay Highlands subdivision eyes expansion after Lot 24 sale" — whichever is best supported by the analysis.)
+        (Reason: umbrella topic framing with three vague nouns and no specific lead; "keep coming up" is a banned closer variant. Pick the single strongest specific fact — e.g., "City reviewing pricing on Sandy Bay Highlands lots with Weichert Cornerstone" or "Sandy Bay Highlands subdivision eyes expansion after Lot 24 sale" — whichever is best supported by the analysis.)
 
         BAD: "City lines up $1.84 million state loan for sewer upgrades; CIPP work shows up for 2025 and 2026."
-        (Reason: CIPP is untranslated jargon — translate to "pipe-lining". Also: second clause dilutes the lead. Better: "Two Rivers weighs a $1.84 million state loan for sewer pipe-lining through 2026.")
+        (Reason: CIPP is untranslated jargon — translate to "pipe-lining". Also routine state-loan sewer rehab is not a headline unless the work is unplanned.)
 
         For `upcoming_headline`: the scheduled meeting body and date should be included (e.g., "Council votes Apr 21"). Return null if no upcoming meetings exist in the context.
 
@@ -1062,22 +1200,51 @@ module PromptTemplateData
         EXCLUDE these procedural items from item_details entirely:
         - Adjournment motions
         - Minutes approval
-        - Consent agenda approval (unless a specific item was pulled for
-          separate discussion)
+        - Consent agenda bulk approval (unless an item falls into the
+          NEVER-FILTER list below, or was pulled for separate discussion)
         - Remote participation approval
         - Treasurer's report acceptance
         - Reconvene in open session
+        - Proclamations and ceremonial recognitions (even when a named
+          individual is honored). These are intentionally filtered — let
+          the absence of a proclamation entry be the default.
 
         DO NOT EXCLUDE closed session motions — they contain statutory
         justification (Wis. Stats 19.85) that residents need for open
         meetings law transparency.
 
-        CONSENT AGENDA SCRUTINY: Most consent agenda items are routine,
-        but occasionally substantive decisions (appointments, contracts,
-        policy changes) are placed on the consent agenda with minimal
-        discussion. If you notice something noteworthy buried in the
-        consent agenda, include it in item_details as you would any
-        other substantive item.
+        NEVER FILTER these items, even when they appear on the consent
+        agenda or are named only by resolution number:
+
+        - Appointments, reappointments, or removals to any named board,
+          commission, or committee with policy-making, land-use, or budget
+          authority (Plan Commission, Library Board, Community Development
+          Authority, Business Industrial Development Committee, Park and
+          Recreation Board, Committee on Aging, Housing Authority, Historic
+          Preservation, Personnel and Finance Committee, Public Works
+          Committee, Public Utilities Committee, Room Tax Commission,
+          Explore Two Rivers Board). Name the appointee, the body, and
+          the term dates.
+        - Hiring, resignation, retirement, or departure of the city
+          manager, department heads (police chief, fire chief, finance
+          director, clerk, city attorney, public works director, utilities
+          director), or library director. Routine staff personnel actions
+          (hiring a patrol officer, accepting a clerk retirement) remain
+          filtered.
+        - Contract awards, grant agreements, or TID disbursements above
+          $50,000 that are not otherwise covered as routine
+          ordinance/consent business.
+        - Policy, code, or ordinance adoptions and amendments
+          (non-routine). Routine technical corrections or state-mandated
+          updates may be filtered.
+
+        When a consent-agenda appointment shares a last name with a
+        current officeholder on the same body, or with someone being
+        honored, recognized, or departing at the same meeting, note the
+        factual connection in the item_details summary. Do not speculate
+        about motive or intent — state the connection plainly
+        ("[X] is taking the Plan Commission seat previously held by [Y]")
+        and let residents interpret.
         </procedural_filter>
 
         <tone_calibration>
