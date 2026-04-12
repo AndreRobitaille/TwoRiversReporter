@@ -1,5 +1,14 @@
 module CommitteesHelper
   ROLE_SORT_ORDER = { "chair" => 0, "vice_chair" => 1 }.freeze
+  COMMITTEE_TYPE_DISPLAY = {
+    "city" => "City Government",
+    "tax_funded_nonprofit" => "Tax-Funded Nonprofit",
+    "external" => "Other Organization"
+  }.freeze
+
+  def committee_type_label(committee_type)
+    COMMITTEE_TYPE_DISPLAY[committee_type] || committee_type.titleize
+  end
 
   # Sort memberships: chair first, vice chair second, council members third, then alphabetical.
   def sort_memberships(memberships, council_member_ids)

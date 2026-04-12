@@ -49,10 +49,10 @@ class CommitteesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
-  test "index shows committees grouped by type" do
+  test "index shows governance sections" do
     get committees_url
     assert_response :success
-    assert_select ".committees-type-label", text: /City Government/
+    assert_select ".section-label", text: /Advisory Boards/
   end
 
   test "index shows committee names linking to show pages" do
@@ -61,10 +61,10 @@ class CommitteesControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", committee_path(@council.slug), text: /City Council/
   end
 
-  test "index shows member counts" do
+  test "index shows council member count" do
     get committees_url
     assert_response :success
-    assert_select ".committees-member-count", minimum: 2
+    assert_select ".committees-council-count", text: /1 member/
   end
 
   test "index excludes dissolved committees" do

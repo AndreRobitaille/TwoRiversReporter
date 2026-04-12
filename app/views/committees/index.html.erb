@@ -1,47 +1,72 @@
 <% content_for(:title) { "Committees - Two Rivers Matters" } %>
 
-<div class="page-header">
+<div class="committees-header">
   <h1 class="page-title">Committees</h1>
-  <p class="page-subtitle">The boards and commissions that make decisions in Two Rivers</p>
+  <p class="committees-tagline">Who has power and how it flows</p>
 </div>
 
-<details class="committees-diagram-wrap" open>
-  <summary class="committees-diagram-toggle">How committees connect — tap to expand</summary>
-  <%= link_to image_tag("committee-connections.png", alt: "Diagram showing how Two Rivers committees relate to each other", class: "committees-diagram"), image_path("committee-connections.png"), target: "_blank" %>
-</details>
+<%# === Diagram === %>
+<div class="committees-diagram-wrap" id="committees-diagram">
+  <button class="committees-diagram-toggle" onclick="document.getElementById('committees-diagram').classList.toggle('is-expanded')">
+    How committees connect
+  </button>
+  <div class="committees-diagram-content">
+    <%= image_tag "committee-connections.png",
+        alt: "Diagram showing how Two Rivers committees relate to each other",
+        class: "committees-diagram" %>
+  </div>
+  <div class="committees-diagram-overlay" onclick="document.getElementById('committees-diagram').classList.remove('is-expanded')"></div>
+</div>
 
-<% current_type = nil %>
-<% @committees.each do |committee| %>
-  <% next if committee.status == "dormant" && @member_counts[committee.id] == 0 %>
-
-  <% if committee.committee_type != current_type %>
-    <% if current_type %>
-      </div>
-    <% end %>
-    <% current_type = committee.committee_type %>
-    <% label, explanation = CommitteesController::COMMITTEE_TYPE_LABELS[current_type] %>
-    <div class="committees-type-divider">
-      <h2 class="committees-type-label"><%= label %></h2>
-      <p class="committees-type-explanation"><%= explanation %></p>
+<%# === City Council — Hero Zone === %>
+<% if @council %>
+  <%= link_to committee_path(@council.slug), class: "committees-council-hero" do %>
+    <div class="committees-council-deco" aria-hidden="true">
+      <%= render "shared/atom_marker", size: 48 %>
     </div>
-    <div class="committees-grid">
-  <% end %>
-
-  <%= link_to committee_path(committee.slug), class: "committees-card #{"committees-card--council" if committee.name == "City Council"}" do %>
-    <div class="committees-card-header">
-      <div>
-        <span class="committees-card-name"><%= committee.name %></span>
-        <% if committee.name == "City Council" %>
-          <span class="badge badge--primary">Elected by voters</span>
-        <% end %>
-      </div>
-      <span class="committees-member-count"><%= @member_counts[committee.id] %> members</span>
-    </div>
-    <% if committee.description.present? %>
-      <p class="committees-card-desc"><%= truncate(committee.description, length: 150) %></p>
-    <% end %>
+    <span class="badge badge--primary">Elected by voters</span>
+    <h2 class="committees-council-name">City Council</h2>
+    <p class="committees-council-desc"><%= CommitteesController::CARD_DESCRIPTIONS["City Council"] %></p>
+    <span class="committees-council-count"><%= @member_counts[@council.id] %> members</span>
   <% end %>
 <% end %>
-<% if current_type %>
-  </div>
+
+<%# === Governance Sections === %>
+<% CommitteesController::GOVERNANCE_SECTIONS.each do |section| %>
+  <% committees = @governance_groups[section[:key]] %>
+  <% next if committees.blank? %>
+
+  <section class="committees-section">
+    <div class="home-section-header">
+      <%= render "shared/atom_marker" %>
+      <span class="section-label"><%= section[:label] %></span>
+      <span class="section-line"></span>
+    </div>
+    <p class="committees-section-desc"><%= section[:description] %></p>
+
+    <% if section[:key] == :subcommittees %>
+      <%# Compact row format — names are self-explanatory %>
+      <div class="committees-rows">
+        <% committees.each do |committee| %>
+          <%= link_to committee_path(committee.slug), class: "committees-row" do %>
+            <span class="committees-row-name"><%= committee.name %></span>
+            <span class="committees-row-count"><%= @member_counts[committee.id] %> members</span>
+          <% end %>
+        <% end %>
+      </div>
+    <% else %>
+      <%# Card grid %>
+      <div class="committees-grid">
+        <% committees.each do |committee| %>
+          <%= link_to committee_path(committee.slug), class: "committees-card" do %>
+            <span class="committees-card-name"><%= committee.name %></span>
+            <% desc = CommitteesController::CARD_DESCRIPTIONS[committee.name] %>
+            <% if desc.present? %>
+              <span class="committees-card-desc"><%= desc %></span>
+            <% end %>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+  </section>
 <% end %>

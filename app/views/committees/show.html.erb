@@ -1,7 +1,7 @@
 <% content_for(:title) { "#{@committee.name} - Two Rivers Matters" } %>
 
 <div class="page-header">
-  <span class="badge badge--default"><%= CommitteesController::COMMITTEE_TYPE_LABELS[@committee.committee_type]&.first %></span>
+  <span class="badge badge--default"><%= committee_type_label(@committee.committee_type) %></span>
   <% if @committee.name == "City Council" %>
     <span class="badge badge--primary">Elected by voters</span>
   <% end %>
