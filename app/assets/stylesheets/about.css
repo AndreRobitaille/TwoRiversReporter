@@ -13,20 +13,6 @@
   position: relative;
 }
 
-/* Decorative starburst watermark behind the hook */
-.about-hook-decoration {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.about-hook > * {
-  position: relative;
-  z-index: 1;
-}
 
 .about-hook .topic-article-title {
   text-align: center;
