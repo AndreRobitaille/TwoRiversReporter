@@ -10,7 +10,6 @@
 
     <h1 class="meeting-article-title"><%= @meeting.body_name.sub(/ Meeting$/, "") %></h1>
 
-    <%# Documents row — link to source URLs (city website), not blob storage %>
     <div class="meeting-article-docs">
       <% @meeting.meeting_documents
            .select { |d| d.document_type.include?("pdf") && d.source_url.present? }
@@ -70,17 +69,19 @@
         <div class="meeting-decisions">
           <% highlights.each do |h| %>
             <div class="meeting-decision">
-              <p class="meeting-decision-text"><%= h["text"] %></p>
               <% if h["vote"].present? %>
-                <span class="meeting-decision-vote">Vote: <%= h["vote"] %></span>
+                <span class="decision-badge <%= h["vote"] =~ /^[0-9]+-[0-9]+$/ && h["vote"].split("-").first.to_i > h["vote"].split("-").last.to_i ? 'decision-badge--passed' : 'decision-badge--default' %>">
+                  <%= h["vote"] %>
+                </span>
               <% end %>
+              <p class="meeting-decision-text"><%= h["text"] %></p>
             </div>
           <% end %>
         </div>
       </section>
     <% end %>
 
-    <%# === Public Input === %>
+    <%# === Public Input (grouped by topic) === %>
     <% public_inputs = meeting_public_input(gd) %>
     <section class="meeting-article-section">
       <div class="home-section-header">
@@ -111,6 +112,8 @@
 
     <%# === Agenda Items === %>
     <% items = meeting_item_details(gd) %>
+    <%# Build a lookup of motions by agenda_item_id for vote breakdowns %>
+    <% motions_by_item = @meeting.motions.includes(votes: :member).group_by(&:agenda_item_id) %>
     <% if items.any? %>
       <section class="meeting-article-section">
         <div class="home-section-header">
@@ -119,57 +122,83 @@
           <span class="section-line"></span>
         </div>
         <% items.each do |item| %>
-          <details class="meeting-item-card">
-            <summary class="meeting-item-card-header">
+          <% matched_agenda_item = @meeting.agenda_items.detect { |ai| ai.title&.downcase&.include?(item["agenda_item_title"]&.downcase&.first(30).to_s) } %>
+          <% item_motions = matched_agenda_item ? (motions_by_item[matched_agenda_item.id] || []) : [] %>
+          <div class="meeting-item-card">
+            <div class="meeting-item-card-header">
               <div class="meeting-item-card-title"><%= item["agenda_item_title"] %></div>
               <% if item["decision"].present? %>
                 <span class="decision-badge <%= decision_badge_class(item["decision"]) %>">
                   <%= item["decision"] %><%= " #{item["vote"]}" if item["vote"].present? %>
                 </span>
               <% end %>
-            </summary>
-
-            <div class="meeting-item-card-body">
-              <% if item["summary"].present? %>
-                <div class="meeting-item-card-summary"><%= item["summary"] %></div>
-              <% end %>
-
-              <% if item["public_hearing"].present? %>
-                <div class="meeting-item-card-hearing">
-                  Public Input: <%= item["public_hearing"] %>
-                </div>
-              <% end %>
-
-              <% if item["citations"].present? %>
-                <% citations = Array(item["citations"]) %>
-                <div class="meeting-item-card-citations">
-                  <% pdf_doc = @meeting.meeting_documents.detect { |d| d.document_type == "minutes_pdf" && d.source_url.present? } ||
-                               @meeting.meeting_documents.detect { |d| d.document_type == "packet_pdf" && d.source_url.present? } %>
-                  <% if pdf_doc %>
-                    <%= link_to safe_external_url(pdf_doc.source_url), target: "_blank", rel: "noopener", class: "meeting-citation-link" do %>
-                      📄 See in official document: <%= citations.join(", ") %>
-                    <% end %>
-                  <% else %>
-                    Reference: <%= citations.join(", ") %>
-                  <% end %>
-                </div>
-              <% end %>
-
-              <% matched_agenda_item = @meeting.agenda_items.detect { |ai| ai.title&.downcase&.include?(item["agenda_item_title"]&.downcase&.first(30).to_s) } %>
-              <% if matched_agenda_item&.topics&.approved&.any? %>
-                <div class="meeting-item-topics">
-                  <% matched_agenda_item.topics.approved
-                       .sort_by { |t| [-(t.resident_impact_score || 0)] }
-                       .each do |topic| %>
-                    <%= link_to topic_path(topic), class: "meeting-topic-door" do %>
-                      <span class="meeting-topic-door-name"><%= topic.name %></span>
-                      <span class="meeting-topic-door-cta">Full history →</span>
-                    <% end %>
-                  <% end %>
-                </div>
-              <% end %>
             </div>
-          </details>
+
+            <% if item["summary"].present? %>
+              <div class="meeting-item-card-summary"><%= item["summary"] %></div>
+            <% end %>
+
+            <% if item["public_hearing"].present? %>
+              <div class="meeting-item-card-hearing">
+                Public Input: <%= item["public_hearing"] %>
+              </div>
+            <% end %>
+
+            <% if item["citations"].present? %>
+              <% citations = Array(item["citations"]) %>
+              <div class="meeting-item-card-citations">
+                <% pdf_doc = @meeting.meeting_documents.detect { |d| d.document_type == "minutes_pdf" && d.source_url.present? } ||
+                             @meeting.meeting_documents.detect { |d| d.document_type == "packet_pdf" && d.source_url.present? } %>
+                <% if pdf_doc %>
+                  <%= link_to safe_external_url(pdf_doc.source_url), target: "_blank", rel: "noopener", class: "meeting-citation-link" do %>
+                    📄 See in official document: <%= citations.join(", ") %>
+                  <% end %>
+                <% else %>
+                  Reference: <%= citations.join(", ") %>
+                <% end %>
+              </div>
+            <% end %>
+
+            <%# Roll call votes — expandable %>
+            <% if item_motions.any? { |mot| mot.votes.any? } %>
+              <% item_motions.select { |mot| mot.votes.any? }.each do |motion| %>
+                <details class="meeting-vote-breakdown">
+                  <summary class="meeting-vote-toggle">
+                    <span>Roll call vote</span>
+                    <% yes_count = motion.votes.count { |v| v.value == "yes" } %>
+                    <% no_count = motion.votes.count { |v| v.value == "no" } %>
+                    <% absent_count = motion.votes.count { |v| v.value == "absent" } %>
+                    <span class="meeting-vote-tally">
+                      <span class="vote-yes"><%= yes_count %> yes</span>
+                      <% if no_count > 0 %><span class="vote-no"><%= no_count %> no</span><% end %>
+                      <% if absent_count > 0 %><span class="vote-absent"><%= absent_count %> absent</span><% end %>
+                    </span>
+                  </summary>
+                  <div class="meeting-vote-list">
+                    <% motion.votes.sort_by { |v| [v.value == "yes" ? 0 : v.value == "no" ? 1 : 2, v.member&.name || ""] }.each do |vote| %>
+                      <div class="meeting-vote-row">
+                        <span class="meeting-vote-member"><%= vote.member&.name || "Unknown" %></span>
+                        <span class="meeting-vote-value meeting-vote-value--<%= vote.value %>"><%= vote.value %></span>
+                      </div>
+                    <% end %>
+                  </div>
+                </details>
+              <% end %>
+            <% end %>
+
+            <% if matched_agenda_item&.topics&.approved&.any? %>
+              <div class="meeting-item-topics">
+                <% matched_agenda_item.topics.approved
+                     .sort_by { |t| [-(t.resident_impact_score || 0)] }
+                     .each do |topic| %>
+                  <%= link_to topic_path(topic), class: "meeting-topic-door" do %>
+                    <span class="meeting-topic-door-name"><%= topic.name %></span>
+                    <span class="meeting-topic-door-cta">Full history →</span>
+                  <% end %>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
         <% end %>
       </section>
     <% end %>

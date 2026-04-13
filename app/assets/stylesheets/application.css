@@ -1519,10 +1519,17 @@ details[open] summary {
 }
 
 .meeting-decision {
-  border-left: 3px solid var(--color-teal);
-  padding: var(--space-3) var(--space-4);
   background: var(--color-surface);
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-start;
+}
+
+.meeting-decision .decision-badge {
+  flex-shrink: 0;
 }
 
 .meeting-decision-text {
@@ -1531,17 +1538,7 @@ details[open] summary {
   line-height: var(--line-height-relaxed);
   color: var(--color-text);
   margin: 0;
-}
-
-.meeting-decision-vote {
-  display: inline-block;
-  font-family: var(--font-data);
-  font-size: var(--font-size-xs);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--color-text-secondary);
-  margin-top: var(--space-2);
+  flex: 1;
 }
 
 /* --- Public Input --- */
@@ -1580,7 +1577,39 @@ details[open] summary {
   margin: var(--space-2) 0 0;
 }
 
-/* --- Agenda Item Cards (collapsible) --- */
+/* --- Public Input Groups --- */
+
+.public-input-group {
+  margin-bottom: var(--space-6);
+}
+
+.public-input-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: var(--space-2);
+  margin-bottom: var(--space-3);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.public-input-group-topic {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--color-teal);
+}
+
+.public-input-group-count {
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* --- Agenda Item Cards --- */
 
 .meeting-item-card {
   background: var(--color-surface);
@@ -1595,32 +1624,7 @@ details[open] summary {
   justify-content: space-between;
   align-items: flex-start;
   gap: var(--space-3);
-  padding: var(--space-4) var(--space-5);
-  cursor: pointer;
-  list-style: none;
-  transition: background var(--transition-fast);
-}
-
-.meeting-item-card-header::-webkit-details-marker {
-  display: none;
-}
-
-.meeting-item-card-header::before {
-  content: '▸';
-  font-size: 0.8rem;
-  color: var(--color-text-muted);
-  margin-right: var(--space-2);
-  transition: transform var(--transition-fast);
-  flex-shrink: 0;
-  margin-top: 0.15rem;
-}
-
-.meeting-item-card[open] .meeting-item-card-header::before {
-  transform: rotate(90deg);
-}
-
-.meeting-item-card-header:hover {
-  background: var(--color-surface-raised);
+  margin-bottom: var(--space-3);
 }
 
 .meeting-item-card-title {
@@ -1633,16 +1637,11 @@ details[open] summary {
   flex: 1;
 }
 
-.meeting-item-card-body {
-  padding: 0 var(--space-5) var(--space-5);
-  border-top: 1px solid var(--color-border);
-}
-
 .meeting-item-card-summary {
   font-family: var(--font-body);
   font-size: var(--font-size-base);
   line-height: var(--line-height-relaxed);
-  margin: var(--space-4) 0 var(--space-3);
+  margin-bottom: var(--space-3);
 }
 
 .meeting-item-card-hearing {
@@ -1668,6 +1667,81 @@ details[open] summary {
   color: var(--color-primary-hover);
   text-decoration: underline;
 }
+
+/* --- Roll call vote breakdown (expandable inside agenda card) --- */
+
+.meeting-vote-breakdown {
+  margin-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.meeting-vote-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3) 0;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.meeting-vote-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.meeting-vote-toggle::before {
+  content: '▸ ';
+  font-size: 0.7rem;
+  transition: transform var(--transition-fast);
+}
+
+.meeting-vote-breakdown[open] .meeting-vote-toggle::before {
+  content: '▾ ';
+}
+
+.meeting-vote-tally {
+  display: flex;
+  gap: var(--space-2);
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.vote-yes { color: var(--color-forest); }
+.vote-no { color: var(--color-brick); }
+.vote-absent { color: var(--color-text-muted); }
+
+.meeting-vote-list {
+  padding-bottom: var(--space-3);
+}
+
+.meeting-vote-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-1) 0;
+}
+
+.meeting-vote-member {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+}
+
+.meeting-vote-value {
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+}
+
+.meeting-vote-value--yes { color: var(--color-forest); }
+.meeting-vote-value--no { color: var(--color-brick); font-weight: 700; }
+.meeting-vote-value--absent { color: var(--color-text-muted); }
 
 /* --- Topic "doors" (not pills — obvious navigation) --- */
 
