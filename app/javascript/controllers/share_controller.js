@@ -13,14 +13,14 @@ export default class extends Controller {
     event.preventDefault()
     this.dropdownTarget.hidden = true
 
-    // On mobile, use native share sheet — handles Facebook app properly
-    if (navigator.share) {
-      navigator.share({ text: this.textValue, url: this.urlValue })
+    // Mobile: use native share sheet (touch screen = likely has apps)
+    if (navigator.share && "ontouchstart" in window) {
+      navigator.share({ text: this.textValue })
         .catch(() => {}) // user cancelled
       return
     }
 
-    // Desktop fallback: copy + open Facebook sharer
+    // Desktop: copy + open Facebook sharer
     this.#copyToClipboard(this.textValue)
     window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(this.urlValue)}`, "_blank")
     this.#flashConfirmation("Copied — paste into your group")
