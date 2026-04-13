@@ -88,7 +88,7 @@ namespace :resummarize do
     # Impact score distribution for approved topics
     puts ""
     puts "Impact score distribution (approved topics):"
-    Topic.approved.group(:resident_impact_score).count.sort.each do |score, n|
+    Topic.approved.group(:resident_impact_score).count.sort_by { |k, _| k.to_i }.each do |score, n|
       label = score.nil? ? "nil" : score.to_s
       puts "  #{label}: #{n}"
     end
