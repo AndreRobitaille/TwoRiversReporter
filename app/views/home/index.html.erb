@@ -5,8 +5,6 @@
   <p class="tagline">Two Rivers city government at a glance</p>
 </div>
 
-<%= render "shared/diamond_divider" %>
-
 <%# === ZONE 1: TOP STORIES === %>
 <% if @top_stories.any? %>
   <div class="home-zone">
@@ -24,14 +22,12 @@
   </div>
 <% end %>
 
-<%= render "shared/diamond_divider" %>
-
-<%# === ZONE 2: THE WIRE === %>
+<%# === ZONE 2: MORE STORIES === %>
 <% if @wire_cards.any? || @wire_rows.any? %>
   <div class="home-zone wire-zone">
     <div class="home-section-header">
       <%= render "shared/atom_marker", size: 20 %>
-      <span class="section-label">The Wire</span>
+      <span class="section-label">More Stories</span>
       <span class="section-line"></span>
     </div>
 
@@ -55,7 +51,6 @@
     <% end %>
   </div>
 
-  <%= render "shared/diamond_divider" %>
 <% end %>
 
 <%# === ZONE 3: NEXT UP === %>
@@ -76,8 +71,6 @@
     <p class="nextup-empty">No council meetings scheduled</p>
   <% end %>
 </div>
-
-<%= render "shared/diamond_divider" %>
 
 <%# === ZONE 4: ESCAPE HATCHES === %>
 <div class="home-escape">

@@ -407,6 +407,18 @@ small {
   opacity: 0.7;
 }
 
+@media (max-width: 600px) {
+  .site-footer .container {
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .footer-links {
+    flex-wrap: wrap;
+    gap: var(--space-3) var(--space-5);
+  }
+}
+
 /* ============================================
    Cards
    ============================================ */
