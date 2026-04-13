@@ -10,12 +10,15 @@
 
     <h1 class="meeting-article-title"><%= @meeting.body_name.sub(/ Meeting$/, "") %></h1>
 
-    <%# Documents row %>
+    <%# Documents row — link to source URLs (city website), not blob storage %>
     <div class="meeting-article-docs">
-      <% @meeting.meeting_documents.select { |d| d.document_type.include?("pdf") && d.file.attached? }.each do |doc| %>
-        <%= link_to rails_blob_path(doc.file, disposition: "attachment"), class: "meeting-doc-link" do %>
+      <% @meeting.meeting_documents
+           .select { |d| d.document_type.include?("pdf") && d.source_url.present? }
+           .sort_by { |d| d.document_type == "minutes_pdf" ? 0 : d.document_type == "agenda_pdf" ? 1 : 2 }
+           .each do |doc| %>
+        <%= link_to safe_external_url(doc.source_url), target: "_blank", rel: "noopener", class: "meeting-doc-link" do %>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          <%= doc.document_type.sub("_pdf", "").humanize %>
+          <%= doc.document_type.sub("_pdf", "").sub("_html", "").humanize %>
         <% end %>
       <% end %>
       <% transcript = @meeting.meeting_documents.detect { |d| d.document_type == "transcript" && d.source_url.present? } %>
@@ -45,7 +48,7 @@
   <% gd = @summary&.generation_data.presence %>
 
   <% if gd %>
-    <%# === Headline — the hook === %>
+    <%# === Lede === %>
     <% headline = meeting_headline(gd) %>
     <% if headline.present? %>
       <div class="meeting-article-lede">
@@ -55,7 +58,7 @@
       <p class="section-empty">No summary available for this meeting yet.</p>
     <% end %>
 
-    <%# === Highlights === %>
+    <%# === Key Decisions === %>
     <% highlights = meeting_highlights(gd) %>
     <% if highlights.any? %>
       <section class="meeting-article-section">
@@ -67,12 +70,9 @@
         <div class="meeting-decisions">
           <% highlights.each do |h| %>
             <div class="meeting-decision">
-              <% if h["vote"].present? %>
-                <span class="meeting-decision-vote"><%= h["vote"] %></span>
-              <% end %>
               <p class="meeting-decision-text"><%= h["text"] %></p>
-              <% if h["citation"].present? %>
-                <span class="meeting-decision-cite"><%= h["citation"] %></span>
+              <% if h["vote"].present? %>
+                <span class="meeting-decision-vote">Vote: <%= h["vote"] %></span>
               <% end %>
             </div>
           <% end %>
@@ -92,11 +92,15 @@
         <div class="public-input-list">
           <% public_inputs.each do |pi| %>
             <div class="public-input-item">
-              <span class="public-input-speaker"><%= pi["speaker"] %></span>
-              <% if pi["type"] == "communication" %>
-                <span class="public-input-type">Relayed by council member</span>
-              <% end %>
-              <p class="public-input-summary"><%= pi["summary"] %></p>
+              <div class="public-input-attribution">
+                <% if pi["type"] == "communication" %>
+                  <span class="public-input-speaker"><%= pi["speaker"] %></span>
+                  <span class="public-input-type">relayed constituent feedback</span>
+                <% else %>
+                  <span class="public-input-speaker"><%= pi["speaker"] %></span>
+                <% end %>
+              </div>
+              <p class="public-input-summary"><%= pi["summary"]&.gsub(/\s*\[Address redacted\.?\]\s*/i, " ")&.strip %></p>
             </div>
           <% end %>
         </div>
@@ -115,46 +119,57 @@
           <span class="section-line"></span>
         </div>
         <% items.each do |item| %>
-          <div class="meeting-item-card">
-            <div class="meeting-item-card-header">
+          <details class="meeting-item-card">
+            <summary class="meeting-item-card-header">
               <div class="meeting-item-card-title"><%= item["agenda_item_title"] %></div>
               <% if item["decision"].present? %>
                 <span class="decision-badge <%= decision_badge_class(item["decision"]) %>">
                   <%= item["decision"] %><%= " #{item["vote"]}" if item["vote"].present? %>
                 </span>
               <% end %>
-            </div>
+            </summary>
 
-            <% if item["summary"].present? %>
-              <div class="meeting-item-card-summary"><%= item["summary"] %></div>
-            <% end %>
+            <div class="meeting-item-card-body">
+              <% if item["summary"].present? %>
+                <div class="meeting-item-card-summary"><%= item["summary"] %></div>
+              <% end %>
 
-            <% if item["public_hearing"].present? %>
-              <div class="meeting-item-card-hearing">
-                Public Input: <%= item["public_hearing"] %>
-              </div>
-            <% end %>
+              <% if item["public_hearing"].present? %>
+                <div class="meeting-item-card-hearing">
+                  Public Input: <%= item["public_hearing"] %>
+                </div>
+              <% end %>
 
-            <% if item["citations"].present? %>
-              <div class="meeting-item-card-citations">
-                <%= Array(item["citations"]).join(", ") %>
-              </div>
-            <% end %>
-
-            <% matched_agenda_item = @meeting.agenda_items.detect { |ai| ai.title&.downcase&.include?(item["agenda_item_title"]&.downcase&.first(30).to_s) } %>
-            <% if matched_agenda_item&.topics&.approved&.any? %>
-              <div class="meeting-item-topics">
-                <% matched_agenda_item.topics.approved
-                     .sort_by { |t| [-(t.resident_impact_score || 0)] }
-                     .each do |topic| %>
-                  <%= link_to topic_path(topic), class: "meeting-topic-door" do %>
-                    <span class="meeting-topic-door-name"><%= topic.name %></span>
-                    <span class="meeting-topic-door-cta">Full history →</span>
+              <% if item["citations"].present? %>
+                <% citations = Array(item["citations"]) %>
+                <div class="meeting-item-card-citations">
+                  <% pdf_doc = @meeting.meeting_documents.detect { |d| d.document_type == "minutes_pdf" && d.source_url.present? } ||
+                               @meeting.meeting_documents.detect { |d| d.document_type == "packet_pdf" && d.source_url.present? } %>
+                  <% if pdf_doc %>
+                    <%= link_to safe_external_url(pdf_doc.source_url), target: "_blank", rel: "noopener", class: "meeting-citation-link" do %>
+                      📄 See in official document: <%= citations.join(", ") %>
+                    <% end %>
+                  <% else %>
+                    Reference: <%= citations.join(", ") %>
                   <% end %>
-                <% end %>
-              </div>
-            <% end %>
-          </div>
+                </div>
+              <% end %>
+
+              <% matched_agenda_item = @meeting.agenda_items.detect { |ai| ai.title&.downcase&.include?(item["agenda_item_title"]&.downcase&.first(30).to_s) } %>
+              <% if matched_agenda_item&.topics&.approved&.any? %>
+                <div class="meeting-item-topics">
+                  <% matched_agenda_item.topics.approved
+                       .sort_by { |t| [-(t.resident_impact_score || 0)] }
+                       .each do |topic| %>
+                    <%= link_to topic_path(topic), class: "meeting-topic-door" do %>
+                      <span class="meeting-topic-door-name"><%= topic.name %></span>
+                      <span class="meeting-topic-door-cta">Full history →</span>
+                    <% end %>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          </details>
         <% end %>
       </section>
     <% end %>

@@ -1519,25 +1519,10 @@ details[open] summary {
 }
 
 .meeting-decision {
+  border-left: 3px solid var(--color-teal);
+  padding: var(--space-3) var(--space-4);
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-4);
-  position: relative;
-}
-
-.meeting-decision-vote {
-  display: inline-block;
-  font-family: var(--font-data);
-  font-size: var(--font-size-xs);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--color-text-secondary);
-  background: var(--color-surface-raised);
-  padding: 0.15rem 0.5rem;
-  border-radius: var(--radius-sm);
-  margin-bottom: var(--space-2);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
 }
 
 .meeting-decision-text {
@@ -1548,11 +1533,14 @@ details[open] summary {
   margin: 0;
 }
 
-.meeting-decision-cite {
-  display: block;
+.meeting-decision-vote {
+  display: inline-block;
   font-family: var(--font-data);
   font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
   margin-top: var(--space-2);
 }
 
@@ -1577,12 +1565,11 @@ details[open] summary {
 }
 
 .public-input-type {
-  font-family: var(--font-data);
-  font-size: var(--font-size-xs);
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
   color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-left: var(--space-2);
+  font-style: italic;
+  margin-left: var(--space-1);
 }
 
 .public-input-summary {
@@ -1593,14 +1580,14 @@ details[open] summary {
   margin: var(--space-2) 0 0;
 }
 
-/* --- Agenda Item Cards --- */
+/* --- Agenda Item Cards (collapsible) --- */
 
 .meeting-item-card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: var(--space-5);
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-3);
+  overflow: hidden;
 }
 
 .meeting-item-card-header {
@@ -1608,24 +1595,54 @@ details[open] summary {
   justify-content: space-between;
   align-items: flex-start;
   gap: var(--space-3);
-  margin-bottom: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  cursor: pointer;
+  list-style: none;
+  transition: background var(--transition-fast);
+}
+
+.meeting-item-card-header::-webkit-details-marker {
+  display: none;
+}
+
+.meeting-item-card-header::before {
+  content: '▸';
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-right: var(--space-2);
+  transition: transform var(--transition-fast);
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.meeting-item-card[open] .meeting-item-card-header::before {
+  transform: rotate(90deg);
+}
+
+.meeting-item-card-header:hover {
+  background: var(--color-surface-raised);
 }
 
 .meeting-item-card-title {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-sm);
   text-transform: uppercase;
   letter-spacing: 0.02em;
   color: var(--color-teal);
   flex: 1;
 }
 
+.meeting-item-card-body {
+  padding: 0 var(--space-5) var(--space-5);
+  border-top: 1px solid var(--color-border);
+}
+
 .meeting-item-card-summary {
   font-family: var(--font-body);
   font-size: var(--font-size-base);
   line-height: var(--line-height-relaxed);
-  margin-bottom: var(--space-3);
+  margin: var(--space-4) 0 var(--space-3);
 }
 
 .meeting-item-card-hearing {
@@ -1635,14 +1652,21 @@ details[open] summary {
   margin-bottom: var(--space-3);
 }
 
-.meeting-item-card-decision {
-  margin-bottom: var(--space-3);
+.meeting-item-card-citations {
+  margin-top: var(--space-3);
 }
 
-.meeting-item-card-citations {
-  font-family: var(--font-data);
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
+.meeting-citation-link {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-teal);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.meeting-citation-link:hover {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
 }
 
 /* --- Topic "doors" (not pills — obvious navigation) --- */
