@@ -1742,6 +1742,11 @@ details[open] summary {
   color: var(--color-terra-cotta);
 }
 
+.meeting-doc-link--copied {
+  color: var(--color-teal);
+  border-color: var(--color-teal);
+}
+
 .meeting-docs-separator {
   display: inline-block;
   width: 1px;

@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["dropdown", "copyButton"]
+  static targets = ["dropdown", "copyButton", "toggleButton"]
   static values = { text: String, url: String }
 
   toggle(event) {
@@ -24,10 +24,21 @@ export default class extends Controller {
     event.preventDefault()
     this.#copyToClipboard(this.textValue)
     this.dropdownTarget.hidden = true
-    const button = this.copyButtonTarget
-    const original = button.textContent
-    button.textContent = "Copied!"
-    setTimeout(() => { button.textContent = original }, 2000)
+    this.#flashConfirmation()
+  }
+
+  #flashConfirmation() {
+    const btn = this.toggleButtonTarget
+    const svg = btn.querySelector("svg")
+    const originalText = btn.textContent.trim()
+    btn.textContent = "Copied!"
+    if (svg) btn.prepend(svg)
+    btn.classList.add("meeting-doc-link--copied")
+    setTimeout(() => {
+      btn.textContent = ` ${originalText}`
+      if (svg) btn.prepend(svg)
+      btn.classList.remove("meeting-doc-link--copied")
+    }, 2000)
   }
 
   #copyToClipboard(text) {
