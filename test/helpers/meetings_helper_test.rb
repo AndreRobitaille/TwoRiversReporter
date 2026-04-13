@@ -200,7 +200,7 @@ class MeetingsHelperTest < ActionView::TestCase
       id: 10,
       body_name: "Finance Committee Meeting",
       starts_at: 1.day.from_now,
-      agenda_items: [agenda_item]
+      agenda_items: [ agenda_item ]
     )
 
     text = share_text(meeting, nil)
