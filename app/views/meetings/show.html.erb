@@ -1,4 +1,11 @@
 <% content_for(:title) { "#{@meeting.body_name} - #{@meeting.starts_at&.strftime('%B %d, %Y')} - Two Rivers Matters" } %>
+<% content_for(:head) do %>
+  <meta property="og:title" content="<%= @meeting.body_name %> — <%= @meeting.starts_at&.strftime("%B %-d, %Y") %>">
+  <meta property="og:description" content="<%= share_og_description(@summary) %>">
+  <meta property="og:url" content="https://<%= MeetingsHelper::PRODUCTION_HOST %>/meetings/<%= @meeting.id %>">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Two Rivers Matters">
+<% end %>
 
 <article class="meeting-article">
 
@@ -30,6 +37,20 @@
       <%= link_to safe_external_url(@meeting.detail_page_url), target: "_blank", rel: "noopener", class: "meeting-doc-link meeting-doc-link--muted" do %>
         City Website ↗
       <% end %>
+      <span class="meeting-docs-separator"></span>
+      <div class="share-wrapper" data-controller="share"
+           data-share-text-value="<%= share_text(@meeting, @summary) %>"
+           data-share-url-value="https://<%= MeetingsHelper::PRODUCTION_HOST %>/meetings/<%= @meeting.id %>"
+           data-action="click@window->share#close keydown.esc@window->share#closeOnEscape">
+        <button type="button" class="meeting-doc-link meeting-doc-link--share" data-action="share#toggle">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          Share
+        </button>
+        <div class="share-dropdown" data-share-target="dropdown" hidden>
+          <button type="button" class="share-dropdown-item" data-action="share#facebook">Share on Facebook</button>
+          <button type="button" class="share-dropdown-item" data-action="share#copy" data-share-target="copyButton">Copy summary</button>
+        </div>
+      </div>
     </div>
   </header>
 
