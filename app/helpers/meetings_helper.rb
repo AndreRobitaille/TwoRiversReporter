@@ -61,6 +61,44 @@ module MeetingsHelper
     end
   end
 
+  PRODUCTION_HOST = "tworiversmatters.com".freeze
+
+  def share_text(meeting, summary)
+    lines = []
+
+    # Header: body name (strip " Meeting" suffix) + date/time
+    name = meeting.body_name.sub(/ Meeting$/, "")
+    date = meeting.starts_at&.strftime("%B %-d, %Y")
+    time = meeting.starts_at&.strftime("%-l:%M %p")
+    lines << "#{name} — #{date}, #{time}"
+    lines << ""
+
+    gd = summary&.generation_data
+    meeting_url = "https://#{PRODUCTION_HOST}/meetings/#{meeting.id}"
+
+    if gd.present?
+      # Headline paragraph
+      headline = gd["headline"]
+      lines << headline if headline.present?
+      lines << "" if headline.present?
+
+      upcoming = meeting.starts_at.present? && meeting.starts_at > Time.current
+
+      if upcoming
+        share_text_upcoming_bullets(lines, gd)
+      else
+        share_text_past_bullets(lines, gd)
+      end
+    elsif meeting.respond_to?(:agenda_items) && meeting.agenda_items.any?
+      share_text_agenda_fallback(lines, meeting)
+    end
+
+    lines << "Full details at Two Rivers Matters:"
+    lines << meeting_url
+
+    lines.join("\n")
+  end
+
   COUNCIL_PATTERNS = [
     "City Council Meeting",
     "City Council Work Session",
@@ -78,5 +116,52 @@ module MeetingsHelper
               meeting.meeting_summaries.find { |s| s.summary_type == "packet_analysis" }
     return nil unless summary
     meeting_headline(summary.generation_data)
+  end
+
+  private
+
+  def share_text_past_bullets(lines, gd)
+    highlights = gd["highlights"] || []
+    return if highlights.empty?
+
+    lines << "Key decisions:"
+    highlights.first(5).each do |h|
+      bullet = " - #{h["text"]}"
+      bullet += " (#{h["vote"]})" if h["vote"].present?
+      lines << bullet
+    end
+    lines << ""
+  end
+
+  def share_text_upcoming_bullets(lines, gd)
+    items = gd["item_details"] || []
+    return if items.empty?
+
+    highlights = gd["highlights"] || []
+
+    lines << "On the agenda:"
+    items.first(5).each do |item|
+      title = item["agenda_item_title"]
+      # Find matching highlight for context
+      match = highlights.detect { |h| h["text"]&.downcase&.include?(title&.downcase&.first(20).to_s) }
+      if match
+        lines << " - #{match["text"]}"
+      else
+        lines << " - #{title}"
+      end
+    end
+    lines << ""
+  end
+
+  def share_text_agenda_fallback(lines, meeting)
+    items = meeting.agenda_items
+      .reject { |ai| ai.title&.match?(/\A(CALL TO ORDER|ROLL CALL|ADJOURNMENT|PUBLIC INPUT)\z/i) }
+    return if items.empty?
+
+    lines << "On the agenda:"
+    items.first(5).each do |ai|
+      lines << " - #{ai.title}"
+    end
+    lines << ""
   end
 end

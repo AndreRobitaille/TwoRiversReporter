@@ -134,4 +134,48 @@ class MeetingsHelperTest < ActionView::TestCase
     assert_equal "decision-badge--default", decision_badge_class("Other")
     assert_equal "decision-badge--default", decision_badge_class(nil)
   end
+
+  # --- share_text helper ---
+
+  test "share_text for past meeting with generation_data includes headline and highlights" do
+    meeting = OpenStruct.new(
+      id: 42,
+      body_name: "Common Council Meeting",
+      starts_at: 2.days.ago
+    )
+    summary = OpenStruct.new(generation_data: @generation_data)
+
+    text = share_text(meeting, summary)
+
+    assert_includes text, "Common Council"
+    assert_no_match(/Common Council Meeting/, text) # strips " Meeting" suffix
+    assert_includes text, meeting.starts_at.strftime("%B %-d, %Y")
+    assert_includes text, meeting.starts_at.strftime("%-l:%M %p")
+    assert_includes text, @generation_data["headline"]
+    assert_includes text, "Key decisions:"
+    assert_includes text, "Adopted intent-to-reimburse resolution"
+    assert_includes text, "Tabled property assessment ordinance"
+    assert_includes text, "https://tworiversmatters.com/meetings/42"
+    assert_includes text, "Two Rivers Matters"
+  end
+
+  test "share_text for past meeting caps at 5 highlights" do
+    many_highlights = 7.times.map { |i| { "text" => "Decision #{i}" } }
+    gd = { "headline" => "Big meeting.", "highlights" => many_highlights }
+    meeting = OpenStruct.new(id: 1, body_name: "Council Meeting", starts_at: 1.day.ago)
+    summary = OpenStruct.new(generation_data: gd)
+
+    text = share_text(meeting, summary)
+
+    assert_equal 5, text.scan(/^ - /).size
+  end
+
+  test "share_text for past meeting includes vote when present" do
+    meeting = OpenStruct.new(id: 1, body_name: "Council Meeting", starts_at: 1.day.ago)
+    summary = OpenStruct.new(generation_data: @generation_data)
+
+    text = share_text(meeting, summary)
+
+    assert_includes text, "6-3"
+  end
 end
