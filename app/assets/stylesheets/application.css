@@ -1375,61 +1375,57 @@ details[open] summary {
    Meeting Detail Page
    ============================================ */
 
+/* Article wrapper — mirrors .topic-article */
 .meeting-article {
-  max-width: 48rem;
+  max-width: 38rem;
   margin: 0 auto;
-  padding: var(--space-4) 0 var(--space-8);
+  padding: var(--space-6) 0 var(--space-8);
 }
 
-/* --- Header (editorial, centered) --- */
+/* --- Header (editorial, left-aligned — mirrors topic-article-header) --- */
 
 .meeting-article-header {
-  text-align: center;
-  margin-bottom: var(--space-6);
+  text-align: left;
   padding-bottom: var(--space-4);
+  margin-bottom: var(--space-6);
 }
 
-.meeting-article-eyebrow {
-  display: block;
-  font-family: var(--font-data);
-  font-size: var(--font-size-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--color-terra-cotta);
-  margin-bottom: var(--space-2);
-}
-
-.meeting-article-title {
-  font-family: var(--font-display);
-  font-weight: 900;
-  font-size: var(--font-size-3xl);
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  color: var(--color-teal);
-  margin: 0 0 var(--space-4);
-}
-
-.meeting-article-utils {
+.meeting-article-topline {
   display: flex;
-  justify-content: center;
-  gap: var(--space-2);
   flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
   margin-bottom: var(--space-3);
+}
+
+.meeting-article-date {
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-terra-cotta);
+}
+
+.meeting-article-docs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
 }
 
 .meeting-doc-link {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: 0.3rem;
   font-family: var(--font-data);
   font-size: var(--font-size-xs);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--color-teal);
   text-decoration: none;
-  padding: var(--space-1) var(--space-3);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-md);
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
   transition: background var(--transition-fast), border-color var(--transition-fast);
 }
 
@@ -1440,54 +1436,65 @@ details[open] summary {
   text-decoration: none;
 }
 
-.meeting-doc-link svg {
+.meeting-doc-link--muted {
   color: var(--color-text-muted);
 }
 
-.meeting-source-link {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  font-family: var(--font-data);
-  font-size: var(--font-size-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+.meeting-doc-link--muted:hover {
   color: var(--color-text-secondary);
-  text-decoration: none;
-  padding: var(--space-1) var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  transition: background var(--transition-fast), border-color var(--transition-fast);
-}
-
-.meeting-source-link:hover {
   background: var(--color-surface-raised);
   border-color: var(--color-border-strong);
-  color: var(--color-text-secondary);
-  text-decoration: none;
 }
 
-.meeting-source-arrow {
-  font-size: 0.85em;
+.meeting-doc-link svg {
+  color: currentColor;
+  opacity: 0.6;
 }
 
+/* Title — mirrors .topic-article-title */
+.meeting-article-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  color: var(--color-teal);
+  margin: 0;
+}
+
+/* Topic pills — below title */
 .meeting-article-topics {
   display: flex;
-  justify-content: center;
-  gap: var(--space-1);
   flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-3);
 }
 
-/* --- Headline --- */
-
-.meeting-article-headline {
+.meeting-article-topic-link {
   font-family: var(--font-body);
-  font-size: var(--font-size-lg);
-  line-height: var(--line-height-relaxed);
-  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  padding: 0.15rem 0.5rem;
+  border-radius: 99px;
+  background: var(--color-primary-light);
+  color: var(--color-teal);
+  text-decoration: none;
+  transition: background var(--transition-fast);
+}
+
+.meeting-article-topic-link:hover {
+  background: color-mix(in srgb, var(--color-teal) 20%, var(--color-primary-light));
+  text-decoration: none;
+  color: var(--color-teal);
+}
+
+/* Headline / dek — mirrors .topic-article-dek */
+.meeting-article-dek {
+  font-family: var(--font-body);
+  font-size: 1.15rem;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
   margin: 0 0 var(--space-6);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--color-border);
 }
 
 /* --- Sections --- */
@@ -1510,22 +1517,29 @@ details[open] summary {
   line-height: var(--line-height-relaxed);
 }
 
-/* --- Agenda Item topic pills --- */
+/* --- Agenda Item topic links --- */
 
 .meeting-item-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
   margin-top: var(--space-3);
+}
+
+/* --- Footer --- */
+
+.meeting-article-footer {
+  margin-top: var(--space-8);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
 }
 
 /* --- Responsive --- */
 
 @media (max-width: 600px) {
-  .meeting-article-title {
-    font-size: var(--font-size-2xl);
-  }
-
-  .meeting-article-utils {
+  .meeting-article-topline {
     flex-direction: column;
-    align-items: center;
+    gap: var(--space-2);
   }
 }
 

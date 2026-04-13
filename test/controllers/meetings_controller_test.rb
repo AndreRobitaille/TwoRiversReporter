@@ -119,7 +119,7 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     get meeting_url(@meeting)
     assert_response :success
 
-    assert_select ".meeting-article-topics .meetings-topic-pill", minimum: 1
+    assert_select ".meeting-article-topics .meeting-article-topic-link", minimum: 1
   end
 
   test "show renders no topic pills when no approved topics" do
@@ -158,7 +158,7 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     get meeting_url(@meeting)
     assert_response :success
 
-    assert_select ".meeting-article-headline", text: /Council approved the budget/
+    assert_select ".meeting-article-dek", text: /Council approved the budget/
   end
 
   test "show renders empty state when no summary exists" do
@@ -217,7 +217,7 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     get meeting_url(@meeting)
     assert_response :success
 
-    assert_select ".meeting-article-utils"
+    assert_select ".meeting-article-docs"
   end
 
   # --- Index view integration tests ---
