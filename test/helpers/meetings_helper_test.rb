@@ -178,4 +178,73 @@ class MeetingsHelperTest < ActionView::TestCase
 
     assert_includes text, "6-3"
   end
+
+  test "share_text for upcoming meeting uses 'On the agenda' and item_details" do
+    meeting = OpenStruct.new(
+      id: 154,
+      body_name: "Plan Commission Meeting",
+      starts_at: 2.days.from_now
+    )
+    summary = OpenStruct.new(generation_data: @generation_data)
+
+    text = share_text(meeting, summary)
+
+    assert_includes text, "Plan Commission"
+    assert_includes text, "On the agenda:"
+    assert_includes text, "Rezoning at 3204 Lincoln Ave"
+  end
+
+  test "share_text falls back to agenda items when no summary" do
+    agenda_item = OpenStruct.new(title: "Budget Amendment Discussion")
+    meeting = OpenStruct.new(
+      id: 10,
+      body_name: "Finance Committee Meeting",
+      starts_at: 1.day.from_now,
+      agenda_items: [agenda_item]
+    )
+
+    text = share_text(meeting, nil)
+
+    assert_includes text, "Finance Committee"
+    assert_includes text, "On the agenda:"
+    assert_includes text, "Budget Amendment Discussion"
+    assert_includes text, "https://tworiversmatters.com/meetings/10"
+  end
+
+  test "share_text agenda fallback filters procedural items" do
+    items = [
+      OpenStruct.new(title: "CALL TO ORDER"),
+      OpenStruct.new(title: "ROLL CALL"),
+      OpenStruct.new(title: "Water Rate Increase"),
+      OpenStruct.new(title: "ADJOURNMENT")
+    ]
+    meeting = OpenStruct.new(
+      id: 10,
+      body_name: "Council Meeting",
+      starts_at: 1.day.from_now,
+      agenda_items: items
+    )
+
+    text = share_text(meeting, nil)
+
+    assert_includes text, "Water Rate Increase"
+    assert_no_match(/CALL TO ORDER/, text)
+    assert_no_match(/ROLL CALL/, text)
+    assert_no_match(/ADJOURNMENT/, text)
+  end
+
+  test "share_text minimal fallback when no summary and no agenda items" do
+    meeting = OpenStruct.new(
+      id: 10,
+      body_name: "Council Meeting",
+      starts_at: 1.day.from_now
+    )
+
+    text = share_text(meeting, nil)
+
+    assert_includes text, "Council"
+    assert_includes text, "https://tworiversmatters.com/meetings/10"
+    assert_no_match(/On the agenda/, text)
+    assert_no_match(/Key decisions/, text)
+  end
 end
