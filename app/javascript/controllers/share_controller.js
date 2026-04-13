@@ -11,7 +11,7 @@ export default class extends Controller {
 
   facebook(event) {
     event.preventDefault()
-    const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(this.urlValue)}`
+    const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(this.urlValue)}&quote=${encodeURIComponent(this.textValue)}`
     const width = 600
     const height = 400
     const left = (screen.width - width) / 2
