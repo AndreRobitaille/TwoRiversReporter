@@ -99,6 +99,14 @@ module MeetingsHelper
     lines.join("\n")
   end
 
+  def share_og_description(summary)
+    headline = summary&.generation_data&.dig("headline")
+    return "Meeting details and AI-generated summary." if headline.blank?
+    return headline if headline.length <= 200
+
+    headline[0..196] + "..."
+  end
+
   COUNCIL_PATTERNS = [
     "City Council Meeting",
     "City Council Work Session",
