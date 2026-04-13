@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_11_013910) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_13_014041) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -57,6 +57,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_11_013910) do
     t.datetime "created_at", null: false
     t.bigint "topic_id", null: false
     t.datetime "updated_at", null: false
+    t.index ["agenda_item_id", "topic_id"], name: "idx_agenda_item_topics_unique_pair", unique: true
     t.index ["agenda_item_id"], name: "index_agenda_item_topics_on_agenda_item_id"
     t.index ["topic_id"], name: "index_agenda_item_topics_on_topic_id"
   end
@@ -273,7 +274,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_11_013910) do
     t.datetime "created_at", null: false
     t.string "name"
     t.datetime "updated_at", null: false
-    t.index ["name"], name: "index_members_on_name"
+    t.index ["name"], name: "index_members_on_name", unique: true
   end
 
   create_table "motions", force: :cascade do |t|
@@ -616,6 +617,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_11_013910) do
     t.datetime "updated_at", null: false
     t.string "value"
     t.index ["member_id"], name: "index_votes_on_member_id"
+    t.index ["motion_id", "member_id"], name: "idx_votes_unique_per_motion", unique: true
     t.index ["motion_id"], name: "index_votes_on_motion_id"
   end
 

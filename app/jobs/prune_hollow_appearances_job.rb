@@ -118,10 +118,11 @@ class PruneHollowAppearancesJob < ApplicationJob
   end
 
   def demote_topic(topic, meeting_id)
-    remaining = topic.topic_appearances.count
-    new_last_activity = topic.topic_appearances.maximum(:appeared_at)
-
     Topic.transaction do
+      topic.lock!
+      remaining = topic.topic_appearances.count
+      new_last_activity = topic.topic_appearances.maximum(:appeared_at)
+
       case remaining
       when 0
         topic.update!(
@@ -144,7 +145,7 @@ class PruneHollowAppearancesJob < ApplicationJob
         # was the one driving last_activity_at).
         topic.update!(last_activity_at: new_last_activity)
       end
-    end
+    end # transaction
 
     # Enqueue briefing regeneration AFTER the transaction commits so job
     # dispatch only happens after a successful write. Runs for both the
@@ -152,6 +153,7 @@ class PruneHollowAppearancesJob < ApplicationJob
     # topic would stay at its pre-prune score and still surface on the
     # homepage. The 0-remaining case skips this because there's nothing
     # to brief about.
+    remaining = topic.reload.topic_appearances.count
     if remaining >= 1 && !topic.resident_impact_admin_locked?
       Topics::GenerateTopicBriefingJob.perform_later(topic_id: topic.id, meeting_id: meeting_id)
     end

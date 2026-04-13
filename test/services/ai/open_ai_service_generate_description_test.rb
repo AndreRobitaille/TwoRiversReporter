@@ -96,7 +96,7 @@ class Ai::OpenAiServiceGenerateDescriptionTest < ActiveSupport::TestCase
     mock_client.verify
   end
 
-  test "returns nil when API response content is nil" do
+  test "raises EmptyResponseError when API response content is nil" do
     topic_context = {
       topic_name: "Nil Topic",
       agenda_items: [],
@@ -104,7 +104,7 @@ class Ai::OpenAiServiceGenerateDescriptionTest < ActiveSupport::TestCase
     }
 
     mock_response = {
-      "choices" => [ { "message" => { "content" => nil } } ]
+      "choices" => [ { "message" => { "content" => nil }, "finish_reason" => "content_filter" } ]
     }
 
     mock_client = Minitest::Mock.new
@@ -114,9 +114,9 @@ class Ai::OpenAiServiceGenerateDescriptionTest < ActiveSupport::TestCase
 
     @service.instance_variable_set(:@client, mock_client)
 
-    result = @service.generate_topic_description(topic_context)
-
-    assert_nil result
+    assert_raises(Ai::OpenAiService::EmptyResponseError) do
+      @service.generate_topic_description(topic_context)
+    end
     mock_client.verify
   end
 end

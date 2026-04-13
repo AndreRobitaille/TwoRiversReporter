@@ -80,8 +80,9 @@ module Scrapers
       end
 
       if meeting.save
-        # Enqueue parsing of the detail page
         Scrapers::ParseMeetingPageJob.perform_later(meeting.id)
+      else
+        Rails.logger.error("DiscoverMeetingsJob: Failed to save meeting (#{detail_url}): #{meeting.errors.full_messages.join(', ')}")
       end
 
       :continue

@@ -55,7 +55,7 @@ module TopicsHelper
   # Convert **bold** markdown to <strong> tags
   def render_inline_markdown(text)
     escaped = ERB::Util.html_escape(text)
-    bolded = escaped.gsub(/\*\*(.+?)\*\*/) { content_tag(:strong, Regexp.last_match(1)) }
+    bolded = escaped.gsub(/\*\*(.+?)\*\*/) { content_tag(:strong, Regexp.last_match(1).html_safe) }
     bolded.html_safe
   end
 

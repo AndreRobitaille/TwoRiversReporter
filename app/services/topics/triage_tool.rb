@@ -238,10 +238,16 @@ module Topics
           end
         end
 
-        # Transfer appearances, status events, and summaries before destroying source
+        # Transfer appearances, status events, summaries, and briefing before destroying source
         source_topic.topic_appearances.update_all(topic_id: target_topic.id)
         source_topic.topic_status_events.update_all(topic_id: target_topic.id)
         source_topic.topic_summaries.update_all(topic_id: target_topic.id)
+
+        if source_topic.topic_briefing && !target_topic.topic_briefing
+          source_topic.topic_briefing.update!(topic_id: target_topic.id)
+        elsif source_topic.topic_briefing
+          source_topic.topic_briefing.destroy!
+        end
 
         source_topic.reload.destroy!
       end

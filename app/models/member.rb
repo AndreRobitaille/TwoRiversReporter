@@ -45,6 +45,8 @@ class Member < ApplicationRecord
 
     # 4. Create new member (find_or_create handles concurrent job races)
     find_or_create_by!(name: normalized)
+  rescue ActiveRecord::RecordNotUnique
+    find_by!(name: normalized)
   end
 
   # Merge this member into the target, moving all associations and creating

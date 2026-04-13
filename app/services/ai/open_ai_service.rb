@@ -45,18 +45,7 @@ module Ai
         { role: "user", content: prompt }
       ].compact
 
-      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      response = @client.chat(
-        parameters: {
-          model: model,
-          response_format: { type: "json_object" },
-          messages: messages,
-          temperature: 0.1
-        }
-      )
-      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
-
-      content = response.dig("choices", 0, "message", "content")
+      content, duration_ms = call_api(model: model, messages: messages, temperature: 0.1, response_format: { type: "json_object" })
 
       record_prompt_run(
         template_key: "extract_votes",
@@ -85,17 +74,7 @@ module Ai
         { role: "user", content: prompt }
       ].compact
 
-      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      response = @client.chat(
-        parameters: {
-          model: model,
-          response_format: { type: "json_object" },
-          messages: messages
-        }
-      )
-      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
-
-      content = response.dig("choices", 0, "message", "content")
+      content, duration_ms = call_api(model: model, messages: messages, response_format: { type: "json_object" })
 
       record_prompt_run(
         template_key: "extract_committee_members",
@@ -130,18 +109,7 @@ module Ai
         { role: "user", content: prompt }
       ].compact
 
-      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      response = @client.chat(
-        parameters: {
-          model: model,
-          response_format: { type: "json_object" },
-          messages: messages,
-          temperature: 0.1
-        }
-      )
-      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
-
-      content = response.dig("choices", 0, "message", "content")
+      content, duration_ms = call_api(model: model, messages: messages, temperature: 0.1, response_format: { type: "json_object" })
 
       record_prompt_run(
         template_key: "extract_topics",
@@ -176,18 +144,7 @@ module Ai
         { role: "user", content: prompt }
       ].compact
 
-      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      response = @client.chat(
-        parameters: {
-          model: model,
-          response_format: { type: "json_object" },
-          messages: messages,
-          temperature: 0.1
-        }
-      )
-      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
-
-      content = response.dig("choices", 0, "message", "content")
+      content, duration_ms = call_api(model: model, messages: messages, temperature: 0.1, response_format: { type: "json_object" })
 
       record_prompt_run(
         template_key: "refine_catchall_topic",
@@ -222,18 +179,7 @@ module Ai
         { role: "user", content: prompt }
       ].compact
 
-      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      response = @client.chat(
-        parameters: {
-          model: model,
-          response_format: { type: "json_object" },
-          messages: messages,
-          temperature: 0.1
-        }
-      )
-      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
-
-      content = response.dig("choices", 0, "message", "content")
+      content, duration_ms = call_api(model: model, messages: messages, temperature: 0.1, response_format: { type: "json_object" })
 
       record_prompt_run(
         template_key: "re_extract_item_topics",
@@ -316,18 +262,7 @@ module Ai
           { role: "user", content: prompt }
         ].compact
 
-        start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-        response = @client.chat(
-          parameters: {
-            model: model,
-            response_format: { type: "json_object" },
-            messages: messages,
-            temperature: 0.1
-          }
-        )
-        duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
-
-        content = response.dig("choices", 0, "message", "content")
+        content, duration_ms = call_api(model: model, messages: messages, temperature: 0.1, response_format: { type: "json_object" })
 
         record_prompt_run(
           template_key: "triage_topics",
@@ -358,18 +293,7 @@ module Ai
         { role: "user", content: prompt }
       ]
 
-      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      response = @client.chat(
-        parameters: {
-          model: model,
-          response_format: { type: "json_object" },
-          messages: messages,
-          temperature: 0.1
-        }
-      )
-      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
-
-      content = response.dig("choices", 0, "message", "content")
+      content, duration_ms = call_api(model: model, messages: messages, temperature: 0.1, response_format: { type: "json_object" })
 
       record_prompt_run(
         template_key: "analyze_topic_summary",
@@ -398,17 +322,7 @@ module Ai
         { role: "user", content: prompt }
       ]
 
-      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      response = @client.chat(
-        parameters: {
-          model: model,
-          messages: messages,
-          temperature: 0.2
-        }
-      )
-      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
-
-      content = response.dig("choices", 0, "message", "content")
+      content, duration_ms = call_api(model: model, messages: messages, temperature: 0.2)
 
       record_prompt_run(
         template_key: "render_topic_summary",
@@ -437,18 +351,7 @@ module Ai
         { role: "user", content: prompt }
       ]
 
-      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      response = @client.chat(
-        parameters: {
-          model: model,
-          response_format: { type: "json_object" },
-          messages: messages,
-          temperature: 0.1
-        }
-      )
-      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
-
-      content = response.dig("choices", 0, "message", "content")
+      content, duration_ms = call_api(model: model, messages: messages, temperature: 0.1, response_format: { type: "json_object" })
 
       record_prompt_run(
         template_key: "analyze_topic_briefing",
@@ -477,18 +380,7 @@ module Ai
         { role: "user", content: prompt }
       ]
 
-      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      response = @client.chat(
-        parameters: {
-          model: model,
-          response_format: { type: "json_object" },
-          messages: messages,
-          temperature: 0.2
-        }
-      )
-      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
-
-      content = response.dig("choices", 0, "message", "content")
+      content, duration_ms = call_api(model: model, messages: messages, temperature: 0.2, response_format: { type: "json_object" })
 
       record_prompt_run(
         template_key: "render_topic_briefing",
@@ -525,17 +417,7 @@ module Ai
         { role: "user", content: prompt }
       ].compact
 
-      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      response = @client.chat(
-        parameters: {
-          model: model,
-          response_format: { type: "json_object" },
-          messages: messages
-        }
-      )
-      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
-
-      content = response.dig("choices", 0, "message", "content")
+      content, duration_ms = call_api(model: model, messages: messages, response_format: { type: "json_object" })
 
       record_prompt_run(
         template_key: "generate_briefing_interim",
@@ -573,16 +455,7 @@ module Ai
         { role: "user", content: user_prompt }
       ].compact
 
-      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      response = @client.chat(
-        parameters: {
-          model: model,
-          messages: messages
-        }
-      )
-      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
-
-      content = response.dig("choices", 0, "message", "content")
+      content, duration_ms = call_api(model: model, messages: messages)
 
       record_prompt_run(
         template_key: key,
@@ -633,18 +506,7 @@ module Ai
         { role: "user", content: prompt }
       ]
 
-      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      response = @client.chat(
-        parameters: {
-          model: model,
-          response_format: { type: "json_object" },
-          messages: messages,
-          temperature: 0.1
-        }
-      )
-      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
-
-      content = response.dig("choices", 0, "message", "content")
+      content, duration_ms = call_api(model: model, messages: messages, temperature: 0.1, response_format: { type: "json_object" })
 
       record_prompt_run(
         template_key: "analyze_meeting_content",
@@ -679,18 +541,7 @@ module Ai
         { role: "user", content: prompt }
       ].compact
 
-      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      response = @client.chat(
-        parameters: {
-          model: model,
-          response_format: { type: "json_object" },
-          messages: messages,
-          temperature: 0.1
-        }
-      )
-      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
-
-      content = response.dig("choices", 0, "message", "content")
+      content, duration_ms = call_api(model: model, messages: messages, temperature: 0.1, response_format: { type: "json_object" })
 
       record_prompt_run(
         template_key: "extract_knowledge",
@@ -719,18 +570,7 @@ module Ai
         { role: "user", content: prompt }
       ].compact
 
-      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      response = @client.chat(
-        parameters: {
-          model: model,
-          response_format: { type: "json_object" },
-          messages: messages,
-          temperature: 0.1
-        }
-      )
-      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
-
-      content = response.dig("choices", 0, "message", "content")
+      content, duration_ms = call_api(model: model, messages: messages, temperature: 0.1, response_format: { type: "json_object" })
 
       record_prompt_run(
         template_key: "triage_knowledge",
@@ -759,16 +599,7 @@ module Ai
         { role: "user", content: prompt }
       ].compact
 
-      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      response = @client.chat(
-        parameters: {
-          model: DEFAULT_MODEL,
-          messages: messages
-        }
-      )
-      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
-
-      content = response.dig("choices", 0, "message", "content")
+      content, duration_ms = call_api(model: DEFAULT_MODEL, messages: messages)
 
       record_prompt_run(
         template_key: "knowledge_search_answer",
@@ -795,18 +626,7 @@ module Ai
         { role: "user", content: prompt }
       ].compact
 
-      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      response = @client.chat(
-        parameters: {
-          model: model,
-          response_format: { type: "json_object" },
-          messages: messages,
-          temperature: 0.1
-        }
-      )
-      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
-
-      content = response.dig("choices", 0, "message", "content")
+      content, duration_ms = call_api(model: model, messages: messages, temperature: 0.1, response_format: { type: "json_object" })
 
       record_prompt_run(
         template_key: "extract_knowledge_patterns",
@@ -843,7 +663,32 @@ module Ai
       CONTEXT
     end
 
+    class EmptyResponseError < StandardError; end
+
     private
+
+    # Central API call wrapper — handles error logging, nil content guard,
+    # and temperature suppression for lightweight models.
+    def call_api(model:, messages:, temperature: nil, response_format: nil)
+      params = { model: model, messages: messages }
+      params[:temperature] = temperature if temperature && model != LIGHTWEIGHT_MODEL
+      params[:response_format] = response_format if response_format
+
+      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      response = @client.chat(parameters: params)
+      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
+
+      content = response.dig("choices", 0, "message", "content")
+      if content.nil?
+        finish_reason = response.dig("choices", 0, "finish_reason")
+        raise EmptyResponseError, "OpenAI returned empty content (finish_reason: #{finish_reason})"
+      end
+
+      [ content, duration_ms ]
+    rescue Faraday::Error => e
+      Rails.logger.error("OpenAI API error: #{e.class} — #{e.message}")
+      raise
+    end
 
     def prepare_committee_context
       committees = Committee.for_ai_context
@@ -929,17 +774,7 @@ module Ai
         { role: "user", content: prompt }
       ]
 
-      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      response = @client.chat(
-        parameters: {
-          model: model,
-          messages: messages,
-          temperature: 0.2
-        }
-      )
-      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
-
-      content = response.dig("choices", 0, "message", "content")
+      content, duration_ms = call_api(model: model, messages: messages, temperature: 0.2)
 
       record_prompt_run(
         template_key: "render_meeting_summary",
