@@ -115,21 +115,19 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     refute all_topics.include?(@blocked_topic)
   end
 
-  test "show renders topics section with ongoing and new subsections" do
+  test "show renders topic pills in header" do
     get meeting_url(@meeting)
     assert_response :success
 
-    assert_select "h2", text: "Topics in This Meeting"
-    assert_select "h3", text: "Ongoing"
-    assert_select "h3", text: "New This Meeting"
+    assert_select ".meeting-article-topics .meetings-topic-pill", minimum: 1
   end
 
-  test "show renders empty state when no approved topics" do
+  test "show renders no topic pills when no approved topics" do
     AgendaItemTopic.destroy_all
     get meeting_url(@meeting)
     assert_response :success
 
-    assert_select ".section-empty", text: "No topics have been identified for this meeting."
+    refute_select ".meeting-article-topics"
   end
 
   test "show assigns summary with generation_data" do
@@ -160,7 +158,7 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     get meeting_url(@meeting)
     assert_response :success
 
-    assert_select ".meeting-headline", text: /Council approved the budget/
+    assert_select ".meeting-article-headline", text: /Council approved the budget/
   end
 
   test "show renders empty state when no summary exists" do
@@ -215,12 +213,11 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     assert assigns(:search_results).empty?
   end
 
-  test "show renders documents section with empty state" do
-    @meeting.meeting_documents.destroy_all
+  test "show renders document links in header" do
     get meeting_url(@meeting)
     assert_response :success
 
-    assert_select ".section-empty", text: "No documents available for this meeting."
+    assert_select ".meeting-article-utils"
   end
 
   # --- Index view integration tests ---

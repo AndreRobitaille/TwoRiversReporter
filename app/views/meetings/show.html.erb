@@ -1,260 +1,199 @@
 <% content_for(:title) { "#{@meeting.body_name} - #{@meeting.starts_at&.strftime('%B %d, %Y')} - Two Rivers Matters" } %>
 
-<%# === Section 1: Header === %>
-<div class="page-header">
-  <h1 class="page-title"><%= @meeting.body_name %></h1>
-</div>
+<article class="meeting-article">
 
-<div class="meeting-meta">
-  <div class="meeting-meta-item">
-    <span class="meeting-meta-label">Date & Time</span>
-    <span class="meeting-meta-value"><%= @meeting.starts_at&.strftime("%B %d, %Y at %l:%M %p") %></span>
-  </div>
-  <div class="meeting-meta-item">
-    <span class="meeting-meta-label">Status</span>
-    <span class="badge <%= case @meeting.status
-      when 'minutes_posted' then 'badge--success'
-      when 'upcoming' then 'badge--primary'
-      else 'badge--default'
-    end %>">
-      <%= @meeting.status&.titleize || "Unknown" %>
-    </span>
-  </div>
-  <% if @meeting.committee.present? %>
-    <div class="meeting-meta-item">
-      <span class="meeting-meta-label">Committee</span>
-      <span class="meeting-meta-value"><%= @meeting.committee.name %></span>
+  <%# === Header === %>
+  <header class="meeting-article-header">
+    <span class="meeting-article-eyebrow"><%= @meeting.starts_at&.strftime("%B %-d, %Y") %> · <%= @meeting.starts_at&.strftime("%-l:%M %p") %></span>
+    <h1 class="meeting-article-title"><%= @meeting.body_name.sub(/ Meeting$/, "") %></h1>
+
+    <%# Document links + source %>
+    <div class="meeting-article-utils">
+      <% @meeting.meeting_documents.select { |d| d.document_type.include?("pdf") && d.file.attached? }.each do |doc| %>
+        <%= link_to rails_blob_path(doc.file, disposition: "attachment"), class: "meeting-doc-link" do %>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <%= doc.document_type.sub("_pdf", "").humanize %>
+        <% end %>
+      <% end %>
+      <% transcript = @meeting.meeting_documents.detect { |d| d.document_type == "transcript" && d.source_url.present? } %>
+      <% if transcript %>
+        <%= link_to safe_external_url(transcript.source_url), target: "_blank", rel: "noopener", class: "meeting-doc-link" do %>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Recording
+        <% end %>
+      <% end %>
+      <%= link_to safe_external_url(@meeting.detail_page_url), target: "_blank", rel: "noopener", class: "meeting-source-link" do %>
+        City Website <span class="meeting-source-arrow">↗</span>
+      <% end %>
+    </div>
+
+    <%# Topic pills %>
+    <% all_topics = (@ongoing_topics + @new_topics).sort_by { |t| [-(t.resident_impact_score || 0), -(t.last_activity_at&.to_i || 0)] } %>
+    <% if all_topics.any? %>
+      <div class="meeting-article-topics">
+        <% all_topics.each do |topic| %>
+          <%= link_to topic.name, topic_path(topic), class: "meetings-topic-pill" %>
+        <% end %>
+      </div>
+    <% end %>
+  </header>
+
+  <% if @summary&.generation_data&.dig("source_type") == "transcript" %>
+    <div class="transcript-banner">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      This summary is based on the meeting's video recording. It will be updated when official minutes are published.
     </div>
   <% end %>
-  <div class="meeting-meta-item">
-    <span class="meeting-meta-label">Original Source</span>
-    <span class="meeting-meta-value">
-      <%= link_to "View on City Website", safe_external_url(@meeting.detail_page_url), target: "_blank", rel: "noopener" %>
-    </span>
-  </div>
-</div>
 
-<% if @summary&.generation_data&.dig("source_type") == "transcript" %>
-  <div class="transcript-banner">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="10"></circle>
-      <line x1="12" y1="8" x2="12" y2="12"></line>
-      <line x1="12" y1="16" x2="12.01" y2="16"></line>
-    </svg>
-    This summary is based on the meeting's video recording. It will be updated when official minutes are published.
-  </div>
-<% end %>
+  <% gd = @summary&.generation_data.presence %>
 
-<% gd = @summary&.generation_data.presence %>
-
-<% if gd %>
-  <%# === Section 2: Headline === %>
-  <section class="section">
+  <% if gd %>
+    <%# === Headline === %>
     <% headline = meeting_headline(gd) %>
     <% if headline.present? %>
-      <p class="meeting-headline"><%= headline %></p>
+      <p class="meeting-article-headline"><%= headline %></p>
     <% else %>
       <p class="section-empty">No summary available for this meeting yet.</p>
     <% end %>
-  </section>
 
-  <%# === Section 3: Highlights === %>
-  <% highlights = meeting_highlights(gd) %>
-  <% if highlights.any? %>
-    <section class="section">
-      <h2>Highlights</h2>
-      <ul class="meeting-highlights">
-        <% highlights.each do |h| %>
-          <li>
-            <%= h["text"] %>
-            <% if h["vote"].present? %>
-              <span class="highlight-vote">(<%= h["vote"] %>)</span>
-            <% end %>
-            <% if h["citation"].present? %>
-              <span class="highlight-citation">[<%= h["citation"] %>]</span>
-            <% end %>
-          </li>
-        <% end %>
-      </ul>
-    </section>
-  <% end %>
+    <%# === Highlights === %>
+    <% highlights = meeting_highlights(gd) %>
+    <% if highlights.any? %>
+      <section class="meeting-article-section">
+        <div class="home-section-header">
+          <%= render "shared/atom_marker", size: 20 %>
+          <span class="section-label">Highlights</span>
+          <span class="section-line"></span>
+        </div>
+        <ul class="meeting-highlights">
+          <% highlights.each do |h| %>
+            <li>
+              <%= h["text"] %>
+              <% if h["vote"].present? %>
+                <span class="highlight-vote">(<%= h["vote"] %>)</span>
+              <% end %>
+              <% if h["citation"].present? %>
+                <span class="highlight-citation">[<%= h["citation"] %>]</span>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      </section>
+    <% end %>
 
-  <%# === Section 4: Public Input === %>
-  <section class="section">
-    <h2>Public Input</h2>
+    <%# === Public Input === %>
     <% public_inputs = meeting_public_input(gd) %>
     <% if public_inputs.any? %>
-      <ul class="public-input-list">
-        <% public_inputs.each do |pi| %>
-          <li class="public-input-item">
-            <span class="public-input-speaker"><%= pi["speaker"] %></span>
-            <span class="public-input-type">
-              <%= pi["type"] == "communication" ? "Communication" : "Public Comment" %>
-            </span>
-            <p><%= pi["summary"] %></p>
-          </li>
-        <% end %>
-      </ul>
-    <% else %>
-      <p class="section-empty">No public comments or communications recorded for this meeting.</p>
-    <% end %>
-  </section>
-
-  <%# === Section 5: Agenda Items === %>
-  <section class="section">
-    <h2>Agenda Items</h2>
-    <% items = meeting_item_details(gd) %>
-    <% if items.any? %>
-      <% items.each do |item| %>
-        <div class="meeting-item-card">
-          <div class="meeting-item-card-title"><%= item["agenda_item_title"] %></div>
-
-          <% if item["summary"].present? %>
-            <div class="meeting-item-card-summary"><%= item["summary"] %></div>
-          <% end %>
-
-          <% if item["public_hearing"].present? %>
-            <div class="meeting-item-card-hearing">
-              Public Input: <%= item["public_hearing"] %>
-            </div>
-          <% end %>
-
-          <% if item["decision"].present? %>
-            <div class="meeting-item-card-decision">
-              <span class="decision-badge <%= decision_badge_class(item["decision"]) %>">
-                <%= item["decision"] %>
-                <%= " #{item["vote"]}" if item["vote"].present? %>
-              </span>
-            </div>
-          <% end %>
-
-          <% if item["citations"].present? %>
-            <div class="meeting-item-card-citations">
-              <%= Array(item["citations"]).join(", ") %>
-            </div>
-          <% end %>
-
-          <%# Match AI item to database agenda items for topic pills %>
-          <% matched_agenda_item = @meeting.agenda_items.detect { |ai| ai.title&.downcase&.include?(item["agenda_item_title"]&.downcase&.first(30).to_s) } %>
-          <% if matched_agenda_item&.topics&.any? %>
-            <div class="tags">
-              <% matched_agenda_item.topics.each do |topic| %>
-                <%= link_to topic.name, topic_path(topic), class: "tag" %>
-              <% end %>
+      <section class="meeting-article-section">
+        <div class="home-section-header">
+          <%= render "shared/atom_marker", size: 20 %>
+          <span class="section-label">Public Input</span>
+          <span class="section-line"></span>
+        </div>
+        <div class="public-input-list">
+          <% public_inputs.each do |pi| %>
+            <div class="public-input-item">
+              <div class="public-input-attribution">
+                <span class="public-input-speaker"><%= pi["speaker"] %></span>
+                <% if pi["type"] == "communication" %>
+                  <span class="public-input-type">Relayed by council member</span>
+                <% end %>
+              </div>
+              <p class="public-input-summary"><%= pi["summary"] %></p>
             </div>
           <% end %>
         </div>
-      <% end %>
+      </section>
     <% else %>
-      <p class="section-empty">No agenda items available for this meeting.</p>
+      <section class="meeting-article-section">
+        <div class="home-section-header">
+          <%= render "shared/atom_marker", size: 20 %>
+          <span class="section-label">Public Input</span>
+          <span class="section-line"></span>
+        </div>
+        <p class="section-empty">No public comments or communications recorded for this meeting.</p>
+      </section>
     <% end %>
-  </section>
 
-<% elsif @summary&.content.present? %>
-  <%# === Legacy fallback: render old markdown content === %>
-  <section class="section">
-    <div class="ai-content">
-      <div class="ai-content-header">
-        <h2>
-          <% if @summary.summary_type == "minutes_recap" %>
-            Meeting Recap
-          <% else %>
-            Packet Analysis
-          <% end %>
-        </h2>
-        <span class="badge badge--ai" title="Generated by AI">AI Analysis</span>
+    <%# === Agenda Items === %>
+    <% items = meeting_item_details(gd) %>
+    <% if items.any? %>
+      <section class="meeting-article-section">
+        <div class="home-section-header">
+          <%= render "shared/atom_marker", size: 20 %>
+          <span class="section-label">Agenda Items</span>
+          <span class="section-line"></span>
+        </div>
+        <% items.each do |item| %>
+          <div class="meeting-item-card">
+            <div class="meeting-item-card-title"><%= item["agenda_item_title"] %></div>
+
+            <% if item["summary"].present? %>
+              <div class="meeting-item-card-summary"><%= item["summary"] %></div>
+            <% end %>
+
+            <% if item["public_hearing"].present? %>
+              <div class="meeting-item-card-hearing">
+                Public Input: <%= item["public_hearing"] %>
+              </div>
+            <% end %>
+
+            <% if item["decision"].present? %>
+              <div class="meeting-item-card-decision">
+                <span class="decision-badge <%= decision_badge_class(item["decision"]) %>">
+                  <%= item["decision"] %>
+                  <%= " #{item["vote"]}" if item["vote"].present? %>
+                </span>
+              </div>
+            <% end %>
+
+            <% if item["citations"].present? %>
+              <div class="meeting-item-card-citations">
+                <%= Array(item["citations"]).join(", ") %>
+              </div>
+            <% end %>
+
+            <% matched_agenda_item = @meeting.agenda_items.detect { |ai| ai.title&.downcase&.include?(item["agenda_item_title"]&.downcase&.first(30).to_s) } %>
+            <% if matched_agenda_item&.topics&.any? %>
+              <div class="meeting-item-topics">
+                <% matched_agenda_item.topics.approved.each do |topic| %>
+                  <%= link_to topic.name, topic_path(topic), class: "meetings-topic-pill" %>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </section>
+    <% end %>
+
+  <% elsif @summary&.content.present? %>
+    <%# === Legacy fallback === %>
+    <section class="meeting-article-section">
+      <div class="home-section-header">
+        <%= render "shared/atom_marker", size: 20 %>
+        <span class="section-label"><%= @summary.summary_type == "minutes_recap" ? "Meeting Recap" : "Packet Analysis" %></span>
+        <span class="section-line"></span>
       </div>
       <div class="prose meeting-legacy-recap">
         <%= markdown @summary.content %>
       </div>
-      <div class="ai-content-disclaimer">
-        Generated by AI based on official documents. Always verify with original sources.
-      </div>
-    </div>
-  </section>
+    </section>
 
-<% else %>
-  <%# === No summary at all === %>
-  <section class="section">
+  <% else %>
     <p class="section-empty">No summary available for this meeting yet.</p>
-  </section>
-<% end %>
-
-<%# === Section 6: Topics in This Meeting === %>
-<section class="section">
-  <h2>Topics in This Meeting</h2>
-  <% if @ongoing_topics.present? || @new_topics.present? %>
-    <% if @ongoing_topics.present? %>
-      <div class="mb-8">
-        <h3>Ongoing</h3>
-        <p class="text-sm text-secondary mb-4">These issues have come up across multiple meetings. Click any for the full picture.</p>
-        <div class="card-grid">
-          <% @ongoing_topics.each do |topic| %>
-            <%= render "topics/topic_card", topic: topic %>
-          <% end %>
-        </div>
-      </div>
-    <% end %>
-
-    <% if @new_topics.present? %>
-      <div>
-        <h3>New This Meeting</h3>
-        <p class="text-sm text-secondary mb-4">These issues came up for the first time.</p>
-        <div class="card-grid">
-          <% @new_topics.each do |topic| %>
-            <%= render "topics/topic_card", topic: topic %>
-          <% end %>
-        </div>
-      </div>
-    <% end %>
-  <% else %>
-    <p class="section-empty">No topics have been identified for this meeting.</p>
   <% end %>
-</section>
 
-<%# === Section 7: Documents === %>
-<section class="section">
-  <h2>Documents</h2>
-  <% if @meeting.meeting_documents.any? %>
-    <div class="card">
-      <ul class="documents-list">
-        <% @meeting.meeting_documents.each do |doc| %>
-          <li>
-            <div>
-              <span class="document-type"><%= doc.document_type.humanize %></span>
-              <% if doc.file.attached? && doc.document_type.include?("pdf") %>
-                <span class="document-meta">
-                  (<%= number_to_human_size(doc.file.byte_size) %>)
-                  <% if doc.text_quality.present? %>
-                    - Quality: <%= doc.text_quality.humanize %>
-                  <% end %>
-                </span>
-              <% elsif doc.document_type == "transcript" %>
-                <span class="document-meta">Source: Video Recording</span>
-              <% end %>
-            </div>
-            <div>
-              <% if doc.file.attached? && doc.document_type.include?("pdf") %>
-                <%= link_to "Download PDF", rails_blob_path(doc.file, disposition: "attachment"), class: "btn btn--secondary btn--sm" %>
-              <% elsif doc.document_type == "transcript" && doc.source_url.present? %>
-                <%= link_to "Watch Recording", safe_external_url(doc.source_url), target: "_blank", rel: "noopener", class: "btn btn--secondary btn--sm" %>
-              <% else %>
-                <%= link_to "View Original", safe_external_url(doc.source_url), target: "_blank", rel: "noopener", class: "btn btn--secondary btn--sm" %>
-              <% end %>
-            </div>
-          </li>
-        <% end %>
-      </ul>
-    </div>
-  <% else %>
-    <p class="section-empty">No documents available for this meeting.</p>
+  <%# === Back link === %>
+  <%= link_to meetings_path, class: "back-link" do %>
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="19" y1="12" x2="5" y2="12"></line>
+      <polyline points="12 19 5 12 12 5"></polyline>
+    </svg>
+    Back to Meetings
   <% end %>
-</section>
 
-<%= link_to meetings_path, class: "back-link" do %>
-  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <line x1="19" y1="12" x2="5" y2="12"></line>
-    <polyline points="12 19 5 12 12 5"></polyline>
-  </svg>
-  Back to Meetings
-<% end %>
+</article>
