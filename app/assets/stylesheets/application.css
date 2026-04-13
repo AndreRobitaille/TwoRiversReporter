@@ -1730,6 +1730,65 @@ details[open] summary {
   opacity: 0.6;
 }
 
+/* Share button — terra-cotta accent to differentiate from source links */
+.meeting-doc-link--share {
+  color: var(--color-terra-cotta);
+  border-color: var(--color-terra-cotta);
+}
+
+.meeting-doc-link--share:hover {
+  background: color-mix(in srgb, var(--color-terra-cotta) 10%, transparent);
+  border-color: var(--color-terra-cotta);
+  color: var(--color-terra-cotta);
+}
+
+.meeting-docs-separator {
+  display: inline-block;
+  width: 1px;
+  height: 1rem;
+  background: var(--color-border);
+  align-self: center;
+}
+
+/* Share dropdown */
+.share-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.share-dropdown {
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  right: 0;
+  min-width: 10rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  z-index: 10;
+  padding: 0.25rem 0;
+}
+
+.share-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 0.4rem 0.75rem;
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.share-dropdown-item:hover {
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+}
+
 /* Title — mirrors .topic-article-title */
 .meeting-article-title {
   font-family: var(--font-display);
