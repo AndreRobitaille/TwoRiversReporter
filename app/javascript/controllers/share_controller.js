@@ -11,27 +11,24 @@ export default class extends Controller {
 
   facebook(event) {
     event.preventDefault()
-    const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(this.urlValue)}&quote=${encodeURIComponent(this.textValue)}`
-    const width = 600
-    const height = 400
-    const left = (screen.width - width) / 2
-    const top = (screen.height - height) / 2
-    window.open(shareUrl, "facebook-share", `width=${width},height=${height},left=${left},top=${top}`)
+    this.#copyToClipboard(this.textValue)
+    window.open("https://www.facebook.com", "_blank")
     this.dropdownTarget.hidden = true
+    this.#flashConfirmation("Copied — paste into your group")
   }
 
   copy(event) {
     event.preventDefault()
     this.#copyToClipboard(this.textValue)
     this.dropdownTarget.hidden = true
-    this.#flashConfirmation()
+    this.#flashConfirmation("Copied!")
   }
 
-  #flashConfirmation() {
+  #flashConfirmation(message) {
     const btn = this.toggleButtonTarget
     const svg = btn.querySelector("svg")
     const originalText = btn.textContent.trim()
-    btn.textContent = "Copied!"
+    btn.textContent = message
     if (svg) btn.prepend(svg)
     btn.classList.add("meeting-doc-link--copied")
     setTimeout(() => {

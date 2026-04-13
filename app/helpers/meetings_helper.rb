@@ -142,22 +142,20 @@ module MeetingsHelper
   end
 
   def share_text_upcoming_bullets(lines, gd)
-    items = gd["item_details"] || []
-    return if items.empty?
-
     highlights = gd["highlights"] || []
+    items = gd["item_details"] || []
+
+    # Prefer highlights (plain-language summaries) over raw agenda titles
+    bullets = if highlights.any?
+      highlights.first(5).map { |h| h["text"] }
+    elsif items.any?
+      items.first(5).map { |i| i["agenda_item_title"] }
+    end
+
+    return if bullets.blank?
 
     lines << "On the agenda:"
-    items.first(5).each do |item|
-      title = item["agenda_item_title"]
-      # Find matching highlight for context
-      match = highlights.detect { |h| h["text"]&.downcase&.include?(title&.downcase&.first(20).to_s) }
-      if match
-        lines << " - #{match["text"]}"
-      else
-        lines << " - #{title}"
-      end
-    end
+    bullets.each { |b| lines << " - #{b}" }
     lines << ""
   end
 

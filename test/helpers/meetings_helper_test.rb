@@ -179,7 +179,7 @@ class MeetingsHelperTest < ActionView::TestCase
     assert_includes text, "6-3"
   end
 
-  test "share_text for upcoming meeting uses 'On the agenda' and item_details" do
+  test "share_text for upcoming meeting prefers highlights over raw titles" do
     meeting = OpenStruct.new(
       id: 154,
       body_name: "Plan Commission Meeting",
@@ -190,6 +190,19 @@ class MeetingsHelperTest < ActionView::TestCase
     text = share_text(meeting, summary)
 
     assert_includes text, "Plan Commission"
+    assert_includes text, "On the agenda:"
+    # Uses highlight text (plain language), not raw agenda_item_title
+    assert_includes text, "Adopted intent-to-reimburse resolution"
+    assert_no_match(/Rezoning at 3204 Lincoln Ave/, text)
+  end
+
+  test "share_text for upcoming meeting falls back to item titles when no highlights" do
+    gd = { "headline" => "Upcoming meeting.", "item_details" => @generation_data["item_details"] }
+    meeting = OpenStruct.new(id: 1, body_name: "Council Meeting", starts_at: 2.days.from_now)
+    summary = OpenStruct.new(generation_data: gd)
+
+    text = share_text(meeting, summary)
+
     assert_includes text, "On the agenda:"
     assert_includes text, "Rezoning at 3204 Lincoln Ave"
   end
