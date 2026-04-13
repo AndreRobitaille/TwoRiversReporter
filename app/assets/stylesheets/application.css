@@ -1488,42 +1488,205 @@ details[open] summary {
   color: var(--color-teal);
 }
 
-/* Headline / dek — mirrors .topic-article-dek */
-.meeting-article-dek {
+/* --- Lede (the hook — visually distinct from body text) --- */
+
+.meeting-article-lede {
+  border-left: 3px solid var(--color-terra-cotta);
+  padding-left: var(--space-5);
+  margin: 0 0 var(--space-8);
+}
+
+.meeting-article-lede p {
   font-family: var(--font-body);
-  font-size: 1.15rem;
-  line-height: 1.55;
-  color: var(--color-text-secondary);
-  margin: 0 0 var(--space-6);
+  font-size: 1.2rem;
+  line-height: 1.65;
+  color: var(--color-text);
+  margin: 0;
 }
 
 /* --- Sections --- */
 
 .meeting-article-section {
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-10);
+}
+
+/* --- Key Decisions (highlights with visual weight) --- */
+
+.meeting-decisions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.meeting-decision {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  position: relative;
+}
+
+.meeting-decision-vote {
+  display: inline-block;
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-raised);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-2);
+}
+
+.meeting-decision-text {
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-text);
+  margin: 0;
+}
+
+.meeting-decision-cite {
+  display: block;
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-top: var(--space-2);
 }
 
 /* --- Public Input --- */
 
-.public-input-attribution {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  margin-bottom: var(--space-1);
+.public-input-item {
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.public-input-item:last-child {
+  border-bottom: none;
+}
+
+.public-input-speaker {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--color-teal);
+}
+
+.public-input-type {
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-left: var(--space-2);
 }
 
 .public-input-summary {
-  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
   line-height: var(--line-height-relaxed);
+  color: var(--color-text);
+  margin: var(--space-2) 0 0;
 }
 
-/* --- Agenda Item topic links --- */
+/* --- Agenda Item Cards --- */
+
+.meeting-item-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  margin-bottom: var(--space-4);
+}
+
+.meeting-item-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.meeting-item-card-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--font-size-base);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--color-teal);
+  flex: 1;
+}
+
+.meeting-item-card-summary {
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-relaxed);
+  margin-bottom: var(--space-3);
+}
+
+.meeting-item-card-hearing {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-style: italic;
+  margin-bottom: var(--space-3);
+}
+
+.meeting-item-card-decision {
+  margin-bottom: var(--space-3);
+}
+
+.meeting-item-card-citations {
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* --- Topic "doors" (not pills — obvious navigation) --- */
 
 .meeting-item-topics {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-  margin-top: var(--space-3);
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.meeting-topic-door {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-primary-light);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: inherit;
+  transition: background var(--transition-fast);
+}
+
+.meeting-topic-door:hover {
+  background: color-mix(in srgb, var(--color-teal) 15%, var(--color-primary-light));
+  text-decoration: none;
+  color: inherit;
+}
+
+.meeting-topic-door-name {
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  color: var(--color-teal);
+}
+
+.meeting-topic-door-cta {
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  color: var(--color-terra-cotta);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 /* --- Footer --- */
@@ -1540,6 +1703,10 @@ details[open] summary {
   .meeting-article-topline {
     flex-direction: column;
     gap: var(--space-2);
+  }
+
+  .meeting-item-card-header {
+    flex-direction: column;
   }
 }
 

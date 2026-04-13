@@ -6,36 +6,29 @@
   <header class="meeting-article-header">
     <div class="meeting-article-topline">
       <span class="meeting-article-date"><%= @meeting.starts_at&.strftime("%B %-d, %Y") %> · <%= @meeting.starts_at&.strftime("%-l:%M %p") %></span>
-      <div class="meeting-article-docs">
-        <% @meeting.meeting_documents.select { |d| d.document_type.include?("pdf") && d.file.attached? }.each do |doc| %>
-          <%= link_to rails_blob_path(doc.file, disposition: "attachment"), class: "meeting-doc-link" do %>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            <%= doc.document_type.sub("_pdf", "").humanize %>
-          <% end %>
-        <% end %>
-        <% transcript = @meeting.meeting_documents.detect { |d| d.document_type == "transcript" && d.source_url.present? } %>
-        <% if transcript %>
-          <%= link_to safe_external_url(transcript.source_url), target: "_blank", rel: "noopener", class: "meeting-doc-link" do %>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            Recording
-          <% end %>
-        <% end %>
-        <%= link_to safe_external_url(@meeting.detail_page_url), target: "_blank", rel: "noopener", class: "meeting-doc-link meeting-doc-link--muted" do %>
-          Source ↗
-        <% end %>
-      </div>
     </div>
 
     <h1 class="meeting-article-title"><%= @meeting.body_name.sub(/ Meeting$/, "") %></h1>
 
-    <% all_topics = (@ongoing_topics + @new_topics).sort_by { |t| [-(t.resident_impact_score || 0), -(t.last_activity_at&.to_i || 0)] } %>
-    <% if all_topics.any? %>
-      <div class="meeting-article-topics">
-        <% all_topics.each do |topic| %>
-          <%= link_to topic.name, topic_path(topic), class: "meeting-article-topic-link" %>
+    <%# Documents row %>
+    <div class="meeting-article-docs">
+      <% @meeting.meeting_documents.select { |d| d.document_type.include?("pdf") && d.file.attached? }.each do |doc| %>
+        <%= link_to rails_blob_path(doc.file, disposition: "attachment"), class: "meeting-doc-link" do %>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <%= doc.document_type.sub("_pdf", "").humanize %>
         <% end %>
-      </div>
-    <% end %>
+      <% end %>
+      <% transcript = @meeting.meeting_documents.detect { |d| d.document_type == "transcript" && d.source_url.present? } %>
+      <% if transcript %>
+        <%= link_to safe_external_url(transcript.source_url), target: "_blank", rel: "noopener", class: "meeting-doc-link" do %>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Watch Recording
+        <% end %>
+      <% end %>
+      <%= link_to safe_external_url(@meeting.detail_page_url), target: "_blank", rel: "noopener", class: "meeting-doc-link meeting-doc-link--muted" do %>
+        City Website ↗
+      <% end %>
+    </div>
   </header>
 
   <% if @summary&.generation_data&.dig("source_type") == "transcript" %>
@@ -52,10 +45,12 @@
   <% gd = @summary&.generation_data.presence %>
 
   <% if gd %>
-    <%# === Headline (the dek) === %>
+    <%# === Headline — the hook === %>
     <% headline = meeting_headline(gd) %>
     <% if headline.present? %>
-      <p class="meeting-article-dek"><%= headline %></p>
+      <div class="meeting-article-lede">
+        <p><%= headline %></p>
+      </div>
     <% else %>
       <p class="section-empty">No summary available for this meeting yet.</p>
     <% end %>
@@ -66,22 +61,22 @@
       <section class="meeting-article-section">
         <div class="home-section-header">
           <%= render "shared/atom_marker" %>
-          <span class="section-label">Highlights</span>
+          <span class="section-label">Key Decisions</span>
           <span class="section-line"></span>
         </div>
-        <ul class="meeting-highlights">
+        <div class="meeting-decisions">
           <% highlights.each do |h| %>
-            <li>
-              <%= h["text"] %>
+            <div class="meeting-decision">
               <% if h["vote"].present? %>
-                <span class="highlight-vote">(<%= h["vote"] %>)</span>
+                <span class="meeting-decision-vote"><%= h["vote"] %></span>
               <% end %>
+              <p class="meeting-decision-text"><%= h["text"] %></p>
               <% if h["citation"].present? %>
-                <span class="highlight-citation">[<%= h["citation"] %>]</span>
+                <span class="meeting-decision-cite"><%= h["citation"] %></span>
               <% end %>
-            </li>
+            </div>
           <% end %>
-        </ul>
+        </div>
       </section>
     <% end %>
 
@@ -90,19 +85,17 @@
     <section class="meeting-article-section">
       <div class="home-section-header">
         <%= render "shared/atom_marker" %>
-        <span class="section-label">Public Input</span>
+        <span class="section-label">Public Input<% if public_inputs.any? %> · <%= public_inputs.size %> <%= "speaker".pluralize(public_inputs.size) %><% end %></span>
         <span class="section-line"></span>
       </div>
       <% if public_inputs.any? %>
         <div class="public-input-list">
           <% public_inputs.each do |pi| %>
             <div class="public-input-item">
-              <div class="public-input-attribution">
-                <span class="public-input-speaker"><%= pi["speaker"] %></span>
-                <% if pi["type"] == "communication" %>
-                  <span class="public-input-type">Relayed by council member</span>
-                <% end %>
-              </div>
+              <span class="public-input-speaker"><%= pi["speaker"] %></span>
+              <% if pi["type"] == "communication" %>
+                <span class="public-input-type">Relayed by council member</span>
+              <% end %>
               <p class="public-input-summary"><%= pi["summary"] %></p>
             </div>
           <% end %>
@@ -123,7 +116,14 @@
         </div>
         <% items.each do |item| %>
           <div class="meeting-item-card">
-            <div class="meeting-item-card-title"><%= item["agenda_item_title"] %></div>
+            <div class="meeting-item-card-header">
+              <div class="meeting-item-card-title"><%= item["agenda_item_title"] %></div>
+              <% if item["decision"].present? %>
+                <span class="decision-badge <%= decision_badge_class(item["decision"]) %>">
+                  <%= item["decision"] %><%= " #{item["vote"]}" if item["vote"].present? %>
+                </span>
+              <% end %>
+            </div>
 
             <% if item["summary"].present? %>
               <div class="meeting-item-card-summary"><%= item["summary"] %></div>
@@ -132,15 +132,6 @@
             <% if item["public_hearing"].present? %>
               <div class="meeting-item-card-hearing">
                 Public Input: <%= item["public_hearing"] %>
-              </div>
-            <% end %>
-
-            <% if item["decision"].present? %>
-              <div class="meeting-item-card-decision">
-                <span class="decision-badge <%= decision_badge_class(item["decision"]) %>">
-                  <%= item["decision"] %>
-                  <%= " #{item["vote"]}" if item["vote"].present? %>
-                </span>
               </div>
             <% end %>
 
@@ -153,8 +144,13 @@
             <% matched_agenda_item = @meeting.agenda_items.detect { |ai| ai.title&.downcase&.include?(item["agenda_item_title"]&.downcase&.first(30).to_s) } %>
             <% if matched_agenda_item&.topics&.approved&.any? %>
               <div class="meeting-item-topics">
-                <% matched_agenda_item.topics.approved.each do |topic| %>
-                  <%= link_to topic.name, topic_path(topic), class: "meeting-article-topic-link" %>
+                <% matched_agenda_item.topics.approved
+                     .sort_by { |t| [-(t.resident_impact_score || 0)] }
+                     .each do |topic| %>
+                  <%= link_to topic_path(topic), class: "meeting-topic-door" do %>
+                    <span class="meeting-topic-door-name"><%= topic.name %></span>
+                    <span class="meeting-topic-door-cta">Full history →</span>
+                  <% end %>
                 <% end %>
               </div>
             <% end %>

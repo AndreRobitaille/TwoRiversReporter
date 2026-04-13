@@ -115,19 +115,27 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     refute all_topics.include?(@blocked_topic)
   end
 
-  test "show renders topic pills in header" do
+  test "show renders topic doors on agenda items" do
+    # Need a summary with item_details matching an agenda item to trigger doors
+    MeetingSummary.create!(
+      meeting: @meeting,
+      summary_type: "minutes_recap",
+      generation_data: {
+        "headline" => "Test",
+        "item_details" => [ { "agenda_item_title" => "TIF Discussion", "summary" => "Discussed TIF" } ]
+      }
+    )
     get meeting_url(@meeting)
     assert_response :success
 
-    assert_select ".meeting-article-topics .meeting-article-topic-link", minimum: 1
+    assert_select ".meeting-topic-door"
   end
 
-  test "show renders no topic pills when no approved topics" do
-    AgendaItemTopic.destroy_all
+  test "show renders document links in header" do
     get meeting_url(@meeting)
     assert_response :success
 
-    refute_select ".meeting-article-topics"
+    assert_select ".meeting-article-docs"
   end
 
   test "show assigns summary with generation_data" do
@@ -158,7 +166,7 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     get meeting_url(@meeting)
     assert_response :success
 
-    assert_select ".meeting-article-dek", text: /Council approved the budget/
+    assert_select ".meeting-article-lede", text: /Council approved the budget/
   end
 
   test "show renders empty state when no summary exists" do
@@ -211,13 +219,6 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     get meetings_url, params: { q: "xyznonexistent999" }
     assert_response :success
     assert assigns(:search_results).empty?
-  end
-
-  test "show renders document links in header" do
-    get meeting_url(@meeting)
-    assert_response :success
-
-    assert_select ".meeting-article-docs"
   end
 
   # --- Index view integration tests ---
