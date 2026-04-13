@@ -41,6 +41,14 @@ class Topic < ApplicationRecord
   scope :review_approved, -> { where(review_status: "approved") }
   scope :review_blocked, -> { where(review_status: "blocked") }
 
+  scope :search_by_text, ->(query) {
+    return none if query.blank?
+    term = "%#{sanitize_sql_like(query.strip.downcase)}%"
+    left_outer_joins(:topic_briefing)
+      .where("LOWER(topics.name) LIKE :q OR LOWER(topics.description) LIKE :q OR LOWER(topic_briefings.headline) LIKE :q", q: term)
+      .distinct
+  }
+
   scope :similar_to, ->(query, threshold = 0.7) {
     where("similarity(name, ?) > ?", query, threshold)
       .order(Arel.sql("similarity(name, '#{ActiveRecord::Base.sanitize_sql(query)}') DESC"))

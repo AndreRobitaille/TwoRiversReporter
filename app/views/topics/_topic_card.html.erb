@@ -1,22 +1,22 @@
-<%= link_to topic_path(topic), class: "card card--clickable card--topic" do %>
-  <div class="card-header">
-    <div class="card-header-row">
-      <h3 class="card-title"><%= topic.name %></h3>
-      <%= topic_lifecycle_badge(topic.lifecycle_status) if topic.lifecycle_status %>
+<%# Locals: topic, highlight_signals (unused, kept for interface compat) %>
+<% ref = @meeting_refs&.dig(topic.id) %>
+<%= link_to topic_path(topic), class: "topics-card" do %>
+  <div class="topics-card-accent"></div>
+  <div class="topics-card-body">
+    <div class="topics-card-top">
+      <h3 class="topics-card-name"><%= topic.name %></h3>
     </div>
     <% if topic.description.present? %>
-      <p class="card-subtitle"><%= truncate(topic.description, length: 80) %></p>
+      <p class="topics-card-desc"><%= truncate(topic.description, length: 100) %></p>
     <% end %>
-  </div>
-  <div class="card-body">
     <% if topic.topic_briefing&.headline.present? %>
-      <p class="card-latest"><%= topic.topic_briefing.headline %></p>
+      <p class="topics-card-headline"><%= topic.topic_briefing.headline %></p>
     <% end %>
-    <div class="card-footer-row">
-      <% if topic.last_activity_at %>
-        <span class="card-meta">Updated <%= time_ago_in_words(topic.last_activity_at) %> ago</span>
+    <div class="topics-card-footer">
+      <% if ref %>
+        <span class="topics-card-meta"><%= ref[:date].strftime("%b %-d") %> · <%= ref[:body_name] %></span>
       <% end %>
-      <span class="btn btn--secondary btn--sm">More info →</span>
+      <span class="topics-card-cta">Read more &rarr;</span>
     </div>
   </div>
 <% end %>

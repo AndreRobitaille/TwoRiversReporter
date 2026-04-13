@@ -41,7 +41,7 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     get topics_url
     assert_response :success
 
-    titles = css_select("#all-topics .card-title").map { |node| node.text.strip }
+    titles = css_select("[data-section='all-topics'] .topics-card-name").map { |node| node.text.strip }
     assert_equal [ "topic a", "topic b", "topic c" ], titles
   end
 
@@ -61,11 +61,11 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     # Should show 20 of 22 topics in main list
-    cards = css_select("#all-topics .card")
+    cards = css_select("[data-section='all-topics'] .topics-card")
     assert_equal 20, cards.size
 
     # Should show count indicator
-    assert_select ".topics-count", text: /Showing.*of 22/
+    assert_select ".topics-count", text: /of 22/
 
     # Should show "Show more" button
     assert_select "a", text: /Show more/
@@ -109,18 +109,18 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     get topics_url
     assert_response :success
 
-    titles = css_select("#hero-topics .card-title").map { |node| node.text.strip }
+    titles = css_select("#hero-topics .topics-card-name").map { |node| node.text.strip }
     assert_equal "scored topic", titles.first
     # @active_topic (nil score) should come after scored topics
     assert_equal @active_topic.name, titles.last
   end
 
-  test "index shows lifecycle badges on topic cards" do
-    # Only active topics are shown — assert only Active badge
+  test "index does not show lifecycle badges (all topics are active)" do
     get topics_url
     assert_response :success
 
-    assert_select ".badge", text: "Active"
+    # Badges are omitted from index cards — all shown topics are active by definition
+    assert_select ".badge", text: "Active", count: 0
     assert_select ".badge", text: "Dormant", count: 0
     assert_select ".badge", text: "Resolved", count: 0
     assert_select ".badge", text: "Recurring", count: 0
@@ -140,14 +140,14 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     # Signal pills were removed from cards
     assert_select ".card-signals", count: 0
     # Cards should still render
-    assert_select ".card--topic", minimum: 1
+    assert_select ".topics-card", minimum: 1
   end
 
   test "index renders cards without highlighted class" do
     get topics_url
     assert_response :success
 
-    # Highlighted card class was removed
+    # Old card classes no longer used
     assert_select ".card--highlighted", count: 0
   end
 
@@ -168,7 +168,7 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     # Hero should show at most 6 cards (8 new + 1 from setup = 9 eligible, but capped at 6)
-    hero_cards = css_select("#hero-topics .card")
+    hero_cards = css_select("#hero-topics .topics-card")
     assert_equal 6, hero_cards.size
   end
 
@@ -176,7 +176,7 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     get topics_url
     assert_response :success
 
-    all_titles = css_select(".card-title").map { |node| node.text.strip }
+    all_titles = css_select(".topics-card-name").map { |node| node.text.strip }
     assert_includes all_titles, @active_topic.name
     refute_includes all_titles, @dormant_topic.name
     refute_includes all_titles, @resolved_topic.name
@@ -193,7 +193,7 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     get topics_url
     assert_response :success
 
-    hero_titles = css_select("#hero-topics .card-title").map { |node| node.text.strip }
+    hero_titles = css_select("#hero-topics .topics-card-name").map { |node| node.text.strip }
     assert_equal @active_topic.name, hero_titles.first
   end
 
@@ -203,7 +203,7 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     get topics_url
     assert_response :success
 
-    hero_titles = css_select("#hero-topics .card-title").map { |node| node.text.strip }
+    hero_titles = css_select("#hero-topics .topics-card-name").map { |node| node.text.strip }
     refute_includes hero_titles, @active_topic.name
   end
 
@@ -213,8 +213,8 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     get topics_url
     assert_response :success
 
-    hero_titles = css_select("#hero-topics .card-title").map { |node| node.text.strip }
-    main_titles = css_select("#all-topics .card-title").map { |node| node.text.strip }
+    hero_titles = css_select("#hero-topics .topics-card-name").map { |node| node.text.strip }
+    main_titles = css_select("[data-section='all-topics'] .topics-card-name").map { |node| node.text.strip }
 
     hero_titles.each do |title|
       refute_includes main_titles, title
@@ -225,7 +225,7 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     get topics_url
     assert_response :success
 
-    assert_select ".page-subtitle", text: /What Two Rivers city government is working on/
+    assert_select ".topics-tagline", text: /What the city is working on/
   end
 
   # --- Topic show page tests ---
