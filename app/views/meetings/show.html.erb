@@ -69,12 +69,14 @@
         <div class="meeting-decisions">
           <% highlights.each do |h| %>
             <div class="meeting-decision">
-              <% if h["vote"].present? %>
-                <span class="decision-badge <%= h["vote"] =~ /^[0-9]+-[0-9]+$/ && h["vote"].split("-").first.to_i > h["vote"].split("-").last.to_i ? 'decision-badge--passed' : 'decision-badge--default' %>">
-                  <%= h["vote"] %>
-                </span>
-              <% end %>
               <p class="meeting-decision-text"><%= h["text"] %></p>
+              <% if h["vote"].present? %>
+                <div class="meeting-decision-footer">
+                  <span class="decision-badge <%= h["vote"] =~ /^[0-9]+-[0-9]+$/ && h["vote"].split("-").first.to_i > h["vote"].split("-").last.to_i ? 'decision-badge--passed' : 'decision-badge--default' %>">
+                    Vote: <%= h["vote"] %>
+                  </span>
+                </div>
+              <% end %>
             </div>
           <% end %>
         </div>
@@ -121,10 +123,10 @@
           <span class="section-label">Agenda Items</span>
           <span class="section-line"></span>
         </div>
-        <% items.each do |item| %>
+        <% items.each_with_index do |item, item_idx| %>
           <% matched_agenda_item = @meeting.agenda_items.detect { |ai| ai.title&.downcase&.include?(item["agenda_item_title"]&.downcase&.first(30).to_s) } %>
           <% item_motions = matched_agenda_item ? (motions_by_item[matched_agenda_item.id] || []) : [] %>
-          <div class="meeting-item-card">
+          <div class="meeting-item-card" id="agenda-item-<%= item_idx %>">
             <div class="meeting-item-card-header">
               <div class="meeting-item-card-title"><%= item["agenda_item_title"] %></div>
               <% if item["decision"].present? %>
@@ -175,7 +177,7 @@
                     </span>
                   </summary>
                   <div class="meeting-vote-list">
-                    <% motion.votes.sort_by { |v| [v.value == "yes" ? 0 : v.value == "no" ? 1 : 2, v.member&.name || ""] }.each do |vote| %>
+                    <% motion.votes.sort_by { |v| v.member&.name&.split&.last || "" }.each do |vote| %>
                       <div class="meeting-vote-row">
                         <span class="meeting-vote-member"><%= vote.member&.name || "Unknown" %></span>
                         <span class="meeting-vote-value meeting-vote-value--<%= vote.value %>"><%= vote.value %></span>

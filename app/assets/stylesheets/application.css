@@ -1521,15 +1521,9 @@ details[open] summary {
 .meeting-decision {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-4);
-  display: flex;
-  gap: var(--space-4);
-  align-items: flex-start;
-}
-
-.meeting-decision .decision-badge {
-  flex-shrink: 0;
+  border-left: 4px solid var(--color-teal);
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  padding: var(--space-4) var(--space-5);
 }
 
 .meeting-decision-text {
@@ -1538,7 +1532,10 @@ details[open] summary {
   line-height: var(--line-height-relaxed);
   color: var(--color-text);
   margin: 0;
-  flex: 1;
+}
+
+.meeting-decision-footer {
+  margin-top: var(--space-3);
 }
 
 /* --- Public Input --- */
@@ -1677,8 +1674,8 @@ details[open] summary {
 
 .meeting-vote-toggle {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: var(--space-3);
   padding: var(--space-3) 0;
   cursor: pointer;
   list-style: none;
@@ -1692,13 +1689,14 @@ details[open] summary {
 }
 
 .meeting-vote-toggle::before {
-  content: '▸ ';
+  content: '▸';
   font-size: 0.7rem;
+  flex-shrink: 0;
   transition: transform var(--transition-fast);
 }
 
 .meeting-vote-breakdown[open] .meeting-vote-toggle::before {
-  content: '▾ ';
+  transform: rotate(90deg);
 }
 
 .meeting-vote-tally {
