@@ -66,23 +66,21 @@ module MeetingsHelper
   def share_text(meeting, summary)
     lines = []
 
-    # Header: body name (strip " Meeting" suffix) + date/time
     name = meeting.body_name.sub(/ Meeting$/, "")
-    date = meeting.starts_at&.strftime("%B %-d, %Y")
-    time = meeting.starts_at&.strftime("%-l:%M %p")
-    lines << "#{name} — #{date}, #{time}"
+    upcoming = meeting.starts_at.present? && meeting.starts_at > Time.current
+
+    # Temporal header + date/time (no blank line between)
+    lines << share_text_temporal_header(meeting, name, upcoming)
+    lines << meeting.starts_at&.strftime("%B %-d, %Y — %-l:%M %p")
     lines << ""
 
     gd = summary&.generation_data
     meeting_url = "https://#{PRODUCTION_HOST}/meetings/#{meeting.id}"
 
     if gd.present?
-      # Headline paragraph
       headline = gd["headline"]
       lines << headline if headline.present?
       lines << "" if headline.present?
-
-      upcoming = meeting.starts_at.present? && meeting.starts_at > Time.current
 
       if upcoming
         share_text_upcoming_bullets(lines, gd)
@@ -93,6 +91,7 @@ module MeetingsHelper
       share_text_agenda_fallback(lines, meeting)
     end
 
+    lines << "" unless lines.last == ""
     lines << "Full details at Two Rivers Matters:"
     lines << meeting_url
 
@@ -128,17 +127,42 @@ module MeetingsHelper
 
   private
 
+  def share_text_temporal_header(meeting, name, upcoming)
+    if upcoming
+      days_until = (meeting.starts_at.to_date - Date.current).to_i
+      prefix = case days_until
+      when 0 then "At tonight's"
+      when 1 then "At tomorrow's"
+      else "At the upcoming"
+      end
+      "#{prefix} #{name} meeting:"
+    else
+      days_ago = (Date.current - meeting.starts_at.to_date).to_i
+      prefix = case days_ago
+      when 0 then "At today's"
+      when 1 then "At yesterday's"
+      else "At last #{meeting.starts_at.strftime("%A")}'s" if days_ago < 7
+      end
+      if prefix
+        "#{prefix} #{name} meeting:"
+      else
+        "#{name}:"
+      end
+    end
+  end
+
   def share_text_past_bullets(lines, gd)
     highlights = gd["highlights"] || []
     return if highlights.empty?
 
     lines << "Key decisions:"
-    highlights.first(5).each do |h|
-      bullet = " - #{h["text"]}"
+    lines << ""
+    highlights.first(5).each_with_index do |h, i|
+      bullet = "* #{h["text"]}"
       bullet += " (#{h["vote"]})" if h["vote"].present?
       lines << bullet
+      lines << "" if i < [ highlights.size, 5 ].min - 1
     end
-    lines << ""
   end
 
   def share_text_upcoming_bullets(lines, gd)
@@ -155,8 +179,11 @@ module MeetingsHelper
     return if bullets.blank?
 
     lines << "On the agenda:"
-    bullets.each { |b| lines << " - #{b}" }
     lines << ""
+    bullets.each_with_index do |b, i|
+      lines << "* #{b}"
+      lines << "" if i < bullets.size - 1
+    end
   end
 
   def share_text_agenda_fallback(lines, meeting)
@@ -165,9 +192,10 @@ module MeetingsHelper
     return if items.empty?
 
     lines << "On the agenda:"
-    items.first(5).each do |ai|
-      lines << " - #{ai.title}"
-    end
     lines << ""
+    items.first(5).each_with_index do |ai, i|
+      lines << "* #{ai.title}"
+      lines << "" if i < [ items.size, 5 ].min - 1
+    end
   end
 end

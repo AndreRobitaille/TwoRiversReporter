@@ -12,7 +12,7 @@ export default class extends Controller {
   facebook(event) {
     event.preventDefault()
     this.#copyToClipboard(this.textValue)
-    window.open("https://www.facebook.com", "_blank")
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(this.urlValue)}`, "_blank")
     this.dropdownTarget.hidden = true
     this.#flashConfirmation("Copied — paste into your group")
   }
