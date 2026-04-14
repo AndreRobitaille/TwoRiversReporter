@@ -477,10 +477,11 @@ module Ai
       committee_ctx = prepare_committee_context
       system_role = template.interpolate_system_role(committee_context: committee_ctx)
       body_name = source.respond_to?(:body_name) ? source.body_name.to_s : ""
-      meeting_date = source.respond_to?(:starts_at) ? source.starts_at&.to_date : nil
+      starts_at = source.respond_to?(:starts_at) ? source.starts_at : nil
+      meeting_date = starts_at&.to_date
       today = Date.current
 
-      temporal_framing = if meeting_date && meeting_date > today
+      temporal_framing = if starts_at && starts_at > Time.current
         "preview"
       elsif type.to_s == "minutes" || type.to_s == "transcript"
         "recap"

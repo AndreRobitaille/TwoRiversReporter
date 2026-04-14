@@ -176,8 +176,8 @@ class SummarizeMeetingJob < ApplicationJob
 
 
   def compute_framing(meeting, type)
-    meeting_date = meeting.starts_at&.to_date
-    if meeting_date && meeting_date > Date.current
+    starts_at = meeting.starts_at
+    if starts_at && starts_at > Time.current
       "preview"
     elsif type == "minutes" || type == "transcript"
       "recap"

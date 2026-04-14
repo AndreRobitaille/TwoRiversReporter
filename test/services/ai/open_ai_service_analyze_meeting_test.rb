@@ -167,6 +167,44 @@ class OpenAiServiceAnalyzeMeetingTest < ActiveSupport::TestCase
     assert prompt_text.include?("recap"), "Prompt must include 'recap' framing for past meeting with minutes"
   end
 
+  test "analyze_meeting_content uses preview framing for same-day future meeting" do
+    captured_params = nil
+
+    mock_chat = lambda do |parameters:|
+      captured_params = parameters
+      {
+        "choices" => [ {
+          "message" => {
+            "content" => {
+              "headline" => "Test headline",
+              "highlights" => [],
+              "public_input" => [],
+              "item_details" => []
+            }.to_json
+          }
+        } ]
+      }
+    end
+
+    # Same calendar date as today, but hours in the future.
+    meeting = Meeting.create!(
+      body_name: "City Council Meeting",
+      starts_at: 4.hours.from_now,
+      detail_page_url: "https://example.com/meeting/today"
+    )
+
+    @service.instance_variable_get(:@client).stub :chat, mock_chat do
+      @service.send(:analyze_meeting_content, "Agenda text", "kb context", "packet", source: meeting)
+    end
+
+    prompt_text = captured_params[:messages].map { |m| m[:content] }.join(" ")
+
+    # The interpolated framing line appears as "<framing> is one of: ...".
+    # Use a line-anchored regex so "preview" doesn't falsely match within "stale_preview".
+    assert_match(/^preview is one of:/, prompt_text,
+      "Same-day future meeting should receive 'preview' framing, not 'stale_preview'")
+  end
+
   test "analyze_meeting_content includes stale_preview framing for past meeting with only packet" do
     captured_params = nil
 

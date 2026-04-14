@@ -330,6 +330,53 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     assert_equal "preview", summary.generation_data["framing"]
   end
 
+  test "same-day future meeting gets preview framing, not stale_preview" do
+    # Meeting later today: same calendar date as Date.current, but hours away.
+    # The old date-only comparison (meeting_date > today) resolved false for
+    # same-day meetings and fell through to stale_preview, which told the AI
+    # to use past tense ("was scheduled") for a meeting that hadn't happened.
+    @meeting.update!(starts_at: 3.hours.from_now)
+
+    @meeting.meeting_documents.create!(
+      document_type: "packet_pdf",
+      source_url: "http://example.com/packet.pdf",
+      extracted_text: "Agenda: Budget review scheduled for later today."
+    )
+
+    generation_data = {
+      "headline" => "Council will consider the budget",
+      "highlights" => [],
+      "public_input" => [],
+      "item_details" => []
+    }
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
+    mock_ai.expect :prepare_doc_context, "Agenda text" do |arg| true end
+    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |text, kb, type, **kwargs|
+      type == "packet"
+    end
+    mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg| arg.is_a?(Hash) end
+    mock_ai.expect :render_topic_summary, "## Summary" do |arg| arg.is_a?(String) end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+    def retrieval_stub.retrieve_topic_context(*args, **kwargs); []; end
+    def retrieval_stub.format_topic_context(*args); []; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        SummarizeMeetingJob.perform_now(@meeting.id)
+      end
+    end
+
+    summary = @meeting.meeting_summaries.find_by(summary_type: "packet_analysis")
+    assert summary
+    assert_equal "preview", summary.generation_data["framing"],
+      "Meeting that starts later today should be a preview, not a stale_preview"
+  end
+
   test "cleans up packet_analysis when minutes_recap is created" do
     # Pre-existing packet preview
     @meeting.meeting_summaries.create!(
