@@ -19,12 +19,12 @@ env:
   secret:
     - RAILS_MASTER_KEY
     - TWO_RIVERS_REPORTER_DATABASE_PASSWORD
-    - GA_MEASUREMENT_ID
   clear:
     SOLID_QUEUE_IN_PUMA: true
     DB_HOST: two_rivers_reporter-db
     WEB_CONCURRENCY: 2
     RAILS_LOG_LEVEL: info
+    GA_MEASUREMENT_ID: G-KEC1YZ61WZ
 
 aliases:
   console: app exec --interactive --reuse "bin/rails console"
