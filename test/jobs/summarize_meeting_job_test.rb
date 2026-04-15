@@ -586,4 +586,140 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
       end
     end
   end
+
+  test "agenda_preview mode generates meeting summary from agenda_pdf extracted_text" do
+    @meeting.meeting_documents.create!(
+      document_type: "agenda_pdf",
+      source_url: "http://example.com/agenda.pdf",
+      extracted_text: "1. Welcome. 2. Review of last meeting. 3. Discussion of playground repairs."
+    )
+
+    generation_data = {
+      "headline" => "Board will review playground repairs tonight",
+      "highlights" => [],
+      "public_input" => [],
+      "item_details" => [
+        { "title" => "Playground repairs", "summary" => "The board will discuss playground repairs.", "activity_level" => "discussion" }
+      ]
+    }
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :prepare_kb_context, "" do |arg|
+      arg.is_a?(Array)
+    end
+    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |text, kb, type, **|
+      type == "agenda" && text.include?("playground")
+    end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        SummarizeMeetingJob.perform_now(@meeting.id, mode: :agenda_preview)
+      end
+    end
+
+    summary = @meeting.meeting_summaries.find_by(summary_type: "agenda_preview")
+    assert summary, "Should create an agenda_preview summary"
+    assert_equal "agenda", summary.generation_data["source_type"]
+    assert_equal "Board will review playground repairs tonight", summary.generation_data["headline"]
+    mock_ai.verify
+  end
+
+  test "agenda_preview mode returns silently when no agenda_pdf exists" do
+    assert_nothing_raised do
+      SummarizeMeetingJob.perform_now(@meeting.id, mode: :agenda_preview)
+    end
+    assert_equal 0, @meeting.meeting_summaries.count
+  end
+
+  test "agenda_preview mode returns silently when agenda_pdf extracted_text is blank" do
+    @meeting.meeting_documents.create!(
+      document_type: "agenda_pdf",
+      source_url: "http://example.com/agenda.pdf",
+      extracted_text: ""
+    )
+
+    assert_nothing_raised do
+      SummarizeMeetingJob.perform_now(@meeting.id, mode: :agenda_preview)
+    end
+    assert_equal 0, @meeting.meeting_summaries.count
+  end
+
+  test "agenda_preview mode enqueues GenerateTopicBriefingJob for each approved topic" do
+    @meeting.meeting_documents.create!(
+      document_type: "agenda_pdf",
+      source_url: "http://example.com/agenda.pdf",
+      extracted_text: "1. Budget review."
+    )
+
+    generation_data = { "headline" => "H", "highlights" => [], "public_input" => [], "item_details" => [] }
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
+    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |*, **| true end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+
+    assert_enqueued_with(job: Topics::GenerateTopicBriefingJob, args: [{ topic_id: @topic.id, meeting_id: @meeting.id }]) do
+      RetrievalService.stub :new, retrieval_stub do
+        Ai::OpenAiService.stub :new, mock_ai do
+          SummarizeMeetingJob.perform_now(@meeting.id, mode: :agenda_preview)
+        end
+      end
+    end
+  end
+
+  test "agenda_preview mode does NOT create TopicSummary records" do
+    @meeting.meeting_documents.create!(
+      document_type: "agenda_pdf",
+      source_url: "http://example.com/agenda.pdf",
+      extracted_text: "1. Budget review."
+    )
+
+    generation_data = { "headline" => "H", "highlights" => [], "public_input" => [], "item_details" => [] }
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
+    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |*, **| true end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        SummarizeMeetingJob.perform_now(@meeting.id, mode: :agenda_preview)
+      end
+    end
+
+    assert_equal 0, @meeting.topic_summaries.count
+  end
+
+  test "agenda_preview mode does NOT enqueue PruneHollowAppearancesJob or ExtractKnowledgeJob" do
+    @meeting.meeting_documents.create!(
+      document_type: "agenda_pdf",
+      source_url: "http://example.com/agenda.pdf",
+      extracted_text: "1. Budget review."
+    )
+
+    generation_data = { "headline" => "H", "highlights" => [], "public_input" => [], "item_details" => [] }
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
+    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |*, **| true end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+
+    assert_no_enqueued_jobs(only: [PruneHollowAppearancesJob, ExtractKnowledgeJob]) do
+      RetrievalService.stub :new, retrieval_stub do
+        Ai::OpenAiService.stub :new, mock_ai do
+          SummarizeMeetingJob.perform_now(@meeting.id, mode: :agenda_preview)
+        end
+      end
+    end
+  end
 end

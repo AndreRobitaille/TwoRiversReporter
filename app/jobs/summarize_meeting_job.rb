@@ -36,8 +36,44 @@ class SummarizeMeetingJob < ApplicationJob
   end
 
   def run_agenda_preview_mode(meeting)
-    # Implemented in Task 3.
-    raise NotImplementedError, "agenda_preview mode not yet implemented"
+    agenda_doc = meeting.meeting_documents.find_by(document_type: "agenda_pdf")
+    return if agenda_doc.nil? || agenda_doc.extracted_text.blank?
+
+    ai_service = ::Ai::OpenAiService.new
+    retrieval_service = RetrievalService.new
+
+    generate_agenda_preview_summary(meeting, agenda_doc, ai_service, retrieval_service)
+    enqueue_briefing_refresh(meeting)
+  end
+
+  def generate_agenda_preview_summary(meeting, agenda_doc, ai_service, retrieval_service)
+    query = build_retrieval_query(meeting)
+    retrieved_chunks = begin
+      retrieval_service.retrieve_context(query)
+    rescue => e
+      Rails.logger.warn("Context retrieval failed for Meeting #{meeting.id}: #{e.message}")
+      []
+    end
+    formatted_context = retrieval_service.format_context(retrieved_chunks).split("\n\n")
+    kb_context = ai_service.prepare_kb_context(formatted_context)
+
+    json_str = ai_service.analyze_meeting_content(agenda_doc.extracted_text, kb_context, "agenda", source: meeting)
+    save_summary(
+      meeting,
+      "agenda_preview",
+      json_str,
+      source_type: "agenda",
+      framing: compute_framing(meeting, "agenda")
+    )
+  end
+
+  def enqueue_briefing_refresh(meeting)
+    meeting.topics.approved.distinct.find_each do |topic|
+      Topics::GenerateTopicBriefingJob.perform_later(
+        topic_id: topic.id,
+        meeting_id: meeting.id
+      )
+    end
   end
 
   def generate_meeting_summary(meeting, ai_service, retrieval_service)
