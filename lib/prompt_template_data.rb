@@ -1169,7 +1169,13 @@ module PromptTemplateData
           title gives nothing substantive to work with.
         - highlights may be empty; do not manufacture impact statements from
           titles alone.
-        - The headline should reflect what's scheduled, not what might happen.
+
+        Tense for agenda input is still governed by temporal_context above.
+        For "preview" framing the meeting is upcoming — use future tense
+        throughout ("will consider", "is set to review", "is proposed", "plans
+        to weigh in on"). Do NOT describe an upcoming meeting in past tense;
+        phrases like "was scheduled to", "was set to", "planned to" are
+        retrospective and belong only to "stale_preview" or "recap" framing.
 
         If {{type}} is "packet": you have the full packet body including staff
         reports, attachments, and background materials. Produce a full preview.
