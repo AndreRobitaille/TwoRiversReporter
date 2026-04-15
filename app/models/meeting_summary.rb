@@ -1,5 +1,5 @@
 class MeetingSummary < ApplicationRecord
-  SUMMARY_TYPES = %w[minutes_recap transcript_recap packet_analysis].freeze
+  SUMMARY_TYPES = %w[minutes_recap transcript_recap packet_analysis agenda_preview].freeze
 
   belongs_to :meeting
 
