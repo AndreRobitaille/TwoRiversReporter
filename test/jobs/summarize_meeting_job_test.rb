@@ -664,7 +664,7 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     def retrieval_stub.retrieve_context(*args, **kwargs); []; end
     def retrieval_stub.format_context(*args); ""; end
 
-    assert_enqueued_with(job: Topics::GenerateTopicBriefingJob, args: [{ topic_id: @topic.id, meeting_id: @meeting.id }]) do
+    assert_enqueued_with(job: Topics::GenerateTopicBriefingJob, args: [ { topic_id: @topic.id, meeting_id: @meeting.id } ]) do
       RetrievalService.stub :new, retrieval_stub do
         Ai::OpenAiService.stub :new, mock_ai do
           SummarizeMeetingJob.perform_now(@meeting.id, mode: :agenda_preview)
@@ -714,7 +714,7 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     def retrieval_stub.retrieve_context(*args, **kwargs); []; end
     def retrieval_stub.format_context(*args); ""; end
 
-    assert_no_enqueued_jobs(only: [PruneHollowAppearancesJob, ExtractKnowledgeJob]) do
+    assert_no_enqueued_jobs(only: [ PruneHollowAppearancesJob, ExtractKnowledgeJob ]) do
       RetrievalService.stub :new, retrieval_stub do
         Ai::OpenAiService.stub :new, mock_ai do
           SummarizeMeetingJob.perform_now(@meeting.id, mode: :agenda_preview)
