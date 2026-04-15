@@ -300,4 +300,47 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     refute_select ".section-label", text: "Coming Up"
     refute_select ".section-label", text: "What Happened"
   end
+
+  # --- Summary fallback chain tests ---
+
+  test "assigns @summary from agenda_preview when no higher-tier summary exists" do
+    @meeting.meeting_summaries.create!(
+      summary_type: "agenda_preview",
+      generation_data: { "headline" => "Agenda preview headline", "source_type" => "agenda" }
+    )
+
+    get meeting_url(@meeting)
+    assert_response :success
+    assert_equal "agenda_preview", assigns(:summary).summary_type
+  end
+
+  test "prefers packet_analysis over agenda_preview" do
+    @meeting.meeting_summaries.create!(
+      summary_type: "agenda_preview",
+      generation_data: { "headline" => "Agenda preview", "source_type" => "agenda" }
+    )
+    @meeting.meeting_summaries.create!(
+      summary_type: "packet_analysis",
+      generation_data: { "headline" => "Packet analysis", "source_type" => "packet" }
+    )
+
+    get meeting_url(@meeting)
+    assert_response :success
+    assert_equal "packet_analysis", assigns(:summary).summary_type
+  end
+
+  test "prefers minutes_recap over agenda_preview" do
+    @meeting.meeting_summaries.create!(
+      summary_type: "agenda_preview",
+      generation_data: { "headline" => "Agenda preview" }
+    )
+    @meeting.meeting_summaries.create!(
+      summary_type: "minutes_recap",
+      generation_data: { "headline" => "Minutes" }
+    )
+
+    get meeting_url(@meeting)
+    assert_response :success
+    assert_equal "minutes_recap", assigns(:summary).summary_type
+  end
 end
