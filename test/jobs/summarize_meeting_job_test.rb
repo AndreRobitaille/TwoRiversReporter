@@ -722,4 +722,118 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
       end
     end
   end
+
+  test "packet run destroys any pre-existing agenda_preview summary" do
+    @meeting.meeting_summaries.create!(
+      summary_type: "agenda_preview",
+      generation_data: { "headline" => "Agenda preview headline", "source_type" => "agenda" }
+    )
+
+    @meeting.meeting_documents.create!(
+      document_type: "packet_pdf",
+      source_url: "http://example.com/packet.pdf",
+      extracted_text: "Packet body text."
+    )
+
+    generation_data = { "headline" => "Packet headline", "highlights" => [], "public_input" => [], "item_details" => [] }
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
+    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |_text, _kb, type, **|
+      type == "packet"
+    end
+    mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg| arg.is_a?(Hash) end
+    mock_ai.expect :render_topic_summary, "## Summary" do |arg| arg.is_a?(String) end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+    def retrieval_stub.retrieve_topic_context(*args, **kwargs); []; end
+    def retrieval_stub.format_topic_context(*args); []; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        SummarizeMeetingJob.perform_now(@meeting.id)
+      end
+    end
+
+    refute @meeting.meeting_summaries.exists?(summary_type: "agenda_preview"),
+      "packet run should destroy any pre-existing agenda_preview"
+    assert @meeting.meeting_summaries.exists?(summary_type: "packet_analysis"),
+      "packet_analysis should now exist"
+  end
+
+  test "transcript run destroys any pre-existing agenda_preview summary" do
+    @meeting.meeting_summaries.create!(
+      summary_type: "agenda_preview",
+      generation_data: { "headline" => "Agenda preview", "source_type" => "agenda" }
+    )
+
+    @meeting.meeting_documents.create!(
+      document_type: "transcript",
+      source_url: "http://example.com/transcript.srt",
+      extracted_text: "Transcript text."
+    )
+
+    generation_data = { "headline" => "Transcript headline", "highlights" => [], "public_input" => [], "item_details" => [] }
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
+    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |_text, _kb, type, **|
+      type == "transcript"
+    end
+    mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg| arg.is_a?(Hash) end
+    mock_ai.expect :render_topic_summary, "## Summary" do |arg| arg.is_a?(String) end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+    def retrieval_stub.retrieve_topic_context(*args, **kwargs); []; end
+    def retrieval_stub.format_topic_context(*args); []; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        SummarizeMeetingJob.perform_now(@meeting.id)
+      end
+    end
+
+    refute @meeting.meeting_summaries.exists?(summary_type: "agenda_preview"),
+      "transcript run should destroy agenda_preview"
+  end
+
+  test "minutes run destroys pre-existing agenda_preview, packet_analysis, and transcript_recap" do
+    @meeting.meeting_summaries.create!(summary_type: "agenda_preview", generation_data: { "headline" => "A" })
+    @meeting.meeting_summaries.create!(summary_type: "packet_analysis", generation_data: { "headline" => "P" })
+    @meeting.meeting_summaries.create!(summary_type: "transcript_recap", generation_data: { "headline" => "T" })
+
+    @meeting.meeting_documents.create!(
+      document_type: "minutes_pdf",
+      source_url: "http://example.com/minutes.pdf",
+      extracted_text: "Minutes text."
+    )
+
+    generation_data = { "headline" => "Minutes headline", "highlights" => [], "public_input" => [], "item_details" => [] }
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
+    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |_text, _kb, type, **|
+      type == "minutes"
+    end
+    mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg| arg.is_a?(Hash) end
+    mock_ai.expect :render_topic_summary, "## Summary" do |arg| arg.is_a?(String) end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+    def retrieval_stub.retrieve_topic_context(*args, **kwargs); []; end
+    def retrieval_stub.format_topic_context(*args); []; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        SummarizeMeetingJob.perform_now(@meeting.id)
+      end
+    end
+
+    refute @meeting.meeting_summaries.exists?(summary_type: "agenda_preview"), "minutes should destroy agenda_preview"
+    refute @meeting.meeting_summaries.exists?(summary_type: "packet_analysis"), "minutes should destroy packet_analysis"
+    refute @meeting.meeting_summaries.exists?(summary_type: "transcript_recap"), "minutes should destroy transcript_recap"
+    assert @meeting.meeting_summaries.exists?(summary_type: "minutes_recap"), "minutes_recap should exist"
+  end
 end

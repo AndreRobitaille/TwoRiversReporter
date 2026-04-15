@@ -105,8 +105,7 @@ class SummarizeMeetingJob < ApplicationJob
       summary = save_summary(meeting, "minutes_recap", json_str, source_type: source_type, framing: compute_framing(meeting, "minutes"))
 
       # Clean up superseded summaries now that minutes exist
-      meeting.meeting_summaries.where(summary_type: "transcript_recap").destroy_all
-      meeting.meeting_summaries.where(summary_type: "packet_analysis").destroy_all
+      meeting.meeting_summaries.where(summary_type: %w[transcript_recap packet_analysis agenda_preview]).destroy_all
       return
     end
 
@@ -115,8 +114,8 @@ class SummarizeMeetingJob < ApplicationJob
       json_str = ai_service.analyze_meeting_content(transcript_doc.extracted_text, kb_context, "transcript", source: meeting)
       save_summary(meeting, "transcript_recap", json_str, source_type: "transcript", framing: compute_framing(meeting, "transcript"))
 
-      # Clean up superseded packet preview
-      meeting.meeting_summaries.where(summary_type: "packet_analysis").destroy_all
+      # Clean up superseded packet preview / agenda preview
+      meeting.meeting_summaries.where(summary_type: %w[packet_analysis agenda_preview]).destroy_all
       return
     end
 
@@ -132,6 +131,8 @@ class SummarizeMeetingJob < ApplicationJob
       if doc_text
         json_str = ai_service.analyze_meeting_content(doc_text, kb_context, "packet", source: meeting)
         save_summary(meeting, "packet_analysis", json_str, framing: compute_framing(meeting, "packet"))
+        # Clean up superseded agenda preview
+        meeting.meeting_summaries.where(summary_type: "agenda_preview").destroy_all
       else
         Rails.logger.warn("No extractable text for packet document on Meeting #{meeting.id}")
       end
