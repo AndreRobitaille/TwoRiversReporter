@@ -60,5 +60,58 @@ module Documents
 
       assert_no_enqueued_jobs(only: ExtractTopicsJob)
     end
+
+    test "enqueues SummarizeMeetingJob with agenda_preview mode when document_type is agenda_pdf" do
+      doc = MeetingDocument.create!(
+        meeting: @meeting,
+        document_type: "agenda_pdf"
+      )
+      doc.file.attach(
+        io: StringIO.new("%PDF-1.0 minimal"),
+        filename: "agenda.pdf",
+        content_type: "application/pdf"
+      )
+
+      pdfinfo_output = "Pages: 1\n"
+      pdftotext_output = ("agenda item " * 30).strip
+
+      Open3.stub :capture2e, [ pdfinfo_output, OpenStruct.new(success?: true) ] do
+        Open3.stub :capture3, [ pdftotext_output, "", OpenStruct.new(success?: true) ] do
+          assert_enqueued_with(
+            job: SummarizeMeetingJob,
+            args: [ @meeting.id, { mode: :agenda_preview } ]
+          ) do
+            Documents::AnalyzePdfJob.perform_now(doc.id)
+          end
+        end
+      end
+    end
+
+    test "does not enqueue SummarizeMeetingJob with agenda_preview for minutes_pdf" do
+      doc = MeetingDocument.create!(
+        meeting: @meeting,
+        document_type: "minutes_pdf"
+      )
+      doc.file.attach(
+        io: StringIO.new("%PDF-1.0 minimal"),
+        filename: "minutes.pdf",
+        content_type: "application/pdf"
+      )
+
+      pdfinfo_output = "Pages: 1\n"
+      pdftotext_output = "Minutes content"
+
+      Open3.stub :capture2e, [ pdfinfo_output, OpenStruct.new(success?: true) ] do
+        Open3.stub :capture3, [ pdftotext_output, "", OpenStruct.new(success?: true) ] do
+          Documents::AnalyzePdfJob.perform_now(doc.id)
+        end
+      end
+
+      enqueued = queue_adapter.enqueued_jobs.select do |j|
+        j[:job] == SummarizeMeetingJob &&
+          j[:args].any? { |a| a.is_a?(Hash) && a["mode"] == "agenda_preview" }
+      end
+      assert_empty enqueued, "Should not enqueue agenda_preview summarization for minutes_pdf"
+    end
   end
 end

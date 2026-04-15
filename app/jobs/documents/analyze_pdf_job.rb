@@ -95,6 +95,13 @@ module Documents
           ExtractTopicsJob.perform_later(document.meeting_id)
           SummarizeMeetingJob.set(wait: 10.minutes).perform_later(document.meeting_id)
         end
+
+        # Trigger agenda preview summarization. Delay allows ParseAgendaJob
+        # -> ExtractTopicsJob -> AutoTriageJob (3-min delay) to complete
+        # first, so topic briefings refresh against approved topics.
+        if document.document_type == "agenda_pdf"
+          SummarizeMeetingJob.set(wait: 5.minutes).perform_later(document.meeting_id, mode: :agenda_preview)
+        end
       end
     rescue StandardError => e
       document.update!(text_quality: "broken")
