@@ -525,6 +525,33 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     end
   end
 
+  test "defaults to :full mode when mode kwarg is omitted" do
+    called = nil
+    job = SummarizeMeetingJob.new
+    job.define_singleton_method(:run_full_mode) { |_m| called = :full }
+    job.define_singleton_method(:run_agenda_preview_mode) { |_m| called = :agenda_preview }
+
+    job.perform(@meeting.id)
+    assert_equal :full, called
+  end
+
+  test "dispatches to :agenda_preview when mode kwarg is :agenda_preview" do
+    called = nil
+    job = SummarizeMeetingJob.new
+    job.define_singleton_method(:run_full_mode) { |_m| called = :full }
+    job.define_singleton_method(:run_agenda_preview_mode) { |_m| called = :agenda_preview }
+
+    job.perform(@meeting.id, mode: :agenda_preview)
+    assert_equal :agenda_preview, called
+  end
+
+  test "raises on unknown mode" do
+    job = SummarizeMeetingJob.new
+    assert_raises(ArgumentError) do
+      job.perform(@meeting.id, mode: :bogus)
+    end
+  end
+
   test "enqueues PruneHollowAppearancesJob after summarization" do
     doc = @meeting.meeting_documents.create!(
       document_type: "minutes_pdf",

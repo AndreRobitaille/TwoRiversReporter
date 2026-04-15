@@ -1,8 +1,22 @@
 class SummarizeMeetingJob < ApplicationJob
   queue_as :default
 
-  def perform(meeting_id)
+  def perform(meeting_id, mode: :full)
     meeting = Meeting.find(meeting_id)
+
+    case mode
+    when :full
+      run_full_mode(meeting)
+    when :agenda_preview
+      run_agenda_preview_mode(meeting)
+    else
+      raise ArgumentError, "Unknown mode: #{mode.inspect}"
+    end
+  end
+
+  private
+
+  def run_full_mode(meeting)
     ai_service = ::Ai::OpenAiService.new
     retrieval_service = RetrievalService.new
 
@@ -21,7 +35,10 @@ class SummarizeMeetingJob < ApplicationJob
     ExtractKnowledgeJob.perform_later(meeting.id)
   end
 
-  private
+  def run_agenda_preview_mode(meeting)
+    # Implemented in Task 3.
+    raise NotImplementedError, "agenda_preview mode not yet implemented"
+  end
 
   def generate_meeting_summary(meeting, ai_service, retrieval_service)
     query = build_retrieval_query(meeting)
