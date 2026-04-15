@@ -57,7 +57,10 @@ class SummarizeMeetingJob < ApplicationJob
     formatted_context = retrieval_service.format_context(retrieved_chunks).split("\n\n")
     kb_context = ai_service.prepare_kb_context(formatted_context)
 
-    json_str = ai_service.analyze_meeting_content(agenda_doc.extracted_text, kb_context, "agenda", source: meeting)
+    topic_context = agenda_topic_context(agenda_doc.extracted_text)
+    combined_context = [ topic_context, kb_context ].reject(&:blank?).join("\n\n")
+
+    json_str = ai_service.analyze_meeting_content(agenda_doc.extracted_text, combined_context, "agenda", source: meeting)
     save_summary(
       meeting,
       "agenda_preview",
@@ -65,6 +68,51 @@ class SummarizeMeetingJob < ApplicationJob
       source_type: "agenda",
       framing: compute_framing(meeting, "agenda")
     )
+  end
+
+  AGENDA_TOPIC_MIN_WORDS = 2
+  AGENDA_TOPIC_MIN_CHARS = 15
+  AGENDA_TOPIC_MIN_IMPACT = 3
+
+  def agenda_topic_context(agenda_text)
+    return "" if agenda_text.blank?
+    haystack = agenda_text.downcase
+
+    topics = Topic.approved
+      .where("resident_impact_score >= ?", AGENDA_TOPIC_MIN_IMPACT)
+      .joins(:topic_briefing)
+      .where.not(topic_briefings: { editorial_content: [ nil, "" ] })
+      .includes(:topic_aliases, :topic_briefing)
+
+    hits = topics.select do |topic|
+      needles = [ topic.name ] + topic.topic_aliases.map(&:name)
+      needles.any? do |needle|
+        normalized = needle.to_s.strip.downcase
+        normalized.split.size >= AGENDA_TOPIC_MIN_WORDS &&
+          normalized.length >= AGENDA_TOPIC_MIN_CHARS &&
+          haystack.include?(normalized)
+      end
+    end
+
+    return "" if hits.empty?
+
+    sections = hits.map do |topic|
+      briefing = topic.topic_briefing
+      parts = [ "## Known topic: #{topic.name}" ]
+      parts << "Impact score: #{topic.resident_impact_score}"
+      parts << "Current state: #{briefing.headline}" if briefing.headline.present?
+      parts << "Coming up: #{briefing.upcoming_headline}" if briefing.upcoming_headline.present?
+      parts << briefing.editorial_content.to_s.truncate(1200) if briefing.editorial_content.present?
+      parts.join("\n")
+    end
+
+    <<~TOPIC_CONTEXT.strip
+      <topic_briefings>
+      The following topics are ongoing civic concerns in Two Rivers that appear by name in the agenda text. Use them to ground your analysis — residents already recognize these issues. These are established context, not outcomes from this meeting.
+
+      #{sections.join("\n\n")}
+      </topic_briefings>
+    TOPIC_CONTEXT
   end
 
   def enqueue_briefing_refresh(meeting)

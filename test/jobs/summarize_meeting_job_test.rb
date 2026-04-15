@@ -836,4 +836,87 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     refute @meeting.meeting_summaries.exists?(summary_type: "transcript_recap"), "minutes should destroy transcript_recap"
     assert @meeting.meeting_summaries.exists?(summary_type: "minutes_recap"), "minutes_recap should exist"
   end
+
+  test "agenda_preview mode injects topic briefing context when agenda text matches an approved high-impact topic name" do
+    known_topic = Topic.create!(
+      name: "testprobe lakeside pavilion renovation",
+      status: "approved",
+      resident_impact_score: 4
+    )
+    TopicBriefing.create!(
+      topic: known_topic,
+      headline: "Residents organized opposition to the pavilion renovation",
+      editorial_content: "Councilmembers reported receiving numerous constituent communications.",
+      generation_tier: "full"
+    )
+
+    short_topic = Topic.create!(name: "testprobe", status: "approved", resident_impact_score: 5)
+    TopicBriefing.create!(topic: short_topic, headline: "Short-name headline", editorial_content: "body", generation_tier: "full")
+
+    low_impact_topic = Topic.create!(name: "testprobe obscure civic matter", status: "approved", resident_impact_score: 2)
+    TopicBriefing.create!(topic: low_impact_topic, headline: "Low-impact headline", editorial_content: "body", generation_tier: "full")
+
+    @meeting.meeting_documents.create!(
+      document_type: "agenda_pdf",
+      source_url: "http://example.com/agenda.pdf",
+      extracted_text: "1. Review Testprobe Lakeside Pavilion Renovation Plan. 2. Testprobe Obscure Civic Matter Update."
+    )
+
+    captured_kb = nil
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :prepare_kb_context, "KB_CONTEXT_BLOCK" do |arg| arg.is_a?(Array) end
+    mock_ai.expect :analyze_meeting_content, '{"headline":"h","highlights":[],"public_input":[],"item_details":[]}' do |_text, kb, type, **|
+      captured_kb = kb
+      type == "agenda"
+    end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        SummarizeMeetingJob.perform_now(@meeting.id, mode: :agenda_preview)
+      end
+    end
+
+    assert captured_kb, "kb_context should have been captured"
+    assert_includes captured_kb, "testprobe lakeside pavilion renovation", "matching high-impact topic should surface"
+    assert_includes captured_kb, "Residents organized opposition", "briefing headline should be injected"
+    refute_includes captured_kb, "Short-name headline", "single-word topic should be filtered out"
+    refute_includes captured_kb, "Low-impact headline", "low-impact topic should be filtered out"
+    assert_includes captured_kb, "KB_CONTEXT_BLOCK", "existing KB context should still be passed"
+  end
+
+  test "agenda_preview mode kb_context is unchanged when no topics match agenda text" do
+    Topic.create!(name: "testprobe unrelated topic marker", status: "approved", resident_impact_score: 4).tap do |t|
+      TopicBriefing.create!(topic: t, headline: "h", editorial_content: "body", generation_tier: "full")
+    end
+
+    @meeting.meeting_documents.create!(
+      document_type: "agenda_pdf",
+      source_url: "http://example.com/agenda.pdf",
+      extracted_text: "Agenda with zero overlap: roll call, adjournment, correspondence."
+    )
+
+    captured_kb = nil
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :prepare_kb_context, "KB_ONLY" do |arg| arg.is_a?(Array) end
+    mock_ai.expect :analyze_meeting_content, '{"headline":"h","highlights":[],"public_input":[],"item_details":[]}' do |_text, kb, type, **|
+      captured_kb = kb
+      type == "agenda"
+    end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        SummarizeMeetingJob.perform_now(@meeting.id, mode: :agenda_preview)
+      end
+    end
+
+    assert_equal "KB_ONLY", captured_kb, "kb_context should be exactly the kb block when no topics match"
+  end
 end
