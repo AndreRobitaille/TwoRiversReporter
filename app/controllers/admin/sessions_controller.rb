@@ -12,7 +12,10 @@ module Admin
       user = User.authenticate_by(params.permit(:email_address, :password))
 
       if user&.admin?
-        if user.totp_enabled?
+        if Rails.env.development?
+          start_new_session_for user
+          redirect_to after_authentication_url
+        elsif user.totp_enabled?
           session[:pending_mfa_user_id] = user.id
           redirect_to new_mfa_session_path
         else
