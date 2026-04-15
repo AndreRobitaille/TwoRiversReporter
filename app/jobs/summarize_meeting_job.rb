@@ -70,13 +70,21 @@ class SummarizeMeetingJob < ApplicationJob
     )
   end
 
-  AGENDA_TOPIC_MIN_WORDS = 2
-  AGENDA_TOPIC_MIN_CHARS = 15
+  AGENDA_TOPIC_MIN_TOKEN_OVERLAP = 3
   AGENDA_TOPIC_MIN_IMPACT = 3
+  AGENDA_TOPIC_MAX_HITS = 6
+  AGENDA_TOPIC_STOPWORDS = Set.new(%w[
+    a an the of and or but to for in on at by with from as is be are was were
+    been being this that these those it its their our your my me us we they he
+    she his her them have has had do does did not no so if then than which who
+    whom whose where when why how all any each every some other into out up down
+    off over under same own more most less few many such new old
+  ]).freeze
 
   def agenda_topic_context(agenda_text)
     return "" if agenda_text.blank?
-    haystack = agenda_text.downcase
+    agenda_tokens = significant_tokens(agenda_text)
+    return "" if agenda_tokens.size < AGENDA_TOPIC_MIN_TOKEN_OVERLAP
 
     topics = Topic.approved
       .where("resident_impact_score >= ?", AGENDA_TOPIC_MIN_IMPACT)
@@ -84,15 +92,22 @@ class SummarizeMeetingJob < ApplicationJob
       .where.not(topic_briefings: { editorial_content: [ nil, "" ] })
       .includes(:topic_aliases, :topic_briefing)
 
-    hits = topics.select do |topic|
+    scored = topics.filter_map do |topic|
       needles = [ topic.name ] + topic.topic_aliases.map(&:name)
-      needles.any? do |needle|
-        normalized = needle.to_s.strip.downcase
-        normalized.split.size >= AGENDA_TOPIC_MIN_WORDS &&
-          normalized.length >= AGENDA_TOPIC_MIN_CHARS &&
-          haystack.include?(normalized)
-      end
+      best_overlap = needles.map do |needle|
+        needle_tokens = significant_tokens(needle)
+        next 0 if needle_tokens.size < AGENDA_TOPIC_MIN_TOKEN_OVERLAP
+        (needle_tokens & agenda_tokens).size
+      end.max || 0
+
+      next nil if best_overlap < AGENDA_TOPIC_MIN_TOKEN_OVERLAP
+      [ topic, best_overlap ]
     end
+
+    hits = scored
+      .sort_by { |topic, overlap| [ -topic.resident_impact_score.to_i, -overlap ] }
+      .first(AGENDA_TOPIC_MAX_HITS)
+      .map(&:first)
 
     return "" if hits.empty?
 
@@ -108,11 +123,21 @@ class SummarizeMeetingJob < ApplicationJob
 
     <<~TOPIC_CONTEXT.strip
       <topic_briefings>
-      The following topics are ongoing civic concerns in Two Rivers that appear by name in the agenda text. Use them to ground your analysis — residents already recognize these issues. These are established context, not outcomes from this meeting.
+      The following topics are ongoing civic concerns in Two Rivers that share content words with the agenda text. Use them to ground your analysis where clearly relevant to an agenda item — residents already recognize these issues. These are established context, not outcomes from this meeting. Ignore entries that don't actually line up with any item.
 
       #{sections.join("\n\n")}
       </topic_briefings>
     TOPIC_CONTEXT
+  end
+
+  def significant_tokens(text)
+    Set.new(
+      text.to_s.downcase.scan(/[a-z]+/).filter_map do |word|
+        next if word.length < 3
+        next if AGENDA_TOPIC_STOPWORDS.include?(word)
+        word.sub(/s\z/, "")
+      end
+    )
   end
 
   def enqueue_briefing_refresh(meeting)

@@ -919,4 +919,87 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
 
     assert_equal "KB_ONLY", captured_kb, "kb_context should be exactly the kb block when no topics match"
   end
+
+  test "agenda_preview mode matches topics via token overlap when exact phrase is not a substring" do
+    flower_topic = Topic.create!(
+      name: "testprobe cemetery perpetual care flowers",
+      status: "approved",
+      resident_impact_score: 4
+    )
+    TopicBriefing.create!(
+      topic: flower_topic,
+      headline: "Council vote approved flower funding but paperwork mismatch",
+      editorial_content: "Residents tracked ongoing paperwork issues.",
+      generation_tier: "full"
+    )
+
+    # Neither the topic name nor any alias is a substring of the agenda text —
+    # but they share {perpetual, care, flower} content tokens.
+    @meeting.meeting_documents.create!(
+      document_type: "agenda_pdf",
+      source_url: "http://example.com/agenda.pdf",
+      extracted_text: "Testprobe Perpetual Care Flower Planting Ordinance Change"
+    )
+
+    captured_kb = nil
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :prepare_kb_context, "KB" do |arg| arg.is_a?(Array) end
+    mock_ai.expect :analyze_meeting_content, '{"headline":"h","highlights":[],"public_input":[],"item_details":[]}' do |_text, kb, type, **|
+      captured_kb = kb
+      type == "agenda"
+    end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        SummarizeMeetingJob.perform_now(@meeting.id, mode: :agenda_preview)
+      end
+    end
+
+    assert_includes captured_kb, "testprobe cemetery perpetual care flowers",
+      "topic should surface via token overlap even when not a substring"
+    assert_includes captured_kb, "paperwork mismatch",
+      "topic briefing content should be injected"
+  end
+
+  test "agenda_preview mode skips topics with only one shared content token" do
+    Topic.create!(
+      name: "testprobe unrelated construction work",
+      status: "approved",
+      resident_impact_score: 4
+    ).tap do |t|
+      TopicBriefing.create!(topic: t, headline: "Construction headline", editorial_content: "body", generation_tier: "full")
+    end
+
+    # Only "testprobe" overlaps with the topic name — 1 token, below threshold.
+    @meeting.meeting_documents.create!(
+      document_type: "agenda_pdf",
+      source_url: "http://example.com/agenda.pdf",
+      extracted_text: "Testprobe alone without any other shared vocabulary."
+    )
+
+    captured_kb = nil
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :prepare_kb_context, "KB" do |arg| arg.is_a?(Array) end
+    mock_ai.expect :analyze_meeting_content, '{"headline":"h","highlights":[],"public_input":[],"item_details":[]}' do |_text, kb, type, **|
+      captured_kb = kb
+      type == "agenda"
+    end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        SummarizeMeetingJob.perform_now(@meeting.id, mode: :agenda_preview)
+      end
+    end
+
+    refute_includes captured_kb, "Construction headline",
+      "topic with single-token overlap should not be injected"
+  end
 end
