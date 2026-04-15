@@ -343,4 +343,39 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_equal "minutes_recap", assigns(:summary).summary_type
   end
+
+  test "renders agenda preview banner when summary source_type is agenda and meeting is in future" do
+    @meeting.update!(starts_at: 1.day.from_now)
+    @meeting.meeting_summaries.create!(
+      summary_type: "agenda_preview",
+      generation_data: { "headline" => "H", "source_type" => "agenda", "highlights" => [], "public_input" => [], "item_details" => [] }
+    )
+
+    get meeting_url(@meeting)
+    assert_response :success
+    assert_match(/hasn.t happened yet/i, response.body)
+  end
+
+  test "renders agenda preview banner with minutes-pending message when meeting is past" do
+    @meeting.update!(starts_at: 1.day.ago)
+    @meeting.meeting_summaries.create!(
+      summary_type: "agenda_preview",
+      generation_data: { "headline" => "H", "source_type" => "agenda", "highlights" => [], "public_input" => [], "item_details" => [] }
+    )
+
+    get meeting_url(@meeting)
+    assert_response :success
+    assert_match(/minutes have not yet been published/i, response.body)
+  end
+
+  test "does not render agenda preview banner for packet summary" do
+    @meeting.meeting_summaries.create!(
+      summary_type: "packet_analysis",
+      generation_data: { "headline" => "H", "source_type" => "packet", "highlights" => [], "public_input" => [], "item_details" => [] }
+    )
+
+    get meeting_url(@meeting)
+    assert_response :success
+    refute_match(/Preview based on the posted agenda/, response.body)
+  end
 end
