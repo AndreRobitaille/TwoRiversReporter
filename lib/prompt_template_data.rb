@@ -1158,6 +1158,26 @@ module PromptTemplateData
         must be null.
         </temporal_context>
 
+        <source_context>
+        The source {{type}} is one of: minutes, transcript, packet, agenda.
+
+        If {{type}} is "agenda": you are seeing agenda titles and brief item
+        descriptions only — NOT full packet body text. Apply extra restraint:
+        - Do not infer what will be discussed beyond what titles and descriptions
+          state.
+        - item_details entries should be 1 short sentence each; omit items whose
+          title gives nothing substantive to work with.
+        - highlights may be empty; do not manufacture impact statements from
+          titles alone.
+        - The headline should reflect what's scheduled, not what might happen.
+
+        If {{type}} is "packet": you have the full packet body including staff
+        reports, attachments, and background materials. Produce a full preview.
+
+        If {{type}} is "minutes" or "transcript": you have the record of what
+        occurred. Follow the temporal_context "recap" guidance above.
+        </source_context>
+
         <guidelines>
         - Write in plain language a resident would use at a neighborhood
           gathering. No government jargon ("motion to waive reading and
