@@ -16,6 +16,7 @@ module Admin
       end
 
       def require_admin_mfa
+        return unless AdminMfaPolicy.enforced?
         return if Current.user&.totp_enabled?
 
         terminate_session if Current.session

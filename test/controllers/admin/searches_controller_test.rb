@@ -23,15 +23,31 @@ module Admin
     end
 
     test "returns results for a query" do
-      # Create a searchable knowledge source with embedding
       source = KnowledgeSource.create!(
         title: "Test Source", body: "Plan Commission history",
         source_type: "note", origin: "manual", status: "approved", active: true
       )
-      IngestKnowledgeSourceJob.perform_now(source.id)
+      chunk = source.knowledge_chunks.create!(
+        chunk_index: 0,
+        content: "Plan Commission history",
+        embedding: [ 1.0, 0.0, 0.0 ],
+        metadata: { char_length: 23 }
+      )
 
-      get admin_search_url, params: { q: "Plan Commission" }
+      retrieval_stub = Object.new
+      captured_query = nil
+      retrieval_stub.define_singleton_method(:retrieve_context) do |query_text, limit: 10, candidate_scope: nil|
+        captured_query = query_text
+        [ { chunk: chunk, score: 0.91 } ]
+      end
+
+      RetrievalService.stub :new, retrieval_stub do
+        get admin_search_url, params: { q: "Plan Commission" }
+      end
+
       assert_response :success
+      assert_equal "Plan Commission", captured_query
+      assert_match "Test Source", response.body
     end
 
     test "unauthenticated users are redirected" do

@@ -12,7 +12,7 @@ module Admin
       user = User.authenticate_by(params.permit(:email_address, :password))
 
       if user&.admin?
-        if Rails.env.development?
+        if !AdminMfaPolicy.enforced?
           start_new_session_for user
           redirect_to after_authentication_url
         elsif user.totp_enabled?
