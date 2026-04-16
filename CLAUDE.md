@@ -12,6 +12,25 @@ Civic transparency site for Two Rivers, WI. Ingests official city meeting docume
 - **`docs/topics/TOPIC_GOVERNANCE.md`** — Non-negotiable rules for all topic extraction, classification, summarization, and lifecycle logic. Read before any topic-related work.
 - **`docs/plans/2026-03-28-atomic-design-system-spec.md`** — Authoritative visual design spec. Covers color palette, typography, graphic motifs (with SVG path data), component patterns, spacing, CSS architecture, and anti-patterns. Read before any UI/styling work.
 
+## Instruction Precedence
+
+If guidance overlaps, follow this order:
+
+1. `docs/DEVELOPMENT_PLAN.md` for product and architecture requirements
+2. Specialized binding docs for their domains
+   - `docs/topics/TOPIC_GOVERNANCE.md` for topic logic
+   - `docs/plans/2026-03-28-atomic-design-system-spec.md` for UI/styling
+3. `CLAUDE.md` and `AGENTS.md` for repo working conventions
+4. Tool-local memory or personal workflow notes
+
+## Before Changing X, Read Y
+
+- Topic extraction / triage / summaries / lifecycle → `docs/topics/TOPIC_GOVERNANCE.md`
+- UI, CSS, components, themes → `docs/plans/2026-03-28-atomic-design-system-spec.md`
+- Meeting/topic behavior or recent feature details → relevant spec in `docs/superpowers/specs/`
+- Prompt template or AI pipeline work → this file's AI/deployment notes
+- Deploy / production operations → this file's Production Deployment section + `config/deploy.yml`
+
 ## Tech Stack
 
 - Rails 8.1, Ruby 4.0, PostgreSQL (with pgvector for embeddings)
@@ -56,6 +75,17 @@ Civic transparency site for Two Rivers, WI. Ingests official city meeting docume
 | Import local SRT files | `bin/rails "transcripts:import[/path/to/srt/files]"` |
 
 CI (`bin/ci` / `config/ci.rb`) runs: setup, rubocop, bundler-audit, importmap audit, brakeman. Note: CI does **not** run tests currently.
+
+When host binding matters for local development, prefer `0.0.0.0` over `localhost`; the dev machine is accessed remotely.
+
+## Verification Expectations
+
+- Ruby/model/job/service changes: run targeted Minitest files and `bin/rubocop`.
+- Prompt changes: run local prompt validation; do not treat prod `prompt_templates:populate` as a substitute for verification.
+- Multi-step AI/data pipeline changes: verify data across each major layer, not just the final rendered output.
+- Before claiming work is complete, state what commands or checks were actually run.
+
+For multi-pass AI/data pipelines, verify upstream → downstream preservation explicitly. Do not assume that more specific-looking final output proves the upstream data flowed through every layer. When possible, compare counts or distinctive content at each stage.
 
 ## Architecture
 
@@ -268,6 +298,18 @@ Note: all `bin/kamal` commands require the env vars exported first (`source .env
 - `.env` — Database password (gitignored, required for deploys)
 - `config/postgres/init.sql` — Creates cache/queue/cable databases and pgvector extension
 - `Dockerfile` — Production image (Ruby 4.0, poppler-utils, tesseract, yt-dlp, jemalloc)
+
+### Prompt Template Deploy Ordering
+
+After editing `lib/prompt_template_data.rb`, production ordering matters:
+
+1. Validate locally with `bin/rubocop` and `bin/rails prompt_templates:validate`
+2. Update the local DB with `bin/rails prompt_templates:populate` if needed
+3. Commit and push
+4. Run `bin/kamal deploy`
+5. Then run `bin/kamal app exec "bin/rails prompt_templates:populate"`
+
+`prompt_templates:populate` on prod reads from the running image, not your local filesystem. If you skip deploy, you can repopulate the database from stale code.
 
 ## Conventions
 
