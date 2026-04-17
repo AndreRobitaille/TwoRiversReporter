@@ -294,4 +294,102 @@ class MeetingsHelperTest < ActionView::TestCase
 
     assert_equal "Meeting details and AI-generated summary.", result
   end
+
+  # --- meeting_share_description ---
+
+  def build_meeting(body_name: "City Council Meeting", starts_at: Time.zone.parse("2026-04-14 18:00"), summaries: [], agenda_items: [])
+    OpenStruct.new(
+      body_name: body_name,
+      starts_at: starts_at,
+      meeting_summaries: summaries,
+      agenda_items: agenda_items
+    )
+  end
+
+  def build_summary(type:, headline: nil)
+    OpenStruct.new(summary_type: type, generation_data: headline ? { "headline" => headline } : {})
+  end
+
+  def build_item(title)
+    OpenStruct.new(title: title)
+  end
+
+  test "meeting_share_description returns AI headline when minutes_recap summary exists" do
+    summary = build_summary(type: "minutes_recap", headline: "Council approved the lakefront rezone 5-2.")
+    meeting = build_meeting(summaries: [ summary ])
+    assert_equal "Council approved the lakefront rezone 5-2.", meeting_share_description(meeting)
+  end
+
+  test "meeting_share_description prefers minutes_recap over lower tiers" do
+    preview = build_summary(type: "agenda_preview", headline: "Preview line.")
+    minutes = build_summary(type: "minutes_recap", headline: "Minutes line.")
+    meeting = build_meeting(summaries: [ preview, minutes ])
+    assert_equal "Minutes line.", meeting_share_description(meeting)
+  end
+
+  test "meeting_share_description lists first 3 agenda items plus remaining count when no summary and 5 items" do
+    items = [
+      build_item("Lakefront Rezone"),
+      build_item("Library Budget Request"),
+      build_item("Lead Pipe Update"),
+      build_item("Snow Removal Contract"),
+      build_item("Downtown Parking Study")
+    ]
+    meeting = build_meeting(agenda_items: items)
+    expected = "Two Rivers City Council, April 14, 2026 — Lakefront Rezone, Library Budget Request, Lead Pipe Update, and 2 other items on the agenda."
+    assert_equal expected, meeting_share_description(meeting)
+  end
+
+  test "meeting_share_description lists all items when exactly 4 present (no tail)" do
+    items = [ build_item("A"), build_item("B"), build_item("C"), build_item("D") ]
+    meeting = build_meeting(agenda_items: items)
+    assert_equal "Two Rivers City Council, April 14, 2026 — A, B, C, and D.", meeting_share_description(meeting)
+  end
+
+  test "meeting_share_description lists all items when exactly 3 present" do
+    items = [ build_item("Alpha"), build_item("Beta"), build_item("Gamma") ]
+    meeting = build_meeting(agenda_items: items)
+    assert_equal "Two Rivers City Council, April 14, 2026 — Alpha, Beta, and Gamma.", meeting_share_description(meeting)
+  end
+
+  test "meeting_share_description lists single item when one present" do
+    items = [ build_item("Conditional Use Permit at 1234 Main St") ]
+    meeting = build_meeting(body_name: "Plan Commission Meeting", agenda_items: items)
+    assert_equal "Two Rivers Plan Commission, April 14, 2026 — Conditional Use Permit at 1234 Main St.", meeting_share_description(meeting)
+  end
+
+  test "meeting_share_description returns bare fallback when no summary and no items" do
+    meeting = build_meeting(body_name: "City Council Meeting")
+    assert_equal "Two Rivers City Council — April 14, 2026.", meeting_share_description(meeting)
+  end
+
+  test "meeting_share_description filters procedural items" do
+    items = [
+      build_item("Call to Order"),
+      build_item("Roll Call"),
+      build_item("Approval of March 31 Minutes"),
+      build_item("Lakefront Rezone"),
+      build_item("Lead Pipe Update")
+    ]
+    meeting = build_meeting(agenda_items: items)
+    result = meeting_share_description(meeting)
+    assert_includes result, "Lakefront Rezone, Lead Pipe Update"
+    refute_includes result, "Call to Order"
+    refute_includes result, "Roll Call"
+    refute_includes result, "Approval of"
+  end
+
+  test "meeting_share_description falls through to bare when only procedural items" do
+    items = [ build_item("Call to Order"), build_item("Roll Call"), build_item("Adjourn") ]
+    meeting = build_meeting(agenda_items: items)
+    assert_equal "Two Rivers City Council — April 14, 2026.", meeting_share_description(meeting)
+  end
+
+  test "meeting_share_description truncates long item titles" do
+    long = "A" * 60
+    items = [ build_item(long), build_item("Second"), build_item("Third"), build_item("Fourth"), build_item("Fifth") ]
+    meeting = build_meeting(agenda_items: items)
+    result = meeting_share_description(meeting)
+    assert_includes result, "A" * 37 + "..."
+  end
 end

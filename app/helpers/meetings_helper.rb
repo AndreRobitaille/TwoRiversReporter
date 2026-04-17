@@ -106,6 +106,21 @@ module MeetingsHelper
     headline[0..196] + "..."
   end
 
+  PROCEDURAL_TITLE_PATTERN = /\A\s*(call to order|roll call|adjourn|recess|reconvene|pledge of allegiance|approval of .*minutes|treasurer'?s? report|consent agenda)/i
+
+  SUMMARY_TYPE_PRIORITY = %w[minutes_recap transcript_recap packet_analysis agenda_preview].freeze
+
+  def meeting_share_description(meeting)
+    summary = preferred_meeting_summary(meeting)
+    headline = summary&.generation_data&.dig("headline")
+    return headline if headline.present?
+
+    items = substantive_agenda_items(meeting)
+    return agenda_fallback_description(meeting, items) if items.any?
+
+    bare_meeting_description(meeting)
+  end
+
   COUNCIL_PATTERNS = [
     "City Council Meeting",
     "City Council Work Session",
@@ -126,6 +141,43 @@ module MeetingsHelper
   end
 
   private
+
+  def preferred_meeting_summary(meeting)
+    meeting.meeting_summaries
+      .to_a
+      .min_by { |s| SUMMARY_TYPE_PRIORITY.index(s.summary_type) || 99 }
+  end
+
+  def substantive_agenda_items(meeting)
+    meeting.agenda_items.reject { |i| i.title.to_s.match?(PROCEDURAL_TITLE_PATTERN) }
+  end
+
+  def agenda_fallback_description(meeting, items)
+    body = cleaned_meeting_body_name(meeting)
+    date = formatted_meeting_date(meeting)
+    truncated = items.map { |i| truncate(i.title.to_s, length: 40, omission: "...") }
+
+    if items.count <= 4
+      "Two Rivers #{body}, #{date} — #{truncated.to_sentence(two_words_connector: ', ')}."
+    else
+      first_three = truncated.first(3)
+      remaining = items.count - 3
+      noun = remaining == 1 ? "item" : "items"
+      "Two Rivers #{body}, #{date} — #{first_three.join(', ')}, and #{remaining} other #{noun} on the agenda."
+    end
+  end
+
+  def bare_meeting_description(meeting)
+    "Two Rivers #{cleaned_meeting_body_name(meeting)} — #{formatted_meeting_date(meeting)}."
+  end
+
+  def cleaned_meeting_body_name(meeting)
+    meeting.body_name.to_s.sub(/ Meeting\z/i, "").strip
+  end
+
+  def formatted_meeting_date(meeting)
+    meeting.starts_at&.strftime("%B %-d, %Y") || "date TBD"
+  end
 
   def share_text_temporal_header(meeting, name, upcoming)
     if upcoming
