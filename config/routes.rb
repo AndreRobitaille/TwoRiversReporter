@@ -1,6 +1,8 @@
 Rails.application.routes.draw do
   root "home#index"
   get "about", to: "pages#about"
+  # OG image source (used by bin/rails og:generate; harmless in prod)
+  get "og/default", to: "og#default"
   # NOTE: when adding a new public resource, update SitemapsController so the
   # new pages appear in /sitemap.xml. Internal nav links handle most crawler
   # discovery, but the sitemap is the explicit signal.

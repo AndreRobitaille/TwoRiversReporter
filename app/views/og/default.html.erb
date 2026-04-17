@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Two Rivers Matters — Your City Hall. In Plain English.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      width: 1200px;
+      height: 630px;
+      background: #faf5eb;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      font-family: 'Outfit', sans-serif;
+    }
+    .starburst {
+      position: absolute;
+      top: 50%;
+      right: -120px;
+      width: 620px;
+      height: 620px;
+      transform: translateY(-50%);
+      opacity: 0.18;
+      pointer-events: none;
+    }
+    h1 {
+      position: relative;
+      z-index: 2;
+      margin: 0 0 0 80px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -0.03em;
+      line-height: 0.88;
+      font-size: 9.5rem;
+      text-align: left;
+    }
+    h1 .l1 { color: #004a59; display: block; }
+    h1 .l2 { color: #c2522a; display: block; }
+  </style>
+</head>
+<body>
+  <svg class="starburst" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+    <defs>
+      <polygon id="og-long" points="0,0 2.5,-42 -2.5,-42"/>
+      <polygon id="og-short" points="0,0 1.5,-16 -1.5,-16"/>
+    </defs>
+    <g transform="translate(50,50)" fill="#c2522a">
+      <use href="#og-long" transform="rotate(0)"/>
+      <use href="#og-long" transform="rotate(90)"/>
+      <use href="#og-long" transform="rotate(180)"/>
+      <use href="#og-long" transform="rotate(270)"/>
+      <use href="#og-short" transform="rotate(45)"/>
+      <use href="#og-short" transform="rotate(135)"/>
+      <use href="#og-short" transform="rotate(225)"/>
+      <use href="#og-short" transform="rotate(315)"/>
+      <circle r="5" fill="#004a59"/>
+    </g>
+  </svg>
+  <h1>
+    <span class="l1">Your City Hall.</span>
+    <span class="l2">In Plain English.</span>
+  </h1>
+</body>
+</html>
