@@ -68,6 +68,7 @@ If guidance overlaps, follow this order:
 | Auto-merge single-word members | `bin/rails members:cleanup` |
 | List duplicate members | `bin/rails members:list_duplicates` |
 | Validate prompt templates | `bin/rails prompt_templates:validate` |
+| Regenerate OG image (social preview) | `bin/rails og:generate` |
 | Backfill all meetings since 2025 | `bin/rails backfill:run` |
 | Check backfill progress | `bin/rails backfill:status` |
 | Backfill transcripts (date range) | `bin/rails "transcripts:backfill[2026-01-01,2026-04-09]"` |
@@ -77,6 +78,8 @@ If guidance overlaps, follow this order:
 CI (`bin/ci` / `config/ci.rb`) runs: setup, rubocop, bundler-audit, importmap audit, brakeman. Note: CI does **not** run tests currently.
 
 When host binding matters for local development, prefer `0.0.0.0` over `localhost`; the dev machine is accessed remotely.
+
+`bin/rails og:generate` requires Chromium (`chromium`, `chromium-browser`, or `google-chrome` on `PATH`) and optionally `pngquant` for PNG compression. On Arch: `sudo pacman -S chromium pngquant`. The task renders `app/views/og/default.html.erb` to a temp file, screenshots it at 1200×630, writes `public/og-image.png`, and cleans up. Only rerun when the OG design changes.
 
 ## Verification Expectations
 
@@ -298,6 +301,7 @@ Note: all `bin/kamal` commands require the env vars exported first (`source .env
 - `.env` — Database password (gitignored, required for deploys)
 - `config/postgres/init.sql` — Creates cache/queue/cable databases and pgvector extension
 - `Dockerfile` — Production image (Ruby 4.0, poppler-utils, tesseract, yt-dlp, jemalloc)
+- `app/views/og/default.html.erb` + `lib/tasks/og.rake` + `public/og-image.png` + `vendor/fonts/Outfit-Black.ttf` — social preview image. Edit the ERB, then run `bin/rails og:generate` to regenerate the PNG. Commit both.
 
 ### Prompt Template Deploy Ordering
 
