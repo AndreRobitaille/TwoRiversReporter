@@ -33,14 +33,14 @@ module Topics
 
     def agenda_items_data
       # Find agenda items for this meeting linked to this topic
-      # We need distinct items, but must not break if we iterate over them
-      # Fix PG::InvalidColumnReference by using pluck first
-      item_ids = @meeting.agenda_items.joins(:agenda_item_topics)
-                      .where(agenda_item_topics: { topic_id: @topic.id })
-                      .distinct
-                      .pluck(:id)
+      # Use substantive rows only so structural section headers never become
+      # standalone evidence items in topic summaries.
+      item_ids = @meeting.agenda_items.substantive.joins(:agenda_item_topics)
+                       .where(agenda_item_topics: { topic_id: @topic.id })
+                       .distinct
+                       .pluck(:id)
 
-      items = @meeting.agenda_items.where(id: item_ids).order(:order_index)
+      items = @meeting.agenda_items.substantive.where(id: item_ids).includes(:parent).order(:order_index)
 
       # Build a normalized-title → item_details entry lookup from the
       # meeting's latest MeetingSummary. This is the substantive content
@@ -80,16 +80,16 @@ module Topics
         # Base Agenda Item Citation
         item_citation = {
           citation_id: "agenda-#{item.id}",
-          label: "Agenda Item #{item.number}: #{item.title}",
+          label: item.parent.present? ? "Agenda Item #{item.number}: #{item.display_context_title}" : "Agenda Item #{item.number}: #{item.title}",
           text_preview: [ item.summary, item.recommended_action ].compact.join("\n")
         }
 
-        matched_details = item_details_by_norm_title[Topics::TitleNormalizer.normalize(item.title.to_s)]
+        matched_details = item_details_for(item, item_details_by_norm_title)
 
         {
           id: item.id,
           number: item.number,
-          title: item.title,
+          title: item.display_context_title,
           summary: item.summary,
           recommended_action: item.recommended_action,
           item_details_summary: matched_details&.dig("summary"),
@@ -110,12 +110,30 @@ module Topics
       details = summary.generation_data["item_details"]
       return {} unless details.is_a?(Array)
 
+      title_counts = substantive_title_counts
+
       details.each_with_object({}) do |entry, index|
         next unless entry.is_a?(Hash)
         title = entry["agenda_item_title"]
         next unless title.is_a?(String)
         normalized = Topics::TitleNormalizer.normalize(title)
+        next if title_counts[normalized].to_i > 1
+
         index[normalized] = entry
+      end
+    end
+
+    def item_details_for(item, item_details_by_norm_title)
+      contextual = Topics::TitleNormalizer.normalize(item.display_context_title.to_s)
+      bare = Topics::TitleNormalizer.normalize(item.title.to_s)
+
+      item_details_by_norm_title[contextual] || item_details_by_norm_title[bare]
+    end
+
+    def substantive_title_counts
+      @meeting.agenda_items.substantive.each_with_object(Hash.new(0)) do |item, counts|
+        normalized = Topics::TitleNormalizer.normalize(item.title.to_s)
+        counts[normalized] += 1 if normalized.present?
       end
     end
 
@@ -146,6 +164,8 @@ module Topics
       cutoff_time = @meeting.starts_at || Time.current
 
       prior_appearances = @topic.topic_appearances
+        .joins(:agenda_item)
+        .merge(AgendaItem.substantive)
         .where("appeared_at < ?", cutoff_time)
         .order(appeared_at: :desc).limit(3)
         .map do |a|

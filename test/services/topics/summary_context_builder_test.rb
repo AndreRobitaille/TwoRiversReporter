@@ -17,9 +17,15 @@ module Topics
         recommended_action: "Approve.",
         order_index: 1
       )
+      @section = @meeting.agenda_items.create!(
+        title: "PUBLIC WORKS",
+        kind: "section",
+        order_index: 0
+      )
       # Creating the AgendaItemTopic link also creates the TopicAppearance
       # via AgendaItemTopic#create_appearance_and_update_continuity callback.
       @agenda_item.topics << @topic
+      AgendaItemTopic.create!(agenda_item: @section, topic: @topic)
 
       # Prior appearance
       @prior_meeting = Meeting.create!(
@@ -27,12 +33,8 @@ module Topics
         starts_at: 1.month.ago,
         detail_page_url: "http://example.com/prior"
       )
-      @topic.topic_appearances.create!(
-        meeting: @prior_meeting,
-        appeared_at: @prior_meeting.starts_at,
-        evidence_type: "agenda_item",
-        body_name: "City Council"
-      )
+      prior_item = @prior_meeting.agenda_items.create!(title: "Prior Street Repair", order_index: 1)
+      AgendaItemTopic.create!(agenda_item: prior_item, topic: @topic)
 
       @builder = SummaryContextBuilder.new(@topic, @meeting)
     end
@@ -52,6 +54,13 @@ module Topics
       assert_equal 1, items.size
       assert_equal "Repair Main St", items.first[:title]
       assert_equal "Proposal to repair.", items.first[:summary]
+    end
+
+    test "excludes structural agenda rows from agenda_items" do
+      context = @builder.build_context_json
+
+      refute_includes context[:agenda_items].map { |item| item[:title] }, "PUBLIC WORKS"
+      refute_includes context[:citation_ids], "agenda-#{@section.id}"
     end
 
     test "includes continuity context" do
@@ -81,6 +90,44 @@ module Topics
       assert_equal 1, attachments.size
       assert_equal "Preview text", attachments.first[:text_preview]
       assert_includes context[:citation_ids], "agenda-#{@agenda_item.id}"
+    end
+
+    test "uses parent context in citation label for child agenda items" do
+      child = @meeting.agenda_items.create!(
+        title: "Repair Main St Bridge",
+        summary: "Bridge work.",
+        order_index: 2,
+        parent: @section
+      )
+      AgendaItemTopic.create!(agenda_item: child, topic: @topic)
+
+      context = SummaryContextBuilder.new(@topic, @meeting).build_context_json
+      child_entry = context[:agenda_items].find { |item| item[:id] == child.id }
+
+      assert_includes child_entry[:citation][:label], "PUBLIC WORKS"
+      assert_equal "PUBLIC WORKS — Repair Main St Bridge", child_entry[:title]
+    end
+
+    test "does not match ambiguous bare item_details titles across sections" do
+      other_section = @meeting.agenda_items.create!(title: "CONSENT AGENDA", kind: "section", order_index: 2)
+      child = @meeting.agenda_items.create!(title: "Resolution", kind: "item", parent: @section, order_index: 3)
+      other_child = @meeting.agenda_items.create!(title: "Resolution", kind: "item", parent: other_section, order_index: 4)
+      AgendaItemTopic.create!(agenda_item: child, topic: @topic)
+      AgendaItemTopic.create!(agenda_item: other_child, topic: @topic)
+
+      @meeting.meeting_summaries.create!(
+        summary_type: "minutes_recap",
+        generation_data: {
+          "item_details" => [
+            { "agenda_item_title" => "Resolution", "summary" => "Ambiguous summary" }
+          ]
+        }
+      )
+
+      context = @builder.build_context_json
+      resolution_entries = context[:agenda_items].select { |item| item[:title].end_with?("Resolution") }
+
+      assert resolution_entries.all? { |item| item[:item_details_summary].nil? }
     end
 
     test "includes resident reported context when present" do

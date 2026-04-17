@@ -3,7 +3,7 @@ class ExtractTopicsJob < ApplicationJob
 
   def perform(meeting_id)
     meeting = Meeting.find(meeting_id)
-    items = meeting.agenda_items.includes(meeting_documents: :extractions).order(:order_index)
+    items = meeting.agenda_items.substantive.includes(:parent, meeting_documents: :extractions).order(:order_index)
 
     if items.empty?
       Rails.logger.info "No agenda items for Meeting #{meeting_id} to tag."
@@ -15,6 +15,7 @@ class ExtractTopicsJob < ApplicationJob
       parts = []
       parts << "ID: #{item.id}"
       parts << "Title: #{item.title}"
+      parts << "Section Context: #{item.parent.title}" if item.parent.present?
       parts << "Summary: #{item.summary}" if item.summary.present?
 
       # Include linked document text (truncated per doc)
@@ -104,7 +105,7 @@ class ExtractTopicsJob < ApplicationJob
   def refine_catchall_topics(meeting, ai_service, existing_topics)
     catchall_links = AgendaItemTopic
       .joins(:topic)
-      .where(agenda_item_id: meeting.agenda_items.select(:id))
+      .where(agenda_item_id: meeting.agenda_items.substantive.select(:id))
       .where(topics: { canonical_name: CATCHALL_TOPIC_NAMES })
       .includes(:agenda_item, :topic)
 

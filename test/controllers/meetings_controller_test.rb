@@ -131,6 +131,115 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".meeting-topic-door"
   end
 
+  test "show excludes structured section topics from substantive topic display" do
+    meeting = Meeting.create!(
+      body_name: "City Council",
+      meeting_type: "Regular",
+      starts_at: 2.days.ago,
+      status: "minutes_posted",
+      detail_page_url: "http://example.com/section-topic"
+    )
+
+    section_topic = Topic.create!(name: "section topic", status: "approved", lifecycle_status: "active", last_activity_at: 1.day.ago)
+    flat_topic = Topic.create!(name: "flat topic", status: "approved", lifecycle_status: "active", last_activity_at: 1.day.ago)
+
+    section = meeting.agenda_items.create!(title: "NEW BUSINESS", kind: "section", order_index: 1)
+    flat = meeting.agenda_items.create!(title: "Water Utility Update", order_index: 2)
+    AgendaItemTopic.create!(topic: section_topic, agenda_item: section)
+    AgendaItemTopic.create!(topic: flat_topic, agenda_item: flat)
+
+    get meeting_url(meeting)
+    assert_response :success
+
+    assert assigns(:has_substantive_topic_content)
+    assert_includes assigns(:ongoing_topics) + assigns(:new_topics), flat_topic
+    refute_includes assigns(:ongoing_topics) + assigns(:new_topics), section_topic
+  end
+
+  test "show preserves legacy flat agenda topics without kind metadata" do
+    meeting = Meeting.create!(
+      body_name: "City Council",
+      meeting_type: "Regular",
+      starts_at: 2.days.ago,
+      status: "minutes_posted",
+      detail_page_url: "http://example.com/legacy-flat-topic"
+    )
+
+    legacy_topic = Topic.create!(name: "legacy flat topic", status: "approved", lifecycle_status: "active", last_activity_at: 1.day.ago)
+    legacy_item = meeting.agenda_items.create!(title: "Legacy Water Update", order_index: 1)
+    AgendaItemTopic.create!(topic: legacy_topic, agenda_item: legacy_item)
+
+    get meeting_url(meeting)
+    assert_response :success
+
+    assert_includes assigns(:ongoing_topics) + assigns(:new_topics), legacy_topic
+  end
+
+  test "show does not count structural-only appearances when splitting ongoing topics" do
+    meeting = Meeting.create!(
+      body_name: "City Council",
+      meeting_type: "Regular",
+      starts_at: 2.days.ago,
+      status: "minutes_posted",
+      detail_page_url: "http://example.com/ongoing-structural-only"
+    )
+
+    topic = Topic.create!(name: "storm water", status: "approved", lifecycle_status: "active", last_activity_at: 1.day.ago)
+    section_item = meeting.agenda_items.create!(title: "NEW BUSINESS", kind: "section", order_index: 1)
+    substantive_item = meeting.agenda_items.create!(title: "Storm Water Grant", order_index: 2)
+    AgendaItemTopic.create!(topic: topic, agenda_item: substantive_item)
+    AgendaItemTopic.create!(topic: topic, agenda_item: section_item)
+
+    get meeting_url(meeting)
+    assert_response :success
+
+    assert_includes assigns(:new_topics), topic
+    refute_includes assigns(:ongoing_topics), topic
+  end
+
+  test "show matches summary item to child agenda item using section context" do
+    meeting = Meeting.create!(
+      body_name: "City Council",
+      meeting_type: "Regular",
+      starts_at: 2.days.ago,
+      status: "minutes_posted",
+      detail_page_url: "http://example.com/show-context-match"
+    )
+
+    new_business = AgendaItem.create!(meeting: meeting, title: "NEW BUSINESS", kind: "section", order_index: 1)
+    consent = AgendaItem.create!(meeting: meeting, title: "CONSENT AGENDA", kind: "section", order_index: 2)
+    target_item = AgendaItem.create!(meeting: meeting, title: "Resolution", kind: "item", parent: new_business, order_index: 3)
+    other_item = AgendaItem.create!(meeting: meeting, title: "Resolution", kind: "item", parent: consent, order_index: 4)
+    target_member = Member.create!(name: "Target Member")
+    other_member = Member.create!(name: "Other Member")
+    target_motion = Motion.create!(meeting: meeting, agenda_item: target_item, description: "Approve resolution", outcome: "passed")
+    other_motion = Motion.create!(meeting: meeting, agenda_item: other_item, description: "Approve consent resolution", outcome: "passed")
+    Vote.create!(motion: target_motion, member: target_member, value: "yes")
+    Vote.create!(motion: other_motion, member: other_member, value: "yes")
+
+    MeetingSummary.create!(
+      meeting: meeting,
+      summary_type: "minutes_recap",
+      generation_data: {
+        "headline" => "Test",
+        "item_details" => [
+          {
+            "agenda_item_title" => "NEW BUSINESS Resolution",
+            "summary" => "Passed.",
+            "decision" => "Passed",
+            "vote" => "All aye"
+          }
+        ]
+      }
+    )
+
+    get meeting_url(meeting)
+    assert_response :success
+
+    assert_select ".meeting-vote-member", text: "Target Member"
+    assert_select ".meeting-vote-member", text: "Other Member", count: 0
+  end
+
   test "show renders document links in header" do
     get meeting_url(@meeting)
     assert_response :success
@@ -250,7 +359,7 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
   test "index shows empty note when no enriched upcoming" do
     get meetings_url
     assert_response :success
-    assert_select ".meetings-empty-note"
+    assert_empty assigns(:upcoming_enriched)
   end
 
   test "index renders headline in recent card" do

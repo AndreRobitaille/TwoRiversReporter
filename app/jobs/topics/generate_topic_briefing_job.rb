@@ -9,18 +9,20 @@ module Topics
       meeting = Meeting.find(meeting_id)
 
       return unless topic.approved?
+      effective_meeting = context_meeting_for(topic, meeting)
+      return unless effective_meeting
 
       ai_service = Ai::OpenAiService.new
       retrieval_service = RetrievalService.new
 
-      context = build_briefing_context(topic, meeting, retrieval_service)
+      context = build_briefing_context(topic, effective_meeting, retrieval_service)
       analysis_json_str = ai_service.analyze_topic_briefing(context, source: topic)
       analysis_json = parse_json_safely(analysis_json_str, topic)
       return if analysis_json.empty?
 
       rendered = ai_service.render_topic_briefing(analysis_json.to_json, source: topic)
 
-      save_briefing(topic, meeting, analysis_json, rendered)
+      save_briefing(topic, effective_meeting, analysis_json, rendered)
       propagate_impact(topic, analysis_json)
     end
 
@@ -29,14 +31,19 @@ module Topics
     def build_briefing_context(topic, meeting, retrieval_service)
       prior_summaries = topic.topic_summaries
         .joins(:meeting)
+        .where(meetings: { id: TopicAppearance.joins(:agenda_item).merge(AgendaItem.substantive).where(topic_id: topic.id).select(:meeting_id) })
         .order("meetings.starts_at ASC")
         .pluck(:generation_data)
 
       recent_meeting_ids = topic.topic_appearances
-        .joins(:meeting)
-        .order("meetings.starts_at DESC")
-        .limit(RAW_CONTEXT_MEETING_LIMIT)
-        .pluck(:meeting_id)
+        .joins(agenda_item: :meeting)
+        .merge(AgendaItem.substantive)
+        .group(:meeting_id)
+        .maximum("meetings.starts_at")
+        .sort_by { |_meeting_id, starts_at| starts_at || Time.at(0) }
+        .reverse
+        .first(RAW_CONTEXT_MEETING_LIMIT)
+        .map(&:first)
 
       recent_meetings = Meeting.where(id: recent_meeting_ids).order(starts_at: :desc)
       recent_raw_context = recent_meetings.flat_map do |m|
@@ -77,31 +84,54 @@ module Topics
           status_events: topic.topic_status_events.order(occurred_at: :desc).limit(5).map do |e|
             { event_type: e.evidence_type, notes: e.notes, date: e.occurred_at&.iso8601 }
           end,
-          total_appearances: topic.topic_appearances.count
+          total_appearances: topic.topic_appearances.joins(:agenda_item).merge(AgendaItem.substantive).count
         },
         upcoming_context: build_upcoming_context(topic)
       }
     end
 
     def build_upcoming_context(topic)
-      upcoming_appearances = topic.topic_appearances
-        .joins(:meeting)
+      upcoming_meeting_ids = topic.topic_appearances
+        .joins(agenda_item: :meeting)
+        .merge(AgendaItem.substantive)
         .where(meetings: { starts_at: Time.current.. })
-        .order("meetings.starts_at ASC")
-        .limit(3)
-        .includes(:meeting, :agenda_item)
+        .group(:meeting_id)
+        .minimum("meetings.starts_at")
+        .sort_by { |_meeting_id, starts_at| starts_at || Time.at(0) }
+        .first(3)
+        .map(&:first)
 
-      upcoming_appearances.map do |appearance|
-        agenda_items = appearance.meeting.agenda_items
+      Meeting.where(id: upcoming_meeting_ids).order(starts_at: :asc).map do |meeting|
+        agenda_items = meeting.agenda_items
+          .substantive
           .joins(:agenda_item_topics)
           .where(agenda_item_topics: { topic_id: topic.id })
 
         {
-          meeting_body: appearance.meeting.body_name,
-          meeting_date: appearance.meeting.starts_at&.to_date&.to_s,
-          agenda_items: agenda_items.map { |ai| { title: ai.title, summary: ai.summary } }
+          meeting_body: meeting.body_name,
+          meeting_date: meeting.starts_at&.to_date&.to_s,
+          agenda_items: agenda_items.includes(:parent).map { |ai| { title: ai.display_context_title, summary: ai.summary } }
         }
       end
+    end
+
+    def context_meeting_for(topic, meeting)
+      return meeting if topic_has_substantive_item_for_meeting?(topic, meeting)
+
+      TopicAppearance
+        .joins(:agenda_item, :meeting)
+        .merge(AgendaItem.substantive)
+        .where(topic_id: topic.id)
+        .order("meetings.starts_at DESC")
+        .first
+        &.meeting
+    end
+
+    def topic_has_substantive_item_for_meeting?(topic, meeting)
+      meeting.agenda_items.substantive
+        .joins(:agenda_item_topics)
+        .where(agenda_item_topics: { topic_id: topic.id })
+        .exists?
     end
 
     def parse_json_safely(json_str, topic)

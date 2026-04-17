@@ -211,11 +211,10 @@ module PromptTemplateData
         </extraction_spec>
 
         <agenda_item_ref_rules>
-        - Match each motion to the MOST SPECIFIC agenda item it belongs to using the list below.
+        - Match each motion to the MOST SPECIFIC substantive agenda item it belongs to using the list below.
         - Return ONE line from the agenda list, verbatim. Include the number and the title from that single line.
-        - Agendas are often hierarchical: numbered section headers like "6: DISCUSSION ITEMS" or "7: ACTION ITEMS" contain lettered sub-items (A, B) that are the actual substantive items.
-          - When a motion acts on a lettered sub-item, reference THE SUB-ITEM (e.g., "A: 26-045 Harbor Resolution"), NOT the parent section header.
-          - Never return two lines combined. Never include both the section header and the sub-item in one ref.
+        - The agenda list contains substantive target items only. Generic section headers may appear only as context for a substantive child item.
+        - Never return the parent section context as the target ref. If a motion acts on a lettered sub-item, reference THE SUB-ITEM (e.g., "A: 26-045 Harbor Resolution"), not the parent section header.
         - Ignore informational/non-item lines at the top or bottom of the list (disability notices, phone numbers, legal boilerplate). They are not agenda items.
         - For consent agenda batch motions (one motion covering multiple routine items), set agenda_item_ref to null.
         - For procedural motions (approving minutes, recess, entering closed session, reconvening, adjournment), set agenda_item_ref to null.
@@ -316,13 +315,17 @@ module PromptTemplateData
         {{existing_topics}}
 
         <extraction_spec>
-        Classify agenda items into high-level topics. Return JSON matching the schema below.
+        Classify substantive agenda items into high-level topics. Return JSON matching the schema below.
+
+        The list below contains only substantive agenda items that are valid topic targets.
+        If a line includes parent section text or other context, treat that as disambiguating context only, not as a separate topic target.
 
         - Ignore "Minutes of Meetings" items if they refer to *previous* meetings (e.g. "Approve minutes of X"). Classify these as "Administrative".
         - Do NOT extract topics from the titles of previous meeting minutes (e.g. if item is "Minutes of Public Works", do not tag "Public Works").
         - If an item is purely administrative (Call to Order, Roll Call, Adjournment), classify as "Administrative".
         - If an item is routine institutional business (individual license renewals, standard report acceptances, routine personnel actions, proclamations), classify as "Routine". However, appointments or personnel actions that involve unusually long tenures, family relationships, or potential conflicts of interest are NOT routine — classify and tag those as topic-worthy.
-        - When an agenda item title is generic (e.g. "PUBLIC HEARING", "NEW BUSINESS"), use attached document text or meeting document context to identify the actual substantive topic.
+        - When a substantive agenda item title is generic (e.g. "PUBLIC HEARING"), use attached document text, parent section context, or meeting document context to identify the actual substantive topic.
+        - Structural section headers such as "NEW BUSINESS", "OLD BUSINESS", "REPORTS", and similar grouping labels are context only and should not themselves be treated as topic targets.
         - When an agenda item references a catch-all ordinance section (e.g. "Height and Area Exceptions"), also identify the substantive civic concern if one exists.
         - Topic names should be at a "neighborhood conversation" level — not hyper-specific (no addresses or applicant details in the topic name).
         - For each tag, decide whether it represents a persistent civic concern worth tracking as a topic (topic_worthy: true) or a one-time routine item (topic_worthy: false).
@@ -347,7 +350,7 @@ module PromptTemplateData
         - Use low confidence (< 0.5) for items where the topic is unclear or could be procedural.
         </extraction_spec>
 
-        Agenda Items:
+        Substantive Agenda Items:
         {{items_text}}
 
         {{meeting_documents_context}}

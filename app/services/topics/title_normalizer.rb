@@ -15,7 +15,9 @@ module Topics
       return "" if str.strip.empty?
 
       str
+        .tr("–—", "  ")
         .gsub(/\A\s*\d+(-\d+)?[a-z]?\.?\s*/i, "")
+        .gsub(/\A\s*[a-z]\.?\s+/i, "")
         .gsub(/\s*,?\s*as needed\s*\z/i, "")
         .gsub(/\s*,?\s*if applicable\s*\z/i, "")
         .gsub(/\s+/, " ")

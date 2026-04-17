@@ -27,13 +27,19 @@ class MeetingsController < ApplicationController
   def show
     @meeting = Meeting.find(params[:id])
 
-    approved_topics = @meeting.topics.approved
-      .includes(:topic_appearances, :topic_briefing)
+    substantive_item_ids = @meeting.agenda_items.substantive.select(:id)
+    approved_topics = Topic.approved
+      .joins(:agenda_item_topics)
+      .where(agenda_item_topics: { agenda_item_id: substantive_item_ids })
+      .includes(:topic_briefing, topic_appearances: :agenda_item)
       .distinct
 
     @ongoing_topics, @new_topics = approved_topics.partition do |topic|
-      topic.topic_appearances.size > 1
+      topic.topic_appearances.count { |appearance| appearance.agenda_item.nil? || appearance.agenda_item.substantive? } > 1
     end
+
+    @has_substantive_agenda_content = @meeting.agenda_items.any?(&:substantive?) || @meeting.meeting_summaries.any?
+    @has_substantive_topic_content = approved_topics.any?
 
     # Supersede chain: minutes > transcript > packet > agenda preview.
     @summary = @meeting.meeting_summaries.find_by(summary_type: "minutes_recap") ||
@@ -47,7 +53,7 @@ class MeetingsController < ApplicationController
   def meeting_has_content?(meeting, zone)
     case zone
     when :upcoming
-      topics = meeting.agenda_items.flat_map(&:topics).uniq.select(&:approved?)
+      topics = meeting.agenda_items.select(&:substantive?).flat_map(&:topics).uniq.select(&:approved?)
       topics.any? || meeting.meeting_summaries.any? || meeting.document_status.in?([ :agenda, :packet, :minutes ])
     when :recent
       meeting.meeting_summaries.any?

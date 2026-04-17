@@ -141,7 +141,11 @@ class SummarizeMeetingJob < ApplicationJob
   end
 
   def enqueue_briefing_refresh(meeting)
-    meeting.topics.approved.distinct.find_each do |topic|
+    Topic.approved
+      .joins(:agenda_item_topics)
+      .where(agenda_item_topics: { agenda_item_id: meeting.agenda_items.substantive.select(:id) })
+      .distinct
+      .find_each do |topic|
       Topics::GenerateTopicBriefingJob.perform_later(
         topic_id: topic.id,
         meeting_id: meeting.id
@@ -214,7 +218,13 @@ class SummarizeMeetingJob < ApplicationJob
 
   def generate_topic_summaries(meeting, ai_service, retrieval_service)
     # Only process approved topics to avoid noise
-    meeting.topics.approved.distinct.each do |topic|
+    # SummaryContextBuilder now filters structural rows so topic summaries
+    # only see substantive agenda evidence.
+    Topic.approved
+      .joins(:agenda_item_topics)
+      .where(agenda_item_topics: { agenda_item_id: meeting.agenda_items.substantive.select(:id) })
+      .distinct
+      .each do |topic|
       # Retrieve context specific to the topic
       query_builder = Topics::RetrievalQueryBuilder.new(topic, meeting)
       query = query_builder.build_query
@@ -317,8 +327,15 @@ class SummarizeMeetingJob < ApplicationJob
     parts = [ "#{meeting.body_name} meeting on #{meeting.starts_at&.to_date}" ]
 
     # Add top agenda items if available
-    if meeting.agenda_items.any?
-      parts << "Agenda: " + meeting.agenda_items.order(:order_index).limit(5).pluck(:title).join(", ")
+    agenda_titles = meeting.agenda_items
+      .substantive
+      .includes(:parent)
+      .order(:order_index)
+      .limit(5)
+      .map(&:display_context_title)
+
+    if agenda_titles.any?
+      parts << "Agenda: " + agenda_titles.join(", ")
     end
 
     parts.join("\n")

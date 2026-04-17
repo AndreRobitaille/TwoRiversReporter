@@ -7,6 +7,7 @@ module Topics
       meeting = Meeting.find(meeting_id)
 
       return unless topic.approved?
+      return unless topic_has_substantive_item_for_meeting?(topic, meeting)
 
       case tier
       when "headline_only"
@@ -38,6 +39,8 @@ module Topics
       briefing = topic.topic_briefing || topic.build_topic_briefing
 
       agenda_items = meeting.agenda_items
+        .substantive
+        .includes(:parent)
         .joins(:agenda_item_topics)
         .where(agenda_item_topics: { topic_id: topic.id })
 
@@ -46,7 +49,7 @@ module Topics
         current_headline: briefing.upcoming_headline || briefing.headline,
         meeting_body: meeting.body_name,
         meeting_date: meeting.starts_at&.to_date&.to_s,
-        agenda_items: agenda_items.map { |ai| { title: ai.title, summary: ai.summary } }
+        agenda_items: agenda_items.map { |ai| { title: ai.display_context_title, summary: ai.summary } }
       }
 
       result = Ai::OpenAiService.new.generate_briefing_interim(context)
@@ -65,6 +68,13 @@ module Topics
       end
       briefing.triggering_meeting = meeting
       briefing.save!
+    end
+
+    def topic_has_substantive_item_for_meeting?(topic, meeting)
+      meeting.agenda_items.substantive
+        .joins(:agenda_item_topics)
+        .where(agenda_item_topics: { topic_id: topic.id })
+        .exists?
     end
   end
 end

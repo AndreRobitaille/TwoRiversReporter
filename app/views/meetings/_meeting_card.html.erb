@@ -1,7 +1,7 @@
 <%# Unified meeting card with date slab. Locals: meeting %>
 <% is_council = council_meeting?(meeting) %>
 <% headline = best_headline(meeting) %>
-<% approved_topics = meeting.agenda_items.flat_map(&:topics).uniq.select(&:approved?)
+<% approved_topics = approved_substantive_topics(meeting)
      .sort_by { |t| [-(t.resident_impact_score || 0), -(t.last_activity_at&.to_i || 0)] } %>
 <% is_upcoming = meeting.starts_at > Time.current %>
 <%= link_to meeting_path(meeting), class: "meetings-card" do %>

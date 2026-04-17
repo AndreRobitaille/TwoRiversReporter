@@ -10,7 +10,7 @@ class ExtractVotesJob < ApplicationJob
       return
     end
 
-    agenda_items = meeting.agenda_items.order(:order_index).to_a
+    agenda_items = meeting.agenda_items.substantive.ordered.includes(:parent).to_a
     agenda_items_text = build_agenda_items_text(agenda_items)
 
     ai_service = ::Ai::OpenAiService.new
@@ -71,7 +71,12 @@ class ExtractVotesJob < ApplicationJob
 
   def build_agenda_items_text(agenda_items)
     agenda_items.map { |item|
-      item.number.present? ? "#{item.number}: #{item.title}" : item.title
+      label = item.number.present? ? "#{item.number}: #{item.title}" : item.title
+      if item.parent.present?
+        "#{label} (#{item.parent.title})"
+      else
+        label
+      end
     }.join("\n")
   end
 
@@ -95,12 +100,16 @@ class ExtractVotesJob < ApplicationJob
     best_score = 0.0
 
     agenda_items.each do |item|
-      next if item.title.blank?
-      item_words = item.title.downcase.gsub(/[^a-z0-9\s]/, "").split
-      next if item_words.empty?
+      item_word_sets = [ item.title, item.try(:display_context_title) ].compact.filter_map do |text|
+        words = text.downcase.gsub(/[^a-z0-9\s]/, "").split
+        words unless words.empty?
+      end
+      next if item_word_sets.empty?
 
-      overlap = (ref_words & item_words).size
-      score = overlap.to_f / [ ref_words.size, item_words.size ].max
+      score = item_word_sets.map { |item_words|
+        overlap = (ref_words & item_words).size
+        overlap.to_f / [ ref_words.size, item_words.size ].max
+      }.max || 0.0
 
       if score > best_score
         best_score = score

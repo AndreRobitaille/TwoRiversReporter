@@ -22,6 +22,32 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     )
   end
 
+  test "uses only substantive agenda items and preserves parent context in prompt text" do
+    section = AgendaItem.create!(
+      meeting: @meeting, number: "7.", title: "ACTION ITEMS", kind: "section", order_index: 0
+    )
+    child = AgendaItem.create!(
+      meeting: @meeting, number: "A.", title: "26-045 Harbor Resolution", parent: section, order_index: 3
+    )
+
+    ai_response = { "motions" => [] }.to_json
+    captured_kwargs = nil
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_votes, ai_response do |_text, **kwargs|
+      captured_kwargs = kwargs
+      true
+    end
+
+    Ai::OpenAiService.stub :new, mock_ai do
+      ExtractVotesJob.perform_now(@meeting.id)
+    end
+
+    assert_includes captured_kwargs[:agenda_items_text], "A.: 26-045 Harbor Resolution (ACTION ITEMS)"
+    refute_includes captured_kwargs[:agenda_items_text], "7.: ACTION ITEMS"
+    mock_ai.verify
+  end
+
   test "links motion to agenda item by item number match" do
     ai_response = {
       "motions" => [ {
@@ -174,17 +200,19 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     end
   end
 
-  test "prefers specific sub-item over section header for hierarchical agendas" do
+  test "links motions to substantive child agenda items instead of parent sections" do
     # Simulates the real production case: a council work session agenda with a
     # "7. ACTION ITEMS" section header and a sub-item "A. 26-045 Harbor Resolution"
     # under it. AI may return a multi-line ref with both the parent and the child.
     # The resolver should pick the specific sub-item, not the section header.
     section_header = AgendaItem.create!(
-      meeting: @meeting, number: "7.", title: "ACTION ITEMS", order_index: 10
+      meeting: @meeting, number: "7.", title: "ACTION ITEMS", kind: "section", order_index: 10
     )
     sub_item = AgendaItem.create!(
       meeting: @meeting, number: "A.",
       title: "26-045 Resolution Adopting Three-Year Harbor Development Statement of Intentions for 2027-2029",
+      kind: "item",
+      parent: section_header,
       order_index: 11
     )
 
@@ -208,8 +236,77 @@ class ExtractVotesJobTest < ActiveJob::TestCase
 
     motion = @meeting.motions.reload.first
     assert_equal sub_item, motion.agenda_item,
-                 "Expected resolver to pick specific sub-item, not the ACTION ITEMS section header"
+                  "Expected resolver to pick specific sub-item, not the ACTION ITEMS section header"
     refute_equal section_header, motion.agenda_item
+    mock_ai.verify
+  end
+
+  test "links motion to child item when parent section is only prompt context" do
+    section_header = AgendaItem.create!(
+      meeting: @meeting, number: "8.", title: "NEW BUSINESS", kind: "section", order_index: 12
+    )
+    sub_item = AgendaItem.create!(
+      meeting: @meeting,
+      number: "B.",
+      title: "Storm Water Grant Resolution",
+      kind: "item",
+      parent: section_header,
+      order_index: 13
+    )
+
+    ai_response = {
+      "motions" => [ {
+        "description" => "Approve the storm water grant resolution",
+        "outcome" => "passed",
+        "agenda_item_ref" => "B.: Storm Water Grant Resolution",
+        "votes" => []
+      } ]
+    }.to_json
+
+    captured_kwargs = nil
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_votes, ai_response do |_text, **kwargs|
+      captured_kwargs = kwargs
+      true
+    end
+
+    Ai::OpenAiService.stub :new, mock_ai do
+      ExtractVotesJob.perform_now(@meeting.id)
+    end
+
+    motion = @meeting.motions.reload.first
+    assert_equal sub_item, motion.agenda_item
+    assert_includes captured_kwargs[:agenda_items_text], "B.: Storm Water Grant Resolution (NEW BUSINESS)"
+    refute_includes captured_kwargs[:agenda_items_text], "8.: NEW BUSINESS"
+    mock_ai.verify
+  end
+
+  test "uses parent section context to disambiguate duplicate child titles" do
+    new_business = AgendaItem.create!(meeting: @meeting, number: "8.", title: "NEW BUSINESS", kind: "section", order_index: 12)
+    consent = AgendaItem.create!(meeting: @meeting, number: "9.", title: "CONSENT AGENDA", kind: "section", order_index: 13)
+    target_item = AgendaItem.create!(meeting: @meeting, number: "A.", title: "Resolution", kind: "item", parent: new_business, order_index: 14)
+    other_item = AgendaItem.create!(meeting: @meeting, number: "A.", title: "Resolution", kind: "item", parent: consent, order_index: 15)
+
+    ai_response = {
+      "motions" => [ {
+        "description" => "Approve the new business resolution",
+        "outcome" => "passed",
+        "agenda_item_ref" => "A.: Resolution (NEW BUSINESS)",
+        "votes" => []
+      } ]
+    }.to_json
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_votes, ai_response do |_text, **_kwargs|
+      true
+    end
+
+    Ai::OpenAiService.stub :new, mock_ai do
+      ExtractVotesJob.perform_now(@meeting.id)
+    end
+
+    assert_equal target_item, @meeting.motions.reload.first.agenda_item
+    refute_equal other_item, @meeting.motions.reload.first.agenda_item
     mock_ai.verify
   end
 

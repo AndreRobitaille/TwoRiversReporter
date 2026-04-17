@@ -161,6 +161,49 @@ class ExtractTopicsJobTest < ActiveJob::TestCase
     mock_ai.verify
   end
 
+  test "excludes structural rows while preserving parent section context for substantive items" do
+    meeting = Meeting.create!(
+      body_name: "Planning Commission", meeting_type: "Regular",
+      starts_at: 1.day.from_now, status: "agenda_posted",
+      detail_page_url: "http://example.com/m/4b"
+    )
+    section = AgendaItem.create!(meeting: meeting, number: "5", title: "NEW BUSINESS", kind: "section", order_index: 1)
+    child = AgendaItem.create!(meeting: meeting, parent: section, number: "5A", title: "Riverside Redevelopment", kind: "item", order_index: 2)
+
+    captured_text = nil
+    ai_response = {
+      "items" => [ {
+        "id" => child.id,
+        "category" => "Development",
+        "tags" => [ "riverside redevelopment" ],
+        "topic_worthy" => true,
+        "confidence" => 0.9
+      } ]
+    }.to_json
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_topics, ai_response do |text, **kwargs|
+      captured_text = text
+      true
+    end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        ExtractTopicsJob.perform_now(meeting.id)
+      end
+    end
+
+    assert_includes captured_text, "ID: #{child.id}"
+    assert_includes captured_text, "Title: Riverside Redevelopment"
+    assert_includes captured_text, "Section Context: NEW BUSINESS"
+    refute_includes captured_text, "ID: #{section.id}"
+    mock_ai.verify
+  end
+
   test "includes meeting-level packet text as context" do
     meeting = Meeting.create!(
       body_name: "Zoning Board", meeting_type: "Regular",

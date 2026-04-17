@@ -67,12 +67,24 @@ module Topics
     end
 
     def linked_title_set(meeting)
-      meeting.agenda_items
+      items = meeting.agenda_items.substantive
         .joins(:agenda_item_topics)
         .where(agenda_item_topics: { topic_id: @topic.id })
-        .pluck(:title)
+
+      title_counts = meeting.agenda_items.substantive.each_with_object(Hash.new(0)) do |item, counts|
+        normalized = Topics::TitleNormalizer.normalize(item.title.to_s)
+        counts[normalized] += 1 if normalized.present?
+      end
+
+      bare_titles = items.pluck(:title)
         .map { |t| Topics::TitleNormalizer.normalize(t) }
-        .to_set
+        .select { |normalized| title_counts[normalized] == 1 }
+
+      contextual_titles = items.includes(:parent).map do |item|
+        Topics::TitleNormalizer.normalize(item.display_context_title.to_s)
+      end
+
+      (bare_titles + contextual_titles).to_set
     end
   end
 end

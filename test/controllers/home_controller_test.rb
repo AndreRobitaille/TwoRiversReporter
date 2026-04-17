@@ -149,6 +149,21 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_select ".nextup-card", maximum: 2
   end
 
+  test "next up does not claim agenda missing when agenda is posted but no substantive topics are approved" do
+    meeting = Meeting.create!(
+      body_name: "City Council Meeting",
+      starts_at: 10.days.from_now,
+      detail_page_url: "http://example.com/next-agenda-posted",
+      status: "agenda_posted"
+    )
+    meeting.meeting_documents.create!(document_type: "agenda_pdf", source_url: "http://example.com/agenda.pdf", extracted_text: "Agenda text")
+
+    get root_url
+    assert_response :success
+    assert_match(/Agenda posted/, css_select(".nextup-zone").text)
+    assert_no_match(/Agenda not yet posted/, css_select(".nextup-zone").text)
+  end
+
   test "escape hatches link to topics and meetings" do
     get root_url
     assert_select "a[href='#{topics_path}']", minimum: 1

@@ -13,6 +13,7 @@ class Topics::UpdateTopicBriefingJobTest < ActiveJob::TestCase
       title: "Downtown Parking Discussion",
       order_index: 1
     )
+    AgendaItemTopic.create!(agenda_item: @item, topic: @topic)
   end
 
   test "tier headline_only creates briefing with upcoming_headline" do
@@ -79,6 +80,45 @@ class Topics::UpdateTopicBriefingJobTest < ActiveJob::TestCase
     mock_ai.verify
   end
 
+  test "tier interim excludes structural agenda rows and keeps parent context" do
+    section = @future_meeting.agenda_items.create!(
+      title: "NEW BUSINESS",
+      kind: "section",
+      order_index: 0
+    )
+    child = @future_meeting.agenda_items.create!(
+      title: "Parking Ramp Expansion",
+      kind: "item",
+      parent: section,
+      order_index: 2
+    )
+    AgendaItemTopic.create!(agenda_item: child, topic: @topic)
+    AgendaItemTopic.create!(agenda_item: section, topic: @topic)
+
+    captured_context = nil
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :generate_briefing_interim, {
+      "headline" => "Council to review parking agenda",
+      "upcoming_note" => "Note"
+    } do |arg|
+      captured_context = arg
+      true
+    end
+
+    Ai::OpenAiService.stub :new, mock_ai do
+      Topics::UpdateTopicBriefingJob.perform_now(
+        topic_id: @topic.id,
+        meeting_id: @future_meeting.id,
+        tier: "interim"
+      )
+    end
+
+    titles = captured_context[:agenda_items].map { |item| item[:title] }
+    assert_includes titles, "NEW BUSINESS — Parking Ramp Expansion"
+    refute_includes titles, "NEW BUSINESS"
+    mock_ai.verify
+  end
+
   test "tier interim does not downgrade full briefing tier" do
     TopicBriefing.create!(
       topic: @topic,
@@ -119,6 +159,22 @@ class Topics::UpdateTopicBriefingJobTest < ActiveJob::TestCase
     )
 
     assert_nil @topic.reload.topic_briefing
+  end
+
+  test "skips when topic has only structural agenda items for the meeting" do
+    section_only_topic = Topic.create!(name: "Section Only Topic", status: "approved")
+    section = @future_meeting.agenda_items.create!(title: "NEW BUSINESS", kind: "section", order_index: 0)
+    AgendaItemTopic.create!(topic: section_only_topic, agenda_item: section)
+
+    assert_nothing_raised do
+      Topics::UpdateTopicBriefingJob.perform_now(
+        topic_id: section_only_topic.id,
+        meeting_id: @future_meeting.id,
+        tier: "interim"
+      )
+    end
+
+    assert_nil section_only_topic.reload.topic_briefing
   end
 
   test "is idempotent for headline_only" do

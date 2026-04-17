@@ -50,6 +50,48 @@ class MeetingsHelperTest < ActionView::TestCase
     assert_includes result, "Agenda posted"
   end
 
+  test "substantive_agenda_items excludes structural rows but keeps legacy flat rows" do
+    meeting = Meeting.create!(
+      body_name: "City Council",
+      meeting_type: "Regular",
+      starts_at: 1.day.ago,
+      status: "minutes_posted",
+      detail_page_url: "http://example.com/helper-substantive"
+    )
+
+    structural = meeting.agenda_items.create!(title: "NEW BUSINESS", kind: "section", order_index: 1)
+    legacy_flat = meeting.agenda_items.create!(title: "Water Utility Update", order_index: 2)
+    procedural = meeting.agenda_items.create!(title: "CALL TO ORDER", order_index: 3)
+
+    items = substantive_agenda_items(meeting)
+
+    assert_includes items, legacy_flat
+    refute_includes items, structural
+    refute_includes items, procedural
+  end
+
+  test "approved_substantive_topics excludes section-only topics" do
+    meeting = Meeting.create!(
+      body_name: "City Council",
+      meeting_type: "Regular",
+      starts_at: 1.day.ago,
+      status: "minutes_posted",
+      detail_page_url: "http://example.com/helper-approved-substantive-topics"
+    )
+
+    section_topic = Topic.create!(name: "section topic", status: "approved", lifecycle_status: "active")
+    item_topic = Topic.create!(name: "item topic", status: "approved", lifecycle_status: "active")
+    section = meeting.agenda_items.create!(title: "NEW BUSINESS", kind: "section", order_index: 1)
+    item = meeting.agenda_items.create!(title: "Storm Water Grant", order_index: 2)
+    AgendaItemTopic.create!(agenda_item: section, topic: section_topic)
+    AgendaItemTopic.create!(agenda_item: item, topic: item_topic)
+
+    topics = approved_substantive_topics(meeting)
+
+    assert_includes topics, item_topic
+    refute_includes topics, section_topic
+  end
+
   # --- generation_data extraction helpers ---
 
   setup do
@@ -222,6 +264,23 @@ class MeetingsHelperTest < ActionView::TestCase
     assert_includes text, "On the agenda:"
     assert_includes text, "Budget Amendment Discussion"
     assert_includes text, "https://tworiversmatters.com/meetings/10"
+  end
+
+  test "share_text agenda fallback includes legacy flat rows and skips structural sections" do
+    meeting = OpenStruct.new(
+      id: 10,
+      body_name: "Council Meeting",
+      starts_at: 1.day.from_now,
+      agenda_items: [
+        OpenStruct.new(title: "NEW BUSINESS", kind: "section"),
+        OpenStruct.new(title: "Water Utility Update", kind: nil)
+      ]
+    )
+
+    text = share_text(meeting, nil)
+
+    assert_includes text, "Water Utility Update"
+    assert_no_match(/NEW BUSINESS/, text)
   end
 
   test "share_text agenda fallback filters procedural items" do

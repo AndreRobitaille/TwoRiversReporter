@@ -7,11 +7,13 @@
   </div>
   <div class="meeting-info">
     <span class="meeting-name"><%= meeting.body_name.sub(/ Meeting$/, "").sub(/^City Council /, "") %></span>
-    <% topic_count = meeting.agenda_items.flat_map(&:topics).uniq.select(&:approved?).size %>
+    <% topic_count = approved_substantive_topics(meeting).size %>
     <% if topic_count > 0 %>
       <span class="meeting-note"><%= pluralize(topic_count, "topic") %> on agenda</span>
-    <% else %>
+    <% elsif meeting.document_status == :none %>
       <span class="meeting-note">Agenda not yet posted</span>
+    <% else %>
+      <span class="meeting-note">Agenda posted</span>
     <% end %>
   </div>
   <span class="meeting-arrow">→</span>

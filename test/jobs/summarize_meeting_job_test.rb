@@ -69,6 +69,9 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
   end
 
   test "generates topic summary for approved topics" do
+    section = @meeting.agenda_items.create!(title: "BUDGET", kind: "section", order_index: 0)
+    AgendaItemTopic.create!(agenda_item: section, topic: @topic)
+
     # Mock OpenAI
     mock_ai = Minitest::Mock.new
 
@@ -79,7 +82,7 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
 
     # Analyze call expectation
     mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg|
-      arg.is_a?(Hash)
+      arg.is_a?(Hash) && arg[:agenda_items].all? { |item| item[:title] != "BUDGET" }
     end
 
     # Render call expectation
@@ -108,6 +111,54 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     assert_equal({ "factual_record" => [] }, summary.generation_data)
 
     # Verify mocks
+    mock_ai.verify
+  end
+
+  test "build_retrieval_query excludes structural rows and keeps parent context for substantive items" do
+    section = @meeting.agenda_items.create!(title: "NEW BUSINESS", kind: "section", order_index: 0)
+    @meeting.agenda_items.create!(
+      title: "Storm Water Grant",
+      kind: "item",
+      parent: section,
+      order_index: 2
+    )
+
+    query = SummarizeMeetingJob.new.send(:build_retrieval_query, @meeting)
+
+    assert_includes query, "Budget Review"
+    assert_includes query, "NEW BUSINESS — Storm Water Grant"
+    refute_match(/Agenda: .*NEW BUSINESS(,|\n|$)/, query)
+  end
+
+  test "generate_topic_summaries skips topics linked only through structural rows" do
+    section_only_topic = Topic.create!(name: "Section Only Topic", status: "approved")
+    section = @meeting.agenda_items.create!(title: "NEW BUSINESS", kind: "section", order_index: 0)
+    AgendaItemTopic.create!(agenda_item: section, topic: section_only_topic)
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :prepare_kb_context, "" do |arg|
+      arg.is_a?(Array)
+    end
+    mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg|
+      arg.is_a?(Hash)
+    end
+    mock_ai.expect :render_topic_summary, "## Topic Summary" do |arg|
+      arg.is_a?(String)
+    end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+    def retrieval_stub.retrieve_topic_context(*args, **kwargs); []; end
+    def retrieval_stub.format_topic_context(*args); []; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        SummarizeMeetingJob.perform_now(@meeting.id)
+      end
+    end
+
+    refute @meeting.topic_summaries.exists?(topic: section_only_topic)
     mock_ai.verify
   end
 
@@ -671,6 +722,46 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
         end
       end
     end
+  end
+
+  test "agenda_preview mode does not enqueue GenerateTopicBriefingJob for section-only topics" do
+    section_only_topic = Topic.create!(name: "Section Only Briefing Topic", status: "approved")
+    section = @meeting.agenda_items.create!(title: "NEW BUSINESS", kind: "section", order_index: 0)
+    AgendaItemTopic.create!(agenda_item: section, topic: section_only_topic)
+
+    @meeting.meeting_documents.create!(
+      document_type: "agenda_pdf",
+      source_url: "http://example.com/agenda.pdf",
+      extracted_text: "Agenda preview text"
+    )
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
+    mock_ai.expect :analyze_meeting_content,({
+      "headline" => "Preview",
+      "highlights" => [],
+      "public_input" => [],
+      "item_details" => []
+    }.to_json) do |_text, _kb, _type, **_kwargs|
+      true
+    end
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        assert_enqueued_with(job: Topics::GenerateTopicBriefingJob, args: [ { topic_id: @topic.id, meeting_id: @meeting.id } ]) do
+          SummarizeMeetingJob.perform_now(@meeting.id, mode: :agenda_preview)
+        end
+      end
+    end
+
+    refute enqueued_jobs.any? { |job|
+      job[:job] == Topics::GenerateTopicBriefingJob &&
+        job[:args] == [ { topic_id: section_only_topic.id, meeting_id: @meeting.id } ]
+    }
+    mock_ai.verify
   end
 
   test "agenda_preview mode does NOT create TopicSummary records" do

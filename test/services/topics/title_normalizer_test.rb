@@ -26,6 +26,16 @@ class Topics::TitleNormalizerTest < ActiveSupport::TestCase
       Topics::TitleNormalizer.normalize("  Parking   Plan   Vote  ")
   end
 
+  test "normalizes contextual separators like em dashes" do
+    assert_equal "new business resolution",
+      Topics::TitleNormalizer.normalize("NEW BUSINESS — Resolution")
+  end
+
+  test "strips lettered child-item prefixes" do
+    assert_equal "resolution",
+      Topics::TitleNormalizer.normalize("A. Resolution")
+  end
+
   test "returns empty string for nil or blank input" do
     assert_equal "", Topics::TitleNormalizer.normalize(nil)
     assert_equal "", Topics::TitleNormalizer.normalize("")

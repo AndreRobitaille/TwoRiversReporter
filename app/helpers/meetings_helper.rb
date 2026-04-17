@@ -87,7 +87,7 @@ module MeetingsHelper
       else
         share_text_past_bullets(lines, gd)
       end
-    elsif meeting.respond_to?(:agenda_items) && meeting.agenda_items.any?
+    elsif substantive_agenda_items(meeting).any?
       share_text_agenda_fallback(lines, meeting)
     end
 
@@ -130,6 +130,43 @@ module MeetingsHelper
     meeting_headline(summary.generation_data)
   end
 
+  def approved_substantive_topics(meeting)
+    substantive_agenda_items(meeting).flat_map(&:topics).uniq.select(&:approved?)
+  end
+
+  def matched_agenda_item_for_summary_item(meeting, item)
+    summary_title = item["agenda_item_title"].to_s
+    return nil if summary_title.blank?
+
+    summary_words = normalized_words(summary_title)
+    return nil if summary_words.empty?
+
+    best_match = nil
+    best_score = 0.0
+
+    substantive_agenda_items(meeting).each do |agenda_item|
+      candidate_word_sets = [ agenda_item.title, agenda_item.display_context_title ].compact.map { |text| normalized_words(text) }.reject(&:empty?)
+      next if candidate_word_sets.empty?
+
+      score = candidate_word_sets.map { |candidate_words|
+        overlap = (summary_words & candidate_words).size
+        overlap.to_f / [ summary_words.size, candidate_words.size ].max
+      }.max || 0.0
+
+      if score > best_score
+        best_score = score
+        best_match = agenda_item
+      end
+    end
+
+    best_score >= 0.4 ? best_match : nil
+  end
+
+  def vote_motions_for_summary_item(meeting, item, motions_by_item)
+    matched_agenda_item = matched_agenda_item_for_summary_item(meeting, item)
+    [ matched_agenda_item, matched_agenda_item ? (motions_by_item[matched_agenda_item.id] || []) : [] ]
+  end
+
   private
 
   def preferred_meeting_summary(meeting)
@@ -139,7 +176,18 @@ module MeetingsHelper
   end
 
   def substantive_agenda_items(meeting)
-    meeting.agenda_items.reject { |i| i.title.to_s.match?(PROCEDURAL_TITLE_PATTERN) }
+    items = if meeting.respond_to?(:agenda_items)
+      meeting.agenda_items.respond_to?(:substantive) ? meeting.agenda_items.substantive : meeting.agenda_items
+    else
+      []
+    end
+
+    items = items.reject { |i| i.respond_to?(:structural?) ? i.structural? : i.respond_to?(:kind) && i.kind == "section" }
+    items.reject { |i| i.title.to_s.match?(PROCEDURAL_TITLE_PATTERN) }
+  end
+
+  def normalized_words(text)
+    text.to_s.downcase.gsub(/[^a-z0-9\s]/, " ").split.uniq
   end
 
   def agenda_fallback_description(meeting, items)
@@ -229,7 +277,7 @@ module MeetingsHelper
   end
 
   def share_text_agenda_fallback(lines, meeting)
-    items = meeting.agenda_items
+    items = substantive_agenda_items(meeting)
       .reject { |ai| ai.title&.match?(/\A(CALL TO ORDER|ROLL CALL|ADJOURNMENT|PUBLIC INPUT)\z/i) }
     return if items.empty?
 

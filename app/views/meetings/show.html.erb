@@ -156,8 +156,7 @@
           <span class="section-line"></span>
         </div>
         <% items.each_with_index do |item, item_idx| %>
-          <% matched_agenda_item = @meeting.agenda_items.detect { |ai| ai.title&.downcase&.include?(item["agenda_item_title"]&.downcase&.first(30).to_s) } %>
-          <% item_motions = matched_agenda_item ? (motions_by_item[matched_agenda_item.id] || []) : [] %>
+          <% matched_agenda_item, item_motions = vote_motions_for_summary_item(@meeting, item, motions_by_item) %>
           <div class="meeting-item-card" id="agenda-item-<%= item_idx %>">
             <div class="meeting-item-card-header">
               <div class="meeting-item-card-title"><%= item["agenda_item_title"] %></div>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_13_014041) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_17_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -64,14 +64,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_13_014041) do
 
   create_table "agenda_items", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.string "kind"
     t.bigint "meeting_id", null: false
     t.string "number"
     t.integer "order_index"
+    t.bigint "parent_id"
     t.text "recommended_action"
     t.text "summary"
     t.text "title"
     t.datetime "updated_at", null: false
+    t.index ["kind"], name: "index_agenda_items_on_kind"
     t.index ["meeting_id"], name: "index_agenda_items_on_meeting_id"
+    t.index ["parent_id"], name: "index_agenda_items_on_parent_id"
   end
 
   create_table "committee_aliases", force: :cascade do |t|
@@ -627,6 +631,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_13_014041) do
   add_foreign_key "agenda_item_documents", "meeting_documents"
   add_foreign_key "agenda_item_topics", "agenda_items"
   add_foreign_key "agenda_item_topics", "topics"
+  add_foreign_key "agenda_items", "agenda_items", column: "parent_id"
   add_foreign_key "agenda_items", "meetings"
   add_foreign_key "committee_aliases", "committees"
   add_foreign_key "committee_memberships", "committees"

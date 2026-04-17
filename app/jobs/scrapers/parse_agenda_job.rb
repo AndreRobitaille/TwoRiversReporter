@@ -34,17 +34,30 @@ module Scrapers
 
         next if title.blank?
 
-        # Save Top Level Item
-        meeting.agenda_items.create!(
-          number: number,
-          title: title,
-          summary: nil,
-          recommended_action: nil,
-          order_index: current_index += 1
-        )
+        li_nodes = section.css("ol.agenda-items > li")
+
+        parent_item = if li_nodes.any?
+          meeting.agenda_items.create!(
+            number: number,
+            title: title,
+            kind: "section",
+            summary: nil,
+            recommended_action: nil,
+            order_index: current_index += 1
+          )
+        else
+          meeting.agenda_items.create!(
+            number: number,
+            title: title,
+            kind: "item",
+            summary: nil,
+            recommended_action: nil,
+            order_index: current_index += 1
+          )
+        end
 
         # 2. Sub-items (nested in ol.agenda-items) within this section
-        section.css("ol.agenda-items > li").each do |li|
+        li_nodes.each do |li|
           div = li.at("div[class^='Section']")
           next unless div
 
@@ -61,22 +74,14 @@ module Scrapers
           end
           sub_title = title_parts.join(" ").strip.squish
 
-          # Extract Summary and Recommended Action
-          summary = nil
-          recommended_action = nil
-
-          div.css("p").each do |p_tag|
-            text = p_tag.text.strip
-            if text.start_with?("Summary:")
-              summary = text.sub(/^Summary:\s*/i, "").strip
-            elsif text.start_with?("Recommended Action:")
-              recommended_action = p_tag.text.sub(/^Recommended Action:\s*/i, "").strip
-            end
-          end
+          summary = extract_summary(div)
+          recommended_action = extract_recommended_action(div)
 
           agenda_item = meeting.agenda_items.create!(
             number: sub_number,
             title: sub_title,
+            kind: "item",
+            parent: parent_item,
             summary: summary,
             recommended_action: recommended_action,
             order_index: current_index += 1
@@ -114,6 +119,23 @@ module Scrapers
 
       Rails.logger.info "Parsed agenda items for Meeting #{meeting_id}"
       ExtractTopicsJob.perform_later(meeting_id)
+    end
+
+    private
+
+    def extract_summary(div)
+      tagged_paragraph_text(div, "Summary:")
+    end
+
+    def extract_recommended_action(div)
+      tagged_paragraph_text(div, "Recommended Action:")
+    end
+
+    def tagged_paragraph_text(div, label)
+      paragraph = div.css("p").find { |p_tag| p_tag.text.strip.start_with?(label) }
+      return nil unless paragraph
+
+      paragraph.text.sub(/^#{Regexp.escape(label)}\s*/i, "").strip
     end
   end
 end

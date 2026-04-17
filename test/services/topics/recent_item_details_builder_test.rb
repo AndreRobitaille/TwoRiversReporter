@@ -12,7 +12,13 @@ class Topics::RecentItemDetailsBuilderTest < ActiveSupport::TestCase
       title: "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED",
       order_index: 1
     )
+    @section = @meeting.agenda_items.create!(
+      title: "PUBLIC UTILITIES",
+      kind: "section",
+      order_index: 0
+    )
     AgendaItemTopic.create!(agenda_item: @linked_item, topic: @topic)
+    AgendaItemTopic.create!(agenda_item: @section, topic: @topic)
   end
 
   test "returns item_details entries for agenda items linked to the topic" do
@@ -70,6 +76,52 @@ class Topics::RecentItemDetailsBuilderTest < ActiveSupport::TestCase
     assert_includes result.first[:summary], "Fake stickers"
     refute(result.any? { |r| r[:summary].to_s.include?("Pump replacement") },
       "water update should not leak into garbage topic context")
+  end
+
+  test "excludes structural agenda rows from recent item details" do
+    @meeting.meeting_summaries.create!(
+      summary_type: "minutes_recap",
+      generation_data: {
+        "item_details" => [
+          {
+            "agenda_item_title" => "PUBLIC UTILITIES",
+            "summary" => "Section header only.",
+            "activity_level" => "discussion"
+          },
+          {
+            "agenda_item_title" => "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED",
+            "summary" => "Substantive content.",
+            "activity_level" => "discussion"
+          }
+        ]
+      }
+    )
+
+    result = Topics::RecentItemDetailsBuilder.new(@topic, [ @meeting ]).build
+
+    assert_equal 1, result.length
+    assert_equal "Substantive content.", result.first[:summary]
+  end
+
+  test "does not include ambiguous bare item_details titles across sections" do
+    child = @meeting.agenda_items.create!(title: "Resolution", kind: "item", parent: @section, order_index: 2)
+    other_section = @meeting.agenda_items.create!(title: "CONSENT AGENDA", kind: "section", order_index: 3)
+    other_child = @meeting.agenda_items.create!(title: "Resolution", kind: "item", parent: other_section, order_index: 4)
+    AgendaItemTopic.create!(agenda_item: child, topic: @topic)
+    AgendaItemTopic.create!(agenda_item: other_child, topic: @topic)
+
+    @meeting.meeting_summaries.create!(
+      summary_type: "minutes_recap",
+      generation_data: {
+        "item_details" => [
+          { "agenda_item_title" => "Resolution", "summary" => "Ambiguous summary" }
+        ]
+      }
+    )
+
+    result = Topics::RecentItemDetailsBuilder.new(@topic, [ @meeting ]).build
+
+    assert_equal [], result
   end
 
   test "returns empty array when meeting has no summary" do
