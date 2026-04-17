@@ -1,0 +1,45 @@
+<section class="card p-6 mt-4 border border-primary/30">
+  <h3 class="text-base font-bold mb-2">This Topic Is Wrong</h3>
+  <p class="text-sm text-secondary mb-4">
+    Use this when the current topic should become an alias of another topic.
+  </p>
+
+  <div class="text-sm text-secondary space-y-2">
+    <p>Move the current topic name under the real canonical destination.</p>
+    <p>Warning: any existing aliases on this topic move with it to the new canonical destination.</p>
+    <p class="font-medium text-base text-base-content">Action path: choose the correct topic below, preview the consequence, then make this topic an alias of it.</p>
+  </div>
+
+  <% if workspace.has_single_alias %>
+    <div class="mt-4">
+      <%= button_to "Flip Main Topic With Its Only Alias", flip_alias_admin_topic_path(workspace.topic), method: :post, class: "btn btn--secondary btn--sm", params: detail_workspace_context %>
+    </div>
+  <% end %>
+
+  <details class="mt-4 rounded border border-dashed p-3">
+    <summary class="text-sm cursor-pointer font-medium">Make this topic an alias of another topic</summary>
+    <div class="mt-3">
+      <p class="text-xs text-secondary mb-3">Choose a destination topic, preview the alias transfer, then move this current topic into it.</p>
+      <%= form_with url: topic_to_alias_admin_topic_path(workspace.topic), method: :post, local: true, class: "space-y-3", data: { controller: "topic-repair-search", topic_repair_search_url_value: merge_candidates_admin_topic_path(workspace.topic, mode: :topic_to_alias), topic_repair_search_action_name_value: "topic_to_alias" } do %>
+        <%= hidden_field_tag :destination_topic_id, nil, data: { topic_repair_search_target: "targetId" } %>
+        <%= hidden_field_tag :alias_count, workspace.alias_count %>
+        <label class="block text-xs text-secondary" for="canonical_rehome_search_<%= workspace.topic.id %>">Destination topic search</label>
+        <input id="canonical_rehome_search_<%= workspace.topic.id %>" type="search" class="form-input w-full" placeholder="Search destination topics" data-topic-repair-search-target="input" data-action="input->topic-repair-search#search">
+        <div class="rounded border p-2 text-sm text-secondary min-h-10 mt-2" data-topic-repair-search-target="results"></div>
+        <div class="mt-2 text-sm text-secondary" data-topic-repair-search-target="selection">Choose a topic from search results.</div>
+
+        <div class="rounded bg-base-200 p-3 text-sm" data-topic-repair-search-target="preview">
+          <p class="text-secondary">Choose a destination topic to preview the alias transfer. Any existing aliases on this topic will move with it.</p>
+        </div>
+
+        <label class="block text-xs text-secondary" for="canonical_rehome_reason_<%= workspace.topic.id %>">Reason</label>
+        <%= text_area_tag :reason, nil, id: "canonical_rehome_reason_#{workspace.topic.id}", rows: 3, class: "w-full", required: true, placeholder: "Why is this the wrong main topic?" %>
+
+        <div class="flex items-center justify-between gap-2">
+          <div class="text-xs text-secondary">Confirmation happens when you submit this form.</div>
+          <%= submit_tag "Make This Topic An Alias Of Another Topic", class: "btn btn--secondary btn--sm", disabled: true, data: { topic_repair_search_target: "submit" } %>
+        </div>
+      <% end %>
+    </div>
+  </details>
+</section>

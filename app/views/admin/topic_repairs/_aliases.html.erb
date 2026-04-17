@@ -1,0 +1,37 @@
+<div class="card p-6">
+  <h2 class="text-lg font-bold mb-2">Aliases</h2>
+  <p class="text-sm text-secondary mb-4">Edit, remove, or promote aliases for this topic.</p>
+
+  <% if topic.topic_aliases.any? %>
+    <table>
+      <tbody>
+        <% topic.topic_aliases.each do |topic_alias| %>
+          <tr>
+            <td>
+              <%= form_with url: update_alias_admin_topic_url(topic), method: :patch, local: true, class: "flex gap-2 items-center" do |f| %>
+                <%= hidden_field_tag :alias_id, topic_alias.id %>
+                <%= text_field_tag :name, topic_alias.name, class: "form-input", aria: { label: "Alias name" } %>
+                <%= text_field_tag :reason, nil, class: "form-input", placeholder: "Reason (optional)", aria: { label: "Rename reason" } %>
+                <%= f.submit "Save", class: "btn btn--secondary btn--sm" %>
+              <% end %>
+            </td>
+            <td class="text-right whitespace-nowrap">
+              <%= form_with url: promote_alias_admin_topic_url(topic), method: :post, local: true, class: "inline-flex gap-2 items-center mr-2" do |f| %>
+                <%= hidden_field_tag :alias_id, topic_alias.id %>
+                <%= text_field_tag :reason, nil, class: "form-input", placeholder: "Reason (optional)", aria: { label: "Promote reason" } %>
+                <%= f.submit "Promote", class: "btn btn--sm btn--secondary", data: { turbo_confirm: "Promote this alias into a new topic?" } %>
+              <% end %>
+              <%= form_with url: remove_alias_admin_topic_url(topic), method: :delete, local: true, class: "inline-flex gap-2 items-center" do |f| %>
+                <%= hidden_field_tag :alias_id, topic_alias.id %>
+                <%= text_field_tag :reason, nil, class: "form-input", placeholder: "Reason (optional)", aria: { label: "Remove reason" } %>
+                <%= f.submit "Remove", class: "btn btn--sm btn--ghost text-danger", data: { turbo_confirm: "Remove this alias?" } %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="text-secondary">No aliases found.</p>
+  <% end %>
+</div>

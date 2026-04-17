@@ -1,0 +1,61 @@
+<div id="merge-modal" class="modal" data-controller="modal" hidden>
+  <div class="modal__panel card p-6" data-action="click->modal#stop">
+    <div class="flex items-start justify-between gap-4 mb-4">
+      <div>
+        <h2 class="text-lg font-bold mb-1">Confirm combine duplicate topic</h2>
+        <p class="text-sm text-secondary">Review the downstream consequences before combining this duplicate topic.</p>
+      </div>
+      <button type="button" class="btn btn--secondary btn--sm" data-action="modal#close">Close</button>
+    </div>
+
+    <p class="mb-3">You are combining duplicate topic <strong data-modal-target="sourceName"></strong> into this topic.</p>
+
+    <ul class="text-sm text-secondary space-y-2 mb-4">
+      <li>Aliases, appearances, summaries, and evidence links move to the current topic.</li>
+      <li>Any review note should explain why this duplicate topic no longer stands on its own.</li>
+      <li>This cannot be undone from this screen.</li>
+    </ul>
+
+    <%= form_with url: merge_from_repair_admin_topic_path(workspace.topic), method: :post, class: "space-y-4", data: { modal_target: "form", controller: "form-feedback", action: "submit->form-feedback#submit turbo:submit-end->form-feedback#end" } do %>
+      <%= hidden_field_tag :source_topic_id, nil, data: { modal_target: "sourceTopicId" } %>
+      <div class="form-group">
+        <label class="block mb-2" for="merge-confirm-reason">Reason</label>
+        <%= text_area_tag :reason, nil, id: "merge-confirm-reason", rows: 3, class: "w-full", placeholder: "Optional: why should these topics be combined?" %>
+      </div>
+      <div class="flex flex-wrap gap-2 justify-end">
+        <button type="button" class="btn btn--secondary" data-action="modal#close">Cancel</button>
+        <%= submit_tag "Combine Duplicate Topic Here", class: "btn btn--danger" %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<div id="retire-modal" class="modal" data-controller="modal" hidden>
+  <div class="modal__panel card p-6" data-action="click->modal#stop">
+    <div class="flex items-start justify-between gap-4 mb-4">
+      <div>
+        <h2 class="text-lg font-bold mb-1">Confirm retire / block</h2>
+        <p class="text-sm text-secondary">This removes the topic from normal reuse and discovery.</p>
+      </div>
+      <button type="button" class="btn btn--secondary btn--sm" data-action="modal#close">Close</button>
+    </div>
+    <p class="mb-3">Retire <strong data-modal-target="sourceName"></strong>?</p>
+    <ul class="text-sm text-secondary space-y-2 mb-4">
+      <li><%= workspace.appearance_count %> appearance<%= "s" if workspace.appearance_count != 1 %>, <%= workspace.agenda_item_count %> agenda item<%= "s" if workspace.agenda_item_count != 1 %>, <%= workspace.decision_count %> decision<%= "s" if workspace.decision_count != 1 %>, and <%= workspace.summary_count %> summary<%= "s" if workspace.summary_count != 1 %> are affected.</li>
+      <li><%= workspace.recent_history.count %> recent review event<%= "s" if workspace.recent_history.count != 1 %> will remain in history for audit context.</li>
+      <li>A blocklist entry will be created to prevent future reuse and similar blocked variants may be added.</li>
+      <li>If another topic should take over, re-home there first; retire only after the successor path is chosen.</li>
+    </ul>
+    <%= form_with url: retire_admin_topic_path(workspace.topic), method: :post, class: "space-y-4", data: { modal_target: "form" } do %>
+      <%= hidden_field_tag :topic_id, workspace.topic.id, data: { modal_target: "sourceTopicId" } %>
+      <div class="form-group">
+        <label class="block mb-2" for="retire-confirm-reason">Reason</label>
+        <%= text_area_tag :reason, nil, id: "retire-confirm-reason", rows: 3, class: "w-full", required: true %>
+      </div>
+      <div class="flex justify-end gap-2">
+        <button type="button" class="btn btn--secondary" data-action="modal#close">Cancel</button>
+        <%= submit_tag "Retire / Block Topic", class: "btn btn--danger" %>
+      </div>
+    <% end %>
+  </div>
+</div>

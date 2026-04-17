@@ -3,60 +3,15 @@ module Admin
     before_action :set_topic, only: %i[show update approve block unblock needs_review pin unpin merge create_alias]
 
     def index
-      @preview_window = helpers.preview_window_from_params(params)
-
-      if params[:view] == "ai_decisions"
-        @ai_events = TopicReviewEvent.automated
-                                     .recent
-                                     .includes(:topic)
-                                     .order(created_at: :desc)
-        return render :index
-      end
-
-      @topics = Topic.all
-
-      if params[:status].present?
-        @topics = @topics.where(status: params[:status])
-      end
-
-      if params[:review_status].present?
-        @topics = @topics.where(review_status: params[:review_status])
-      end
-
-      if params[:pinned] == "true"
-        @topics = @topics.pinned
-      end
-
-      if params[:q].present?
-        @topics = @topics.similar_to(params[:q])
-      else
-        @topics = sort_topics(@topics)
-      end
-
-      # Simple pagination
-      @page = [ params[:page].to_i, 1 ].max
-      @per_page = 50
-
-      # execute count before limit/offset
-      # Use .size which handles grouped queries correctly (returning a hash) or integer for standard queries
-      count_result = @topics.size
-      @total_topics = count_result.is_a?(Hash) ? count_result.size : count_result
-      @total_pages = (@total_topics.to_f / @per_page).ceil
-
-      @topics = @topics.offset((@page - 1) * @per_page).limit(@per_page)
-    end
-
-    def search
-      @topics = Topic.where("name ILIKE ?", "%#{params[:q]}%").limit(20)
-      render json: @topics.select(:id, :name)
+      scope = filtered_topics
+      @inbox_rows = Admin::Topics::InboxQuery.new(scope: scope, sort: params[:sort]).call
     end
 
     def show
-      @aliases = @topic.topic_aliases
-      @preview_window = helpers.preview_window_from_params(params)
-      @recent_mentions = @topic.agenda_items.includes(meeting: { meeting_documents: :extractions })
-        .order("meetings.starts_at DESC")
-        .limit(10)
+      @workspace = Admin::Topics::DetailWorkspaceQuery.new(topic: @topic).call
+      @impact_preview = build_impact_preview
+      @retire_preview = Admin::Topics::ImpactPreviewQuery.new(action: :retire, topic: @topic).call
+      @detail_workspace_context = detail_workspace_context
     end
 
     def update
@@ -88,14 +43,20 @@ module Admin
         end
       else
         respond_to do |format|
-          format.html { render :show, status: :unprocessable_entity }
-        format.turbo_stream {
-          render turbo_stream: turbo_stream.replace(
-            helpers.dom_id(@topic),
-            partial: "admin/topics/topic",
-            locals: { topic: @topic, preview_window: helpers.preview_window_from_params(params) }
-          )
-        }
+          format.html do
+            @workspace = Admin::Topics::DetailWorkspaceQuery.new(topic: @topic).call
+            @impact_preview = build_impact_preview
+            @retire_preview = Admin::Topics::ImpactPreviewQuery.new(action: :retire, topic: @topic).call
+            flash.now[:alert] = @topic.errors.full_messages.to_sentence
+            render :show, status: :unprocessable_entity
+          end
+          format.turbo_stream {
+            render turbo_stream: turbo_stream.replace(
+              helpers.dom_id(@topic),
+              partial: "admin/topics/topic",
+              locals: { topic: @topic, preview_window: helpers.preview_window_from_params(params) }
+            )
+          }
           format.json { render json: { success: false, errors: @topic.errors.full_messages }, status: :unprocessable_entity }
         end
       end
@@ -103,7 +64,7 @@ module Admin
 
     def approve
       @topic.update(status: "approved", review_status: "approved")
-      Topics::GenerateDescriptionJob.perform_later(@topic.id)
+      ::Topics::GenerateDescriptionJob.perform_later(@topic.id)
       record_review_event(@topic, "approved")
       render_turbo_update("Topic approved.")
     end
@@ -141,26 +102,7 @@ module Admin
     def merge
       target_topic = Topic.find(params[:target_topic_id])
 
-      ActiveRecord::Base.transaction do
-        # Create alias from the merged topic name
-        TopicAlias.create!(topic: target_topic, name: @topic.name)
-
-        # Move aliases
-        @topic.topic_aliases.update_all(topic_id: target_topic.id)
-
-        # Move agenda items
-        @topic.agenda_item_topics.each do |ait|
-          # Only create if not exists
-          unless AgendaItemTopic.exists?(agenda_item: ait.agenda_item, topic: target_topic)
-            ait.update!(topic: target_topic)
-          else
-            ait.destroy # Duplicate link
-          end
-        end
-
-        # Delete source topic
-        @topic.destroy!
-      end
+      ::Topics::MergeService.new(source_topic: @topic, target_topic: target_topic).call
 
       redirect_to admin_topic_path(target_topic), notice: "Topic merged successfully."
     rescue ActiveRecord::RecordNotFound
@@ -180,7 +122,7 @@ module Admin
     end
 
     def search
-      topics = Topic.where("name ILIKE ?", "%#{params[:q]}%").limit(20)
+      topics = Topic.search_by_text(params[:q]).limit(20)
       render json: topics.select(:id, :name)
     end
 
@@ -197,7 +139,7 @@ module Admin
       notice = case params[:commit]
       when "Approve Selected"
         topics.update_all(status: "approved", review_status: "approved")
-        topics.each { |t| Topics::GenerateDescriptionJob.perform_later(t.id) }
+        topics.each { |t| ::Topics::GenerateDescriptionJob.perform_later(t.id) }
         record_bulk_review_events(topic_ids, "approved", reason)
         "Selected topics approved."
       when "Block Selected"
@@ -217,20 +159,14 @@ module Admin
 
     private
 
-    def sort_topics(topics)
-      default_sort = params[:review_status] == "proposed" ? "created_at" : "last_seen_at"
-      params[:sort] = default_sort if params[:sort].blank?
-      params[:direction] = "desc" if params[:direction].blank?
-      column = %w[name status importance last_seen_at last_activity_at created_at mentions_count].include?(params[:sort]) ? params[:sort] : default_sort
-      direction = %w[asc desc].include?(params[:direction]) ? params[:direction] : "desc"
-
-      if column == "mentions_count"
-        topics.left_joins(:agenda_items)
-              .group(:id)
-              .order(Arel.sql("COUNT(agenda_items.id) #{direction}"))
-      else
-        topics.order(column => direction)
-      end
+    def filtered_topics
+      scope = Topic.all
+      scope = scope.where(status: params[:status]) if params[:status].present?
+      scope = scope.where(review_status: params[:review_status]) if params[:review_status].present?
+      scope = scope.where(lifecycle_status: params[:lifecycle_status]) if params[:lifecycle_status].present?
+      scope = scope.pinned if params[:pinned] == "true"
+      scope = scope.search_by_text(params[:q]) if params[:q].present?
+      scope
     end
 
     def render_turbo_update(message)
@@ -248,6 +184,12 @@ module Admin
 
     def set_topic
       @topic = Topic.find(params[:id])
+    end
+
+    def build_impact_preview
+      source_topic = Topic.find_by(id: params[:source_topic_id])
+      action = params[:action_name].presence&.to_sym || :merge
+      Admin::Topics::ImpactPreviewQuery.new(action: action, topic: @topic, source_topic: source_topic).call
     end
 
     def record_review_event(topic, action)
@@ -292,6 +234,10 @@ module Admin
 
     def topic_params
       params.require(:topic).permit(:description, :importance, :name, :source_type, :source_notes, :resident_impact_score)
+    end
+
+    def detail_workspace_context
+      params.permit(:source_topic_id, :q).to_h.compact_blank.symbolize_keys
     end
   end
 end

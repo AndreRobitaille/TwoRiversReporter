@@ -226,31 +226,7 @@ module Topics
     end
 
     def merge_topics!(source_topic, target_topic)
-      ActiveRecord::Base.transaction do
-        TopicAlias.create!(topic: target_topic, name: source_topic.name)
-        source_topic.topic_aliases.update_all(topic_id: target_topic.id)
-
-        source_topic.agenda_item_topics.each do |agenda_item_topic|
-          unless AgendaItemTopic.exists?(agenda_item: agenda_item_topic.agenda_item, topic: target_topic)
-            agenda_item_topic.update!(topic: target_topic)
-          else
-            agenda_item_topic.destroy
-          end
-        end
-
-        # Transfer appearances, status events, summaries, and briefing before destroying source
-        source_topic.topic_appearances.update_all(topic_id: target_topic.id)
-        source_topic.topic_status_events.update_all(topic_id: target_topic.id)
-        source_topic.topic_summaries.update_all(topic_id: target_topic.id)
-
-        if source_topic.topic_briefing && !target_topic.topic_briefing
-          source_topic.topic_briefing.update!(topic_id: target_topic.id)
-        elsif source_topic.topic_briefing
-          source_topic.topic_briefing.destroy!
-        end
-
-        source_topic.reload.destroy!
-      end
+      Topics::MergeService.new(source_topic: source_topic, target_topic: target_topic).call
     end
 
     def merge_reason(merge)

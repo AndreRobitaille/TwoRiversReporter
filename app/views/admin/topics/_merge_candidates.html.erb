@@ -1,0 +1,23 @@
+<div class="space-y-2">
+  <% if candidates.any? %>
+    <% candidates.each do |candidate| %>
+      <button
+        type="button"
+        class="block w-full rounded border p-3 text-left"
+        data-action="click->topic-detail-impact#selectCandidate click->topic-repair-search#selectCandidate"
+        data-topic-id="<%= candidate.topic_id %>"
+        data-topic-name="<%= candidate.name %>"
+        data-topic-alias-count="<%= candidate.alias_count %>"
+        data-topic-mention-count="<%= candidate.mention_count %>"
+        data-topic-summary-count="<%= candidate.summary_count %>"
+        data-topic-decision-count="<%= candidate.decision_count %>"
+        data-topic-knowledge-link-count="<%= candidate.knowledge_link_count %>"
+      >
+        <div class="font-medium"><%= candidate.name %></div>
+        <div class="text-sm text-secondary"><%= candidate.match_reason %></div>
+      </button>
+    <% end %>
+  <% else %>
+    <p class="text-secondary">No matching topics.</p>
+  <% end %>
+</div>

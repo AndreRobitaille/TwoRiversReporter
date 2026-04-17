@@ -1,4 +1,5 @@
 require "test_helper"
+require "securerandom"
 
 class AdminTopicFlowsTest < ActionDispatch::IntegrationTest
   setup do
@@ -19,40 +20,50 @@ class AdminTopicFlowsTest < ActionDispatch::IntegrationTest
     post mfa_session_url, params: { code: totp.now }
     follow_redirect! # to admin_root
 
-    @topic1 = Topic.create!(name: "Topic A", importance: 5, last_seen_at: 1.day.ago)
-    @topic2 = Topic.create!(name: "Topic B", importance: 3, last_seen_at: 2.days.ago)
-    @topic3 = Topic.create!(name: "Topic C", importance: 8, last_seen_at: 3.days.ago)
+    suffix = SecureRandom.hex(4)
+    @topic1_name = "Topic Alpha #{suffix}"
+    @topic2_name = "Topic Beta #{suffix}"
+    @topic3_name = "Topic Gamma #{suffix}"
+    @topic1 = Topic.create!(name: @topic1_name, importance: 5, last_seen_at: 1.day.ago, status: "proposed", review_status: "proposed")
+    @topic2 = Topic.create!(name: @topic2_name, importance: 3, last_seen_at: 2.days.ago, status: "proposed", review_status: "proposed")
+    @topic3 = Topic.create!(name: @topic3_name, importance: 8, last_seen_at: 3.days.ago, status: "proposed", review_status: "proposed")
   end
 
-  test "can view topics list with sorting" do
+  test "can view topic inbox" do
     get admin_topics_url
     assert_response :success
-    assert_select "tr", count: 7 # header + 3 topics × 2 rows (data + hidden preview)
 
-    # Default sort by last_seen_at desc (Topic A is most recent seen)
-    # Actually wait, topic1 seen 1 day ago, topic2 2 days ago, topic3 3 days ago.
-    # So A, B, C.
-
-    # Test sorting by importance desc
-    get admin_topics_url(sort: "importance", direction: "desc")
-    assert_response :success
-    # Order should be C (8), A (5), B (3)
-    # I can check order by checking ids or content order.
-
-    # Simple check:
-    rows = css_select("tbody tr:first-child")
-    assert_match /topic c/i, rows[0].text
-    assert_match /topic a/i, rows[1].text
-    assert_match /topic b/i, rows[2].text
+    assert_select "h1.page-title", text: "Topic Inbox"
+    assert_select "form.admin-topics-filters"
+    assert_select "table.admin-topics-table"
+    assert_select "a[href*='sort=name']", text: "Topic"
+    assert_select "a[href*='sort=mention_count']", text: "Mentions"
+    assert_select "a[href=?]", admin_topic_path(@topic1), text: @topic1_name.downcase
+    assert_select "a[href=?]", admin_topic_path(@topic2), text: @topic2_name.downcase
+    assert_select "a[href=?]", admin_topic_path(@topic3), text: @topic3_name.downcase
+    assert_select "a.btn--secondary[href=?]", admin_topic_path(@topic1), text: "Open Topic"
+    assert_select "a.btn--secondary[href=?]", admin_topic_path(@topic2), text: "Open Topic"
+    assert_select "a.btn--secondary[href=?]", admin_topic_path(@topic3), text: "Open Topic"
+    assert_match "Signals", response.body
   end
 
   test "can search for topics via json" do
-    get search_admin_topics_url(q: "topic a")
+    get search_admin_topics_url(q: @topic1_name)
     assert_response :success
     json = JSON.parse(response.body)
     assert_equal 1, json.length
     assert_equal @topic1.id, json[0]["id"]
-    assert_equal "topic a", json[0]["name"]
+    assert_equal @topic1_name.downcase, json[0]["name"]
+  end
+
+  test "can search for topics via json by alias" do
+    TopicAlias.create!(topic: @topic1, name: "finance")
+
+    get search_admin_topics_url(q: "fin")
+
+    assert_response :success
+    json = JSON.parse(response.body)
+    assert_equal [ @topic1.id ], json.map { |row| row["id"] }
   end
 
   test "can update importance inline" do
@@ -65,6 +76,16 @@ class AdminTopicFlowsTest < ActionDispatch::IntegrationTest
 
   test "can merge topic into another" do
     # Merge Topic B into Topic A
+    meeting = Meeting.create!(
+      body_name: "City Council",
+      meeting_type: "Regular",
+      starts_at: Time.current,
+      status: "minutes_posted",
+      detail_page_url: "http://example.com/meeting/#{SecureRandom.hex(6)}"
+    )
+    agenda_item = AgendaItem.create!(meeting: meeting, number: "1", title: "Item 1", order_index: 1)
+    AgendaItemTopic.create!(topic: @topic2, agenda_item: agenda_item)
+
     post merge_admin_topic_url(@topic2), params: { target_topic_id: @topic1.id }
 
     # Redirects to target topic show page
@@ -72,7 +93,8 @@ class AdminTopicFlowsTest < ActionDispatch::IntegrationTest
 
     assert_raises(ActiveRecord::RecordNotFound) { @topic2.reload }
 
-    assert TopicAlias.exists?(name: "topic b", topic_id: @topic1.id)
+    assert TopicAlias.exists?(name: @topic2_name.downcase, topic_id: @topic1.id)
+    assert_equal 1, @topic1.reload.topic_appearances.count
   end
 
   test "can create alias" do

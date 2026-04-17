@@ -22,13 +22,13 @@ module Admin
     test "should filter by review_status" do
       get admin_topics_url(review_status: "proposed")
       assert_response :success
-      assert_select "a", text: @proposed_topic.name
+      assert_select "a[href=?]", admin_topic_path(@proposed_topic), text: @proposed_topic.name
       assert_select "a", text: @approved_topic.name, count: 0
 
       get admin_topics_url(review_status: "approved")
       assert_response :success
       assert_select "a", text: @proposed_topic.name, count: 0
-      assert_select "a", text: @approved_topic.name
+      assert_select "a[href=?]", admin_topic_path(@approved_topic), text: @approved_topic.name
     end
 
     test "should approve proposed topic" do

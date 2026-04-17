@@ -1,0 +1,51 @@
+<section class="card p-6">
+  <div class="flex items-center justify-between gap-3 mb-4">
+    <h2 class="text-lg font-bold">Evidence snapshot</h2>
+    <span class="badge badge--default">Repair-first evidence</span>
+  </div>
+
+  <% if workspace.recent_evidence.any? %>
+    <div class="space-y-3">
+      <% workspace.recent_evidence.each do |agenda_item| %>
+        <% preview = topic_mention_preview(agenda_item, workspace.topic) %>
+        <article class="rounded border p-4 shadow-sm stacked card">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="font-semibold">
+                <%= link_to agenda_item.meeting.body_name, meeting_path(agenda_item.meeting), class: "text-inherit" %>
+              </div>
+              <div class="text-sm text-secondary">
+                <%= agenda_item.title %>
+                <% if agenda_item.meeting.starts_at.present? %>
+                  · <%= agenda_item.meeting.starts_at.to_date %>
+                <% end %>
+              </div>
+            </div>
+            <span class="badge badge--default">Stacked card</span>
+          </div>
+
+          <% topic_digest = workspace.topic.topic_summaries.find_by(meeting_id: agenda_item.meeting_id, summary_type: "topic_digest") %>
+          <% fallback_text = agenda_item.summary.presence || agenda_item.recommended_action.presence %>
+          <% if preview %>
+            <div class="mt-3 rounded border bg-white/50 p-3 text-sm">
+              <div class="italic text-secondary">&ldquo;<%= highlight_preview_terms(preview[:text], preview[:terms]) %>&rdquo;</div>
+            </div>
+          <% elsif fallback_text.present? %>
+            <div class="mt-3 rounded border bg-white/50 p-3 text-sm">
+              <div class="text-secondary"><%= fallback_text.squish %></div>
+            </div>
+          <% elsif topic_digest.present? %>
+            <div class="mt-3 rounded border bg-white/50 p-3 text-sm">
+              <div class="mb-1 text-xs font-semibold uppercase tracking-wide text-secondary">Topic digest</div>
+              <div class="text-secondary"><%= truncate(topic_digest.content.to_s.gsub(/^#+\s.*$/, "").squish, length: 320) %></div>
+            </div>
+          <% else %>
+            <div class="mt-3 text-sm text-secondary">Preview unavailable.</div>
+          <% end %>
+        </article>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="text-secondary">No recent evidence.</p>
+  <% end %>
+</section>

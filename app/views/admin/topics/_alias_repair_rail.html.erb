@@ -1,0 +1,52 @@
+<div class="topic-alias-card">
+  <% if workspace.aliases.any? %>
+    <div class="topic-alias-list">
+      <% workspace.aliases.each do |topic_alias| %>
+        <% remove_preview = Admin::Topics::ImpactPreviewQuery.new(action: :remove_alias, topic: workspace.topic, alias_name: topic_alias.name, alias_count: 1).call %>
+        <% promote_preview = Admin::Topics::ImpactPreviewQuery.new(action: :promote_alias, topic: workspace.topic, alias_name: topic_alias.name, alias_count: 1).call %>
+        <article class="topic-alias-row">
+          <div class="topic-alias-row__main">
+            <div class="topic-alias-row__name"><%= topic_alias.name %></div>
+            <p class="topic-alias-row__summary">Choose what to do with this alias entry.</p>
+          </div>
+
+          <div class="topic-alias-row__preview">
+            <p><strong>Leave As Alias:</strong> Keep the alias linked to this topic.</p>
+            <p><strong>Remove Alias:</strong> <%= remove_preview.consequence %></p>
+            <p><strong>Promote Alias To Its Own Topic:</strong> <%= promote_preview.consequence %></p>
+            <dl class="topic-alias-row__stats">
+              <div><dt>Appearances</dt><dd><%= remove_preview.appearance_count %></dd></div>
+              <div><dt>Summaries</dt><dd><%= remove_preview.summary_count %></dd></div>
+              <div><dt>Decisions</dt><dd><%= remove_preview.decision_count %></dd></div>
+              <div><dt>Knowledge links</dt><dd><%= remove_preview.knowledge_link_count %></dd></div>
+            </dl>
+          </div>
+
+          <div class="topic-alias-row__actions">
+            <span class="badge badge--default">Leave As Alias</span>
+            <%= button_to remove_alias_admin_topic_path(workspace.topic), method: :delete, class: "btn btn--secondary btn--sm", form: { data: { turbo_confirm: "Remove #{topic_alias.name}? This alias entry will no longer resolve here." } } do %>
+              <%= hidden_field_tag :alias_id, topic_alias.id %>
+              <%= hidden_field_tag :reason, "Alias does not belong here" %>
+              <%= hidden_field_tag :q, detail_workspace_context&.dig(:q), data: { topic_detail_impact_target: "aliasContextQ" } %>
+              <%= hidden_field_tag :source_topic_id, detail_workspace_context&.dig(:source_topic_id), data: { topic_detail_impact_target: "aliasContextSource" } %>
+              <%= hidden_field_tag :alias_name, topic_alias.name %>
+              Remove Alias
+            <% end %>
+            <%= button_to promote_alias_admin_topic_path(workspace.topic), method: :post, class: "btn btn--secondary btn--sm", form: { data: { turbo_confirm: "Promote #{topic_alias.name}? This creates a new standalone topic shell, removes 1 alias entry from this topic, and does not carry appearances, summaries, or history forward automatically." } } do %>
+              <%= hidden_field_tag :alias_id, topic_alias.id %>
+              <%= hidden_field_tag :reason, "Alias should be standalone" %>
+              <%= hidden_field_tag :q, detail_workspace_context&.dig(:q), data: { topic_detail_impact_target: "aliasContextQ" } %>
+              <%= hidden_field_tag :source_topic_id, detail_workspace_context&.dig(:source_topic_id), data: { topic_detail_impact_target: "aliasContextSource" } %>
+              Promote Alias To Its Own Topic
+            <% end %>
+            <%= render "move_alias_form", workspace: workspace, topic_alias: topic_alias, detail_workspace_context: detail_workspace_context %>
+          </div>
+        </article>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="text-secondary">No aliases to review.</p>
+  <% end %>
+
+  <p class="topic-alias-card__note">Downstream warnings: removing, promoting, or moving aliases changes future matching and may affect related mentions.</p>
+</div>

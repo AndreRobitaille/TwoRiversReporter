@@ -46,6 +46,20 @@ Rails.application.routes.draw do
         post :bulk_update
       end
       member do
+        get :repair, to: "admin/topic_repairs#show"
+        get :history, to: "admin/topic_repairs#history"
+        get :merge_candidates, to: "admin/topic_repairs#merge_candidates"
+        get :impact_preview, to: "admin/topic_repairs#impact_preview"
+        post :merge_from_repair, to: "admin/topic_repairs#merge"
+        post :merge_away_from_repair, to: "admin/topic_repairs#merge_away"
+        post :topic_to_alias, to: "admin/topic_repairs#topic_to_alias"
+        post :flip_alias, to: "admin/topic_repairs#flip_alias"
+        post :move_alias, to: "admin/topic_repairs#move_alias"
+        patch :update_alias, to: "admin/topic_repairs#update_alias"
+        post :promote_alias, to: "admin/topic_repairs#promote_alias"
+        delete :remove_alias, to: "admin/topic_repairs#remove_alias"
+        post :promote_alias, to: "admin/topic_repairs#promote_alias"
+        post :retire, to: "admin/topic_repairs#retire"
         post :approve
         post :block
         post :unblock

@@ -1,0 +1,20 @@
+<section class="card p-6 border border-danger-light bg-red-50/40">
+  <h2 class="text-lg font-bold mb-2 text-danger">Topic Surgery</h2>
+  <p class="text-sm text-secondary mb-4">
+    Use this only when the current topic is the wrong container: a bad umbrella, a catch-all, or a topic that should be blocked instead of repaired.
+  </p>
+
+  <div class="rounded border border-danger-light bg-white p-4 space-y-3">
+    <p class="text-sm font-medium text-danger">This action is deliberately high-friction.</p>
+    <p class="text-sm text-secondary">
+      Retiring this topic will block it from normal use. Add a reason so the next reviewer understands why the container is unsafe.
+    </p>
+
+    <%= form_with url: retire_admin_topic_url(topic), method: :post, local: true, class: "space-y-3" do |f| %>
+      <div>
+        <%= text_area_tag :reason, nil, class: "form-input w-full", rows: 3, required: true, placeholder: "Why is this topic a bad umbrella or wrong container?" %>
+      </div>
+      <%= f.submit "Retire / Block Topic", class: "btn btn--danger", data: { turbo_confirm: "Retire and block this topic? This should only be used for bad umbrella topics." } %>
+    <% end %>
+  </div>
+</section>

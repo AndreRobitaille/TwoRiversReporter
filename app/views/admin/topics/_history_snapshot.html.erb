@@ -1,0 +1,12 @@
+<section class="card p-6 mt-6">
+  <h2 class="text-lg font-bold mb-4">Recent activity</h2>
+  <% if history.any? %>
+    <ul>
+      <% history.each do |event| %>
+        <li><%= event.action %><% if event.reason.present? %> — <%= event.reason %><% end %></li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="text-secondary">No recent activity.</p>
+  <% end %>
+</section>

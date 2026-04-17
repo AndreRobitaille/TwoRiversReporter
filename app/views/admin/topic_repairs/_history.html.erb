@@ -1,0 +1,17 @@
+<h2 class="text-lg font-bold mb-2">History</h2>
+
+<% if history.any? %>
+  <ul class="space-y-3">
+    <% history.each do |event| %>
+      <li class="text-sm">
+        <div class="font-medium"><%= event.action.humanize %></div>
+        <% if event.reason.present? %>
+          <div class="text-secondary"><%= event.reason %></div>
+        <% end %>
+        <div class="text-secondary"><%= event.user&.email_address || "System" %> · <%= time_ago_in_words(event.created_at) %> ago</div>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <p class="text-secondary">No history yet.</p>
+<% end %>

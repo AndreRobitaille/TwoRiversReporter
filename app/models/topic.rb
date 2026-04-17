@@ -43,10 +43,18 @@ class Topic < ApplicationRecord
 
   scope :search_by_text, ->(query) {
     return none if query.blank?
-    term = "%#{sanitize_sql_like(query.strip.downcase)}%"
+    normalized_query = normalize_name(query)
+    return none if normalized_query.blank?
+
+    term = "%#{sanitize_sql_like(normalized_query)}%"
     left_outer_joins(:topic_briefing)
-      .where("LOWER(topics.name) LIKE :q OR LOWER(topics.description) LIKE :q OR LOWER(topic_briefings.headline) LIKE :q", q: term)
+      .left_outer_joins(:topic_aliases)
+      .where(
+        "LOWER(topics.name) LIKE :q OR LOWER(topics.canonical_name) LIKE :q OR LOWER(topics.description) LIKE :q OR LOWER(topic_briefings.headline) LIKE :q OR LOWER(topic_aliases.name) LIKE :q",
+        q: term
+      )
       .distinct
+      .order(:name)
   }
 
   scope :similar_to, ->(query, threshold = 0.7) {

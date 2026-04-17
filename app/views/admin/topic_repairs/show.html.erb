@@ -1,0 +1,62 @@
+<% content_for(:title) { "Repair #{@workspace.topic.name} - Admin" } %>
+
+<div class="page-header">
+  <div class="flex items-center justify-between gap-4">
+    <div>
+      <h1 class="page-title">Repair Topic</h1>
+      <p class="page-subtitle"><%= @workspace.topic.name %></p>
+    </div>
+    <div class="flex gap-2">
+      <%= link_to "Back to Inbox", admin_topics_path, class: "btn btn--secondary" %>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-cols-2 gap-6">
+  <div class="card p-6" data-controller="topic-repair-search" data-topic-repair-search-url-value="<%= merge_candidates_admin_topic_url(@workspace.topic) %>">
+    <h2 class="text-lg font-bold mb-2">This Topic Is Correct</h2>
+    <p class="text-secondary"><strong><%= @workspace.topic.name %></strong></p>
+
+    <p class="mt-4 text-sm text-secondary">Combine duplicate topics here when another topic is really the same issue.</p>
+    <label class="block mt-4 text-sm font-medium">Find topics to combine into this topic</label>
+    <input type="search" class="form-input mt-2" placeholder="Search topics..." data-topic-repair-search-target="input" data-action="input->topic-repair-search#search">
+
+    <div class="mt-4" data-topic-repair-search-target="results"></div>
+
+    <div class="mt-4 flex gap-2 flex-wrap">
+      <span class="badge badge--default"><%= pluralize(@workspace.alias_count, "alias") %></span>
+      <span class="badge badge--default"><%= pluralize(@workspace.mention_count, "mention") %></span>
+    </div>
+  </div>
+
+  <div class="card p-6 space-y-6">
+    <%= render "aliases", topic: @workspace.topic %>
+
+    <%= render "surgery", topic: @workspace.topic %>
+
+    <section>
+      <h2 class="text-lg font-bold mb-2">Recent activity</h2>
+
+      <% if @workspace.recent_activity.any? %>
+        <ul class="space-y-2 text-sm">
+          <% @workspace.recent_activity.each do |event| %>
+            <li>
+              <span class="font-medium"><%= event.action.humanize %></span>
+              <% if event.reason.present? %>
+                <span class="text-secondary">· <%= event.reason %></span>
+              <% end %>
+              <span class="text-secondary">· <%= time_ago_in_words(event.created_at) %> ago</span>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="text-secondary">No recent activity.</p>
+      <% end %>
+    </section>
+
+    <turbo-frame id="topic-repair-history" src="<%= history_admin_topic_url(@workspace.topic) %>" loading="lazy">
+      <h2 class="text-lg font-bold mb-2">History</h2>
+      <p class="text-secondary">Loading history…</p>
+    </turbo-frame>
+  </div>
+</div>

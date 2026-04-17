@@ -1,196 +1,138 @@
-<% content_for(:title) { "#{@topic.name} - Admin" } %>
+<% content_for(:title) { "#{@workspace.topic.name} - Admin" } %>
 
-<div class="page-header">
-  <div class="flex items-center justify-between">
-    <h1 class="page-title"><%= @topic.name %></h1>
-    <div class="flex gap-2">
-      <%= link_to "Back to Topics", admin_topics_path, class: "btn btn--secondary" %>
+<% if flash[:notice] || flash[:alert] %>
+  <div class="flash <%= flash[:alert] ? 'flash--danger' : 'flash--success' %> mb-4" data-controller="auto-hide">
+    <%= flash[:alert] || flash[:notice] %>
+  </div>
+<% end %>
+
+<%= render "header_summary", workspace: @workspace %>
+
+<div class="topic-decision-board" data-controller="topic-decision-board topic-detail-impact" data-topic-detail-impact-url-value="<%= impact_preview_admin_topic_path(@workspace.topic) %>">
+  <section class="topic-decision-card topic-decision-card--primary" data-topic-decision-board-target="card" data-expanded="true">
+    <button type="button" class="topic-decision-card__trigger" data-topic-decision-board-target="trigger" data-action="click->topic-decision-board#toggle" aria-expanded="true">
+      <h2 class="topic-decision-card__title">This Topic Is Correct</h2>
+      <span class="topic-decision-card__chevron" data-topic-decision-board-target="chevron">Collapse</span>
+    </button>
+    <div class="topic-decision-card__panel" data-topic-decision-board-target="panel">
+      <%= render "merge_workbench", workspace: @workspace, preview: @impact_preview %>
     </div>
-  </div>
-  <div class="mt-2 flex gap-2 flex-wrap">
-    <span class="badge <%= case @topic.review_status
-      when 'approved' then 'badge--success'
-      when 'blocked' then 'badge--danger'
-      when 'proposed' then 'badge--warning'
-      else 'badge--default'
-    end %>">Review: <%= @topic.review_status.presence || "unknown" %></span>
-    <span class="badge <%= case @topic.status
-      when 'approved' then 'badge--success'
-      when 'blocked' then 'badge--danger'
-      when 'proposed' then 'badge--default'
-      else 'badge--default'
-    end %>">Visibility: <%= @topic.status == "approved" ? "public" : @topic.status %></span>
-    <% if @topic.pinned? %>
-      <span class="badge badge--primary">Pinned</span>
-    <% end %>
-  </div>
+  </section>
+
+  <section class="topic-decision-card" data-topic-decision-board-target="card" data-expanded="false">
+    <button type="button" class="topic-decision-card__trigger" data-topic-decision-board-target="trigger" data-action="click->topic-decision-board#toggle" aria-expanded="false">
+      <h2 class="topic-decision-card__title">This Topic Is Wrong</h2>
+      <span class="topic-decision-card__chevron" data-topic-decision-board-target="chevron">Expand</span>
+    </button>
+    <div class="topic-decision-card__panel" data-topic-decision-board-target="panel" hidden>
+      <%= render "canonical_correction", workspace: @workspace, detail_workspace_context: @detail_workspace_context %>
+    </div>
+  </section>
+
+  <section class="topic-decision-card" data-topic-decision-board-target="card" data-expanded="false">
+    <button type="button" class="topic-decision-card__trigger" data-topic-decision-board-target="trigger" data-action="click->topic-decision-board#toggle" aria-expanded="false">
+      <h2 class="topic-decision-card__title">Aliases On This Topic</h2>
+      <span class="topic-decision-card__chevron" data-topic-decision-board-target="chevron">Expand</span>
+    </button>
+    <div class="topic-decision-card__panel" data-topic-decision-board-target="panel" hidden>
+      <%= render "alias_repair_rail", workspace: @workspace, detail_workspace_context: @detail_workspace_context %>
+    </div>
+  </section>
+
+  <section class="topic-decision-card topic-decision-card--danger" data-topic-decision-board-target="card" data-expanded="false">
+    <button type="button" class="topic-decision-card__trigger" data-topic-decision-board-target="trigger" data-action="click->topic-decision-board#toggle" aria-expanded="false">
+      <h2 class="topic-decision-card__title">This Topic Should Not Exist</h2>
+      <span class="topic-decision-card__chevron" data-topic-decision-board-target="chevron">Expand</span>
+    </button>
+    <div class="topic-decision-card__panel" data-topic-decision-board-target="panel" hidden>
+      <p class="topic-decision-card__summary">Use this when the record should be blocked or retired instead of repaired.</p>
+      <section class="topic-decision-destructive">
+        <h3 class="topic-decision-destructive__title">Destructive actions</h3>
+        <p class="topic-decision-destructive__lead">Block or retire this topic only when it should no longer be usable. This will add a blocklist entry and keep the topic out of future matching.</p>
+        <div class="topic-decision-destructive__preview">
+          <div class="topic-decision-destructive__label">Consequence preview</div>
+          <p><%= @retire_preview.consequence %></p>
+          <p class="topic-decision-destructive__note"><%= @retire_preview.language %></p>
+          <dl class="topic-decision-destructive__stats">
+            <div class="topic-decision-destructive__stat"><dt>Appearances</dt><dd><%= @retire_preview.appearance_count %></dd></div>
+            <div class="topic-decision-destructive__stat"><dt>Agenda items</dt><dd><%= @workspace.topic.agenda_items.count %></dd></div>
+            <div class="topic-decision-destructive__stat"><dt>Decisions</dt><dd><%= @retire_preview.decision_count %></dd></div>
+            <div class="topic-decision-destructive__stat"><dt>Summaries</dt><dd><%= @retire_preview.summary_count %></dd></div>
+          </dl>
+        </div>
+
+        <button type="button" class="btn btn--danger" data-action="click->topic-detail-impact#openRetireConfirm" data-modal-id="retire-modal" data-topic-id="<%= @workspace.topic.id %>" data-topic-name="<%= @workspace.topic.name %>">Retire / Block Topic</button>
+      </section>
+    </div>
+  </section>
+
 </div>
 
-<div class="grid grid-cols-2 gap-6">
-  <div class="card p-6" id="topic-details-form">
-    <h2 class="text-lg font-bold mb-4">Details</h2>
-    <% if flash[:notice] %>
-      <div class="flash flash--success mb-4" data-controller="auto-hide">
-        <%= flash[:notice] %>
-      </div>
-    <% end %>
-    <%= form_with model: [:admin, @topic], data: { controller: "form-feedback", action: "submit->form-feedback#submit turbo:submit-end->form-feedback#end" } do |f| %>
-      <div class="form-group">
-        <%= f.label :name, "Canonical Name" %>
-        <%= f.text_field :name, class: "form-input w-full" %>
-      </div>
-      <div class="form-group">
-        <%= f.label :description, "Description" %>
-        <%= f.text_area :description, rows: 4, class: "form-input w-full" %>
-      </div>
-      <div class="form-group">
-        <%= f.label :source_type, "Resident context source" %>
-        <%= f.select :source_type,
-          options_for_select([
-            ["Admin observation", "admin_observation"],
-            ["Community observation", "community_observation"],
-            ["Social media", "social_media"],
-            ["Other", "other"]
-          ], @topic.source_type),
-          { include_blank: "Select source" },
-          class: "form-input w-full" %>
-        <p class="text-xs text-secondary mt-1">Optional. Used for resident-reported context labeling.</p>
-      </div>
-      <div class="form-group">
-        <%= f.label :source_notes, "Resident-reported context (no official record)" %>
-        <%= f.text_area :source_notes, rows: 4, class: "form-input w-full" %>
-        <p class="text-xs text-secondary mt-1">Shown to residents with a clear label. Keep it factual and observational.</p>
-      </div>
-      <div class="form-group">
-        <%= f.label :importance, "Importance (0-10)" %>
-        <%= f.number_field :importance, min: 0, max: 10, class: "form-input w-full" %>
-      </div>
-      <div class="form-group">
-        <%= f.label :resident_impact_score, "Resident Impact (1-5)" %>
-        <%= f.select :resident_impact_score,
-          options_for_select(
-            [["--", ""], ["1 - Routine", 1], ["2 - Minor", 2], ["3 - Moderate", 3], ["4 - Significant", 4], ["5 - Major", 5]],
-            @topic.resident_impact_score
-          ),
-          {},
-          class: "form-input w-full" %>
-        <p class="text-xs text-secondary mt-1">
-          <% if @topic.resident_impact_admin_locked? %>
-            Set by admin (<%= time_ago_in_words(@topic.resident_impact_overridden_at) %> ago, expires in
-            <%= distance_of_time_in_words(@topic.resident_impact_overridden_at + 180.days, Time.current) %>)
-          <% elsif @topic.resident_impact_score.present? %>
-            AI-assessed
-          <% else %>
-            Not yet scored
-          <% end %>
-        </p>
-      </div>
-      <div class="form-group mt-4 flex gap-2 flex-wrap">
-        <%= f.submit "Update Topic", class: "btn btn--primary", data: { form_feedback_target: "submit" } %>
-        
-        <% if @topic.review_status == "proposed" %>
-          <%= link_to "Approve", approve_admin_topic_path(@topic), data: { turbo_method: :post }, class: "btn btn--success" %>
-        <% end %>
+<div class="topic-decision-secondary-stack">
+  <section class="topic-decision-card topic-decision-card--secondary">
+    <%= render "evidence_snapshot", workspace: @workspace %>
+  </section>
 
-        <% if @topic.review_status == "approved" %>
-          <%= link_to "Needs review", needs_review_admin_topic_path(@topic), data: { turbo_method: :post }, class: "btn btn--secondary" %>
-        <% end %>
+  <section class="topic-decision-card topic-decision-card--secondary">
+    <%= render "history_snapshot", history: @workspace.recent_history %>
+  </section>
 
-        <% unless @topic.status == "blocked" %>
-          <%= link_to "Block", block_admin_topic_path(@topic), data: { turbo_method: :post }, class: "btn btn--danger" %>
-        <% else %>
-          <%= link_to "Unblock", unblock_admin_topic_path(@topic), data: { turbo_method: :post }, class: "btn btn--secondary" %>
-        <% end %>
-        
-        <% unless @topic.pinned? %>
-          <%= link_to "Pin", pin_admin_topic_path(@topic), data: { turbo_method: :post }, class: "btn btn--secondary" %>
-        <% else %>
-          <%= link_to "Unpin", unpin_admin_topic_path(@topic), data: { turbo_method: :post }, class: "btn btn--secondary" %>
+  <details class="topic-decision-card topic-decision-card--secondary" data-details-collapsible <%= "open" if @topic.errors.any? %>>
+      <summary class="topic-decision-details__summary">Edit details</summary>
+      <div class="topic-decision-details__body">
+        <p class="text-sm text-secondary">Lower-priority metadata editing stays available here, but out of the repair path.</p>
+
+        <%= form_with model: [:admin, @workspace.topic], local: true, class: "topic-decision-details__form" do |f| %>
+          <div class="form-group">
+            <%= f.label :name, "Canonical name" %>
+            <%= f.text_field :name, class: "form-input w-full" %>
+          </div>
+
+          <div class="form-group">
+            <%= f.label :description, "Description" %>
+            <%= f.text_area :description, rows: 4, class: "form-input w-full" %>
+          </div>
+
+          <div class="form-group">
+            <%= f.label :source_type, "Resident context source" %>
+            <%= f.select :source_type,
+              options_for_select([
+                ["Admin observation", "admin_observation"],
+                ["Community observation", "community_observation"],
+                ["Social media", "social_media"],
+                ["Other", "other"]
+              ], @workspace.topic.source_type),
+              { include_blank: "Select source" },
+              class: "form-input w-full" %>
+          </div>
+
+          <div class="form-group">
+            <%= f.label :source_notes, "Resident-reported context (no official record)" %>
+            <%= f.text_area :source_notes, rows: 4, class: "form-input w-full" %>
+          </div>
+
+          <div class="form-group">
+            <%= f.label :importance, "Importance (0-10)" %>
+            <%= f.number_field :importance, min: 0, max: 10, class: "form-input w-full" %>
+          </div>
+
+          <div class="form-group">
+            <%= f.label :resident_impact_score, "Resident Impact (1-5)" %>
+            <%= f.select :resident_impact_score,
+              options_for_select(
+                [["--", ""], ["1 - Routine", 1], ["2 - Minor", 2], ["3 - Moderate", 3], ["4 - Significant", 4], ["5 - Major", 5]],
+                @workspace.topic.resident_impact_score
+              ),
+              {},
+              class: "form-input w-full" %>
+          </div>
+
+          <div class="topic-decision-details__actions">
+            <%= f.submit "Save details", class: "btn btn--primary" %>
+          </div>
         <% end %>
       </div>
-    <% end %>
-  </div>
-
-  <div class="card p-6">
-    <h2 class="text-lg font-bold mb-4">Aliases & Merging</h2>
-    <% if @aliases.any? %>
-      <ul class="list-disc pl-5 mb-6">
-        <% @aliases.each do |a| %>
-          <li class="mb-1"><%= a.name %></li>
-        <% end %>
-      </ul>
-    <% else %>
-      <p class="text-secondary mb-6">No aliases found.</p>
-    <% end %>
-
-    <div class="border-t pt-4 mb-6">
-      <h3 class="text-md font-bold mb-2">Add Manual Alias</h3>
-      <%= form_with url: create_alias_admin_topic_path(@topic), local: true, class: "flex gap-2" do |f| %>
-        <%= f.text_field :name, class: "form-input grow", placeholder: "e.g. alternate spelling" %>
-        <%= f.submit "Add", class: "btn btn--secondary" %>
-      <% end %>
-    </div>
-
-    <div class="border-t pt-4">
-      <h3 class="text-md font-bold mb-2 text-danger">Merge into another Topic</h3>
-      <p class="text-sm text-secondary mb-2">Move everything to a target topic. <strong>This topic will be deleted.</strong></p>
-      
-      <button type="button" 
-              class="btn btn--danger w-full justify-center" 
-              data-controller="modal-trigger" 
-              data-action="click->modal-trigger#open" 
-              data-modal-trigger-topic-id-value="<%= @topic.id %>" 
-              data-modal-trigger-topic-name-value="<%= @topic.name %>">
-        Merge / Alias To...
-      </button>
-    </div>
-  </div>
+    </details>
 </div>
 
-<div class="mt-6">
-  <h2 class="text-lg font-bold mb-4">Recent Mentions</h2>
-  <div class="table-wrapper">
-    <table>
-      <thead>
-        <tr>
-          <th>Meeting</th>
-          <th style="width: 50%;">Agenda Item</th>
-          <th>Date</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @recent_mentions.each do |agenda_item| %>
-          <% preview = topic_mention_preview(agenda_item, @topic, window: @preview_window) %>
-          <tr>
-            <td style="white-space: nowrap;">
-              <%= link_to agenda_item.meeting.body_name, meeting_path(agenda_item.meeting) %>
-            </td>
-            <td>
-              <div class="font-bold"><%= agenda_item.title %></div>
-              <% if preview %>
-                <div class="text-sm mt-2" style="background-color: var(--color-surface); padding: var(--space-2); border-radius: var(--radius-sm); border: 1px solid var(--color-border);">
-                  <div class="mb-1" style="font-style: italic; color: var(--color-text-secondary);">
-                    &ldquo;<%= highlight_preview_terms(preview[:text], preview[:terms]) %>&rdquo;
-                  </div>
-                  <div class="text-xs text-secondary">
-                    &mdash; <%= preview[:document_type].to_s.humanize %>
-                    <% if preview[:page_number].present? %>
-                      (Page <%= preview[:page_number] %>)
-                    <% end %>
-                  </div>
-                </div>
-              <% else %>
-                 <div class="text-xs text-secondary mt-1" style="font-style: italic;">Preview unavailable</div>
-              <% end %>
-            </td>
-            <td style="white-space: nowrap;">
-              <%= agenda_item.meeting.starts_at&.to_date %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<%= render "merge_modal" %>
+<%= render "repair_confirm_modal", workspace: @workspace %>

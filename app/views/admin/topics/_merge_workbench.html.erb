@@ -1,0 +1,37 @@
+<section class="card p-6">
+  <h3 class="text-lg font-bold mb-2">Primary topic stays here</h3>
+  <p class="text-secondary mb-4">Another topic is the same issue and should live under this topic: <strong><%= workspace.topic.name %></strong></p>
+
+  <div class="grid gap-4 lg:grid-cols-2">
+    <div>
+      <%= form_with url: merge_from_repair_admin_topic_path(workspace.topic), method: :post do |f| %>
+        <label class="block mb-2" for="merge-source-search">Find source topic</label>
+        <input id="merge-source-search" type="search" class="w-full" placeholder="Search by name or alias" data-topic-detail-impact-target="search" data-action="input->topic-detail-impact#search" value="<%= params[:q] %>">
+        <%= hidden_field_tag :source_topic_id, params[:source_topic_id], data: { topic_detail_impact_target: "source" } %>
+        <%= hidden_field_tag :source_topic_name, params[:source_topic_name], data: { topic_detail_impact_target: "sourceName" } %>
+        <%= hidden_field_tag :alias_context_q, params[:q], data: { topic_detail_impact_target: "aliasContextQ" } %>
+        <%= hidden_field_tag :alias_context_source_topic_id, params[:source_topic_id], data: { topic_detail_impact_target: "aliasContextSource" } %>
+
+        <div class="mt-2 text-sm text-secondary" data-topic-detail-impact-target="selection">
+          <%= if params[:source_topic_name].present?
+                "Selected topic: #{params[:source_topic_name]}"
+              elsif params[:source_topic_id].present?
+                "Selected topic ID: #{params[:source_topic_id]}"
+              else
+                "Choose a topic from search results."
+              end %>
+        </div>
+
+        <div class="mt-3" data-topic-detail-impact-target="results"></div>
+
+        <div class="mt-4">
+          <button type="button" class="btn btn--danger" data-action="click->topic-detail-impact#openMergeConfirm">
+            Combine Duplicate Topic Here
+          </button>
+        </div>
+      <% end %>
+    </div>
+
+    <%= render "impact_summary", workspace: preview %>
+  </div>
+</section>
