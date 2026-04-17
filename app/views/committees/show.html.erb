@@ -1,4 +1,6 @@
-<% content_for(:title) { "#{@committee.name} - Two Rivers Matters" } %>
+<% content_for(:title) { "#{@committee.name} — Two Rivers, WI" } %>
+<% content_for(:description) { @committee.description.presence || "The #{@committee.name} in Two Rivers, WI — members, meetings, and the issues they've taken up." } %>
+<% content_for(:og_type) { "article" } %>
 
 <article class="committee-article">
   <header class="committee-article-header">
