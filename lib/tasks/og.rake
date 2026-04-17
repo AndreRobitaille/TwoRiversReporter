@@ -2,28 +2,29 @@ namespace :og do
   desc "Generate public/og-image.png from app/views/og/default.html.erb"
   task generate: :environment do
     require "fileutils"
-    require "open3"
-    require "socket"
 
     output_path = Rails.root.join("public", "og-image.png").to_s
-    tmp_path = Rails.root.join("tmp", "og-image-raw.png").to_s
-    FileUtils.mkdir_p(File.dirname(tmp_path))
+    tmp_dir = Rails.root.join("tmp")
+    tmp_html = tmp_dir.join("og-default.html").to_s
+    tmp_png = tmp_dir.join("og-image-raw.png").to_s
+    FileUtils.mkdir_p(tmp_dir)
 
     chromium = %w[chromium chromium-browser google-chrome google-chrome-stable]
       .find { |cmd| system("which #{cmd} > /dev/null 2>&1") }
     abort "No Chromium binary found on PATH (tried: chromium, chromium-browser, google-chrome, google-chrome-stable)." if chromium.nil?
 
-    port = find_free_port
-    server_pid = spawn(
-      { "RAILS_ENV" => "development" },
-      "bin/rails", "server", "-p", port.to_s, "-b", "127.0.0.1",
-      out: File::NULL, err: File::NULL
+    # Render the ERB to a static file. Rails' dev-mode annotation comments
+    # wrap the real <!DOCTYPE html>, which triggers quirks mode in Chromium
+    # and breaks font metrics. Strip them before writing.
+    html = ApplicationController.renderer.render(
+      template: "og/default",
+      layout: false
     )
+    html = html.gsub(/<!--\s*(BEGIN|END) app\/views\/og\/default\.html\.erb\s*-->\n?/, "").lstrip
+    File.write(tmp_html, html)
 
     begin
-      wait_for_server("http://127.0.0.1:#{port}/og/default")
-
-      url = "http://127.0.0.1:#{port}/og/default"
+      url = "file://#{tmp_html}"
       args = [
         chromium,
         "--headless=new",
@@ -31,49 +32,29 @@ namespace :og do
         "--hide-scrollbars",
         "--no-sandbox",
         "--window-size=1200,630",
-        "--screenshot=#{tmp_path}",
+        "--virtual-time-budget=10000",
+        "--run-all-compositor-stages-before-draw",
+        "--screenshot=#{tmp_png}",
         url
       ]
       system(*args) || abort("Chromium screenshot failed")
 
-      abort "Chromium produced no output at #{tmp_path}" unless File.exist?(tmp_path)
+      abort "Chromium produced no output at #{tmp_png}" unless File.exist?(tmp_png)
 
       if system("which pngquant > /dev/null 2>&1")
-        system("pngquant --force --quality=80-95 --output #{output_path} #{tmp_path}") ||
-          FileUtils.cp(tmp_path, output_path)
+        system("pngquant --force --quality=80-95 --output #{output_path} #{tmp_png}") ||
+          FileUtils.cp(tmp_png, output_path)
       else
         warn "pngquant not on PATH — copying raw PNG. Install pngquant to get ~5-10x smaller file."
-        FileUtils.cp(tmp_path, output_path)
+        FileUtils.cp(tmp_png, output_path)
       end
 
       size_kb = File.size(output_path) / 1024
       puts "Generated #{output_path} (#{size_kb} KB)"
       warn "WARNING: file exceeds 100 KB target." if size_kb > 100
     ensure
-      Process.kill("TERM", server_pid) rescue nil
-      Process.wait(server_pid) rescue nil
-      FileUtils.rm_f(tmp_path)
+      FileUtils.rm_f(tmp_png)
+      FileUtils.rm_f(tmp_html)
     end
-  end
-
-  def find_free_port
-    server = TCPServer.new("127.0.0.1", 0)
-    port = server.addr[1]
-    server.close
-    port
-  end
-
-  def wait_for_server(url, timeout: 30)
-    deadline = Time.now + timeout
-    until Time.now > deadline
-      begin
-        require "net/http"
-        response = Net::HTTP.get_response(URI(url))
-        return if response.code.to_i < 500
-      rescue Errno::ECONNREFUSED, Errno::ECONNRESET
-        sleep 0.25
-      end
-    end
-    abort "Rails server on #{url} did not become ready within #{timeout}s"
   end
 end
