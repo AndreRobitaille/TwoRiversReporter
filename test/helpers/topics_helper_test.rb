@@ -293,4 +293,26 @@ class TopicsHelperTest < ActionView::TestCase
 
     assert_nil result[:meeting], "should not link when committee name doesn't match"
   end
+
+  # --- topic_share_description ---
+
+  test "topic_share_description returns briefing headline when present" do
+    briefing = OpenStruct.new(headline: "Council has voted to fund only half of replacement line items.")
+    topic = OpenStruct.new(name: "Lead Pipe Replacement", topic_briefing: briefing)
+    assert_equal "Council has voted to fund only half of replacement line items.",
+      topic_share_description(topic)
+  end
+
+  test "topic_share_description falls through to bare when briefing is nil" do
+    topic = OpenStruct.new(name: "Lead Pipe Replacement", topic_briefing: nil)
+    assert_equal "Lead pipe replacement in Two Rivers, WI — every city meeting where it's come up, every vote, and what's still unresolved.",
+      topic_share_description(topic)
+  end
+
+  test "topic_share_description falls through to bare when briefing headline is blank" do
+    briefing = OpenStruct.new(headline: "")
+    topic = OpenStruct.new(name: "Downtown Parking Study", topic_briefing: briefing)
+    assert_equal "Downtown parking study in Two Rivers, WI — every city meeting where it's come up, every vote, and what's still unresolved.",
+      topic_share_description(topic)
+  end
 end

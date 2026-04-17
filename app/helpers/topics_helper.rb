@@ -131,6 +131,14 @@ module TopicsHelper
     { event: event_text, meeting_name: display_name, meeting: meeting }
   end
 
+  def topic_share_description(topic)
+    headline = topic.topic_briefing&.headline
+    return headline if headline.present?
+
+    name_sentence = topic.name.to_s.downcase.sub(/\A[a-z]/, &:upcase)
+    "#{name_sentence} in Two Rivers, WI — every city meeting where it's come up, every vote, and what's still unresolved."
+  end
+
   private
 
   # Normalize meeting name strings for MATCHING between AI-generated
