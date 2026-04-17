@@ -8,131 +8,243 @@
 
 <%= render "header_summary", workspace: @workspace %>
 
-<div class="topic-decision-board" data-controller="topic-decision-board topic-detail-impact" data-topic-detail-impact-url-value="<%= impact_preview_admin_topic_path(@workspace.topic) %>">
-  <section class="topic-decision-card topic-decision-card--primary" data-topic-decision-board-target="card" data-expanded="true">
-    <button type="button" class="topic-decision-card__trigger" data-topic-decision-board-target="trigger" data-action="click->topic-decision-board#toggle" aria-expanded="true">
-      <h2 class="topic-decision-card__title">This Topic Is Correct</h2>
-      <span class="topic-decision-card__chevron" data-topic-decision-board-target="chevron">Collapse</span>
-    </button>
-    <div class="topic-decision-card__panel" data-topic-decision-board-target="panel">
-      <%= render "merge_workbench", workspace: @workspace, preview: @impact_preview %>
-    </div>
-  </section>
+<div class="topic-detail-layout" data-controller="topic-decision-board topic-detail-impact" data-topic-detail-impact-url-value="<%= impact_preview_admin_topic_path(@workspace.topic) %>">
 
-  <section class="topic-decision-card" data-topic-decision-board-target="card" data-expanded="false">
-    <button type="button" class="topic-decision-card__trigger" data-topic-decision-board-target="trigger" data-action="click->topic-decision-board#toggle" aria-expanded="false">
-      <h2 class="topic-decision-card__title">This Topic Is Wrong</h2>
-      <span class="topic-decision-card__chevron" data-topic-decision-board-target="chevron">Expand</span>
-    </button>
-    <div class="topic-decision-card__panel" data-topic-decision-board-target="panel" hidden>
-      <%= render "canonical_correction", workspace: @workspace, detail_workspace_context: @detail_workspace_context %>
-    </div>
-  </section>
-
-  <section class="topic-decision-card" data-topic-decision-board-target="card" data-expanded="false">
-    <button type="button" class="topic-decision-card__trigger" data-topic-decision-board-target="trigger" data-action="click->topic-decision-board#toggle" aria-expanded="false">
-      <h2 class="topic-decision-card__title">Aliases On This Topic</h2>
-      <span class="topic-decision-card__chevron" data-topic-decision-board-target="chevron">Expand</span>
-    </button>
-    <div class="topic-decision-card__panel" data-topic-decision-board-target="panel" hidden>
-      <%= render "alias_repair_rail", workspace: @workspace, detail_workspace_context: @detail_workspace_context %>
-    </div>
-  </section>
-
-  <section class="topic-decision-card topic-decision-card--danger" data-topic-decision-board-target="card" data-expanded="false">
-    <button type="button" class="topic-decision-card__trigger" data-topic-decision-board-target="trigger" data-action="click->topic-decision-board#toggle" aria-expanded="false">
-      <h2 class="topic-decision-card__title">This Topic Should Not Exist</h2>
-      <span class="topic-decision-card__chevron" data-topic-decision-board-target="chevron">Expand</span>
-    </button>
-    <div class="topic-decision-card__panel" data-topic-decision-board-target="panel" hidden>
-      <p class="topic-decision-card__summary">Use this when the record should be blocked or retired instead of repaired.</p>
-      <section class="topic-decision-destructive">
-        <h3 class="topic-decision-destructive__title">Destructive actions</h3>
-        <p class="topic-decision-destructive__lead">Block or retire this topic only when it should no longer be usable. This will add a blocklist entry and keep the topic out of future matching.</p>
-        <div class="topic-decision-destructive__preview">
-          <div class="topic-decision-destructive__label">Consequence preview</div>
-          <p><%= @retire_preview.consequence %></p>
-          <p class="topic-decision-destructive__note"><%= @retire_preview.language %></p>
-          <dl class="topic-decision-destructive__stats">
-            <div class="topic-decision-destructive__stat"><dt>Appearances</dt><dd><%= @retire_preview.appearance_count %></dd></div>
-            <div class="topic-decision-destructive__stat"><dt>Agenda items</dt><dd><%= @workspace.topic.agenda_items.count %></dd></div>
-            <div class="topic-decision-destructive__stat"><dt>Decisions</dt><dd><%= @retire_preview.decision_count %></dd></div>
-            <div class="topic-decision-destructive__stat"><dt>Summaries</dt><dd><%= @retire_preview.summary_count %></dd></div>
-          </dl>
+  <%# ===== LEFT COLUMN: Decision cards + Evidence ===== %>
+  <div class="topic-detail-main">
+    <div class="topic-decision-board">
+      <section class="topic-decision-card topic-decision-card--primary" data-topic-decision-board-target="card" data-expanded="true">
+        <button type="button" class="topic-decision-card__trigger" data-topic-decision-board-target="trigger" data-action="click->topic-decision-board#toggle" aria-expanded="true">
+          <h2 class="topic-decision-card__title">This Topic Is Correct</h2>
+          <span class="topic-decision-card__chevron" data-topic-decision-board-target="chevron">Collapse</span>
+        </button>
+        <div class="topic-decision-card__panel" data-topic-decision-board-target="panel">
+          <%= render "merge_workbench", workspace: @workspace, preview: @impact_preview %>
         </div>
+      </section>
 
-        <button type="button" class="btn btn--danger" data-action="click->topic-detail-impact#openRetireConfirm" data-modal-id="retire-modal" data-topic-id="<%= @workspace.topic.id %>" data-topic-name="<%= @workspace.topic.name %>">Retire / Block Topic</button>
+      <section class="topic-decision-card" data-topic-decision-board-target="card" data-expanded="false">
+        <button type="button" class="topic-decision-card__trigger" data-topic-decision-board-target="trigger" data-action="click->topic-decision-board#toggle" aria-expanded="false">
+          <h2 class="topic-decision-card__title">This Topic Is Wrong</h2>
+          <span class="topic-decision-card__chevron" data-topic-decision-board-target="chevron">Expand</span>
+        </button>
+        <div class="topic-decision-card__panel" data-topic-decision-board-target="panel" hidden>
+          <%= render "canonical_correction", workspace: @workspace, detail_workspace_context: @detail_workspace_context %>
+        </div>
+      </section>
+
+      <section class="topic-decision-card" data-topic-decision-board-target="card" data-expanded="false">
+        <button type="button" class="topic-decision-card__trigger" data-topic-decision-board-target="trigger" data-action="click->topic-decision-board#toggle" aria-expanded="false">
+          <h2 class="topic-decision-card__title">Aliases On This Topic</h2>
+          <span class="topic-decision-card__chevron" data-topic-decision-board-target="chevron">Expand</span>
+        </button>
+        <div class="topic-decision-card__panel" data-topic-decision-board-target="panel" hidden>
+          <%= render "alias_repair_rail", workspace: @workspace, detail_workspace_context: @detail_workspace_context %>
+        </div>
+      </section>
+
+      <section class="topic-decision-card topic-decision-card--danger" data-topic-decision-board-target="card" data-expanded="false">
+        <button type="button" class="topic-decision-card__trigger" data-topic-decision-board-target="trigger" data-action="click->topic-decision-board#toggle" aria-expanded="false">
+          <h2 class="topic-decision-card__title">This Topic Should Not Exist</h2>
+          <span class="topic-decision-card__chevron" data-topic-decision-board-target="chevron">Expand</span>
+        </button>
+        <div class="topic-decision-card__panel" data-topic-decision-board-target="panel" hidden>
+          <div class="topic-decision-destructive">
+            <div class="topic-panel-label">What happens</div>
+            <p class="text-sm" style="margin: 0 0 var(--space-2);"><%= @retire_preview.consequence %></p>
+
+            <dl class="topic-decision-destructive__stats">
+              <div class="topic-decision-destructive__stat"><dt>Appearances</dt><dd><%= @retire_preview.appearance_count %></dd></div>
+              <div class="topic-decision-destructive__stat"><dt>Agenda items</dt><dd><%= @workspace.topic.agenda_items.count %></dd></div>
+              <div class="topic-decision-destructive__stat"><dt>Decisions</dt><dd><%= @retire_preview.decision_count %></dd></div>
+              <div class="topic-decision-destructive__stat"><dt>Summaries</dt><dd><%= @retire_preview.summary_count %></dd></div>
+            </dl>
+
+            <p class="text-xs text-secondary" style="margin: var(--space-2) 0 0;"><%= @retire_preview.language %> A blocklist entry prevents future reuse.</p>
+
+            <button type="button" class="btn btn--danger btn--sm" data-action="click->topic-detail-impact#openRetireConfirm" data-modal-id="retire-modal" data-topic-id="<%= @workspace.topic.id %>" data-topic-name="<%= @workspace.topic.name %>">Block this topic</button>
+          </div>
+        </div>
       </section>
     </div>
-  </section>
 
-</div>
-
-<div class="topic-decision-secondary-stack">
-  <section class="topic-decision-card topic-decision-card--secondary">
     <%= render "evidence_snapshot", workspace: @workspace %>
-  </section>
+  </div>
 
-  <section class="topic-decision-card topic-decision-card--secondary">
-    <%= render "history_snapshot", history: @workspace.recent_history %>
-  </section>
+  <%# ===== RIGHT SIDEBAR ===== %>
+  <% status_variant = case @workspace.topic.status
+    when "blocked" then "topic-sidebar-section--status-blocked"
+    when "proposed" then "topic-sidebar-section--status-proposed"
+    else ""
+  end %>
+  <aside class="topic-detail-sidebar">
 
-  <details class="topic-decision-card topic-decision-card--secondary" data-details-collapsible <%= "open" if @topic.errors.any? %>>
-      <summary class="topic-decision-details__summary">Edit details</summary>
-      <div class="topic-decision-details__body">
-        <p class="text-sm text-secondary">Lower-priority metadata editing stays available here, but out of the repair path.</p>
-
-        <%= form_with model: [:admin, @workspace.topic], local: true, class: "topic-decision-details__form" do |f| %>
-          <div class="form-group">
-            <%= f.label :name, "Canonical name" %>
-            <%= f.text_field :name, class: "form-input w-full" %>
-          </div>
-
-          <div class="form-group">
-            <%= f.label :description, "Description" %>
-            <%= f.text_area :description, rows: 4, class: "form-input w-full" %>
-          </div>
-
-          <div class="form-group">
-            <%= f.label :source_type, "Resident context source" %>
-            <%= f.select :source_type,
-              options_for_select([
-                ["Admin observation", "admin_observation"],
-                ["Community observation", "community_observation"],
-                ["Social media", "social_media"],
-                ["Other", "other"]
-              ], @workspace.topic.source_type),
-              { include_blank: "Select source" },
-              class: "form-input w-full" %>
-          </div>
-
-          <div class="form-group">
-            <%= f.label :source_notes, "Resident-reported context (no official record)" %>
-            <%= f.text_area :source_notes, rows: 4, class: "form-input w-full" %>
-          </div>
-
-          <div class="form-group">
-            <%= f.label :importance, "Importance (0-10)" %>
-            <%= f.number_field :importance, min: 0, max: 10, class: "form-input w-full" %>
-          </div>
-
-          <div class="form-group">
-            <%= f.label :resident_impact_score, "Resident Impact (1-5)" %>
-            <%= f.select :resident_impact_score,
-              options_for_select(
-                [["--", ""], ["1 - Routine", 1], ["2 - Minor", 2], ["3 - Moderate", 3], ["4 - Significant", 4], ["5 - Major", 5]],
-                @workspace.topic.resident_impact_score
-              ),
-              {},
-              class: "form-input w-full" %>
-          </div>
-
-          <div class="topic-decision-details__actions">
-            <%= f.submit "Save details", class: "btn btn--primary" %>
+    <%# --- Status & Metadata --- %>
+    <div class="topic-sidebar-section topic-sidebar-section--status <%= status_variant %>">
+      <h3 class="topic-sidebar-heading">Status</h3>
+      <dl class="topic-sidebar-stats">
+        <div class="topic-sidebar-stat">
+          <dt>Review</dt>
+          <dd>
+            <% review_badge = case @workspace.topic.review_status
+              when "approved" then "badge--success"
+              when "blocked" then "badge--danger"
+              when "proposed" then "badge--warning"
+              else "badge--default"
+            end %>
+            <span class="badge <%= review_badge %>"><%= @workspace.topic.review_status.presence || "unknown" %></span>
+          </dd>
+        </div>
+        <div class="topic-sidebar-stat">
+          <dt>Visibility</dt>
+          <dd>
+            <% status_badge = case @workspace.topic.status
+              when "approved" then "badge--success"
+              when "blocked" then "badge--danger"
+              when "proposed" then "badge--warning"
+              else "badge--default"
+            end %>
+            <span class="badge <%= status_badge %>"><%= @workspace.topic.status %></span>
+          </dd>
+        </div>
+        <div class="topic-sidebar-stat">
+          <dt>Lifecycle</dt>
+          <dd><%= @workspace.topic.lifecycle_status || "unknown" %></dd>
+        </div>
+        <div class="topic-sidebar-stat topic-sidebar-stat--highlight">
+          <dt>Impact</dt>
+          <dd><%= @workspace.topic.resident_impact_score || "-" %></dd>
+        </div>
+        <div class="topic-sidebar-stat">
+          <dt>Appearances</dt>
+          <dd><%= @workspace.appearance_count %></dd>
+        </div>
+        <div class="topic-sidebar-stat">
+          <dt>Summaries</dt>
+          <dd><%= @workspace.summary_count %></dd>
+        </div>
+        <div class="topic-sidebar-stat">
+          <dt>Decisions</dt>
+          <dd><%= @workspace.decision_count %></dd>
+        </div>
+        <div class="topic-sidebar-stat">
+          <dt>Last activity</dt>
+          <dd><%= @workspace.last_activity_at ? time_ago_in_words(@workspace.last_activity_at) + " ago" : "-" %></dd>
+        </div>
+        <% if @workspace.pinned %>
+          <div class="topic-sidebar-stat">
+            <dt>Pinned</dt>
+            <dd><span class="badge badge--primary">Yes</span></dd>
           </div>
         <% end %>
-      </div>
-    </details>
+      </dl>
+      <% if @workspace.signals.any? %>
+        <div class="topic-sidebar-signals">
+          <% @workspace.signals.each do |signal| %>
+            <span class="badge badge--signal badge--signal-warm"><%= signal %></span>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+
+    <%# --- Edit Details (above aliases — more used) --- %>
+    <div class="topic-sidebar-section topic-sidebar-section--edit">
+      <details data-details-collapsible <%= "open" if @topic.errors.any? %>>
+        <summary class="topic-sidebar-heading">
+          Edit Details
+          <span class="topic-sidebar-count">+</span>
+        </summary>
+        <div class="topic-decision-details__body">
+          <%= form_with model: [:admin, @workspace.topic], local: true, class: "topic-decision-details__form" do |f| %>
+            <div class="form-group">
+              <%= f.label :name, "Canonical name" %>
+              <%= f.text_field :name, class: "form-input w-full" %>
+            </div>
+
+            <div class="form-group">
+              <%= f.label :description, "Description" %>
+              <%= f.text_area :description, rows: 2, class: "form-input w-full" %>
+            </div>
+
+            <div class="form-group">
+              <%= f.label :source_type, "Context source" %>
+              <%= f.select :source_type,
+                options_for_select([
+                  ["Admin observation", "admin_observation"],
+                  ["Community observation", "community_observation"],
+                  ["Social media", "social_media"],
+                  ["Other", "other"]
+                ], @workspace.topic.source_type),
+                { include_blank: "Select source" },
+                class: "form-input w-full" %>
+            </div>
+
+            <div class="form-group">
+              <%= f.label :source_notes, "Resident context" %>
+              <%= f.text_area :source_notes, rows: 2, class: "form-input w-full" %>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2);">
+              <div class="form-group">
+                <%= f.label :importance, "Importance" %>
+                <%= f.number_field :importance, min: 0, max: 10, class: "form-input w-full" %>
+              </div>
+              <div class="form-group">
+                <%= f.label :resident_impact_score, "Impact" %>
+                <%= f.select :resident_impact_score,
+                  options_for_select(
+                    [["--", ""], ["1", 1], ["2", 2], ["3", 3], ["4", 4], ["5", 5]],
+                    @workspace.topic.resident_impact_score
+                  ),
+                  {},
+                  class: "form-input w-full" %>
+              </div>
+            </div>
+
+            <div class="topic-decision-details__actions">
+              <%= f.submit "Save", class: "btn btn--primary btn--sm" %>
+            </div>
+          <% end %>
+        </div>
+      </details>
+    </div>
+
+    <%# --- Aliases --- %>
+    <div class="topic-sidebar-section">
+      <h3 class="topic-sidebar-heading">Aliases <span class="topic-sidebar-count"><%= @workspace.alias_count %></span></h3>
+      <% if @workspace.aliases.any? %>
+        <ul class="topic-sidebar-alias-list">
+          <% @workspace.aliases.each do |topic_alias| %>
+            <li class="topic-sidebar-alias"><%= topic_alias.name %></li>
+          <% end %>
+        </ul>
+        <p class="topic-sidebar-hint">Manage in "Aliases On This Topic" card</p>
+      <% else %>
+        <p class="topic-sidebar-empty">No aliases</p>
+      <% end %>
+    </div>
+
+    <%# --- Recent Activity --- %>
+    <div class="topic-sidebar-section topic-sidebar-section--activity">
+      <h3 class="topic-sidebar-heading">Activity</h3>
+      <% if @workspace.recent_history.any? %>
+        <ul class="topic-history-list">
+          <% @workspace.recent_history.each do |event| %>
+            <li class="topic-history-item">
+              <span class="topic-history-date"><%= event.created_at.strftime("%b %d") %></span>
+              <span class="topic-history-action"><%= event.action %></span>
+              <% if event.reason.present? %>
+                <span class="topic-history-reason"><%= truncate(event.reason, length: 50) %></span>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="topic-sidebar-empty">No recent activity</p>
+      <% end %>
+    </div>
+
+  </aside>
 </div>
 
 <%= render "repair_confirm_modal", workspace: @workspace %>

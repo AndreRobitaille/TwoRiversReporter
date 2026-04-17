@@ -1,17 +1,21 @@
-<tr class="<%= "admin-topics-table__row--warn" if row.signals.intersect?(["Needs review", "Blocked", "Many aliases", "No description"]) %>">
+<% row_class = case row.review_status
+   when "proposed" then "admin-topics-table__row--proposed"
+   when "blocked" then "admin-topics-table__row--blocked"
+   else "admin-topics-table__row--approved"
+end %>
+<% row_class += " admin-topics-table__row--warn" if row.signals.intersect?(["Needs review", "Blocked", "Many aliases", "No description"]) %>
+<tr class="<%= row_class %>">
   <td>
     <div class="font-semibold"><%= link_to row.name, admin_topic_path(row.topic_id), data: { turbo_frame: "_top" } %></div>
     <% if row.alias_names.any? %>
-      <div class="text-sm text-secondary mt-1">
-        Aliases: <%= row.alias_names.join(", ") %>
-      </div>
+      <div class="text-sm text-secondary mt-1"><%= row.alias_names.join(", ") %></div>
     <% end %>
   </td>
   <td>
     <div class="admin-topics-table__badges">
-      <span class="badge <%= row.review_status == "proposed" ? "badge--warning" : row.review_status == "blocked" ? "badge--danger" : "badge--success" %>">Review: <%= row.review_status %></span>
+      <span class="badge <%= row.review_status == "proposed" ? "badge--warning" : row.review_status == "blocked" ? "badge--danger" : "badge--success" %>"><%= row.review_status %></span>
       <% if row.status != row.review_status %>
-        <span class="badge <%= row.status == "blocked" ? "badge--danger" : row.status == "approved" ? "badge--success" : "badge--default" %>">State: <%= row.status %></span>
+        <span class="badge <%= row.status == "blocked" ? "badge--danger" : row.status == "approved" ? "badge--success" : "badge--default" %>"><%= row.status %></span>
       <% end %>
     </div>
   </td>
@@ -26,6 +30,6 @@
   <td><%= row.last_seen_at&.to_date || "-" %></td>
   <td><%= row.last_activity_at&.to_date || "-" %></td>
   <td class="text-right">
-    <%= link_to "Open Topic", admin_topic_path(row.topic_id), class: "btn btn--secondary btn--sm" %>
+    <%= link_to "Open", admin_topic_path(row.topic_id), class: "btn btn--secondary btn--sm" %>
   </td>
 </tr>

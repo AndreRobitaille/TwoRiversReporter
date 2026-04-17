@@ -1,9 +1,17 @@
-<section class="card p-6 mt-6">
-  <h2 class="text-lg font-bold mb-4">Recent activity</h2>
+<section class="card" style="padding: var(--space-5);">
+  <h2 style="font-size: var(--font-size-base); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-4);">Recent Activity</h2>
   <% if history.any? %>
-    <ul>
+    <ul class="topic-history-list">
       <% history.each do |event| %>
-        <li><%= event.action %><% if event.reason.present? %> — <%= event.reason %><% end %></li>
+        <li class="topic-history-item">
+          <span class="topic-history-date"><%= event.created_at.strftime("%b %d, %H:%M") %></span>
+          <span>
+            <span class="topic-history-action"><%= event.action %></span>
+            <% if event.reason.present? %>
+              <span class="topic-history-reason"> &mdash; <%= event.reason %></span>
+            <% end %>
+          </span>
+        </li>
       <% end %>
     </ul>
   <% else %>

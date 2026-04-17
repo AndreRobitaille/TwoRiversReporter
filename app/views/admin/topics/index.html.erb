@@ -1,15 +1,11 @@
 <% content_for(:title) { "Topic Inbox - Admin" } %>
 
 <div class="page-header">
-  <div class="flex items-center justify-between">
-    <div>
-      <h1 class="page-title">Topic Inbox</h1>
-      <p class="page-subtitle">Review AI mistakes, ambiguous cases, and cleanup work.</p>
-    </div>
-  </div>
+  <h1 class="page-title">Topic Inbox</h1>
+  <p class="page-subtitle">Review AI mistakes, ambiguous cases, and cleanup work.</p>
 </div>
 
-<div class="card">
+<div class="card" style="padding: var(--space-5);">
   <%= form_with url: admin_topics_path, method: :get, local: true, class: "admin-topics-filters" do |f| %>
     <%= f.text_field :q, value: params[:q], placeholder: "Search topics, aliases, description", class: "form-input" %>
     <%= f.select :status,
@@ -28,8 +24,8 @@
       <%= f.check_box :pinned, { checked: params[:pinned] == "true" }, "true", nil %>
       <span>Pinned only</span>
     </label>
-    <%= f.submit "Apply", class: "btn btn--primary" %>
-    <%= link_to "Reset", admin_topics_path, class: "btn btn--ghost" %>
+    <%= f.submit "Apply", class: "btn btn--primary btn--sm" %>
+    <%= link_to "Reset", admin_topics_path, class: "btn btn--ghost btn--sm" %>
   <% end %>
 
   <div class="table-wrapper">
@@ -42,7 +38,7 @@
           <th class="text-right"><%= link_to "Mentions", admin_topics_path(request.query_parameters.merge(sort: "mention_count")), class: "admin-topics-table__sort-link" %></th>
           <th><%= link_to "Last Seen", admin_topics_path(request.query_parameters.merge(sort: "last_seen_at")), class: "admin-topics-table__sort-link" %></th>
           <th><%= link_to "Last Activity", admin_topics_path(request.query_parameters.merge(sort: "last_activity_at")), class: "admin-topics-table__sort-link" %></th>
-          <th class="text-right">Actions</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>

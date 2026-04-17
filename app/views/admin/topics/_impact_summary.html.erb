@@ -1,20 +1,13 @@
-<section class="card p-4" id="impact-summary" data-topic-detail-impact-target="summary">
-  <h3 class="text-sm font-semibold mb-2">Downstream impact</h3>
-
-  <p class="text-secondary mb-3" data-topic-detail-impact-target="language"><%= workspace.language %></p>
-
-  <p class="text-sm mb-3"><%= workspace.consequence %></p>
-
-  <dl class="grid grid-cols-1 gap-2 text-sm">
-    <div class="flex justify-between gap-3"><dt class="text-secondary">Topics affected</dt><dd><%= workspace.source_topic.present? ? 2 : 1 %></dd></div>
-    <div class="flex justify-between gap-3"><dt class="text-secondary"><%= workspace.action == :move_alias ? "Aliases moving" : "Aliases to move" %></dt><dd><%= workspace.alias_count %></dd></div>
-    <% if workspace.action == :move_alias %>
-      <div class="flex justify-between gap-3"><dt class="text-secondary">Destination aliases already there</dt><dd><%= workspace.destination_alias_count %></dd></div>
-    <% end %>
-    <div class="flex justify-between gap-3"><dt class="text-secondary">Appearances/Mentions</dt><dd><%= workspace.appearance_count %></dd></div>
-    <div class="flex justify-between gap-3"><dt class="text-secondary">Future appearances</dt><dd><%= workspace.future_appearance_count %></dd></div>
-    <div class="flex justify-between gap-3"><dt class="text-secondary">Summaries</dt><dd><%= workspace.summary_count %></dd></div>
-    <div class="flex justify-between gap-3"><dt class="text-secondary">Decisions/Votes</dt><dd><%= workspace.decision_count %></dd></div>
-    <div class="flex justify-between gap-3"><dt class="text-secondary">Knowledge links</dt><dd><%= workspace.knowledge_link_count %></dd></div>
-  </dl>
-</section>
+<div class="topic-impact-inline" id="impact-summary" data-topic-detail-impact-target="summary">
+  <div class="topic-impact-inline__header">Impact preview</div>
+  <div class="topic-impact-inline__body">
+    <p class="text-sm text-secondary" style="margin: 0 0 var(--space-1);"><%= workspace.consequence %></p>
+    <dl>
+      <div class="topic-impact-inline__row"><dt>Topics affected</dt><dd><%= workspace.source_topic.present? ? 2 : 1 %></dd></div>
+      <div class="topic-impact-inline__row"><dt>Aliases</dt><dd><%= workspace.alias_count %></dd></div>
+      <div class="topic-impact-inline__row"><dt>Appearances</dt><dd><%= workspace.appearance_count %></dd></div>
+      <div class="topic-impact-inline__row"><dt>Summaries</dt><dd><%= workspace.summary_count %></dd></div>
+      <div class="topic-impact-inline__row"><dt>Decisions</dt><dd><%= workspace.decision_count %></dd></div>
+    </dl>
+  </div>
+</div>

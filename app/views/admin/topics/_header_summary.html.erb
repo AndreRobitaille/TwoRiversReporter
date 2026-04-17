@@ -1,33 +1,11 @@
 <div class="page-header topic-board-header">
   <div class="topic-board-header__top">
-    <h1 class="page-title"><%= workspace.topic.name %></h1>
-    <%= link_to "Back to Topics", admin_topics_path, class: "btn btn--secondary topic-board-header__back" %>
-  </div>
-  <div class="topic-board-header__meta">
-    <% review_badge = case workspace.topic.review_status
-      when "approved" then "badge--success"
-      when "blocked" then "badge--danger"
-      when "proposed" then "badge--warning"
-      else "badge--default"
-    end %>
-    <% status_badge = case workspace.topic.status
-      when "approved" then "badge--success"
-      when "blocked" then "badge--danger"
-      when "proposed" then "badge--warning"
-      else "badge--default"
-    end %>
-    <span class="badge <%= review_badge %>">Review: <%= workspace.topic.review_status.presence || "unknown" %></span>
-    <span class="badge <%= status_badge %>">Status: <%= workspace.topic.status %></span>
-    <span class="badge badge--default">Aliases: <%= workspace.alias_count %></span>
-    <span class="badge badge--default">Appearances: <%= workspace.appearance_count %></span>
-    <span class="badge badge--default">Last activity: <%= workspace.last_activity_at ? time_ago_in_words(workspace.last_activity_at) + " ago" : "unknown" %></span>
-    <% if workspace.pinned %><span class="badge badge--primary">Pinned</span><% end %>
-  </div>
-  <% if workspace.signals.any? %>
-    <div class="topic-board-header__signals">
-      <% workspace.signals.each do |signal| %>
-        <span class="badge badge--warning"><%= signal %></span>
+    <div>
+      <h1 class="page-title" style="margin-bottom: var(--space-1);"><%= workspace.topic.name %></h1>
+      <% if workspace.topic.description.present? %>
+        <p class="text-sm text-secondary" style="margin: 0;"><%= workspace.topic.description %></p>
       <% end %>
     </div>
-  <% end %>
+    <%= link_to "Back to Inbox", admin_topics_path, class: "btn btn--secondary btn--sm topic-board-header__back" %>
+  </div>
 </div>

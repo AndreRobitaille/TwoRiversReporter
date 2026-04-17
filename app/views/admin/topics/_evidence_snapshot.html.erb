@@ -1,51 +1,46 @@
-<section class="card p-6">
-  <div class="flex items-center justify-between gap-3 mb-4">
-    <h2 class="text-lg font-bold">Evidence snapshot</h2>
-    <span class="badge badge--default">Repair-first evidence</span>
+<div class="topic-decision-card" style="border-left: none;">
+  <div class="topic-decision-card__trigger" style="cursor: default; border-left: 3px solid var(--color-primary);">
+    <h2 class="topic-decision-card__title">Evidence Snapshot</h2>
+    <span style="font-family: var(--font-data); font-size: var(--font-size-xs); color: var(--color-text-muted);"><%= workspace.recent_evidence.size %> recent</span>
   </div>
 
-  <% if workspace.recent_evidence.any? %>
-    <div class="space-y-3">
-      <% workspace.recent_evidence.each do |agenda_item| %>
-        <% preview = topic_mention_preview(agenda_item, workspace.topic) %>
-        <article class="rounded border p-4 shadow-sm stacked card">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <div class="font-semibold">
+  <div class="topic-decision-card__panel" style="display: block;">
+    <% if workspace.recent_evidence.any? %>
+      <div class="topic-evidence-list">
+        <% workspace.recent_evidence.each do |agenda_item| %>
+          <% preview = topic_mention_preview(agenda_item, workspace.topic) %>
+          <article class="topic-evidence-item">
+            <div class="topic-evidence-item__header">
+              <span class="topic-evidence-item__meeting">
                 <%= link_to agenda_item.meeting.body_name, meeting_path(agenda_item.meeting), class: "text-inherit" %>
-              </div>
-              <div class="text-sm text-secondary">
-                <%= agenda_item.title %>
-                <% if agenda_item.meeting.starts_at.present? %>
-                  · <%= agenda_item.meeting.starts_at.to_date %>
+              </span>
+              <% if agenda_item.meeting.starts_at.present? %>
+                <span class="topic-evidence-item__date"><%= agenda_item.meeting.starts_at.to_date %></span>
+              <% end %>
+            </div>
+            <div class="topic-evidence-item__title"><%= agenda_item.title %></div>
+
+            <% topic_digest = workspace.topic.topic_summaries.find_by(meeting_id: agenda_item.meeting_id, summary_type: "topic_digest") %>
+            <% fallback_text = agenda_item.summary.presence || agenda_item.recommended_action.presence %>
+            <% if preview %>
+              <div class="topic-evidence-item__excerpt">
+                <%= highlight_preview_terms(preview[:text], preview[:terms]) %>
+                <% if preview[:document_type].present? %>
+                  <span class="topic-evidence-item__excerpt-source">
+                    &mdash; <%= preview[:document_type].to_s.humanize %><% if preview[:page_number].present? %> (p. <%= preview[:page_number] %>)<% end %>
+                  </span>
                 <% end %>
               </div>
-            </div>
-            <span class="badge badge--default">Stacked card</span>
-          </div>
-
-          <% topic_digest = workspace.topic.topic_summaries.find_by(meeting_id: agenda_item.meeting_id, summary_type: "topic_digest") %>
-          <% fallback_text = agenda_item.summary.presence || agenda_item.recommended_action.presence %>
-          <% if preview %>
-            <div class="mt-3 rounded border bg-white/50 p-3 text-sm">
-              <div class="italic text-secondary">&ldquo;<%= highlight_preview_terms(preview[:text], preview[:terms]) %>&rdquo;</div>
-            </div>
-          <% elsif fallback_text.present? %>
-            <div class="mt-3 rounded border bg-white/50 p-3 text-sm">
-              <div class="text-secondary"><%= fallback_text.squish %></div>
-            </div>
-          <% elsif topic_digest.present? %>
-            <div class="mt-3 rounded border bg-white/50 p-3 text-sm">
-              <div class="mb-1 text-xs font-semibold uppercase tracking-wide text-secondary">Topic digest</div>
-              <div class="text-secondary"><%= truncate(topic_digest.content.to_s.gsub(/^#+\s.*$/, "").squish, length: 320) %></div>
-            </div>
-          <% else %>
-            <div class="mt-3 text-sm text-secondary">Preview unavailable.</div>
-          <% end %>
-        </article>
-      <% end %>
-    </div>
-  <% else %>
-    <p class="text-secondary">No recent evidence.</p>
-  <% end %>
-</section>
+            <% elsif fallback_text.present? %>
+              <div class="topic-evidence-item__excerpt"><%= fallback_text.squish %></div>
+            <% elsif topic_digest.present? %>
+              <div class="topic-evidence-item__excerpt"><%= truncate(topic_digest.content.to_s.gsub(/^#+\s.*$/, "").squish, length: 320) %></div>
+            <% end %>
+          </article>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-sm text-secondary">No recent evidence.</p>
+    <% end %>
+  </div>
+</div>
