@@ -1,11 +1,7 @@
-<% content_for(:title) { "#{@meeting.body_name} - #{@meeting.starts_at&.strftime('%B %d, %Y')} - Two Rivers Matters" } %>
-<% content_for(:head) do %>
-  <meta property="og:title" content="<%= @meeting.body_name %> — <%= @meeting.starts_at&.strftime("%B %-d, %Y") %>">
-  <meta property="og:description" content="<%= share_og_description(@summary) %>">
-  <meta property="og:url" content="https://<%= MeetingsHelper::PRODUCTION_HOST %>/meetings/<%= @meeting.id %>">
-  <meta property="og:type" content="article">
-  <meta property="og:site_name" content="Two Rivers Matters">
-<% end %>
+<% cleaned_body = @meeting.body_name.sub(/ Meeting\z/i, "").strip %>
+<% content_for(:title) { "#{cleaned_body}, #{@meeting.starts_at&.strftime('%b %-d, %Y')} — Two Rivers, WI" } %>
+<% content_for(:description) { meeting_share_description(@meeting) } %>
+<% content_for(:og_type) { "article" } %>
 
 <article class="meeting-article">
 
