@@ -264,6 +264,26 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".meetings-card-headline", text: /Big news from council/
   end
 
+  test "index renders agenda preview headline in upcoming card" do
+    upcoming = Meeting.create!(
+      body_name: "Environmental Advisory Board Meeting",
+      meeting_type: "Regular",
+      starts_at: 3.days.from_now,
+      status: "upcoming",
+      detail_page_url: "http://example.com/upcoming-headline"
+    )
+
+    MeetingSummary.create!(
+      meeting: upcoming,
+      summary_type: "agenda_preview",
+      generation_data: { "headline" => "Board will focus on shoreline clean-up and outreach updates." }
+    )
+
+    get meetings_url
+    assert_response :success
+    assert_select ".meetings-card-headline", text: /Board will focus on shoreline clean-up and outreach updates/
+  end
+
   test "index renders topic pills on upcoming card" do
     upcoming = Meeting.create!(
       body_name: "City Council Meeting",

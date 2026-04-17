@@ -48,7 +48,7 @@ class MeetingsController < ApplicationController
     case zone
     when :upcoming
       topics = meeting.agenda_items.flat_map(&:topics).uniq.select(&:approved?)
-      topics.any? || meeting.document_status.in?([ :agenda, :packet, :minutes ])
+      topics.any? || meeting.meeting_summaries.any? || meeting.document_status.in?([ :agenda, :packet, :minutes ])
     when :recent
       meeting.meeting_summaries.any?
     end

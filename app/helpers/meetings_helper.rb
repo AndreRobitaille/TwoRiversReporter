@@ -125,9 +125,7 @@ module MeetingsHelper
   end
 
   def best_headline(meeting)
-    summary = meeting.meeting_summaries.find { |s| s.summary_type == "minutes_recap" } ||
-              meeting.meeting_summaries.find { |s| s.summary_type == "transcript_recap" } ||
-              meeting.meeting_summaries.find { |s| s.summary_type == "packet_analysis" }
+    summary = preferred_meeting_summary(meeting)
     return nil unless summary
     meeting_headline(summary.generation_data)
   end
