@@ -158,7 +158,7 @@ module MeetingsHelper
     truncated = items.map { |i| truncate(i.title.to_s, length: 40, omission: "...") }
 
     if items.count <= 4
-      "Two Rivers #{body}, #{date} — #{truncated.to_sentence(two_words_connector: ', ')}."
+      "Two Rivers #{body}, #{date} — #{truncated.to_sentence}."
     else
       first_three = truncated.first(3)
       remaining = items.count - 3

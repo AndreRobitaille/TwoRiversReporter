@@ -373,7 +373,8 @@ class MeetingsHelperTest < ActionView::TestCase
     ]
     meeting = build_meeting(agenda_items: items)
     result = meeting_share_description(meeting)
-    assert_includes result, "Lakefront Rezone, Lead Pipe Update"
+    assert_includes result, "Lakefront Rezone"
+    assert_includes result, "Lead Pipe Update"
     refute_includes result, "Call to Order"
     refute_includes result, "Roll Call"
     refute_includes result, "Approval of"
