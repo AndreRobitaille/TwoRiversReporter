@@ -98,14 +98,6 @@ module MeetingsHelper
     lines.join("\n")
   end
 
-  def share_og_description(summary)
-    headline = summary&.generation_data&.dig("headline")
-    return "Meeting details and AI-generated summary." if headline.blank?
-    return headline if headline.length <= 200
-
-    headline[0..196] + "..."
-  end
-
   PROCEDURAL_TITLE_PATTERN = /\A\s*(call to order|roll call|adjourn|recess|reconvene|pledge of allegiance|approval of .*minutes|treasurer'?s? report|consent agenda)/i
 
   SUMMARY_TYPE_PRIORITY = %w[minutes_recap transcript_recap packet_analysis agenda_preview].freeze

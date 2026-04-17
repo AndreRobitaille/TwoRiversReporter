@@ -261,40 +261,6 @@ class MeetingsHelperTest < ActionView::TestCase
     assert_no_match(/Key decisions/, text)
   end
 
-  # --- OG meta helpers ---
-
-  test "share_og_description extracts headline truncated to 200 chars" do
-    long_headline = "A" * 250
-    summary = OpenStruct.new(generation_data: { "headline" => long_headline })
-
-    result = share_og_description(summary)
-
-    assert_equal 200, result.length
-    assert result.end_with?("...")
-  end
-
-  test "share_og_description returns headline when under 200 chars" do
-    summary = OpenStruct.new(generation_data: @generation_data)
-
-    result = share_og_description(summary)
-
-    assert_equal @generation_data["headline"], result
-  end
-
-  test "share_og_description returns default when no summary" do
-    result = share_og_description(nil)
-
-    assert_equal "Meeting details and AI-generated summary.", result
-  end
-
-  test "share_og_description returns default when no generation_data" do
-    summary = OpenStruct.new(generation_data: nil)
-
-    result = share_og_description(summary)
-
-    assert_equal "Meeting details and AI-generated summary.", result
-  end
-
   # --- meeting_share_description ---
 
   def build_meeting(body_name: "City Council Meeting", starts_at: Time.zone.parse("2026-04-14 18:00"), summaries: [], agenda_items: [])

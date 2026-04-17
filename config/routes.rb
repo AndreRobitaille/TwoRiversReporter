@@ -1,8 +1,12 @@
 Rails.application.routes.draw do
   root "home#index"
   get "about", to: "pages#about"
-  # OG image source (used by bin/rails og:generate; harmless in prod)
-  get "og/default", to: "og#default"
+  # OG image source — dev/test only. The rake task (og:generate) renders
+  # this ERB directly via ApplicationController.renderer, so the HTTP route
+  # is only needed for visual preview in development.
+  unless Rails.env.production?
+    get "og/default", to: "og#default"
+  end
   # NOTE: when adding a new public resource, update SitemapsController so the
   # new pages appear in /sitemap.xml. Internal nav links handle most crawler
   # discovery, but the sitemap is the explicit signal.
