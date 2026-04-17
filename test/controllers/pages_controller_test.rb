@@ -8,7 +8,7 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
 
   test "about page has correct title" do
     get about_path
-    assert_select "title", /About/
+    assert_select "title", /Plain English/
   end
 
   test "about page contains anchor links" do
