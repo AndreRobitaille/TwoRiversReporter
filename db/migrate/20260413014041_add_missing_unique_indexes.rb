@@ -19,7 +19,7 @@ class AddMissingUniqueIndexes < ActiveRecord::Migration[8.0]
       )
     SQL
 
-    add_index :agenda_item_topics, [:agenda_item_id, :topic_id],
+    add_index :agenda_item_topics, [ :agenda_item_id, :topic_id ],
               unique: true, name: "idx_agenda_item_topics_unique_pair"
 
     # Dedupe votes before adding unique constraint
@@ -30,7 +30,7 @@ class AddMissingUniqueIndexes < ActiveRecord::Migration[8.0]
       )
     SQL
 
-    add_index :votes, [:motion_id, :member_id],
+    add_index :votes, [ :motion_id, :member_id ],
               unique: true, name: "idx_votes_unique_per_motion"
   end
 

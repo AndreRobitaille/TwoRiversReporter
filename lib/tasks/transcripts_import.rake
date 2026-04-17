@@ -81,7 +81,7 @@ namespace :transcripts do
   end
 
   desc "Backfill real YouTube URLs for transcript documents with placeholder source_url"
-  task :backfill_urls => :environment do
+  task backfill_urls: :environment do
     require "open3"
 
     placeholder_docs = MeetingDocument
