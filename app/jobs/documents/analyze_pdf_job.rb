@@ -90,9 +90,21 @@ module Documents
         # Trigger Vote, Membership, and Topic Extraction for minutes
         # SummarizeMeetingJob is delayed to run after extraction + triage complete
         if document.document_type == "minutes_pdf"
+          parse_result = :noop
+
+          if Scrapers::ParseAgendaJob.meeting_has_usable_agenda_source?(document.meeting)
+            begin
+              parse_result = Scrapers::ParseAgendaJob.parse_and_reconcile(document.meeting_id)
+            rescue StandardError => e
+              Rails.logger.warn "Agenda reconciliation failed for Meeting #{document.meeting_id}: #{e.message}"
+              parse_result = :noop
+            end
+          end
+
+          ExtractTopicsJob.perform_later(document.meeting_id) if parse_result == :noop
+
           ExtractVotesJob.perform_later(document.meeting_id)
           ExtractCommitteeMembersJob.perform_later(document.meeting_id)
-          ExtractTopicsJob.perform_later(document.meeting_id)
           SummarizeMeetingJob.set(wait: 10.minutes).perform_later(document.meeting_id)
         end
 
@@ -100,6 +112,7 @@ module Documents
         # -> ExtractTopicsJob -> AutoTriageJob (3-min delay) to complete
         # first, so topic briefings refresh against approved topics.
         if document.document_type == "agenda_pdf"
+          Scrapers::ParseAgendaJob.perform_later(document.meeting_id)
           SummarizeMeetingJob.set(wait: 5.minutes).perform_later(document.meeting_id, mode: :agenda_preview)
         end
       end
@@ -107,5 +120,6 @@ module Documents
       document.update!(text_quality: "broken")
       Rails.logger.error("PDF Analysis failed for Document #{document_id}: #{e.message}")
     end
+
   end
 end

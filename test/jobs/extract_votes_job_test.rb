@@ -281,6 +281,39 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     mock_ai.verify
   end
 
+  test "vote extraction still links to upgraded legacy child item after rerun" do
+    section = AgendaItem.create!(meeting: @meeting, number: "8.", title: "NEW BUSINESS", kind: "section", order_index: 10)
+    child = AgendaItem.create!(meeting: @meeting, number: "B.", title: "Storm Water Grant Resolution", kind: nil, parent: nil, order_index: 11)
+    @meeting.meeting_documents.create!(document_type: "agenda_pdf", extracted_text: "8. NEW BUSINESS B. Storm Water Grant Resolution")
+
+    Scrapers::ParseAgendaJob.perform_now(@meeting.id)
+
+    child.reload
+    assert_equal "item", child.kind
+    assert_equal section.id, child.parent_id
+
+    ai_response = {
+      "motions" => [ {
+        "description" => "Approve the storm water grant resolution",
+        "outcome" => "passed",
+        "agenda_item_ref" => "B.: Storm Water Grant Resolution",
+        "votes" => []
+      } ]
+    }.to_json
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_votes, ai_response do |_text, **_kwargs|
+      true
+    end
+
+    Ai::OpenAiService.stub :new, mock_ai do
+      ExtractVotesJob.perform_now(@meeting.id)
+    end
+
+    assert_equal child.id, @meeting.motions.reload.first.agenda_item_id
+    mock_ai.verify
+  end
+
   test "uses parent section context to disambiguate duplicate child titles" do
     new_business = AgendaItem.create!(meeting: @meeting, number: "8.", title: "NEW BUSINESS", kind: "section", order_index: 12)
     consent = AgendaItem.create!(meeting: @meeting, number: "9.", title: "CONSENT AGENDA", kind: "section", order_index: 13)

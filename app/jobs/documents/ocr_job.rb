@@ -20,6 +20,7 @@ module Documents
         # -r 300 for 300 DPI (good for OCR)
         unless system("pdftoppm", "-png", "-r", "300", pdf_path, File.join(dir, "page"))
           Rails.logger.error "pdftoppm failed for doc #{document_id}"
+          Scrapers::ParseAgendaJob.perform_later(document.meeting_id) if document.document_type == "minutes_pdf"
           document.update!(ocr_status: "failed")
           return
         end
@@ -59,22 +60,40 @@ module Documents
           text_quality: "ocr"
         )
 
-        # Trigger Downstream Jobs
-        if document.document_type.include?("packet")
-          SummarizeMeetingJob.perform_later(document.meeting_id)
-        end
-        if document.document_type == "minutes_pdf"
-          ExtractVotesJob.perform_later(document.meeting_id)
-          ExtractCommitteeMembersJob.perform_later(document.meeting_id)
-          ExtractTopicsJob.perform_later(document.meeting_id)
-          SummarizeMeetingJob.set(wait: 10.minutes).perform_later(document.meeting_id)
-        end
+        trigger_downstream_jobs(document)
 
         Rails.logger.info "OCR completed for Document #{document_id} (#{images.count} pages)"
       end
     rescue StandardError => e
       Rails.logger.error "OCR failed for Document #{document_id}: #{e.message}"
       document.update!(ocr_status: "failed")
+    end
+
+    private
+
+    def trigger_downstream_jobs(document)
+      if document.document_type.include?("packet")
+        SummarizeMeetingJob.perform_later(document.meeting_id)
+      end
+
+      return unless document.document_type == "minutes_pdf"
+
+      parse_result = :noop
+
+      if Scrapers::ParseAgendaJob.meeting_has_usable_agenda_source?(document.meeting)
+        begin
+          parse_result = Scrapers::ParseAgendaJob.parse_and_reconcile(document.meeting_id)
+        rescue StandardError => e
+          Rails.logger.warn "Agenda reconciliation failed for Meeting #{document.meeting_id}: #{e.message}"
+          parse_result = :noop
+        end
+      end
+
+      ExtractTopicsJob.perform_later(document.meeting_id) if parse_result == :noop
+
+      ExtractVotesJob.perform_later(document.meeting_id)
+      ExtractCommitteeMembersJob.perform_later(document.meeting_id)
+      SummarizeMeetingJob.set(wait: 10.minutes).perform_later(document.meeting_id)
     end
   end
 end

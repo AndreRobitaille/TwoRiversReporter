@@ -253,6 +253,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_17_120000) do
   end
 
   create_table "meetings", force: :cascade do |t|
+    t.string "agenda_structure_digest"
     t.string "body_name"
     t.bigint "committee_id"
     t.datetime "created_at", null: false
