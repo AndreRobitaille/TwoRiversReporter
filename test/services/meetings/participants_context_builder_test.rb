@@ -124,6 +124,24 @@ module Meetings
       assert_equal "", result
     end
 
+    test "returns meeting roll call when committee cannot be resolved but agenda names exist" do
+      meeting = Meeting.create!(
+        body_name: "Harbor Commission Workshop",
+        starts_at: Time.current,
+        detail_page_url: "http://example.com/harbor"
+      )
+
+      result = Meetings::ParticipantsContextBuilder.new(meeting, "Councilmembers: Mark Bittner, Doug Brandt").build
+
+      assert_equal "Meeting roll call: Doug Brandt, Mark Bittner.", result
+    end
+
+    test "includes excused names in meeting roll call output" do
+      result = Meetings::ParticipantsContextBuilder.new(@meeting, "Excused: Kathy Dahlke, Shannon Derby").build
+
+      assert_equal "Canonical roster: Doug Brandt, Kathy Dahlke, Mark Bittner, Shannon Derby. Meeting roll call: Kathy Dahlke, Shannon Derby.", result
+    end
+
     test "returns blank result when fallback committee lookup still fails" do
       CommitteeMembership.delete_all
       CommitteeAlias.delete_all

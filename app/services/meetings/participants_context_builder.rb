@@ -18,10 +18,10 @@ module Meetings
     end
 
     def build
-      committee = resolved_committee
-      return "" unless committee
-
       agenda_names = roll_call_names
+      committee = resolved_committee
+      return meeting_roll_call_text(agenda_names) unless committee
+
       roster_names = current_member_names(committee)
       <<~TEXT.squish
         Canonical roster: #{roster_names.uniq.sort.join(", ")}.
@@ -57,15 +57,21 @@ module Meetings
       end.reject(&:blank?)
     end
 
+    def meeting_roll_call_text(agenda_names)
+      return "" unless agenda_names.any?
+
+      "Meeting roll call: #{agenda_names.uniq.sort.join(", ")}."
+    end
+
     def document_texts
       @agenda_text ? [ @agenda_text ] : []
     end
 
     def extract_names_from_text(text)
       text.to_s.lines.flat_map do |line|
-        next [] unless line.match?(/^\s*(Councilmembers|Present|Absent|Absent and Excused):\s*/i)
+        next [] unless line.match?(/^\s*(Councilmembers|Present|Absent|Absent and Excused|Excused):\s*/i)
 
-        _, names = line.split(/Councilmembers:|Present:|Absent:|Absent and Excused:/, 2)
+        _, names = line.split(/Councilmembers:|Present:|Absent:|Absent and Excused:|Excused:/, 2)
         next [] unless names
 
         names.split(/,| and /).map(&:strip)

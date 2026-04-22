@@ -153,7 +153,7 @@ module PromptTemplateData
       placeholders: [
         { "name" => "kb_context", "description" => "Knowledge base context chunks" },
         { "name" => "committee_context", "description" => "Active committees and descriptions" },
-        { "name" => "type", "description" => "Document type: packet, minutes, or transcript" },
+        { "name" => "type", "description" => "Document type: packet, agenda, minutes, or transcript" },
         { "name" => "body_name", "description" => "Name of the governing body" },
         { "name" => "meeting_date", "description" => "Date of the meeting (YYYY-MM-DD)" },
         { "name" => "today", "description" => "Current date (YYYY-MM-DD)" },
