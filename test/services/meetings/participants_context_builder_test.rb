@@ -23,15 +23,35 @@ module Meetings
     end
 
     test "uses roster active at meeting date, not today's current roster" do
-      old_member = Member.create!(name: "Old Roster Member")
-      future_member = Member.create!(name: "Future Roster Member")
-      CommitteeMembership.create!(committee: @committee, member: old_member, source: "seeded", started_on: 2.days.ago.to_date)
-      CommitteeMembership.create!(committee: @committee, member: future_member, source: "seeded", started_on: 1.day.from_now.to_date)
+      committee = Committee.create!(name: "Historic City Council", committee_type: "city", status: "active")
+      active_on_meeting_date = Member.create!(name: "Meeting Date Member")
+      active_today_only = Member.create!(name: "Today Only Member")
 
-      result = Meetings::ParticipantsContextBuilder.new(@meeting).build
+      meeting_date = 2.weeks.ago.to_date
+      CommitteeMembership.create!(
+        committee: committee,
+        member: active_on_meeting_date,
+        source: "seeded",
+        started_on: 1.month.ago.to_date,
+        ended_on: 1.week.ago.to_date
+      )
+      CommitteeMembership.create!(
+        committee: committee,
+        member: active_today_only,
+        source: "seeded",
+        started_on: 1.day.ago.to_date
+      )
 
-      assert_includes result, "Old Roster Member"
-      assert_not_includes result, "Future Roster Member"
+      meeting = Meeting.create!(
+        body_name: "Historic City Council",
+        starts_at: meeting_date.to_time,
+        detail_page_url: "http://example.com/historic"
+      )
+
+      result = Meetings::ParticipantsContextBuilder.new(meeting).build
+
+      assert_includes result, "Meeting Date Member"
+      assert_not_includes result, "Today Only Member"
     end
 
     test "uses agenda roll call names as meeting-specific overrides" do

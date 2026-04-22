@@ -39,7 +39,7 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
       arg.is_a?(Array)
     end
     mock_ai.expect :analyze_meeting_content, generation_data.to_json do |text, kb, type, **kwargs|
-      type == "minutes"
+      type == "minutes" && kwargs.key?(:participant_context)
     end
     # Topic-level: still uses two-pass
     mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg|
@@ -322,7 +322,7 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     captured_participant_context = nil
     mock_ai.expect :analyze_meeting_content, '{"headline":"h","highlights":[],"public_input":[],"item_details":[]}' do |_text, _kb, type, **kwargs|
       captured_participant_context = kwargs[:participant_context]
-      type == "transcript" && kwargs[:participant_context].include?("Shannon Derby")
+      type == "transcript" && kwargs.key?(:participant_context) && kwargs[:participant_context].include?("Shannon Derby")
     end
     mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg|
       arg.is_a?(Hash)
@@ -373,7 +373,7 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     captured_participant_context = nil
     mock_ai.expect :analyze_meeting_content, '{"headline":"h","highlights":[],"public_input":[],"item_details":[]}' do |_text, _kb, type, **kwargs|
       captured_participant_context = kwargs[:participant_context]
-      type == "minutes" && kwargs[:participant_context].include?("Shannon Derby")
+      type == "minutes" && kwargs.key?(:participant_context) && kwargs[:participant_context].include?("Shannon Derby")
     end
     mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg|
       arg.is_a?(Hash)
@@ -422,7 +422,7 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     mock_ai = Minitest::Mock.new
     mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
     mock_ai.expect :analyze_meeting_content, generation_data.to_json do |text, kb, type, **kwargs|
-      type == "minutes"
+      type == "minutes" && kwargs.key?(:participant_context)
     end
     # Topic-level mocks
     mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg| arg.is_a?(Hash) end
@@ -466,7 +466,7 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
     mock_ai.expect :prepare_doc_context, "Agenda text" do |arg| true end
     mock_ai.expect :analyze_meeting_content, generation_data.to_json do |text, kb, type, **kwargs|
-      type == "packet"
+      type == "packet" && kwargs.key?(:participant_context)
     end
     # Topic-level mocks
     mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg| arg.is_a?(Hash) end
@@ -513,7 +513,7 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
     mock_ai.expect :prepare_doc_context, "Agenda text" do |arg| true end
     mock_ai.expect :analyze_meeting_content, generation_data.to_json do |text, kb, type, **kwargs|
-      type == "packet"
+      type == "packet" && kwargs.key?(:participant_context)
     end
     mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg| arg.is_a?(Hash) end
     mock_ai.expect :render_topic_summary, "## Summary" do |arg| arg.is_a?(String) end
@@ -559,7 +559,7 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     mock_ai = Minitest::Mock.new
     mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
     mock_ai.expect :analyze_meeting_content, generation_data.to_json do |text, kb, type, **kwargs|
-      type == "minutes"
+      type == "minutes" && kwargs.key?(:participant_context)
     end
     # Topic-level mocks
     mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg| arg.is_a?(Hash) end
@@ -605,7 +605,7 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     mock_ai = Minitest::Mock.new
     mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
     mock_ai.expect :analyze_meeting_content, generation_data.to_json do |text, kb, type, **kwargs|
-      type == "transcript"
+      type == "transcript" && kwargs.key?(:participant_context)
     end
     # Topic-level mocks
     mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg| arg.is_a?(Hash) end
@@ -727,7 +727,7 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
 
     mock_ai = Minitest::Mock.new
     mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
-    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |_t, _k, type, **kwargs| type == "minutes" end
+    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |_t, _k, type, **kwargs| type == "minutes" && kwargs.key?(:participant_context) end
     mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg| arg.is_a?(Hash) end
     mock_ai.expect :render_topic_summary, "## Summary" do |arg| arg.is_a?(String) end
 
@@ -766,8 +766,8 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     mock_ai.expect :prepare_kb_context, "" do |arg|
       arg.is_a?(Array)
     end
-    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |text, kb, type, **|
-      type == "agenda" && text.include?("playground")
+    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |text, kb, type, **kwargs|
+      type == "agenda" && kwargs.key?(:participant_context) && text.include?("playground")
     end
 
     retrieval_stub = Object.new
@@ -817,7 +817,7 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     generation_data = { "headline" => "H", "highlights" => [], "public_input" => [], "item_details" => [] }
     mock_ai = Minitest::Mock.new
     mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
-    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |*, **| true end
+    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |*, **kwargs| kwargs.key?(:participant_context) end
 
     retrieval_stub = Object.new
     def retrieval_stub.retrieve_context(*args, **kwargs); []; end
@@ -850,8 +850,8 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
       "highlights" => [],
       "public_input" => [],
       "item_details" => []
-    }.to_json) do |_text, _kb, _type, **_kwargs|
-      true
+    }.to_json) do |_text, _kb, _type, **kwargs|
+      kwargs.key?(:participant_context)
     end
     retrieval_stub = Object.new
     def retrieval_stub.retrieve_context(*args, **kwargs); []; end
@@ -882,7 +882,7 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     generation_data = { "headline" => "H", "highlights" => [], "public_input" => [], "item_details" => [] }
     mock_ai = Minitest::Mock.new
     mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
-    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |*, **| true end
+    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |*, **kwargs| kwargs.key?(:participant_context) end
 
     retrieval_stub = Object.new
     def retrieval_stub.retrieve_context(*args, **kwargs); []; end
@@ -907,7 +907,7 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     generation_data = { "headline" => "H", "highlights" => [], "public_input" => [], "item_details" => [] }
     mock_ai = Minitest::Mock.new
     mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
-    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |*, **| true end
+    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |*, **kwargs| kwargs.key?(:participant_context) end
 
     retrieval_stub = Object.new
     def retrieval_stub.retrieve_context(*args, **kwargs); []; end
@@ -937,8 +937,8 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     generation_data = { "headline" => "Packet headline", "highlights" => [], "public_input" => [], "item_details" => [] }
     mock_ai = Minitest::Mock.new
     mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
-    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |_text, _kb, type, **|
-      type == "packet"
+    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |_text, _kb, type, **kwargs|
+      type == "packet" && kwargs.key?(:participant_context)
     end
     mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg| arg.is_a?(Hash) end
     mock_ai.expect :render_topic_summary, "## Summary" do |arg| arg.is_a?(String) end
@@ -976,8 +976,8 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     generation_data = { "headline" => "Transcript headline", "highlights" => [], "public_input" => [], "item_details" => [] }
     mock_ai = Minitest::Mock.new
     mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
-    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |_text, _kb, type, **|
-      type == "transcript"
+    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |_text, _kb, type, **kwargs|
+      type == "transcript" && kwargs.key?(:participant_context)
     end
     mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg| arg.is_a?(Hash) end
     mock_ai.expect :render_topic_summary, "## Summary" do |arg| arg.is_a?(String) end
@@ -1012,8 +1012,8 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     generation_data = { "headline" => "Minutes headline", "highlights" => [], "public_input" => [], "item_details" => [] }
     mock_ai = Minitest::Mock.new
     mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
-    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |_text, _kb, type, **|
-      type == "minutes"
+    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |_text, _kb, type, **kwargs|
+      type == "minutes" && kwargs.key?(:participant_context)
     end
     mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg| arg.is_a?(Hash) end
     mock_ai.expect :render_topic_summary, "## Summary" do |arg| arg.is_a?(String) end
@@ -1064,9 +1064,9 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     captured_kb = nil
     mock_ai = Minitest::Mock.new
     mock_ai.expect :prepare_kb_context, "KB_CONTEXT_BLOCK" do |arg| arg.is_a?(Array) end
-    mock_ai.expect :analyze_meeting_content, '{"headline":"h","highlights":[],"public_input":[],"item_details":[]}' do |_text, kb, type, **|
+    mock_ai.expect :analyze_meeting_content, '{"headline":"h","highlights":[],"public_input":[],"item_details":[]}' do |_text, kb, type, **kwargs|
       captured_kb = kb
-      type == "agenda"
+      type == "agenda" && kwargs.key?(:participant_context)
     end
 
     retrieval_stub = Object.new
@@ -1101,9 +1101,9 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     captured_kb = nil
     mock_ai = Minitest::Mock.new
     mock_ai.expect :prepare_kb_context, "KB_ONLY" do |arg| arg.is_a?(Array) end
-    mock_ai.expect :analyze_meeting_content, '{"headline":"h","highlights":[],"public_input":[],"item_details":[]}' do |_text, kb, type, **|
+    mock_ai.expect :analyze_meeting_content, '{"headline":"h","highlights":[],"public_input":[],"item_details":[]}' do |_text, kb, type, **kwargs|
       captured_kb = kb
-      type == "agenda"
+      type == "agenda" && kwargs.key?(:participant_context)
     end
 
     retrieval_stub = Object.new
@@ -1143,9 +1143,9 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     captured_kb = nil
     mock_ai = Minitest::Mock.new
     mock_ai.expect :prepare_kb_context, "KB" do |arg| arg.is_a?(Array) end
-    mock_ai.expect :analyze_meeting_content, '{"headline":"h","highlights":[],"public_input":[],"item_details":[]}' do |_text, kb, type, **|
+    mock_ai.expect :analyze_meeting_content, '{"headline":"h","highlights":[],"public_input":[],"item_details":[]}' do |_text, kb, type, **kwargs|
       captured_kb = kb
-      type == "agenda"
+      type == "agenda" && kwargs.key?(:participant_context)
     end
 
     retrieval_stub = Object.new
@@ -1183,9 +1183,9 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     captured_kb = nil
     mock_ai = Minitest::Mock.new
     mock_ai.expect :prepare_kb_context, "KB" do |arg| arg.is_a?(Array) end
-    mock_ai.expect :analyze_meeting_content, '{"headline":"h","highlights":[],"public_input":[],"item_details":[]}' do |_text, kb, type, **|
+    mock_ai.expect :analyze_meeting_content, '{"headline":"h","highlights":[],"public_input":[],"item_details":[]}' do |_text, kb, type, **kwargs|
       captured_kb = kb
-      type == "agenda"
+      type == "agenda" && kwargs.key?(:participant_context)
     end
 
     retrieval_stub = Object.new
