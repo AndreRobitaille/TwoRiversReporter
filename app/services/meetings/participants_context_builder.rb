@@ -7,18 +7,25 @@ module Meetings
       "Absent and Excused:"
     ].freeze
 
+    CITY_COUNCIL_VARIANTS = [
+      /\bcity council reorganizational meeting\b/i,
+      /\bcity council\b/i
+    ].freeze
+
     def initialize(meeting)
       @meeting = meeting
     end
 
     def build
       committee = resolved_committee
-      return [] unless committee
+      return "" unless committee
 
       agenda_names = roll_call_names
       roster_names = current_member_names(committee)
       names = agenda_names.any? ? agenda_names : roster_names
-      names.uniq.sort
+      <<~TEXT.squish
+        Meeting participants: #{names.uniq.sort.join(", ")}.
+      TEXT
     end
 
     private
@@ -29,7 +36,7 @@ module Meetings
 
     def fallback_committee
       body_name = @meeting.body_name.to_s
-      return nil unless body_name.match?(/council/i)
+      return nil unless CITY_COUNCIL_VARIANTS.any? { |pattern| body_name.match?(pattern) }
 
       Committee.resolve("City Council")
     end
@@ -39,7 +46,7 @@ module Meetings
     end
 
     def roll_call_names
-      document_texts.filter_map { |text| extract_names_from_text(text) }.flatten.compact.map do |name|
+      document_texts.flat_map { |text| extract_names_from_text(text) }.compact.map do |name|
         Member.normalize_name(name)
       end.reject(&:blank?)
     end
@@ -49,13 +56,14 @@ module Meetings
     end
 
     def extract_names_from_text(text)
-      line = text.to_s.lines.find { |l| ROLL_CALL_LABELS.any? { |label| l.include?(label) } }
-      return [] unless line
+      text.to_s.lines.flat_map do |line|
+        next [] unless ROLL_CALL_LABELS.any? { |label| line.include?(label) }
 
-      _, names = line.split(/Councilmembers:|Present:|Absent:|Absent and Excused:/, 2)
-      return [] unless names
+        _, names = line.split(/Councilmembers:|Present:|Absent:|Absent and Excused:/, 2)
+        next [] unless names
 
-      names.split(/,| and /).map(&:strip)
+        names.split(/,| and /).map(&:strip)
+      end
     end
   end
 end

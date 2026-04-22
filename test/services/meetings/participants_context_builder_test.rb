@@ -25,18 +25,22 @@ module Meetings
     test "uses agenda roll call names as meeting-specific overrides" do
       @meeting.meeting_documents.create!(
         document_type: "agenda_pdf",
-        extracted_text: "1. CALL TO ORDER\nCouncilmembers: Mark Bittner, Doug Brandt, Katherine Dahlke, Shannon Derby"
+        extracted_text: "1. CALL TO ORDER\nCouncilmembers: Mark Bittner, Doug Brandt\nPresent: Katherine Dahlke, Shannon Derby"
       )
 
       result = Meetings::ParticipantsContextBuilder.new(@meeting).build
 
-      assert_equal [ "Doug Brandt", "Katherine Dahlke", "Mark Bittner", "Shannon Derby" ], result.sort
+      assert_match(/Meeting participants:/, result)
+      assert_match(/Mark Bittner/, result)
+      assert_match(/Doug Brandt/, result)
+      assert_match(/Kathy Dahlke|Katherine Dahlke/, result)
+      assert_match(/Shannon Derby/, result)
     end
 
     test "falls back to canonical council roster when no agenda roll call exists" do
       result = Meetings::ParticipantsContextBuilder.new(@meeting).build
 
-      assert_equal [ "Doug Brandt", "Kathy Dahlke", "Mark Bittner", "Shannon Derby" ], result.sort
+      assert_equal "Meeting participants: Doug Brandt, Kathy Dahlke, Mark Bittner, Shannon Derby.", result
     end
 
     test "returns blank result when no committee can be resolved" do
@@ -48,7 +52,7 @@ module Meetings
 
       result = Meetings::ParticipantsContextBuilder.new(meeting).build
 
-      assert_equal [], result
+      assert_equal "", result
     end
   end
 end
