@@ -322,7 +322,7 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     captured_participant_context = nil
     mock_ai.expect :analyze_meeting_content, '{"headline":"h","highlights":[],"public_input":[],"item_details":[]}' do |_text, _kb, type, **kwargs|
       captured_participant_context = kwargs[:participant_context]
-      type == "transcript" && kwargs[:participant_context].include?("Doug Brandt")
+      type == "transcript" && kwargs[:participant_context].include?("Shannon Derby")
     end
     mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg|
       arg.is_a?(Hash)
@@ -343,7 +343,7 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
       end
     end
 
-    assert_includes captured_participant_context, "Doug Brandt"
+    assert_includes captured_participant_context, "Shannon Derby"
     mock_ai.verify
   end
 

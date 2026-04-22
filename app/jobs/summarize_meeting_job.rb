@@ -391,6 +391,8 @@ class SummarizeMeetingJob < ApplicationJob
   end
 
   def participant_context_for(meeting)
-    Meetings::ParticipantsContextBuilder.new(meeting).build
+    agenda_doc = meeting.meeting_documents.find_by(document_type: "agenda_pdf")
+    agenda_text = agenda_doc&.extracted_text
+    Meetings::ParticipantsContextBuilder.new(meeting, agenda_text).build
   end
 end

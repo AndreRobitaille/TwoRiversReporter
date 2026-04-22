@@ -12,8 +12,9 @@ module Meetings
       /\bcity council\b/i
     ].freeze
 
-    def initialize(meeting)
+    def initialize(meeting, agenda_text = nil)
       @meeting = meeting
+      @agenda_text = agenda_text
     end
 
     def build
@@ -57,7 +58,7 @@ module Meetings
     end
 
     def document_texts
-      @meeting.meeting_documents.pluck(:extracted_text)
+      @agenda_text ? [ @agenda_text ] : @meeting.meeting_documents.pluck(:extracted_text)
     end
 
     def extract_names_from_text(text)
