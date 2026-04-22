@@ -247,6 +247,43 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".meeting-article-docs"
   end
 
+  test "show exposes split share payloads in the view" do
+    meeting = Meeting.create!(
+      body_name: "City Council Meeting",
+      meeting_type: "Regular",
+      starts_at: 2.days.ago,
+      status: "minutes_posted",
+      detail_page_url: "http://example.com/share-split"
+    )
+    MeetingSummary.create!(
+      meeting: meeting,
+      summary_type: "minutes_recap",
+      generation_data: {
+        "headline" => "Council discussed the lakefront rezone.",
+        "highlights" => [
+          { "text" => "Council approved the lakefront rezone after debate.", "vote" => "6-3" },
+          { "text" => "Council discussed the lakefront rezone." }
+        ]
+      }
+    )
+
+    get meeting_url(meeting)
+    assert_response :success
+
+    wrapper = css_select(".share-wrapper").first
+    assert wrapper
+
+    copy_text = wrapper["data-share-copy-text-value"]
+    facebook_text = wrapper["data-share-facebook-text-value"]
+    summary = meeting.meeting_summaries.first
+
+    assert copy_text.present?
+    assert facebook_text.present?
+    assert_equal ApplicationController.helpers.share_text(meeting, summary), copy_text
+    assert_equal ApplicationController.helpers.facebook_share_text(meeting, summary), facebook_text
+    assert_not_equal copy_text, facebook_text
+  end
+
   test "show assigns summary with generation_data" do
     summary = MeetingSummary.create!(
       meeting: @meeting,

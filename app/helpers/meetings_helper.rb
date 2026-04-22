@@ -64,45 +64,14 @@ module MeetingsHelper
   PRODUCTION_HOST = "tworiversmatters.com".freeze
 
   def share_text(meeting, summary)
-    lines = []
-
-    name = meeting.body_name.sub(/ Meeting$/, "")
-    upcoming = meeting.starts_at.present? && meeting.starts_at > Time.current
-
-    # Temporal header + date/time (no blank line between)
-    lines << share_text_temporal_header(meeting, name, upcoming)
-    lines << meeting.starts_at&.strftime("%B %-d, %Y — %-l:%M %p")
-    lines << ""
-
-    gd = summary&.generation_data
-    meeting_url = "https://#{PRODUCTION_HOST}/meetings/#{meeting.id}"
-
-    if gd.present?
-      headline = gd["headline"]
-      lines << headline if headline.present?
-      lines << "" if headline.present?
-
-      if upcoming
-        share_text_upcoming_bullets(lines, gd)
-      else
-        share_text_past_bullets(lines, gd)
-      end
-    elsif substantive_agenda_items(meeting).any?
-      share_text_agenda_fallback(lines, meeting)
-    end
-
-    lines << "" unless lines.last == ""
-    lines << "Full details at Two Rivers Matters:"
-    lines << meeting_url
-
-    lines.join("\n")
+    share_text_body(meeting, summary, include_headline: true)
   end
 
   def facebook_share_text(meeting, summary)
     prepend = facebook_share_prepend(meeting, summary)
-    body = share_text(meeting, summary)
+    return share_text(meeting, summary) if prepend.blank?
 
-    prepend.present? ? "#{prepend}\n\n#{body}" : body
+    "#{prepend}\n\n#{share_text_body(meeting, summary, include_headline: false)}"
   end
 
   PROCEDURAL_TITLE_PATTERN = /\A\s*(call to order|roll call|adjourn|recess|reconvene|pledge of allegiance|approval of .*minutes|treasurer'?s? report|consent agenda)/i
@@ -323,5 +292,39 @@ module MeetingsHelper
 
     item = substantive_agenda_items(meeting).first
     item&.title.presence
+  end
+
+  def share_text_body(meeting, summary, include_headline:)
+    lines = []
+
+    name = meeting.body_name.sub(/ Meeting$/, "")
+    upcoming = meeting.starts_at.present? && meeting.starts_at > Time.current
+
+    lines << share_text_temporal_header(meeting, name, upcoming)
+    lines << meeting.starts_at&.strftime("%B %-d, %Y — %-l:%M %p")
+    lines << ""
+
+    gd = summary&.generation_data
+    meeting_url = "https://#{PRODUCTION_HOST}/meetings/#{meeting.id}"
+
+    if gd.present?
+      headline = gd["headline"] if include_headline
+      lines << headline if headline.present?
+      lines << "" if headline.present?
+
+      if upcoming
+        share_text_upcoming_bullets(lines, gd)
+      else
+        share_text_past_bullets(lines, gd)
+      end
+    elsif substantive_agenda_items(meeting).any?
+      share_text_agenda_fallback(lines, meeting)
+    end
+
+    lines << "" unless lines.last == ""
+    lines << "Full details at Two Rivers Matters:"
+    lines << meeting_url
+
+    lines.join("\n")
   end
 end

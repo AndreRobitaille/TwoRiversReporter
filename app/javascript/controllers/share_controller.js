@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static targets = ["dropdown", "copyButton", "toggleButton"]
-  static values = { text: String, url: String }
+  static values = { copyText: String, facebookText: String, url: String }
 
   toggle(event) {
     event.stopPropagation()
@@ -15,20 +15,20 @@ export default class extends Controller {
 
     // Mobile: use native share sheet (touch screen = likely has apps)
     if (navigator.share && "ontouchstart" in window) {
-      navigator.share({ text: this.textValue })
+      navigator.share({ text: this.facebookTextValue })
         .catch(() => {}) // user cancelled
       return
     }
 
     // Desktop: copy + open Facebook sharer
-    this.#copyToClipboard(this.textValue)
+    this.#copyToClipboard(this.facebookTextValue)
     window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(this.urlValue)}`, "_blank")
     this.#flashConfirmation("Copied — paste into your group")
   }
 
   copy(event) {
     event.preventDefault()
-    this.#copyToClipboard(this.textValue)
+    this.#copyToClipboard(this.copyTextValue)
     this.dropdownTarget.hidden = true
     this.#flashConfirmation("Copied!")
   }
