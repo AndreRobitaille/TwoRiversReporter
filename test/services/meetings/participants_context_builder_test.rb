@@ -4,6 +4,7 @@ module Meetings
   class ParticipantsContextBuilderTest < ActiveSupport::TestCase
     setup do
       @committee = Committee.create!(name: "City Council", committee_type: "city", status: "active")
+      CommitteeAlias.create!(committee: @committee, name: "City Council Reorganizational Meeting")
 
       @mark = Member.create!(name: "Mark Bittner")
       @doug = Member.create!(name: "Doug Brandt")
@@ -29,13 +30,13 @@ module Meetings
 
       result = ParticipantsContextBuilder.new(@meeting).build
 
-      assert_equal [ "Mark Bittner", "Doug Brandt", "Katherine Dahlke", "Shannon Derby" ], result
+      assert_equal [ "Mark Bittner", "Doug Brandt", "Katherine Dahlke", "Shannon Derby" ], result.sort
     end
 
     test "falls back to canonical council roster when no agenda roll call exists" do
       result = ParticipantsContextBuilder.new(@meeting).build
 
-      assert_equal [ "Mark Bittner", "Doug Brandt", "Kathy Dahlke", "Shannon Derby" ], result
+      assert_equal [ "Mark Bittner", "Doug Brandt", "Kathy Dahlke", "Shannon Derby" ], result.sort
     end
 
     test "returns blank result when no committee can be resolved" do
