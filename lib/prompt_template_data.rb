@@ -158,6 +158,7 @@ module PromptTemplateData
         { "name" => "meeting_date", "description" => "Date of the meeting (YYYY-MM-DD)" },
         { "name" => "today", "description" => "Current date (YYYY-MM-DD)" },
         { "name" => "temporal_framing", "description" => "preview, recap, or stale_preview" },
+        { "name" => "participant_context", "description" => "Authoritative participant spellings and meeting roll-call names" },
         { "name" => "doc_text", "description" => "Meeting document text (truncated to 100k)" }
       ]
     },
@@ -1160,6 +1161,15 @@ module PromptTemplateData
         headline should note that results are pending. decision and vote fields
         must be null.
         </temporal_context>
+
+        <participant_context>
+        {{participant_context}}
+
+        Name handling rules:
+        - Prefer authoritative participant spellings from participant context.
+        - Use meeting-specific roll-call names when they differ from the current roster.
+        - Do not invent alternate spellings from noisy transcript text when authoritative spellings are provided.
+        </participant_context>
 
         <source_context>
         The source {{type}} is one of: minutes, transcript, packet, agenda.
