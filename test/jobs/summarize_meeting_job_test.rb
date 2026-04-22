@@ -845,7 +845,7 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
 
     mock_ai = Minitest::Mock.new
     mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
-    mock_ai.expect :analyze_meeting_content,({
+    mock_ai.expect :analyze_meeting_content, ({
       "headline" => "Preview",
       "highlights" => [],
       "public_input" => [],
