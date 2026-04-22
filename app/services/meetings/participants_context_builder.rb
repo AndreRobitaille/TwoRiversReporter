@@ -42,7 +42,12 @@ module Meetings
     end
 
     def current_member_names(committee)
-      committee.committee_memberships.current.includes(:member).map { |membership| membership.member.name }
+      meeting_date = @meeting.starts_at&.to_date || Date.current
+
+      committee.committee_memberships
+        .includes(:member)
+        .select { |membership| membership_active_on?(membership, meeting_date) }
+        .map { |membership| membership.member.name }
     end
 
     def roll_call_names
@@ -57,13 +62,20 @@ module Meetings
 
     def extract_names_from_text(text)
       text.to_s.lines.flat_map do |line|
-        next [] unless ROLL_CALL_LABELS.any? { |label| line.include?(label) }
+        next [] unless line.match?(/^\s*(Councilmembers|Present|Absent|Absent and Excused):\s*/i)
 
         _, names = line.split(/Councilmembers:|Present:|Absent:|Absent and Excused:/, 2)
         next [] unless names
 
         names.split(/,| and /).map(&:strip)
       end
+    end
+
+    def membership_active_on?(membership, meeting_date)
+      started_on = membership.started_on || Date.new(1900, 1, 1)
+      ended_on = membership.ended_on || Date.new(9999, 12, 31)
+
+      started_on <= meeting_date && ended_on >= meeting_date
     end
   end
 end
