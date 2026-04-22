@@ -28,15 +28,15 @@ module Meetings
         extracted_text: "1. CALL TO ORDER\nCouncilmembers: Mark Bittner, Doug Brandt, Katherine Dahlke, Shannon Derby"
       )
 
-      result = ParticipantsContextBuilder.new(@meeting).build
+      result = Meetings::ParticipantsContextBuilder.new(@meeting).build
 
-      assert_equal [ "Mark Bittner", "Doug Brandt", "Katherine Dahlke", "Shannon Derby" ], result.sort
+      assert_equal [ "Doug Brandt", "Katherine Dahlke", "Mark Bittner", "Shannon Derby" ], result.sort
     end
 
     test "falls back to canonical council roster when no agenda roll call exists" do
-      result = ParticipantsContextBuilder.new(@meeting).build
+      result = Meetings::ParticipantsContextBuilder.new(@meeting).build
 
-      assert_equal [ "Mark Bittner", "Doug Brandt", "Kathy Dahlke", "Shannon Derby" ], result.sort
+      assert_equal [ "Doug Brandt", "Kathy Dahlke", "Mark Bittner", "Shannon Derby" ], result.sort
     end
 
     test "returns blank result when no committee can be resolved" do
@@ -46,7 +46,7 @@ module Meetings
         detail_page_url: "http://example.com/harbor"
       )
 
-      result = ParticipantsContextBuilder.new(meeting).build
+      result = Meetings::ParticipantsContextBuilder.new(meeting).build
 
       assert_equal [], result
     end
