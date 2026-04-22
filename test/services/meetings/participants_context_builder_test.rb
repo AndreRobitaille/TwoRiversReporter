@@ -23,8 +23,8 @@ module Meetings
 
     test "uses agenda roll call names as meeting-specific overrides" do
       @meeting.meeting_documents.create!(
-        document_type: "minutes_pdf",
-        extracted_text: "Councilmembers: Mark Bittner, Doug Brandt, Katherine Dahlke, Shannon Derby"
+        document_type: "agenda_pdf",
+        extracted_text: "1. CALL TO ORDER\nCouncilmembers: Mark Bittner, Doug Brandt, Katherine Dahlke, Shannon Derby"
       )
 
       result = ParticipantsContextBuilder.new(@meeting).build
