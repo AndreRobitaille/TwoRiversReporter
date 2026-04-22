@@ -32,7 +32,7 @@ module Meetings
     private
 
     def resolved_committee
-      Committee.resolve(@meeting.body_name) || fallback_committee
+      @meeting.committee || Committee.resolve(@meeting.body_name) || fallback_committee
     end
 
     def fallback_committee
@@ -47,7 +47,7 @@ module Meetings
 
       committee.committee_memberships
         .includes(:member)
-        .select { |membership| membership_active_on?(membership, meeting_date) }
+        .select { |membership| membership_active_on?(membership, meeting_date) && !%w[staff non_voting].include?(membership.role) }
         .map { |membership| membership.member.name }
     end
 
@@ -58,7 +58,7 @@ module Meetings
     end
 
     def document_texts
-      @agenda_text ? [ @agenda_text ] : @meeting.meeting_documents.pluck(:extracted_text)
+      @agenda_text ? [ @agenda_text ] : []
     end
 
     def extract_names_from_text(text)

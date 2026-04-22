@@ -60,7 +60,8 @@ module Meetings
         extracted_text: "1. CALL TO ORDER\nCouncilmembers: Mark Bittner, Doug Brandt\nAlso Present: Katherine Dahlke\nPresent: Shannon Derby"
       )
 
-      result = Meetings::ParticipantsContextBuilder.new(@meeting).build
+      agenda_text = "1. CALL TO ORDER\nCouncilmembers: Mark Bittner, Doug Brandt\nAlso Present: Katherine Dahlke\nPresent: Shannon Derby"
+      result = Meetings::ParticipantsContextBuilder.new(@meeting, agenda_text).build
 
       assert_match(/Canonical roster: .*Doug Brandt.*Kathy Dahlke.*Mark Bittner.*Shannon Derby\./, result)
       assert_match(/Meeting roll call: .*Doug Brandt.*Shannon Derby\./, result)
@@ -68,6 +69,44 @@ module Meetings
     end
 
     test "falls back to canonical council roster when no agenda roll call exists" do
+      result = Meetings::ParticipantsContextBuilder.new(@meeting).build
+
+      assert_equal "Canonical roster: Doug Brandt, Kathy Dahlke, Mark Bittner, Shannon Derby. Meeting roll call: none.", result
+    end
+
+    test "uses meeting committee when body name does not resolve" do
+      meeting = Meeting.create!(
+        body_name: "Unmatched Body Name",
+        committee: @committee,
+        starts_at: Time.current,
+        detail_page_url: "http://example.com/unmatched"
+      )
+
+      result = Meetings::ParticipantsContextBuilder.new(meeting).build
+
+      assert_includes result, "Canonical roster: Doug Brandt, Kathy Dahlke, Mark Bittner, Shannon Derby."
+    end
+
+    test "excludes staff and non-voting members from canonical roster" do
+      staff = Member.create!(name: "Staff Person")
+      non_voting = Member.create!(name: "Non Voting Person")
+
+      CommitteeMembership.create!(committee: @committee, member: staff, role: "staff", source: "seeded")
+      CommitteeMembership.create!(committee: @committee, member: non_voting, role: "non_voting", source: "seeded")
+
+      result = Meetings::ParticipantsContextBuilder.new(@meeting).build
+
+      assert_includes result, "Canonical roster: Doug Brandt, Kathy Dahlke, Mark Bittner, Shannon Derby."
+      refute_includes result, "Staff Person"
+      refute_includes result, "Non Voting Person"
+    end
+
+    test "does not scan other meeting documents when no agenda text is provided" do
+      @meeting.meeting_documents.create!(
+        document_type: "minutes_pdf",
+        extracted_text: "Councilmembers: Mark Bittner, Doug Brandt"
+      )
+
       result = Meetings::ParticipantsContextBuilder.new(@meeting).build
 
       assert_equal "Canonical roster: Doug Brandt, Kathy Dahlke, Mark Bittner, Shannon Derby. Meeting roll call: none.", result
