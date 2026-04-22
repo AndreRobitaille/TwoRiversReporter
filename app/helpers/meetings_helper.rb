@@ -98,6 +98,13 @@ module MeetingsHelper
     lines.join("\n")
   end
 
+  def facebook_share_text(meeting, summary)
+    prepend = facebook_share_prepend(meeting, summary)
+    body = share_text(meeting, summary)
+
+    prepend.present? ? "#{prepend}\n\n#{body}" : body
+  end
+
   PROCEDURAL_TITLE_PATTERN = /\A\s*(call to order|roll call|adjourn|recess|reconvene|pledge of allegiance|approval of .*minutes|treasurer'?s? report|consent agenda)/i
 
   SUMMARY_TYPE_PRIORITY = %w[minutes_recap transcript_recap packet_analysis agenda_preview].freeze
@@ -287,5 +294,34 @@ module MeetingsHelper
       lines << "* #{ai.title}"
       lines << "" if i < [ items.size, 5 ].min - 1
     end
+  end
+
+  def facebook_share_prepend(meeting, summary)
+    gd = summary&.generation_data
+    hook = facebook_share_hook_from_summary(meeting, gd)
+    hook ||= facebook_share_hook_from_agenda(meeting)
+    hook
+  end
+
+  def facebook_share_hook_from_summary(meeting, gd)
+    return nil if gd.blank?
+
+    highlights = meeting_highlights(gd)
+    if meeting.starts_at.present? && meeting.starts_at <= Time.current
+      highlight = highlights.find { |h| h["vote"].present? } || highlights.first
+      return highlight&.dig("text").presence
+    end
+
+    highlight = highlights.first
+    return highlight&.dig("text").presence if highlight.present?
+
+    nil
+  end
+
+  def facebook_share_hook_from_agenda(meeting)
+    return nil unless meeting.starts_at.present? && meeting.starts_at > Time.current
+
+    item = substantive_agenda_items(meeting).first
+    item&.title.presence
   end
 end

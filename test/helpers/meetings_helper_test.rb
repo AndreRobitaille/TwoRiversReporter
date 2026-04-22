@@ -320,6 +320,132 @@ class MeetingsHelperTest < ActionView::TestCase
     assert_no_match(/Key decisions/, text)
   end
 
+  # --- facebook_share_text wrapper ---
+
+  test "facebook_share_text uses the first highlight when completed meeting highlights have no votes" do
+    meeting = OpenStruct.new(id: 42, body_name: "Common Council Meeting", starts_at: 2.days.ago)
+    summary = OpenStruct.new(
+      generation_data: {
+        "headline" => "Council meeting recap.",
+        "highlights" => [
+          { "text" => "Council discussed the lakefront rezone." },
+          { "text" => "Council approved the lakefront rezone after debate." }
+        ]
+      }
+    )
+
+    share_body = share_text(meeting, summary)
+    facebook_body = facebook_share_text(meeting, summary)
+    lead, blank_line, body = facebook_body.split("\n", 3)
+
+    assert_equal "Council discussed the lakefront rezone.", lead
+    assert_equal "", blank_line
+    assert_equal share_body, body
+  end
+
+  test "facebook_share_text falls back to the first substantive agenda title when summary has no usable hook" do
+    meeting = OpenStruct.new(
+      id: 43,
+      body_name: "Plan Commission Meeting",
+      starts_at: 2.days.from_now,
+      agenda_items: [
+        OpenStruct.new(title: "CALL TO ORDER"),
+        OpenStruct.new(title: "Rezoning at 3204 Lincoln Ave"),
+        OpenStruct.new(title: "Adjournment")
+      ]
+    )
+    summary = OpenStruct.new(generation_data: { "headline" => "Planning commission update.", "highlights" => [] })
+
+    share_body = share_text(meeting, summary)
+    facebook_body = facebook_share_text(meeting, summary)
+    lead, blank_line, body = facebook_body.split("\n", 3)
+
+    assert_equal "Rezoning at 3204 Lincoln Ave", lead
+    assert_equal "", blank_line
+    assert_equal share_body, body
+  end
+
+  test "facebook_share_text prefers a later highlighted vote for completed meetings" do
+    meeting = OpenStruct.new(id: 44, body_name: "Common Council Meeting", starts_at: 2.days.ago)
+    summary = OpenStruct.new(
+      generation_data: {
+        "highlights" => [
+          { "text" => "Council discussed the library project." },
+          { "text" => "Council approved the lakefront rezone 5-2.", "vote" => "5-2" }
+        ]
+      }
+    )
+
+    share_body = share_text(meeting, summary)
+    facebook_body = facebook_share_text(meeting, summary)
+    lead, blank_line, body = facebook_body.split("\n", 3)
+
+    assert_equal "Council approved the lakefront rezone 5-2.", lead
+    assert_equal "", blank_line
+    assert_equal share_body, body
+  end
+
+  test "facebook_share_text prepends the summary highlight for upcoming meetings" do
+    meeting = OpenStruct.new(id: 154, body_name: "Plan Commission Meeting", starts_at: 2.days.from_now)
+    summary = OpenStruct.new(
+      generation_data: {
+        "headline" => "Commission update.",
+        "highlights" => [
+          { "text" => "Commission will weigh a major rezoning request." }
+        ]
+      }
+    )
+
+    share_body = share_text(meeting, summary)
+    facebook_body = facebook_share_text(meeting, summary)
+    lead, blank_line, body = facebook_body.split("\n", 3)
+
+    assert_equal "Commission will weigh a major rezoning request.", lead
+    assert_equal "", blank_line
+    assert_equal share_body, body
+  end
+
+  test "facebook_share_text falls back to share_text when no useful prepend can be built" do
+    meeting = OpenStruct.new(
+      id: 10,
+      body_name: "Finance Committee Meeting",
+      starts_at: 1.day.from_now,
+      agenda_items: []
+    )
+
+    share_body = share_text(meeting, nil)
+    facebook_body = facebook_share_text(meeting, nil)
+
+    assert_equal share_body, facebook_body
+  end
+
+  test "facebook_share_text returns share_text unchanged when summary has no substantive hook" do
+    meeting = OpenStruct.new(
+      id: 11,
+      body_name: "Finance Committee Meeting",
+      starts_at: 1.day.from_now,
+      agenda_items: []
+    )
+    summary = OpenStruct.new(generation_data: { "headline" => "Finance Committee will meet tomorrow.", "highlights" => [] })
+
+    assert_equal share_text(meeting, summary), facebook_share_text(meeting, summary)
+  end
+
+  test "facebook_share_text returns share_text for completed meetings without usable highlights even with substantive agenda items" do
+    meeting = OpenStruct.new(
+      id: 12,
+      body_name: "Plan Commission Meeting",
+      starts_at: 2.days.ago,
+      agenda_items: [
+        OpenStruct.new(title: "Rezoning at 3204 Lincoln Ave"),
+        OpenStruct.new(title: "Lead Pipe Update")
+      ]
+    )
+    summary = OpenStruct.new(generation_data: { "headline" => "Planning commission update.", "highlights" => [] })
+
+    assert_equal share_text(meeting, summary), facebook_share_text(meeting, summary)
+  end
+
   # --- meeting_share_description ---
 
   def build_meeting(body_name: "City Council Meeting", starts_at: Time.zone.parse("2026-04-14 18:00"), summaries: [], agenda_items: [])
