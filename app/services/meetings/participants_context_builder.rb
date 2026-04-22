@@ -22,9 +22,9 @@ module Meetings
 
       agenda_names = roll_call_names
       roster_names = current_member_names(committee)
-      names = agenda_names.any? ? agenda_names : roster_names
       <<~TEXT.squish
-        Meeting participants: #{names.uniq.sort.join(", ")}.
+        Canonical roster: #{roster_names.uniq.sort.join(", ")}.
+        Meeting roll call: #{agenda_names.any? ? agenda_names.uniq.sort.join(", ") : "none"}.
       TEXT
     end
 

@@ -30,17 +30,14 @@ module Meetings
 
       result = Meetings::ParticipantsContextBuilder.new(@meeting).build
 
-      assert_match(/Meeting participants:/, result)
-      assert_match(/Mark Bittner/, result)
-      assert_match(/Doug Brandt/, result)
-      assert_match(/Kathy Dahlke|Katherine Dahlke/, result)
-      assert_match(/Shannon Derby/, result)
+      assert_match(/Canonical roster: .*Doug Brandt.*Kathy Dahlke.*Mark Bittner.*Shannon Derby\./, result)
+      assert_match(/Meeting roll call: .*Doug Brandt.*Katherine Dahlke.*Mark Bittner.*Shannon Derby\./, result)
     end
 
     test "falls back to canonical council roster when no agenda roll call exists" do
       result = Meetings::ParticipantsContextBuilder.new(@meeting).build
 
-      assert_equal "Meeting participants: Doug Brandt, Kathy Dahlke, Mark Bittner, Shannon Derby.", result
+      assert_equal "Canonical roster: Doug Brandt, Kathy Dahlke, Mark Bittner, Shannon Derby. Meeting roll call: none.", result
     end
 
     test "returns blank result when no committee can be resolved" do
