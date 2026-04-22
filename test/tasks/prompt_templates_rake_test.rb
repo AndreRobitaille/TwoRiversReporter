@@ -13,7 +13,7 @@ class PromptTemplatesRakeTest < ActiveSupport::TestCase
       name: "Vote Extraction",
       description: "Extracts motions and vote records from meeting minutes",
       model_tier: "default",
-      placeholders: [{ "name" => "stale", "description" => "stale" }],
+      placeholders: [ { "name" => "stale", "description" => "stale" } ],
       system_role: "Old role",
       instructions: "Old instructions"
     )
