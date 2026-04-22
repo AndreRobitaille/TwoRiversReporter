@@ -166,9 +166,13 @@ PROMPT_TEMPLATES_DATA = [
     placeholders: [
       { "name" => "kb_context", "description" => "Knowledge base context chunks" },
       { "name" => "committee_context", "description" => "Active committees and descriptions" },
-      { "name" => "type", "description" => "Document type: packet or minutes" },
-      { "name" => "body_name", "description" => "Meeting body name (e.g. City Council Meeting)" },
-      { "name" => "doc_text", "description" => "Meeting document text (truncated to 50k)" }
+      { "name" => "type", "description" => "Document type: packet, agenda, minutes, or transcript" },
+      { "name" => "body_name", "description" => "Name of the governing body" },
+      { "name" => "meeting_date", "description" => "Date of the meeting (YYYY-MM-DD)" },
+      { "name" => "today", "description" => "Current date (YYYY-MM-DD)" },
+      { "name" => "temporal_framing", "description" => "preview, recap, or stale_preview" },
+      { "name" => "participant_context", "description" => "Authoritative participant spellings and meeting roll-call names" },
+      { "name" => "doc_text", "description" => "Meeting document text (truncated to 100k)" }
     ]
   },
   {

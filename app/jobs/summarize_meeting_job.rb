@@ -60,7 +60,13 @@ class SummarizeMeetingJob < ApplicationJob
     topic_context = agenda_topic_context(agenda_doc.extracted_text)
     combined_context = [ topic_context, kb_context ].reject(&:blank?).join("\n\n")
 
-    json_str = ai_service.analyze_meeting_content(agenda_doc.extracted_text, combined_context, "agenda", source: meeting)
+    json_str = ai_service.analyze_meeting_content(
+      agenda_doc.extracted_text,
+      combined_context,
+      "agenda",
+      source: meeting,
+      participant_context: participant_context_for(meeting)
+    )
     save_summary(
       meeting,
       "agenda_preview",
@@ -178,7 +184,13 @@ class SummarizeMeetingJob < ApplicationJob
         source_type = "minutes_with_transcript"
       end
 
-      json_str = ai_service.analyze_meeting_content(input_text, kb_context, "minutes", source: meeting)
+      json_str = ai_service.analyze_meeting_content(
+        input_text,
+        kb_context,
+        "minutes",
+        source: meeting,
+        participant_context: participant_context_for(meeting)
+      )
       summary = save_summary(meeting, "minutes_recap", json_str, source_type: source_type, framing: compute_framing(meeting, "minutes"))
 
       # Clean up superseded summaries now that minutes exist
@@ -188,7 +200,13 @@ class SummarizeMeetingJob < ApplicationJob
 
     # Priority 2: Transcript (when no minutes available)
     if transcript_doc&.extracted_text.present?
-      json_str = ai_service.analyze_meeting_content(transcript_doc.extracted_text, kb_context, "transcript", source: meeting)
+      json_str = ai_service.analyze_meeting_content(
+        transcript_doc.extracted_text,
+        kb_context,
+        "transcript",
+        source: meeting,
+        participant_context: participant_context_for(meeting)
+      )
       save_summary(meeting, "transcript_recap", json_str, source_type: "transcript", framing: compute_framing(meeting, "transcript"))
 
       # Clean up superseded packet preview / agenda preview
@@ -206,7 +224,13 @@ class SummarizeMeetingJob < ApplicationJob
       end
 
       if doc_text
-        json_str = ai_service.analyze_meeting_content(doc_text, kb_context, "packet", source: meeting)
+        json_str = ai_service.analyze_meeting_content(
+          doc_text,
+          kb_context,
+          "packet",
+          source: meeting,
+          participant_context: participant_context_for(meeting)
+        )
         save_summary(meeting, "packet_analysis", json_str, framing: compute_framing(meeting, "packet"))
         # Clean up superseded agenda preview
         meeting.meeting_summaries.where(summary_type: "agenda_preview").destroy_all
@@ -364,5 +388,11 @@ class SummarizeMeetingJob < ApplicationJob
     summary.content = content
     summary.generation_data = generation_data
     summary.save!
+  end
+
+  def participant_context_for(meeting)
+    agenda_doc = meeting.meeting_documents.find_by(document_type: "agenda_pdf")
+    agenda_text = agenda_doc&.extracted_text
+    Meetings::ParticipantsContextBuilder.new(meeting, agenda_text).build
   end
 end

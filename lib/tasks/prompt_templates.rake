@@ -13,7 +13,12 @@ namespace :prompt_templates do
         next
       end
 
-      attrs = { instructions: data[:instructions].strip }
+      meta = PromptTemplateData::METADATA.find { |item| item[:key] == key }
+
+      attrs = {
+        instructions: data[:instructions].strip,
+        placeholders: meta&.fetch(:placeholders)
+      }
       attrs[:system_role] = data[:system_role].present? ? data[:system_role].strip : nil
 
       template.editor_note = "Populated from OpenAiService heredoc"

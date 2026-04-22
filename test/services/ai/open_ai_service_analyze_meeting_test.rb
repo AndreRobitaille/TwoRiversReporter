@@ -4,6 +4,12 @@ class OpenAiServiceAnalyzeMeetingTest < ActiveSupport::TestCase
   setup do
     seed_prompt_templates
     @service = Ai::OpenAiService.new
+
+    prompt_data = PromptTemplateData::PROMPTS.fetch("analyze_meeting_content")
+    PromptTemplate.find_by!(key: "analyze_meeting_content").update!(
+      system_role: prompt_data[:system_role],
+      instructions: prompt_data[:instructions]
+    )
   end
 
   test "analyze_meeting_content prompt includes json keyword for response_format" do
@@ -237,5 +243,51 @@ class OpenAiServiceAnalyzeMeetingTest < ActiveSupport::TestCase
     prompt_text = captured_params[:messages].map { |m| m[:content] }.join(" ")
 
     assert prompt_text.include?("stale_preview"), "Prompt must include 'stale_preview' framing for past meeting with only packet"
+  end
+
+  test "analyze_meeting_content includes participant context and name-handling rules" do
+    captured_params = nil
+
+    mock_chat = lambda do |parameters:|
+      captured_params = parameters
+      {
+        "choices" => [ {
+          "message" => {
+            "content" => {
+              "headline" => "Test headline",
+              "highlights" => [],
+              "public_input" => [],
+              "item_details" => []
+            }.to_json
+          }
+        } ]
+      }
+    end
+
+    meeting = Meeting.create!(
+      body_name: "City Council Meeting",
+      starts_at: 3.days.ago,
+      detail_page_url: "https://example.com/meeting/participants"
+    )
+
+    @service.instance_variable_get(:@client).stub :chat, mock_chat do
+      @service.send(
+        :analyze_meeting_content,
+        "Transcript text",
+        "kb context",
+        "transcript",
+        source: meeting,
+        participant_context: "- Shannon Derby (roll call)\n- Mark Bittner (authoritative spelling)"
+      )
+    end
+
+    prompt_text = captured_params[:messages].map { |m| m[:content] }.join(" ")
+    prompt_downcase = prompt_text.downcase
+
+    assert prompt_text.include?("{{participant_context}}") == false
+    assert prompt_text.include?("Shannon Derby"), "Prompt must interpolate participant context"
+    assert prompt_downcase.include?("authoritative participant spellings"), "Prompt must instruct preferred spellings"
+    assert prompt_downcase.include?("meeting-specific roll-call names"), "Prompt must mention roll-call handling"
+    assert prompt_downcase.include?("do not invent alternate spellings"), "Prompt must forbid noisy transcript spellings"
   end
 end
