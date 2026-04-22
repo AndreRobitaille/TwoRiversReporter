@@ -347,6 +347,57 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     mock_ai.verify
   end
 
+  test "minutes analysis includes participant context from agenda roll call overrides" do
+    committee = Committee.create!(name: "City Council", committee_type: "city", status: "active")
+    mark = Member.create!(name: "Mark Bittner")
+    doug = Member.create!(name: "Doug Brandt")
+    [ mark, doug ].each do |member|
+      CommitteeMembership.create!(committee: committee, member: member, source: "seeded")
+    end
+
+    @meeting.meeting_documents.create!(
+      document_type: "agenda_pdf",
+      source_url: "http://example.com/agenda.pdf",
+      extracted_text: "Councilmembers: Mark Bittner, Doug Brandt\nPresent: Shannon Derby"
+    )
+    @meeting.meeting_documents.create!(
+      document_type: "minutes_pdf",
+      source_url: "http://example.com/minutes.pdf",
+      extracted_text: "Page 1: The council approved the budget 5-2."
+    )
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :prepare_kb_context, "" do |arg|
+      arg.is_a?(Array)
+    end
+    captured_participant_context = nil
+    mock_ai.expect :analyze_meeting_content, '{"headline":"h","highlights":[],"public_input":[],"item_details":[]}' do |_text, _kb, type, **kwargs|
+      captured_participant_context = kwargs[:participant_context]
+      type == "minutes" && kwargs[:participant_context].include?("Shannon Derby")
+    end
+    mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |arg|
+      arg.is_a?(Hash)
+    end
+    mock_ai.expect :render_topic_summary, "## Summary" do |arg|
+      arg.is_a?(String)
+    end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+    def retrieval_stub.retrieve_topic_context(*args, **kwargs); []; end
+    def retrieval_stub.format_topic_context(*args); []; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        SummarizeMeetingJob.perform_now(@meeting.id)
+      end
+    end
+
+    assert_includes captured_participant_context, "Shannon Derby"
+    mock_ai.verify
+  end
+
   test "minutes take priority over transcript" do
     @meeting.meeting_documents.create!(
       document_type: "minutes_pdf",

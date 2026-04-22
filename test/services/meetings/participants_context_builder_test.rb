@@ -64,5 +64,21 @@ module Meetings
 
       assert_equal "", result
     end
+
+    test "returns blank result when fallback committee lookup still fails" do
+      CommitteeMembership.delete_all
+      CommitteeAlias.delete_all
+      Committee.delete_all
+
+      meeting = Meeting.create!(
+        body_name: "City Council Special Meeting",
+        starts_at: Time.current,
+        detail_page_url: "http://example.com/city-council"
+      )
+
+      result = Meetings::ParticipantsContextBuilder.new(meeting).build
+
+      assert_equal "", result
+    end
   end
 end
