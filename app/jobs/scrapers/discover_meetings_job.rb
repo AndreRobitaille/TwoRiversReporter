@@ -6,14 +6,27 @@ module Scrapers
 
     DEFAULT_LOOKBACK = 90.days
 
+    def self.run_inline!(since: nil, enqueue_transcripts: true)
+      meeting_ids = new.discover_meeting_ids(since: since)
+      Scrapers::DiscoverTranscriptsJob.perform_later if enqueue_transcripts
+      meeting_ids
+    end
+
     def perform(since: nil)
+      self.class.run_inline!(since: since)
+    end
+
+    def discover_meeting_ids(since: nil)
       since ||= DEFAULT_LOOKBACK.ago
       agent = Mechanize.new
       agent.user_agent_alias = "Mac Safari"
       page = agent.get(MEETINGS_URL)
 
+      meeting_ids = []
+
       loop do
-        should_continue = parse_page(page, since)
+        should_continue, ids = parse_page(page, since)
+        meeting_ids.concat(Array(ids))
         break unless should_continue
 
         next_link = page.link_with(text: /next ›/)
@@ -22,21 +35,25 @@ module Scrapers
         page = next_link.click
       end
 
-      # Check for YouTube transcripts for recent council meetings
-      Scrapers::DiscoverTranscriptsJob.perform_later
+      meeting_ids
     end
 
     private
 
     def parse_page(page, since)
       rows = page.search("table.views-table tbody tr")
+      meeting_ids = []
 
       rows.each do |row|
         result = process_row(row, since)
-        return false if result == :stop
+        if result == :stop
+          return [ false, meeting_ids ]
+        end
+
+        meeting_ids << result if result.is_a?(Integer)
       end
 
-      true
+      [ true, meeting_ids ]
     end
 
     def process_row(row, since)
@@ -85,7 +102,7 @@ module Scrapers
         Rails.logger.error("DiscoverMeetingsJob: Failed to save meeting (#{detail_url}): #{meeting.errors.full_messages.join(', ')}")
       end
 
-      :continue
+      meeting.id
     end
 
     def determine_status(starts_at)

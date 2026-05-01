@@ -1,9 +1,12 @@
+require "uri"
+
 module Scrapers
   class ParseMeetingPageJob < ApplicationJob
     queue_as :default
 
     def perform(meeting_id)
       meeting = Meeting.find(meeting_id)
+      parsed_successfully = false
 
       agent = Mechanize.new
       agent.user_agent_alias = "Mac Safari"
@@ -19,6 +22,9 @@ module Scrapers
 
       # Extract Documents
       extract_documents(meeting, page)
+      parsed_successfully = true
+    ensure
+      meeting.mark_processing!(:meeting_page_parsed_at) if parsed_successfully
     end
 
     private
@@ -48,16 +54,18 @@ module Scrapers
           href = link["href"]
           next if href.blank?
 
+          source_url = normalize_source_url(meeting.detail_page_url, href)
+
           # Determine specific type (pdf vs html)
           doc_type = determine_doc_type(base_type, href)
 
           # Create MeetingDocument
-          doc = meeting.meeting_documents.find_or_initialize_by(source_url: href)
+          doc = meeting.meeting_documents.find_or_initialize_by(source_url: source_url)
           doc.document_type = doc_type
 
           if doc.new_record? || doc.changed?
             doc.save!
-            Rails.logger.info "Found document: #{doc_type} at #{href}"
+            Rails.logger.info "Found document: #{doc_type} at #{source_url}"
           end
 
           # Always enqueue download to check for remote content updates
@@ -73,6 +81,12 @@ module Scrapers
       else
         "#{base}_html"
       end
+    end
+
+    def normalize_source_url(base_url, href)
+      URI.join(base_url, href).to_s
+    rescue URI::InvalidURIError
+      href
     end
   end
 end

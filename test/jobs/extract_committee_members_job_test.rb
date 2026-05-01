@@ -33,6 +33,26 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
     end
   end
 
+  test "rebuild is atomic when attendee creation fails mid-run" do
+    ai_response = {
+      "voting_members_present" => [ "Smith", "Johnson" ],
+      "voting_members_absent" => [],
+      "non_voting_staff" => [],
+      "guests" => []
+    }
+    mock_service = stub_ai_response(ai_response)
+
+    Member.stub :resolve, ->(name) { raise ActiveRecord::RecordInvalid.new(Member.new) if name == "Johnson"; Member.find_or_create_by!(name: name) } do
+      Ai::OpenAiService.stub :new, mock_service do
+        assert_raises ActiveRecord::RecordInvalid do
+          ExtractCommitteeMembersJob.perform_now(@meeting.id)
+        end
+      end
+    end
+
+    assert_equal 0, @meeting.meeting_attendances.count
+  end
+
   test "creates MeetingAttendance records for all attendees" do
     ai_response = {
       "voting_members_present" => [ "Smith", "Johnson" ],
@@ -429,5 +449,75 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
 
     assert_equal 0, @meeting.meeting_attendances.count
     mock_service.verify
+  end
+
+  test "records committee member extraction status and timestamp on success" do
+    ai_response = {
+      "voting_members_present" => [ "Smith" ],
+      "voting_members_absent" => [],
+      "non_voting_staff" => [],
+      "guests" => []
+    }
+    mock_service = stub_ai_response(ai_response)
+
+    Ai::OpenAiService.stub :new, mock_service do
+      ExtractCommitteeMembersJob.perform_now(@meeting.id)
+    end
+
+    state = @meeting.reload.processing_state
+    assert_equal "processed", state["committee_members_extraction_status"]
+    assert_not_nil state["committee_members_extracted_at"]
+    mock_service.verify
+  end
+
+  test "retries missing_source once minutes text becomes available" do
+    @doc.update!(extracted_text: nil)
+
+    ExtractCommitteeMembersJob.perform_now(@meeting.id)
+    assert_equal "missing_source", @meeting.reload.processing_state["committee_members_extraction_status"]
+
+    @doc.update!(extracted_text: "ROLL CALL\nPresent: Smith, Johnson")
+    mock_service = stub_ai_response({
+      "voting_members_present" => [ "Smith", "Johnson" ],
+      "voting_members_absent" => [],
+      "non_voting_staff" => [],
+      "guests" => []
+    })
+
+    Ai::OpenAiService.stub :new, mock_service do
+      ExtractCommitteeMembersJob.perform_now(@meeting.id)
+    end
+
+    assert_equal "processed", @meeting.reload.processing_state["committee_members_extraction_status"]
+    mock_service.verify
+  end
+
+  test "records committee member extraction empty when no attendees are returned" do
+    ai_response = {
+      "voting_members_present" => [],
+      "voting_members_absent" => [],
+      "non_voting_staff" => [],
+      "guests" => []
+    }
+    mock_service = stub_ai_response(ai_response)
+
+    Ai::OpenAiService.stub :new, mock_service do
+      ExtractCommitteeMembersJob.perform_now(@meeting.id)
+    end
+
+    state = @meeting.reload.processing_state
+    assert_equal "empty", state["committee_members_extraction_status"]
+    assert_not_nil state["committee_members_extracted_at"]
+    mock_service.verify
+  end
+
+  test "records committee member extraction missing_source when minutes text is absent" do
+    @doc.update!(extracted_text: nil)
+
+    ExtractCommitteeMembersJob.perform_now(@meeting.id)
+
+    state = @meeting.reload.processing_state
+    assert_equal "missing_source", state["committee_members_extraction_status"]
+    assert_not_nil state["committee_members_extracted_at"]
   end
 end

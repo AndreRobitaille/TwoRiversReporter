@@ -4,9 +4,11 @@ class ExtractTopicsJob < ApplicationJob
   def perform(meeting_id)
     meeting = Meeting.find(meeting_id)
     items = meeting.agenda_items.substantive.includes(:parent, meeting_documents: :extractions).order(:order_index)
+    extraction_status = "empty"
 
     if items.empty?
       Rails.logger.info "No agenda items for Meeting #{meeting_id} to tag."
+      stamp_processing_state(meeting, extraction_status)
       return
     end
 
@@ -57,7 +59,7 @@ class ExtractTopicsJob < ApplicationJob
         topic_worthy = c_data.fetch("topic_worthy", true)
 
         # Find item
-        item = AgendaItem.find_by(id: item_id)
+        item = items.find { |agenda_item| agenda_item.id == item_id }
         next unless item
 
         if confidence && confidence < 0.5
@@ -79,20 +81,23 @@ class ExtractTopicsJob < ApplicationJob
           next unless topic
 
           AgendaItemTopic.find_or_create_by!(agenda_item: item, topic: topic)
+          extraction_status = "processed"
         end
       end
 
       Rails.logger.info "Tagged #{classifications.size} items for Meeting #{meeting_id}"
 
       # Pass 2: Refine catch-all ordinance topics into substantive civic concerns
-      refine_catchall_topics(meeting, ai_service, existing_topics)
+      extraction_status = "processed" if refine_catchall_topics(meeting, ai_service, existing_topics)
 
       # Schedule auto-triage with delay so extraction jobs from the same scraper run
       # complete before triage fires. Multiple enqueues are safe — the job is idempotent.
       Topics::AutoTriageJob.set(wait: 3.minutes).perform_later
+      stamp_processing_state(meeting, extraction_status)
 
     rescue JSON::ParserError => e
       Rails.logger.error "Failed to parse topics JSON for Meeting #{meeting_id}: #{e.message}"
+      stamp_processing_state(meeting, "parse_error")
     end
   end
 
@@ -109,7 +114,9 @@ class ExtractTopicsJob < ApplicationJob
       .where(topics: { canonical_name: CATCHALL_TOPIC_NAMES })
       .includes(:agenda_item, :topic)
 
-    return if catchall_links.empty?
+    return false if catchall_links.empty?
+
+    changed = false
 
     catchall_links.each do |link|
       item = link.agenda_item
@@ -139,10 +146,13 @@ class ExtractTopicsJob < ApplicationJob
         link.destroy!
         AgendaItemTopic.find_or_create_by!(agenda_item: item, topic: new_topic)
         Rails.logger.info "Refined catch-all '#{link.topic.name}' -> '#{new_topic.name}' for AgendaItem #{item.id}"
+        changed = true
       rescue JSON::ParserError, Faraday::Error => e
         Rails.logger.error "Refinement failed for AgendaItem #{item.id}: #{e.class} #{e.message}"
       end
     end
+
+    changed
   end
 
   def gather_item_document_text(item, meeting)
@@ -209,5 +219,12 @@ class ExtractTopicsJob < ApplicationJob
   rescue => e
     Rails.logger.warn "Failed to retrieve community context for extraction: #{e.message}"
     ""
+  end
+
+  def stamp_processing_state(meeting, status)
+    meeting.mark_processing!("topics_extracted_at")
+    meeting.with_lock do
+      meeting.update!(processing_state: meeting.processing_state.merge("topics_extraction_status" => status))
+    end
   end
 end

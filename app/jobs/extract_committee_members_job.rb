@@ -7,6 +7,7 @@ class ExtractCommitteeMembersJob < ApplicationJob
 
     unless minutes_doc&.extracted_text.present?
       Rails.logger.info "No minutes text available for Meeting #{meeting_id}"
+      stamp_processing_state(meeting, "missing_source")
       return
     end
 
@@ -17,21 +18,27 @@ class ExtractCommitteeMembersJob < ApplicationJob
       data = JSON.parse(json_response)
     rescue JSON::ParserError => e
       Rails.logger.error "Failed to parse committee members JSON for Meeting #{meeting_id}: #{e.message}"
+      stamp_processing_state(meeting, "parse_error")
       return
     end
 
-    meeting.meeting_attendances.destroy_all
-    create_attendance_records(meeting, data)
+    created_any = false
+    ActiveRecord::Base.transaction do
+      meeting.meeting_attendances.destroy_all
+      created_any = create_attendance_records(meeting, data)
 
-    reconcile_memberships(meeting) if meeting.committee_id.present?
-    detect_departures(meeting) if meeting.committee_id.present?
+      reconcile_memberships(meeting) if meeting.committee_id.present?
+      detect_departures(meeting) if meeting.committee_id.present?
+    end
 
     Rails.logger.info "Extracted #{meeting.meeting_attendances.count} attendees for Meeting #{meeting_id}"
+    stamp_processing_state(meeting, created_any ? "processed" : "empty")
   end
 
   private
 
   def create_attendance_records(meeting, data)
+    created = false
     (data["voting_members_present"] || []).each do |name|
       next if name.blank?
 
@@ -42,6 +49,7 @@ class ExtractCommitteeMembersJob < ApplicationJob
       meeting.meeting_attendances.create!(
         member: member, status: "present", attendee_type: "voting_member"
       )
+      created = true
     end
 
     (data["voting_members_absent"] || []).each do |name|
@@ -54,6 +62,7 @@ class ExtractCommitteeMembersJob < ApplicationJob
       meeting.meeting_attendances.create!(
         member: member, status: "absent", attendee_type: "voting_member"
       )
+      created = true
     end
 
     (data["non_voting_staff"] || []).each do |entry|
@@ -68,6 +77,7 @@ class ExtractCommitteeMembersJob < ApplicationJob
         member: member, status: "present", attendee_type: "non_voting_staff",
         capacity: entry.is_a?(Hash) ? entry["capacity"] : nil
       )
+      created = true
     end
 
     (data["guests"] || []).each do |entry|
@@ -81,7 +91,10 @@ class ExtractCommitteeMembersJob < ApplicationJob
       meeting.meeting_attendances.create!(
         member: member, status: "present", attendee_type: "guest"
       )
+      created = true
     end
+
+    created
   end
 
   def reconcile_memberships(meeting)
@@ -136,6 +149,13 @@ class ExtractCommitteeMembersJob < ApplicationJob
 
       ended_date = last_attendance&.meeting&.starts_at&.to_date || meeting.starts_at.to_date
       membership.update!(ended_on: ended_date)
+    end
+  end
+
+  def stamp_processing_state(meeting, status)
+    meeting.mark_processing!("committee_members_extracted_at")
+    meeting.with_lock do
+      meeting.update!(processing_state: meeting.processing_state.merge("committee_members_extraction_status" => status))
     end
   end
 end

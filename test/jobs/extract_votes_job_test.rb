@@ -200,6 +200,26 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     end
   end
 
+  test "enqueues continuity update on missing minutes source" do
+    @minutes_doc.destroy!
+
+    assert_enqueued_with(job: Topics::UpdateContinuityJob, args: [ { meeting_id: @meeting.id } ]) do
+      ExtractVotesJob.perform_now(@meeting.id)
+    end
+  end
+
+  test "enqueues continuity update after successful extraction" do
+    ai_response = { "motions" => [] }.to_json
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_votes, ai_response do |_text, **kwargs| true end
+
+    Ai::OpenAiService.stub :new, mock_ai do
+      assert_enqueued_with(job: Topics::UpdateContinuityJob, args: [ { meeting_id: @meeting.id } ]) do
+        ExtractVotesJob.perform_now(@meeting.id)
+      end
+    end
+  end
+
   test "links motions to substantive child agenda items instead of parent sections" do
     # Simulates the real production case: a council work session agenda with a
     # "7. ACTION ITEMS" section header and a sub-item "A. 26-045 Harbor Resolution"
@@ -368,5 +388,84 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     assert_equal 1, motions.size
     assert_equal "New motion", motions.first.description
     mock_ai.verify
+  end
+
+  test "records votes extraction status and timestamp on success" do
+    ai_response = {
+      "motions" => [ {
+        "description" => "Approve lead service line contract",
+        "outcome" => "passed",
+        "agenda_item_ref" => "7a",
+        "votes" => []
+      } ]
+    }.to_json
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_votes, ai_response do |_text, **kwargs| true end
+
+    Ai::OpenAiService.stub :new, mock_ai do
+      ExtractVotesJob.perform_now(@meeting.id)
+    end
+
+    state = @meeting.reload.processing_state
+    assert_equal "processed", state["votes_extraction_status"]
+    assert_not_nil state["votes_extracted_at"]
+  end
+
+  test "retries missing_source once minutes text becomes available" do
+    @minutes_doc.update!(extracted_text: nil)
+
+    ExtractVotesJob.perform_now(@meeting.id)
+    assert_equal "missing_source", @meeting.reload.processing_state["votes_extraction_status"]
+
+    @minutes_doc.update!(extracted_text: "Motion to approve lead service line contract. Passed 7-0.")
+    ai_response = { "motions" => [ { "description" => "Approve lead service line contract", "outcome" => "passed", "agenda_item_ref" => "7a", "votes" => [] } ] }.to_json
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_votes, ai_response do |_text, **kwargs| true end
+
+    Ai::OpenAiService.stub :new, mock_ai do
+      ExtractVotesJob.perform_now(@meeting.id)
+    end
+
+    assert_equal "processed", @meeting.reload.processing_state["votes_extraction_status"]
+    mock_ai.verify
+  end
+
+  test "records votes extraction empty when no motions are returned" do
+    ai_response = { "motions" => [] }.to_json
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_votes, ai_response do |_text, **kwargs| true end
+
+    Ai::OpenAiService.stub :new, mock_ai do
+      ExtractVotesJob.perform_now(@meeting.id)
+    end
+
+    state = @meeting.reload.processing_state
+    assert_equal "empty", state["votes_extraction_status"]
+    assert_not_nil state["votes_extracted_at"]
+  end
+
+  test "records votes extraction parse_error when AI returns invalid json" do
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_votes, "not-json" do |_text, **kwargs| true end
+
+    Ai::OpenAiService.stub :new, mock_ai do
+      ExtractVotesJob.perform_now(@meeting.id)
+    end
+
+    state = @meeting.reload.processing_state
+    assert_equal "parse_error", state["votes_extraction_status"]
+    assert_not_nil state["votes_extracted_at"]
+  end
+
+  test "records votes extraction missing_source when minutes are absent" do
+    @minutes_doc.destroy!
+
+    ExtractVotesJob.perform_now(@meeting.id)
+
+    state = @meeting.reload.processing_state
+    assert_equal "missing_source", state["votes_extraction_status"]
+    assert_not_nil state["votes_extracted_at"]
   end
 end

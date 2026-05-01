@@ -8,7 +8,9 @@ module Scrapers
       meeting = Meeting.find(meeting_id)
       agenda_doc = meeting.meeting_documents.find_by(document_type: "agenda_html")
       agenda_pdf_doc = meeting.meeting_documents.find_by(document_type: "agenda_pdf")
-      new.send(:parse_and_reconcile, meeting, meeting_id: meeting_id, agenda_doc: agenda_doc, agenda_pdf_doc: agenda_pdf_doc)
+      result = new.send(:parse_and_reconcile, meeting, meeting_id: meeting_id, agenda_doc: agenda_doc, agenda_pdf_doc: agenda_pdf_doc)
+      meeting.mark_processing!(:agenda_checked_at)
+      result
     end
 
     SECTION_PATTERN = /(\d+\.)\s+(.+?)(?=\s+\d+\.\s+|\z)/m
@@ -29,11 +31,8 @@ module Scrapers
     end
 
     def perform(meeting_id)
-      meeting = Meeting.find(meeting_id)
-      agenda_doc = meeting.meeting_documents.find_by(document_type: "agenda_html")
-      agenda_pdf_doc = meeting.meeting_documents.find_by(document_type: "agenda_pdf")
-
-      parse_and_reconcile(meeting, meeting_id:, agenda_doc:, agenda_pdf_doc:)
+      result = self.class.parse_and_reconcile(meeting_id)
+      result
     end
 
     private

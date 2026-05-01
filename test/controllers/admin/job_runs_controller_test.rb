@@ -31,6 +31,8 @@ class Admin::JobRunsControllerTest < ActionDispatch::IntegrationTest
     get admin_job_runs_url
     assert_response :success
     assert_select ".job-type-grid"
+    assert_select ".job-type-card-name", text: "Scrape City Website (discover + process)"
+    assert_match(/repair incomplete pipeline stages/i, response.body)
   end
 
   test "create enqueues meeting-scoped jobs" do
@@ -46,7 +48,7 @@ class Admin::JobRunsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "create enqueues scraper job" do
-    assert_enqueued_with(job: Scrapers::DiscoverMeetingsJob) do
+    assert_enqueued_with(job: Scrapers::FullPipelineRefreshJob) do
       post admin_job_runs_url, params: {
         job_type: "discover_meetings"
       }

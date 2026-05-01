@@ -7,6 +7,8 @@ class ExtractVotesJob < ApplicationJob
 
     unless minutes_doc&.extracted_text.present?
       Rails.logger.info "No minutes text available for Meeting #{meeting_id}"
+      stamp_processing_state(meeting, "missing_source")
+      Topics::UpdateContinuityJob.perform_later(meeting_id: meeting_id)
       return
     end
 
@@ -23,6 +25,7 @@ class ExtractVotesJob < ApplicationJob
     begin
       data = JSON.parse(json_response)
       motions = data["motions"] || []
+      changed = motions.any?
 
       ActiveRecord::Base.transaction do
         meeting.motions.destroy_all
@@ -52,18 +55,22 @@ class ExtractVotesJob < ApplicationJob
               member: member,
               value: val
             )
+            changed = true
           end
         end
       end
 
       Rails.logger.info "Extracted #{motions.size} motions for Meeting #{meeting_id}"
+      stamp_processing_state(meeting, changed ? "processed" : "empty")
     rescue JSON::ParserError => e
       Rails.logger.error "Failed to parse votes JSON for Meeting #{meeting_id}: #{e.message}"
+      stamp_processing_state(meeting, "parse_error")
     rescue ActiveRecord::RecordInvalid => e
       Rails.logger.error "Validation error saving votes for Meeting #{meeting_id}: #{e.message}"
+      stamp_processing_state(meeting, "parse_error")
     end
 
-    # Always trigger continuity update — even on partial failure, the meeting state changed
+    # Always trigger continuity update so reruns can re-evaluate downstream continuity.
     Topics::UpdateContinuityJob.perform_later(meeting_id: meeting_id)
   end
 
@@ -129,5 +136,12 @@ class ExtractVotesJob < ApplicationJob
     end
 
     nil
+  end
+
+  def stamp_processing_state(meeting, status)
+    meeting.mark_processing!("votes_extracted_at")
+    meeting.with_lock do
+      meeting.update!(processing_state: meeting.processing_state.merge("votes_extraction_status" => status))
+    end
   end
 end

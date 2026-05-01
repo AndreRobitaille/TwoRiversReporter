@@ -88,4 +88,41 @@ class MeetingTest < ActiveSupport::TestCase
     )
     assert_equal :transcript, meeting.document_status
   end
+
+  test "processing state helpers read and write meeting parsed marker" do
+    meeting = Meeting.create!(detail_page_url: "http://example.com/processing-1", starts_at: Time.current)
+
+    assert_nil meeting.meeting_page_parsed_at
+    assert_equal({}, meeting.processing_state)
+
+    meeting.mark_processing!(:meeting_page_parsed_at)
+    assert meeting.meeting_page_parsed?
+    assert_not_nil meeting.meeting_page_parsed_at
+    assert_equal true, meeting.processing_state["meeting_page_parsed_at"]
+
+    meeting.clear_processing!(:meeting_page_parsed_at)
+    assert_not meeting.meeting_page_parsed?
+    assert_nil meeting.meeting_page_parsed_at
+    assert_equal false, meeting.processing_state["meeting_page_parsed_at"]
+  end
+
+  test "processing state helpers support generic markers" do
+    meeting = Meeting.create!(detail_page_url: "http://example.com/processing-2", starts_at: Time.current)
+
+    meeting.mark_processing!(:agenda_parsed)
+    assert_equal true, meeting.processing_state["agenda_parsed"]
+
+    meeting.clear_processing!(:agenda_parsed)
+    assert_equal false, meeting.processing_state["agenda_parsed"]
+  end
+
+  test "processing marker helpers expose explicit generic API" do
+    meeting = Meeting.create!(detail_page_url: "http://example.com/processing-3", starts_at: Time.current)
+
+    meeting.set_processing_marker!(:agenda_parsed)
+    assert meeting.processing_marker_set?(:agenda_parsed)
+
+    meeting.clear_processing_marker!(:agenda_parsed)
+    assert_not meeting.processing_marker_set?(:agenda_parsed)
+  end
 end

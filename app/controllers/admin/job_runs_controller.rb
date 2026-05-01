@@ -10,7 +10,7 @@ class Admin::JobRunsController < Admin::BaseController
     "generate_description" => { job: Topics::GenerateDescriptionJob, scope: :topic, name: "Topic Description" },
     # No-target
     "auto_triage" => { job: Topics::AutoTriageJob, scope: :none, name: "Topic Triage" },
-    "discover_meetings" => { job: Scrapers::DiscoverMeetingsJob, scope: :none, name: "Scrape City Website" }
+    "discover_meetings" => { job: Scrapers::FullPipelineRefreshJob, scope: :none, name: "Scrape City Website (discover + process)" }
   }.freeze
 
   def index

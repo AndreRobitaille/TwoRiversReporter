@@ -24,6 +24,51 @@ class Meeting < ApplicationRecord
     "november" => 11, "nov" => 11, "december" => 12, "dec" => 12
   }.freeze
 
+  def processing_state
+    super || {}
+  end
+
+  def processing_marker_set?(marker)
+    processing_state[marker.to_s] == true
+  end
+
+  def meeting_page_parsed?
+    processing_marker_set?(:meeting_page_parsed_at) || meeting_page_parsed_at.present?
+  end
+
+  def set_processing_marker!(marker, timestamp = Time.current)
+    with_lock do
+      state = processing_state.deep_dup
+      state[marker.to_s] = true
+      updates = { processing_state: state }
+
+      if marker.to_s == "meeting_page_parsed_at"
+        updates[:meeting_page_parsed_at] = timestamp
+      end
+
+      update!(updates)
+    end
+  end
+
+  def clear_processing_marker!(marker)
+    with_lock do
+      state = processing_state.deep_dup
+      state[marker.to_s] = false
+      updates = { processing_state: state }
+
+      if marker.to_s == "meeting_page_parsed_at"
+        updates[:meeting_page_parsed_at] = nil
+      end
+
+      update!(updates)
+    end
+  end
+
+  alias_method :mark_processing!, :set_processing_marker!
+  alias_method :clear_processing!, :clear_processing_marker!
+  alias_method :mark_processing_state!, :set_processing_marker!
+  alias_method :clear_processing_state!, :clear_processing_marker!
+
   def self.search_multi(query)
     return none if query.blank?
 

@@ -1,6 +1,12 @@
 class SummarizeMeetingJob < ApplicationJob
   queue_as :default
 
+  SUMMARY_PRIORITY = [
+    [ "minutes_pdf", "minutes_recap" ],
+    [ "transcript", "transcript_recap" ],
+    [ "packet_pdf", "packet_analysis" ]
+  ].freeze
+
   def perform(meeting_id, mode: :full)
     meeting = Meeting.find(meeting_id)
 
@@ -170,7 +176,7 @@ class SummarizeMeetingJob < ApplicationJob
     formatted_context = retrieval_service.format_context(retrieved_chunks).split("\n\n")
     kb_context = ai_service.prepare_kb_context(formatted_context)
 
-    minutes_doc = meeting.meeting_documents.find_by(document_type: "minutes_pdf")
+    minutes_doc = minutes_document_for(meeting)
     transcript_doc = meeting.meeting_documents.find_by(document_type: "transcript")
 
     # Priority 1: Minutes (authoritative), optionally supplemented by transcript
@@ -215,7 +221,7 @@ class SummarizeMeetingJob < ApplicationJob
     end
 
     # Priority 3: Fall back to packet
-    packet_doc = meeting.meeting_documents.where("document_type LIKE ?", "%packet%").first
+    packet_doc = packet_document_for(meeting)
     if packet_doc
       doc_text = if packet_doc.extractions.any?
         ai_service.prepare_doc_context(packet_doc.extractions)
@@ -394,5 +400,37 @@ class SummarizeMeetingJob < ApplicationJob
     agenda_doc = meeting.meeting_documents.find_by(document_type: "agenda_pdf")
     agenda_text = agenda_doc&.extracted_text
     Meetings::ParticipantsContextBuilder.new(meeting, agenda_text).build
+  end
+
+  def self.summary_repair_needed?(meeting)
+    source_type, summary_type = summary_target_for(meeting)
+    return false if source_type.nil?
+
+    summary = meeting.meeting_summaries.where(summary_type: summary_type).order(id: :desc).first
+    return true if summary.nil?
+
+    summary.content.blank? && summary.generation_data.blank?
+  end
+
+  def self.summary_target_for(meeting)
+    SUMMARY_PRIORITY.each do |document_type, summary_type|
+      doc = case document_type
+      when "packet_pdf"
+        meeting.meeting_documents.where("document_type LIKE ?", "%packet%").where.not(extracted_text: [ nil, "" ]).exists?
+      else
+        meeting.meeting_documents.where(document_type: document_type).where.not(extracted_text: [ nil, "" ]).exists?
+      end
+      return [ document_type, summary_type ] if doc
+    end
+
+    [ nil, nil ]
+  end
+
+  def minutes_document_for(meeting)
+    meeting.meeting_documents.find_by(document_type: "minutes_pdf")
+  end
+
+  def packet_document_for(meeting)
+    meeting.meeting_documents.where("document_type LIKE ?", "%packet%").first
   end
 end

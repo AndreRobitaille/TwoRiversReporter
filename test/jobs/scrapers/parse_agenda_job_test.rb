@@ -263,4 +263,33 @@ class Scrapers::ParseAgendaJobTest < ActiveJob::TestCase
     assert_equal original_items_snapshot, meeting.agenda_items.order(:id).pluck(:id, :number, :title, :kind, :parent_id, :order_index)
   end
 
+  test "marks agenda checked when no parseable agenda exists" do
+    meeting = Meeting.create!(
+      body_name: "Committee On Aging",
+      meeting_type: "Regular",
+      starts_at: Time.current,
+      status: "parsed",
+      detail_page_url: "http://example.com/no-agenda"
+    )
+
+    Scrapers::ParseAgendaJob.perform_now(meeting.id)
+
+    assert_equal true, meeting.reload.processing_state["agenda_checked_at"]
+  end
+
+  test "direct parse_and_reconcile path stamps agenda checked" do
+    meeting = Meeting.create!(
+      body_name: "Committee On Aging",
+      meeting_type: "Regular",
+      starts_at: Time.current,
+      status: "parsed",
+      detail_page_url: "http://example.com/direct-reconcile"
+    )
+
+    meeting.meeting_documents.create!(document_type: "agenda_pdf", extracted_text: "1. CALL TO ORDER")
+
+    Scrapers::ParseAgendaJob.parse_and_reconcile(meeting.id)
+
+    assert_equal true, meeting.reload.processing_state["agenda_checked_at"]
+  end
 end

@@ -249,44 +249,27 @@ class ExtractTopicsJobTest < ActiveJob::TestCase
     mock_ai.verify
   end
 
-  test "works normally when no documents have text" do
+  test "returns early when no substantive agenda items exist" do
     meeting = Meeting.create!(
       body_name: "City Council", meeting_type: "Regular",
       starts_at: 1.day.from_now, status: "agenda_posted",
       detail_page_url: "http://example.com/m/6"
     )
-    item = AgendaItem.create!(meeting: meeting, number: "1", title: "Budget Discussion", order_index: 1)
-    # Document with no extracted text
     MeetingDocument.create!(meeting: meeting, document_type: "packet_pdf", extracted_text: nil)
 
-    ai_response = {
-      "items" => [ {
-        "id" => item.id,
-        "category" => "Finance",
-        "tags" => [ "city budget" ],
-        "topic_worthy" => true,
-        "confidence" => 0.8
-      } ]
-    }.to_json
-
-    mock_ai = Minitest::Mock.new
-    mock_ai.expect :extract_topics, ai_response do |text, **kwargs|
-      true
-    end
-
     retrieval_stub = Object.new
-    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
-    def retrieval_stub.format_context(*args); ""; end
+    def retrieval_stub.retrieve_context(*args, **kwargs); flunk "should not retrieve context"; end
+    def retrieval_stub.format_context(*args); flunk "should not format context"; end
 
-    assert_difference "Topic.count", 1 do
-      RetrievalService.stub :new, retrieval_stub do
-        Ai::OpenAiService.stub :new, mock_ai do
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, ->(*) { raise "should not instantiate AI when there are no substantive agenda items" } do
+        assert_no_difference "Topic.count" do
           ExtractTopicsJob.perform_now(meeting.id)
         end
       end
     end
 
-    mock_ai.verify
+    assert_equal "empty", meeting.reload.processing_state["topics_extraction_status"]
   end
 
   test "refines catch-all topic into substantive topic when significant" do
@@ -590,5 +573,78 @@ class ExtractTopicsJobTest < ActiveJob::TestCase
     item_topics = item.topics.reload.pluck(:canonical_name)
     assert_includes item_topics, "height and area exceptions"
     mock_ai.verify
+  end
+
+  test "records topics extraction status and timestamp on success" do
+    meeting = Meeting.create!(
+      body_name: "City Council", meeting_type: "Regular",
+      starts_at: 1.day.from_now, status: "agenda_posted",
+      detail_page_url: "http://example.com/m/status"
+    )
+    item = AgendaItem.create!(meeting: meeting, number: "1", title: "Budget Discussion", order_index: 1)
+
+    ai_response = { "items" => [ { "id" => item.id, "category" => "Finance", "tags" => [ "city budget" ], "topic_worthy" => true, "confidence" => 0.8 } ] }.to_json
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_topics, ai_response do |_text, **kwargs|
+      true
+    end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        ExtractTopicsJob.perform_now(meeting.id)
+      end
+    end
+
+    state = meeting.reload.processing_state
+    assert_equal "processed", state["topics_extraction_status"]
+    assert_not_nil state["topics_extracted_at"]
+  end
+
+  test "records processed status for non-empty successful extraction" do
+    meeting = Meeting.create!(
+      body_name: "City Council", meeting_type: "Regular",
+      starts_at: 1.day.from_now, status: "agenda_posted",
+      detail_page_url: "http://example.com/m/status-processed"
+    )
+    item = AgendaItem.create!(meeting: meeting, number: "1", title: "Budget Discussion", order_index: 1)
+
+    ai_response = { "items" => [ { "id" => item.id, "category" => "Finance", "tags" => [ "city budget" ], "topic_worthy" => true, "confidence" => 0.8 } ] }.to_json
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_topics, ai_response do |_text, **kwargs| true end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        ExtractTopicsJob.perform_now(meeting.id)
+      end
+    end
+
+    state = meeting.reload.processing_state
+    assert_equal "processed", state["topics_extraction_status"]
+    assert_not_nil state["topics_extracted_at"]
+  end
+
+  test "records topics extraction empty when no substantive agenda items exist" do
+    meeting = Meeting.create!(
+      body_name: "City Council", meeting_type: "Regular",
+      starts_at: 1.day.from_now, status: "agenda_posted",
+      detail_page_url: "http://example.com/m/missing-topics"
+    )
+
+    RetrievalService.stub :new, ->(*) { flunk "should not retrieve context" } do
+      Ai::OpenAiService.stub :new, ->(*) { flunk "should not instantiate AI when there are no substantive agenda items" } do
+        ExtractTopicsJob.perform_now(meeting.id)
+      end
+    end
+
+    assert_equal "empty", meeting.reload.processing_state["topics_extraction_status"]
+    assert_equal 0, Topic.count
   end
 end
