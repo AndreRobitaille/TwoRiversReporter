@@ -60,6 +60,71 @@ class Scrapers::PipelineRepairSweepTest < ActiveJob::TestCase
     assert_equal 0, result[:agenda_parses_enqueued]
   end
 
+  test "agenda repair backfills marker instead of reparsing when agenda items already exist" do
+    meeting = Meeting.create!(detail_page_url: "https://example.com/agenda-items-present", starts_at: 1.day.ago)
+    meeting.meeting_documents.create!(document_type: "agenda_html", extracted_text: nil)
+    meeting.meeting_documents.first.file.attach(io: StringIO.new("agenda"), filename: "agenda.html", content_type: "text/html")
+    meeting.agenda_items.create!(title: "Already parsed item", kind: "item", order_index: 1)
+
+    result = Scrapers::PipelineRepairSweep.new([ meeting.id ]).call
+
+    assert_equal 0, result[:agenda_parses_enqueued]
+    assert meeting.reload.processing_marker_set?(:agenda_checked_at)
+  end
+
+  test "agenda repair backfills marker instead of reparsing when summary already exists" do
+    meeting = Meeting.create!(detail_page_url: "https://example.com/agenda-summary-present", starts_at: 1.day.ago)
+    meeting.meeting_documents.create!(document_type: "agenda_html", extracted_text: nil)
+    meeting.meeting_documents.first.file.attach(io: StringIO.new("agenda"), filename: "agenda.html", content_type: "text/html")
+    meeting.meeting_summaries.create!(summary_type: "minutes_recap", content: "done", generation_data: {})
+
+    result = Scrapers::PipelineRepairSweep.new([ meeting.id ]).call
+
+    assert_equal 0, result[:agenda_parses_enqueued]
+    assert meeting.reload.processing_marker_set?(:agenda_checked_at)
+  end
+
+  test "blank summary row does not block parse agenda job" do
+    meeting = Meeting.create!(detail_page_url: "https://example.com/agenda-blank-summary", starts_at: 1.day.ago)
+    meeting.meeting_documents.create!(document_type: "agenda_html", extracted_text: nil)
+    meeting.meeting_documents.first.file.attach(io: StringIO.new("agenda"), filename: "agenda.html", content_type: "text/html")
+    meeting.meeting_summaries.create!(summary_type: "minutes_recap", content: nil, generation_data: {})
+
+    assert_enqueued_with(job: Scrapers::ParseAgendaJob, args: [ meeting.id ]) do
+      result = Scrapers::PipelineRepairSweep.new([ meeting.id ]).call
+      assert_equal 1, result[:agenda_parses_enqueued]
+    end
+
+    refute meeting.reload.processing_marker_set?(:agenda_checked_at)
+  end
+
+  test "agenda repair still enqueues parse when no agenda items and no summaries exist" do
+    meeting = Meeting.create!(detail_page_url: "https://example.com/agenda-truly-incomplete", starts_at: 1.day.ago)
+    meeting.meeting_documents.create!(document_type: "agenda_html", extracted_text: nil)
+    meeting.meeting_documents.first.file.attach(io: StringIO.new("agenda"), filename: "agenda.html", content_type: "text/html")
+
+    assert_enqueued_with(job: Scrapers::ParseAgendaJob, args: [ meeting.id ]) do
+      result = Scrapers::PipelineRepairSweep.new([ meeting.id ]).call
+      assert_equal 1, result[:agenda_parses_enqueued]
+    end
+
+    refute meeting.reload.processing_marker_set?(:agenda_checked_at)
+  end
+
+  test "agenda repair remains a no-op after marker backfill on rerun" do
+    meeting = Meeting.create!(detail_page_url: "https://example.com/agenda-rerun-noop", starts_at: 1.day.ago)
+    meeting.meeting_documents.create!(document_type: "agenda_html", extracted_text: nil)
+    meeting.meeting_documents.first.file.attach(io: StringIO.new("agenda"), filename: "agenda.html", content_type: "text/html")
+    meeting.agenda_items.create!(title: "Already parsed item", kind: "item", order_index: 1)
+
+    Scrapers::PipelineRepairSweep.new([ meeting.id ]).call
+
+    assert_no_enqueued_jobs only: [ Scrapers::ParseAgendaJob ] do
+      result = Scrapers::PipelineRepairSweep.new([ meeting.id ]).call
+      assert_equal 0, result[:agenda_parses_enqueued]
+    end
+  end
+
   test "repairs downloaded pdfs that have not been analyzed" do
     meeting = Meeting.create!(detail_page_url: "https://example.com/pdf-needs-analysis", starts_at: 1.day.ago)
     document = meeting.meeting_documents.create!(document_type: "packet_pdf", extracted_text: nil, fetched_at: Time.current)

@@ -63,8 +63,21 @@ module Scrapers
       return if meeting.processing_state.stringify_keys["agenda_checked_at"].present?
       return if meeting.agenda_structure_digest.present?
 
+      if agenda_repair_already_satisfied?(meeting)
+        meeting.mark_processing!(:agenda_checked_at)
+        return
+      end
+
       Scrapers::ParseAgendaJob.perform_later(meeting.id)
       counters[:agenda_parses_enqueued] += 1
+    end
+
+    def agenda_repair_already_satisfied?(meeting)
+      meeting.agenda_items.exists? || meeting.meeting_summaries.any? { |summary| usable_meeting_summary?(summary) }
+    end
+
+    def usable_meeting_summary?(summary)
+      summary.content.present? || summary.generation_data.present?
     end
 
     def repair_summary(meeting, counters)
