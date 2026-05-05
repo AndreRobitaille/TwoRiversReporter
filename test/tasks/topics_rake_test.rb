@@ -66,7 +66,7 @@ class TopicsRakeTest < ActiveSupport::TestCase
 
   test "split_broad_topic reuses an existing exact-name topic" do
     broad = Topic.create!(name: "redevelopment", status: "approved")
-    existing_topic = Topic.create!(name: "former hamilton site", status: "proposed")
+    existing_topic = Topic.create!(name: "former hamilton site alpha", status: "proposed")
 
     meeting = Meeting.create!(body_name: "planning commission", starts_at: Time.current, detail_page_url: "https://example.com/meetings/1")
     item = AgendaItem.create!(title: "Redevelopment discussion", summary: "Hamilton parcel update", meeting: meeting)
@@ -75,7 +75,7 @@ class TopicsRakeTest < ActiveSupport::TestCase
     capture_io do
       ai_service = Object.new
       ai_service.define_singleton_method(:re_extract_item_topics) do |**_kwargs|
-        { "topic_worthy" => true, "tags" => [ "Former Hamilton Site" ] }.to_json
+        { "topic_worthy" => true, "tags" => [ "Former Hamilton Site Alpha" ] }.to_json
       end
 
       Ai::OpenAiService.stub(:new, ai_service) do
@@ -90,7 +90,7 @@ class TopicsRakeTest < ActiveSupport::TestCase
 
   test "split_broad_topic reuses an existing approved unsafe exact-name topic" do
     broad = Topic.create!(name: "redevelopment", status: "approved")
-    existing_topic = Topic.create!(name: "former hamilton site", status: "approved", reuse_strategy: "unsafe_for_auto_reuse")
+    existing_topic = Topic.create!(name: "former hamilton site beta", status: "approved", reuse_strategy: "unsafe_for_auto_reuse")
 
     meeting = Meeting.create!(body_name: "planning commission", starts_at: Time.current, detail_page_url: "https://example.com/meetings/4")
     item = AgendaItem.create!(title: "Redevelopment update", summary: "Parcel note", meeting: meeting)
@@ -99,7 +99,7 @@ class TopicsRakeTest < ActiveSupport::TestCase
     capture_io do
       ai_service = Object.new
       ai_service.define_singleton_method(:re_extract_item_topics) do |**_kwargs|
-        { "topic_worthy" => true, "tags" => [ "Former Hamilton Site" ] }.to_json
+        { "topic_worthy" => true, "tags" => [ "Former Hamilton Site Beta" ] }.to_json
       end
 
       Ai::OpenAiService.stub(:new, ai_service) do
@@ -114,36 +114,34 @@ class TopicsRakeTest < ActiveSupport::TestCase
 
   test "split_broad_topic does not reuse an existing blocked exact-name topic" do
     broad = Topic.create!(name: "redevelopment", status: "approved")
-    blocked_topic = Topic.create!(name: "former hamilton site", status: "blocked", reuse_strategy: "canonical")
-    fallback_topic = Topic.create!(name: "former hamilton site update", status: "approved")
+    blocked_topic = Topic.create!(name: "former hamilton site gamma", status: "blocked", reuse_strategy: "canonical")
 
     meeting = Meeting.create!(body_name: "planning commission", starts_at: Time.current, detail_page_url: "https://example.com/meetings/5")
     item = AgendaItem.create!(title: "Redevelopment decision", summary: "Blocklist check", meeting: meeting)
     AgendaItemTopic.create!(agenda_item: item, topic: broad)
 
-    capture_io do
+    stdout, = capture_io do
       ai_service = Object.new
       ai_service.define_singleton_method(:re_extract_item_topics) do |**_kwargs|
-        { "topic_worthy" => true, "tags" => [ "Former Hamilton Site" ] }.to_json
+        { "topic_worthy" => true, "tags" => [ "Former Hamilton Site Gamma" ] }.to_json
       end
 
       Ai::OpenAiService.stub(:new, ai_service) do
-        Topics::FindOrCreateService.stub(:call, ->(_name, **_kwargs) { fallback_topic }) do
-          Rake::Task["topics:split_broad_topic"].invoke(broad.name)
-        end
+        Rake::Task["topics:split_broad_topic"].invoke(broad.name)
       end
     end
 
     assert_equal 1, Topic.where(id: blocked_topic.id).count
     refute_includes item.reload.topics, blocked_topic
-    assert_equal fallback_topic, item.topics.first
+    assert_empty item.topics
+    assert_match(/Former Hamilton Site Gamma \(BLOCKED\)/, stdout)
   ensure
     Rake::Task["topics:split_broad_topic"].reenable
   end
 
   test "split_broad_topic reuses an existing proposed exact-name topic" do
     broad = Topic.create!(name: "community visioning", status: "approved")
-    existing_topic = Topic.create!(name: "community vision planning", status: "proposed")
+    existing_topic = Topic.create!(name: "community vision planning alpha", status: "proposed")
 
     meeting = Meeting.create!(body_name: "planning commission", starts_at: Time.current, detail_page_url: "https://example.com/meetings/3")
     item = AgendaItem.create!(title: "Community visioning follow-up", summary: "Planning update", meeting: meeting)
@@ -152,7 +150,7 @@ class TopicsRakeTest < ActiveSupport::TestCase
     capture_io do
       ai_service = Object.new
       ai_service.define_singleton_method(:re_extract_item_topics) do |**_kwargs|
-        { "topic_worthy" => true, "tags" => [ "Community Vision Planning" ] }.to_json
+        { "topic_worthy" => true, "tags" => [ "Community Vision Planning Alpha" ] }.to_json
       end
 
       Ai::OpenAiService.stub(:new, ai_service) do
@@ -161,7 +159,7 @@ class TopicsRakeTest < ActiveSupport::TestCase
     end
 
     assert_equal existing_topic, item.reload.topics.first
-    assert_equal 1, Topic.where(name: "community vision planning").count
+    assert_equal 1, Topic.where(name: "community vision planning alpha").count
   ensure
     Rake::Task["topics:split_broad_topic"].reenable
   end
@@ -178,7 +176,7 @@ class TopicsRakeTest < ActiveSupport::TestCase
     capture_io do
       ai_service = Object.new
       ai_service.define_singleton_method(:re_extract_item_topics) do |**_kwargs|
-        { "topic_worthy" => true, "tags" => [ "Former Hamilton Site" ] }.to_json
+        { "topic_worthy" => true, "tags" => [ "Former Hamilton Site Delta" ] }.to_json
       end
 
       Ai::OpenAiService.stub(:new, ai_service) do
@@ -186,7 +184,7 @@ class TopicsRakeTest < ActiveSupport::TestCase
       end
     end
 
-    topic = Topic.find_by(name: "former hamilton site")
+    topic = Topic.find_by(name: "former hamilton site delta")
     assert topic.present?
     assert_equal [ topic ], item_one.reload.topics.to_a
     assert_equal [ topic ], item_two.reload.topics.to_a
