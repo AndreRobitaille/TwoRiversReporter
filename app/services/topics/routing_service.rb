@@ -21,7 +21,7 @@ module Topics
     private
 
     def unsafe_redevelopment_label?
-      @name.in?(%w[redevelopment redevelopments redevelopment project]) || @name == "redevelopment"
+      @name.in?(%w[redevelopment redevelopments])
     end
 
     def strong_hamilton_context?
