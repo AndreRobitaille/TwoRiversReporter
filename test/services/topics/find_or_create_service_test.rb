@@ -64,6 +64,7 @@ module Topics
 
     test "unsafe redevelopment label routes to former hamilton site when context is strong" do
       former_hamilton = Topic.create!(name: "former hamilton site", status: "approved")
+      TopicBlocklist.create!(name: "redevelopment", reason: "broad umbrella label")
 
       topic = Topics::FindOrCreateService.call(
         "Redevelopment",
@@ -71,6 +72,21 @@ module Topics
         item_summary: "fischer parcel visioning for the former hamilton site",
         meeting_body_name: "planning commission",
         document_text: "former hamilton site redevelopment discussion"
+      )
+
+      assert_equal former_hamilton, topic
+    end
+
+    test "blocklisted redevelopment still routes to former hamilton site with strong context" do
+      former_hamilton = Topic.create!(name: "former hamilton site", status: "approved")
+      TopicBlocklist.create!(name: "redevelopment", reason: "broad umbrella label")
+
+      topic = Topics::FindOrCreateService.call(
+        "Redevelopment",
+        item_title: "Former Hamilton site parcel update",
+        item_summary: "Hamilton site review for the former hamilton property",
+        meeting_body_name: "planning commission",
+        document_text: "parcel and hamilton site discussion"
       )
 
       assert_equal former_hamilton, topic

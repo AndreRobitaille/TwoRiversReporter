@@ -61,7 +61,7 @@ namespace :topics do
     abort "No items to re-extract" if links.empty?
 
     ai_service = Ai::OpenAiService.new
-    existing_topics = Topic.approved.where.not(id: topic.id).pluck(:name)
+    existing_topics = Topic.reusable.where.not(id: topic.id).pluck(:name)
 
     removed = 0
     retagged = 0
@@ -97,6 +97,13 @@ namespace :topics do
         data = JSON.parse(result)
         tags = data["tags"] || []
         topic_worthy = data.fetch("topic_worthy", false)
+        routing_context = {
+          item_title: item.title,
+          item_summary: item.summary,
+          meeting_body_name: meeting.body_name,
+          document_text: doc_text,
+          existing_topics: existing_topics
+        }
 
         if !topic_worthy || tags.empty?
           link.destroy!
@@ -104,7 +111,7 @@ namespace :topics do
           puts "NOT TOPIC-WORTHY (removed)"
         else
           tags.each do |new_name|
-            new_topic = Topics::FindOrCreateService.call(new_name)
+            new_topic = Topics::FindOrCreateService.call(new_name, **routing_context)
             if new_topic
               AgendaItemTopic.find_or_create_by!(agenda_item: item, topic: new_topic)
               puts "-> #{new_topic.name}"

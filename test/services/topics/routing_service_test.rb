@@ -48,6 +48,29 @@ module Topics
       assert_equal former_hamilton, topic
     end
 
+    test "hamilton site and parcel signals can route redevelopment" do
+      former_hamilton = Topic.create!(name: "former hamilton site", status: "approved")
+
+      topic = Topics::RoutingService.call(
+        "Redevelopment",
+        item_title: "Former Hamilton site parcel review",
+        document_text: "parcel mapping and hamilton site update"
+      )
+
+      assert_equal former_hamilton, topic
+    end
+
+    test "single weak signal does not route redevelopment" do
+      Topic.create!(name: "former hamilton site", status: "approved")
+
+      topic = Topics::RoutingService.call(
+        "Redevelopment",
+        item_title: "Hamilton site update"
+      )
+
+      assert_nil topic
+    end
+
     test "unrelated downtown parcel rezoning does not route to former hamilton site" do
       Topic.create!(name: "former hamilton site", status: "approved")
 

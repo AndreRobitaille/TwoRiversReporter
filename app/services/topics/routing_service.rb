@@ -17,6 +17,7 @@ module Topics
       @item_summary = item_summary
       @meeting_body_name = meeting_body_name
       @document_text = document_text
+      @existing_topics = Array(existing_topics)
     end
 
     def call
@@ -43,6 +44,8 @@ module Topics
         text.include?("former hamilton site"),
         text.include?("former hamilton property"),
         text.include?("hamilton property"),
+        text.include?("hamilton site"),
+        text.include?("parcel"),
         text.include?("fischer"),
         text.include?("visioning"),
         text.include?("former hamilton")

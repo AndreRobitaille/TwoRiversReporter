@@ -26,16 +26,6 @@ module Topics
     def call
       return nil if @normalized_name.blank?
 
-      # 1. Check Blocklist - Case insensitive
-      if TopicBlocklist.where("LOWER(name) = ?", @normalized_name).exists?
-        return nil # Treat as false positive/blocked
-      end
-
-      # 2. Check Exact Match (Topic) - Case insensitive
-      existing_topic = Topic.reusable.where("LOWER(name) = ?", @normalized_name).first
-      return existing_topic if existing_topic
-
-      # 3. Check contextual routing for vague or unsafe labels
       routed_topic = Topics::RoutingService.call(
         @raw_name,
         item_title: @item_title,
@@ -45,6 +35,15 @@ module Topics
         existing_topics: @existing_topics
       )
       return routed_topic if routed_topic
+
+      # 1. Check Blocklist - Case insensitive
+      if TopicBlocklist.where("LOWER(name) = ?", @normalized_name).exists?
+        return nil # Treat as false positive/blocked
+      end
+
+      # 2. Check Exact Match (Topic) - Case insensitive
+      existing_topic = Topic.reusable.where("LOWER(name) = ?", @normalized_name).first
+      return existing_topic if existing_topic
 
       exact_unsafe_topic = Topic.where("LOWER(name) = ?", @normalized_name).where(reuse_strategy: "unsafe_for_auto_reuse").first
       return nil if exact_unsafe_topic
