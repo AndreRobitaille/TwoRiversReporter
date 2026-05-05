@@ -115,7 +115,15 @@ namespace :topics do
             normalized_new_name = Topic.normalize_name(new_name)
             new_topic = split_topic_cache[normalized_new_name]
             unless new_topic
-              new_topic = Topics::FindOrCreateService.call(new_name, **routing_context)
+              blocked_topic = Topic.where("LOWER(name) = ?", normalized_new_name).find_by(status: "blocked")
+              if blocked_topic
+                puts "-> #{new_name} (BLOCKED)"
+                split_topic_cache[normalized_new_name] = nil
+                next
+              end
+
+              new_topic = Topic.where("LOWER(name) = ?", normalized_new_name).first
+              new_topic ||= Topics::FindOrCreateService.call(new_name, **routing_context)
               split_topic_cache[normalized_new_name] = new_topic if new_topic
             end
             if new_topic
