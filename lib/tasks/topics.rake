@@ -66,6 +66,7 @@ namespace :topics do
     removed = 0
     retagged = 0
     skipped = 0
+    split_topic_cache = {}
 
     links.find_each do |link|
       item = link.agenda_item
@@ -111,7 +112,12 @@ namespace :topics do
           puts "NOT TOPIC-WORTHY (removed)"
         else
           tags.each do |new_name|
-            new_topic = Topics::FindOrCreateService.call(new_name, **routing_context)
+            normalized_new_name = Topic.normalize_name(new_name)
+            new_topic = split_topic_cache[normalized_new_name]
+            unless new_topic
+              new_topic = Topics::FindOrCreateService.call(new_name, **routing_context)
+              split_topic_cache[normalized_new_name] = new_topic if new_topic
+            end
             if new_topic
               AgendaItemTopic.find_or_create_by!(agenda_item: item, topic: new_topic)
               puts "-> #{new_topic.name}"
