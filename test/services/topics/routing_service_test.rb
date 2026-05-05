@@ -11,14 +11,27 @@ module Topics
 
     test "exact reusable topic match wins before contextual routing" do
       reusable = Topic.create!(name: "downtown redevelopment", status: "approved")
-      Topic.create!(name: "former hamilton site redevelopment", status: "approved")
+      Topic.create!(name: "former hamilton site", status: "approved")
 
       topic = Topics::RoutingService.call(
         "Downtown Redevelopment",
-        context: { text: "former hamilton site" }
+        document_text: "former hamilton site"
       )
 
       assert_equal reusable, topic
+    end
+
+    test "exact alias resolution wins before unsafe routing" do
+      canonical = Topic.create!(name: "former hamilton site", status: "approved")
+      TopicAlias.create!(name: "hamilton site redevelopment", topic: canonical)
+
+      topic = Topics::RoutingService.call(
+        "Hamilton Site Redevelopment",
+        item_title: "Redevelopment",
+        document_text: "rezoning"
+      )
+
+      assert_equal canonical, topic
     end
 
     test "unsafe redevelopment label routes to former hamilton site when context is strong" do
@@ -26,7 +39,10 @@ module Topics
 
       topic = Topics::RoutingService.call(
         "Redevelopment",
-        context: { body_name: "Former Hamilton Site", text: "former hamilton site redevelopment" }
+        item_title: "Former Hamilton property rezoning",
+        item_summary: "fischer parcel visioning and rezoning for redevelopment",
+        meeting_body_name: "planning commission",
+        document_text: "former hamilton site redevelopment"
       )
 
       assert_equal former_hamilton, topic
@@ -37,7 +53,7 @@ module Topics
 
       topic = Topics::RoutingService.call(
         "Redevelopment",
-        context: { text: "Hamilton" }
+        document_text: "Hamilton"
       )
 
       assert_nil topic

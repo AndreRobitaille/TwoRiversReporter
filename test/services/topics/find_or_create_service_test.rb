@@ -54,7 +54,8 @@ module Topics
 
       topic = Topics::FindOrCreateService.call(
         "Downtown Redevelopment",
-        context: { meeting_body: "planning commission", text: "Former Hamilton site" }
+        meeting_body_name: "planning commission",
+        document_text: "Former Hamilton site"
       )
 
       assert_equal reusable, topic
@@ -66,10 +67,22 @@ module Topics
 
       topic = Topics::FindOrCreateService.call(
         "Redevelopment",
-        context: { body_name: "former hamilton site", text: "former hamilton site redevelopment discussion" }
+        item_title: "Former Hamilton property rezoning",
+        item_summary: "fischer parcel visioning for the former hamilton site",
+        meeting_body_name: "planning commission",
+        document_text: "former hamilton site redevelopment discussion"
       )
 
       assert_equal former_hamilton, topic
+    end
+
+    test "unsafe exact-name topic with no route fails safely" do
+      unsafe = Topic.create!(name: "redevelopment", status: "approved", reuse_strategy: "unsafe_for_auto_reuse")
+
+      topic = Topics::FindOrCreateService.call("Redevelopment")
+
+      assert_nil topic
+      assert_equal unsafe, Topic.find_by(name: "redevelopment")
     end
 
     test "unsafe redevelopment label does not route to hamilton without supporting context" do
