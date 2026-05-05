@@ -32,17 +32,33 @@ class TopicsRakeTest < ActiveSupport::TestCase
     Rake::Task["topics:seed_category_blocklist"].reenable
   end
 
-  test "mark_unsafe_for_reuse updates matching topics from TOPICS env" do
+  test "mark_unsafe_for_reuse normalizes TOPICS env before matching" do
     redevelopment = Topic.create!(name: "Redevelopment", reuse_strategy: "canonical")
     community_visioning = Topic.create!(name: "Community Visioning", reuse_strategy: "canonical")
 
     previous_topics = ENV["TOPICS"]
-    ENV["TOPICS"] = "redevelopment,community visioning"
+    ENV["TOPICS"] = "  ReDeVeLoPmEnT!,  community   visioning  "
 
     Rake::Task["topics:mark_unsafe_for_reuse"].invoke
 
     assert_equal "unsafe_for_auto_reuse", redevelopment.reload.reuse_strategy
     assert_equal "unsafe_for_auto_reuse", community_visioning.reload.reuse_strategy
+  ensure
+    ENV["TOPICS"] = previous_topics
+    Rake::Task["topics:mark_unsafe_for_reuse"].reenable
+  end
+
+  test "mark_unsafe_for_reuse aborts when TOPICS is blank" do
+    previous_topics = ENV["TOPICS"]
+    ENV["TOPICS"] = "   "
+
+    stdout, stderr = capture_io do
+      assert_raises(SystemExit) do
+        Rake::Task["topics:mark_unsafe_for_reuse"].invoke
+      end
+    end
+
+    assert_match(/Usage: TOPICS='redevelopment,community visioning' bin\/rails topics:mark_unsafe_for_reuse/, stderr)
   ensure
     ENV["TOPICS"] = previous_topics
     Rake::Task["topics:mark_unsafe_for_reuse"].reenable
