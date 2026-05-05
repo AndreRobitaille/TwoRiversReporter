@@ -38,7 +38,7 @@ module Topics
     end
 
     def strong_hamilton_context?
-      text = [@item_title, @item_summary, @meeting_body_name, @document_text].compact.join(" ").downcase
+      text = [ @item_title, @item_summary, @meeting_body_name, @document_text ].compact.join(" ").downcase
       signals = [
         text.include?("former hamilton site"),
         text.include?("former hamilton property"),

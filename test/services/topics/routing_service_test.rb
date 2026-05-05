@@ -67,7 +67,7 @@ module Topics
 
       topic = Topics::RoutingService.call(
         "Redevelopment",
-        existing_topics: ["former hamilton site"]
+        existing_topics: [ "former hamilton site" ]
       )
 
       assert_nil topic
