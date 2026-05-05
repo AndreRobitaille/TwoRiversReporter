@@ -64,17 +64,13 @@ class TopicsRakeTest < ActiveSupport::TestCase
     Rake::Task["topics:mark_unsafe_for_reuse"].reenable
   end
 
-  test "split_broad_topic uses reusable topics as existing candidates" do
+  test "split_broad_topic reuses an existing exact-name topic" do
     broad = Topic.create!(name: "redevelopment", status: "approved")
-    reusable_candidate = Topic.create!(name: "former hamilton site", status: "approved")
-    Topic.create!(name: "legacy topic", status: "approved", reuse_strategy: "unsafe_for_auto_reuse")
+    existing_topic = Topic.create!(name: "former hamilton site", status: "proposed")
 
     meeting = Meeting.create!(body_name: "planning commission", starts_at: Time.current, detail_page_url: "https://example.com/meetings/1")
     item = AgendaItem.create!(title: "Redevelopment discussion", summary: "Hamilton parcel update", meeting: meeting)
     AgendaItemTopic.create!(agenda_item: item, topic: broad)
-
-    captured_calls = []
-    original_call = Topics::FindOrCreateService.method(:call)
 
     capture_io do
       ai_service = Object.new
@@ -83,29 +79,37 @@ class TopicsRakeTest < ActiveSupport::TestCase
       end
 
       Ai::OpenAiService.stub(:new, ai_service) do
-        Topics::FindOrCreateService.define_singleton_method(:call) do |*args, **kwargs|
-          captured_calls << [ args, kwargs ]
-          reusable_candidate
-        end
-
         Rake::Task["topics:split_broad_topic"].invoke(broad.name)
       end
     end
 
-    assert_equal 1, captured_calls.length
-    assert_equal [ "Former Hamilton Site" ], captured_calls.first.first
-    assert_equal(
-      {
-        item_title: item.title,
-        item_summary: item.summary,
-        meeting_body_name: meeting.body_name,
-        document_text: "",
-        existing_topics: [ "former hamilton site" ]
-      },
-      captured_calls.first.last
-    )
+    assert_equal existing_topic, item.reload.topics.first
   ensure
-    Topics::FindOrCreateService.singleton_class.send(:define_method, :call, original_call)
+    Rake::Task["topics:split_broad_topic"].reenable
+  end
+
+  test "split_broad_topic reuses an existing proposed exact-name topic" do
+    broad = Topic.create!(name: "community visioning", status: "approved")
+    existing_topic = Topic.create!(name: "community vision planning", status: "proposed")
+
+    meeting = Meeting.create!(body_name: "planning commission", starts_at: Time.current, detail_page_url: "https://example.com/meetings/3")
+    item = AgendaItem.create!(title: "Community visioning follow-up", summary: "Planning update", meeting: meeting)
+    AgendaItemTopic.create!(agenda_item: item, topic: broad)
+
+    capture_io do
+      ai_service = Object.new
+      ai_service.define_singleton_method(:re_extract_item_topics) do |**_kwargs|
+        { "topic_worthy" => true, "tags" => [ "Community Vision Planning" ] }.to_json
+      end
+
+      Ai::OpenAiService.stub(:new, ai_service) do
+        Rake::Task["topics:split_broad_topic"].invoke(broad.name)
+      end
+    end
+
+    assert_equal existing_topic, item.reload.topics.first
+    assert_equal 1, Topic.where(name: "community vision planning").count
+  ensure
     Rake::Task["topics:split_broad_topic"].reenable
   end
 
