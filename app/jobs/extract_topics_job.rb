@@ -36,7 +36,7 @@ class ExtractTopicsJob < ApplicationJob
     meeting_docs_context = build_meeting_document_context(meeting, items)
 
     # Get existing approved topic names to reduce duplicates
-    existing_topics = Topic.approved.pluck(:name)
+    existing_topics = Topic.reusable.pluck(:name)
 
     ai_service = ::Ai::OpenAiService.new
     json_response = ai_service.extract_topics(

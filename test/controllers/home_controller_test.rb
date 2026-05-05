@@ -26,6 +26,16 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
       description: "How the city funds big projects"
     )
 
+    @unsafe_topic = Topic.create!(
+      name: "unsafe reuse topic",
+      status: "approved",
+      lifecycle_status: "active",
+      reuse_strategy: "unsafe_for_auto_reuse",
+      resident_impact_score: 5,
+      last_activity_at: 2.days.ago,
+      description: "Approved but unsafe to reuse"
+    )
+
     @low_topic = Topic.create!(
       name: "building permits",
       status: "approved",
@@ -45,6 +55,9 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
 
     item3 = AgendaItem.create!(meeting: @council_meeting, title: "Permits")
     AgendaItemTopic.create!(topic: @low_topic, agenda_item: item3)
+
+    item4 = AgendaItem.create!(meeting: @council_meeting, title: "Unsafe reuse")
+    AgendaItemTopic.create!(topic: @unsafe_topic, agenda_item: item4)
   end
 
   test "renders successfully" do
@@ -208,6 +221,13 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
 
     get root_url
     assert_no_match(/blocked thing/, response.body)
+  end
+
+  test "approved unsafe topics do not appear on homepage" do
+    get root_url
+
+    assert_response :success
+    assert_no_match(/unsafe reuse topic/, response.body)
   end
 
   test "topic description shown when present" do

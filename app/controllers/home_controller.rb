@@ -31,7 +31,7 @@ class HomeController < ApplicationController
   # both @top_stories and @wire_cards across the same request's queries.
 
   def build_top_stories
-    Topic.approved
+    Topic.reusable
       .where("resident_impact_score >= ?", TOP_STORY_MIN_IMPACT)
       .where("last_activity_at > ?", ACTIVITY_WINDOW.ago)
       .order(resident_impact_score: :desc, last_activity_at: :desc, id: :desc)
@@ -40,7 +40,7 @@ class HomeController < ApplicationController
   end
 
   def build_wire(exclude_ids)
-    scope = Topic.approved
+    scope = Topic.reusable
       .where("resident_impact_score >= ?", WIRE_MIN_IMPACT)
       .where("last_activity_at > ?", ACTIVITY_WINDOW.ago)
       .order(resident_impact_score: :desc, last_activity_at: :desc, id: :desc)
