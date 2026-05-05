@@ -14,6 +14,7 @@ class Topic < ApplicationRecord
   validates :status, presence: true, inclusion: { in: %w[proposed approved blocked] }
   validates :review_status, inclusion: { in: %w[proposed approved blocked] }, allow_nil: true
   validates :lifecycle_status, inclusion: { in: %w[active dormant resolved recurring] }, allow_nil: true
+  validates :reuse_strategy, inclusion: { in: %w[canonical unsafe_for_auto_reuse] }
   validates :canonical_name, uniqueness: true, allow_nil: true
   validates :slug, uniqueness: true, allow_nil: true
 
@@ -31,6 +32,8 @@ class Topic < ApplicationRecord
   scope :blocked, -> { where(status: "blocked") }
   scope :pinned, -> { where(pinned: true) }
   scope :publicly_visible, -> { where(status: "approved") }
+  scope :reusable, -> { approved.where(reuse_strategy: "canonical") }
+  scope :unsafe_for_auto_reuse, -> { where(reuse_strategy: "unsafe_for_auto_reuse") }
 
   scope :active, -> { where(lifecycle_status: "active") }
   scope :dormant, -> { where(lifecycle_status: "dormant") }
@@ -90,6 +93,7 @@ class Topic < ApplicationRecord
 
   def maintain_derived_fields
     self.name = self.class.normalize_name(name)
+    self.reuse_strategy = "canonical" if reuse_strategy.blank?
 
     if name_changed? || canonical_name.blank?
       self.canonical_name = self.class.normalize_name(name)
