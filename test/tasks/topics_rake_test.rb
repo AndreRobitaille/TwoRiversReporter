@@ -108,4 +108,33 @@ class TopicsRakeTest < ActiveSupport::TestCase
     Topics::FindOrCreateService.singleton_class.send(:define_method, :call, original_call)
     Rake::Task["topics:split_broad_topic"].reenable
   end
+
+  test "split_broad_topic reuses duplicate tags within the same run" do
+    broad = Topic.create!(name: "redevelopment", status: "approved")
+
+    meeting = Meeting.create!(body_name: "planning commission", starts_at: Time.current, detail_page_url: "https://example.com/meetings/2")
+    item_one = AgendaItem.create!(title: "First redevelopment item", summary: "First summary", meeting: meeting)
+    item_two = AgendaItem.create!(title: "Second redevelopment item", summary: "Second summary", meeting: meeting)
+    AgendaItemTopic.create!(agenda_item: item_one, topic: broad)
+    AgendaItemTopic.create!(agenda_item: item_two, topic: broad)
+
+    capture_io do
+      ai_service = Object.new
+      ai_service.define_singleton_method(:re_extract_item_topics) do |**_kwargs|
+        { "topic_worthy" => true, "tags" => [ "Former Hamilton Site" ] }.to_json
+      end
+
+      Ai::OpenAiService.stub(:new, ai_service) do
+        Rake::Task["topics:split_broad_topic"].invoke(broad.name)
+      end
+    end
+
+    topic = Topic.find_by(name: "former hamilton site")
+    assert topic.present?
+    assert_equal [ topic ], item_one.reload.topics.to_a
+    assert_equal [ topic ], item_two.reload.topics.to_a
+    assert_equal 2, AgendaItemTopic.where(topic: topic).count
+  ensure
+    Rake::Task["topics:split_broad_topic"].reenable
+  end
 end
