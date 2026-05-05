@@ -22,18 +22,29 @@ module Topics
     end
 
     test "unsafe redevelopment label routes to former hamilton site when context is strong" do
-      former_hamilton = Topic.create!(name: "former hamilton site redevelopment", status: "approved")
+      former_hamilton = Topic.create!(name: "former hamilton site", status: "approved")
 
       topic = Topics::RoutingService.call(
         "Redevelopment",
-        context: { body_name: "Former Hamilton Site", text: "Hamilton site redevelopment" }
+        context: { body_name: "Former Hamilton Site", text: "former hamilton site redevelopment" }
       )
 
       assert_equal former_hamilton, topic
     end
 
-    test "unsafe redevelopment label does not route to hamilton without supporting context" do
-      Topic.create!(name: "former hamilton site redevelopment", status: "approved")
+    test "unsafe redevelopment label does not route on bare hamilton context" do
+      Topic.create!(name: "former hamilton site", status: "approved")
+
+      topic = Topics::RoutingService.call(
+        "Redevelopment",
+        context: { text: "Hamilton" }
+      )
+
+      assert_nil topic
+    end
+
+    test "unsafe redevelopment label does not route without supporting context" do
+      Topic.create!(name: "former hamilton site", status: "approved")
 
       topic = Topics::RoutingService.call("Redevelopment")
 

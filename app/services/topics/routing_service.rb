@@ -1,7 +1,5 @@
 module Topics
   class RoutingService
-    HAMILTON_HINTS = ["hamilton", "former hamilton", "former hamilton site"].freeze
-
     def self.call(name, context: {})
       new(name, context: context).call
     end
@@ -28,12 +26,11 @@ module Topics
 
     def strong_hamilton_context?
       haystack = [@context[:text], @context[:body_name], @context[:meeting_body]].compact.join(" ").downcase
-      HAMILTON_HINTS.any? { |hint| haystack.include?(hint) }
+      haystack.include?("former hamilton site")
     end
 
     def route_to_former_hamilton_site
-      Topic.reusable.where("LOWER(name) LIKE ?", "%former hamilton site%").first ||
-        Topic.reusable.where("LOWER(name) LIKE ?", "%hamilton%").first
+      Topic.reusable.where("LOWER(name) = ?", "former hamilton site").first
     end
   end
 end

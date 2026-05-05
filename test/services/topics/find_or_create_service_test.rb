@@ -62,11 +62,11 @@ module Topics
     end
 
     test "unsafe redevelopment label routes to former hamilton site when context is strong" do
-      former_hamilton = Topic.create!(name: "former hamilton site redevelopment", status: "approved")
+      former_hamilton = Topic.create!(name: "former hamilton site", status: "approved")
 
       topic = Topics::FindOrCreateService.call(
         "Redevelopment",
-        context: { body_name: "former hamilton site", text: "Hamilton site redevelopment discussion" }
+        context: { body_name: "former hamilton site", text: "former hamilton site redevelopment discussion" }
       )
 
       assert_equal former_hamilton, topic
