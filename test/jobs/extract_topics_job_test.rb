@@ -134,6 +134,7 @@ class ExtractTopicsJobTest < ActiveJob::TestCase
       extracted_text: "Former Hamilton site redevelopment discussion and site planning details"
     )
     former_hamilton = Topic.create!(name: "former hamilton site", status: "approved")
+    unsafe_redevelopment = Topic.create!(name: "redevelopment", status: "approved", reuse_strategy: "unsafe_for_auto_reuse")
 
     ai_response = {
       "items" => [ {
@@ -160,7 +161,9 @@ class ExtractTopicsJobTest < ActiveJob::TestCase
       end
     end
 
-    assert_includes item.topics.reload, former_hamilton
+    item_topics = item.topics.reload
+    assert_includes item_topics, former_hamilton
+    refute_includes item_topics, unsafe_redevelopment
     mock_ai.verify
   end
 

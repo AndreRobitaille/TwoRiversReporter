@@ -36,7 +36,7 @@ class ExtractTopicsJob < ApplicationJob
     meeting_docs_context = build_meeting_document_context(meeting, items)
 
     # Cache item document text so we don't recompute it for each tag iteration.
-    item_document_texts = items.index_with { |item| gather_item_document_text(item, meeting) }
+    document_text_by_item_id = items.index_with { |item| gather_item_document_text(item, meeting) }.transform_keys(&:id)
 
     # Get existing approved topic names to reduce duplicates
     existing_topics = Topic.reusable.pluck(:name)
@@ -82,11 +82,7 @@ class ExtractTopicsJob < ApplicationJob
 
           topic = Topics::FindOrCreateService.call(
             topic_name,
-            item_title: item.title,
-            item_summary: item.summary,
-            meeting_body_name: meeting.body_name,
-            document_text: item_document_texts[item],
-            existing_topics: existing_topics
+            **topic_routing_context(item, meeting, document_text_by_item_id[item.id], existing_topics)
           )
           next unless topic
 
@@ -98,7 +94,7 @@ class ExtractTopicsJob < ApplicationJob
       Rails.logger.info "Tagged #{classifications.size} items for Meeting #{meeting_id}"
 
       # Pass 2: Refine catch-all ordinance topics into substantive civic concerns
-      extraction_status = "processed" if refine_catchall_topics(meeting, ai_service, existing_topics)
+      extraction_status = "processed" if refine_catchall_topics(meeting, ai_service, existing_topics, document_text_by_item_id)
 
       # Schedule auto-triage with delay so extraction jobs from the same scraper run
       # complete before triage fires. Multiple enqueues are safe — the job is idempotent.
@@ -117,7 +113,7 @@ class ExtractTopicsJob < ApplicationJob
     height\ and\ area\ exceptions
   ].freeze
 
-  def refine_catchall_topics(meeting, ai_service, existing_topics)
+  def refine_catchall_topics(meeting, ai_service, existing_topics, document_text_by_item_id)
     catchall_links = AgendaItemTopic
       .joins(:topic)
       .where(agenda_item_id: meeting.agenda_items.substantive.select(:id))
@@ -130,7 +126,7 @@ class ExtractTopicsJob < ApplicationJob
 
     catchall_links.each do |link|
       item = link.agenda_item
-      doc_text = gather_item_document_text(item, meeting)
+      doc_text = document_text_by_item_id[item.id] || gather_item_document_text(item, meeting)
       next if doc_text.blank?
 
       begin
@@ -151,11 +147,7 @@ class ExtractTopicsJob < ApplicationJob
 
         new_topic = Topics::FindOrCreateService.call(
           new_name,
-          item_title: item.title,
-          item_summary: item.summary,
-          meeting_body_name: meeting.body_name,
-          document_text: doc_text,
-          existing_topics: existing_topics
+          **topic_routing_context(item, meeting, doc_text, existing_topics)
         )
         next unless new_topic
 
@@ -194,6 +186,16 @@ class ExtractTopicsJob < ApplicationJob
     end
 
     parts.join("\n---\n")
+  end
+
+  def topic_routing_context(item, meeting, document_text, existing_topics)
+    {
+      item_title: item.title,
+      item_summary: item.summary,
+      meeting_body_name: meeting.body_name,
+      document_text: document_text,
+      existing_topics: existing_topics
+    }
   end
 
   def build_meeting_document_context(meeting, items)
