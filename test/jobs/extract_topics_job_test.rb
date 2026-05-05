@@ -116,6 +116,54 @@ class ExtractTopicsJobTest < ActiveJob::TestCase
     mock_ai.verify
   end
 
+  test "routes unsafe redevelopment tags to former hamilton site when extraction context is strong" do
+    meeting = Meeting.create!(
+      body_name: "Planning Commission", meeting_type: "Regular",
+      starts_at: 1.day.from_now, status: "agenda_posted",
+      detail_page_url: "http://example.com/m/3b"
+    )
+    item = AgendaItem.create!(
+      meeting: meeting,
+      number: "1",
+      title: "Former Hamilton site redevelopment",
+      summary: "Visioning for the former Hamilton property",
+      order_index: 1
+    )
+    MeetingDocument.create!(
+      meeting: meeting, document_type: "packet_pdf",
+      extracted_text: "Former Hamilton site redevelopment discussion and site planning details"
+    )
+    former_hamilton = Topic.create!(name: "former hamilton site", status: "approved")
+
+    ai_response = {
+      "items" => [ {
+        "id" => item.id,
+        "category" => "Development",
+        "tags" => [ "Redevelopment" ],
+        "topic_worthy" => true,
+        "confidence" => 0.9
+      } ]
+    }.to_json
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_topics, ai_response do |text, **kwargs|
+      text.is_a?(String)
+    end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        ExtractTopicsJob.perform_now(meeting.id)
+      end
+    end
+
+    assert_includes item.topics.reload, former_hamilton
+    mock_ai.verify
+  end
+
   test "includes linked document text in extraction" do
     meeting = Meeting.create!(
       body_name: "Zoning Board", meeting_type: "Regular",

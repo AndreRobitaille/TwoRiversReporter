@@ -35,6 +35,9 @@ class ExtractTopicsJob < ApplicationJob
     # Build meeting-level document context (packets/minutes not linked to specific items)
     meeting_docs_context = build_meeting_document_context(meeting, items)
 
+    # Cache item document text so we don't recompute it for each tag iteration.
+    item_document_texts = items.index_with { |item| gather_item_document_text(item, meeting) }
+
     # Get existing approved topic names to reduce duplicates
     existing_topics = Topic.reusable.pluck(:name)
 
@@ -77,7 +80,14 @@ class ExtractTopicsJob < ApplicationJob
         tags.each do |topic_name|
           next if topic_name.blank?
 
-          topic = Topics::FindOrCreateService.call(topic_name)
+          topic = Topics::FindOrCreateService.call(
+            topic_name,
+            item_title: item.title,
+            item_summary: item.summary,
+            meeting_body_name: meeting.body_name,
+            document_text: item_document_texts[item],
+            existing_topics: existing_topics
+          )
           next unless topic
 
           AgendaItemTopic.find_or_create_by!(agenda_item: item, topic: topic)
@@ -139,7 +149,14 @@ class ExtractTopicsJob < ApplicationJob
         new_name = data["topic_name"]
         next if new_name.blank?
 
-        new_topic = Topics::FindOrCreateService.call(new_name)
+        new_topic = Topics::FindOrCreateService.call(
+          new_name,
+          item_title: item.title,
+          item_summary: item.summary,
+          meeting_body_name: meeting.body_name,
+          document_text: doc_text,
+          existing_topics: existing_topics
+        )
         next unless new_topic
 
         # Replace the catch-all tag with the substantive topic
