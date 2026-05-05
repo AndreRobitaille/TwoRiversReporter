@@ -152,4 +152,15 @@ namespace :topics do
       end
     end
   end
+
+  desc "Mark umbrella topics unsafe for auto-reuse"
+  task mark_unsafe_for_reuse: :environment do
+    names = ENV["TOPICS"].to_s.split(",").map { |name| Topic.normalize_name(name) }.reject(&:blank?)
+    abort "Usage: TOPICS='redevelopment,community visioning' bin/rails topics:mark_unsafe_for_reuse" if names.empty?
+
+    topics = Topic.where(name: names)
+    topics.update_all(reuse_strategy: "unsafe_for_auto_reuse")
+
+    puts "Marked topics: #{topics.pluck(:name).join(", ")}"
+  end
 end

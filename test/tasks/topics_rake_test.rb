@@ -31,4 +31,20 @@ class TopicsRakeTest < ActiveSupport::TestCase
   ensure
     Rake::Task["topics:seed_category_blocklist"].reenable
   end
+
+  test "mark_unsafe_for_reuse updates matching topics from TOPICS env" do
+    redevelopment = Topic.create!(name: "Redevelopment", reuse_strategy: "canonical")
+    community_visioning = Topic.create!(name: "Community Visioning", reuse_strategy: "canonical")
+
+    previous_topics = ENV["TOPICS"]
+    ENV["TOPICS"] = "redevelopment,community visioning"
+
+    Rake::Task["topics:mark_unsafe_for_reuse"].invoke
+
+    assert_equal "unsafe_for_auto_reuse", redevelopment.reload.reuse_strategy
+    assert_equal "unsafe_for_auto_reuse", community_visioning.reload.reuse_strategy
+  ensure
+    ENV["TOPICS"] = previous_topics
+    Rake::Task["topics:mark_unsafe_for_reuse"].reenable
+  end
 end
