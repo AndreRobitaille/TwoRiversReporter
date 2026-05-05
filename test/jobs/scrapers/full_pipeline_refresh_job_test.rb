@@ -2,16 +2,34 @@ require "test_helper"
 
 class Scrapers::FullPipelineRefreshJobTest < ActiveJob::TestCase
   test "full pipeline job invokes discover helper and repair sweep" do
+    meetings = [
+      Meeting.create!(detail_page_url: "https://example.com/full-refresh-1", starts_at: 1.day.ago),
+      Meeting.create!(detail_page_url: "https://example.com/full-refresh-2", starts_at: 2.days.ago)
+    ]
     sweep = Minitest::Mock.new
     sweep.expect :call, { meetings_scoped: 2, parse_meeting_pages_enqueued: 0, document_downloads_enqueued: 0, agenda_parses_enqueued: 0, summaries_enqueued: 0 }
 
-    Scrapers::DiscoverMeetingsJob.stub :run_inline!, ->(**_) { Scrapers::DiscoverTranscriptsJob.perform_later; [ 11, 22 ] } do
-      Scrapers::PipelineRepairSweep.stub :new, ->(*args) { assert_equal [ [ 11, 22 ] ], args; sweep } do
-        assert_enqueued_with(job: Scrapers::DiscoverTranscriptsJob) do
-          assert_equal({ meetings_scoped: 2, parse_meeting_pages_enqueued: 0, document_downloads_enqueued: 0, agenda_parses_enqueued: 0, summaries_enqueued: 0 }, Scrapers::FullPipelineRefreshJob.perform_now)
+    parsed_ids = []
+
+    Scrapers::DiscoverMeetingsJob.stub :run_inline!, ->(**_) { Scrapers::DiscoverTranscriptsJob.perform_later; meetings.map(&:id) } do
+      Scrapers::ParseMeetingPageJob.stub :perform_now, ->(id, enqueue_downloads: true) {
+        parsed_ids << id
+        Meeting.find(id).mark_processing!(:meeting_page_parsed_at)
+      } do
+        Scrapers::PipelineRepairSweep.stub :new, ->(discovered_ids, parsed_meeting_ids: nil, since: nil) {
+          assert_equal meetings.map(&:id), discovered_ids
+          assert_equal meetings.map(&:id), parsed_meeting_ids
+          assert_nil since
+          sweep
+        } do
+          assert_enqueued_with(job: Scrapers::DiscoverTranscriptsJob) do
+            assert_equal({ meetings_scoped: 2, parse_meeting_pages_enqueued: 0, document_downloads_enqueued: 0, agenda_parses_enqueued: 0, summaries_enqueued: 0 }, Scrapers::FullPipelineRefreshJob.perform_now)
+          end
         end
       end
     end
+
+    assert_equal meetings.map(&:id), parsed_ids
     sweep.verify
   end
 
@@ -23,6 +41,20 @@ class Scrapers::FullPipelineRefreshJobTest < ActiveJob::TestCase
         Scrapers::FullPipelineRefreshJob.perform_now
       end
     end
+  end
+
+  test "full refresh parses newly discovered meetings inline" do
+    meeting = Meeting.create!(detail_page_url: "https://www.two-rivers.org/meetings/new", starts_at: 1.day.ago)
+
+    parsed_ids = []
+
+    Scrapers::DiscoverMeetingsJob.stub :run_inline!, [ meeting.id ] do
+      Scrapers::ParseMeetingPageJob.stub :perform_now, ->(id, enqueue_downloads: true) { parsed_ids << id } do
+        Scrapers::FullPipelineRefreshJob.perform_now
+      end
+    end
+
+    assert_equal [ meeting.id ], parsed_ids
   end
 
   test "discover meetings helper returns ids while still enqueuing parse jobs" do
@@ -103,7 +135,7 @@ class Scrapers::FullPipelineRefreshJobTest < ActiveJob::TestCase
 
   test "perform enqueues transcript discovery" do
     job = Object.new
-    job.define_singleton_method(:discover_meeting_ids) { |since: nil| [] }
+    job.define_singleton_method(:discover_meeting_ids) { |since: nil, enqueue_parse_jobs: true| [] }
 
     Scrapers::DiscoverMeetingsJob.stub :new, job do
       assert_enqueued_with(job: Scrapers::DiscoverTranscriptsJob) do
@@ -114,7 +146,7 @@ class Scrapers::FullPipelineRefreshJobTest < ActiveJob::TestCase
 
   test "class inline helper can skip transcript enqueueing" do
     job = Object.new
-    job.define_singleton_method(:discover_meeting_ids) { |since: nil| [ 7 ] }
+    job.define_singleton_method(:discover_meeting_ids) { |since: nil, enqueue_parse_jobs: true| [ 7 ] }
 
     Scrapers::DiscoverMeetingsJob.stub :new, job do
       assert_equal [ 7 ], Scrapers::DiscoverMeetingsJob.run_inline!(enqueue_transcripts: false)

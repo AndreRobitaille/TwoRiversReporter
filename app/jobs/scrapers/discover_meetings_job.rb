@@ -6,8 +6,8 @@ module Scrapers
 
     DEFAULT_LOOKBACK = 90.days
 
-    def self.run_inline!(since: nil, enqueue_transcripts: true)
-      meeting_ids = new.discover_meeting_ids(since: since)
+    def self.run_inline!(since: nil, enqueue_transcripts: true, enqueue_parse_jobs: true)
+      meeting_ids = new.discover_meeting_ids(since: since, enqueue_parse_jobs: enqueue_parse_jobs)
       Scrapers::DiscoverTranscriptsJob.perform_later if enqueue_transcripts
       meeting_ids
     end
@@ -16,7 +16,7 @@ module Scrapers
       self.class.run_inline!(since: since)
     end
 
-    def discover_meeting_ids(since: nil)
+    def discover_meeting_ids(since: nil, enqueue_parse_jobs: true)
       since ||= DEFAULT_LOOKBACK.ago
       agent = Mechanize.new
       agent.user_agent_alias = "Mac Safari"
@@ -25,7 +25,7 @@ module Scrapers
       meeting_ids = []
 
       loop do
-        should_continue, ids = parse_page(page, since)
+        should_continue, ids = parse_page(page, since, enqueue_parse_jobs: enqueue_parse_jobs)
         meeting_ids.concat(Array(ids))
         break unless should_continue
 
@@ -40,12 +40,12 @@ module Scrapers
 
     private
 
-    def parse_page(page, since)
+    def parse_page(page, since, enqueue_parse_jobs: true)
       rows = page.search("table.views-table tbody tr")
       meeting_ids = []
 
       rows.each do |row|
-        result = process_row(row, since)
+        result = process_row(row, since, enqueue_parse_jobs: enqueue_parse_jobs)
         if result == :stop
           return [ false, meeting_ids ]
         end
@@ -56,7 +56,7 @@ module Scrapers
       [ true, meeting_ids ]
     end
 
-    def process_row(row, since)
+    def process_row(row, since, enqueue_parse_jobs: true)
       # Extract Data
       date_span = row.at(".views-field-field-calendar-date span")
       return unless date_span
@@ -97,12 +97,11 @@ module Scrapers
       end
 
       if meeting.save
-        Scrapers::ParseMeetingPageJob.perform_later(meeting.id)
+        Scrapers::ParseMeetingPageJob.perform_later(meeting.id) if enqueue_parse_jobs
+        meeting.id
       else
         Rails.logger.error("DiscoverMeetingsJob: Failed to save meeting (#{detail_url}): #{meeting.errors.full_messages.join(', ')}")
       end
-
-      meeting.id
     end
 
     def determine_status(starts_at)

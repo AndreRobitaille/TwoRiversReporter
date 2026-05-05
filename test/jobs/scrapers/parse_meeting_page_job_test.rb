@@ -66,6 +66,39 @@ class Scrapers::ParseMeetingPageJobTest < ActiveJob::TestCase
     assert_equal true, meeting.reload.processing_state["meeting_page_parsed_at"]
   end
 
+  test "can skip download enqueueing during inline parse" do
+    meeting = Meeting.create!(detail_page_url: "http://example.com/meetings/skip-downloads", starts_at: Time.current)
+
+    page = Object.new
+    page.define_singleton_method(:at) do |selector|
+      if selector == ".related_info.meeting_info"
+        container = Object.new
+        container.define_singleton_method(:at) do |inner_selector|
+          if inner_selector == ".minutes"
+            section = Object.new
+            section.define_singleton_method(:search) do |_|
+              [ Object.new.tap { |link| link.define_singleton_method(:[]) { |key| key == "href" ? "https://cdn.example.com/minutes.pdf" : nil } } ]
+            end
+            section
+          end
+        end
+        container
+      end
+    end
+
+    agent = Object.new
+    agent.define_singleton_method(:user_agent_alias=) { |_alias_name| }
+    agent.define_singleton_method(:get) { |_url| page }
+
+    Mechanize.stub :new, agent do
+      assert_no_enqueued_jobs only: Documents::DownloadJob do
+        Scrapers::ParseMeetingPageJob.perform_now(meeting.id, enqueue_downloads: false)
+      end
+    end
+
+    assert_equal [ "minutes_pdf" ], meeting.reload.meeting_documents.pluck(:document_type)
+  end
+
   test "does not stamp completion on fetch failure" do
     meeting = Meeting.create!(detail_page_url: "http://example.com/fetch-failure", starts_at: Time.current)
 

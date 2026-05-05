@@ -2,8 +2,9 @@ module Scrapers
   class PipelineRepairSweep
     LOOKBACK_WINDOW = 90.days
 
-    def initialize(discovered_meeting_ids = [], since: nil)
+    def initialize(discovered_meeting_ids = [], since: nil, parsed_meeting_ids: nil)
       @discovered_meeting_ids = Array(discovered_meeting_ids).compact
+      @parsed_meeting_ids = Array(parsed_meeting_ids || discovered_meeting_ids).compact
       @since = since || LOOKBACK_WINDOW.ago
     end
 
@@ -21,7 +22,7 @@ module Scrapers
       }
 
       meetings.find_each do |meeting|
-        unless meeting.meeting_page_parsed? || discovered_meeting_ids.include?(meeting.id)
+        unless meeting.meeting_page_parsed? || parsed_meeting_ids.include?(meeting.id)
           Scrapers::ParseMeetingPageJob.perform_later(meeting.id)
           counters[:parse_meeting_pages_enqueued] += 1
         end
@@ -37,7 +38,7 @@ module Scrapers
 
     private
 
-    attr_reader :discovered_meeting_ids, :since
+    attr_reader :discovered_meeting_ids, :parsed_meeting_ids, :since
 
     def scoped_meetings
       Meeting.where(id: discovered_meeting_ids).or(Meeting.where(starts_at: since..Time.current)).distinct
@@ -126,7 +127,6 @@ module Scrapers
       required_markers.all? do |marker|
         state.key?(marker.to_s) && terminal_marker_status?(state[extraction_status_key(marker)])
       end
-
     end
 
     def required_summary_markers(meeting, source_type)

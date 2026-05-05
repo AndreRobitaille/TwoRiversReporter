@@ -513,4 +513,13 @@ class Scrapers::PipelineRepairSweepTest < ActiveJob::TestCase
       assert_equal 2, result[:meetings_scoped]
     end
   end
+
+  test "discovered meetings are only exempt from parse repair after successful inline parse" do
+    discovered = Meeting.create!(detail_page_url: "https://example.com/future-discovered", starts_at: 2.days.from_now)
+
+    assert_enqueued_with(job: Scrapers::ParseMeetingPageJob, args: [ discovered.id ]) do
+      result = Scrapers::PipelineRepairSweep.new([ discovered.id ], parsed_meeting_ids: []).call
+      assert_equal 1, result[:parse_meeting_pages_enqueued]
+    end
+  end
 end

@@ -4,7 +4,7 @@ module Scrapers
   class ParseMeetingPageJob < ApplicationJob
     queue_as :default
 
-    def perform(meeting_id)
+    def perform(meeting_id, enqueue_downloads: true)
       meeting = Meeting.find(meeting_id)
       parsed_successfully = false
 
@@ -21,7 +21,7 @@ module Scrapers
       end
 
       # Extract Documents
-      extract_documents(meeting, page)
+      extract_documents(meeting, page, enqueue_downloads: enqueue_downloads)
       parsed_successfully = true
     ensure
       meeting.mark_processing!(:meeting_page_parsed_at) if parsed_successfully
@@ -29,7 +29,7 @@ module Scrapers
 
     private
 
-    def extract_documents(meeting, page)
+    def extract_documents(meeting, page, enqueue_downloads: true)
       # The structure is usually inside .related_info.meeting_info
       container = page.at(".related_info.meeting_info")
 
@@ -70,7 +70,7 @@ module Scrapers
 
           # Always enqueue download to check for remote content updates
           # The DownloadJob will handle conditional GETs to avoid unnecessary work
-          Documents::DownloadJob.perform_later(doc.id)
+          Documents::DownloadJob.perform_later(doc.id) if enqueue_downloads
         end
       end
     end
