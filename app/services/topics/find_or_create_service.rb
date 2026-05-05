@@ -41,7 +41,7 @@ module Topics
       end
 
       # 5. Create New Topic
-      Topic.create!(name: @normalized_name, status: "proposed", review_status: "proposed")
+      Topic.create!(name: @normalized_name, status: "proposed", review_status: "proposed", reuse_strategy: "canonical")
     end
   end
 end

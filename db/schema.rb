@@ -591,6 +591,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_01_000000) do
     t.datetime "resident_impact_overridden_at"
     t.integer "resident_impact_score"
     t.jsonb "resident_reported_context", default: {}, null: false
+    t.string "reuse_strategy", default: "canonical", null: false
     t.string "review_status"
     t.string "slug"
     t.string "status", default: "approved", null: false
@@ -601,6 +602,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_01_000000) do
     t.index ["name"], name: "index_topics_on_name"
     t.index ["name"], name: "index_topics_on_name_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["resident_impact_score"], name: "index_topics_on_resident_impact_score"
+    t.index ["reuse_strategy"], name: "index_topics_on_reuse_strategy"
     t.index ["review_status"], name: "index_topics_on_review_status"
     t.index ["slug"], name: "index_topics_on_slug", unique: true
   end

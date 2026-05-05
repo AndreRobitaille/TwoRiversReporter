@@ -16,6 +16,22 @@ module Topics
       assert_equal "new topic", topic.name
       assert_equal "proposed", topic.status
       assert_equal "proposed", topic.review_status
+      assert_equal "canonical", topic.reuse_strategy
+    end
+
+    test "new topics default to canonical reuse strategy" do
+      topic = Topics::FindOrCreateService.call("Another New Topic")
+
+      assert_equal "canonical", topic.reuse_strategy
+    end
+
+    test "unsafe approved topics are excluded from reusable scope" do
+      safe_topic = Topic.create!(name: "safe topic", status: "approved")
+      unsafe_topic = Topic.create!(name: "unsafe topic", status: "approved", reuse_strategy: "unsafe_for_auto_reuse")
+
+      assert_includes Topic.reusable, safe_topic
+      assert_not_includes Topic.reusable, unsafe_topic
+      assert_includes Topic.unsafe_for_auto_reuse, unsafe_topic
     end
 
     test "returns existing topic (exact match)" do
