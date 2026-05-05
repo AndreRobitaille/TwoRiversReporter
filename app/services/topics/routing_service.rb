@@ -17,7 +17,6 @@ module Topics
       @item_summary = item_summary
       @meeting_body_name = meeting_body_name
       @document_text = document_text
-      @existing_topics = Array(existing_topics)
     end
 
     def call
@@ -39,14 +38,14 @@ module Topics
     end
 
     def strong_hamilton_context?
-      text = [@item_title, @item_summary, @meeting_body_name, @document_text, @existing_topics.map { |topic| topic.respond_to?(:name) ? topic.name : topic }].flatten.compact.join(" ").downcase
+      text = [@item_title, @item_summary, @meeting_body_name, @document_text].compact.join(" ").downcase
       signals = [
-        text.include?("former hamilton"),
+        text.include?("former hamilton site"),
+        text.include?("former hamilton property"),
         text.include?("hamilton property"),
         text.include?("fischer"),
-        text.include?("parcel"),
         text.include?("visioning"),
-        text.match?(/\b(rezone|rezoning|zoning|site plan|redevelop|redevelopment)\b/)
+        text.include?("former hamilton")
       ]
 
       signals.count(true) >= 2

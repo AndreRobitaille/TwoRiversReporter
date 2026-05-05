@@ -39,13 +39,38 @@ module Topics
 
       topic = Topics::RoutingService.call(
         "Redevelopment",
-        item_title: "Former Hamilton property rezoning",
-        item_summary: "fischer parcel visioning and rezoning for redevelopment",
+        item_title: "Former Hamilton property",
+        item_summary: "fischer visioning for the former hamilton site",
         meeting_body_name: "planning commission",
-        document_text: "former hamilton site redevelopment"
+        document_text: "historic former hamilton site"
       )
 
       assert_equal former_hamilton, topic
+    end
+
+    test "unrelated downtown parcel rezoning does not route to former hamilton site" do
+      Topic.create!(name: "former hamilton site", status: "approved")
+
+      topic = Topics::RoutingService.call(
+        "Redevelopment",
+        item_title: "Downtown parcel rezoning",
+        item_summary: "downtown redevelopment review",
+        meeting_body_name: "planning commission",
+        document_text: "site plan review"
+      )
+
+      assert_nil topic
+    end
+
+    test "existing topics containing former hamilton site do not route without Hamilton context" do
+      Topic.create!(name: "former hamilton site", status: "approved")
+
+      topic = Topics::RoutingService.call(
+        "Redevelopment",
+        existing_topics: ["former hamilton site"]
+      )
+
+      assert_nil topic
     end
 
     test "unsafe redevelopment label does not route on bare hamilton context" do
