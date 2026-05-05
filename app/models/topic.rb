@@ -14,7 +14,7 @@ class Topic < ApplicationRecord
   validates :status, presence: true, inclusion: { in: %w[proposed approved blocked] }
   validates :review_status, inclusion: { in: %w[proposed approved blocked] }, allow_nil: true
   validates :lifecycle_status, inclusion: { in: %w[active dormant resolved recurring] }, allow_nil: true
-  validates :reuse_strategy, inclusion: { in: %w[canonical unsafe_for_auto_reuse] }, allow_nil: true
+  validates :reuse_strategy, inclusion: { in: %w[canonical unsafe_for_auto_reuse] }
   validates :canonical_name, uniqueness: true, allow_nil: true
   validates :slug, uniqueness: true, allow_nil: true
 

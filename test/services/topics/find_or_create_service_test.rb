@@ -29,7 +29,7 @@ module Topics
       safe_topic = Topic.create!(name: "safe topic", status: "approved")
       unsafe_topic = Topic.create!(name: "unsafe topic", status: "approved", reuse_strategy: "unsafe_for_auto_reuse")
 
-      assert_includes Topic.reusable, safe_topic
+      assert_equal [safe_topic], Topic.reusable.order(:id).to_a
       assert_not_includes Topic.reusable, unsafe_topic
       assert_includes Topic.unsafe_for_auto_reuse, unsafe_topic
     end
