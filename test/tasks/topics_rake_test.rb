@@ -4,6 +4,17 @@ require "rake"
 class TopicsRakeTest < ActiveSupport::TestCase
   setup do
     Rails.application.load_tasks unless Rake::Task.task_defined?("topics:seed_category_blocklist")
+
+    AgendaItemTopic.delete_all
+    AgendaItem.delete_all
+    Meeting.delete_all
+    TopicAlias.delete_all
+    TopicBlocklist.delete_all
+    Topic.delete_all
+
+    Rake::Task["topics:seed_category_blocklist"].reenable
+    Rake::Task["topics:mark_unsafe_for_reuse"].reenable
+    Rake::Task["topics:split_broad_topic"].reenable
   end
 
   test "seed_category_blocklist adds category names to blocklist" do
