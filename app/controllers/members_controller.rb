@@ -35,7 +35,9 @@ class MembersController < ApplicationController
   private
 
   def load_attendance
-    records = @member.meeting_attendances.includes(meeting: :committee)
+    records = @member.meeting_attendances
+      .voting_members
+      .includes(meeting: :committee)
     return nil if records.none?
 
     # Group by committee for per-committee breakdown with peer comparison
@@ -49,6 +51,7 @@ class MembersController < ApplicationController
 
       # Peer comparison: other members on the same committee
       peer_rates = MeetingAttendance
+        .voting_members
         .joins(:meeting)
         .where(meetings: { committee_id: committee.id })
         .where.not(member_id: @member.id)

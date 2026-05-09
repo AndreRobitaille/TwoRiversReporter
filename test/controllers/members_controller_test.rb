@@ -63,6 +63,112 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
     assert_select ".member-attendance-list", count: 0
   end
 
+  test "show omits attendance section when member only appears as guest" do
+    meeting = Meeting.create!(
+      body_name: "City Council", meeting_type: "Regular",
+      starts_at: 3.days.ago, status: "minutes_posted",
+      detail_page_url: "http://example.com/guest-att-test",
+      committee: @council
+    )
+    MeetingAttendance.create!(
+      meeting: meeting, member: @member,
+      status: "present", attendee_type: "guest"
+    )
+
+    get member_url(@member)
+    assert_response :success
+
+    assert_select ".member-attendance-list", count: 0
+  end
+
+  test "show omits attendance section when member only appears as non-voting staff" do
+    meeting = Meeting.create!(
+      body_name: "City Council", meeting_type: "Regular",
+      starts_at: 3.days.ago, status: "minutes_posted",
+      detail_page_url: "http://example.com/staff-att-test",
+      committee: @council
+    )
+    MeetingAttendance.create!(
+      meeting: meeting, member: @member,
+      status: "present", attendee_type: "non_voting_staff"
+    )
+
+    get member_url(@member)
+    assert_response :success
+
+    assert_select ".member-attendance-list", count: 0
+  end
+
+  test "show attendance comparison ignores non-voting attendees" do
+    meeting_one = Meeting.create!(
+      body_name: "City Council", meeting_type: "Regular",
+      starts_at: 3.days.ago, status: "minutes_posted",
+      detail_page_url: "http://example.com/peer-att-test-1",
+      committee: @council
+    )
+    meeting_two = Meeting.create!(
+      body_name: "City Council", meeting_type: "Regular",
+      starts_at: 2.days.ago, status: "minutes_posted",
+      detail_page_url: "http://example.com/peer-att-test-2",
+      committee: @council
+    )
+    meeting_three = Meeting.create!(
+      body_name: "City Council", meeting_type: "Regular",
+      starts_at: 1.day.ago, status: "minutes_posted",
+      detail_page_url: "http://example.com/peer-att-test-3",
+      committee: @council
+    )
+
+    peer = Member.create!(name: "Voting Peer")
+    guest_peer = Member.create!(name: "Frequent Guest")
+    staff_peer = Member.create!(name: "Frequent Staff")
+
+    [meeting_one, meeting_two, meeting_three].each do |meeting|
+      MeetingAttendance.create!(
+        meeting: meeting, member: @member,
+        status: "present", attendee_type: "voting_member"
+      )
+    end
+
+    MeetingAttendance.create!(
+      meeting: meeting_one, member: peer,
+      status: "present", attendee_type: "voting_member"
+    )
+    MeetingAttendance.create!(
+      meeting: meeting_two, member: peer,
+      status: "present", attendee_type: "voting_member"
+    )
+    MeetingAttendance.create!(
+      meeting: meeting_three, member: peer,
+      status: "absent", attendee_type: "voting_member"
+    )
+
+    [meeting_one, meeting_two, meeting_three].each do |meeting|
+      MeetingAttendance.create!(
+        meeting: meeting, member: guest_peer,
+        status: "present", attendee_type: "guest"
+      )
+    end
+
+    MeetingAttendance.create!(
+      meeting: meeting_one, member: staff_peer,
+      status: "present", attendee_type: "non_voting_staff"
+    )
+    MeetingAttendance.create!(
+      meeting: meeting_two, member: staff_peer,
+      status: "present", attendee_type: "non_voting_staff"
+    )
+    MeetingAttendance.create!(
+      meeting: meeting_three, member: staff_peer,
+      status: "absent", attendee_type: "non_voting_staff"
+    )
+
+    get member_url(@member)
+    assert_response :success
+
+    assert_select ".member-attendance-stat", text: /3 of 3 \(100%\) — above 67% avg/
+  end
+
   test "show groups votes by topic for high-impact topics" do
     meeting = Meeting.create!(
       body_name: "City Council", meeting_type: "Regular",
