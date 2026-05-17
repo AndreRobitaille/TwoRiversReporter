@@ -83,12 +83,14 @@ module Scrapers
       detail_url = "https://www.two-rivers.org#{detail_url}" unless detail_url.start_with?("http")
 
       # Upsert Meeting
-      meeting = Meeting.find_or_initialize_by(detail_page_url: detail_url)
+      meeting = find_existing_meeting(starts_at, title_text, detail_url)
+      preserve_existing_details = preserve_existing_details?(meeting, title_text)
 
       # Update attributes
+      meeting.detail_page_url = detail_url unless preserve_existing_details
       meeting.starts_at = starts_at
-      meeting.body_name = title_text
-      meeting.committee = Committee.resolve(title_text)
+      meeting.body_name = title_text unless preserve_existing_details
+      meeting.committee = Committee.resolve(title_text) unless preserve_existing_details
       meeting.meeting_type = "regular" # Default, can be refined later
       meeting.status = determine_status(starts_at)
 
@@ -107,6 +109,22 @@ module Scrapers
     def determine_status(starts_at)
       return "upcoming" if starts_at > Time.current
       "held"
+    end
+
+    def find_existing_meeting(starts_at, title_text, detail_url)
+      Meeting.find_by(detail_page_url: detail_url) ||
+        Meeting.where(starts_at: starts_at).find do |meeting|
+          Meeting.normalized_body_name(meeting.body_name) == Meeting.normalized_body_name(title_text)
+        end ||
+        Meeting.new(detail_page_url: detail_url)
+    end
+
+    def preserve_existing_details?(meeting, title_text)
+      meeting.persisted? && cancelled_title?(title_text) && !cancelled_title?(meeting.body_name)
+    end
+
+    def cancelled_title?(title_text)
+      title_text.to_s.match?(/\b(cancelled|canceled)\b/i)
     end
   end
 end

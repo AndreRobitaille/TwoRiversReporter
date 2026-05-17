@@ -9,7 +9,7 @@ class MeetingsController < ApplicationController
       .order(starts_at: :asc)
 
     # Split upcoming: enriched (has agenda/topics) vs thin (just scheduled)
-    @upcoming_enriched, @upcoming_thin = upcoming_all.partition { |m| meeting_has_content?(m, :upcoming) }
+    @upcoming_enriched, @upcoming_thin = deduplicate_meetings(upcoming_all, :upcoming).partition { |m| meeting_has_content?(m, :upcoming) }
 
     recent_all = Meeting
       .where(starts_at: (RECENT_WINDOW.ago)..Time.current)
@@ -17,7 +17,7 @@ class MeetingsController < ApplicationController
       .order(starts_at: :desc)
 
     # Split recent: enriched (has summary) vs thin (no summary)
-    @recent_enriched, @recent_thin = recent_all.partition { |m| meeting_has_content?(m, :recent) }
+    @recent_enriched, @recent_thin = deduplicate_meetings(recent_all, :recent).partition { |m| meeting_has_content?(m, :recent) }
 
     if params[:q].present?
       @pagy, @search_results = pagy(:offset, Meeting.search_multi(params[:q]), limit: 15)
@@ -49,6 +49,27 @@ class MeetingsController < ApplicationController
   end
 
   private
+
+  def deduplicate_meetings(meetings, zone)
+    meetings.group_by(&:duplicate_identity_key)
+      .values
+      .map { |duplicates| preferred_duplicate(duplicates, zone) }
+  end
+
+  def preferred_duplicate(duplicates, zone)
+    duplicates.max_by do |meeting|
+      [
+        cancelled_meeting?(meeting) ? 0 : 1,
+        meeting_has_content?(meeting, zone) ? 1 : 0,
+        meeting.updated_at.to_i,
+        -meeting.id
+      ]
+    end
+  end
+
+  def cancelled_meeting?(meeting)
+    meeting.body_name.to_s.match?(/\b(cancelled|canceled)\b/i)
+  end
 
   def meeting_has_content?(meeting, zone)
     case zone

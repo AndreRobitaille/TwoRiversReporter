@@ -87,6 +87,56 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     assert assigns(:recent_thin).size >= 1
   end
 
+  test "index collapses duplicate upcoming meetings with same date and normalized name" do
+    starts_at = 3.days.from_now.change(usec: 0)
+    original = Meeting.create!(
+      body_name: "Plan Commission Meeting",
+      meeting_type: "Regular",
+      starts_at: starts_at,
+      status: "upcoming",
+      detail_page_url: "http://example.com/upcoming-duplicate-original"
+    )
+    duplicate = Meeting.create!(
+      body_name: "Plan Commission Meeting - Cancelled",
+      meeting_type: "Regular",
+      starts_at: starts_at,
+      status: "upcoming",
+      detail_page_url: "http://example.com/upcoming-duplicate-cancelled"
+    )
+
+    get meetings_url
+    assert_response :success
+
+    listed = assigns(:upcoming_enriched) + assigns(:upcoming_thin)
+    assert_includes listed, original
+    refute_includes listed, duplicate
+  end
+
+  test "index collapses duplicate recent meetings with same date and normalized name" do
+    starts_at = 3.days.ago.change(usec: 0)
+    original = Meeting.create!(
+      body_name: "Public Works Committee",
+      meeting_type: "Regular",
+      starts_at: starts_at,
+      status: "held",
+      detail_page_url: "http://example.com/recent-duplicate-original"
+    )
+    duplicate = Meeting.create!(
+      body_name: "Public Works Committee Meeting",
+      meeting_type: "Regular",
+      starts_at: starts_at,
+      status: "held",
+      detail_page_url: "http://example.com/recent-duplicate-meeting"
+    )
+
+    get meetings_url
+    assert_response :success
+
+    listed = assigns(:recent_enriched) + assigns(:recent_thin)
+    assert_includes listed, original
+    refute_includes listed, duplicate
+  end
+
   test "index assigns search_results when q param present" do
     get meetings_url, params: { q: "City Council" }
     assert_response :success

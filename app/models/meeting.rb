@@ -15,6 +15,19 @@ class Meeting < ApplicationRecord
   scope :recent, -> { where("starts_at <= ?", Time.current).order(starts_at: :desc) }
   scope :in_window, ->(from, to) { where(starts_at: from..to) }
 
+  def self.normalized_body_name(name)
+    name.to_s
+      .downcase
+      .gsub(/\b(cancelled|canceled)\b/, " ")
+      .gsub(/\bmeeting\b/, " ")
+      .gsub(/[^a-z0-9]+/, " ")
+      .squish
+  end
+
+  def duplicate_identity_key
+    [ starts_at, self.class.normalized_body_name(body_name) ]
+  end
+
   MONTH_NAMES = {
     "january" => 1, "jan" => 1, "february" => 2, "feb" => 2,
     "march" => 3, "mar" => 3, "april" => 4, "apr" => 4,
