@@ -459,6 +459,54 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     assert_not_nil state["votes_extracted_at"]
   end
 
+  test "drops unseconded motions instead of treating later roll call as their outcome" do
+    @minutes_doc.update!(extracted_text: <<~TEXT)
+      A. 26-095 Resolution Authorizing Application for DNR Stewardship Recreational Boating Grant
+      Recommended Action: Motion to waive reading and authorize the resolution
+      Motion made by Dahlke to table, no second motion. Motion carried with roll call vote.
+      Motion made by Derby, seconded by B. LeClair.
+      Voting Yea: Brandt, Petri, Stechmesser, D. LeClair, Bittner, Derby, B. LeClair
+      Voting Nay: Dahlke
+    TEXT
+    item = AgendaItem.create!(
+      meeting: @meeting,
+      number: "A.",
+      title: "26-095 Resolution Authorizing Application for DNR Stewardship Recreational Boating Grant",
+      order_index: 3
+    )
+
+    ai_response = {
+      "motions" => [
+        {
+          "description" => "Motion to table.",
+          "outcome" => "tabled",
+          "agenda_item_ref" => "A.: 26-095 Resolution Authorizing Application for DNR Stewardship Recreational Boating Grant",
+          "votes" => [ { "member" => "Doug Brandt", "value" => "yes" } ]
+        },
+        {
+          "description" => "Motion to waive reading and authorize the resolution.",
+          "outcome" => "passed",
+          "agenda_item_ref" => "A.: 26-095 Resolution Authorizing Application for DNR Stewardship Recreational Boating Grant",
+          "votes" => [ { "member" => "Doug Brandt", "value" => "yes" } ]
+        }
+      ]
+    }.to_json
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_votes, ai_response do |_text, **_kwargs| true end
+
+    Ai::OpenAiService.stub :new, mock_ai do
+      ExtractVotesJob.perform_now(@meeting.id)
+    end
+
+    motions = @meeting.motions.reload
+    assert_equal 1, motions.size
+    assert_equal "passed", motions.first.outcome
+    assert_equal item, motions.first.agenda_item
+    assert_includes motions.first.description, "authorize the resolution"
+    mock_ai.verify
+  end
+
   test "records votes extraction missing_source when minutes are absent" do
     @minutes_doc.destroy!
 

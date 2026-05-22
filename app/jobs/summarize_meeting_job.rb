@@ -195,7 +195,8 @@ class SummarizeMeetingJob < ApplicationJob
         kb_context,
         "minutes",
         source: meeting,
-        participant_context: participant_context_for(meeting)
+        participant_context: participant_context_for(meeting),
+        motion_context: motion_context_for(meeting)
       )
       summary = save_summary(meeting, "minutes_recap", json_str, source_type: source_type, framing: compute_framing(meeting, "minutes"))
 
@@ -211,7 +212,8 @@ class SummarizeMeetingJob < ApplicationJob
         kb_context,
         "transcript",
         source: meeting,
-        participant_context: participant_context_for(meeting)
+        participant_context: participant_context_for(meeting),
+        motion_context: motion_context_for(meeting)
       )
       save_summary(meeting, "transcript_recap", json_str, source_type: "transcript", framing: compute_framing(meeting, "transcript"))
 
@@ -235,7 +237,8 @@ class SummarizeMeetingJob < ApplicationJob
           kb_context,
           "packet",
           source: meeting,
-          participant_context: participant_context_for(meeting)
+          participant_context: participant_context_for(meeting),
+          motion_context: motion_context_for(meeting)
         )
         save_summary(meeting, "packet_analysis", json_str, framing: compute_framing(meeting, "packet"))
         # Clean up superseded agenda preview
@@ -400,6 +403,28 @@ class SummarizeMeetingJob < ApplicationJob
     agenda_doc = meeting.meeting_documents.find_by(document_type: "agenda_pdf")
     agenda_text = agenda_doc&.extracted_text
     Meetings::ParticipantsContextBuilder.new(meeting, agenda_text).build
+  end
+
+  def motion_context_for(meeting)
+    motions = meeting.motions.includes(:agenda_item, :votes).order(:id).to_a
+    return "No structured motion extraction available." if motions.empty?
+
+    lines = motions.map do |motion|
+      item = motion.agenda_item&.title || "No linked agenda item"
+      vote_counts = motion.votes.group_by(&:value).transform_values(&:count)
+      vote_text = if vote_counts.any?
+        vote_counts.sort.map { |value, count| "#{value}=#{count}" }.join(", ")
+      else
+        "no individual votes recorded"
+      end
+
+      "- #{item}: #{motion.outcome} — #{motion.description} (#{vote_text})"
+    end
+
+    <<~TEXT.strip
+      Structured motions extracted from the same meeting minutes. Use this as grounding for item decision and vote fields when it conflicts with noisy prose in the minutes.
+      #{lines.join("\n")}
+    TEXT
   end
 
   def self.summary_repair_needed?(meeting)

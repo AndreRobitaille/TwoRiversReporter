@@ -290,4 +290,43 @@ class OpenAiServiceAnalyzeMeetingTest < ActiveSupport::TestCase
     assert prompt_downcase.include?("meeting-specific roll-call names"), "Prompt must mention roll-call handling"
     assert prompt_downcase.include?("do not invent alternate spellings"), "Prompt must forbid noisy transcript spellings"
   end
+
+  test "analyze_meeting_content includes safeguards for unseconded motions and grant applications" do
+    captured_params = nil
+
+    mock_chat = lambda do |parameters:|
+      captured_params = parameters
+      {
+        "choices" => [ {
+          "message" => {
+            "content" => {
+              "headline" => "Test headline",
+              "highlights" => [],
+              "public_input" => [],
+              "item_details" => []
+            }.to_json
+          }
+        } ]
+      }
+    end
+
+    meeting = Meeting.create!(
+      body_name: "City Council Meeting",
+      starts_at: 3.days.ago,
+      detail_page_url: "https://example.com/meeting/parliamentary"
+    )
+
+    @service.instance_variable_get(:@client).stub :chat, mock_chat do
+      @service.send(:analyze_meeting_content, "Minutes text", "kb context", "minutes", source: meeting)
+    end
+
+    prompt_text = captured_params[:messages].map { |m| m[:content] }.join(" ")
+    prompt_downcase = prompt_text.downcase
+
+    assert_includes prompt_downcase, "unseconded"
+    assert_includes prompt_downcase, "no second"
+    assert_includes prompt_downcase, "later operative motion"
+    assert_includes prompt_downcase, "authorize applying for a grant"
+    assert_includes prompt_downcase, "final project funding"
+  end
 end

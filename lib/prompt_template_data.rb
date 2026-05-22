@@ -159,6 +159,7 @@ module PromptTemplateData
         { "name" => "today", "description" => "Current date (YYYY-MM-DD)" },
         { "name" => "temporal_framing", "description" => "preview, recap, or stale_preview" },
         { "name" => "participant_context", "description" => "Authoritative participant spellings and meeting roll-call names" },
+        { "name" => "motion_context", "description" => "Structured motions and vote outcomes extracted from the same meeting" },
         { "name" => "doc_text", "description" => "Meeting document text (truncated to 100k)" }
       ]
     },
@@ -226,6 +227,9 @@ module PromptTemplateData
         - For "roll call" votes, list every member.
         - For "voice votes", leave "votes" empty unless exceptions are named.
         - Infer "yes" from "Present" members on unanimous votes ONLY if confident.
+        - A motion that is not seconded ("no second", "not seconded", "died for lack of second") is not operative and was not voted on. Do not return it as passed, failed, or tabled.
+        - Do not attach a later roll-call tally to an earlier unseconded motion. If an unseconded motion is followed by a seconded motion and then a roll-call vote, return the later operative motion and vote.
+        - Subsidiary motions such as table, refer, postpone, or amend only control the item's outcome if they were seconded and actually adopted. Otherwise, use the final operative motion on the item.
         </ambiguity_handling>
 
         Agenda Items:
@@ -1171,6 +1175,16 @@ module PromptTemplateData
         - Do not invent alternate spellings from noisy transcript text when authoritative spellings are provided.
         </participant_context>
 
+        <motion_context>
+        {{motion_context}}
+
+        When structured motions are available, use them as grounding for
+        item_details decision and vote fields. If the raw minutes prose is
+        ambiguous but the structured motions identify a linked agenda item,
+        outcome, and vote count, prefer the structured motion data. Do not
+        invent decisions for items that have no matching motion.
+        </motion_context>
+
         <source_context>
         The source {{type}} is one of: minutes, transcript, packet, agenda.
 
@@ -1234,6 +1248,13 @@ module PromptTemplateData
           there is genuinely nothing for a resident to act on, follow, or
           care about.
         </guidelines>
+
+        <motion_sequence_rules>
+        - A motion with "no second", "not seconded", or "died for lack of second" is unseconded and not operative. Do not treat it as the item decision, and do not attach a later roll-call vote to it.
+        - If an unseconded motion is followed by a seconded motion and a roll-call vote, the item_details decision and vote must reflect the later operative motion.
+        - Subsidiary motions such as table, refer, postpone, or amend only become the item outcome if they were seconded and adopted. Failed or unseconded subsidiary motions may be mentioned only as context if important.
+        - For grant items, distinguish "authorize applying for a grant" from "approve final project funding", "award a contract", or "approve proceeding with the project". If the record says final project funding comes later, say the council approved only the application step.
+        </motion_sequence_rules>
 
         <procedural_filter>
         EXCLUDE these procedural items from item_details entirely:

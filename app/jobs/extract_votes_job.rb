@@ -24,7 +24,7 @@ class ExtractVotesJob < ApplicationJob
 
     begin
       data = JSON.parse(json_response)
-      motions = data["motions"] || []
+      motions = normalize_motions(data["motions"] || [], minutes_doc.extracted_text)
       changed = motions.any?
 
       ActiveRecord::Base.transaction do
@@ -85,6 +85,20 @@ class ExtractVotesJob < ApplicationJob
         label
       end
     }.join("\n")
+  end
+
+  def normalize_motions(motions, minutes_text)
+    motions.reject do |motion_data|
+      unseconded_motion?(motion_data, minutes_text)
+    end
+  end
+
+  def unseconded_motion?(motion_data, minutes_text)
+    description = motion_data["description"].to_s.downcase
+    return false unless description.include?("table")
+
+    text = minutes_text.to_s.downcase.squish
+    text.match?(/motion made by [^.]{0,80}\bto table\b[^.]{0,80}\b(no second|not seconded|lack of second)\b/)
   end
 
   # Resolve the AI's agenda_item_ref to a real AgendaItem record.
