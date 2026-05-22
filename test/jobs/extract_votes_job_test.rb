@@ -507,6 +507,36 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     mock_ai.verify
   end
 
+  test "adds absent voting members to extracted roll call votes when AI omits them" do
+    absent_member = Member.create!(name: "Adam Wachowski")
+    MeetingAttendance.create!(
+      meeting: @meeting,
+      member: absent_member,
+      status: "absent",
+      attendee_type: "voting_member"
+    )
+
+    ai_response = {
+      "motions" => [ {
+        "description" => "Approve lead service line contract",
+        "outcome" => "passed",
+        "agenda_item_ref" => "7a: Lead Service Line Replacement Program",
+        "votes" => [ { "member" => "Ald. Smith", "value" => "yes" } ]
+      } ]
+    }.to_json
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_votes, ai_response do |_text, **_kwargs| true end
+
+    Ai::OpenAiService.stub :new, mock_ai do
+      ExtractVotesJob.perform_now(@meeting.id)
+    end
+
+    motion = @meeting.motions.reload.first
+    assert_equal "absent", motion.votes.find_by!(member: absent_member).value
+    mock_ai.verify
+  end
+
   test "records votes extraction missing_source when minutes are absent" do
     @minutes_doc.destroy!
 

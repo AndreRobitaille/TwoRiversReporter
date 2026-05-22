@@ -57,6 +57,8 @@ class ExtractVotesJob < ApplicationJob
             )
             changed = true
           end
+
+          add_absent_voting_members(motion, meeting) if motion.votes.where.not(value: "absent").exists?
         end
       end
 
@@ -99,6 +101,20 @@ class ExtractVotesJob < ApplicationJob
 
     text = minutes_text.to_s.downcase.squish
     text.match?(/motion made by [^.]{0,80}\bto table\b[^.]{0,80}\b(no second|not seconded|lack of second)\b/)
+  end
+
+  def add_absent_voting_members(motion, meeting)
+    existing_member_ids = motion.votes.pluck(:member_id)
+    absent_members = meeting.meeting_attendances
+      .voting_members
+      .where(status: %w[absent excused])
+      .where.not(member_id: existing_member_ids)
+      .includes(:member)
+      .map(&:member)
+
+    absent_members.each do |member|
+      Vote.create!(motion: motion, member: member, value: "absent")
+    end
   end
 
   # Resolve the AI's agenda_item_ref to a real AgendaItem record.
