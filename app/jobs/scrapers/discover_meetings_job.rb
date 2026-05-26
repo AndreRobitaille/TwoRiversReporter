@@ -112,9 +112,17 @@ module Scrapers
     end
 
     def find_existing_meeting(starts_at, title_text, detail_url)
-      Meeting.find_by(detail_page_url: detail_url) ||
-        Meeting.where(starts_at: starts_at).find do |meeting|
-          Meeting.normalized_body_name(meeting.body_name) == Meeting.normalized_body_name(title_text)
+      normalized_title = Meeting.normalized_body_name(title_text)
+
+      Meeting.where(starts_at: starts_at).find do |meeting|
+        Meeting.normalized_body_name(meeting.body_name) == normalized_title
+      end ||
+        Meeting.where(starts_at: starts_at.beginning_of_day..starts_at.end_of_day).find do |meeting|
+          Meeting.normalized_body_name(meeting.body_name) == normalized_title
+        end ||
+        Meeting.where(detail_page_url: detail_url).find do |meeting|
+          meeting.starts_at&.to_date == starts_at.to_date &&
+            Meeting.normalized_body_name(meeting.body_name) == normalized_title
         end ||
         Meeting.new(detail_page_url: detail_url)
     end

@@ -9,7 +9,7 @@ class Meeting < ApplicationRecord
   has_many :knowledge_sources, dependent: :nullify
   belongs_to :committee, optional: true
 
-  validates :detail_page_url, presence: true, uniqueness: true
+  validates :detail_page_url, presence: true
 
   scope :upcoming, -> { where("starts_at > ?", Time.current).order(starts_at: :asc) }
   scope :recent, -> { where("starts_at <= ?", Time.current).order(starts_at: :desc) }
@@ -26,6 +26,23 @@ class Meeting < ApplicationRecord
 
   def duplicate_identity_key
     [ starts_at, self.class.normalized_body_name(body_name) ]
+  end
+
+  def latest_document(document_type)
+    latest_documents(document_type).first
+  end
+
+  def latest_documents(*document_types)
+    types = Array(document_types).flatten
+    return [] if types.empty?
+
+    docs = association(:meeting_documents).loaded? ? meeting_documents.to_a : meeting_documents.where(document_type: types).to_a
+
+    types.filter_map do |type|
+      docs
+        .select { |document| document.document_type == type }
+        .max_by { |document| [ document.created_at || Time.at(0), document.id || 0 ] }
+    end
   end
 
   MONTH_NAMES = {

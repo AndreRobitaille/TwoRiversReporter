@@ -856,6 +856,49 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     assert_equal 0, @meeting.meeting_summaries.count
   end
 
+  test "agenda_preview mode uses the latest agenda_pdf when multiple agenda PDFs exist" do
+    @meeting.meeting_documents.create!(
+      document_type: "agenda_pdf",
+      source_url: "http://example.com/agenda-old.pdf",
+      extracted_text: "Old agenda text about resurfacing.",
+      created_at: 2.days.ago
+    )
+    @meeting.meeting_documents.create!(
+      document_type: "agenda_pdf",
+      source_url: "http://example.com/agenda-new.pdf",
+      extracted_text: "New agenda text about playground repairs.",
+      created_at: 1.day.ago
+    )
+
+    generation_data = {
+      "headline" => "Board will review playground repairs tonight",
+      "highlights" => [],
+      "public_input" => [],
+      "item_details" => []
+    }
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :prepare_kb_context, "" do |arg|
+      arg.is_a?(Array)
+    end
+    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |text, _kb, type, **kwargs|
+      type == "agenda" && text.include?("playground repairs") && kwargs.key?(:participant_context)
+    end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        SummarizeMeetingJob.perform_now(@meeting.id, mode: :agenda_preview)
+      end
+    end
+
+    assert_equal "Board will review playground repairs tonight", @meeting.meeting_summaries.find_by(summary_type: "agenda_preview")&.generation_data&.dig("headline")
+    mock_ai.verify
+  end
+
   test "agenda_preview mode enqueues GenerateTopicBriefingJob for each approved topic" do
     @meeting.meeting_documents.create!(
       document_type: "agenda_pdf",

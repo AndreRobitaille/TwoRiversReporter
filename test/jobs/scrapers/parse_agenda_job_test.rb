@@ -160,6 +160,32 @@ class Scrapers::ParseAgendaJobTest < ActiveJob::TestCase
     assert_equal "2026/27 DNR Non-Point Source & Storm Water Grant", meeting.agenda_items.find_by(number: "b.")&.title
   end
 
+  test "uses the latest agenda_pdf when multiple agenda PDFs exist" do
+    meeting = Meeting.create!(
+      body_name: "Harbor Commission Meeting",
+      meeting_type: "Regular",
+      starts_at: Time.current,
+      status: "agenda_posted",
+      detail_page_url: "http://example.com/harbor-latest-agenda"
+    )
+
+    meeting.meeting_documents.create!(
+      document_type: "agenda_pdf",
+      extracted_text: "5. OLD BUSINESS a. Old Marina Lease Discussion 6. ADJOURNMENT",
+      created_at: 2.days.ago
+    )
+    meeting.meeting_documents.create!(
+      document_type: "agenda_pdf",
+      extracted_text: "5. NEW BUSINESS a. Harbor Dredging Contract Award 6. ADJOURNMENT",
+      created_at: 1.day.ago
+    )
+
+    Scrapers::ParseAgendaJob.perform_now(meeting.id)
+
+    assert_equal "Harbor Dredging Contract Award", meeting.agenda_items.find_by(number: "a.")&.title
+    refute meeting.agenda_items.exists?(title: "Old Marina Lease Discussion")
+  end
+
   test "rerunning parse preserves agenda item ids when downstream references exist" do
     meeting = Meeting.create!(
       body_name: "Plan Commission Meeting",
@@ -190,8 +216,8 @@ class Scrapers::ParseAgendaJobTest < ActiveJob::TestCase
     assert_equal 2, meeting.agenda_items.count
     assert_equal 2, meeting.agenda_items.pluck(:id).uniq.count
     assert_equal [
-      [section.id, "3.", "ACTION ITEMS", "section", nil, 1],
-      [original_id, "A.", "Harbor Resolution", "item", section.id, 2]
+      [ section.id, "3.", "ACTION ITEMS", "section", nil, 1 ],
+      [ original_id, "A.", "Harbor Resolution", "item", section.id, 2 ]
     ], meeting.agenda_items.order(:id).pluck(:id, :number, :title, :kind, :parent_id, :order_index)
     assert_equal 1, meeting.agenda_items.where(number: "A.", title: "Harbor Resolution", kind: "item", parent_id: section.id).count
     assert_equal original_id, motion.reload.agenda_item_id

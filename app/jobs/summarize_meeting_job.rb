@@ -42,7 +42,7 @@ class SummarizeMeetingJob < ApplicationJob
   end
 
   def run_agenda_preview_mode(meeting)
-    agenda_doc = meeting.meeting_documents.find_by(document_type: "agenda_pdf")
+    agenda_doc = meeting.latest_document("agenda_pdf")
     return if agenda_doc.nil? || agenda_doc.extracted_text.blank?
 
     ai_service = ::Ai::OpenAiService.new
@@ -177,7 +177,7 @@ class SummarizeMeetingJob < ApplicationJob
     kb_context = ai_service.prepare_kb_context(formatted_context)
 
     minutes_doc = minutes_document_for(meeting)
-    transcript_doc = meeting.meeting_documents.find_by(document_type: "transcript")
+    transcript_doc = meeting.latest_document("transcript")
 
     # Priority 1: Minutes (authoritative), optionally supplemented by transcript
     if minutes_doc&.extracted_text.present?
@@ -400,7 +400,7 @@ class SummarizeMeetingJob < ApplicationJob
   end
 
   def participant_context_for(meeting)
-    agenda_doc = meeting.meeting_documents.find_by(document_type: "agenda_pdf")
+    agenda_doc = meeting.latest_document("agenda_pdf")
     agenda_text = agenda_doc&.extracted_text
     Meetings::ParticipantsContextBuilder.new(meeting, agenda_text).build
   end
@@ -452,10 +452,13 @@ class SummarizeMeetingJob < ApplicationJob
   end
 
   def minutes_document_for(meeting)
-    meeting.meeting_documents.find_by(document_type: "minutes_pdf")
+    meeting.latest_document("minutes_pdf")
   end
 
   def packet_document_for(meeting)
-    meeting.meeting_documents.where("document_type LIKE ?", "%packet%").first
+    meeting.meeting_documents
+      .where("document_type LIKE ?", "%packet%")
+      .order(created_at: :desc, id: :desc)
+      .first
   end
 end

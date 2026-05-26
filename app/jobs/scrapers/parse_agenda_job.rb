@@ -6,8 +6,8 @@ module Scrapers
 
     def self.parse_and_reconcile(meeting_id)
       meeting = Meeting.find(meeting_id)
-      agenda_doc = meeting.meeting_documents.find_by(document_type: "agenda_html")
-      agenda_pdf_doc = meeting.meeting_documents.find_by(document_type: "agenda_pdf")
+      agenda_doc = meeting.latest_document("agenda_html")
+      agenda_pdf_doc = meeting.latest_document("agenda_pdf")
       result = new.send(:parse_and_reconcile, meeting, meeting_id: meeting_id, agenda_doc: agenda_doc, agenda_pdf_doc: agenda_pdf_doc)
       meeting.mark_processing!(:agenda_checked_at)
       result
@@ -39,8 +39,8 @@ module Scrapers
 
     def parse_and_reconcile(meeting, meeting_id: nil, agenda_doc: nil, agenda_pdf_doc: nil)
       meeting_id ||= meeting.id
-      agenda_doc ||= meeting.meeting_documents.find_by(document_type: "agenda_html")
-      agenda_pdf_doc ||= meeting.meeting_documents.find_by(document_type: "agenda_pdf")
+      agenda_doc ||= meeting.latest_document("agenda_html")
+      agenda_pdf_doc ||= meeting.latest_document("agenda_pdf")
       candidates = build_candidates(meeting_id:, agenda_doc:, agenda_pdf_doc:)
       return :noop if candidates.blank?
 

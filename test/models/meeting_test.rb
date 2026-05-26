@@ -89,6 +89,25 @@ class MeetingTest < ActiveSupport::TestCase
     assert_equal :transcript, meeting.document_status
   end
 
+  test "latest_document returns the newest document for a type" do
+    meeting = Meeting.create!(detail_page_url: "http://example.com/latest-doc", starts_at: Time.current)
+    older = meeting.meeting_documents.create!(document_type: "agenda_pdf", source_url: "http://example.com/old.pdf", created_at: 2.days.ago)
+    newer = meeting.meeting_documents.create!(document_type: "agenda_pdf", source_url: "http://example.com/new.pdf", created_at: 1.day.ago)
+
+    assert_equal newer, meeting.latest_document("agenda_pdf")
+    refute_equal older, meeting.latest_document("agenda_pdf")
+  end
+
+  test "latest_documents returns the newest document for each requested type in request order" do
+    meeting = Meeting.create!(detail_page_url: "http://example.com/latest-docs", starts_at: Time.current)
+    older_minutes = meeting.meeting_documents.create!(document_type: "minutes_pdf", source_url: "http://example.com/minutes-old.pdf", created_at: 3.days.ago)
+    newer_minutes = meeting.meeting_documents.create!(document_type: "minutes_pdf", source_url: "http://example.com/minutes-new.pdf", created_at: 1.day.ago)
+    meeting.meeting_documents.create!(document_type: "agenda_pdf", source_url: "http://example.com/agenda.pdf", created_at: 2.days.ago)
+
+    assert_equal [ newer_minutes.document_type, "agenda_pdf" ], meeting.latest_documents("minutes_pdf", "agenda_pdf").map(&:document_type)
+    refute_includes meeting.latest_documents("minutes_pdf", "agenda_pdf"), older_minutes
+  end
+
   test "processing state helpers read and write meeting parsed marker" do
     meeting = Meeting.create!(detail_page_url: "http://example.com/processing-1", starts_at: Time.current)
 

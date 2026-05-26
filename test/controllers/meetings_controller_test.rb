@@ -165,6 +165,26 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     refute all_topics.include?(@blocked_topic)
   end
 
+  test "show renders only the latest PDF link for each document type" do
+    @meeting.meeting_documents.create!(
+      document_type: "agenda_pdf",
+      source_url: "http://example.com/agenda-old.pdf",
+      created_at: 2.days.ago
+    )
+    @meeting.meeting_documents.create!(
+      document_type: "agenda_pdf",
+      source_url: "http://example.com/agenda-new.pdf",
+      created_at: 1.day.ago
+    )
+
+    get meeting_url(@meeting)
+    assert_response :success
+
+    assert_select ".meeting-article-docs a", text: /Agenda/, count: 1
+    assert_select ".meeting-article-docs a[href='http://example.com/agenda-new.pdf']", count: 1
+    assert_select ".meeting-article-docs a[href='http://example.com/agenda-old.pdf']", count: 0
+  end
+
   test "show renders topic doors on agenda items" do
     # Need a summary with item_details matching an agenda item to trigger doors
     MeetingSummary.create!(
