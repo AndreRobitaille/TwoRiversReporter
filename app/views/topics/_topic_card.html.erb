@@ -1,14 +1,18 @@
 <%# Locals: topic, highlight_signals (unused, kept for interface compat) %>
 <% ref = @meeting_refs&.dig(topic.id) %>
-<%= link_to topic_path(topic), class: "topics-card" do %>
+<% generated_image = @topic_generated_images&.[](topic.id) %>
+<% has_image = generated_image&.file&.attached? %>
+<%= link_to topic_path(topic), class: (has_image ? "topics-card topics-card--with-image" : "topics-card") do %>
   <div class="topics-card-accent"></div>
   <div class="topics-card-body">
+    <% if has_image %>
+      <div class="topics-card-media">
+        <%= image_tag generated_image.file, alt: "Illustration for #{topic.name}", class: "topics-card-image", loading: "lazy", decoding: "async" %>
+      </div>
+    <% end %>
     <div class="topics-card-top">
       <h3 class="topics-card-name"><%= topic.name %></h3>
     </div>
-    <% if topic.description.present? %>
-      <p class="topics-card-desc"><%= truncate(topic.description, length: 100) %></p>
-    <% end %>
     <% if topic.topic_briefing&.headline.present? %>
       <p class="topics-card-headline"><%= topic.topic_briefing.headline %></p>
     <% end %>

@@ -1,5 +1,6 @@
 class TopicsController < ApplicationController
   include HighlightSignals
+  include LoadsGeneratedImages
 
   def index
     @search_query = params[:q].presence
@@ -12,6 +13,7 @@ class TopicsController < ApplicationController
 
       @pagy, @search_results = pagy(:offset, search_scope, limit: 20)
       @meeting_refs = build_meeting_refs(@search_results.map(&:id))
+      @topic_generated_images = generated_images_for(@search_results, surface: :og)
     else
       active_scope = Topic.publicly_visible
                           .active
@@ -50,6 +52,8 @@ class TopicsController < ApplicationController
 
       # Most recent meeting appearance per topic (for "Last discussed" labels)
       @meeting_refs = build_meeting_refs(visible_ids)
+
+      @topic_generated_images = generated_images_for(@hero_topics + @topics, surface: :og)
     end
 
     respond_to do |format|

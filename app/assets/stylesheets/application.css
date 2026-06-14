@@ -1638,6 +1638,49 @@ small {
   background: var(--color-terra-cotta);
 }
 
+/* Optional thumbnail — only present when a generated image exists, so
+   image-less cards keep their flex-column text layout (clean fallback). The
+   image floats right inside a block body so the title/headline/footer wrap
+   around it and reclaim the space above and below — no dead column. Fixed 3:2
+   box matches the source aspect (1536×1024) so almost nothing is cropped. */
+.topics-card--with-image .topics-card-body {
+  display: block;
+}
+
+.topics-card-media {
+  float: right;
+  width: 132px;
+  aspect-ratio: 3 / 2;
+  margin: 0 0 var(--space-2) var(--space-4);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+}
+
+.topics-card-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Block body loses flex `gap`; restore vertical rhythm between stacked
+   children and clear the float so the footer sits below the image. */
+.topics-card--with-image .topics-card-top {
+  margin-bottom: var(--space-2);
+}
+
+.topics-card--with-image .topics-card-headline {
+  margin-bottom: var(--space-2);
+}
+
+.topics-card--with-image .topics-card-footer {
+  clear: both;
+  margin-top: 0;
+}
+
 .topics-card-body {
   padding: var(--space-5) var(--space-6);
   display: flex;
@@ -1660,17 +1703,6 @@ small {
   text-transform: uppercase;
   letter-spacing: 0.02em;
   color: var(--color-teal);
-  margin: 0;
-}
-
-/* Description: static scope explainer — quiet, small, secondary */
-.topics-card-desc {
-  font-family: var(--font-data);
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  line-height: var(--line-height-normal);
   margin: 0;
 }
 
@@ -2556,6 +2588,30 @@ details[open] summary {
   flex: 1;
   min-width: 0;
   gap: var(--space-1);
+}
+
+/* Optional thumbnail — only present when a generated image exists, so
+   image-less cards keep their slab + text layout (clean fallback). Fixed 3:2
+   box matches the source aspect so almost nothing is cropped; top-aligned with
+   the card content rather than centered. */
+.meetings-card-media {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  width: 132px;
+  aspect-ratio: 3 / 2;
+  margin: var(--space-3) var(--space-4) var(--space-3) 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+}
+
+.meetings-card-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }
 
 .meetings-card-top {

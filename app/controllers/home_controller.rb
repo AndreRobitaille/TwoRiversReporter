@@ -1,4 +1,6 @@
 class HomeController < ApplicationController
+  include LoadsGeneratedImages
+
   ACTIVITY_WINDOW = 30.days
   TOP_STORY_LIMIT = 2
   WIRE_MIN_IMPACT = 2
@@ -20,7 +22,7 @@ class HomeController < ApplicationController
     @next_up = build_next_up
     load_headlines(@top_stories + @wire_cards + @wire_rows)
     load_meeting_refs(@top_stories + @wire_cards + @wire_rows)
-    load_generated_images(@top_stories + @wire_cards)
+    @topic_generated_images = generated_images_for(@top_stories + @wire_cards, surface: :og)
   end
 
   private
@@ -78,21 +80,5 @@ class HomeController < ApplicationController
         date: row.starts_at
       }
     end
-  end
-
-  def load_generated_images(topics)
-    topic_ids = topics.map(&:id)
-    return if topic_ids.empty?
-
-    @topic_generated_images = GeneratedImage.ready
-      .where(imageable_type: "Topic", imageable_id: topic_ids)
-      .where(purpose: [ "og", "feature_and_og" ])
-      .includes(file_attachment: :blob)
-      .newest
-      .each_with_object({}) do |image, images_by_topic_id|
-        next unless image.file.attached?
-
-        images_by_topic_id[image.imageable_id] ||= image
-      end
   end
 end

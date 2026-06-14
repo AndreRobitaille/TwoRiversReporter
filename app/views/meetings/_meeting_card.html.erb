@@ -4,7 +4,9 @@
 <% approved_topics = approved_substantive_topics(meeting)
      .sort_by { |t| [-(t.resident_impact_score || 0), -(t.last_activity_at&.to_i || 0)] } %>
 <% is_upcoming = meeting.starts_at > Time.current %>
-<%= link_to meeting_path(meeting), class: "meetings-card" do %>
+<% generated_image = @meeting_generated_images&.[](meeting.id) %>
+<% has_image = generated_image&.file&.attached? %>
+<%= link_to meeting_path(meeting), class: (has_image ? "meetings-card meetings-card--with-image" : "meetings-card") do %>
   <div class="meetings-date-slab <%= 'meetings-date-slab--council' if is_council %>">
     <span class="meetings-date-month"><%= meeting.starts_at.strftime("%b") %></span>
     <span class="meetings-date-day"><%= meeting.starts_at.strftime("%-d") %></span>
@@ -33,4 +35,9 @@
       <span class="meetings-card-note">Agenda not yet posted</span>
     <% end %>
   </div>
+  <% if has_image %>
+    <div class="meetings-card-media">
+      <%= image_tag generated_image.file, alt: "Illustration for #{meeting.body_name.sub(/ Meeting$/, '')}", class: "meetings-card-image", loading: "lazy", decoding: "async" %>
+    </div>
+  <% end %>
 <% end %>

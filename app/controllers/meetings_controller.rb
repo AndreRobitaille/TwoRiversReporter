@@ -1,4 +1,6 @@
 class MeetingsController < ApplicationController
+  include LoadsGeneratedImages
+
   UPCOMING_WINDOW = 21.days
   RECENT_WINDOW = 21.days
 
@@ -22,6 +24,10 @@ class MeetingsController < ApplicationController
     if params[:q].present?
       @pagy, @search_results = pagy(:offset, Meeting.search_multi(params[:q]), limit: 15)
     end
+
+    # Cards only render for enriched lists + search results (thin meetings use compact rows).
+    carded_meetings = @upcoming_enriched + @recent_enriched + Array(@search_results)
+    @meeting_generated_images = generated_images_for(carded_meetings, surface: :feature)
   end
 
   def show
