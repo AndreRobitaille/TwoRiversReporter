@@ -5,9 +5,11 @@ class Admin::JobRunsController < Admin::BaseController
     "extract_votes" => { job: ExtractVotesJob, scope: :meeting, name: "Extract Votes" },
     "extract_committee_members" => { job: ExtractCommitteeMembersJob, scope: :meeting, name: "Extract Committee Members" },
     "summarize_meeting" => { job: SummarizeMeetingJob, scope: :meeting, name: "Summarize Meeting" },
+    "generate_meeting_image" => { job: GeneratedImages::GenerateForMeetingJob, scope: :meeting, name: "Meeting Image" },
     # Topic-scoped
     "generate_topic_briefing" => { job: Topics::GenerateTopicBriefingJob, scope: :topic, name: "Topic Briefing" },
     "generate_description" => { job: Topics::GenerateDescriptionJob, scope: :topic, name: "Topic Description" },
+    "generate_topic_image" => { job: GeneratedImages::GenerateForTopicJob, scope: :topic, name: "Topic Image" },
     # No-target
     "auto_triage" => { job: Topics::AutoTriageJob, scope: :none, name: "Topic Triage" },
     "discover_meetings" => { job: Scrapers::FullPipelineRefreshJob, scope: :none, name: "Scrape City Website (discover + process)" }

@@ -1,17 +1,22 @@
 <%# Renders a top story card. Locals: topic, headline, meeting_ref, variant (:primary or :secondary) %>
 <% variant ||= :primary %>
-<% card_class = variant == :primary ? "top-story" : "second-story" %>
+<% base_class = variant == :primary ? "top-story" : "second-story" %>
+<% generated_image = @topic_generated_images&.[](topic.id) %>
+<% has_image = generated_image&.file&.attached? %>
+<% card_class = has_image ? "#{base_class} #{base_class}--with-image" : base_class %>
 
 <%= link_to topic_path(topic), class: card_class do %>
   <div class="story-accent"></div>
+  <% if has_image %>
+    <div class="story-media">
+      <%= image_tag generated_image.file, alt: "Illustration for #{topic.name}", class: "story-image", loading: (variant == :primary ? "eager" : "lazy"), fetchpriority: (variant == :primary ? "high" : nil), decoding: "async" %>
+    </div>
+  <% end %>
   <div class="story-inner">
     <% if variant == :primary %>
       <div class="story-deco"><%= render "shared/starburst", size: 48, opacity: 1.0 %></div>
     <% end %>
     <div class="story-topic"><%= topic.name %></div>
-    <% if topic.description.present? %>
-      <div class="story-desc"><%= topic.description %></div>
-    <% end %>
     <% if headline.present? %>
       <p class="story-headline"><%= headline %></p>
     <% end %>

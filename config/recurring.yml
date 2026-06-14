@@ -25,3 +25,7 @@ production:
     class: ExtractKnowledgePatternsJob
     queue: default
     schedule: every Monday at 3:30am
+  refresh_generated_images_homepage_topics:
+    class: GeneratedImages::RefreshHomepageTopicsJob
+    queue: default
+    schedule: every 6 hours

@@ -1,6 +1,9 @@
 require "test_helper"
+require "base64"
 
 class HomeControllerTest < ActionDispatch::IntegrationTest
+  IMAGE_BYTES = Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO0yMjoAAAAASUVORK5CYII=")
+
   setup do
     @council_meeting = Meeting.create!(
       body_name: "City Council Meeting",
@@ -73,6 +76,42 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_select ".top-story .story-topic", text: /lead service lines/i
     assert_select ".top-story .story-headline", text: /Lead line headline/
     assert_select ".top-story .read-more", text: /Full story/
+  end
+
+  test "top stories render ready generated images" do
+    image = @high_topic.generated_images.create!(status: "ready", purpose: "feature_and_og", generated_at: Time.current)
+    image.file.attach(io: StringIO.new(IMAGE_BYTES), filename: "lead-lines.png", content_type: "image/png")
+
+    get root_url
+    assert_response :success
+
+    assert_select ".top-story.top-story--with-image"
+    assert_select ".top-story .story-image[alt=?]", "Illustration for lead service lines"
+    # Homepage thumbnails carry no overlay label (kept clean; disclosure lives on detail pages).
+    assert_select ".top-story .generated-image-label", count: 0
+    assert_select ".wire-card .wire-image", count: 0
+  end
+
+  test "wire cards render ready generated images" do
+    wire_topic = Topic.create!(
+      name: "storm sewer grant",
+      status: "approved",
+      lifecycle_status: "active",
+      resident_impact_score: 3,
+      last_activity_at: 1.day.ago,
+      description: "Flood control and infrastructure grant"
+    )
+    image = wire_topic.generated_images.create!(status: "ready", purpose: "feature_and_og", generated_at: Time.current)
+    image.file.attach(io: StringIO.new(IMAGE_BYTES), filename: "borrowing.png", content_type: "image/png")
+
+    get root_url
+    assert_response :success
+
+    assert_select ".wire-card.wire-card--with-image"
+    assert_select ".wire-card .wire-image[alt=?]", "Illustration for storm sewer grant"
+    # Wire cards intentionally omit the per-card label (too small; one disclosure per page).
+    assert_select ".wire-card .generated-image-label", count: 0
+    assert_select ".top-story .story-image", count: 0
   end
 
   test "top stories limited to 2 items" do
@@ -149,6 +188,24 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_no_match(/Plan Commission/i, nextup_text)
   end
 
+  test "next up renders blank body_name safely" do
+    Meeting.create!(
+      body_name: nil,
+      starts_at: 10.days.from_now,
+      detail_page_url: "http://example.com/blank-next-up"
+    )
+    Meeting.create!(
+      body_name: "City Council Meeting",
+      starts_at: 10.days.from_now,
+      detail_page_url: "http://example.com/council-next-up"
+    )
+
+    get root_url
+    assert_response :success
+
+    assert_select ".nextup-card .meeting-name", text: /City Council/
+  end
+
   test "next up limited to 2 meetings" do
     3.times do |i|
       Meeting.create!(
@@ -194,6 +251,16 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
 
     get root_url
     assert_response :success
+    assert_select ".story-image", count: 0
+    assert_select ".wire-image", count: 0
+  end
+
+  test "populated homepage without generated images stays text first" do
+    get root_url
+    assert_response :success
+
+    assert_select ".story-image", count: 0
+    assert_select ".wire-image", count: 0
   end
 
   test "wire zone omitted when no qualifying wire topics" do
@@ -230,10 +297,12 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_no_match(/unsafe reuse topic/, response.body)
   end
 
-  test "topic description shown when present" do
+  test "topic description omitted from homepage cards" do
     TopicBriefing.create!(topic: @high_topic, headline: "headline", generation_tier: "full")
 
     get root_url
-    assert_select ".story-desc", text: /Replacing aging lead water pipes/
+    # Descriptions are intentionally dropped from the top-six cards (too busy).
+    assert_select ".story-desc", count: 0
+    assert_select ".wire-desc", count: 0
   end
 end

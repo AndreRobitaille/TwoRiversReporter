@@ -153,6 +153,7 @@ module Topics
       briefing.last_full_generation_at = Time.current
       briefing.triggering_meeting = meeting
       briefing.save!
+      enqueue_generated_image_job(topic)
     end
 
     def propagate_impact(topic, analysis_json)
@@ -160,6 +161,12 @@ module Topics
 
       score = analysis_json["resident_impact"]["score"].to_i
       topic.update_resident_impact_from_ai(score) if score.between?(1, 5)
+    end
+
+    def enqueue_generated_image_job(topic)
+      return unless GeneratedImages::Config.enabled?
+
+      GeneratedImages::GenerateForTopicJob.perform_later(topic.id)
     end
   end
 end

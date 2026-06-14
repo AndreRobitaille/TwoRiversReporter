@@ -389,6 +389,7 @@ class SummarizeMeetingJob < ApplicationJob
     summary.generation_data = generation_data
     summary.content = nil
     summary.save!
+    enqueue_generated_image_job_for_meeting(summary)
     summary
   end
 
@@ -460,5 +461,11 @@ class SummarizeMeetingJob < ApplicationJob
       .where("document_type LIKE ?", "%packet%")
       .order(created_at: :desc, id: :desc)
       .first
+  end
+
+  def enqueue_generated_image_job_for_meeting(summary)
+    return unless GeneratedImages::Config.enabled?
+
+    GeneratedImages::GenerateForMeetingJob.perform_later(summary.meeting_id)
   end
 end

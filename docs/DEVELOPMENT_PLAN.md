@@ -20,6 +20,20 @@ citation-backed summaries for residents.
 
 AI-generated content must never replace or obscure official documents.
 
+## Generated Civic Images
+
+- High-priority homepage topics and substantive meetings may get AI-generated illustrative images.
+- Images are illustrative only, not evidence; official documents and citations remain the source of truth.
+- Generated civic images should read like restrained local newspaper/editorial photographs, not cartoons, vector art, AI explainer graphics, or symbolic collages.
+- Each generated image should use **one dominant resident-visible physical anchor**. Do not try to represent every agenda item in a meeting image. Prefer concrete scenes residents recognize: streets, curbs, sidewalks, utility poles/meters, homes, parks, lakefront/beach access, public facilities, and other physical civic infrastructure.
+- Household-cost or policy issues should be visualized through physical context, not fake paperwork, charts, dollar signs, readable bills, or presentation slides.
+- For named/specific local places, facilities, businesses, beaches, parks, or landmarks, avoid full invented stand-ins. Use cropped, non-identifying details and surrounding atmosphere instead. Admin upload override is expected for hard cases where a generated image would look like a fake version of a known local place.
+- Topic images are limited to the actual homepage top-six pool and are reused for topic social previews.
+- Meeting images are generated only when the structured summary or agenda has enough substantive content; they support the meeting page and social previews.
+- Homepage cards render the topic image as a small, fixed side thumbnail beside the text (≈200×134 on the two top stories, ≈104×78 on the wire cards) so the text stays primary; topic descriptions are omitted from these top-six cards, and the thumbnails carry no overlay label. Topic and meeting detail pages show a larger edge-to-edge feature image lifted off the page with a soft drop shadow and a short "AI image" cutline beneath it. Images never dominate — they cue the reader, not lead.
+- When no image exists, cards and detail pages omit the image entirely with no reserved space. The homepage photo-and-text layout is gated behind an image-present modifier class, so image-less cards fall back to the plain text layout.
+- Provenance is stored. Failed generations retry once with a safer prompt, then fall back. Admins can regenerate, change the prompt, upload a replacement, or disable the image.
+
 ------------------------------------------------------------------------
 
 # Foundational Concept: Topics

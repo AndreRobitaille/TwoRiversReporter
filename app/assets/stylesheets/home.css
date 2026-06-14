@@ -101,9 +101,67 @@
   background: linear-gradient(90deg, var(--color-terra-cotta), var(--color-amber));
 }
 
-.top-story .story-inner {
-  padding: var(--space-5) var(--space-6);
+/* Photo + lede: a fixed, standard-ratio thumbnail (identical on both top
+   stories) sits left of the text. Only applies when an image exists
+   (--with-image); image-less cards keep the default single-column block flow,
+   so the no-image fallback stays clean. Shared sizing for top + second story
+   keeps the two cards visually consistent. */
+/* Doubled class (e.g. .second-story.second-story--with-image) so this beats
+   the base `.second-story { display: block }` rule regardless of source order. */
+.top-story.top-story--with-image,
+.second-story.second-story--with-image {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto 1fr;
+  align-items: start;
+}
+
+.top-story--with-image .story-accent,
+.second-story--with-image .story-accent {
+  grid-column: 1 / -1;
+}
+
+.top-story .story-media,
+.second-story .story-media {
+  grid-column: 1;
+  grid-row: 2;
+  align-self: start;
+  width: 200px;
+  height: 134px;
+  margin: var(--space-4) 0 var(--space-4) var(--space-5);
+  overflow: hidden;
   position: relative;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.top-story .story-image,
+.second-story .story-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center;
+}
+
+.top-story .story-inner {
+  padding: var(--space-4) var(--space-6);
+  position: relative;
+}
+
+.top-story .story-inner,
+.second-story .story-inner {
+  display: flex;
+  flex-direction: column;
+}
+
+.top-story--with-image .story-inner,
+.second-story--with-image .story-inner {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: stretch;
 }
 
 .top-story .story-deco {
@@ -124,15 +182,6 @@
   margin: 0 0 0.15rem;
 }
 
-.top-story .story-desc {
-  font-family: var(--font-data);
-  font-size: var(--font-size-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--color-text-secondary);
-  margin: 0 0 0.7rem;
-}
-
 .top-story .story-headline {
   font-family: var(--font-body);
   font-size: var(--font-size-base);
@@ -144,6 +193,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-top: auto;
+  padding-top: var(--space-3);
 }
 
 .top-story .story-meta {
@@ -196,7 +247,7 @@
 
 .second-story .story-accent {
   height: 4px;
-  background: linear-gradient(90deg, var(--color-teal), #3d7b8a);
+  background: linear-gradient(90deg, var(--color-teal), var(--color-accent-cool-hover));
 }
 
 .second-story .story-inner {
@@ -213,15 +264,6 @@
   margin: 0 0 0.1rem;
 }
 
-.second-story .story-desc {
-  font-family: var(--font-data);
-  font-size: var(--font-size-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--color-text-secondary);
-  margin: 0 0 0.55rem;
-}
-
 .second-story .story-headline {
   font-size: var(--font-size-sm);
   line-height: var(--line-height-relaxed);
@@ -232,6 +274,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-top: auto;
+  padding-top: var(--space-3);
 }
 
 .second-story .story-meta {
@@ -286,6 +330,46 @@
   transition: opacity var(--transition-fast);
 }
 
+.wire-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Image cards become a side-thumbnail layout: a small, standard-ratio image
+   stays recognizable, where a full-width strip flattened it. */
+.wire-card--with-image {
+  display: grid;
+  grid-template-columns: 104px 1fr;
+  column-gap: var(--space-3);
+  align-items: start;
+}
+
+.wire-card--with-image .wire-media {
+  grid-column: 1;
+  align-self: start;
+  width: 104px;
+  height: 78px;
+  margin: 0;
+  overflow: hidden;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.wire-card--with-image .wire-body {
+  grid-column: 2;
+}
+
+.wire-card .wire-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center;
+}
+
 .wire-card:hover {
   box-shadow: var(--shadow-md);
   transform: translateY(-1px);
@@ -305,15 +389,6 @@
   letter-spacing: 0.02em;
   color: var(--color-teal);
   margin: 0 0 0.1rem;
-}
-
-.wire-card .wire-desc {
-  font-family: var(--font-data);
-  font-size: var(--font-size-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--color-text-secondary);
-  margin: 0 0 0.45rem;
 }
 
 .wire-card .wire-headline {
@@ -548,15 +623,15 @@
   text-decoration: none;
   padding: 0.65rem var(--space-5);
   border-radius: var(--radius-md);
-  background: linear-gradient(180deg, var(--color-teal) 0%, #003a47 100%);
+  background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   color: var(--color-text-inverse);
   box-shadow: var(--shadow-sm), inset 0 1px 0 rgb(255 255 255 / 0.2);
-  border: 1px solid #003040;
+  border: 1px solid var(--color-primary-hover);
   transition: all var(--transition-fast);
 }
 
 .home-escape-btn:hover {
-  background: linear-gradient(180deg, #005a6b 0%, var(--color-teal) 100%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 70%, white) 0%, var(--color-primary) 100%);
   box-shadow: var(--shadow-md), inset 0 1px 0 rgb(255 255 255 / 0.2);
   transform: translateY(-1px);
   color: var(--color-text-inverse);
@@ -585,6 +660,19 @@
 @media (max-width: 600px) {
   .home-header .page-title {
     font-size: 1.35rem;
+  }
+
+  /* Stack the photo + lede on narrow screens: full-width banner above text. */
+  .top-story.top-story--with-image,
+  .second-story.second-story--with-image {
+    display: block;
+  }
+
+  .top-story--with-image .story-media,
+  .second-story--with-image .story-media {
+    width: auto;
+    height: 9rem;
+    margin: 0 0 var(--space-3);
   }
 
   .top-story .story-inner {

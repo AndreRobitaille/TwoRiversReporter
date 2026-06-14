@@ -16,6 +16,7 @@ module PromptTemplateSeeds
         key: key,
         name: meta[:name],
         description: meta[:description],
+        usage_context: meta[:usage_context],
         model_tier: meta[:model_tier],
         placeholders: meta[:placeholders],
         system_role: prompt_data[:system_role],

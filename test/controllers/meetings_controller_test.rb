@@ -1,6 +1,9 @@
 require "test_helper"
+require "base64"
 
 class MeetingsControllerTest < ActionDispatch::IntegrationTest
+  IMAGE_BYTES = Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO0yMjoAAAAASUVORK5CYII=")
+
   setup do
     @meeting = Meeting.create!(
       body_name: "City Council",
@@ -155,6 +158,37 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
 
     assert assigns(:ongoing_topics).include?(@ongoing_topic)
     assert assigns(:new_topics).include?(@new_topic)
+  end
+
+  test "show assigns newest summary within the highest priority summary type" do
+    older = @meeting.meeting_summaries.create!(
+      summary_type: "packet_analysis",
+      generation_data: { "headline" => "Older packet line." },
+      created_at: 2.days.ago,
+      updated_at: 2.days.ago
+    )
+    newer = @meeting.meeting_summaries.create!(
+      summary_type: "packet_analysis",
+      generation_data: { "headline" => "Newer packet line." },
+      created_at: 1.day.ago,
+      updated_at: 1.day.ago
+    )
+
+    get meeting_url(@meeting)
+    assert_response :success
+
+    assert_equal newer, assigns(:summary)
+    refute_equal older, assigns(:summary)
+  end
+
+  test "show falls back to usable lower tier when higher tier is blank" do
+    @meeting.meeting_summaries.create!(summary_type: "minutes_recap", content: "", generation_data: {})
+    usable_packet = @meeting.meeting_summaries.create!(summary_type: "packet_analysis", content: "", generation_data: { "headline" => "Packet line" })
+
+    get meeting_url(@meeting)
+    assert_response :success
+
+    assert_equal usable_packet, assigns(:summary)
   end
 
   test "show excludes non-approved topics" do
@@ -315,6 +349,55 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     assert_select ".meeting-article-docs"
+  end
+
+  test "show renders feature image and generated og image" do
+    image = @meeting.generated_images.create!(status: "ready", purpose: "feature", generated_at: Time.current)
+    image.file.attach(io: StringIO.new(IMAGE_BYTES), filename: "meeting-feature.png", content_type: "image/png")
+
+    get meeting_url(@meeting)
+    assert_response :success
+
+    assert_select ".meeting-feature-image img[alt=?]", "Illustration for City Council"
+    assert_select ".meeting-feature-image .generated-image-cutline", text: /AI image/
+    assert_select "meta[property='og:image']", count: 1
+    assert_match(%r{\Ahttps?://}, css_select("meta[property='og:image']").first["content"])
+    assert_includes css_select("meta[property='og:image']").first["content"], "/rails/active_storage/"
+    assert_select "meta[property='og:image:alt']", count: 1
+    assert_includes css_select("meta[property='og:image:alt']").first["content"], "Illustration for City Council"
+    assert_select "meta[property='og:image:width'][content='1536']", count: 1
+    assert_select "meta[property='og:image:height'][content='1024']", count: 1
+  end
+
+  test "show handles blank body_name with generated image" do
+    meeting = Meeting.create!(
+      body_name: nil,
+      meeting_type: "Regular",
+      starts_at: 2.days.ago,
+      status: "minutes_posted",
+      detail_page_url: "http://example.com/blank-body-name"
+    )
+    image = meeting.generated_images.create!(status: "ready", purpose: "feature", generated_at: Time.current)
+    image.file.attach(io: StringIO.new(IMAGE_BYTES), filename: "blank-body-name.png", content_type: "image/png")
+
+    get meeting_url(meeting)
+    assert_response :success
+
+    assert_select ".meeting-article-title", text: "Meeting"
+    assert_select ".meeting-feature-image img[alt=?]", "Illustration for Meeting"
+    assert_select ".meeting-feature-image .generated-image-cutline", text: /AI image/
+    assert_select "meta[property='og:image']", count: 1
+    assert_select "meta[property='og:image:alt']", count: 1
+  end
+
+  test "show falls back when no generated image exists" do
+    get meeting_url(@meeting)
+    assert_response :success
+
+    assert_select ".meeting-feature-image", count: 0
+    assert_select "meta[property='og:image'][content$='/og-image.png']", count: 1
+    assert_select "meta[property='og:image:width'][content='1200']", count: 1
+    assert_select "meta[property='og:image:height'][content='630']", count: 1
   end
 
   test "show exposes split share payloads in the view" do

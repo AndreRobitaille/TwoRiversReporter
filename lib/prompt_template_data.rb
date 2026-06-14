@@ -8,18 +8,33 @@ module PromptTemplateData
   # Metadata for seeding (key, name, description, model_tier, placeholders)
   METADATA = [
     {
+      key: "generated_image_brief",
+      name: "Generated Image Brief",
+      description: "Builds a strict JSON brief for civic image generation",
+      usage_context: "Image generation pipeline: turns civic source material into a safe, structured image brief for social/OG-style artwork",
+      model_tier: "lightweight",
+      placeholders: [
+        { "name" => "imageable_type", "description" => "Type of record the image will represent" },
+        { "name" => "composite", "description" => "Composite context JSON for the image brief" },
+        { "name" => "source_text", "description" => "Source text truncated to 12k characters" }
+      ]
+    },
+    {
       key: "extract_votes",
       name: "Vote Extraction",
       description: "Extracts motions and vote records from meeting minutes",
+      usage_context: "Meeting page: the motion text and pass/fail/tabled vote badges on each agenda item card",
       model_tier: "default",
       placeholders: [
-        { "name" => "text", "description" => "Meeting minutes text (truncated to 50k chars)" }
+        { "name" => "text", "description" => "Meeting minutes text (truncated to 50k chars)" },
+        { "name" => "agenda_items", "description" => "Numbered agenda items for the meeting (for motion-to-item linking)" }
       ]
     },
     {
       key: "extract_committee_members",
       name: "Committee Member Extraction",
       description: "Extracts roll call and attendance from meeting minutes",
+      usage_context: "Members page: who attended each meeting, their role, and present/absent/excused status",
       model_tier: "lightweight",
       placeholders: [
         { "name" => "text", "description" => "Meeting minutes text (truncated to 50k chars)" }
@@ -29,6 +44,7 @@ module PromptTemplateData
       key: "extract_topics",
       name: "Topic Extraction",
       description: "Classifies agenda items into civic topics",
+      usage_context: "Pipeline: decides which topics get linked to each agenda item and appear on meeting/topic pages",
       model_tier: "default",
       placeholders: [
         { "name" => "existing_topics", "description" => "All approved topic names" },
@@ -41,6 +57,7 @@ module PromptTemplateData
       key: "refine_catchall_topic",
       name: "Catchall Topic Refinement",
       description: "Refines broad ordinance topics into specific civic concerns",
+      usage_context: "Pipeline: renames generic ordinance headings into specific civic concerns residents can follow",
       model_tier: "default",
       placeholders: [
         { "name" => "item_title", "description" => "Agenda item title" },
@@ -54,6 +71,7 @@ module PromptTemplateData
       key: "re_extract_item_topics",
       name: "Topic Re-extraction",
       description: "Re-extracts topics when splitting a broad topic",
+      usage_context: "Pipeline: reruns topic extraction when an admin splits a broad topic",
       model_tier: "default",
       placeholders: [
         { "name" => "item_title", "description" => "Agenda item title" },
@@ -67,6 +85,7 @@ module PromptTemplateData
       key: "triage_topics",
       name: "Topic Triage",
       description: "AI-assisted approval, blocking, and merging of proposed topics",
+      usage_context: "Pipeline: auto-approves, blocks, or merges proposed topics after extraction",
       model_tier: "default",
       placeholders: [
         { "name" => "context_json", "description" => "JSON with topic data, similarities, and community context" }
@@ -76,6 +95,7 @@ module PromptTemplateData
       key: "analyze_topic_summary",
       name: "Topic Summary Analysis",
       description: "Structured analysis of a topic's activity in a single meeting",
+      usage_context: "Topic page: the per-meeting snapshot in The Story section",
       model_tier: "default",
       placeholders: [
         { "name" => "committee_context", "description" => "Active committees and descriptions" },
@@ -86,6 +106,7 @@ module PromptTemplateData
       key: "render_topic_summary",
       name: "Topic Summary Rendering",
       description: "Renders structured topic analysis into editorial prose",
+      usage_context: "Topic page: legacy pass 2 rendering for older summaries",
       model_tier: "default",
       placeholders: [
         { "name" => "plan_json", "description" => "Structured analysis JSON from pass 1" }
@@ -95,6 +116,7 @@ module PromptTemplateData
       key: "analyze_topic_briefing",
       name: "Topic Briefing Analysis",
       description: "Rolling briefing — structured analysis across all meetings for a topic",
+      usage_context: "Topic page and homepage: What to Watch, The Story, and Record content for a topic briefing",
       model_tier: "default",
       placeholders: [
         { "name" => "committee_context", "description" => "Active committees and descriptions" },
@@ -105,6 +127,7 @@ module PromptTemplateData
       key: "render_topic_briefing",
       name: "Topic Briefing Rendering",
       description: "Renders briefing analysis into editorial content",
+      usage_context: "Topic page: legacy pass 2 rendering for older briefings",
       model_tier: "default",
       placeholders: [
         { "name" => "analysis_json", "description" => "Structured briefing analysis JSON from pass 1" }
@@ -114,6 +137,7 @@ module PromptTemplateData
       key: "generate_briefing_interim",
       name: "Interim Briefing",
       description: "Quick headline generation for newly approved topics",
+      usage_context: "Homepage: quick headline text on the What Happened and Coming Up cards",
       model_tier: "lightweight",
       placeholders: [
         { "name" => "topic_name", "description" => "Name of the topic" },
@@ -127,6 +151,7 @@ module PromptTemplateData
       key: "generate_topic_description_detailed",
       name: "Topic Description (Detailed)",
       description: "Generates scope descriptions for topics with 3+ agenda items",
+      usage_context: "Everywhere topics appear: one-line descriptions under topic names for active topics",
       model_tier: "lightweight",
       placeholders: [
         { "name" => "topic_name", "description" => "Name of the topic" },
@@ -138,6 +163,7 @@ module PromptTemplateData
       key: "generate_topic_description_broad",
       name: "Topic Description (Broad)",
       description: "Generates scope descriptions for topics with fewer than 3 agenda items",
+      usage_context: "Everywhere topics appear: one-line descriptions under topic names for early-stage topics",
       model_tier: "lightweight",
       placeholders: [
         { "name" => "topic_name", "description" => "Name of the topic" },
@@ -149,6 +175,7 @@ module PromptTemplateData
       key: "analyze_meeting_content",
       name: "Meeting Content Analysis",
       description: "Single-pass structured analysis of full meeting content",
+      usage_context: "Meeting page: headline, highlights, public input, and agenda-item cards",
       model_tier: "default",
       placeholders: [
         { "name" => "kb_context", "description" => "Knowledge base context chunks" },
@@ -167,6 +194,7 @@ module PromptTemplateData
       key: "render_meeting_summary",
       name: "Meeting Summary Rendering",
       description: "Renders meeting analysis into editorial prose (legacy)",
+      usage_context: "Meeting page: legacy full-text recap fallback for older meetings",
       model_tier: "default",
       placeholders: [
         { "name" => "plan_json", "description" => "Structured analysis JSON from pass 1" },
@@ -174,9 +202,45 @@ module PromptTemplateData
       ]
     },
     {
+      key: "extract_knowledge",
+      name: "Knowledge Extraction",
+      description: "Extracts durable civic facts from meeting summaries and raw document text",
+      usage_context: "Pipeline: captures background facts for future AI prompts; never shown to residents",
+      model_tier: "default",
+      placeholders: [
+        { "name" => "summary_json", "description" => "Meeting summary generation_data JSON" },
+        { "name" => "raw_text", "description" => "Meeting document text truncated to 25k chars" },
+        { "name" => "existing_kb", "description" => "Existing relevant knowledge entries to avoid duplication" }
+      ]
+    },
+    {
+      key: "triage_knowledge",
+      name: "Knowledge Triage",
+      description: "Auto-approves or blocks proposed knowledge entries",
+      usage_context: "Pipeline: evaluates whether extracted knowledge entries are grounded and non-duplicative",
+      model_tier: "default",
+      placeholders: [
+        { "name" => "entries_json", "description" => "Proposed knowledge entries with title, body, reasoning, confidence" },
+        { "name" => "existing_kb", "description" => "Existing approved knowledge entries to check for duplicates" }
+      ]
+    },
+    {
+      key: "extract_knowledge_patterns",
+      name: "Knowledge Pattern Detection",
+      description: "Detects cross-meeting patterns from accumulated knowledge entries",
+      usage_context: "Pipeline: weekly analysis of accumulated knowledge entries to find patterns and escalation signals",
+      model_tier: "default",
+      placeholders: [
+        { "name" => "knowledge_entries", "description" => "All approved extracted + manual knowledge entries" },
+        { "name" => "recent_summaries", "description" => "Recent topic briefing data (last 90 days)" },
+        { "name" => "topic_metadata", "description" => "Topic appearance counts, lifecycle status, committees" }
+      ]
+    },
+    {
       key: "knowledge_search_answer",
       name: "Knowledge Search Answer",
       description: "Synthesizes an answer to admin questions using knowledge base context",
+      usage_context: "Admin tool: on-demand Q&A over the knowledge base",
       model_tier: "default",
       placeholders: [
         { "name" => "context", "description" => "Numbered knowledge base chunks with origin labels" },
@@ -187,6 +251,50 @@ module PromptTemplateData
 
   # Prompt text (system_role + instructions) for each template key.
   PROMPTS = {
+    "generated_image_brief" => {
+      system_role: "You are a civic image brief writer. Return only valid JSON.",
+      instructions: <<~PROMPT.strip
+        Create a concise JSON brief for generating a civic newspaper photograph.
+
+        Rules:
+        - Return JSON only.
+        - Do not invent facts, places, people, organizations, dates, or readable document text.
+        - Do not quote or reconstruct document text.
+        - Use only what is supported by the inputs.
+        - Pick one primary visual subject / anchor, not three agenda items.
+        - Prefer resident-visible physical anchors: streets, sidewalks, utility infrastructure, homes, parks, beach/lakefront, public facilities.
+        - For outdoor scenes, describe ordinary fair-weather daylight when it fits: clear, lightly cloudy, or partly sunny conditions with natural color. Keep a grounded civic-news tone, not a cheerful tourism-promo mood.
+        - Represent household cost and policy issues through physical civic context, not fake bills, charts, symbols, or documents.
+        - For named or specific local places/facilities, avoid full invented exteriors; use cropped, non-identifying details.
+        - Avoid readable text, fake officials, fake meetings, fake landmarks, and collage layouts.
+
+        Required JSON keys:
+        - civic_issue
+        - composition
+        - avoid
+
+        Inputs:
+        imageable_type: {{imageable_type}}
+        composite: {{composite}}
+        source_text: {{source_text}}
+      PROMPT
+    },
+
+    "extract_knowledge" => {
+      system_role: "You extract civic knowledge.",
+      instructions: "Extract facts from: {{summary_json}}\n\nRaw text: {{raw_text}}\n\nExisting KB: {{existing_kb}}\n\nReturn json."
+    },
+
+    "triage_knowledge" => {
+      system_role: "You triage knowledge.",
+      instructions: "Triage: {{entries_json}}\n\nExisting: {{existing_kb}}\n\nReturn json."
+    },
+
+    "extract_knowledge_patterns" => {
+      system_role: "You detect patterns.",
+      instructions: "Entries: {{knowledge_entries}}\n\nSummaries: {{recent_summaries}}\n\nTopics: {{topic_metadata}}\n\nReturn json."
+    },
+
     "extract_votes" => {
       system_role: "You are a data extraction assistant.",
       instructions: <<~PROMPT.strip

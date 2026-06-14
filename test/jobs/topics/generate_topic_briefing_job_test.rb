@@ -82,6 +82,43 @@ class Topics::GenerateTopicBriefingJobTest < ActiveJob::TestCase
     mock_ai.verify
   end
 
+  test "enqueues generated image job after briefing save when enabled" do
+    analysis_json = {
+      "headline" => "Council approved modified parking plan 4-3 on Feb 18",
+      "upcoming_headline" => nil,
+      "editorial_analysis" => { "current_state" => "The city approved the plan." },
+      "factual_record" => [],
+      "civic_sentiment" => [],
+      "continuity_signals" => [],
+      "resident_impact" => { "score" => 4, "rationale" => "Affects downtown" }
+    }.to_json
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :analyze_topic_briefing, analysis_json do |arg|
+      arg.is_a?(Hash)
+    end
+    mock_ai.expect :render_topic_briefing, {
+      "editorial_content" => "Editorial",
+      "record_content" => "Record"
+    } do |arg|
+      arg.is_a?(String)
+    end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_topic_context(*args, **kwargs); []; end
+    def retrieval_stub.format_topic_context(*args); []; end
+
+    GeneratedImages::Config.stub :enabled?, true do
+      RetrievalService.stub :new, retrieval_stub do
+        Ai::OpenAiService.stub :new, mock_ai do
+          assert_enqueued_jobs 1, only: GeneratedImages::GenerateForTopicJob do
+            Topics::GenerateTopicBriefingJob.perform_now(topic_id: @topic.id, meeting_id: @meeting.id)
+          end
+        end
+      end
+    end
+  end
+
   test "saves upcoming_headline when AI provides one" do
     # Create a future meeting appearance
     future_meeting = Meeting.create!(

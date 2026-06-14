@@ -20,6 +20,13 @@
     <% end %>
   </header>
 
+  <% if @generated_image&.file&.attached? %>
+    <figure class="topic-feature-image">
+      <%= image_tag @generated_image.file, alt: "Illustration for #{@topic.name}", class: "topic-feature-image__img", loading: "eager", fetchpriority: "high", decoding: "async" %>
+      <figcaption class="generated-image-cutline">AI image</figcaption>
+    </figure>
+  <% end %>
+
   <%# === What to Watch (pullquote) === %>
   <% watch_text = briefing_what_to_watch(@briefing) %>
   <% if watch_text.present? %>
@@ -45,7 +52,8 @@
       </div>
       <ul class="topic-upcoming-list">
         <% @upcoming.each do |appearance| %>
-          <% is_council = appearance.meeting.body_name.include?("Council") && !appearance.meeting.body_name.include?("Work Session") %>
+          <% meeting_name = appearance.meeting.body_name.to_s %>
+          <% is_council = meeting_name.include?("Council") && !meeting_name.include?("Work Session") %>
           <li class="topic-upcoming-entry">
             <%= link_to meeting_path(appearance.meeting), class: "topic-upcoming-link" do %>
               <time class="topic-upcoming-date <%= 'council' if is_council %>">
@@ -53,7 +61,7 @@
                 <span class="topic-upcoming-day"><%= appearance.meeting.starts_at.strftime("%-d") %></span>
               </time>
               <div class="topic-upcoming-detail">
-                <div class="topic-upcoming-committee"><%= clean_meeting_display(appearance.meeting.body_name) %></div>
+                <div class="topic-upcoming-committee"><%= clean_meeting_display(meeting_name).presence || "Meeting" %></div>
                 <% if appearance.agenda_item %>
                   <div class="topic-upcoming-item"><%= appearance.agenda_item.title %></div>
                 <% end %>

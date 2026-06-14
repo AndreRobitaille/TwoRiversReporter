@@ -45,6 +45,11 @@
           <div class="job-type-card-name">Summarize Meeting</div>
           <div class="job-type-card-desc">Generate structured meeting summary</div>
         </label>
+        <label class="job-type-card" data-action="click->job-run#selectType" data-job-run-scope-param="meeting">
+          <input type="radio" name="job_type" value="generate_meeting_image" class="hidden" data-job-run-target="typeRadio">
+          <div class="job-type-card-name">Meeting Image</div>
+          <div class="job-type-card-desc">Refresh the public feature artwork</div>
+        </label>
         <label class="job-type-card" data-action="click->job-run#selectType" data-job-run-scope-param="topic">
           <input type="radio" name="job_type" value="generate_topic_briefing" class="hidden" data-job-run-target="typeRadio">
           <div class="job-type-card-name">Topic Briefing</div>
@@ -54,6 +59,11 @@
           <input type="radio" name="job_type" value="generate_description" class="hidden" data-job-run-target="typeRadio">
           <div class="job-type-card-name">Topic Description</div>
           <div class="job-type-card-desc">Generate short scope descriptions</div>
+        </label>
+        <label class="job-type-card" data-action="click->job-run#selectType" data-job-run-scope-param="topic">
+          <input type="radio" name="job_type" value="generate_topic_image" class="hidden" data-job-run-target="typeRadio">
+          <div class="job-type-card-name">Topic Image</div>
+          <div class="job-type-card-desc">Refresh the topic card artwork</div>
         </label>
       </div>
 

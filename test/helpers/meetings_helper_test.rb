@@ -470,6 +470,36 @@ class MeetingsHelperTest < ActionView::TestCase
     assert_equal "Minutes line.", meeting_share_description(meeting)
   end
 
+  test "preferred_meeting_summary picks newest summary within same type" do
+    older = build_summary(type: "packet_analysis", headline: "Older packet line.")
+    older.updated_at = 2.days.ago
+    newer = build_summary(type: "packet_analysis", headline: "Newer packet line.")
+    newer.updated_at = 1.day.ago
+    meeting = build_meeting(summaries: [ older, newer ])
+
+    assert_equal "Newer packet line.", send(:preferred_meeting_summary, meeting).generation_data["headline"]
+  end
+
+  test "preferred_meeting_summary prefers newer updated_at over created_at when same type" do
+    first = build_summary(type: "agenda_preview", headline: "First preview line.")
+    first.created_at = 3.days.ago
+    first.updated_at = 3.days.ago
+    second = build_summary(type: "agenda_preview", headline: "Second preview line.")
+    second.created_at = 2.days.ago
+    second.updated_at = 2.days.ago
+    meeting = build_meeting(summaries: [ first, second ])
+
+    assert_equal "Second preview line.", send(:preferred_meeting_summary, meeting).generation_data["headline"]
+  end
+
+  test "preferred_meeting_summary falls back to usable lower tier when higher tier is blank" do
+    blank_minutes = build_summary(type: "minutes_recap")
+    usable_packet = build_summary(type: "packet_analysis", headline: "Packet line.")
+    meeting = build_meeting(summaries: [ blank_minutes, usable_packet ])
+
+    assert_equal "Packet line.", send(:preferred_meeting_summary, meeting).generation_data["headline"]
+  end
+
   test "meeting_share_description lists first 3 agenda items plus remaining count when no summary and 5 items" do
     items = [
       build_item("Lakefront Rezone"),

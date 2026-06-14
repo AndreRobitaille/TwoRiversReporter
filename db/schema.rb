@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_02_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_14_020000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -162,6 +162,36 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_02_000001) do
     t.text "raw_text"
     t.datetime "updated_at", null: false
     t.index ["meeting_document_id"], name: "index_extractions_on_meeting_document_id"
+  end
+
+  create_table "generated_images", force: :cascade do |t|
+    t.boolean "admin_override", default: false, null: false
+    t.datetime "created_at", null: false
+    t.text "custom_prompt"
+    t.text "failure_reason"
+    t.datetime "generated_at"
+    t.bigint "imageable_id", null: false
+    t.string "imageable_type", null: false
+    t.string "model"
+    t.string "output_format"
+    t.text "prompt"
+    t.string "purpose", default: "feature_and_og", null: false
+    t.string "requested_size"
+    t.integer "retry_count", default: 0, null: false
+    t.bigint "source_briefing_id"
+    t.string "source_content_fingerprint"
+    t.string "source_generation_tier"
+    t.bigint "source_summary_id"
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "uploaded_by_id"
+    t.jsonb "visual_brief", default: {}, null: false
+    t.index ["imageable_type", "imageable_id", "status", "purpose"], name: "index_generated_images_current_lookup"
+    t.index ["imageable_type", "imageable_id"], name: "index_generated_images_on_imageable"
+    t.index ["source_briefing_id"], name: "index_generated_images_on_source_briefing_id"
+    t.index ["source_content_fingerprint"], name: "index_generated_images_on_source_content_fingerprint"
+    t.index ["source_summary_id"], name: "index_generated_images_on_source_summary_id"
+    t.index ["uploaded_by_id"], name: "index_generated_images_on_uploaded_by_id"
   end
 
   create_table "knowledge_chunks", force: :cascade do |t|
@@ -646,6 +676,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_02_000001) do
   add_foreign_key "entity_mentions", "meeting_documents"
   add_foreign_key "entity_mentions", "meetings"
   add_foreign_key "extractions", "meeting_documents"
+  add_foreign_key "generated_images", "meeting_summaries", column: "source_summary_id", on_delete: :nullify
+  add_foreign_key "generated_images", "topic_briefings", column: "source_briefing_id", on_delete: :nullify
+  add_foreign_key "generated_images", "users", column: "uploaded_by_id"
   add_foreign_key "knowledge_chunks", "knowledge_sources"
   add_foreign_key "knowledge_source_topics", "knowledge_sources"
   add_foreign_key "knowledge_source_topics", "topics"

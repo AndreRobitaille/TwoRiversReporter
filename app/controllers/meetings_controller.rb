@@ -26,6 +26,9 @@ class MeetingsController < ApplicationController
 
   def show
     @meeting = Meeting.find(params[:id])
+    @meeting_display_name = helpers.clean_meeting_display(@meeting.body_name).presence || "Meeting"
+    @generated_image = @meeting.current_generated_image(:feature)
+    assign_generated_image_meta(@generated_image, alt: "Illustration for #{@meeting_display_name}")
 
     substantive_item_ids = @meeting.agenda_items.substantive.select(:id)
     approved_topics = Topic.approved
@@ -42,10 +45,7 @@ class MeetingsController < ApplicationController
     @has_substantive_topic_content = approved_topics.any?
 
     # Supersede chain: minutes > transcript > packet > agenda preview.
-    @summary = @meeting.meeting_summaries.find_by(summary_type: "minutes_recap") ||
-               @meeting.meeting_summaries.find_by(summary_type: "transcript_recap") ||
-               @meeting.meeting_summaries.find_by(summary_type: "packet_analysis") ||
-               @meeting.meeting_summaries.find_by(summary_type: "agenda_preview")
+    @summary = preferred_meeting_summary(@meeting)
   end
 
   private
@@ -79,5 +79,37 @@ class MeetingsController < ApplicationController
     when :recent
       meeting.meeting_summaries.any?
     end
+  end
+
+  def preferred_meeting_summary(meeting)
+    meeting.meeting_summaries
+      .to_a
+      .select { |summary| summary_usable?(summary) }
+      .min_by { |summary| [ summary_priority(summary), -(summary.updated_at || summary.created_at || Time.at(0)).to_i ] }
+  end
+
+  def assign_generated_image_meta(image, alt:)
+    return unless image&.file&.attached?
+
+    @page_og_image = generated_image_url(image.file)
+    @page_og_image_alt = alt
+    @page_og_image_width = 1536
+    @page_og_image_height = 1024
+  end
+
+  def generated_image_url(attachment)
+    if Rails.env.production?
+      rails_blob_url(attachment, host: MeetingsHelper::PRODUCTION_HOST, protocol: "https")
+    else
+      rails_blob_url(attachment, host: request.host_with_port, protocol: request.protocol.delete_suffix("://"))
+    end
+  end
+
+  def summary_usable?(summary)
+    summary.content.present? || summary.generation_data.present?
+  end
+
+  def summary_priority(summary)
+    MeetingsHelper::SUMMARY_TYPE_PRIORITY.index(summary.summary_type) || 99
   end
 end

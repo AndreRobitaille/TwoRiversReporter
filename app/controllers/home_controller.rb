@@ -1,6 +1,5 @@
 class HomeController < ApplicationController
   ACTIVITY_WINDOW = 30.days
-  TOP_STORY_MIN_IMPACT = 4
   TOP_STORY_LIMIT = 2
   WIRE_MIN_IMPACT = 2
   WIRE_CARD_COUNT = 4
@@ -21,6 +20,7 @@ class HomeController < ApplicationController
     @next_up = build_next_up
     load_headlines(@top_stories + @wire_cards + @wire_rows)
     load_meeting_refs(@top_stories + @wire_cards + @wire_rows)
+    load_generated_images(@top_stories + @wire_cards)
   end
 
   private
@@ -31,12 +31,7 @@ class HomeController < ApplicationController
   # both @top_stories and @wire_cards across the same request's queries.
 
   def build_top_stories
-    Topic.reusable
-      .where("resident_impact_score >= ?", TOP_STORY_MIN_IMPACT)
-      .where("last_activity_at > ?", ACTIVITY_WINDOW.ago)
-      .order(resident_impact_score: :desc, last_activity_at: :desc, id: :desc)
-      .limit(TOP_STORY_LIMIT)
-      .to_a
+    GeneratedImages::HomepageTopicSelector.new.call.first(TOP_STORY_LIMIT)
   end
 
   def build_wire(exclude_ids)
@@ -83,5 +78,21 @@ class HomeController < ApplicationController
         date: row.starts_at
       }
     end
+  end
+
+  def load_generated_images(topics)
+    topic_ids = topics.map(&:id)
+    return if topic_ids.empty?
+
+    @topic_generated_images = GeneratedImage.ready
+      .where(imageable_type: "Topic", imageable_id: topic_ids)
+      .where(purpose: [ "og", "feature_and_og" ])
+      .includes(file_attachment: :blob)
+      .newest
+      .each_with_object({}) do |image, images_by_topic_id|
+        next unless image.file.attached?
+
+        images_by_topic_id[image.imageable_id] ||= image
+      end
   end
 end

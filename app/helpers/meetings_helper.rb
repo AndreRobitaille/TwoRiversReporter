@@ -96,8 +96,9 @@ module MeetingsHelper
   ].freeze
 
   def council_meeting?(meeting)
-    meeting.body_name.in?(COUNCIL_PATTERNS) ||
-      (meeting.body_name.include?("Council") && !meeting.body_name.include?("Work Session"))
+    body_name = meeting.body_name.to_s
+    body_name.in?(COUNCIL_PATTERNS) ||
+      (body_name.include?("Council") && !body_name.include?("Work Session"))
   end
 
   def best_headline(meeting)
@@ -148,7 +149,12 @@ module MeetingsHelper
   def preferred_meeting_summary(meeting)
     meeting.meeting_summaries
       .to_a
-      .min_by { |s| SUMMARY_TYPE_PRIORITY.index(s.summary_type) || 99 }
+      .select { |summary| summary_usable?(summary) }
+      .min_by { |s| [ SUMMARY_TYPE_PRIORITY.index(s.summary_type) || 99, -(s.updated_at || s.created_at || Time.at(0)).to_i ] }
+  end
+
+  def summary_usable?(summary)
+    summary.content.present? || summary.generation_data.present?
   end
 
   def substantive_agenda_items(meeting)
@@ -297,7 +303,7 @@ module MeetingsHelper
   def share_text_body(meeting, summary, include_headline:)
     lines = []
 
-    name = meeting.body_name.sub(/ Meeting$/, "")
+    name = cleaned_meeting_body_name(meeting).presence || "Meeting"
     upcoming = meeting.starts_at.present? && meeting.starts_at > Time.current
 
     lines << share_text_temporal_header(meeting, name, upcoming)

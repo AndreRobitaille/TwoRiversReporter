@@ -68,6 +68,51 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     assert_nil summary.content
   end
 
+  test "enqueues generated image job after summary persistence when enabled" do
+    @meeting.meeting_documents.create!(
+      document_type: "minutes_pdf",
+      source_url: "http://example.com/minutes.pdf",
+      extracted_text: "Page 1: The council approved the budget 5-2."
+    )
+
+    generation_data = {
+      "headline" => "Council approved the budget",
+      "highlights" => [],
+      "public_input" => [],
+      "item_details" => []
+    }
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :prepare_kb_context, "" do |arg|
+      arg.is_a?(Array)
+    end
+    mock_ai.expect :analyze_meeting_content, generation_data.to_json do |_text, _kb, type, **kwargs|
+      type == "minutes" && kwargs.key?(:participant_context)
+    end
+    mock_ai.expect :analyze_topic_summary, '{"factual_record": []}' do |_arg|
+      true
+    end
+    mock_ai.expect :render_topic_summary, "## Summary" do |_arg|
+      true
+    end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+    def retrieval_stub.retrieve_topic_context(*args, **kwargs); []; end
+    def retrieval_stub.format_topic_context(*args); []; end
+
+    GeneratedImages::Config.stub :enabled?, true do
+      RetrievalService.stub :new, retrieval_stub do
+        Ai::OpenAiService.stub :new, mock_ai do
+          assert_enqueued_with(job: GeneratedImages::GenerateForMeetingJob, args: [ @meeting.id ]) do
+            SummarizeMeetingJob.perform_now(@meeting.id)
+          end
+        end
+      end
+    end
+  end
+
   test "passes linked motion context into minutes meeting analysis" do
     @meeting.meeting_documents.create!(
       document_type: "minutes_pdf",

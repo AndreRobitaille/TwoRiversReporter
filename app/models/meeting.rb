@@ -4,6 +4,7 @@ class Meeting < ApplicationRecord
   has_many :topics, -> { distinct }, through: :agenda_items
   has_many :meeting_summaries, dependent: :destroy
   has_many :topic_summaries, dependent: :destroy
+  has_many :generated_images, as: :imageable, dependent: :destroy
   has_many :motions, dependent: :destroy
   has_many :meeting_attendances, dependent: :destroy
   has_many :knowledge_sources, dependent: :nullify
@@ -43,6 +44,10 @@ class Meeting < ApplicationRecord
         .select { |document| document.document_type == type }
         .max_by { |document| [ document.created_at || Time.at(0), document.id || 0 ] }
     end
+  end
+
+  def current_generated_image(surface = :feature)
+    generated_images.usable_for(surface).first
   end
 
   MONTH_NAMES = {

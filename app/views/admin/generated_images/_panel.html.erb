@@ -1,0 +1,145 @@
+<% imageable = local_assigns.fetch(:imageable) %>
+<% return_to = local_assigns.fetch(:return_to, admin_root_path) %>
+<% latest_image = imageable.generated_images.order(created_at: :desc, updated_at: :desc, id: :desc).first %>
+<% panel_title = local_assigns.fetch(:title, "Generated image") %>
+
+<div class="topic-sidebar-section topic-sidebar-section--generated-image">
+  <h3 class="topic-sidebar-heading"><%= panel_title %></h3>
+
+  <% if latest_image.present? %>
+    <div class="generated-image-panel__preview">
+      <% if latest_image.file.attached? %>
+        <%= image_tag latest_image.file, class: "generated-image-panel__image", alt: local_assigns.fetch(:alt, panel_title) %>
+      <% else %>
+        <div class="generated-image-panel__image generated-image-panel__image--empty">No file attached</div>
+      <% end %>
+
+      <div class="generated-image-panel__meta">
+        <div class="generated-image-panel__status-row">
+          <% status_badge = case latest_image.status
+            when "ready" then "badge--success"
+            when "processing" then "badge--warning"
+            when "failed" then "badge--danger"
+            when "disabled" then "badge--default"
+            else "badge--default"
+          end %>
+          <span class="badge <%= status_badge %>"><%= latest_image.status %></span>
+          <span class="generated-image-panel__kicker"><%= latest_image.purpose %></span>
+          <% if latest_image.admin_override? %>
+            <span class="badge badge--primary">admin override</span>
+          <% end %>
+        </div>
+        <p class="generated-image-panel__detail">Generated <%= latest_image.generated_at ? time_ago_in_words(latest_image.generated_at) + " ago" : "—" %></p>
+        <p class="generated-image-panel__detail">Updated <%= time_ago_in_words(latest_image.updated_at || latest_image.created_at) %> ago.</p>
+      </div>
+    </div>
+
+    <dl class="generated-image-panel__facts">
+      <div class="generated-image-panel__fact"><dt>Status</dt><dd><%= latest_image.status %></dd></div>
+      <div class="generated-image-panel__fact"><dt>Purpose</dt><dd><%= latest_image.purpose %></dd></div>
+      <div class="generated-image-panel__fact"><dt>Admin override</dt><dd><%= latest_image.admin_override? ? "yes" : "no" %></dd></div>
+      <% if latest_image.uploaded_by.present? %>
+        <div class="generated-image-panel__fact"><dt>Uploaded by</dt><dd><%= latest_image.uploaded_by.email_address %></dd></div>
+      <% end %>
+      <% if latest_image.source_generation_tier.present? %>
+        <div class="generated-image-panel__fact"><dt>Source tier</dt><dd><%= latest_image.source_generation_tier %></dd></div>
+      <% end %>
+      <% if latest_image.source_summary_id.present? %>
+        <div class="generated-image-panel__fact"><dt>Source summary ID</dt><dd><%= latest_image.source_summary_id %></dd></div>
+      <% end %>
+      <% if latest_image.source_briefing_id.present? %>
+        <div class="generated-image-panel__fact"><dt>Source briefing ID</dt><dd><%= latest_image.source_briefing_id %></dd></div>
+      <% end %>
+      <% if latest_image.source_content_fingerprint.present? %>
+        <div class="generated-image-panel__fact"><dt>Fingerprint</dt><dd><%= latest_image.source_content_fingerprint %></dd></div>
+      <% end %>
+      <% if latest_image.model.present? %>
+        <div class="generated-image-panel__fact"><dt>Model</dt><dd><%= latest_image.model %></dd></div>
+      <% end %>
+      <% if latest_image.output_format.present? %>
+        <div class="generated-image-panel__fact"><dt>Format</dt><dd><%= latest_image.output_format %></dd></div>
+      <% end %>
+      <% if latest_image.requested_size.present? %>
+        <div class="generated-image-panel__fact"><dt>Size</dt><dd><%= latest_image.requested_size %></dd></div>
+      <% end %>
+      <div class="generated-image-panel__fact"><dt>Generated at</dt><dd><%= latest_image.generated_at ? l(latest_image.generated_at, format: :short) : "—" %></dd></div>
+      <div class="generated-image-panel__fact"><dt>Updated at</dt><dd><%= l(latest_image.updated_at, format: :short) %></dd></div>
+      <% if latest_image.failure_reason.present? %>
+        <div class="generated-image-panel__fact generated-image-panel__fact--danger"><dt>Failure</dt><dd><%= latest_image.failure_reason %></dd></div>
+      <% end %>
+      <% if latest_image.custom_prompt.present? %>
+        <div class="generated-image-panel__fact"><dt>Custom prompt</dt><dd><%= latest_image.custom_prompt %></dd></div>
+      <% end %>
+    </dl>
+
+    <details class="generated-image-panel__details">
+      <summary>Prompt & brief</summary>
+      <div class="generated-image-panel__details-body">
+        <div class="generated-image-panel__block">
+          <div class="generated-image-panel__block-label">Visual brief</div>
+          <pre class="generated-image-panel__code"><%= JSON.pretty_generate(latest_image.visual_brief || {}) %></pre>
+        </div>
+        <% if latest_image.prompt.present? %>
+          <div class="generated-image-panel__block">
+            <div class="generated-image-panel__block-label">Prompt</div>
+            <pre class="generated-image-panel__code"><%= latest_image.prompt %></pre>
+          </div>
+        <% end %>
+      </div>
+    </details>
+
+    <div class="generated-image-panel__actions">
+      <%= form_with url: regenerate_generated_images_path, method: :post, local: true do |form| %>
+        <%= hidden_field_tag :imageable_type, imageable.class.name %>
+        <%= hidden_field_tag :imageable_id, imageable.id %>
+        <%= hidden_field_tag :return_to, return_to %>
+        <div class="form-group generated-image-panel__prompt-group">
+          <%= label_tag :custom_prompt, "Custom prompt" %>
+          <%= text_area_tag :custom_prompt, latest_image.custom_prompt, rows: 3, class: "form-input w-full" %>
+        </div>
+        <%= form.submit "Regenerate", class: "btn btn--secondary btn--sm" %>
+      <% end %>
+
+      <%= form_with url: disable_generated_images_path, method: :post, local: true do |form| %>
+        <%= hidden_field_tag :imageable_type, imageable.class.name %>
+        <%= hidden_field_tag :imageable_id, imageable.id %>
+        <%= hidden_field_tag :image_id, latest_image.id %>
+        <%= hidden_field_tag :return_to, return_to %>
+        <%= form.submit "Disable", class: "btn btn--danger btn--sm", data: { turbo_confirm: "Disable this image? It will stop showing on public pages." } %>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="topic-sidebar-empty">No ready image yet.</p>
+
+    <div class="generated-image-panel__actions">
+      <%= form_with url: regenerate_generated_images_path, method: :post, local: true do |form| %>
+        <%= hidden_field_tag :imageable_type, imageable.class.name %>
+        <%= hidden_field_tag :imageable_id, imageable.id %>
+        <%= hidden_field_tag :return_to, return_to %>
+        <div class="form-group generated-image-panel__prompt-group">
+          <%= label_tag :custom_prompt, "Custom prompt" %>
+          <%= text_area_tag :custom_prompt, nil, rows: 3, class: "form-input w-full" %>
+        </div>
+        <%= form.submit "Queue image", class: "btn btn--secondary btn--sm" %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="generated-image-panel__upload">
+    <%= form_with url: generated_images_path, method: :post, local: true, multipart: true do |form| %>
+      <%= hidden_field_tag :imageable_type, imageable.class.name %>
+      <%= hidden_field_tag :imageable_id, imageable.id %>
+      <%= hidden_field_tag :return_to, return_to %>
+      <div class="form-group">
+        <%= label_tag "generated_image[file]", "Upload replacement" %>
+        <%= file_field_tag "generated_image[file]", class: "form-input w-full", accept: "image/png,image/jpeg,image/webp" %>
+      </div>
+      <%= hidden_field_tag "generated_image[purpose]", local_assigns.fetch(:purpose, GeneratedImages::Generator::DEFAULT_PURPOSE) %>
+      <%= hidden_field_tag "generated_image[requested_size]", GeneratedImages::Generator::DEFAULT_SIZE %>
+      <div class="generated-image-panel__upload-actions">
+        <%= form.submit "Save upload", class: "btn btn--primary btn--sm" %>
+      </div>
+      <p class="generated-image-panel__hint">PNG, JPEG, or WebP only. Max 10 MB.</p>
+    <% end %>
+  </div>
+</div>

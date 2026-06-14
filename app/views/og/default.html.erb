@@ -8,6 +8,11 @@
     outfit_black_b64 = Base64.strict_encode64(File.binread(Rails.root.join("vendor/fonts/Outfit-Black.ttf")))
   %>
   <style>
+    :root {
+      --og-bg: #faf5eb;
+      --og-teal: #004a59;
+      --og-terra-cotta: #c2522a;
+    }
     @font-face {
       font-family: 'Outfit';
       font-style: normal;
@@ -20,7 +25,7 @@
     body {
       width: 1200px;
       height: 630px;
-      background: #faf5eb;
+      background: var(--og-bg);
       position: relative;
       overflow: hidden;
       display: flex;
@@ -50,8 +55,8 @@
       text-align: left;
       white-space: nowrap;
     }
-    h1 .l1 { color: #004a59; display: block; }
-    h1 .l2 { color: #c2522a; display: block; }
+    h1 .l1 { color: var(--og-teal); display: block; }
+    h1 .l2 { color: var(--og-terra-cotta); display: block; }
   </style>
 </head>
 <body>
@@ -60,7 +65,7 @@
       <polygon id="og-long" points="0,0 2.5,-42 -2.5,-42"/>
       <polygon id="og-short" points="0,0 1.5,-16 -1.5,-16"/>
     </defs>
-    <g transform="translate(50,50)" fill="#c2522a">
+    <g transform="translate(50,50)" fill="var(--og-terra-cotta)">
       <use href="#og-long" transform="rotate(0)"/>
       <use href="#og-long" transform="rotate(90)"/>
       <use href="#og-long" transform="rotate(180)"/>
@@ -69,7 +74,7 @@
       <use href="#og-short" transform="rotate(135)"/>
       <use href="#og-short" transform="rotate(225)"/>
       <use href="#og-short" transform="rotate(315)"/>
-      <circle r="5" fill="#004a59"/>
+      <circle r="5" fill="var(--og-teal)"/>
     </g>
   </svg>
   <h1>

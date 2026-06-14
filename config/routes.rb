@@ -107,6 +107,13 @@ Rails.application.routes.draw do
       end
     end
 
+    resources :generated_images, controller: "admin/generated_images", only: [ :create ] do
+      collection do
+        post :regenerate
+        post :disable
+      end
+    end
+
     get "search", to: "admin/searches#index", as: :admin_search
   end
 

@@ -209,6 +209,14 @@
       </details>
     </div>
 
+    <%= render "admin/generated_images/panel",
+      imageable: @workspace.topic,
+      surface: :og,
+      purpose: GeneratedImages::Generator::DEFAULT_PURPOSE,
+      title: "Generated image",
+      alt: "Generated image for #{@workspace.topic.name}",
+      return_to: request.fullpath %>
+
     <%# --- Aliases --- %>
     <div class="topic-sidebar-section">
       <h3 class="topic-sidebar-heading">Aliases <span class="topic-sidebar-count"><%= @workspace.alias_count %></span></h3>

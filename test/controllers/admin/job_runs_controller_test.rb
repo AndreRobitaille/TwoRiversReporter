@@ -1,4 +1,5 @@
 require "test_helper"
+require "securerandom"
 
 class Admin::JobRunsControllerTest < ActionDispatch::IntegrationTest
   include ActiveJob::TestHelper
@@ -25,6 +26,7 @@ class Admin::JobRunsControllerTest < ActionDispatch::IntegrationTest
       detail_page_url: "https://example.com/meeting-job-runs-test",
       starts_at: Time.zone.parse("2026-03-01 18:00:00")
     )
+    @topic = Topic.create!(name: "Job Run Topic #{SecureRandom.hex(4)}", status: "approved")
   end
 
   test "index shows job run console" do
@@ -32,6 +34,8 @@ class Admin::JobRunsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".job-type-grid"
     assert_select ".job-type-card-name", text: "Scrape City Website (discover + process)"
+    assert_select ".job-type-card-name", text: "Meeting Image"
+    assert_select ".job-type-card-name", text: "Topic Image"
     assert_match(/repair incomplete pipeline stages/i, response.body)
   end
 
@@ -54,6 +58,31 @@ class Admin::JobRunsControllerTest < ActionDispatch::IntegrationTest
       }
     end
     assert_redirected_to admin_job_runs_url
+  end
+
+  test "create enqueues meeting image job" do
+    assert_enqueued_with(job: GeneratedImages::GenerateForMeetingJob, args: [ @meeting.id ]) do
+      post admin_job_runs_url, params: {
+        job_type: "generate_meeting_image",
+        date_from: "2026-03-01",
+        date_to: "2026-03-31"
+      }
+    end
+
+    assert_redirected_to admin_job_runs_url
+    assert_match(/Meeting Image/i, flash[:notice])
+  end
+
+  test "create enqueues topic image job" do
+    assert_enqueued_with(job: GeneratedImages::GenerateForTopicJob, args: [ @topic.id ]) do
+      post admin_job_runs_url, params: {
+        job_type: "generate_topic_image",
+        topic_ids: [ @topic.id ]
+      }
+    end
+
+    assert_redirected_to admin_job_runs_url
+    assert_match(/Topic Image/i, flash[:notice])
   end
 
   test "count returns target count for meeting-scoped jobs" do

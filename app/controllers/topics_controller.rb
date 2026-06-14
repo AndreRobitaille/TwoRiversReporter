@@ -63,6 +63,8 @@ class TopicsController < ApplicationController
 
   def show
     @topic = Topic.publicly_visible.find(params[:id])
+    @generated_image = @topic.current_generated_image(:og)
+    assign_generated_image_meta(@generated_image, alt: "Illustration for #{@topic.name}")
 
     # Upcoming: future meetings where this topic is on the agenda.
     # Deduplicate on (meeting_id, agenda_item_id) as a view-layer safety net;
@@ -112,11 +114,30 @@ class TopicsController < ApplicationController
       .select("DISTINCT ON (topic_appearances.topic_id) topic_appearances.topic_id, meetings.id AS meeting_id, meetings.body_name, meetings.starts_at")
       .order(Arel.sql("topic_appearances.topic_id, meetings.starts_at DESC"))
       .each_with_object({}) do |row, h|
+        meeting_name = helpers.clean_meeting_display(row.body_name).presence || "Meeting"
+
         h[row.topic_id] = {
           meeting_id: row.meeting_id,
-          body_name: row.body_name.sub(/ Meeting$/, ""),
+          body_name: meeting_name,
           date: row.starts_at
         }
       end
+  end
+
+  def assign_generated_image_meta(image, alt:)
+    return unless image&.file&.attached?
+
+    @page_og_image = generated_image_url(image.file)
+    @page_og_image_alt = alt
+    @page_og_image_width = 1536
+    @page_og_image_height = 1024
+  end
+
+  def generated_image_url(attachment)
+    if Rails.env.production?
+      rails_blob_url(attachment, host: MeetingsHelper::PRODUCTION_HOST, protocol: "https")
+    else
+      rails_blob_url(attachment, host: request.host_with_port, protocol: request.protocol.delete_suffix("://"))
+    end
   end
 end

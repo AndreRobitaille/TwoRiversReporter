@@ -1,6 +1,9 @@
 require "test_helper"
+require "base64"
 
 class TopicsControllerTest < ActionDispatch::IntegrationTest
+  IMAGE_BYTES = Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO0yMjoAAAAASUVORK5CYII=")
+
   setup do
     @meeting = Meeting.create!(
       body_name: "City Council",
@@ -234,6 +237,59 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     get topic_url(@active_topic)
     assert_response :success
     assert_select "h1", text: @active_topic.name
+  end
+
+  test "show uses generated og image" do
+    image = @active_topic.generated_images.create!(status: "ready", purpose: "feature_and_og", generated_at: Time.current)
+    image.file.attach(io: StringIO.new(IMAGE_BYTES), filename: "topic-og.png", content_type: "image/png")
+
+    get topic_url(@active_topic)
+    assert_response :success
+
+    assert_select "meta[property='og:image']", count: 1
+    assert_match(%r{\Ahttps?://}, css_select("meta[property='og:image']").first["content"])
+    assert_includes css_select("meta[property='og:image']").first["content"], "/rails/active_storage/"
+    assert_select "meta[property='og:image:alt']", count: 1
+    assert_includes css_select("meta[property='og:image:alt']").first["content"], "Illustration for active topic"
+    assert_select "meta[property='og:image:width'][content='1536']", count: 1
+    assert_select "meta[property='og:image:height'][content='1024']", count: 1
+  end
+
+  test "show renders medium generated image on topic page" do
+    image = @active_topic.generated_images.create!(status: "ready", purpose: "feature_and_og", generated_at: Time.current)
+    image.file.attach(io: StringIO.new(IMAGE_BYTES), filename: "topic-medium.png", content_type: "image/png")
+
+    get topic_url(@active_topic)
+    assert_response :success
+
+    assert_select ".topic-feature-image img[alt=?]", "Illustration for active topic"
+    assert_select ".topic-feature-image .generated-image-cutline", text: /AI image/
+  end
+
+  test "show falls back to default og image when no generated image exists" do
+    get topic_url(@active_topic)
+    assert_response :success
+
+    assert_select "meta[property='og:image'][content$='/og-image.png']", count: 1
+    assert_select "meta[property='og:image:width'][content='1200']", count: 1
+    assert_select "meta[property='og:image:height'][content='630']", count: 1
+  end
+
+  test "show renders upcoming meeting with blank body_name safely" do
+    future_meeting = Meeting.create!(
+      body_name: nil,
+      meeting_type: "Regular",
+      starts_at: 2.days.from_now,
+      status: "parsed",
+      detail_page_url: "http://example.com/future-blank"
+    )
+    future_item = AgendaItem.create!(meeting: future_meeting, title: "Future item")
+    AgendaItemTopic.create!(topic: @active_topic, agenda_item: future_item)
+
+    get topic_url(@active_topic)
+    assert_response :success
+
+    assert_select ".topic-upcoming-committee", text: "Meeting"
   end
 
   test "show redirects to topics index for non-existent topic" do

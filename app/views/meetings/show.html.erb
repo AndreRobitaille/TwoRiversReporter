@@ -1,5 +1,5 @@
-<% cleaned_body = @meeting.body_name.sub(/ Meeting\z/i, "").strip %>
-<% content_for(:title) { "#{cleaned_body}, #{@meeting.starts_at&.strftime('%b %-d, %Y')} — Two Rivers, WI" } %>
+<% meeting_name = @meeting_display_name.presence || "Meeting" %>
+<% content_for(:title) { "#{meeting_name}, #{@meeting.starts_at&.strftime('%b %-d, %Y')} — Two Rivers, WI" } %>
 <% content_for(:description) { meeting_share_description(@meeting) } %>
 <% content_for(:og_type) { "article" } %>
 
@@ -11,7 +11,7 @@
       <span class="meeting-article-date"><%= @meeting.starts_at&.strftime("%B %-d, %Y") %> · <%= @meeting.starts_at&.strftime("%-l:%M %p") %></span>
     </div>
 
-    <h1 class="meeting-article-title"><%= @meeting.body_name.sub(/ Meeting$/, "") %></h1>
+    <h1 class="meeting-article-title"><%= meeting_name %></h1>
 
     <div class="meeting-article-docs">
       <% @meeting.latest_documents("minutes_pdf", "agenda_pdf", "packet_pdf")
@@ -74,6 +74,13 @@
         Preview based on the posted agenda. Official minutes have not yet been published.
       <% end %>
     </div>
+  <% end %>
+
+  <% if @generated_image&.file&.attached? %>
+    <figure class="meeting-feature-image">
+      <%= image_tag @generated_image.file, alt: "Illustration for #{meeting_name}", class: "meeting-feature-image__img", loading: "eager", fetchpriority: "high", decoding: "async" %>
+      <figcaption class="generated-image-cutline">AI image</figcaption>
+    </figure>
   <% end %>
 
   <% gd = @summary&.generation_data.presence %>

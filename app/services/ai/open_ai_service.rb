@@ -1,9 +1,34 @@
+require "base64"
+
 module Ai
   class OpenAiService
     # Updated to GPT-5.2 as requested
     DEFAULT_MODEL = ENV.fetch("OPENAI_REASONING_MODEL", "gpt-5.2")
     DEFAULT_GEMINI_MODEL = ENV.fetch("GEMINI_MODEL", "gemini-3-pro-preview")
     LIGHTWEIGHT_MODEL = ENV.fetch("OPENAI_LIGHTWEIGHT_MODEL", "gpt-5.4-mini")
+    IMAGE_MODEL = ENV.fetch("OPENAI_IMAGE_MODEL", "gpt-image-1")
+    REQUIRED_PROMPT_KEYS = %w[
+      extract_votes
+      extract_committee_members
+      extract_topics
+      refine_catchall_topic
+      re_extract_item_topics
+      triage_topics
+      analyze_topic_summary
+      generated_image_brief
+      render_topic_summary
+      analyze_topic_briefing
+      render_topic_briefing
+      generate_briefing_interim
+      generate_topic_description_detailed
+      generate_topic_description_broad
+      analyze_meeting_content
+      extract_knowledge
+      triage_knowledge
+      extract_knowledge_patterns
+      knowledge_search_answer
+      render_meeting_summary
+    ].freeze
 
     def initialize
       @client = OpenAI::Client.new(access_token: Rails.application.credentials.openai_access_token || ENV["OPENAI_ACCESS_TOKEN"])
@@ -308,6 +333,78 @@ module Ai
       )
 
       content
+    end
+
+    def build_generated_image_brief(imageable_type:, source_text:, composite:)
+      template = PromptTemplate.find_by!(key: "generated_image_brief")
+      system_role = template.system_role
+      placeholders = {
+        imageable_type: imageable_type.to_s,
+        composite: composite.to_json,
+        source_text: source_text.to_s.truncate(12_000, separator: " ")
+      }
+      prompt = template.interpolate(**placeholders)
+      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
+
+      content, _duration_ms = call_api(
+        model: model,
+        messages: [
+          { role: "system", content: system_role },
+          { role: "user", content: prompt }
+        ],
+        response_format: { type: "json_object" }
+      )
+
+      record_prompt_run(
+        template_key: "generated_image_brief",
+        messages: [
+          { role: "system", content: system_role },
+          { role: "user", content: prompt }
+        ],
+        response_content: content,
+        model: model,
+        response_format: "json_object",
+        duration_ms: _duration_ms,
+        placeholder_values: placeholders.transform_keys(&:to_s)
+      )
+
+      brief = JSON.parse(content)
+      required_keys = %w[civic_issue composition avoid]
+      missing_keys = required_keys.reject { |key| brief[key].present? }
+      raise "generated image brief invalid JSON: missing required keys #{missing_keys.join(', ')}" if missing_keys.any?
+
+      brief
+    rescue JSON::ParserError => e
+      raise "generated image brief invalid JSON: #{e.message}"
+    end
+
+    def generate_civic_image(prompt:, size: "1536x1024", output_format: "jpeg")
+      format = output_format.to_s
+      parameters = {
+        model: IMAGE_MODEL,
+        prompt: prompt,
+        size: size
+      }
+      parameters[:response_format] = "b64_json" unless IMAGE_MODEL.to_s.start_with?("gpt-image")
+
+      response = @client.images.generate(
+        parameters: parameters
+      )
+
+      image_data = response.dig("data", 0) || {}
+      b64_json = image_data["b64_json"].to_s.strip
+      raise "OpenAI image generation returned empty b64_json" if b64_json.blank?
+
+      bytes = Base64.decode64(b64_json)
+      raise "OpenAI image generation decoded to empty bytes" if bytes.blank?
+
+      {
+        bytes: bytes,
+        revised_prompt: image_data["revised_prompt"],
+        model: IMAGE_MODEL,
+        size: size,
+        format: format
+      }
     end
 
     def render_topic_summary(plan_json, source: nil)
