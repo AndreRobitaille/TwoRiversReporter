@@ -94,6 +94,8 @@ Rails.application.routes.draw do
       end
     end
 
+    resources :meetings, only: %i[show], controller: "admin/meetings", as: :admin_meetings
+
     resources :prompt_templates, controller: "admin/prompt_templates", as: :admin_prompt_templates, only: [ :index, :edit, :update ] do
       member do
         get :diff

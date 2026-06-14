@@ -1,0 +1,51 @@
+<% content_for(:title) { "#{@meeting_display_name} - Admin" } %>
+
+<% if flash[:notice] || flash[:alert] %>
+  <div class="flash <%= flash[:alert] ? 'flash--danger' : 'flash--success' %> mb-4" data-controller="auto-hide">
+    <%= flash[:alert] || flash[:notice] %>
+  </div>
+<% end %>
+
+<div class="topic-detail-layout">
+  <div class="topic-detail-main">
+    <section class="topic-decision-card topic-decision-card--primary">
+      <div class="topic-decision-card__panel">
+        <div class="topic-panel-label">Admin meeting workspace</div>
+        <h1 class="topic-decision-card__title"><%= @meeting_display_name %></h1>
+        <p class="text-sm text-secondary" style="margin: var(--space-2) 0 0;">
+          Manage the generated image used on this meeting's public page and social previews.
+        </p>
+
+        <div class="topic-decision-details__actions" style="margin-top: var(--space-4);">
+          <%= link_to "View public meeting", meeting_path(@meeting), class: "btn btn--secondary btn--sm" %>
+          <% if @meeting.detail_page_url.present? %>
+            <%= link_to "City meeting page", safe_external_url(@meeting.detail_page_url), target: "_blank", rel: "noopener", class: "btn btn--secondary btn--sm" %>
+          <% end %>
+        </div>
+      </div>
+    </section>
+
+    <section class="topic-decision-card">
+      <div class="topic-decision-card__panel">
+        <h2 class="topic-decision-card__title">Meeting details</h2>
+        <dl class="generated-image-panel__facts" style="margin-top: var(--space-3);">
+          <div class="generated-image-panel__fact"><dt>Body</dt><dd><%= @meeting_display_name %></dd></div>
+          <div class="generated-image-panel__fact"><dt>Type</dt><dd><%= @meeting.meeting_type.presence || "—" %></dd></div>
+          <div class="generated-image-panel__fact"><dt>Committee</dt><dd><%= @meeting.committee&.name.presence || "—" %></dd></div>
+          <div class="generated-image-panel__fact"><dt>Starts at</dt><dd><%= @meeting.starts_at ? l(@meeting.starts_at, format: :long) : "—" %></dd></div>
+          <div class="generated-image-panel__fact"><dt>Status</dt><dd><%= @meeting.status.presence || "—" %></dd></div>
+          <div class="generated-image-panel__fact"><dt>Meeting ID</dt><dd><%= @meeting.id %></dd></div>
+        </dl>
+      </div>
+    </section>
+  </div>
+
+  <aside class="topic-detail-sidebar">
+    <%= render "admin/generated_images/panel",
+      imageable: @meeting,
+      purpose: GeneratedImages::Generator::DEFAULT_PURPOSE,
+      title: "Meeting image",
+      alt: "Generated image for #{@meeting_display_name}",
+      return_to: request.fullpath %>
+  </aside>
+</div>

@@ -1,4 +1,6 @@
 module TopicsHelper
+  include MeetingsHelper
+
   def topic_lifecycle_badge(status)
     css_class = case status
     when "active" then "badge--success"
@@ -92,19 +94,6 @@ module TopicsHelper
     Date.parse(date_string).strftime("%b %-d, %Y")
   rescue Date::Error, TypeError
     date_string.to_s
-  end
-
-  # Clean a meeting name for display. Strips trailing " Meeting", parenthetical
-  # status suffixes, date suffixes the AI sometimes appends, and " - NO QUORUM".
-  # Safe to call with either canonical Meeting.body_name values or raw AI text.
-  def clean_meeting_display(name)
-    return "" if name.blank?
-    name.to_s
-        .gsub(/\s*\([^)]*\)\s*\z/, "")    # strip trailing "(CANCELED - NO QUORUM)"
-        .gsub(/,\s*[A-Z][a-z]{2,}\s+\d{1,2}(?:,?\s+\d{4})?\z/, "")  # strip ", Nov 20 2025"
-        .sub(/\s+Meeting\z/, "")          # strip trailing " Meeting"
-        .sub(/\s+-\s+NO QUORUM.*\z/i, "") # strip trailing " - NO QUORUM"
-        .strip
   end
 
   def enrich_record_entry(entry, record_meetings)
