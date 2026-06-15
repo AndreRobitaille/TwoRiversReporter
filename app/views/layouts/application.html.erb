@@ -39,12 +39,17 @@
     <%= csp_meta_tag %>
 
     <% if Rails.env.production? && ENV["GA_MEASUREMENT_ID"].present? %>
-      <script async src="https://www.googletagmanager.com/gtag/js?id=<%= ENV['GA_MEASUREMENT_ID'] %>"></script>
       <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', '<%= j ENV['GA_MEASUREMENT_ID'] %>');
+        window.addEventListener('load', function() {
+          var script = document.createElement('script');
+          script.async = true;
+          script.src = 'https://www.googletagmanager.com/gtag/js?id=<%= j ENV['GA_MEASUREMENT_ID'] %>';
+          document.head.appendChild(script);
+          gtag('js', new Date());
+          gtag('config', '<%= j ENV['GA_MEASUREMENT_ID'] %>');
+        });
       </script>
     <% end %>
 
@@ -59,10 +64,10 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;900&family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;900&family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@300;400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
-    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "application", "home", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "about", "data-turbo-track": "reload" if controller_name == "pages" && action_name == "about" %>
     <%= javascript_importmap_tags %>
 
   </head>

@@ -68,6 +68,39 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "homepage does not load unrelated page stylesheets" do
+    get root_url
+    assert_response :success
+
+    assert_select "link[href*='/assets/application-']"
+    assert_select "link[href*='/assets/home-']"
+    assert_select "link[href*='/assets/about-']", count: 0
+  end
+
+  test "font stylesheet is loaded without blocking render" do
+    get root_url
+    assert_response :success
+
+    assert_select "link[href*='fonts.googleapis.com'][rel='preload'][as='style'][onload]"
+    assert_select "link[href*='fonts.googleapis.com'][rel='stylesheet']", count: 0
+  end
+
+  test "analytics script is deferred until after initial load" do
+    original_measurement_id = ENV["GA_MEASUREMENT_ID"]
+    ENV["GA_MEASUREMENT_ID"] = "G-TEST"
+
+    Rails.stub(:env, ActiveSupport::StringInquirer.new("production")) do
+      get root_url
+    end
+
+    assert_response :success
+    assert_select "script[src*='googletagmanager.com/gtag/js']", count: 0
+    assert_includes response.body, "window.addEventListener('load'"
+    assert_includes response.body, "googletagmanager.com/gtag/js?id=G-TEST"
+  ensure
+    ENV["GA_MEASUREMENT_ID"] = original_measurement_id
+  end
+
   test "top stories show highest impact topics" do
     TopicBriefing.create!(topic: @high_topic, headline: "Lead line headline", generation_tier: "full")
 
