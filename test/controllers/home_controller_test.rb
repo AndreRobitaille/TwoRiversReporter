@@ -96,6 +96,7 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "script[src*='googletagmanager.com/gtag/js']", count: 0
     assert_includes response.body, "window.addEventListener('load'"
+    assert_includes response.body, "setTimeout(loadAnalytics, 5000)"
     assert_includes response.body, "googletagmanager.com/gtag/js?id=G-TEST"
   ensure
     ENV["GA_MEASUREMENT_ID"] = original_measurement_id

@@ -43,12 +43,16 @@
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         window.addEventListener('load', function() {
-          var script = document.createElement('script');
-          script.async = true;
-          script.src = 'https://www.googletagmanager.com/gtag/js?id=<%= j ENV['GA_MEASUREMENT_ID'] %>';
-          document.head.appendChild(script);
-          gtag('js', new Date());
-          gtag('config', '<%= j ENV['GA_MEASUREMENT_ID'] %>');
+          function loadAnalytics() {
+            var script = document.createElement('script');
+            script.async = true;
+            script.src = 'https://www.googletagmanager.com/gtag/js?id=<%= j ENV['GA_MEASUREMENT_ID'] %>';
+            document.head.appendChild(script);
+            gtag('js', new Date());
+            gtag('config', '<%= j ENV['GA_MEASUREMENT_ID'] %>');
+          }
+
+          setTimeout(loadAnalytics, 5000);
         });
       </script>
     <% end %>
