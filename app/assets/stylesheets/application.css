@@ -2591,19 +2591,49 @@ details[open] summary {
 }
 
 /* Optional thumbnail — only present when a generated image exists, so
-   image-less cards keep their slab + text layout (clean fallback). Fixed 3:2
-   box matches the source aspect so almost nothing is cropped; top-aligned with
-   the card content rather than centered. */
+   image-less cards keep their slab + text layout (clean fallback). The image
+   lives inside the body and floats right so the text wraps around it at every
+   width (the same pattern as topic cards). This avoids the mobile failure mode
+   where a fixed image column crushes the body text into a one-word-per-line
+   strip. Fixed 3:2 box matches the source aspect so almost nothing is cropped. */
+.meetings-card--with-image .meetings-card-body {
+  display: block;
+}
+
+/* Contain the floated thumbnail so short cards still reserve its height. */
+.meetings-card--with-image .meetings-card-body::after {
+  content: "";
+  display: block;
+  clear: both;
+}
+
 .meetings-card-media {
-  flex: 0 0 auto;
-  align-self: flex-start;
+  float: right;
   width: 132px;
   aspect-ratio: 3 / 2;
-  margin: var(--space-3) var(--space-4) var(--space-3) 0;
+  margin: 0 0 var(--space-2) var(--space-4);
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface-raised);
+}
+
+/* Block body loses the flex row gap; restore vertical rhythm between the
+   stacked text blocks. The top row must be a plain block (not flex) so the
+   name + time flow as inline text that wraps around the floated thumbnail —
+   a flex container lays out its full width ignoring the float, which pushes
+   the time underneath the image on narrow screens. */
+.meetings-card--with-image .meetings-card-top {
+  display: block;
+  margin-bottom: var(--space-1);
+}
+
+.meetings-card--with-image .meetings-card-time {
+  margin-left: var(--space-2);
+}
+
+.meetings-card--with-image .meetings-card-headline {
+  margin-bottom: var(--space-2);
 }
 
 .meetings-card-image {

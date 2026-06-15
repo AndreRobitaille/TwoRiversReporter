@@ -13,6 +13,11 @@
     <span class="meetings-date-dow"><%= meeting.starts_at.strftime("%a") %></span>
   </div>
   <div class="meetings-card-body">
+    <% if has_image %>
+      <div class="meetings-card-media">
+        <%= image_tag generated_image.file, alt: "Illustration for #{meeting.body_name.sub(/ Meeting$/, '')}", class: "meetings-card-image", loading: "lazy", decoding: "async" %>
+      </div>
+    <% end %>
     <div class="meetings-card-top">
       <span class="meetings-card-name"><%= meeting.body_name.sub(/ Meeting$/, "") %></span>
       <% if is_upcoming %>
@@ -35,9 +40,4 @@
       <span class="meetings-card-note">Agenda not yet posted</span>
     <% end %>
   </div>
-  <% if has_image %>
-    <div class="meetings-card-media">
-      <%= image_tag generated_image.file, alt: "Illustration for #{meeting.body_name.sub(/ Meeting$/, '')}", class: "meetings-card-image", loading: "lazy", decoding: "async" %>
-    </div>
-  <% end %>
 <% end %>
