@@ -15,7 +15,14 @@
   <div class="meetings-card-body">
     <% if has_image %>
       <div class="meetings-card-media">
-        <%= image_tag generated_image.file, alt: "Illustration for #{meeting.body_name.sub(/ Meeting$/, '')}", class: "meetings-card-image", loading: "lazy", decoding: "async" %>
+        <% dimensions = generated_image_dimensions(size: :standard) %>
+        <%= image_tag generated_image_variant(generated_image, size: :standard),
+          alt: "Illustration for #{meeting.body_name.sub(/ Meeting$/, '')}",
+          class: "meetings-card-image",
+          loading: "lazy",
+          decoding: "async",
+          width: dimensions[:width],
+          height: dimensions[:height] %>
       </div>
     <% end %>
     <div class="meetings-card-top">

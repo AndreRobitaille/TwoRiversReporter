@@ -9,7 +9,15 @@
   <div class="story-accent"></div>
   <% if has_image %>
     <div class="story-media">
-      <%= image_tag generated_image.file, alt: "Illustration for #{topic.name}", class: "story-image", loading: (variant == :primary ? "eager" : "lazy"), fetchpriority: (variant == :primary ? "high" : nil), decoding: "async" %>
+      <% dimensions = generated_image_dimensions(size: :standard) %>
+      <%= image_tag generated_image_variant(generated_image, size: :standard),
+        alt: "Illustration for #{topic.name}",
+        class: "story-image",
+        loading: (variant == :primary ? "eager" : "lazy"),
+        fetchpriority: (variant == :primary ? "high" : nil),
+        decoding: "async",
+        width: dimensions[:width],
+        height: dimensions[:height] %>
     </div>
   <% end %>
   <div class="story-inner">

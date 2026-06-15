@@ -87,6 +87,8 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
 
     assert_select ".top-story.top-story--with-image"
     assert_select ".top-story .story-image[alt=?]", "Illustration for lead service lines"
+    assert_select ".top-story .story-image[src*=?]", "/rails/active_storage/representations/"
+    assert_select ".top-story .story-image[width=?][height=?]", "396", "264"
     # Homepage thumbnails carry no overlay label (kept clean; disclosure lives on detail pages).
     assert_select ".top-story .generated-image-label", count: 0
     assert_select ".wire-card .wire-image", count: 0
@@ -109,6 +111,8 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
 
     assert_select ".wire-card.wire-card--with-image"
     assert_select ".wire-card .wire-image[alt=?]", "Illustration for storm sewer grant"
+    assert_select ".wire-card .wire-image[src*=?]", "/rails/active_storage/representations/"
+    assert_select ".wire-card .wire-image[width=?][height=?]", "204", "152"
     # Wire cards intentionally omit the per-card label (too small; one disclosure per page).
     assert_select ".wire-card .generated-image-label", count: 0
     assert_select ".top-story .story-image", count: 0

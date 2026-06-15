@@ -146,6 +146,17 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".topics-card", minimum: 1
   end
 
+  test "index topic cards render generated image thumbnails" do
+    image = @active_topic.generated_images.create!(status: "ready", purpose: "feature_and_og", generated_at: Time.current)
+    image.file.attach(io: StringIO.new(IMAGE_BYTES), filename: "active-topic.png", content_type: "image/png")
+
+    get topics_url
+    assert_response :success
+
+    assert_select ".topics-card .topics-card-image[src*=?]", "/rails/active_storage/representations/"
+    assert_select ".topics-card .topics-card-image[width=?][height=?]", "396", "264"
+  end
+
   test "index renders cards without highlighted class" do
     get topics_url
     assert_response :success

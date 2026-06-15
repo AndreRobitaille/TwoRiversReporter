@@ -4,7 +4,14 @@
 <%= link_to topic_path(topic), class: (has_image ? "wire-card wire-card--with-image" : "wire-card") do %>
   <% if has_image %>
     <div class="wire-media">
-      <%= image_tag generated_image.file, alt: "Illustration for #{topic.name}", class: "wire-image", loading: "lazy", decoding: "async" %>
+      <% dimensions = generated_image_dimensions(size: :compact) %>
+      <%= image_tag generated_image_variant(generated_image, size: :compact),
+        alt: "Illustration for #{topic.name}",
+        class: "wire-image",
+        loading: "lazy",
+        decoding: "async",
+        width: dimensions[:width],
+        height: dimensions[:height] %>
     </div>
   <% end %>
   <div class="wire-body">

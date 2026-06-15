@@ -90,6 +90,18 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     assert assigns(:recent_thin).size >= 1
   end
 
+  test "index meeting cards render generated image thumbnails" do
+    MeetingSummary.create!(meeting: @meeting, summary_type: "minutes_recap", generation_data: { "headline" => "Test" })
+    image = @meeting.generated_images.create!(status: "ready", purpose: "feature", generated_at: Time.current)
+    image.file.attach(io: StringIO.new(IMAGE_BYTES), filename: "meeting-card.png", content_type: "image/png")
+
+    get meetings_url
+    assert_response :success
+
+    assert_select ".meetings-card .meetings-card-image[src*=?]", "/rails/active_storage/representations/"
+    assert_select ".meetings-card .meetings-card-image[width=?][height=?]", "396", "264"
+  end
+
   test "index collapses duplicate upcoming meetings with same date and normalized name" do
     starts_at = 3.days.from_now.change(usec: 0)
     original = Meeting.create!(
