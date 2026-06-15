@@ -274,6 +274,8 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     assert_select ".topic-feature-image img[alt=?]", "Illustration for active topic"
+    assert_select ".topic-feature-image img[src*=?]", "/rails/active_storage/representations/"
+    assert_select ".topic-feature-image img[width=?][height=?]", "800", "533"
     assert_select ".topic-feature-image .generated-image-cutline", text: /AI image/
   end
 

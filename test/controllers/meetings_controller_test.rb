@@ -371,6 +371,8 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     assert_select ".meeting-feature-image img[alt=?]", "Illustration for City Council"
+    assert_select ".meeting-feature-image img[src*=?]", "/rails/active_storage/representations/"
+    assert_select ".meeting-feature-image img[width=?][height=?]", "800", "533"
     assert_select ".meeting-feature-image .generated-image-cutline", text: /AI image/
     assert_select "meta[property='og:image']", count: 1
     assert_match(%r{\Ahttps?://}, css_select("meta[property='og:image']").first["content"])

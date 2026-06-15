@@ -22,7 +22,15 @@
 
   <% if @generated_image&.file&.attached? %>
     <figure class="topic-feature-image">
-      <%= image_tag @generated_image.file, alt: "Illustration for #{@topic.name}", class: "topic-feature-image__img", loading: "eager", fetchpriority: "high", decoding: "async" %>
+      <% dimensions = generated_image_dimensions(size: :feature) %>
+      <%= image_tag generated_image_variant(@generated_image, size: :feature),
+        alt: "Illustration for #{@topic.name}",
+        class: "topic-feature-image__img",
+        loading: "eager",
+        fetchpriority: "high",
+        decoding: "async",
+        width: dimensions[:width],
+        height: dimensions[:height] %>
       <figcaption class="generated-image-cutline">AI image</figcaption>
     </figure>
   <% end %>
