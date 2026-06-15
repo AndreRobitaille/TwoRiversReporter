@@ -70,7 +70,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;900&family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@300;400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 
-    <%= stylesheet_link_tag "application", "home", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "home", "data-turbo-track": "reload" if controller_name == "home" %>
     <%= stylesheet_link_tag "about", "data-turbo-track": "reload" if controller_name == "pages" && action_name == "about" %>
     <%= javascript_importmap_tags %>
 

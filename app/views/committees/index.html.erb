@@ -10,9 +10,14 @@
 <div class="committees-diagram-wrap" id="committees-diagram">
   <p class="committees-diagram-caption">How committees connect — click to expand</p>
   <div class="committees-diagram-content" onclick="document.getElementById('committees-diagram').classList.toggle('is-expanded')">
-    <%= image_tag "committee-connections.png",
+    <%= image_tag "committee-connections-1200.webp",
         alt: "Diagram showing how Two Rivers committees relate to each other",
-        class: "committees-diagram" %>
+        class: "committees-diagram",
+        width: 1200,
+        height: 600,
+        srcset: "#{asset_path('committee-connections-800.webp')} 800w, #{asset_path('committee-connections-1200.webp')} 1200w",
+        sizes: "(max-width: 900px) 100vw, 1166px",
+        fetchpriority: "high" %>
   </div>
 </div>
 

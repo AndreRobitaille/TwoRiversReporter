@@ -37,33 +37,6 @@
 }
 
 /* ============================================
-   Section Headers (atom marker pattern)
-   ============================================ */
-
-.home-section-header {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin-bottom: var(--space-4);
-}
-
-.home-section-header .section-label {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--color-teal);
-  white-space: nowrap;
-}
-
-.home-section-header .section-line {
-  flex: 1;
-  height: 1.5px;
-  background: linear-gradient(90deg, var(--color-terra-cotta), transparent);
-}
-
-/* ============================================
    Zone Spacing
    ============================================ */
 

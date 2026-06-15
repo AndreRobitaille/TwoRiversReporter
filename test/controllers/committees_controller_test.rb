@@ -68,6 +68,16 @@ class CommitteesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".committees-council-name", text: /City Council/
   end
 
+  test "index uses dimensioned responsive committee diagram" do
+    get committees_url
+    assert_response :success
+
+    assert_select ".committees-diagram[src*=?]", "committee-connections-1200"
+    assert_select ".committees-diagram[srcset]"
+    assert_select ".committees-diagram[width=?][height=?]", "1200", "600"
+    assert_select ".committees-diagram[fetchpriority=?]", "high"
+  end
+
   test "index excludes dissolved committees" do
     dissolved = Committee.create!(
       name: "Dissolved Board", slug: "dissolved-board",

@@ -13,6 +13,15 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_select "link[href*='/assets/about-']"
   end
 
+  test "about page does not load homepage stylesheet" do
+    get about_path
+    assert_response :success
+
+    assert_select "link[href*='/assets/application-']"
+    assert_select "link[href*='/assets/about-']"
+    assert_select "link[href*='/assets/home-']", count: 0
+  end
+
   test "about page has correct title" do
     get about_path
     assert_select "title", /Plain English/
