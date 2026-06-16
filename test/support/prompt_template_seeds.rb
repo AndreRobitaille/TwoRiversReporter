@@ -7,13 +7,11 @@ module PromptTemplateSeeds
   def self.create_all!
     PromptTemplateData::METADATA.each do |meta|
       key = meta[:key]
-      next if PromptTemplate.exists?(key: key)
-
       prompt_data = PromptTemplateData::PROMPTS[key]
       raise "No prompt data for key '#{key}'" unless prompt_data
 
-      PromptTemplate.create!(
-        key: key,
+      template = PromptTemplate.find_or_initialize_by(key: key)
+      attrs = {
         name: meta[:name],
         description: meta[:description],
         usage_context: meta[:usage_context],
@@ -21,7 +19,11 @@ module PromptTemplateSeeds
         placeholders: meta[:placeholders],
         system_role: prompt_data[:system_role],
         instructions: prompt_data[:instructions]
-      )
+      }
+
+      next if template.persisted? && attrs.all? { |attr, value| template.public_send(attr) == value }
+
+      template.update!(attrs)
     end
   end
 end

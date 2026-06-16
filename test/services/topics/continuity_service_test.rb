@@ -155,5 +155,25 @@ module Topics
         Topics::ContinuityService.call(@topic)
       end
     end
+
+    test "lowers last_activity_at and last_seen_at when latest appearance is removed" do
+      older_meeting = Meeting.create!(body_name: "Committee", starts_at: 3.months.ago, detail_page_url: "http://example.com/older")
+      older_ai = AgendaItem.create!(meeting: older_meeting, title: "Older Discussion", number: "2")
+      AgendaItemTopic.create!(topic: @topic, agenda_item: older_ai)
+
+      newer_meeting = Meeting.create!(body_name: "Committee", starts_at: 1.month.ago, detail_page_url: "http://example.com/newer")
+      newer_ai = AgendaItem.create!(meeting: newer_meeting, title: "Newer Discussion", number: "3")
+      AgendaItemTopic.create!(topic: @topic, agenda_item: newer_ai)
+
+      @topic.update!(last_activity_at: newer_meeting.starts_at, last_seen_at: newer_meeting.starts_at)
+
+      @topic.topic_appearances.where(agenda_item: newer_ai).destroy_all
+
+      Topics::ContinuityService.call(@topic)
+      @topic.reload
+
+      assert_equal older_meeting.starts_at, @topic.last_activity_at
+      assert_equal older_meeting.starts_at, @topic.last_seen_at
+    end
   end
 end

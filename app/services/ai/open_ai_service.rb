@@ -115,7 +115,7 @@ module Ai
       content
     end
 
-    def extract_topics(items_text, community_context: "", existing_topics: [], meeting_documents_context: "", source: nil)
+    def extract_topics(items_text, community_context: "", existing_topics: [], meeting_documents_context: "", meeting_context: "", source: nil)
       existing_topics_list = existing_topics.join("\n")
 
       template = PromptTemplate.find_by!(key: "extract_topics")
@@ -124,7 +124,8 @@ module Ai
         items_text: items_text.truncate(50_000),
         community_context: community_context,
         existing_topics: existing_topics_list,
-        meeting_documents_context: meeting_documents_context.to_s.truncate(30_000, separator: " ")
+        meeting_documents_context: meeting_documents_context.to_s.truncate(30_000, separator: " "),
+        meeting_context: meeting_context.to_s
       }
       prompt = template.interpolate(**placeholders)
       model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL

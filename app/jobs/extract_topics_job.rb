@@ -34,6 +34,7 @@ class ExtractTopicsJob < ApplicationJob
 
     # Build meeting-level document context (packets/minutes not linked to specific items)
     meeting_docs_context = build_meeting_document_context(meeting, items)
+    meeting_context = build_meeting_context(meeting)
 
     # Cache item document text so we don't recompute it for each tag iteration.
     document_text_by_item_id = items.index_with { |item| gather_item_document_text(item, meeting) }.transform_keys(&:id)
@@ -47,6 +48,7 @@ class ExtractTopicsJob < ApplicationJob
       community_context: community_context,
       existing_topics: existing_topics,
       meeting_documents_context: meeting_docs_context,
+      meeting_context: meeting_context,
       source: meeting
     )
 
@@ -79,6 +81,7 @@ class ExtractTopicsJob < ApplicationJob
         # Create topics from tags only (category is a broad grouping, not a topic)
         tags.each do |topic_name|
           next if topic_name.blank?
+          next if reject_room_tax_city_budget_tag?(meeting, item, topic_name)
 
           topic = Topics::FindOrCreateService.call(
             topic_name,
@@ -111,6 +114,18 @@ class ExtractTopicsJob < ApplicationJob
 
   CATCHALL_TOPIC_NAMES = %w[
     height\ and\ area\ exceptions
+  ].freeze
+
+  CITY_BUDGET_SCOPE_INDICATORS = [
+    "general fund",
+    "tax levy",
+    "all fund",
+    "all city fund",
+    "citywide",
+    "city budget",
+    "city council budget",
+    "budget adoption",
+    "property tax"
   ].freeze
 
   def refine_catchall_topics(meeting, ai_service, existing_topics, document_text_by_item_id)
@@ -198,6 +213,32 @@ class ExtractTopicsJob < ApplicationJob
     }
   end
 
+  def reject_room_tax_city_budget_tag?(meeting, item, topic_name)
+    return false unless meeting.body_name.to_s.include?("Room Tax Commission")
+    return false unless city_budget_variant?(topic_name)
+
+    title = item.title.to_s.downcase
+    return false unless title.include?("budget review") || title.include?("review budget")
+
+    context = [ item.title, item.summary, directly_attached_item_document_text(item) ].compact.join(" \n").downcase
+    return false if CITY_BUDGET_SCOPE_INDICATORS.any? { |indicator| context.include?(indicator) }
+
+    true
+  end
+
+  def city_budget_variant?(topic_name)
+    normalized = normalize_topic_name(topic_name)
+    normalized.match?(/\A(city budget( review| discussion| update|s)?|citywide budget.*|overall city budget.*)\z/) || normalized.include?("city budget")
+  end
+
+  def normalize_topic_name(name)
+    name.to_s.downcase.gsub(/[^a-z0-9]+/, " ").squeeze(" ").strip
+  end
+
+  def directly_attached_item_document_text(item)
+    item.meeting_documents.filter_map(&:extracted_text).join(" \n")
+  end
+
   def build_meeting_document_context(meeting, items)
     # Find document IDs already linked to specific agenda items
     linked_doc_ids = AgendaItemDocument
@@ -229,6 +270,14 @@ class ExtractTopicsJob < ApplicationJob
     end
 
     ""
+  end
+
+  def build_meeting_context(meeting)
+    date = meeting.starts_at&.to_date&.iso8601 || "unknown"
+    <<~TEXT.strip
+      Meeting body: #{meeting.body_name}
+      Meeting date: #{date}
+    TEXT
   end
 
   def retrieve_community_context

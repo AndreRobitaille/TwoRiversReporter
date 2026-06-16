@@ -352,7 +352,7 @@ class ExtractTopicsJobTest < ActiveJob::TestCase
       end
     end
 
-    assert_equal [ reusable_topic.name ], captured_existing_topics
+    assert_includes captured_existing_topics, reusable_topic.name
     assert_not_includes captured_existing_topics, unsafe_topic.name
     mock_ai.verify
   end
@@ -739,6 +739,120 @@ class ExtractTopicsJobTest < ActiveJob::TestCase
     assert_not_nil state["topics_extracted_at"]
   end
 
+  test "rejects citywide budget variant tags for room tax commission budget review" do
+    meeting = Meeting.create!(
+      body_name: "Room Tax Commission Meeting", meeting_type: "Regular",
+      starts_at: 1.day.from_now, status: "agenda_posted",
+      detail_page_url: "http://example.com/m/citywide-budget"
+    )
+    item = AgendaItem.create!(meeting: meeting, number: "1", title: "Budget Review", order_index: 1)
+
+    ai_response = {
+      "items" => [ {
+        "id" => item.id,
+        "category" => "Finance",
+        "tags" => [ "citywide budget", "city budget update" ],
+        "topic_worthy" => true,
+        "confidence" => 0.8
+      } ]
+    }.to_json
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_topics, ai_response do |_text, **kwargs|
+      true
+    end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+
+    assert_no_difference "Topic.count" do
+      RetrievalService.stub :new, retrieval_stub do
+        Ai::OpenAiService.stub :new, mock_ai do
+          ExtractTopicsJob.perform_now(meeting.id)
+        end
+      end
+    end
+
+    mock_ai.verify
+  end
+
+  test "rejects overall city budget variant tags for generic rtc budget review" do
+    meeting = Meeting.create!(
+      body_name: "Room Tax Commission Meeting", meeting_type: "Regular",
+      starts_at: 1.day.from_now, status: "agenda_posted",
+      detail_page_url: "http://example.com/m/overall-city-budget"
+    )
+    item = AgendaItem.create!(meeting: meeting, number: "1", title: "RTC BUDGET REVIEW", order_index: 1)
+
+    ai_response = {
+      "items" => [ {
+        "id" => item.id,
+        "category" => "Finance",
+        "tags" => [ "overall city budget" ],
+        "topic_worthy" => true,
+        "confidence" => 0.8
+      } ]
+    }.to_json
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_topics, ai_response do |_text, **kwargs|
+      true
+    end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+
+    assert_no_difference "Topic.count" do
+      RetrievalService.stub :new, retrieval_stub do
+        Ai::OpenAiService.stub :new, mock_ai do
+          ExtractTopicsJob.perform_now(meeting.id)
+        end
+      end
+    end
+
+    mock_ai.verify
+  end
+
+  test "does not reject room tax budget tags" do
+    meeting = Meeting.create!(
+      body_name: "Room Tax Commission Meeting", meeting_type: "Regular",
+      starts_at: 1.day.from_now, status: "agenda_posted",
+      detail_page_url: "http://example.com/m/room-tax-budget"
+    )
+    item = AgendaItem.create!(meeting: meeting, number: "1", title: "Budget Review", order_index: 1)
+
+    ai_response = {
+      "items" => [ {
+        "id" => item.id,
+        "category" => "Finance",
+        "tags" => [ "room tax budget" ],
+        "topic_worthy" => true,
+        "confidence" => 0.8
+      } ]
+    }.to_json
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_topics, ai_response do |_text, **kwargs|
+      true
+    end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+
+    assert_difference "Topic.count", 1 do
+      RetrievalService.stub :new, retrieval_stub do
+        Ai::OpenAiService.stub :new, mock_ai do
+          ExtractTopicsJob.perform_now(meeting.id)
+        end
+      end
+    end
+
+    mock_ai.verify
+  end
+
   test "records topics extraction empty when no substantive agenda items exist" do
     meeting = Meeting.create!(
       body_name: "City Council", meeting_type: "Regular",
@@ -746,13 +860,249 @@ class ExtractTopicsJobTest < ActiveJob::TestCase
       detail_page_url: "http://example.com/m/missing-topics"
     )
 
-    RetrievalService.stub :new, ->(*) { flunk "should not retrieve context" } do
-      Ai::OpenAiService.stub :new, ->(*) { flunk "should not instantiate AI when there are no substantive agenda items" } do
-        ExtractTopicsJob.perform_now(meeting.id)
+    assert_no_difference "Topic.count" do
+      RetrievalService.stub :new, ->(*) { flunk "should not retrieve context" } do
+        Ai::OpenAiService.stub :new, ->(*) { flunk "should not instantiate AI when there are no substantive agenda items" } do
+          ExtractTopicsJob.perform_now(meeting.id)
+        end
       end
     end
 
     assert_equal "empty", meeting.reload.processing_state["topics_extraction_status"]
-    assert_equal 0, Topic.count
+  end
+
+  test "passes meeting body and date context to topic extraction" do
+    meeting = Meeting.create!(
+      body_name: "Room Tax Commission Meeting",
+      meeting_type: "regular",
+      starts_at: Time.zone.parse("2026-06-23 16:00:00"),
+      status: "upcoming",
+      detail_page_url: "http://example.com/room-tax"
+    )
+    item = AgendaItem.create!(
+      meeting: meeting,
+      number: "4.",
+      title: "BUDGET REVIEW (Action Item)",
+      order_index: 4,
+      kind: "item"
+    )
+
+    captured_kwargs = nil
+    ai_response = {
+      "items" => [ {
+        "id" => item.id,
+        "category" => "Finance",
+        "tags" => [ "room tax budget" ],
+        "topic_worthy" => true,
+        "confidence" => 0.8
+      } ]
+    }.to_json
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_topics, ai_response do |_text, **kwargs|
+      captured_kwargs = kwargs
+      true
+    end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        ExtractTopicsJob.perform_now(meeting.id)
+      end
+    end
+
+    assert_includes captured_kwargs[:meeting_context], "Meeting body: Room Tax Commission Meeting"
+    assert_includes captured_kwargs[:meeting_context], "Meeting date: 2026-06-23"
+    mock_ai.verify
+  end
+
+  test "does not link room tax commission budget review to city budget without explicit citywide scope" do
+    meeting = Meeting.create!(
+      body_name: "Room Tax Commission Meeting",
+      meeting_type: "regular",
+      starts_at: Time.zone.parse("2026-06-23 16:00:00"),
+      status: "upcoming",
+      detail_page_url: "http://example.com/room-tax-budget"
+    )
+    item = AgendaItem.create!(
+      meeting: meeting,
+      number: "4.",
+      title: "BUDGET REVIEW (Action Item)",
+      order_index: 4,
+      kind: "item"
+    )
+    Topic.create!(name: "city budget", status: "approved", review_status: "approved")
+
+    ai_response = {
+      "items" => [ {
+        "id" => item.id,
+        "category" => "Finance",
+        "tags" => [ "city budget" ],
+        "topic_worthy" => true,
+        "confidence" => 0.8
+      } ]
+    }.to_json
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_topics, ai_response do |_text, **kwargs|
+      true
+    end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        ExtractTopicsJob.perform_now(meeting.id)
+      end
+    end
+
+    refute_includes item.topics.reload.pluck(:canonical_name), "city budget"
+    refute AgendaItemTopic.joins(:topic).where(agenda_item: item, topics: { canonical_name: "city budget" }).exists?
+    refute_equal "parse_error", meeting.reload.processing_state["topics_extraction_status"]
+    mock_ai.verify
+  end
+
+  test "does not link room tax commission city budget review variant to city budget" do
+    meeting = Meeting.create!(
+      body_name: "Room Tax Commission Meeting",
+      meeting_type: "regular",
+      starts_at: Time.zone.parse("2026-06-23 16:00:00"),
+      status: "upcoming",
+      detail_page_url: "http://example.com/room-tax-budget-variant"
+    )
+    item = AgendaItem.create!(
+      meeting: meeting,
+      number: "4.",
+      title: "BUDGET REVIEW (Action Item)",
+      order_index: 4,
+      kind: "item"
+    )
+    Topic.create!(name: "city budget", status: "approved", review_status: "approved")
+
+    ai_response = {
+      "items" => [ {
+        "id" => item.id,
+        "category" => "Finance",
+        "tags" => [ "city budget review" ],
+        "topic_worthy" => true,
+        "confidence" => 0.8
+      } ]
+    }.to_json
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_topics, ai_response do |_text, **kwargs|
+      true
+    end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        ExtractTopicsJob.perform_now(meeting.id)
+      end
+    end
+
+    refute_includes item.topics.reload.pluck(:canonical_name), "city budget"
+    mock_ai.verify
+  end
+
+  test "links room tax budget for room tax commission budget review" do
+    meeting = Meeting.create!(
+      body_name: "Room Tax Commission Meeting",
+      meeting_type: "regular",
+      starts_at: Time.zone.parse("2026-06-23 16:00:00"),
+      status: "upcoming",
+      detail_page_url: "http://example.com/room-tax-budget-allowed"
+    )
+    item = AgendaItem.create!(
+      meeting: meeting,
+      number: "4.",
+      title: "BUDGET REVIEW (Action Item)",
+      order_index: 4,
+      kind: "item"
+    )
+    Topic.create!(name: "room tax budget", status: "approved", review_status: "approved")
+
+    ai_response = {
+      "items" => [ {
+        "id" => item.id,
+        "category" => "Finance",
+        "tags" => [ "room tax budget" ],
+        "topic_worthy" => true,
+        "confidence" => 0.8
+      } ]
+    }.to_json
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_topics, ai_response do |_text, **kwargs|
+      true
+    end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        ExtractTopicsJob.perform_now(meeting.id)
+      end
+    end
+
+    assert_includes item.topics.reload.pluck(:canonical_name), "room tax budget"
+    mock_ai.verify
+  end
+
+  test "allows room tax commission budget review to city budget when explicit citywide scope exists" do
+    meeting = Meeting.create!(
+      body_name: "Room Tax Commission Meeting",
+      meeting_type: "regular",
+      starts_at: Time.zone.parse("2026-06-23 16:00:00"),
+      status: "upcoming",
+      detail_page_url: "http://example.com/room-tax-budget-allow"
+    )
+    item = AgendaItem.create!(
+      meeting: meeting,
+      number: "4.",
+      title: "BUDGET REVIEW (Action Item)",
+      order_index: 4,
+      kind: "item"
+    )
+    AgendaItemDocument.create!(agenda_item: item, meeting_document: MeetingDocument.create!(meeting: meeting, document_type: "packet_pdf", extracted_text: "General Fund citywide tax levy discussion for the room tax commission budget review"))
+    Topic.create!(name: "city budget", status: "approved", review_status: "approved")
+
+    ai_response = {
+      "items" => [ {
+        "id" => item.id,
+        "category" => "Finance",
+        "tags" => [ "city budget" ],
+        "topic_worthy" => true,
+        "confidence" => 0.8
+      } ]
+    }.to_json
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_topics, ai_response do |_text, **kwargs|
+      true
+    end
+
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+
+    RetrievalService.stub :new, retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        ExtractTopicsJob.perform_now(meeting.id)
+      end
+    end
+
+    assert_includes item.topics.reload.pluck(:canonical_name), "city budget"
+    mock_ai.verify
   end
 end

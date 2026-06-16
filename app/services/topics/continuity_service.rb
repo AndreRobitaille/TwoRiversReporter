@@ -218,7 +218,7 @@ module Topics
 
           updates[:first_seen_at] = first if @topic.first_seen_at != first
           updates[:last_seen_at] = last if @topic.last_seen_at != last
-          updates[:last_activity_at] = last if @topic.last_activity_at.nil? || @topic.last_activity_at < last
+          updates[:last_activity_at] = last if @topic.last_activity_at != last
         end
 
         @topic.update!(updates) if updates.any?

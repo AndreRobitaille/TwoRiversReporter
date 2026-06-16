@@ -50,6 +50,7 @@ module PromptTemplateData
         { "name" => "existing_topics", "description" => "All approved topic names" },
         { "name" => "community_context", "description" => "Knowledge base context" },
         { "name" => "meeting_documents_context", "description" => "Extracted text from meeting documents" },
+        { "name" => "meeting_context", "description" => "Meeting body, date, and scope instructions" },
         { "name" => "items_text", "description" => "Formatted agenda items to classify" }
       ]
     },
@@ -422,6 +423,25 @@ module PromptTemplateData
         If the answer only makes sense for a SPECIFIC concern within the category,
         name that concern. If the item is routine, mark it not topic-worthy.
         </topic_granularity>
+
+        <committee_scope>
+        {{meeting_context}}
+
+        Generic agenda terms must be interpreted within this body's jurisdiction unless attached documents clearly broaden the scope.
+        Before reusing a broad topic, determine the body and what it governs.
+        Generic labels like budget review, policy update, director update, treasurer report,
+        program update, and review are body-scoped by default.
+
+        Reuse broad citywide topics only with explicit citywide scope evidence like General Fund,
+        citywide tax levy, all fund budgets, City Council budget adoption, citywide service levels,
+        city budget, or citywide budget amendment.
+
+        Room Tax Commission budget review normally means room-tax/tourism budget, not overall city budget.
+        Do not link it to city budget unless explicit citywide evidence exists.
+
+        If ambiguous and generic, prefer a narrower body-scoped topic or topic_worthy false;
+        do not fill uncertainty with a broad canonical topic.
+        </committee_scope>
 
         {{community_context}}
 

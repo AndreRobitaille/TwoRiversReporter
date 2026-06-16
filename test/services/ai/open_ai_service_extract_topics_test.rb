@@ -47,4 +47,29 @@ class Ai::OpenAiServiceExtractTopicsTest < ActiveSupport::TestCase
       assert_includes captured_prompt, "conditional use permits"
     end
   end
+
+  test "extract_topics includes meeting context and body scoped reuse rules" do
+    captured_prompt = nil
+    mock_response = {
+      "choices" => [ { "message" => { "content" => '{"items":[]}' } } ]
+    }
+
+    client = @service.instance_variable_get(:@client)
+    client.stub :chat, ->(parameters:) {
+      captured_prompt = parameters[:messages].last[:content]
+      mock_response
+    } do
+      @service.extract_topics(
+        "ID: 3029\nTitle: BUDGET REVIEW",
+        existing_topics: [ "city budget" ],
+        meeting_context: "Meeting body: Room Tax Commission Meeting\nMeeting date: 2026-06-23"
+      )
+    end
+
+    assert_includes captured_prompt, "Meeting body: Room Tax Commission Meeting"
+    assert_includes captured_prompt, "Room Tax Commission"
+    assert_match(/generic agenda/i, captured_prompt)
+    assert_match(/body-scoped|body scoped|committee-scoped|committee scoped|jurisdiction/i, captured_prompt)
+    assert_match(/broad citywide topic|citywide scope|overall city budget|General Fund|tax levy/i, captured_prompt)
+  end
 end
