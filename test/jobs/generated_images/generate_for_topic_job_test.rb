@@ -13,6 +13,24 @@ class GeneratedImages::GenerateForTopicJobTest < ActiveJob::TestCase
     end
   end
 
+  test "force generates when disabled" do
+    captured = nil
+
+    GeneratedImages::Generator.stub :new, ->(imageable, source:, eligibility:, custom_prompt: nil, generated_image: nil, retrying_after: nil) do
+      captured = { imageable: imageable, source: source, eligibility: eligibility, custom_prompt: custom_prompt, generated_image: generated_image }
+      Object.new.tap { |o| o.define_singleton_method(:call) { true } }
+    end do
+      GeneratedImages::Config.stub :enabled?, false do
+        GeneratedImages::GenerateForTopicJob.perform_now(@topic.id, force: true)
+      end
+    end
+
+    assert_equal @topic, captured[:imageable]
+    assert_equal @briefing, captured[:source]
+    assert_predicate captured[:eligibility], :eligible?
+    assert_predicate captured[:generated_image], :admin_override
+  end
+
   test "generates when eligible and stale" do
     eligibility_obj = Object.new
     eligibility_obj.define_singleton_method(:call) { Struct.new(:eligible?, :reason).new(true, nil) }

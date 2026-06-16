@@ -4,7 +4,7 @@ module GeneratedImages
     PROCESSING_TIMEOUT = 30.minutes
 
     def perform(topic_id, custom_prompt: nil, force: false)
-      return unless GeneratedImages::Config.enabled?
+      return unless GeneratedImages::Config.enabled? || force
 
       topic = Topic.find(topic_id)
       payload = nil

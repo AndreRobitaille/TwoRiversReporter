@@ -74,7 +74,7 @@ class Admin::JobRunsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "create enqueues topic image job" do
-    assert_enqueued_with(job: GeneratedImages::GenerateForTopicJob, args: [ @topic.id ]) do
+    assert_enqueued_with(job: GeneratedImages::GenerateForTopicJob, args: [ @topic.id, { force: true } ]) do
       post admin_job_runs_url, params: {
         job_type: "generate_topic_image",
         topic_ids: [ @topic.id ]

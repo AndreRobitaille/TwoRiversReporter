@@ -74,6 +74,8 @@ class Admin::JobRunsController < Admin::BaseController
           latest_meeting_id = Meeting.where(id: topic.agenda_items.select(:meeting_id)).order(starts_at: :desc).pick(:id)
           config[:job].perform_later(topic_id: topic.id, meeting_id: latest_meeting_id) if latest_meeting_id
         end
+      elsif config[:job] == GeneratedImages::GenerateForTopicJob
+        targets.each { |topic| config[:job].perform_later(topic.id, force: true) }
       else
         targets.each { |topic| config[:job].perform_later(topic.id) }
       end
