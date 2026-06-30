@@ -7,12 +7,12 @@ class SummarizeMeetingJob < ApplicationJob
     [ "packet_pdf", "packet_analysis" ]
   ].freeze
 
-  def perform(meeting_id, mode: :full)
+  def perform(meeting_id, mode: :full, enqueue_followups: true)
     meeting = Meeting.find(meeting_id)
 
     case mode
     when :full
-      run_full_mode(meeting)
+      run_full_mode(meeting, enqueue_followups: enqueue_followups)
     when :agenda_preview
       run_agenda_preview_mode(meeting)
     else
@@ -22,7 +22,7 @@ class SummarizeMeetingJob < ApplicationJob
 
   private
 
-  def run_full_mode(meeting)
+  def run_full_mode(meeting, enqueue_followups: true)
     ai_service = ::Ai::OpenAiService.new
     retrieval_service = RetrievalService.new
 
@@ -35,10 +35,10 @@ class SummarizeMeetingJob < ApplicationJob
     # 3. Prune hollow topic appearances based on the new summary's
     #    activity_level signal. Runs before knowledge extraction so
     #    downstream jobs see the cleaned-up appearance set.
-    PruneHollowAppearancesJob.perform_later(meeting.id)
+    PruneHollowAppearancesJob.perform_later(meeting.id) if enqueue_followups
 
     # 4. Knowledge Extraction (downstream, never blocks summarization)
-    ExtractKnowledgeJob.perform_later(meeting.id)
+    ExtractKnowledgeJob.perform_later(meeting.id) if enqueue_followups
   end
 
   def run_agenda_preview_mode(meeting)

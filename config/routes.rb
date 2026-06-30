@@ -116,6 +116,10 @@ Rails.application.routes.draw do
       end
     end
 
+    resource :transcript_imports, only: %i[show create], controller: "admin/transcript_imports", as: :admin_transcript_imports do
+      post :check_url
+    end
+
     get "search", to: "admin/searches#index", as: :admin_search
   end
 

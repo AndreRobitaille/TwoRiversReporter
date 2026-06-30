@@ -1,0 +1,142 @@
+<div class="admin-two-column transcript-imports-page">
+  <section class="admin-two-column__main">
+    <div class="page-header">
+      <h1 class="page-title">Transcript Imports</h1>
+      <p class="page-subtitle">Import YouTube captions for a meeting, generate or refresh its summary, and reanalyze related topics in one background workflow.</p>
+    </div>
+
+    <% if flash.any? %>
+      <div class="flash-messages">
+        <% flash.each do |type, message| %>
+          <% flash_class = case type.to_s
+          when "notice" then "flash--success"
+          when "alert" then "flash--danger"
+          else "flash--danger"
+          end %>
+          <div class="flash <%= flash_class %>"><%= message %></div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <div class="card">
+      <%= form_with url: admin_transcript_imports_path, method: :post, scope: :transcript_import, local: true, html: { class: "transcript-imports-form" } do |form| %>
+        <div class="inline-controls">
+          <div class="transcript-imports-form__control">
+            <%= label_tag :meeting_filter, "Filter meetings", class: "form-label" %>
+            <%= text_field_tag :meeting_filter, nil, placeholder: "Search meetings", class: "form-input", data: { transcript_import_filter: true } %>
+          </div>
+
+          <div class="transcript-imports-form__control">
+            <%= label_tag "transcript_import_meeting_id", "Meeting", class: "form-label" %>
+            <select name="transcript_import[meeting_id]" id="transcript_import_meeting_id" class="form-input" data-transcript-import-select="true">
+              <option value="">Choose a meeting</option>
+              <% @meetings.each do |meeting| %>
+                <option value="<%= meeting.id %>" data-filter-text="<%= meeting_filter_text(meeting) %>" <%= "selected" if meeting.id.to_s == @selected_meeting_id.to_s %>><%= meeting_option_label(meeting) %></option>
+              <% end %>
+            </select>
+          </div>
+        </div>
+
+        <div class="transcript-imports-form__control">
+          <%= form.label :youtube_url, "YouTube watch URL", class: "form-label" %>
+          <%= form.url_field :youtube_url, value: @selected_youtube_url, placeholder: "https://www.youtube.com/watch?v=...", class: "form-input" %>
+        </div>
+
+        <div class="transcript-imports-form__actions">
+          <%= button_tag "Check URL", type: "submit", class: "btn btn--secondary", formaction: check_url_admin_transcript_imports_path, formmethod: :post %>
+          <%= form.submit "Begin Import", class: "btn btn--primary" %>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="card mt-4">
+      <h2>Recent workflows</h2>
+      <% if @transcript_imports.any? %>
+        <div class="table-wrapper transcript-imports-table-wrap">
+          <table class="transcript-imports-table">
+            <thead>
+              <tr>
+                <th>Meeting</th>
+                <th>Status</th>
+                <th>Started</th>
+                <th>Last log</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @transcript_imports.each do |transcript_import| %>
+                <tr>
+                  <td><%= transcript_import.meeting.body_name.presence || transcript_import.meeting.id %></td>
+                  <td>
+                    <% status_class = case transcript_import.status
+                    when "queued" then "status-pill--queued"
+                    when "running" then "status-pill--running"
+                    when "completed" then "status-pill--completed"
+                    when "failed" then "status-pill--failed"
+                    else "status-pill--queued"
+                    end %>
+                    <span class="status-pill <%= status_class %>"><%= transcript_import.status %></span>
+                  </td>
+                  <td><%= transcript_import.started_at ? time_ago_in_words(transcript_import.started_at) + " ago" : "—" %></td>
+                  <td class="transcript-imports-table__log"><%= transcript_import.step_logs.to_a.last&.dig("message") || "—" %></td>
+                  <td>
+                    <% if transcript_import.step_logs.present? || transcript_import.error_message.present? %>
+                      <details>
+                        <summary>View logs</summary>
+                        <% if transcript_import.error_message.present? %>
+                          <p><strong><%= transcript_import.error_class %></strong>: <%= transcript_import.error_message %></p>
+                        <% end %>
+                        <ol class="transcript-imports-step-logs">
+                          <% transcript_import.step_logs.each do |entry| %>
+                            <li>
+                              <strong><%= entry["step"] %></strong>
+                              <span><%= entry["message"] %></span>
+                            </li>
+                          <% end %>
+                        </ol>
+                      </details>
+                    <% else %>
+                      —
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% else %>
+        <p>No transcript imports yet.</p>
+      <% end %>
+    </div>
+  </section>
+
+  <aside class="admin-two-column__aside admin-sidebar">
+    <div class="card">
+      <h2>What this job does</h2>
+      <ol>
+        <li>Verifies the YouTube URL and captions availability.</li>
+        <li>Downloads and stores the transcript.</li>
+        <li>Regenerates the meeting summary.</li>
+        <li>Reanalyzes related topics.</li>
+      </ol>
+      <p class="mt-2">The workflow logs each step and captures failure details so failed imports can be diagnosed from this page.</p>
+    </div>
+  </aside>
+</div>
+
+<script>
+  (() => {
+    const input = document.querySelector("[data-transcript-import-filter]");
+    const select = document.querySelector("[data-transcript-import-select]");
+    if (!input || !select) return;
+
+    const options = Array.from(select.options).map((option) => ({ option, text: option.textContent.toLowerCase() }));
+    input.addEventListener("input", () => {
+      const query = input.value.trim().toLowerCase();
+      options.forEach(({ option, text }) => {
+        const filterText = (option.dataset.filterText || text).toLowerCase();
+        option.hidden = query && !filterText.includes(query);
+      });
+    });
+  })();
+</script>

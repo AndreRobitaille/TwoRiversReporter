@@ -1849,6 +1849,139 @@ tbody tr:hover {
   background: var(--color-primary-light);
 }
 
+/* ============================================
+   Admin Transcript Imports
+   ============================================ */
+
+.admin-two-column {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 20rem;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.admin-two-column__main,
+.admin-two-column__aside {
+  min-width: 0;
+}
+
+.admin-sidebar {
+  position: sticky;
+  top: 1rem;
+}
+
+.transcript-imports-form {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.transcript-imports-form__control {
+  min-width: 0;
+}
+
+.inline-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.transcript-imports-form .form-input {
+  width: 100%;
+}
+
+.transcript-imports-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.transcript-imports-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 42rem;
+}
+
+.transcript-imports-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.transcript-imports-table tbody td {
+  vertical-align: top;
+}
+
+.transcript-imports-table td {
+  padding: var(--space-3) var(--space-4);
+}
+
+.transcript-imports-table td:nth-child(2),
+.transcript-imports-table td:nth-child(3),
+.transcript-imports-table td:nth-child(4) {
+  font-family: var(--font-data);
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.transcript-imports-table__log {
+  max-width: 24rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.status-pill--queued,
+.status-pill--running {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border-color: color-mix(in srgb, var(--color-primary) 18%, var(--color-primary-light));
+}
+
+.status-pill--completed {
+  background: var(--color-success-light);
+  color: var(--color-success);
+  border-color: color-mix(in srgb, var(--color-success) 18%, var(--color-success-light));
+}
+
+.status-pill--failed {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+  border-color: color-mix(in srgb, var(--color-danger) 18%, var(--color-danger-light));
+}
+
+.admin-sidebar .card {
+  height: 100%;
+}
+
+.admin-sidebar ol {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--color-text-secondary);
+}
+
+.admin-sidebar li + li {
+  margin-top: var(--space-2);
+}
+
+.admin-sidebar h2 {
+  margin-bottom: var(--space-3);
+}
+
 /* --- Admin Topics: Filter Bar --- */
 
 .admin-topics-filters {
@@ -1975,6 +2108,18 @@ tbody tr:hover {
   }
   .admin-topics-filters .form-input:first-child {
     grid-column: 1 / -1;
+  }
+
+  .admin-two-column {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-sidebar {
+    position: static;
+  }
+
+  .inline-controls {
+    grid-template-columns: 1fr;
   }
 }
 
