@@ -1886,6 +1886,13 @@ tbody tr:hover {
   align-items: end;
 }
 
+.transcript-imports-form__meeting-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+
 .transcript-imports-form .form-input {
   width: 100%;
 }
@@ -2119,6 +2126,10 @@ tbody tr:hover {
   }
 
   .inline-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .transcript-imports-form__meeting-grid {
     grid-template-columns: 1fr;
   }
 }

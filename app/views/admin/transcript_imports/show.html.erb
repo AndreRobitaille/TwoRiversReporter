@@ -20,7 +20,7 @@
 
     <div class="card">
       <%= form_with url: admin_transcript_imports_path, method: :post, scope: :transcript_import, local: true, html: { class: "transcript-imports-form" } do |form| %>
-        <div class="inline-controls">
+        <div class="transcript-imports-form__meeting-grid">
           <div class="transcript-imports-form__control">
             <%= label_tag :meeting_filter, "Filter meetings", class: "form-label" %>
             <%= text_field_tag :meeting_filter, nil, placeholder: "Search meetings", class: "form-input", data: { transcript_import_filter: true } %>
