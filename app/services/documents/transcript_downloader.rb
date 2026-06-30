@@ -7,6 +7,7 @@ module Documents
     YOUTUBE_URL_PATTERN = %r{\Ahttps://www\.youtube\.com/watch\?v=[A-Za-z0-9_-]+\z}
     YT_DLP_TIMEOUT = 30.seconds
     YT_DLP_BASE_ARGS = [ "yt-dlp", "--no-update", "--js-runtimes", "node" ].freeze
+    YOUTUBE_COOKIES_PATH = "/rails/storage/youtube.cookies.txt"
 
     InvalidUrlError = Class.new(StandardError)
     DownloadError = Class.new(StandardError)
@@ -32,7 +33,7 @@ module Documents
         return PrecheckResult.new(status: :invalid_url, message: "URL must be a youtube.com watch URL", details: nil)
       end
 
-      stdout, stderr, status = run_yt_dlp(*YT_DLP_BASE_ARGS, "--dump-single-json", "--skip-download", video_url)
+      stdout, stderr, status = run_yt_dlp(*yt_dlp_args, "--dump-single-json", "--skip-download", video_url)
       unless status.success?
         details = stderr.to_s.strip.presence || stdout.to_s.strip.presence
         return PrecheckResult.new(
@@ -67,6 +68,12 @@ module Documents
       raise DownloadError, "yt-dlp timed out after #{YT_DLP_TIMEOUT} while verifying captions: #{e.message}"
     rescue Errno::ENOENT, Errno::EACCES, IOError, SystemCallError => e
       raise DownloadError, "yt-dlp could not be executed: #{e.message}"
+    end
+
+    def self.yt_dlp_args
+      return YT_DLP_BASE_ARGS unless File.exist?(YOUTUBE_COOKIES_PATH)
+
+      YT_DLP_BASE_ARGS + [ "--cookies", YOUTUBE_COOKIES_PATH ]
     end
 
     def initialize(meeting:, video_url:)
@@ -128,7 +135,7 @@ module Documents
 
     def download_captions_for(tmpdir, caption_flag)
       stdout, stderr, status = self.class.run_yt_dlp(
-        *YT_DLP_BASE_ARGS,
+        *self.class.yt_dlp_args,
         caption_flag,
         "--sub-lang", "en",
         "--sub-format", "srt",

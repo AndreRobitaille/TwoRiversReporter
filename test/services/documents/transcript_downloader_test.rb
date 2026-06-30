@@ -48,6 +48,35 @@ module Documents
       assert_equal "manual_caption", doc.text_quality
     end
 
+    test "uses persistent YouTube cookies file when present" do
+      capture_args = nil
+      stub_tmpdir_with_srt(SAMPLE_SRT) do
+        File.stub :exist?, ->(path) { path == TranscriptDownloader::YOUTUBE_COOKIES_PATH } do
+          Open3.stub :capture3, ->(*args) { capture_args = args; [ "", "", OpenStruct.new(success?: true) ] } do
+            result = TranscriptDownloader.new(meeting: @meeting, video_url: @video_url).download_and_store
+            assert_predicate result, :created?
+          end
+        end
+      end
+
+      assert_includes capture_args, "--cookies"
+      assert_includes capture_args, TranscriptDownloader::YOUTUBE_COOKIES_PATH
+    end
+
+    test "omits YouTube cookies option when persistent cookies file is absent" do
+      capture_args = nil
+      stub_tmpdir_with_srt(SAMPLE_SRT) do
+        File.stub :exist?, ->(path) { path == TranscriptDownloader::YOUTUBE_COOKIES_PATH ? false : File.exist?(path) } do
+          Open3.stub :capture3, ->(*args) { capture_args = args; [ "", "", OpenStruct.new(success?: true) ] } do
+            result = TranscriptDownloader.new(meeting: @meeting, video_url: @video_url).download_and_store
+            assert_predicate result, :created?
+          end
+        end
+      end
+
+      assert_not_includes capture_args, "--cookies"
+    end
+
     test "falls back to auto captions and marks transcript auto_transcribed" do
       Dir.mktmpdir("test-transcript") do |tmpdir|
         original = Dir.method(:mktmpdir)
