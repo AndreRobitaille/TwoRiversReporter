@@ -44,7 +44,7 @@ class Scrapers::DiscoverTranscriptsJobTest < ActiveJob::TestCase
 
     assert_includes capture_args, "--no-update"
     assert_includes capture_args, "--js-runtimes"
-    assert_includes capture_args, "node"
+    assert_includes capture_args, "deno"
   end
 
   test "parses work session title and enqueues download" do

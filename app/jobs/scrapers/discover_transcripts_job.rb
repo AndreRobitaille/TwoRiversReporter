@@ -44,7 +44,7 @@ module Scrapers
 
     def fetch_video_list
       stdout, stderr, status = Open3.capture3(
-        "yt-dlp", "--no-update", "--js-runtimes", "node", "--flat-playlist", "--print", "%(id)s | %(title)s",
+        "yt-dlp", "--no-update", "--js-runtimes", "deno", "--flat-playlist", "--print", "%(id)s | %(title)s",
         YOUTUBE_CHANNEL_URL
       )
 

@@ -43,7 +43,7 @@ module Documents
       assert_includes doc.extracted_text, "Welcome to the city council meeting."
       assert_includes capture_args, "--no-update"
       assert_includes capture_args, "--js-runtimes"
-      assert_includes capture_args, "node"
+      assert_includes capture_args, "deno"
       assert_includes capture_args, "--write-sub"
       assert_equal "manual_caption", doc.text_quality
     end
@@ -100,7 +100,7 @@ module Documents
           doc = @meeting.meeting_documents.find_by!(document_type: "transcript")
           assert_equal "auto_transcribed", doc.text_quality
           assert attempts.all? { |args| args.include?("--no-update") }
-          assert attempts.all? { |args| args.include?("--js-runtimes") && args.include?("node") }
+          assert attempts.all? { |args| args.include?("--js-runtimes") && args.include?("deno") }
           assert attempts.any? { |args| args.include?("--write-sub") }
           assert attempts.any? { |args| args.include?("--write-auto-sub") }
         ensure

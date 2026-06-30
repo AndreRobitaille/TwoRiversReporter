@@ -6,7 +6,7 @@ module Documents
   class TranscriptDownloader
     YOUTUBE_URL_PATTERN = %r{\Ahttps://www\.youtube\.com/watch\?v=[A-Za-z0-9_-]+\z}
     YT_DLP_TIMEOUT = 30.seconds
-    YT_DLP_BASE_ARGS = [ "yt-dlp", "--no-update", "--js-runtimes", "node" ].freeze
+    YT_DLP_BASE_ARGS = [ "yt-dlp", "--no-update", "--js-runtimes", "deno" ].freeze
     YOUTUBE_COOKIES_PATH = "/rails/storage/youtube.cookies.txt"
 
     InvalidUrlError = Class.new(StandardError)
