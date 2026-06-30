@@ -8,10 +8,32 @@ class GeneratedImages::GenerateForMeetingJobTest < ActiveJob::TestCase
   end
 
   test "returns when disabled" do
-    GeneratedImages::Config.stub :enabled?, false do
-      GeneratedImages::GenerateForMeetingJob.perform_now(@meeting.id)
-      assert true
+    logged = []
+    logger = Object.new
+    logger.define_singleton_method(:info) { |message| logged << message }
+
+    Rails.stub :logger, logger do
+      GeneratedImages::Config.stub :enabled?, false do
+        GeneratedImages::GenerateForMeetingJob.perform_now(@meeting.id)
+      end
     end
+
+    assert_match(/GenerateForMeetingJob skipped: config disabled/i, logged.first)
+  end
+
+  test "logs ineligible meeting skip reason" do
+    @meeting.meeting_summaries.delete_all
+    logged = []
+    logger = Object.new
+    logger.define_singleton_method(:info) { |message| logged << message }
+
+    Rails.stub :logger, logger do
+      GeneratedImages::Config.stub :enabled?, true do
+        GeneratedImages::GenerateForMeetingJob.perform_now(@meeting.id)
+      end
+    end
+
+    assert_match(/missing summary/i, logged.first)
   end
 
   test "generates when eligible and fingerprint is stale" do

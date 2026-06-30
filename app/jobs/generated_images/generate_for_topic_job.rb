@@ -4,26 +4,26 @@ module GeneratedImages
     PROCESSING_TIMEOUT = 30.minutes
 
     def perform(topic_id, custom_prompt: nil, force: false)
-      return unless GeneratedImages::Config.enabled? || force
+      return log_skip("config disabled") unless GeneratedImages::Config.enabled? || force
 
       topic = Topic.find(topic_id)
       payload = nil
 
       topic.with_lock do
         briefing = topic.reload.topic_briefing
-        return unless briefing
+        return log_skip("missing briefing", topic_id) unless briefing
 
         eligibility = topic_eligibility_for(topic, force: force, custom_prompt: custom_prompt)
-        return unless eligibility.eligible?
+        return log_skip("ineligible: #{eligibility.reason}", topic_id) unless eligibility.eligible?
 
         fingerprint = GeneratedImages::ContentFingerprint.for_topic_briefing(briefing)
         retrying_after = nil
 
         if custom_prompt.blank? && !force
-          return if topic.generated_images.where(source_content_fingerprint: fingerprint, status: "ready").exists?
+          return log_skip("ready duplicate", topic_id) if topic.generated_images.where(source_content_fingerprint: fingerprint, status: "ready").exists?
 
           if topic.generated_images.where(source_content_fingerprint: fingerprint, status: "processing").where("updated_at >= ?", PROCESSING_TIMEOUT.ago).exists?
-            return
+            return log_skip("fresh processing lock", topic_id)
           end
 
           topic.generated_images.where(source_content_fingerprint: fingerprint, status: "processing").where("updated_at < ?", PROCESSING_TIMEOUT.ago).find_each do |existing|
@@ -36,13 +36,13 @@ module GeneratedImages
             retrying_after = nil
           when 1
             retrying_after = failed_images.first
-            return unless retrying_after.retry_available?
+            return log_skip("retry exhausted", topic_id) unless retrying_after.retry_available?
           else
-            return
+            return log_skip("retry exhausted", topic_id)
           end
         end
 
-        return if topic.generated_images.where(source_content_fingerprint: fingerprint, status: "processing").where("updated_at >= ?", PROCESSING_TIMEOUT.ago).exists?
+        return log_skip("fresh processing lock", topic_id) if topic.generated_images.where(source_content_fingerprint: fingerprint, status: "processing").where("updated_at >= ?", PROCESSING_TIMEOUT.ago).exists?
 
         payload = {
           briefing: briefing,
@@ -95,6 +95,11 @@ module GeneratedImages
 
     def retryable_failure?(result)
       result.respond_to?(:failed?) && result.failed? && result.respond_to?(:retry_available?) && result.retry_available? && result.respond_to?(:retry_count) && result.retry_count == 1
+    end
+
+    def log_skip(reason, topic_id = nil)
+      Rails.logger.info("GeneratedImages::GenerateForTopicJob skipped#{topic_id ? " topic=#{topic_id}" : ""}: #{reason}")
+      nil
     end
   end
 end

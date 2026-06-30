@@ -4,26 +4,26 @@ module GeneratedImages
     PROCESSING_TIMEOUT = 30.minutes
 
     def perform(meeting_id, custom_prompt: nil, force: false)
-      return unless GeneratedImages::Config.enabled?
+      return log_skip("config disabled") unless GeneratedImages::Config.enabled?
 
       meeting = Meeting.find(meeting_id)
       payload = nil
 
       meeting.with_lock do
         summary = preferred_summary_for(meeting.reload)
-        return unless summary
+        return log_skip("missing summary", meeting_id) unless summary
 
         eligibility = meeting_eligibility_for(meeting, summary, force: force, custom_prompt: custom_prompt)
-        return unless eligibility.eligible?
+        return log_skip("ineligible: #{eligibility.reason}", meeting_id) unless eligibility.eligible?
 
         fingerprint = GeneratedImages::ContentFingerprint.for_meeting_summary(summary)
         retrying_after = nil
 
         if custom_prompt.blank? && !force
-          return if meeting.generated_images.where(source_content_fingerprint: fingerprint, status: "ready").exists?
+          return log_skip("ready duplicate", meeting_id) if meeting.generated_images.where(source_content_fingerprint: fingerprint, status: "ready").exists?
 
           if meeting.generated_images.where(source_content_fingerprint: fingerprint, status: "processing").where("updated_at >= ?", PROCESSING_TIMEOUT.ago).exists?
-            return
+            return log_skip("fresh processing lock", meeting_id)
           end
 
           meeting.generated_images.where(source_content_fingerprint: fingerprint, status: "processing").where("updated_at < ?", PROCESSING_TIMEOUT.ago).find_each do |existing|
@@ -36,13 +36,13 @@ module GeneratedImages
             retrying_after = nil
           when 1
             retrying_after = failed_images.first
-            return unless retrying_after.retry_available?
+            return log_skip("retry exhausted", meeting_id) unless retrying_after.retry_available?
           else
-            return
+            return log_skip("retry exhausted", meeting_id)
           end
         end
 
-        return if meeting.generated_images.where(source_content_fingerprint: fingerprint, status: "processing").where("updated_at >= ?", PROCESSING_TIMEOUT.ago).exists?
+        return log_skip("fresh processing lock", meeting_id) if meeting.generated_images.where(source_content_fingerprint: fingerprint, status: "processing").where("updated_at >= ?", PROCESSING_TIMEOUT.ago).exists?
 
         payload = {
           summary: summary,
@@ -110,6 +110,11 @@ module GeneratedImages
 
     def retryable_failure?(result)
       result.respond_to?(:failed?) && result.failed? && result.respond_to?(:retry_available?) && result.retry_available? && result.respond_to?(:retry_count) && result.retry_count == 1
+    end
+
+    def log_skip(reason, meeting_id = nil)
+      Rails.logger.info("GeneratedImages::GenerateForMeetingJob skipped#{meeting_id ? " meeting=#{meeting_id}" : ""}: #{reason}")
+      nil
     end
   end
 end

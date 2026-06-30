@@ -7,10 +7,32 @@ class GeneratedImages::GenerateForTopicJobTest < ActiveJob::TestCase
   end
 
   test "returns when disabled" do
-    GeneratedImages::Config.stub :enabled?, false do
-      GeneratedImages::GenerateForTopicJob.perform_now(@topic.id)
-      assert true
+    logged = []
+    logger = Object.new
+    logger.define_singleton_method(:info) { |message| logged << message }
+
+    Rails.stub :logger, logger do
+      GeneratedImages::Config.stub :enabled?, false do
+        GeneratedImages::GenerateForTopicJob.perform_now(@topic.id)
+      end
     end
+
+    assert_match(/GenerateForTopicJob skipped: config disabled/i, logged.first)
+  end
+
+  test "logs ineligible topic skip reason" do
+    @topic.update!(resident_impact_score: 3)
+    logged = []
+    logger = Object.new
+    logger.define_singleton_method(:info) { |message| logged << message }
+
+    Rails.stub :logger, logger do
+      GeneratedImages::Config.stub :enabled?, true do
+        GeneratedImages::GenerateForTopicJob.perform_now(@topic.id)
+      end
+    end
+
+    assert_match(/not in homepage top six/i, logged.first)
   end
 
   test "force generates when disabled" do

@@ -25,6 +25,7 @@ env:
     WEB_CONCURRENCY: 2
     RAILS_LOG_LEVEL: info
     GA_MEASUREMENT_ID: G-KEC1YZ61WZ
+    GENERATED_IMAGES_ENABLED: "true"
 
 aliases:
   console: app exec --interactive --reuse "bin/rails console"
