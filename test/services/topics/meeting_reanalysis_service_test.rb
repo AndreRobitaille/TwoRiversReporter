@@ -345,4 +345,22 @@ class Topics::MeetingReanalysisServiceTest < ActiveSupport::TestCase
     assert_equal [ topic.id ], continuity_topic_ids
     assert_equal [ topic.id ], briefing_topic_ids
   end
+
+  test "missing affected topic ids are skipped during briefing regeneration" do
+    meeting = Meeting.create!(body_name: "City Council Work Session", meeting_type: "work_session", starts_at: Time.zone.parse("2026-06-29 18:00:00"), status: "upcoming", detail_page_url: "http://example.com/work-session")
+    item = AgendaItem.create!(meeting: meeting, title: "WASTEWATER PLANNING", order_index: 1, kind: "item")
+    topic = Topic.create!(name: "wastewater planning", status: "approved", review_status: "approved")
+    missing_topic_id = Topic.maximum(:id).to_i + 100
+    AgendaItemTopic.create!(agenda_item: item, topic: topic)
+    meeting.update!(processing_state: { "topics_extraction_status" => "processed" })
+
+    briefing_topic_ids = []
+    service = Topics::MeetingReanalysisService.new(meeting.id)
+
+    Topics::GenerateTopicBriefingJob.stub :perform_now, ->(topic_id:, meeting_id:) { Topic.find(topic_id); briefing_topic_ids << topic_id } do
+      service.send(:regenerate_briefings, meeting, [ topic.id, missing_topic_id ])
+    end
+
+    assert_equal [ topic.id ], briefing_topic_ids
+  end
 end

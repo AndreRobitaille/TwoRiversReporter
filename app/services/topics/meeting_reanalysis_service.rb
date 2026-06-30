@@ -155,7 +155,15 @@ module Topics
     end
 
     def regenerate_briefings(meeting, topic_ids)
-      topic_ids.each { |topic_id| Topics::GenerateTopicBriefingJob.perform_now(topic_id: topic_id, meeting_id: meeting.id) }
+      existing_topic_ids = Topic.where(id: topic_ids).pluck(:id)
+      missing_topic_ids = topic_ids - existing_topic_ids
+      Rails.logger.warn("Skipping briefing regeneration for missing topic ids: #{missing_topic_ids.inspect}") if missing_topic_ids.any?
+
+      topic_ids.each do |topic_id|
+        next unless existing_topic_ids.include?(topic_id)
+
+        Topics::GenerateTopicBriefingJob.perform_now(topic_id: topic_id, meeting_id: meeting.id)
+      end
     end
 
     def homepage_selector_ids
