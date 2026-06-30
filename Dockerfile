@@ -15,10 +15,13 @@ FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
 WORKDIR /rails
 
 # Install base packages
+ARG YT_DLP_CACHE_BUST=2026-06-30
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y curl libjemalloc2 libvips postgresql-client poppler-utils tesseract-ocr && \
+    apt-get install --no-install-recommends -y curl libjemalloc2 libvips nodejs postgresql-client poppler-utils tesseract-ocr && \
     curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux -o /usr/local/bin/yt-dlp && \
     chmod +x /usr/local/bin/yt-dlp && \
+    yt-dlp --version && \
+    node --version && \
     ln -s /usr/lib/$(uname -m)-linux-gnu/libjemalloc.so.2 /usr/local/lib/libjemalloc.so && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 

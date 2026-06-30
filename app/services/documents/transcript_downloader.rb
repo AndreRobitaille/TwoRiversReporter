@@ -6,6 +6,7 @@ module Documents
   class TranscriptDownloader
     YOUTUBE_URL_PATTERN = %r{\Ahttps://www\.youtube\.com/watch\?v=[A-Za-z0-9_-]+\z}
     YT_DLP_TIMEOUT = 30.seconds
+    YT_DLP_BASE_ARGS = [ "yt-dlp", "--no-update", "--js-runtimes", "node" ].freeze
 
     InvalidUrlError = Class.new(StandardError)
     DownloadError = Class.new(StandardError)
@@ -31,7 +32,7 @@ module Documents
         return PrecheckResult.new(status: :invalid_url, message: "URL must be a youtube.com watch URL", details: nil)
       end
 
-      stdout, stderr, status = run_yt_dlp("yt-dlp", "--dump-single-json", "--skip-download", video_url)
+      stdout, stderr, status = run_yt_dlp(*YT_DLP_BASE_ARGS, "--dump-single-json", "--skip-download", video_url)
       unless status.success?
         details = stderr.to_s.strip.presence || stdout.to_s.strip.presence
         return PrecheckResult.new(
@@ -127,7 +128,7 @@ module Documents
 
     def download_captions_for(tmpdir, caption_flag)
       stdout, stderr, status = self.class.run_yt_dlp(
-        "yt-dlp",
+        *YT_DLP_BASE_ARGS,
         caption_flag,
         "--sub-lang", "en",
         "--sub-format", "srt",

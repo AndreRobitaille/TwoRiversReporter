@@ -34,12 +34,17 @@ class Scrapers::DiscoverTranscriptsJobTest < ActiveJob::TestCase
   test "parses standard council meeting title and enqueues download" do
     date_str = @council_meeting.starts_at.strftime("%B %-d, %Y")
     yt_output = "abc123 | City Council Meeting for Thursday, #{date_str}\n"
+    capture_args = nil
 
-    Open3.stub :capture3, [ yt_output, "", stub_status(true) ] do
+    Open3.stub :capture3, ->(*args) { capture_args = args; [ yt_output, "", stub_status(true) ] } do
       assert_enqueued_with(job: Documents::DownloadTranscriptJob, args: [ @council_meeting.id, "https://www.youtube.com/watch?v=abc123" ]) do
         Scrapers::DiscoverTranscriptsJob.perform_now
       end
     end
+
+    assert_includes capture_args, "--no-update"
+    assert_includes capture_args, "--js-runtimes"
+    assert_includes capture_args, "node"
   end
 
   test "parses work session title and enqueues download" do
