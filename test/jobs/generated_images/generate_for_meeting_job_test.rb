@@ -81,6 +81,31 @@ class GeneratedImages::GenerateForMeetingJobTest < ActiveJob::TestCase
     assert_equal 1, @meeting.generated_images.count
   end
 
+  test "automatic generation skips when a ready admin upload exists" do
+    @meeting.generated_images.create!(
+      status: "ready",
+      admin_override: true,
+      source_generation_tier: "admin_upload",
+      generated_at: Time.current
+    )
+
+    eligibility_obj = Object.new
+    eligibility_obj.define_singleton_method(:call) do
+      Struct.new(:eligible?, :reason, :primary_text, :composite?).new(true, nil, "street repairs", false)
+    end
+
+    GeneratedImages::MeetingEligibility.stub :new, ->(*) { eligibility_obj } do
+      GeneratedImages::Generator.stub :new, ->(*) { raise "should not generate over admin upload" } do
+        GeneratedImages::Config.stub :enabled?, true do
+          GeneratedImages::GenerateForMeetingJob.perform_now(@meeting.id)
+        end
+      end
+    end
+
+    assert_equal 1, @meeting.generated_images.count
+    assert_equal 1, @meeting.generated_images.ready.where(admin_override: true, source_generation_tier: "admin_upload").count
+  end
+
   test "skips when matching processing image already exists" do
     @meeting.generated_images.create!(status: "processing", source_content_fingerprint: GeneratedImages::ContentFingerprint.for_meeting_summary(@minutes))
 
@@ -274,6 +299,32 @@ class GeneratedImages::GenerateForMeetingJobTest < ActiveJob::TestCase
 
     assert_predicate captured, :admin_override
     assert_nil captured.custom_prompt
+  end
+
+  test "force still generates when a ready admin upload exists" do
+    @meeting.generated_images.create!(
+      status: "ready",
+      admin_override: true,
+      source_generation_tier: "admin_upload",
+      generated_at: Time.current
+    )
+    eligibility_obj = Object.new
+    eligibility_obj.define_singleton_method(:call) { Struct.new(:eligible?, :reason, :primary_text, :composite?).new(true, nil, "street repairs", false) }
+    captured = nil
+
+    GeneratedImages::MeetingEligibility.stub :new, ->(*) { eligibility_obj } do
+      GeneratedImages::Generator.stub :new, ->(imageable, source:, eligibility:, custom_prompt: nil, generated_image: nil, retrying_after: nil) do
+        captured = generated_image
+        Object.new.tap { |o| o.define_singleton_method(:call) { true } }
+      end do
+        GeneratedImages::Config.stub :enabled?, true do
+          GeneratedImages::GenerateForMeetingJob.perform_now(@meeting.id, force: true)
+        end
+      end
+    end
+
+    assert_predicate captured, :admin_override
+    assert_equal 2, @meeting.generated_images.count
   end
 
   test "force bypasses meeting eligibility checks" do

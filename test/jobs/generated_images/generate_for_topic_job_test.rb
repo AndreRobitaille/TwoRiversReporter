@@ -94,6 +94,30 @@ class GeneratedImages::GenerateForTopicJobTest < ActiveJob::TestCase
     assert_equal 1, @topic.generated_images.count
   end
 
+  test "automatic generation skips when a ready admin upload exists" do
+    @topic.generated_images.create!(
+      status: "ready",
+      purpose: "feature_and_og",
+      admin_override: true,
+      source_generation_tier: "admin_upload",
+      generated_at: Time.current
+    )
+
+    eligibility_obj = Object.new
+    eligibility_obj.define_singleton_method(:call) { Struct.new(:eligible?, :reason).new(true, nil) }
+
+    GeneratedImages::TopicEligibility.stub :new, ->(*) { eligibility_obj } do
+      GeneratedImages::Generator.stub :new, ->(*) { raise "should not generate over admin upload" } do
+        GeneratedImages::Config.stub :enabled?, true do
+          GeneratedImages::GenerateForTopicJob.perform_now(@topic.id)
+        end
+      end
+    end
+
+    assert_equal 1, @topic.generated_images.count
+    assert_equal 1, @topic.generated_images.ready.where(admin_override: true, source_generation_tier: "admin_upload").count
+  end
+
   test "skips when matching processing image already exists" do
     @topic.generated_images.create!(status: "processing", purpose: "feature_and_og", source_content_fingerprint: GeneratedImages::ContentFingerprint.for_topic_briefing(@briefing))
 
@@ -285,6 +309,33 @@ class GeneratedImages::GenerateForTopicJobTest < ActiveJob::TestCase
 
     assert_predicate captured, :admin_override
     assert_nil captured.custom_prompt
+  end
+
+  test "force still generates when a ready admin upload exists" do
+    @topic.generated_images.create!(
+      status: "ready",
+      purpose: "feature_and_og",
+      admin_override: true,
+      source_generation_tier: "admin_upload",
+      generated_at: Time.current
+    )
+    eligibility_obj = Object.new
+    eligibility_obj.define_singleton_method(:call) { Struct.new(:eligible?, :reason).new(true, nil) }
+    captured = nil
+
+    GeneratedImages::TopicEligibility.stub :new, ->(*) { eligibility_obj } do
+      GeneratedImages::Generator.stub :new, ->(imageable, source:, eligibility:, custom_prompt: nil, generated_image: nil, retrying_after: nil) do
+        captured = generated_image
+        Object.new.tap { |o| o.define_singleton_method(:call) { true } }
+      end do
+        GeneratedImages::Config.stub :enabled?, true do
+          GeneratedImages::GenerateForTopicJob.perform_now(@topic.id, force: true)
+        end
+      end
+    end
+
+    assert_predicate captured, :admin_override
+    assert_equal 2, @topic.generated_images.count
   end
 
   test "force bypasses topic eligibility checks" do

@@ -20,6 +20,7 @@ module GeneratedImages
         retrying_after = nil
 
         if custom_prompt.blank? && !force
+          return log_skip("ready admin override", meeting_id) if meeting.generated_images.ready.where(admin_override: true).exists?
           return log_skip("ready duplicate", meeting_id) if meeting.generated_images.where(source_content_fingerprint: fingerprint, status: "ready").exists?
 
           if meeting.generated_images.where(source_content_fingerprint: fingerprint, status: "processing").where("updated_at >= ?", PROCESSING_TIMEOUT.ago).exists?

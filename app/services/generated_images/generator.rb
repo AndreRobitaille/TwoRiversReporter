@@ -38,17 +38,21 @@ module GeneratedImages
 
       @imageable.generated_images.transaction do
         @imageable.lock!
-        image.file.attach(io: StringIO.new(result[:bytes]), filename: filename_for(result[:format]), content_type: content_type_for(result[:format]))
-        supersede_previous_ready_images(except: image)
-        image.update!(
-          status: "ready",
-          generated_at: Time.current,
-          model: result[:model],
-          output_format: result[:format],
-          requested_size: result[:size],
-          failure_reason: nil,
-          retry_count: image.retry_count
-        )
+        if automatic_generation?(image) && ready_admin_override_exists?(except: image)
+          image.update!(status: "superseded", failure_reason: "Admin override exists")
+        else
+          image.file.attach(io: StringIO.new(result[:bytes]), filename: filename_for(result[:format]), content_type: content_type_for(result[:format]))
+          supersede_previous_ready_images(except: image)
+          image.update!(
+            status: "ready",
+            generated_at: Time.current,
+            model: result[:model],
+            output_format: result[:format],
+            requested_size: result[:size],
+            failure_reason: nil,
+            retry_count: image.retry_count
+          )
+        end
       end
       image
     rescue Faraday::Error, Net::OpenTimeout, Net::ReadTimeout => e
@@ -122,6 +126,14 @@ module GeneratedImages
       @imageable.generated_images.ready.where.not(id: except.id).find_each do |existing|
         existing.update!(status: "superseded")
       end
+    end
+
+    def automatic_generation?(image)
+      !image.admin_override?
+    end
+
+    def ready_admin_override_exists?(except:)
+      @imageable.generated_images.ready.where(admin_override: true).where.not(id: except.id).exists?
     end
 
     def filename_for(format)

@@ -82,6 +82,25 @@ class GeneratedImages::GeneratorTest < ActiveSupport::TestCase
     ai_service.verify
   end
 
+  test "automatic reservation does not supersede newer ready admin override" do
+    topic = Topic.create!(name: "Uploaded Override Topic", status: "approved")
+    briefing = TopicBriefing.create!(topic: topic, headline: "Headline", upcoming_headline: "Next up", editorial_content: "Editorial", record_content: "Record", generation_tier: "full")
+    reservation = GeneratedImage.create!(imageable: topic, status: "processing", purpose: "feature_and_og", admin_override: false, source_briefing: briefing, source_generation_tier: "full", source_content_fingerprint: "auto", generated_at: nil)
+    uploaded = GeneratedImage.create!(imageable: topic, status: "ready", purpose: "feature_and_og", admin_override: true, source_generation_tier: "admin_upload", generated_at: Time.current)
+
+    ai_service = Minitest::Mock.new
+    ai_service.expect(:build_generated_image_brief, { "civic_issue" => "Topic issue", "composition" => "A topic scene", "avoid" => [] }) { true }
+    ai_service.expect(:generate_civic_image, { bytes: "new-bytes", revised_prompt: nil, model: "gpt-image-1", size: "1536x1024", format: "jpeg" }) { true }
+
+    result = GeneratedImages::Generator.new(topic, source: briefing, generated_image: reservation, ai_service: ai_service).call
+
+    assert_equal reservation, result
+    assert_equal "superseded", reservation.reload.status
+    assert_not reservation.file.attached?
+    assert_equal "ready", uploaded.reload.status
+    ai_service.verify
+  end
+
   test "records custom prompt and admin override" do
     topic = Topic.create!(name: "Prompt Topic", status: "approved")
     briefing = TopicBriefing.create!(topic: topic, headline: "Headline", upcoming_headline: "Next", editorial_content: "Editorial", record_content: "Record", generation_tier: "full")
