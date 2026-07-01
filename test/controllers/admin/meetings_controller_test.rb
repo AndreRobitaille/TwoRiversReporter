@@ -23,6 +23,48 @@ module Admin
       assert_redirected_to new_session_path
     end
 
+    test "index requires admin authentication" do
+      get admin_meetings_url
+
+      assert_redirected_to new_session_path
+    end
+
+    test "admin can list meetings and reach image management" do
+      Meeting.create!(
+        body_name: "Undated Meeting",
+        meeting_type: "Regular",
+        status: "scheduled",
+        detail_page_url: "https://example.com/meetings/undated"
+      )
+      @meeting.generated_images.create!(
+        status: "ready",
+        purpose: GeneratedImages::Generator::DEFAULT_PURPOSE,
+        generated_at: Time.current,
+        source_generation_tier: "test"
+      )
+      sign_in_as_admin
+
+      get admin_meetings_url
+
+      assert_response :success
+      assert_select "h1", text: "Meetings"
+      assert_select "tbody tr:first-child" do
+        assert_select "td", text: "Plan Commission"
+        assert_select "td", text: "Plan Commission"
+      end
+      assert_select ".badge", text: "ready"
+      assert_select "a[href=?]", admin_meeting_path(@meeting), text: "Manage image"
+    end
+
+    test "admin dashboard links to meetings" do
+      sign_in_as_admin
+
+      get admin_root_url
+
+      assert_response :success
+      assert_select ".card ul a[href=?]", admin_meetings_path, text: "Meetings"
+    end
+
     test "admin can view meeting image management page" do
       sign_in_as_admin
 

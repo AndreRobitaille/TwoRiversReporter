@@ -1,0 +1,54 @@
+<% content_for(:title) { "Meetings - Admin" } %>
+
+<div class="page-header">
+  <h1 class="page-title">Meetings</h1>
+  <p class="page-subtitle">Find a meeting and manage its generated image.</p>
+</div>
+
+<div class="card mb-6">
+  <div class="card-header">
+    <h2 class="card-title">Recent meetings</h2>
+    <p class="card-subtitle">Open a meeting workspace to regenerate, disable, or upload a replacement image.</p>
+  </div>
+
+  <% if @meetings.present? %>
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Meeting</th>
+            <th>Committee</th>
+            <th>Starts</th>
+            <th>Status</th>
+            <th>Image</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @meetings.each do |meeting| %>
+            <% meeting_name = clean_meeting_display(meeting.body_name).presence || "Meeting" %>
+            <% latest_image = @latest_generated_images_by_meeting_id[meeting.id] %>
+            <% image_status = latest_image&.status || "missing" %>
+            <% badge_class = case image_status
+              when "ready" then "badge--success"
+              when "processing" then "badge--warning"
+              when "failed" then "badge--danger"
+              when "disabled" then "badge--default"
+              else "badge--default"
+            end %>
+            <tr>
+              <td><%= meeting_name %></td>
+              <td><%= meeting.committee&.name.presence || "—" %></td>
+              <td><%= meeting.starts_at ? l(meeting.starts_at, format: :short) : "—" %></td>
+              <td><%= meeting.status.presence || "—" %></td>
+              <td><span class="badge <%= badge_class %>"><%= image_status %></span></td>
+              <td><%= link_to "Manage image", admin_meeting_path(meeting), class: "btn btn--secondary btn--sm" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="text-secondary">No meetings found.</p>
+  <% end %>
+</div>

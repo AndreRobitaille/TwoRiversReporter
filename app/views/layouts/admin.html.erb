@@ -50,6 +50,7 @@
           <nav class="site-nav">
             <%= link_to "Dashboard", admin_root_path, class: ("active" if controller_name == "dashboard") %>
             <%= link_to "Topics", admin_topics_path, class: ("active" if controller_name == "topics") %>
+            <%= link_to "Meetings", admin_meetings_path, class: ("active" if controller_name == "meetings") %>
             <%= link_to "Committees", admin_committees_path, class: ("active" if controller_name == "committees") %>
             <%= link_to "Members", admin_members_path, class: ("active" if controller_name == "members") %>
             <%= link_to "Knowledge Sources", admin_knowledge_sources_path, class: ("active" if controller_name == "knowledge_sources") %>
@@ -77,6 +78,7 @@
           <div class="footer-links">
             <%= link_to "Dashboard", admin_root_path %>
             <%= link_to "Topics", admin_topics_path %>
+            <%= link_to "Meetings", admin_meetings_path %>
             <%= link_to "Committees", admin_committees_path %>
             <%= link_to "Members", admin_members_path %>
             <%= link_to "Public Site", root_path %>
