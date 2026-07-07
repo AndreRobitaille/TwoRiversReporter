@@ -82,21 +82,24 @@ class Admin::TranscriptImportsControllerTest < ActionDispatch::IntegrationTest
 
     assert_enqueued_jobs 1 do
       post admin_transcript_imports_path, params: { transcript_import: { meeting_id: @meeting.id, youtube_url: youtube_url } }
+      assert_equal Admin::TranscriptImportWorkflowJob, enqueued_jobs.last[:job]
     end
 
+    transcript_import = TranscriptImport.last
     assert_redirected_to admin_transcript_imports_path
     assert_match(/Transcript import workflow queued/i, flash[:notice])
     assert_equal 1, TranscriptImport.count
-    assert_equal "queued", TranscriptImport.last.status
+    assert_equal transcript_import.id, enqueued_jobs.last[:args].first
+    assert_equal "queued", transcript_import.status
   end
 
   test "create attaches uploaded srt and enqueues workflow" do
     sign_in_as_admin
 
     upload = uploaded_file(sample_srt, filename: "manual-transcript.srt", content_type: "text/srt")
-    enqueued = false
+    enqueued_ids = []
 
-    Admin::TranscriptImportWorkflowJob.stub(:perform_later, ->(id) { enqueued = id.present? }) do
+    Admin::TranscriptImportWorkflowJob.stub(:perform_later, ->(id) { enqueued_ids << id }) do
       post admin_transcript_imports_path, params: {
         transcript_import: {
           meeting_id: @meeting.id,
@@ -109,7 +112,7 @@ class Admin::TranscriptImportsControllerTest < ActionDispatch::IntegrationTest
     transcript_import = TranscriptImport.last
     assert_redirected_to admin_transcript_imports_path
     assert_match(/Transcript import workflow queued/i, flash[:notice])
-    assert enqueued
+    assert_equal [ transcript_import.id ], enqueued_ids
     assert transcript_import.srt_file.attached?
     assert_equal "manual-transcript.srt", transcript_import.srt_file.filename.to_s
   end
@@ -118,9 +121,9 @@ class Admin::TranscriptImportsControllerTest < ActionDispatch::IntegrationTest
     sign_in_as_admin
 
     upload = uploaded_file(sample_srt, filename: "manual-transcript.srt", content_type: nil)
-    enqueued = false
+    enqueued_ids = []
 
-    Admin::TranscriptImportWorkflowJob.stub(:perform_later, ->(id) { enqueued = id.present? }) do
+    Admin::TranscriptImportWorkflowJob.stub(:perform_later, ->(id) { enqueued_ids << id }) do
       post admin_transcript_imports_path, params: {
         transcript_import: {
           meeting_id: @meeting.id,
@@ -133,7 +136,7 @@ class Admin::TranscriptImportsControllerTest < ActionDispatch::IntegrationTest
     transcript_import = TranscriptImport.last
     assert_redirected_to admin_transcript_imports_path
     assert_match(/Transcript import workflow queued/i, flash[:notice])
-    assert enqueued
+    assert_equal [ transcript_import.id ], enqueued_ids
     assert transcript_import.srt_file.attached?
     assert_equal "manual-transcript.srt", transcript_import.srt_file.filename.to_s
   end
