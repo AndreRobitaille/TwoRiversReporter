@@ -29,7 +29,7 @@ module Admin
         message: transcript_log_message(transcript_result),
         metadata: {
           status: transcript_result.status,
-          source: transcript_source(transcript_result),
+          source: transcript_source(transcript_result, meeting_document),
           meeting_document_id: meeting_document&.id,
           text_chars: meeting_document&.text_chars
         }
@@ -102,8 +102,12 @@ module Admin
       transcript_result.reused? ? "Transcript reused" : "Transcript downloaded"
     end
 
-    def transcript_source(transcript_result)
-      transcript_result.respond_to?(:source) && transcript_result.source.present? ? transcript_result.source : "youtube_captions"
+    def transcript_source(transcript_result, meeting_document = nil)
+      return transcript_result.source if transcript_result.respond_to?(:source) && transcript_result.source.present?
+
+      return "uploaded_srt" if transcript_result.reused? && meeting_document&.text_quality == "uploaded_transcript"
+
+      "youtube_captions"
     end
 
     def log_and_append(transcript_import, step:, message:, metadata: {})

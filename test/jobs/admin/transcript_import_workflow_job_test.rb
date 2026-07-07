@@ -64,6 +64,8 @@ module Admin
 
       download_log = @transcript_import.step_logs.find { |entry| entry["step"] == "download_transcript" }
       assert_equal "created", download_log.dig("metadata", "status")
+      assert_equal "youtube_captions", download_log.dig("metadata", "source")
+      assert_equal "Transcript downloaded", download_log["message"]
       assert_equal document.id, download_log.dig("metadata", "meeting_document_id")
       assert_equal 15, download_log.dig("metadata", "text_chars")
 
@@ -172,7 +174,56 @@ module Admin
       @transcript_import.reload
       assert_equal "completed", @transcript_import.status
       assert_equal reused_document.id, @transcript_import.meeting_document_id
-      assert_equal "reused", @transcript_import.step_logs.find { |entry| entry["step"] == "download_transcript" }.dig("metadata", "status")
+      download_log = @transcript_import.step_logs.find { |entry| entry["step"] == "download_transcript" }
+      assert_equal "reused", download_log.dig("metadata", "status")
+      assert_equal "youtube_captions", download_log.dig("metadata", "source")
+      assert_equal "Transcript reused", download_log["message"]
+    end
+
+    test "logs reused uploaded transcript provenance without calling it uploaded during workflow" do
+      reused_document = MeetingDocument.create!(meeting: @meeting, document_type: "transcript", source_url: @transcript_import.youtube_url, extracted_text: "Existing uploaded transcript", text_quality: "uploaded_transcript", text_chars: 28)
+      reused_document.file.attach(io: StringIO.new("srt"), filename: "existing.srt", content_type: "text/srt")
+      download_result = Documents::TranscriptDownloader::Result.new(status: "reused", meeting_document: reused_document)
+
+      downloader = Minitest::Mock.new
+      downloader.expect :download_and_store, download_result
+
+      reanalysis_result = ::Topics::MeetingReanalysisService::Result.new(meeting: @meeting, before_topic_ids: [], after_topic_ids: [], affected_topic_ids: [], selector_ids: [], wire_ids: [])
+      reanalysis_service = Minitest::Mock.new
+      reanalysis_service.expect :call, reanalysis_result
+
+      Rails.logger.stub :error, nil do
+        Documents::TranscriptDownloader.stub :new, ->(meeting:, video_url:) {
+          assert_equal @meeting, meeting
+          assert_equal @transcript_import.youtube_url, video_url
+          downloader
+        } do
+          SummarizeMeetingJob.stub :perform_now, ->(meeting_id, mode: :full, enqueue_followups: true) {
+            assert_equal @meeting.id, meeting_id
+            assert_equal :full, mode
+            assert_equal false, enqueue_followups
+          } do
+            PruneHollowAppearancesJob.stub :perform_now, ->(meeting_id) { assert_equal @meeting.id, meeting_id } do
+              ::Topics::MeetingReanalysisService.stub :new, ->(meeting_id) {
+                assert_equal @meeting.id, meeting_id
+                reanalysis_service
+              } do
+                Admin::TranscriptImportWorkflowJob.perform_now(@transcript_import.id)
+              end
+            end
+          end
+        end
+      end
+
+      downloader.verify
+      reanalysis_service.verify
+
+      @transcript_import.reload
+      assert_equal "completed", @transcript_import.status
+      download_log = @transcript_import.step_logs.find { |entry| entry["step"] == "download_transcript" }
+      assert_equal "reused", download_log.dig("metadata", "status")
+      assert_equal "uploaded_srt", download_log.dig("metadata", "source")
+      assert_equal "Transcript reused", download_log["message"]
     end
 
     test "stores failure details and logs the failing substep" do
