@@ -183,7 +183,7 @@ module Admin
     test "logs reused uploaded transcript provenance without calling it uploaded during workflow" do
       reused_document = MeetingDocument.create!(meeting: @meeting, document_type: "transcript", source_url: @transcript_import.youtube_url, extracted_text: "Existing uploaded transcript", text_quality: "uploaded_transcript", text_chars: 28)
       reused_document.file.attach(io: StringIO.new("srt"), filename: "existing.srt", content_type: "text/srt")
-      download_result = Documents::TranscriptDownloader::Result.new(status: "reused", meeting_document: reused_document)
+      download_result = Documents::TranscriptDownloader::Result.new(status: "reused", meeting_document: reused_document, source: "uploaded_srt")
 
       downloader = Minitest::Mock.new
       downloader.expect :download_and_store, download_result

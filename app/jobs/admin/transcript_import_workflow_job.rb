@@ -97,9 +97,10 @@ module Admin
     end
 
     def transcript_log_message(transcript_result)
+      return "Transcript reused" if transcript_result.reused?
       return "Transcript uploaded" if transcript_source(transcript_result) == "uploaded_srt"
 
-      transcript_result.reused? ? "Transcript reused" : "Transcript downloaded"
+      "Transcript downloaded"
     end
 
     def transcript_source(transcript_result, meeting_document = nil)
