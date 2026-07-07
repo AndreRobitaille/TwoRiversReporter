@@ -80,7 +80,7 @@ class Admin::TranscriptImportsControllerTest < ActionDispatch::IntegrationTest
   test "create enqueues workflow and creates queued record" do
     sign_in_as_admin
 
-    assert_enqueued_with(job: Admin::TranscriptImportWorkflowJob) do
+    assert_enqueued_jobs 1 do
       post admin_transcript_imports_path, params: { transcript_import: { meeting_id: @meeting.id, youtube_url: youtube_url } }
     end
 
@@ -88,6 +88,70 @@ class Admin::TranscriptImportsControllerTest < ActionDispatch::IntegrationTest
     assert_match(/Transcript import workflow queued/i, flash[:notice])
     assert_equal 1, TranscriptImport.count
     assert_equal "queued", TranscriptImport.last.status
+  end
+
+  test "create attaches uploaded srt and enqueues workflow" do
+    sign_in_as_admin
+
+    upload = uploaded_file(sample_srt, filename: "manual-transcript.srt", content_type: "text/srt")
+    enqueued = false
+
+    Admin::TranscriptImportWorkflowJob.stub(:perform_later, ->(id) { enqueued = id.present? }) do
+      post admin_transcript_imports_path, params: {
+        transcript_import: {
+          meeting_id: @meeting.id,
+          youtube_url: youtube_url,
+          srt_file: upload
+        }
+      }
+    end
+
+    transcript_import = TranscriptImport.last
+    assert_redirected_to admin_transcript_imports_path
+    assert_match(/Transcript import workflow queued/i, flash[:notice])
+    assert enqueued
+    assert transcript_import.srt_file.attached?
+    assert_equal "manual-transcript.srt", transcript_import.srt_file.filename.to_s
+  end
+
+  test "create rejects non srt upload and preserves meeting and url" do
+    sign_in_as_admin
+
+    upload = uploaded_file("not an srt", filename: "notes.txt", content_type: "text/plain")
+
+    assert_no_enqueued_jobs do
+      post admin_transcript_imports_path, params: {
+        transcript_import: {
+          meeting_id: @meeting.id,
+          youtube_url: youtube_url,
+          srt_file: upload
+        }
+      }
+    end
+
+    assert_redirected_to admin_transcript_imports_path(meeting_id: @meeting.id, youtube_url: youtube_url)
+    assert_match(/Upload an SRT file/i, flash[:alert])
+    assert_equal 0, TranscriptImport.count
+  end
+
+  test "create rejects empty srt upload" do
+    sign_in_as_admin
+
+    upload = uploaded_file("", filename: "empty.srt", content_type: "text/srt")
+
+    assert_no_enqueued_jobs do
+      post admin_transcript_imports_path, params: {
+        transcript_import: {
+          meeting_id: @meeting.id,
+          youtube_url: youtube_url,
+          srt_file: upload
+        }
+      }
+    end
+
+    assert_redirected_to admin_transcript_imports_path(meeting_id: @meeting.id, youtube_url: youtube_url)
+    assert_match(/Upload an SRT file/i, flash[:alert])
+    assert_equal 0, TranscriptImport.count
   end
 
   test "invalid meeting does not enqueue and alerts" do
@@ -162,6 +226,23 @@ class Admin::TranscriptImportsControllerTest < ActionDispatch::IntegrationTest
   end
 
   private
+
+  def uploaded_file(content, filename:, content_type:)
+    tempfile = Tempfile.new([ File.basename(filename, ".srt"), File.extname(filename) ])
+    tempfile.binmode
+    tempfile.write(content)
+    tempfile.rewind
+
+    Rack::Test::UploadedFile.new(tempfile.path, content_type, original_filename: filename)
+  end
+
+  def sample_srt
+    <<~SRT
+      1
+      00:00:01,000 --> 00:00:03,000
+      Welcome to the uploaded transcript.
+    SRT
+  end
 
   def sign_in_as_admin
     post session_url, params: { email_address: @admin.email_address, password: "password123456" }

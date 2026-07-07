@@ -3,6 +3,7 @@ class TranscriptImport < ApplicationRecord
 
   belongs_to :meeting
   belongs_to :meeting_document, optional: true
+  has_one_attached :srt_file
 
   validates :youtube_url, presence: true
   validates :status, inclusion: { in: STATUSES }

@@ -22,7 +22,14 @@ module Admin
         return
       end
 
+      srt_file = transcript_import_upload
+      unless valid_srt_upload?(srt_file)
+        redirect_to admin_transcript_imports_path(meeting_id: meeting.id, youtube_url: youtube_url), alert: "Upload an SRT file, or remove the selected file before importing."
+        return
+      end
+
       transcript_import = TranscriptImport.create!(meeting: meeting, youtube_url: youtube_url, status: "queued")
+      transcript_import.srt_file.attach(srt_file) if srt_file.present?
       Admin::TranscriptImportWorkflowJob.perform_later(transcript_import.id)
 
       redirect_to admin_transcript_imports_path, notice: "Transcript import workflow queued."
@@ -53,8 +60,28 @@ module Admin
 
     private
 
+    def valid_srt_upload?(upload)
+      return true if upload.blank?
+      return false unless upload.respond_to?(:original_filename)
+      return false unless File.extname(upload.original_filename.to_s).casecmp(".srt").zero?
+      return false if upload.respond_to?(:size) && upload.size.to_i <= 0
+      return false unless allowed_srt_content_type?(upload.content_type)
+
+      true
+    end
+
+    def allowed_srt_content_type?(content_type)
+      content_type.to_s.split(";").first.strip.then do |normalized|
+        %w[text/srt application/x-subrip text/plain application/octet-stream].include?(normalized)
+      end
+    end
+
     def transcript_import_params
       params.fetch(:transcript_import, {}).permit(:meeting_id, :youtube_url)
+    end
+
+    def transcript_import_upload
+      params.require(:transcript_import).fetch(:srt_file, nil)
     end
   end
 end
