@@ -18,6 +18,15 @@ module Documents
       @video_url = "https://www.youtube.com/watch?v=abc123"
     end
 
+    test "parse_srt removes sequence numbers and timestamps" do
+      plain_text = TranscriptDownloader.parse_srt(SAMPLE_SRT)
+
+      assert_includes plain_text, "Welcome to the city council meeting."
+      assert_includes plain_text, "Tonight we will discuss the budget proposal."
+      assert_not_includes plain_text, "00:00:01,000"
+      refute_match(/^1$/, plain_text)
+    end
+
     def stub_tmpdir_with_srt(srt_content)
       Dir.mktmpdir("test-transcript") do |tmpdir|
         File.write(File.join(tmpdir, "video.en.srt"), srt_content)

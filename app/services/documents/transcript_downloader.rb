@@ -62,6 +62,15 @@ module Documents
       PrecheckResult.new(status: :verification_unavailable, message: e.message, details: e.message)
     end
 
+    def self.parse_srt(srt_content)
+      srt_content
+        .to_s
+        .gsub(/^\d+\s*$/, "")
+        .gsub(/^\d{2}:\d{2}:\d{2},\d{3}\s*-->.*$/, "")
+        .gsub(/\n{3,}/, "\n\n")
+        .strip
+    end
+
     def self.run_yt_dlp(*args)
       Timeout.timeout(YT_DLP_TIMEOUT) { Open3.capture3(*args) }
     rescue Timeout::Error => e
@@ -157,11 +166,7 @@ module Documents
     end
 
     def parse_srt(srt_content)
-      srt_content
-        .gsub(/^\d+\s*$/, "")
-        .gsub(/^\d{2}:\d{2}:\d{2},\d{3}\s*-->.*$/, "")
-        .gsub(/\n{3,}/, "\n\n")
-        .strip
+      self.class.parse_srt(srt_content)
     end
 
     def attach_transcript_file(document, srt_content)
