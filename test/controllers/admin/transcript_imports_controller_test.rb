@@ -114,6 +114,30 @@ class Admin::TranscriptImportsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "manual-transcript.srt", transcript_import.srt_file.filename.to_s
   end
 
+  test "create allows uploaded srt with blank content type" do
+    sign_in_as_admin
+
+    upload = uploaded_file(sample_srt, filename: "manual-transcript.srt", content_type: nil)
+    enqueued = false
+
+    Admin::TranscriptImportWorkflowJob.stub(:perform_later, ->(id) { enqueued = id.present? }) do
+      post admin_transcript_imports_path, params: {
+        transcript_import: {
+          meeting_id: @meeting.id,
+          youtube_url: youtube_url,
+          srt_file: upload
+        }
+      }
+    end
+
+    transcript_import = TranscriptImport.last
+    assert_redirected_to admin_transcript_imports_path
+    assert_match(/Transcript import workflow queued/i, flash[:notice])
+    assert enqueued
+    assert transcript_import.srt_file.attached?
+    assert_equal "manual-transcript.srt", transcript_import.srt_file.filename.to_s
+  end
+
   test "create rejects non srt upload and preserves meeting and url" do
     sign_in_as_admin
 

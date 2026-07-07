@@ -71,13 +71,14 @@ module Admin
     end
 
     def allowed_srt_content_type?(content_type)
-      content_type.to_s.split(";").first.strip.then do |normalized|
-        %w[text/srt application/x-subrip text/plain application/octet-stream].include?(normalized)
-      end
+      normalized = content_type.to_s.split(";").first.to_s.strip
+      return true if normalized.blank?
+
+      %w[text/srt application/x-subrip text/plain application/octet-stream].include?(normalized)
     end
 
     def transcript_import_params
-      params.fetch(:transcript_import, {}).permit(:meeting_id, :youtube_url)
+      params.fetch(:transcript_import, {}).permit(:meeting_id, :youtube_url, :srt_file)
     end
 
     def transcript_import_upload
