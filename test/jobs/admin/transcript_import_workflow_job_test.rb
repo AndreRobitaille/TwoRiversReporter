@@ -75,6 +75,63 @@ module Admin
       assert_equal [ 3, 2 ], reanalysis_finish.dig("metadata", "after_topic_ids")
     end
 
+    test "uses uploaded srt importer when an srt file is attached" do
+      @transcript_import.srt_file.attach(
+        io: StringIO.new("1\n00:00:01,000 --> 00:00:03,000\nUploaded transcript text."),
+        filename: "manual.srt",
+        content_type: "text/srt"
+      )
+      document = MeetingDocument.create!(meeting: @meeting, document_type: "transcript", source_url: @transcript_import.youtube_url, extracted_text: "Uploaded transcript text.", text_quality: "uploaded_transcript", text_chars: 25)
+      upload_result = Documents::UploadedTranscriptImporter::Result.new(status: "created", meeting_document: document, source: "uploaded_srt")
+
+      importer = Minitest::Mock.new
+      importer.expect :import, upload_result
+
+      reanalysis_result = ::Topics::MeetingReanalysisService::Result.new(meeting: @meeting, before_topic_ids: [], after_topic_ids: [], affected_topic_ids: [], selector_ids: [], wire_ids: [])
+      reanalysis_service = Minitest::Mock.new
+      reanalysis_service.expect :call, reanalysis_result
+
+      Rails.logger.stub :error, nil do
+        Documents::TranscriptDownloader.stub :new, ->(*) { flunk "should not use YouTube downloader when an SRT is uploaded" } do
+          Documents::UploadedTranscriptImporter.stub :new, ->(meeting:, youtube_url:, srt_file:) {
+            assert_equal @meeting, meeting
+            assert_equal @transcript_import.youtube_url, youtube_url
+            assert srt_file.attached?
+            assert_equal "manual.srt", srt_file.blob.filename.to_s
+            importer
+          } do
+            SummarizeMeetingJob.stub :perform_now, ->(meeting_id, mode: :full, enqueue_followups: true) {
+              assert_equal @meeting.id, meeting_id
+              assert_equal :full, mode
+              assert_equal false, enqueue_followups
+            } do
+              PruneHollowAppearancesJob.stub :perform_now, ->(meeting_id) { assert_equal @meeting.id, meeting_id } do
+                ::Topics::MeetingReanalysisService.stub :new, ->(meeting_id) {
+                  assert_equal @meeting.id, meeting_id
+                  reanalysis_service
+                } do
+                  Admin::TranscriptImportWorkflowJob.perform_now(@transcript_import.id)
+                end
+              end
+            end
+          end
+        end
+      end
+
+      importer.verify
+      reanalysis_service.verify
+
+      @transcript_import.reload
+      assert_equal "completed", @transcript_import.status
+      assert_equal document.id, @transcript_import.meeting_document_id
+
+      import_log = @transcript_import.step_logs.find { |entry| entry["step"] == "download_transcript" }
+      assert_equal "Transcript uploaded", import_log["message"]
+      assert_equal "created", import_log.dig("metadata", "status")
+      assert_equal "uploaded_srt", import_log.dig("metadata", "source")
+      assert_equal document.id, import_log.dig("metadata", "meeting_document_id")
+    end
+
     test "logs reused transcript and still completes" do
       reused_document = MeetingDocument.create!(meeting: @meeting, document_type: "transcript", source_url: @transcript_import.youtube_url, extracted_text: "Existing transcript", text_quality: "auto_transcribed", text_chars: 19)
       download_result = Documents::TranscriptDownloader::Result.new(status: "reused", meeting_document: reused_document)

@@ -21,16 +21,15 @@ module Admin
       log_and_append(transcript_import, step: "workflow", message: "Transcript import workflow started")
 
       @current_step = "download_transcript"
-      downloader_result = Documents::TranscriptDownloader
-        .new(meeting: transcript_import.meeting, video_url: transcript_import.youtube_url)
-        .download_and_store
+      transcript_result = import_transcript(transcript_import)
 
-      meeting_document = downloader_result.meeting_document
+      meeting_document = transcript_result.meeting_document
       log_and_append(transcript_import,
         step: "download_transcript",
-        message: downloader_result.reused? ? "Transcript reused" : "Transcript downloaded",
+        message: transcript_log_message(transcript_result),
         metadata: {
-          status: downloader_result.status,
+          status: transcript_result.status,
+          source: transcript_source(transcript_result),
           meeting_document_id: meeting_document&.id,
           text_chars: meeting_document&.text_chars
         }
@@ -79,6 +78,32 @@ module Admin
         "meeting_id=#{transcript_import&.meeting_id} youtube_url=#{transcript_import&.youtube_url} " \
         "error_class=#{error.class.name} error_message=#{error.message}"
       )
+    end
+
+    def import_transcript(transcript_import)
+      if transcript_import.srt_file.attached?
+        Documents::UploadedTranscriptImporter
+          .new(
+            meeting: transcript_import.meeting,
+            youtube_url: transcript_import.youtube_url,
+            srt_file: transcript_import.srt_file
+          )
+          .import
+      else
+        Documents::TranscriptDownloader
+          .new(meeting: transcript_import.meeting, video_url: transcript_import.youtube_url)
+          .download_and_store
+      end
+    end
+
+    def transcript_log_message(transcript_result)
+      return "Transcript uploaded" if transcript_source(transcript_result) == "uploaded_srt"
+
+      transcript_result.reused? ? "Transcript reused" : "Transcript downloaded"
+    end
+
+    def transcript_source(transcript_result)
+      transcript_result.respond_to?(:source) && transcript_result.source.present? ? transcript_result.source : "youtube_captions"
     end
 
     def log_and_append(transcript_import, step:, message:, metadata: {})
