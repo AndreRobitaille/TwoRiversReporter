@@ -40,10 +40,13 @@ class Admin::TranscriptImportsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "h1", text: "Transcript Imports"
-    assert_select "form[action=?][method=post]", admin_transcript_imports_path do
+    assert_select "form[action=?][method=post][enctype='multipart/form-data']", admin_transcript_imports_path do
       assert_select "option[value='']", text: "Choose a meeting"
       assert_select "select[name='transcript_import[meeting_id]']"
       assert_select "input[name='transcript_import[youtube_url]']"
+      assert_select "input[type=file][name='transcript_import[srt_file]'][accept='.srt,text/srt,application/x-subrip,text/plain']"
+      assert_select "p", text: /If an SRT is uploaded, it will be used instead of YouTube captions/i
+      assert_select "button[type=button][data-transcript-import-remove-file]", text: "Remove file"
       assert_select "button[type='submit'][formaction='#{check_url_admin_transcript_imports_path}'][formmethod='post']", text: "Check URL"
       assert_select "input[type=submit][value='Begin Import']"
     end

@@ -19,7 +19,7 @@
     <% end %>
 
     <div class="card">
-      <%= form_with url: admin_transcript_imports_path, method: :post, scope: :transcript_import, local: true, html: { class: "transcript-imports-form" } do |form| %>
+      <%= form_with url: admin_transcript_imports_path, method: :post, scope: :transcript_import, local: true, html: { class: "transcript-imports-form", multipart: true } do |form| %>
         <div class="transcript-imports-form__meeting-grid">
           <div class="transcript-imports-form__control">
             <%= label_tag :meeting_filter, "Filter meetings", class: "form-label" %>
@@ -40,6 +40,13 @@
         <div class="transcript-imports-form__control">
           <%= form.label :youtube_url, "YouTube watch URL", class: "form-label" %>
           <%= form.url_field :youtube_url, value: @selected_youtube_url, placeholder: "https://www.youtube.com/watch?v=...", class: "form-input" %>
+        </div>
+
+        <div class="transcript-imports-form__control" data-transcript-import-file-control>
+          <%= form.label :srt_file, "SRT transcript file (optional)", class: "form-label" %>
+          <%= form.file_field :srt_file, accept: ".srt,text/srt,application/x-subrip,text/plain", class: "form-input", data: { transcript_import_file: true } %>
+          <p class="form-help">If an SRT is uploaded, it will be used instead of YouTube captions. The YouTube URL is still saved as the source video.</p>
+          <button type="button" class="btn btn--secondary" data-transcript-import-remove-file hidden>Remove file</button>
         </div>
 
         <div class="transcript-imports-form__actions">
@@ -138,5 +145,23 @@
         option.hidden = query && !filterText.includes(query);
       });
     });
+
+    const fileInput = document.querySelector("[data-transcript-import-file]");
+    const removeFileButton = document.querySelector("[data-transcript-import-remove-file]");
+
+    if (fileInput && removeFileButton) {
+      const syncRemoveFileButton = () => {
+        removeFileButton.hidden = !fileInput.value;
+      };
+
+      fileInput.addEventListener("change", syncRemoveFileButton);
+      removeFileButton.addEventListener("click", () => {
+        fileInput.value = "";
+        syncRemoveFileButton();
+        fileInput.focus();
+      });
+
+      syncRemoveFileButton();
+    }
   })();
 </script>
