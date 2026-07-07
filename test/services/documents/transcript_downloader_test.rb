@@ -40,6 +40,7 @@ module Documents
 
     test "creates transcript document with attached SRT" do
       capture_args = nil
+      result = nil
       stub_tmpdir_with_srt(SAMPLE_SRT) do
         Open3.stub :capture3, ->(*args) { capture_args = args; [ "", "", OpenStruct.new(success?: true) ] } do
           result = TranscriptDownloader.new(meeting: @meeting, video_url: @video_url).download_and_store
@@ -50,6 +51,7 @@ module Documents
       doc = @meeting.meeting_documents.find_by!(document_type: "transcript")
       assert doc.file.attached?
       assert_includes doc.extracted_text, "Welcome to the city council meeting."
+      assert_equal "youtube_captions", result.source
       assert_includes capture_args, "--no-update"
       assert_includes capture_args, "--js-runtimes"
       assert_includes capture_args, "deno"
@@ -126,6 +128,18 @@ module Documents
         result = TranscriptDownloader.new(meeting: @meeting, video_url: @video_url).download_and_store
         assert_predicate result, :reused?
         assert_equal doc, result.meeting_document
+        assert_equal "youtube_captions", result.source
+      end
+    end
+
+    test "reused uploaded transcript reports uploaded source" do
+      doc = MeetingDocument.create!(meeting: @meeting, document_type: "transcript", source_url: @video_url, text_quality: "uploaded_transcript", extracted_text: "existing transcript")
+      doc.file.attach(io: StringIO.new("srt"), filename: "existing.srt", content_type: "text/srt")
+
+      Open3.stub :capture3, ->(*) { flunk "should not shell out" } do
+        result = TranscriptDownloader.new(meeting: @meeting, video_url: @video_url).download_and_store
+        assert_predicate result, :reused?
+        assert_equal "uploaded_srt", result.source
       end
     end
 

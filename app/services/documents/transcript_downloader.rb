@@ -12,7 +12,7 @@ module Documents
     InvalidUrlError = Class.new(StandardError)
     DownloadError = Class.new(StandardError)
 
-    Result = Struct.new(:status, :meeting_document, keyword_init: true) do
+    Result = Struct.new(:status, :meeting_document, :source, keyword_init: true) do
       def created?
         status == "created"
       end
@@ -96,7 +96,11 @@ module Documents
       @meeting.with_lock do
         existing_document = @meeting.meeting_documents.find_by(document_type: "transcript")
         if existing_document&.file&.attached? && existing_document.extracted_text.present?
-          return Result.new(status: "reused", meeting_document: existing_document)
+          return Result.new(
+            status: "reused",
+            meeting_document: existing_document,
+            source: existing_document.text_quality == "uploaded_transcript" ? "uploaded_srt" : "youtube_captions"
+          )
         end
 
         existing_document&.destroy!
@@ -120,7 +124,7 @@ module Documents
           raise
         end
 
-        Result.new(status: "created", meeting_document: document)
+        Result.new(status: "created", meeting_document: document, source: "youtube_captions")
       end
     end
 

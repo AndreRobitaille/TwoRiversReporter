@@ -105,7 +105,7 @@ module Admin
     def transcript_source(transcript_result, meeting_document = nil)
       return transcript_result.source if transcript_result.respond_to?(:source) && transcript_result.source.present?
 
-      return "uploaded_srt" if transcript_result.reused? && meeting_document&.text_quality == "uploaded_transcript"
+      return "uploaded_srt" if meeting_document&.text_quality == "uploaded_transcript"
 
       "youtube_captions"
     end
