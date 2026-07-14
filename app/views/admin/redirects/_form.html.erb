@@ -1,0 +1,39 @@
+<%= form_with model: [:admin, redirect] do |form| %>
+  <% if redirect.errors.any? %>
+    <div class="flash flash--danger">
+      <%= redirect.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= form.label :source_path, "From (path)", class: "form-label" %>
+    <%= form.text_field :source_path, class: "form-input", placeholder: "/topics/766" %>
+    <p class="text-sm text-muted mt-1">The old path to catch. A leading slash is added and any trailing slash or query string is stripped automatically.</p>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :destination, "To (path or URL)", class: "form-label" %>
+    <%= form.text_field :destination, class: "form-input", placeholder: "/topics/176" %>
+    <p class="text-sm text-muted mt-1">Where visitors should land — an internal path (<code>/topics/176</code>) or a full URL.</p>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :status_code, "Type", class: "form-label" %>
+    <%= form.select :status_code, [
+      ["301 — Permanent", 301],
+      ["302 — Temporary", 302],
+      ["307 — Temporary (preserve method)", 307],
+      ["308 — Permanent (preserve method)", 308]
+    ], {}, class: "form-select" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :note, "Note (optional)", class: "form-label" %>
+    <%= form.text_area :note, rows: 2, class: "form-textarea", placeholder: "Why this redirect exists" %>
+  </div>
+
+  <div class="flex gap-2 items-center mt-6">
+    <%= form.submit class: "btn btn--primary" %>
+    <%= link_to "Cancel", admin_redirects_path, class: "btn btn--secondary" %>
+  </div>
+<% end %>

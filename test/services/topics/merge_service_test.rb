@@ -66,6 +66,29 @@ module Topics
       assert TopicAlias.exists?(topic: other_topic, name: "property tax levy")
     end
 
+    test "creates a redirect from the retired topic to the surviving topic" do
+      source_topic = Topic.create!(name: "property tax levy")
+      target_topic = Topic.create!(name: "property tax")
+
+      MergeService.new(source_topic: source_topic, target_topic: target_topic).call
+
+      redirect = Redirect.find_by(source_path: "/topics/#{source_topic.id}")
+      assert_not_nil redirect
+      assert_equal "/topics/#{target_topic.id}", redirect.destination
+    end
+
+    test "collapses an existing redirect chain when its target is retired" do
+      first_source = Topic.create!(name: "harbor")
+      source_topic = Topic.create!(name: "harbor project")
+      target_topic = Topic.create!(name: "downtown project")
+      # An earlier merge left /topics/<first_source> pointing at source_topic.
+      Redirect.create!(source_path: "/topics/#{first_source.id}", destination: "/topics/#{source_topic.id}")
+
+      MergeService.new(source_topic: source_topic, target_topic: target_topic).call
+
+      assert_equal "/topics/#{target_topic.id}", Redirect.find_by(source_path: "/topics/#{first_source.id}").destination
+    end
+
     test "enqueues future briefing updates for migrated future agenda items" do
       source_topic = Topic.create!(name: "harbor project")
       target_topic = Topic.create!(name: "downtown project", status: "approved")

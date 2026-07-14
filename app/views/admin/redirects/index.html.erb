@@ -1,0 +1,49 @@
+<% content_for(:title) { "Redirects - Admin" } %>
+
+<div class="page-header">
+  <div class="flex justify-between items-center">
+    <div>
+      <h1 class="page-title">Redirects</h1>
+      <p class="page-subtitle">Send old or retired URLs to their current home. Topic merges add these automatically; add or edit any others here.</p>
+    </div>
+    <%= link_to "New Redirect", new_admin_redirect_path, class: "btn btn--primary" %>
+  </div>
+</div>
+
+<% if @redirects.any? %>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>From</th>
+          <th>To</th>
+          <th>Code</th>
+          <th>Hits</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @redirects.each do |redirect| %>
+          <tr>
+            <td><code><%= redirect.source_path %></code></td>
+            <td>
+              <code><%= redirect.destination %></code>
+              <% if redirect.note.present? %>
+                <p class="text-sm text-secondary mt-1 mb-0"><%= truncate(redirect.note, length: 80) %></p>
+              <% end %>
+            </td>
+            <td><span class="badge badge--default"><%= redirect.status_code %></span></td>
+            <td><%= redirect.hits %></td>
+            <td class="text-right">
+              <%= link_to "Edit", edit_admin_redirect_path(redirect), class: "btn btn--sm btn--ghost" %>
+              <%= button_to "Delete", admin_redirect_path(redirect), method: :delete,
+                    class: "btn btn--sm btn--ghost", form: { style: "display:inline", data: { turbo_confirm: "Delete this redirect?" } } %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <p class="text-secondary">No redirects yet.</p>
+<% end %>

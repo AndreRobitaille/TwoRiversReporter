@@ -32,6 +32,7 @@ module Topics
           source_topic.topic_briefing.destroy!
         end
 
+        create_redirect_for_retired_topic!
         source_topic.reload.destroy!
       end
 
@@ -42,6 +43,20 @@ module Topics
     private
 
     attr_reader :source_topic, :target_topic
+
+    # The source topic's numeric URL is about to become a dead link. Record a
+    # redirect to the survivor, and re-point any redirect chain that ended at
+    # the source so previously-retired IDs resolve in a single hop.
+    def create_redirect_for_retired_topic!
+      paths = Rails.application.routes.url_helpers
+      source_path = paths.topic_path(source_topic)
+      destination = paths.topic_path(target_topic)
+
+      Redirect.upsert_redirect(source_path: source_path, destination: destination)
+      Redirect.where(destination: source_path)
+              .where.not(source_path: destination)
+              .update_all(destination: destination)
+    end
 
     def move_aliases!
       source_topic.topic_aliases.find_each do |topic_alias|

@@ -26,7 +26,7 @@ module TwoRiversReporter
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.
-    config.autoload_lib(ignore: %w[assets tasks])
+    config.autoload_lib(ignore: %w[assets tasks middleware])
 
     # Configuration for the application, engines, and railties goes here.
     #
@@ -38,5 +38,11 @@ module TwoRiversReporter
 
     # Don't generate system test files.
     config.generators.system_tests = nil
+
+    # Serve admin-managed redirects (e.g. merged-away topic URLs) ahead of
+    # routing. Lives in lib/middleware (excluded from the autoloader), so
+    # require it explicitly before referencing the constant.
+    require_relative "../lib/middleware/redirect_middleware"
+    config.middleware.use RedirectMiddleware
   end
 end

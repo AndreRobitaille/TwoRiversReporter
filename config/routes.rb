@@ -79,6 +79,8 @@ Rails.application.routes.draw do
 
     resources :topic_blocklists, controller: "admin/topic_blocklists", as: :admin_topic_blocklists
 
+    resources :redirects, controller: "admin/redirects", as: :admin_redirects
+
     resources :committees, controller: "admin/committees", as: :admin_committees do
       member do
         post :create_alias
