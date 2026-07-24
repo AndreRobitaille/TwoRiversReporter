@@ -12,7 +12,7 @@ class User < ApplicationRecord
   before_validation :assign_webauthn_id, on: :create
 
   validates :email_address, presence: true, uniqueness: true
-  validates :status, inclusion: { in: %w[pending active rejected disabled] }, allow_nil: true
+  validates :status, inclusion: { in: %w[pending active rejected] }
   validates :webauthn_id, presence: true, uniqueness: true
 
   generates_token_for :password_reset, expires_in: 15.minutes do
@@ -93,7 +93,11 @@ class User < ApplicationRecord
   end
 
   def admin_access_ready?
-    active_for_authentication? && email_verified_at.present?
+    return false unless active_for_authentication?
+
+    self.class.connection.select_value(
+      self.class.sanitize_sql_array(["SELECT 1 FROM passkey_credentials WHERE user_id = ? LIMIT 1", id])
+    ).present?
   end
 
   def passkey_prompt_dismissed?
