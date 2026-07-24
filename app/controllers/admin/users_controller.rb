@@ -39,18 +39,22 @@ module Admin
         application.update!(status: "approved", reviewed_at: Time.current, reviewed_by: Current.session.user)
       end
 
-      TransactionalEmail.application_approved(user, application, magic_link).deliver_now
-      redirect_to user_path(@user), notice: "Application approved."
-    rescue StandardError => e
-      ApplicationRecord.transaction do
-        user = User.lock.find(user.id)
-        application = user.membership_applications.lock.find(application.id)
-        user.update!(status: "pending", disabled_at: Time.current)
-        application.update!(status: "submitted", reviewed_at: nil, reviewed_by: nil)
-        magic_link.destroy! if magic_link&.persisted?
-      end
+      begin
+        TransactionalEmail.application_approved(user, application, magic_link).deliver_now
+      rescue StandardError => e
+        raise e unless user && application && magic_link
 
-      raise e
+        ApplicationRecord.transaction do
+          user = User.lock.find(user.id)
+          application = user.membership_applications.lock.find(application.id)
+          user.update!(status: "pending", disabled_at: Time.current)
+          application.update!(status: "submitted", reviewed_at: nil, reviewed_by: nil)
+          magic_link.destroy! if magic_link.persisted?
+        end
+
+        raise e
+      end
+      redirect_to user_path(@user), notice: "Application approved."
     end
 
     def reject

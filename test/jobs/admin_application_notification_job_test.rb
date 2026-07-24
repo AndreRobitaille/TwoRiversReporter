@@ -146,6 +146,46 @@ class AdminApplicationNotificationJobTest < ActiveSupport::TestCase
     end
   end
 
+  test "skips applications that stop being submitted before the claim stamp" do
+    travel 2.hours do
+      claimed_applicant = User.create!(email_address: "claimed-change@example.com", password: "password", status: "pending")
+      stale_applicant = User.create!(email_address: "stale-change@example.com", password: "password", status: "pending")
+      claimed_app = claimed_applicant.membership_applications.create!(status: "submitted", first_name: "Claimed", last_name: "User", city: "Two Rivers", state: "WI")
+      stale_app = stale_applicant.membership_applications.create!(status: "submitted", first_name: "Stale", last_name: "User", city: "Two Rivers", state: "WI")
+
+      captured_emails = nil
+      message = Object.new
+      message.define_singleton_method(:deliver_now) do
+        raise "unexpected applicant emails: #{captured_emails.inspect}" unless captured_emails == [claimed_applicant.email_address]
+        true
+      end
+
+      transactional_email_stub = ->(applications) {
+        captured_emails = applications.map { |application| application.user.email_address }
+        message
+      }
+
+      MembershipApplication.stub(:where, ->(*args) {
+        relation = MembershipApplication.all.where(*args)
+        if args.first.is_a?(Hash) && args.first[:id] == [claimed_app.id, stale_app.id] && args.first[:status] == "submitted"
+          relation.define_singleton_method(:pluck) do |*|
+            stale_app.update!(status: "approved")
+            [claimed_app.id, stale_app.id]
+          end
+        end
+        relation
+      }) do
+        TransactionalEmail.stub(:admin_application_notifications, transactional_email_stub) do
+          AdminApplicationNotificationJob.perform_now(claimed_app.id)
+        end
+      end
+
+      assert_not_nil claimed_app.reload.admin_notification_sent_at
+      assert_nil stale_app.reload.admin_notification_sent_at
+      assert_equal "approved", stale_app.reload.status
+    end
+  end
+
   test "keeps cooldown active when a previously notified application is approved within the hour" do
     notified_applicant = User.create!(email_address: "notified@example.com", password: "password", status: "pending")
     notified_app = notified_applicant.membership_applications.create!(

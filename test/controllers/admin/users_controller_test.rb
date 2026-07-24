@@ -46,6 +46,26 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_equal 0, MagicLink.where(user: applicant, purpose: "sign_in").count
   end
 
+  test "admin approval re-raises stale review errors without compensation" do
+    admin = create_passkey_admin
+    applicant = User.create!(email_address: "stale@example.com", password: "password", status: "pending")
+    applicant.membership_applications.create!(status: "approved", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI")
+    session = admin.sessions.create!(ip_address: "127.0.0.1", user_agent: "test", last_seen_at: Time.current)
+    Current.session = session
+
+    controller = Admin::UsersController.new
+    controller.request = ActionDispatch::TestRequest.create
+    controller.response = ActionDispatch::TestResponse.new
+    controller.instance_variable_set(:@user, applicant)
+
+    assert_raises(ActiveRecord::RecordNotFound) { controller.send(:approve) }
+
+    assert_equal "pending", applicant.reload.status
+    assert_equal 0, MagicLink.where(user: applicant, purpose: "sign_in").count
+  ensure
+    Current.session = nil
+  end
+
   test "admin approval remains retryable when approval email delivery raises non delivery errors" do
     admin = create_passkey_admin
     applicant = User.create!(email_address: "approve-runtime@example.com", password: "password", status: "pending")

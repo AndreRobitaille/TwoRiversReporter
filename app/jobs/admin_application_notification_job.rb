@@ -23,8 +23,12 @@ class AdminApplicationNotificationJob < ApplicationJob
       claimed_ids = MembershipApplication.where(id: applications.map(&:id), status: "submitted", admin_notification_sent_at: nil).pluck(:id)
       return if claimed_ids.empty?
 
-      MembershipApplication.where(id: claimed_ids).update_all(admin_notification_sent_at: batch_sent_at)
-      applications = MembershipApplication.where(id: claimed_ids).order(:created_at).to_a
+      applications = MembershipApplication.lock.where(id: claimed_ids, status: "submitted", admin_notification_sent_at: nil)
+                                          .order(:created_at)
+                                          .to_a
+      return if applications.empty?
+
+      applications.each { |application| application.update_columns(admin_notification_sent_at: batch_sent_at) }
     end
 
     message = TransactionalEmail.admin_application_notifications(applications)
