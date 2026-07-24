@@ -13,7 +13,7 @@ class SessionsController < ApplicationController
 
     if user&.active_for_authentication?
       link = MagicLink.create_for!(user, purpose: "sign_in")
-      TransactionalEmail.magic_link(user.email_address, link.raw_token).deliver_now if defined?(TransactionalEmail)
+      TransactionalEmail.magic_link(user, link).deliver_now
     end
 
     redirect_to new_public_session_path, notice: "If that account can sign in, we sent a link."
