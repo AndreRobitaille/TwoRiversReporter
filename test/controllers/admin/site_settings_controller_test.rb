@@ -23,6 +23,19 @@ class Admin::SiteSettingsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "open", SiteSetting.access_mode
   end
 
+  test "a rejected mode re-renders with the persisted mode still selected" do
+    sign_in_as_admin(create_passkey_admin)
+    SiteSetting.delete_all
+    SiteSetting.create!(access_mode: "open", singleton_guard: 0)
+
+    patch admin_site_settings_path, params: { site_setting: { access_mode: "sideways" } }
+
+    assert_response :unprocessable_entity
+    assert_includes response.body, "Access mode is not included in the list"
+    assert_match(/type="radio"[^>]*value="open"[^>]*checked="checked"/, response.body)
+    assert_no_match(/type="radio"[^>]*value="gated"[^>]*checked="checked"/, response.body)
+  end
+
   test "non-admins cannot reach the toggle" do
     get admin_site_settings_path
 
