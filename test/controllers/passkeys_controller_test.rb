@@ -71,6 +71,14 @@ class PasskeysControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
   end
 
+  test "registration returns unprocessable entity for malformed credential payload" do
+    headers = signed_session_headers(@user)
+
+    post registration_passkeys_url, params: { credential: { malformed: true } }, headers: headers
+
+    assert_response :unprocessable_entity
+  end
+
   test "authentication_options stores challenge without login" do
     post authentication_options_passkeys_url
 
@@ -90,6 +98,12 @@ class PasskeysControllerTest < ActionDispatch::IntegrationTest
     WebAuthn::Credential.stub(:from_get, ->(*args, **kwargs) { raise WebAuthn::Error, "bad ceremony" }) do
       post authentication_passkeys_url, params: { credential: { raw: "value" } }
     end
+
+    assert_response :unauthorized
+  end
+
+  test "authentication returns unauthorized for malformed credential payload" do
+    post authentication_passkeys_url, params: { credential: { malformed: true } }
 
     assert_response :unauthorized
   end

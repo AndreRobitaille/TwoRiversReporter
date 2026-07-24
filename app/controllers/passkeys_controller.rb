@@ -77,6 +77,7 @@ class PasskeysController < ApplicationController
 
     def verified_create_credential
       credential = webauthn_credential_from_create(params[:credential])
+      return if performed?
       credential.verify(
         session.delete(:passkey_registration_challenge),
         user_verification: true
@@ -89,6 +90,7 @@ class PasskeysController < ApplicationController
 
     def verified_get_credential
       credential = webauthn_credential_from_get(params[:credential])
+      return if performed?
       passkey = PasskeyCredential.find_by(external_id: credential.id)
       return head :unauthorized unless passkey
       credential.verify(
@@ -113,10 +115,16 @@ class PasskeysController < ApplicationController
 
     def webauthn_credential_from_create(*args, **kwargs)
       WebAuthn::Credential.from_create(*args, **kwargs)
+    rescue NoMethodError, TypeError, ArgumentError
+      head :unprocessable_entity
+      nil
     end
 
     def webauthn_credential_from_get(*args, **kwargs)
       WebAuthn::Credential.from_get(*args, **kwargs)
+    rescue NoMethodError, TypeError, ArgumentError
+      head :unauthorized
+      nil
     end
 
     def render_not_found
