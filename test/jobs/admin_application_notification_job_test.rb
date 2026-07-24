@@ -55,7 +55,11 @@ class AdminApplicationNotificationJobTest < ActiveSupport::TestCase
       fresh_app = fresh_applicant.membership_applications.create!(status: "submitted", first_name: "Fresh", last_name: "User", city: "Two Rivers", state: "WI")
       deliveries = 0
       message = Object.new
-      message.define_singleton_method(:deliver_now) { deliveries += 1 }
+      message.define_singleton_method(:deliver_now) do
+        deliveries += 1
+        raise "fresh batch not claimed" if fresh_app.reload.admin_notification_sent_at.nil?
+        raise "cooldown stamp missing" if old_app.reload.admin_notification_sent_at.nil?
+      end
 
       TransactionalEmail.stub(:admin_application_notifications, message) do
         AdminApplicationNotificationJob.perform_now(fresh_app.id)

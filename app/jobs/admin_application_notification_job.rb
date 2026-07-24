@@ -3,6 +3,7 @@ class AdminApplicationNotificationJob < ApplicationJob
 
   def perform(membership_application_id)
     applications = nil
+    batch_sent_at = nil
 
     MembershipApplication.transaction do
       lock_admin_scope!
@@ -14,10 +15,24 @@ class AdminApplicationNotificationJob < ApplicationJob
       return if applications.empty?
     end
 
-    TransactionalEmail.admin_application_notifications(applications).deliver_now
+    message = TransactionalEmail.admin_application_notifications(applications)
 
     batch_sent_at = Time.current
-    MembershipApplication.where(id: applications.map(&:id)).update_all(admin_notification_sent_at: batch_sent_at)
+    MembershipApplication.transaction do
+      lock_admin_scope!
+      return if cooldown_active?
+
+      claimed_ids = MembershipApplication.where(id: applications.map(&:id), status: "submitted", admin_notification_sent_at: nil).pluck(:id)
+      return if claimed_ids.empty?
+
+      MembershipApplication.where(id: claimed_ids).update_all(admin_notification_sent_at: batch_sent_at)
+      applications = MembershipApplication.where(id: claimed_ids).order(:created_at).to_a
+    end
+
+    message.deliver_now
+  rescue StandardError
+    MembershipApplication.where(id: applications&.map(&:id), admin_notification_sent_at: batch_sent_at).update_all(admin_notification_sent_at: nil) if batch_sent_at.present?
+    raise
   end
 
   private
