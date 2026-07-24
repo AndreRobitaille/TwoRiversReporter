@@ -23,7 +23,7 @@
     <tbody>
       <% @users.each do |user| %>
         <tr>
-          <td><%= user.email_address %></td>
+          <td><%= link_to user.email_address, user_path(user) %></td>
           <td><%= user.totp_enabled? ? "Yes" : "No" %></td>
         </tr>
       <% end %>

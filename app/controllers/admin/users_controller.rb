@@ -1,7 +1,14 @@
 module Admin
   class UsersController < BaseController
+    before_action :set_user, only: %i[show approve reject toggle_admin disable revoke_session]
+
     def index
-      @users = User.where(admin: true).order(:email_address)
+      @users = User.order(:email_address)
+    end
+
+    def show
+      @applications = @user.membership_applications.order(created_at: :desc)
+      @sessions = @user.sessions.order(last_seen_at: :desc)
     end
 
     def new
@@ -12,13 +19,62 @@ module Admin
       @user = User.new(user_params.merge(admin: true))
 
       if @user.save
-        redirect_to users_path, notice: "Admin user created. They must enroll MFA on first sign-in."
+        redirect_to user_path(@user), notice: "Admin user created. They must enroll MFA on first sign-in."
       else
         render :new, status: :unprocessable_entity
       end
     end
 
+    def approve
+      application = submitted_application!
+      magic_link = nil
+
+      ApplicationRecord.transaction do
+        @user.update!(status: "active")
+        application.update!(status: "approved", reviewed_at: Time.current, reviewed_by: Current.session.user)
+        magic_link = MagicLink.create_for!(@user, purpose: "application")
+      end
+
+      TransactionalEmail.application_approved(@user, application, magic_link).deliver_now
+      redirect_to user_path(@user), notice: "Application approved."
+    end
+
+    def reject
+      application = submitted_application!
+
+      ApplicationRecord.transaction do
+        @user.update!(status: "rejected")
+        application.update!(status: "rejected", reviewed_at: Time.current, reviewed_by: Current.session.user, rejection_reason: params[:rejection_reason].presence)
+      end
+
+      redirect_to user_path(@user), notice: "Application rejected."
+    end
+
+    def toggle_admin
+      @user.update!(admin: !@user.admin?)
+      redirect_to user_path(@user), notice: "Admin role updated."
+    end
+
+    def disable
+      @user.update!(disabled_at: Time.current)
+      redirect_to user_path(@user), notice: "User disabled."
+    end
+
+    def revoke_session
+      @user.sessions.find(params[:session_id]).destroy!
+      redirect_to user_path(@user), notice: "Session revoked."
+    end
+
     private
+
+      def set_user
+        @user = User.find(params[:id])
+      end
+
+      def submitted_application!
+        @user.membership_applications.find_by!(status: "submitted")
+      end
+
       def user_params
         params.require(:user).permit(:email_address, :password, :password_confirmation)
       end

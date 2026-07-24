@@ -50,6 +50,27 @@ class TransactionalEmail
     )
   end
 
+  def self.application_approved(user, membership_application, magic_link)
+    Message.new(
+      email: user.email_address,
+      transactional_id: application_link_transactional_id,
+      data_variables: {
+        application_url: Rails.application.routes.url_helpers.edit_application_path(membership_application, token: magic_link.raw_token)
+      }
+    )
+  end
+
+  def self.admin_application_notifications(applications)
+    Message.new(
+      email: ENV.fetch("ADMIN_NOTIFICATION_EMAIL", "admin@example.com"),
+      transactional_id: ENV["LOOPS_ADMIN_APPLICATION_NOTIFICATION_TRANSACTIONAL_ID"].presence || "admin_application_notifications",
+      data_variables: {
+        application_count: applications.size,
+        applicant_emails: applications.map { |application| application.user.email_address }
+      }
+    )
+  end
+
   def self.magic_link_transactional_id
     ENV["LOOPS_MAGIC_LINK_TRANSACTIONAL_ID"].presence || default_magic_link_transactional_id
   end
