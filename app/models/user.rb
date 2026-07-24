@@ -1,12 +1,19 @@
 class User < ApplicationRecord
   has_secure_password
   has_many :sessions, dependent: :destroy
+  has_many :magic_links, dependent: :destroy
+  has_many :passkey_credentials, dependent: :destroy
+  has_many :membership_applications, dependent: :destroy
 
   encrypts :totp_secret
 
   normalizes :email_address, with: ->(e) { e.strip.downcase }
 
+  before_validation :assign_webauthn_id, on: :create
+
   validates :email_address, presence: true, uniqueness: true
+  validates :status, inclusion: { in: %w[pending active rejected disabled] }, allow_nil: true
+  validates :webauthn_id, presence: true, uniqueness: true
 
   generates_token_for :password_reset, expires_in: 15.minutes do
     password_digest&.last(10)
@@ -79,5 +86,27 @@ class User < ApplicationRecord
     update!(recovery_codes_digest: remaining)
 
     true
+  end
+
+  def active_for_authentication?
+    status == "active" && disabled_at.blank?
+  end
+
+  def admin_access_ready?
+    active_for_authentication? && email_verified_at.present?
+  end
+
+  def passkey_prompt_dismissed?
+    passkey_prompt_dismissed_until.present? && passkey_prompt_dismissed_until.future?
+  end
+
+  def dismiss_passkey_prompt!
+    update!(passkey_prompt_dismissed_until: 1.week.from_now)
+  end
+
+  private
+
+  def assign_webauthn_id
+    self.webauthn_id ||= WebAuthn.generate_user_id
   end
 end

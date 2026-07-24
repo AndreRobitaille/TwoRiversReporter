@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_14_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_23_000003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -237,6 +237,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_14_000000) do
     t.index ["status"], name: "index_knowledge_sources_on_status"
   end
 
+  create_table "magic_links", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "expires_at", null: false
+    t.string "purpose", null: false
+    t.string "token_digest", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "used_at"
+    t.bigint "user_id", null: false
+    t.index ["token_digest"], name: "index_magic_links_on_token_digest", unique: true
+    t.index ["user_id", "purpose"], name: "index_magic_links_on_user_id_and_purpose"
+    t.index ["user_id"], name: "index_magic_links_on_user_id"
+  end
+
   create_table "meeting_attendances", force: :cascade do |t|
     t.string "attendee_type", null: false
     t.string "capacity"
@@ -314,6 +327,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_14_000000) do
     t.index ["name"], name: "index_members_on_name", unique: true
   end
 
+  create_table "membership_applications", force: :cascade do |t|
+    t.datetime "admin_notification_sent_at"
+    t.text "application_notes"
+    t.string "city"
+    t.datetime "created_at", null: false
+    t.string "facebook_profile_url"
+    t.string "first_name"
+    t.string "last_name"
+    t.text "rejection_reason"
+    t.datetime "reviewed_at"
+    t.bigint "reviewed_by_id"
+    t.string "state"
+    t.string "status", default: "email_pending", null: false
+    t.string "street"
+    t.datetime "submitted_at"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["reviewed_by_id"], name: "index_membership_applications_on_reviewed_by_id"
+    t.index ["status"], name: "index_membership_applications_on_status"
+    t.index ["user_id"], name: "index_membership_applications_on_user_id"
+  end
+
   create_table "motions", force: :cascade do |t|
     t.bigint "agenda_item_id"
     t.datetime "created_at", null: false
@@ -323,6 +358,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_14_000000) do
     t.datetime "updated_at", null: false
     t.index ["agenda_item_id"], name: "index_motions_on_agenda_item_id"
     t.index ["meeting_id"], name: "index_motions_on_meeting_id"
+  end
+
+  create_table "passkey_credentials", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "external_id", null: false
+    t.datetime "last_used_at"
+    t.string "nickname"
+    t.text "public_key", null: false
+    t.integer "sign_count", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["external_id"], name: "index_passkey_credentials_on_external_id", unique: true
+    t.index ["user_id"], name: "index_passkey_credentials_on_user_id"
   end
 
   create_table "prompt_runs", force: :cascade do |t|
@@ -671,13 +719,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_14_000000) do
   create_table "users", force: :cascade do |t|
     t.boolean "admin", default: false, null: false
     t.datetime "created_at", null: false
+    t.datetime "disabled_at"
     t.string "email_address", null: false
+    t.datetime "email_verified_at"
+    t.datetime "passkey_prompt_dismissed_until"
     t.string "password_digest", null: false
     t.text "recovery_codes_digest", default: [], null: false, array: true
+    t.string "status", default: "pending"
     t.boolean "totp_enabled", default: false, null: false
     t.string "totp_secret"
     t.datetime "updated_at", null: false
+    t.string "webauthn_id"
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
+    t.index ["status"], name: "index_users_on_status"
+    t.index ["webauthn_id"], name: "index_users_on_webauthn_id", unique: true
   end
 
   create_table "votes", force: :cascade do |t|
@@ -714,14 +769,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_14_000000) do
   add_foreign_key "knowledge_source_topics", "knowledge_sources"
   add_foreign_key "knowledge_source_topics", "topics"
   add_foreign_key "knowledge_sources", "meetings"
+  add_foreign_key "magic_links", "users"
   add_foreign_key "meeting_attendances", "meetings"
   add_foreign_key "meeting_attendances", "members"
   add_foreign_key "meeting_documents", "meetings"
   add_foreign_key "meeting_summaries", "meetings"
   add_foreign_key "meetings", "committees"
   add_foreign_key "member_aliases", "members"
+  add_foreign_key "membership_applications", "users"
+  add_foreign_key "membership_applications", "users", column: "reviewed_by_id"
   add_foreign_key "motions", "agenda_items"
   add_foreign_key "motions", "meetings"
+  add_foreign_key "passkey_credentials", "users"
   add_foreign_key "prompt_versions", "prompt_templates"
   add_foreign_key "sessions", "users"
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
