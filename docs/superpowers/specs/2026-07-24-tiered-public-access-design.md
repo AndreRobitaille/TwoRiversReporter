@@ -106,7 +106,9 @@ This is the only mechanism that answers "I applied — did it work?", which in a
 1. No withheld text appears in any anonymous response body.
 2. `og_controller` and `sitemaps#show` are public in both modes.
 3. Admin surfaces are gated in both modes, unaffected by `access_mode`.
-4. `access_mode` participates in any HTTP or fragment cache key. A page cached while `open` must not be served after a flip to `gated`. `ApplicationController` already calls `stale_when_importmap_changes`, so the etag computation is the place to check.
+4. A page cached while `open` must not be served after a flip to `gated`. **No code is required for this** — verified empirically on 2026-07-24: `Rack::ETag` and `Rack::ConditionalGet` are in the middleware stack, Rails sends `Cache-Control: max-age=0, private, must-revalidate`, and the ETag is derived from the response body. Every request therefore revalidates against the origin, the server re-renders under the current mode, and a page whose content differs between modes already gets a distinct ETag. A page whose content is identical in both modes is correct to serve from cache.
+
+   Do not add an `etag { ... }` block for the access mode. Registered etaggers only apply inside `fresh_when`/`stale?`, which this app never calls, so such a block is inert; forcing it to apply activates `stale_when_importmap_changes` site-wide as a side effect.
 
 ## Testing
 

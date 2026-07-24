@@ -234,18 +234,9 @@ class SiteAccessTest < ActionDispatch::IntegrationTest
     assert_not @controller.send(:gated_for_visitor?)
   end
 
-  test "flipping the mode changes the etag" do
-    set_access_mode("open")
-    get root_path
-    open_etag = response.headers["ETag"]
-
-    set_access_mode("gated")
-    get root_path
-    gated_etag = response.headers["ETag"]
-
-    assert_not_equal open_etag, gated_etag,
-      "a page cached while open must not be served after a flip to gated"
-  end
+  # No etag test. Verified empirically that Rails' must-revalidate default plus
+  # Rack::ETag's body-derived validator already prevent a stale page surviving a
+  # mode flip — see security invariant 4 in the design spec.
 
   private
 
@@ -285,11 +276,6 @@ module SiteAccess
 
   included do
     helper_method :gated_for_visitor?, :site_gated?
-
-    # The mode must participate in the etag, or a page cached while the site
-    # was open keeps being served after a flip to gated. Calling site_gated?
-    # here also populates the per-request memo.
-    etag { site_gated? }
   end
 
   private
