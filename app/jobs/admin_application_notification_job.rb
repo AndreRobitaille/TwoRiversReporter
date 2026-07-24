@@ -5,7 +5,6 @@ class AdminApplicationNotificationJob < ApplicationJob
     return if sent_within_hour?(membership_application_id)
 
     applications = MembershipApplication.where(status: "submitted", admin_notification_sent_at: nil)
-                                       .where("created_at <= ?", 1.hour.ago)
                                        .order(:created_at)
 
     applications = applications.to_a

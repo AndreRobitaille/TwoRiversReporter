@@ -1,27 +1,43 @@
 <div class="page-header">
   <h1 class="page-title"><%= @user.email_address %></h1>
+  <p class="page-subtitle">Account and application management</p>
 </div>
 
 <div class="flex gap-2 mb-4">
-  <%= button_to "Approve application", approve_admin_user_path(@user), method: :patch, class: "btn btn--primary" %>
-  <%= button_to "Reject application", reject_admin_user_path(@user), method: :patch, params: { rejection_reason: "" }, class: "btn btn--secondary" %>
-  <%= button_to(@user.admin? ? "Remove admin" : "Make admin", toggle_admin_admin_user_path(@user), method: :patch, class: "btn btn--secondary") %>
-  <%= button_to "Disable user", disable_admin_user_path(@user), method: :patch, class: "btn btn--secondary" %>
+  <%= button_to(@user.disabled_at? ? "Re-enable account" : "Disable account", disable_user_path(@user), method: :patch, class: "btn btn--secondary") %>
+  <%= button_to(@user.admin? ? "Remove admin" : "Make admin", toggle_admin_user_path(@user), method: :patch, class: "btn btn--secondary") %>
+  <%= button_to "Revoke all sessions", revoke_all_sessions_user_path(@user), method: :delete, class: "btn btn--secondary" %>
 </div>
 
-<h2>Applications</h2>
+<h2>Membership applications</h2>
 <ul>
   <% @applications.each do |application| %>
-    <li><%= application.status %> - <%= application.first_name %> <%= application.last_name %></li>
+    <li>
+      <strong><%= application.status %></strong>
+      <%= application.first_name %> <%= application.last_name %>
+      <%= application.city %>, <%= application.state %>
+      <% if application.application_notes.present? %>
+        — <%= application.application_notes %>
+      <% end %>
+      <%= form_with url: reject_user_path(@user), method: :patch do |form| %>
+        <%= form.label :rejection_reason, "Rejection reason" %>
+        <%= form.text_field :rejection_reason %>
+        <%= form.submit "Reject application" %>
+      <% end %>
+      <%= button_to "Approve application", approve_user_path(@user), method: :patch %>
+    </li>
   <% end %>
 </ul>
 
-<h2>Sessions</h2>
+<h2>Passkeys</h2>
+<p><%= @user.passkey_credentials.exists? ? "Present" : "None" %></p>
+
+<h2>Session history</h2>
 <ul>
   <% @sessions.each do |session| %>
     <li>
-      <%= session.id %>
-      <%= button_to "Revoke", revoke_session_admin_user_path(@user, session_id: session.id), method: :delete %>
+      <%= session.id %> — <%= session.last_seen_at %>
+      <%= button_to "Revoke", revoke_session_user_path(@user, session_id: session.id), method: :delete %>
     </li>
   <% end %>
 </ul>

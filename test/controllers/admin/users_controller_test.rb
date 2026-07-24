@@ -6,13 +6,22 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     applicant = User.create!(email_address: "approve@example.com", password: "password", status: "pending")
     application = applicant.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI")
     sign_in(admin)
+    delivered = false
 
-    assert_difference("MagicLink.count", 1) do
-      with_admin_access { patch approve_user_path(applicant) }
+    TransactionalEmail.stub(:application_approved, ->(_user, _application, _magic_link) {
+      Object.new.tap do |message|
+        message.define_singleton_method(:deliver_now) { delivered = true }
+      end
+    }) do
+      assert_difference("MagicLink.where(purpose: 'sign_in').count", 1) do
+        with_admin_access { patch approve_user_path(applicant) }
+      end
     end
 
     assert_redirected_to user_path(applicant)
+    assert_predicate delivered, :itself
     assert_equal "active", applicant.reload.status
+    assert_predicate applicant.disabled_at, :blank?
     assert_equal "approved", application.reload.status
   end
 
@@ -44,6 +53,46 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
 
     with_admin_access { delete revoke_session_user_path(user, session_id: session.id) }
     assert_not Session.exists?(session.id)
+  end
+
+  test "admin can revoke all sessions for a user" do
+    admin = create_passkey_admin
+    user = User.create!(email_address: "managed-all@example.com", password: "password", status: "active")
+    first_session = user.sessions.create!(ip_address: "127.0.0.1", user_agent: "test", last_seen_at: Time.current)
+    user.sessions.create!(ip_address: "127.0.0.1", user_agent: "test", last_seen_at: 1.minute.ago)
+    sign_in(admin)
+
+    with_admin_access { delete revoke_all_sessions_user_path(user) }
+
+    assert_not Session.exists?(first_session.id)
+    assert_equal 0, user.sessions.count
+  end
+
+  test "index and show reflect account and application management details" do
+    admin = create_passkey_admin
+    user = User.create!(email_address: "ui@example.com", password: "password", status: "active")
+    disabled_user = User.create!(email_address: "ui-disabled@example.com", password: "password", status: "active", disabled_at: Time.current)
+    user.passkey_credentials.create!(external_id: SecureRandom.uuid, public_key: "public-key", sign_count: 0)
+    user.sessions.create!(ip_address: "127.0.0.1", user_agent: "test", last_seen_at: Time.current)
+    user.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI", application_notes: "Hello")
+    sign_in(admin)
+
+    with_admin_access do
+      get users_path
+      assert_response :success
+      assert_includes response.body, "Account management"
+
+      get user_path(user)
+      assert_response :success
+      assert_includes response.body, "Membership applications"
+      assert_includes response.body, "Passkeys"
+      assert_includes response.body, "Session history"
+      assert_includes response.body, "Rejection reason"
+
+      get user_path(disabled_user)
+      assert_response :success
+      assert_includes response.body, "Re-enable account"
+    end
   end
 
   private

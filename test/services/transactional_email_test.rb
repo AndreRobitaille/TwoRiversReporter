@@ -23,6 +23,19 @@ class TransactionalEmailTest < ActiveSupport::TestCase
     ENV.delete("LOOPS_MAGIC_LINK_TRANSACTIONAL_ID")
   end
 
+  test "application_approved sends a sign in compatible link and keeps the token memory only" do
+    user = User.create!(email_address: "applicant@example.com", password: "password123", password_confirmation: "password123", status: "active")
+    application = user.membership_applications.create!(status: "approved", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI")
+    magic_link = MagicLink.create_for!(user, purpose: "sign_in")
+
+    message = TransactionalEmail.application_approved(user, application, magic_link)
+
+    assert_equal user.email_address, message.email
+    assert_equal TransactionalEmail.send(:magic_link_transactional_id), message.transactional_id
+    assert_includes message.data_variables[:sign_in_url], magic_link.raw_token
+    assert_not_includes message.data_variables.keys, :application_url
+  end
+
   test "deliver_now in test does not hit loops and succeeds through the fake path" do
     user = User.create!(email_address: "active@example.com", password: "password123", password_confirmation: "password123", status: "active")
     magic_link = MagicLink.create_for!(user, purpose: "sign_in")

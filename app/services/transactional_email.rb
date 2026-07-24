@@ -53,9 +53,9 @@ class TransactionalEmail
   def self.application_approved(user, membership_application, magic_link)
     Message.new(
       email: user.email_address,
-      transactional_id: application_link_transactional_id,
+      transactional_id: magic_link_transactional_id,
       data_variables: {
-        application_url: Rails.application.routes.url_helpers.edit_application_path(membership_application, token: magic_link.raw_token)
+        sign_in_url: "/session/magic_link?token=#{CGI.escape(magic_link.raw_token)}"
       }
     )
   end

@@ -1,6 +1,6 @@
 module Admin
   class UsersController < BaseController
-    before_action :set_user, only: %i[show approve reject toggle_admin disable revoke_session]
+    before_action :set_user, only: %i[show approve reject toggle_admin disable revoke_session revoke_all_sessions]
 
     def index
       @users = User.order(:email_address)
@@ -27,14 +27,13 @@ module Admin
 
     def approve
       application = submitted_application!
-      magic_link = nil
 
       ApplicationRecord.transaction do
-        @user.update!(status: "active")
+        @user.update!(status: "active", disabled_at: nil)
         application.update!(status: "approved", reviewed_at: Time.current, reviewed_by: Current.session.user)
-        magic_link = MagicLink.create_for!(@user, purpose: "application")
       end
 
+      magic_link = MagicLink.create_for!(@user, purpose: "sign_in")
       TransactionalEmail.application_approved(@user, application, magic_link).deliver_now
       redirect_to user_path(@user), notice: "Application approved."
     end
@@ -56,13 +55,25 @@ module Admin
     end
 
     def disable
-      @user.update!(disabled_at: Time.current)
-      redirect_to user_path(@user), notice: "User disabled."
+      if @user.disabled_at.present?
+        @user.update!(disabled_at: nil)
+        notice = "User re-enabled."
+      else
+        @user.update!(disabled_at: Time.current)
+        notice = "User disabled."
+      end
+
+      redirect_to user_path(@user), notice: notice
     end
 
     def revoke_session
       @user.sessions.find(params[:session_id]).destroy!
       redirect_to user_path(@user), notice: "Session revoked."
+    end
+
+    def revoke_all_sessions
+      @user.sessions.delete_all
+      redirect_to user_path(@user), notice: "All sessions revoked."
     end
 
     private

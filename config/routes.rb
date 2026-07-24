@@ -55,6 +55,7 @@ Rails.application.routes.draw do
         patch :toggle_admin
         patch :disable
         delete :revoke_session
+        delete :revoke_all_sessions
       end
     end
 
