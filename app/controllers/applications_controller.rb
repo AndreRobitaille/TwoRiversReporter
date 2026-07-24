@@ -12,6 +12,8 @@ class ApplicationsController < ApplicationController
     return redirect_to(new_application_path, notice: "Check your email for the application link.") if email.blank?
 
     user = User.find_or_initialize_by(email_address: email)
+    return redirect_to(new_application_path, notice: "Check your email for the application link.") unless user.new_record? || user.status == "pending"
+
     ensure_pending_disabled_account!(user)
 
     membership_application = user.membership_applications.find_or_create_by!(status: "email_pending")
@@ -28,20 +30,22 @@ class ApplicationsController < ApplicationController
     @membership_application = MembershipApplication.find(params[:id])
     @token = params[:token].to_s
 
-    redirect_to new_application_path, alert: invalid_application_link_message unless MagicLink.confirmable?(@token, purpose: "application")
+    redirect_to new_application_path, alert: invalid_application_link_message unless application_token_matches_current_application?
   end
 
   def update
     @membership_application = MembershipApplication.find(params[:id])
     @token = params[:token].to_s
 
-    unless MagicLink.confirmable?(@token, purpose: "application")
+    unless application_token_matches_current_application?
       return redirect_to(new_application_path, alert: invalid_application_link_message)
     end
 
     saved = false
 
     ApplicationRecord.transaction do
+      raise ActiveRecord::Rollback unless application_token_matches_current_application?
+
       MagicLink.consume!(@token, purpose: "application")
       saved = @membership_application.update(
         membership_application_params.merge(status: "submitted", submitted_at: Time.current)
@@ -71,6 +75,12 @@ class ApplicationsController < ApplicationController
 
   def membership_application_params
     params.require(:membership_application).permit(:first_name, :last_name, :street, :city, :state, :facebook_profile_url, :application_notes)
+  end
+
+  def application_token_matches_current_application?
+    return false unless MagicLink.confirmable?(@token, purpose: "application")
+
+    MagicLink.for_token(@token).where(purpose: "application", user_id: @membership_application.user_id).usable.exists?
   end
 
   def invalid_application_link_message
