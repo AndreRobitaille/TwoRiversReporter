@@ -269,20 +269,23 @@
         <% end %>
       </section>
     <% end %>
-
     <% end %>
 
   <% elsif @summary&.content.present? %>
-    <section class="meeting-article-section">
-      <div class="home-section-header">
-        <%= render "shared/atom_marker" %>
-        <span class="section-label"><%= @summary.summary_type == "minutes_recap" ? "Meeting Recap" : "Packet Analysis" %></span>
-        <span class="section-line"></span>
-      </div>
-      <div class="prose meeting-legacy-recap">
-        <%= markdown @summary.content %>
-      </div>
-    </section>
+    <% if gated_for_visitor? %>
+      <%= render "shared/gate" %>
+    <% else %>
+      <section class="meeting-article-section">
+        <div class="home-section-header">
+          <%= render "shared/atom_marker" %>
+          <span class="section-label"><%= @summary.summary_type == "minutes_recap" ? "Meeting Recap" : "Packet Analysis" %></span>
+          <span class="section-line"></span>
+        </div>
+        <div class="prose meeting-legacy-recap">
+          <%= markdown @summary.content %>
+        </div>
+      </section>
+    <% end %>
 
   <% else %>
     <p class="section-empty">No summary available for this meeting yet.</p>

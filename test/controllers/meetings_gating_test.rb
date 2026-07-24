@@ -63,6 +63,28 @@ class MeetingsGatingTest < ActionDispatch::IntegrationTest
     assert_no_match(/Sign in to keep reading/, response.body)
   end
 
+  test "legacy recap is gated for anonymous visitors, shown to members" do
+    legacy_meeting = Meeting.create!(body_name: "City Council Meeting", starts_at: 5.days.ago, detail_page_url: "https://example.com/legacy-meeting")
+    legacy_meeting.meeting_summaries.create!(
+      summary_type: "minutes_recap",
+      content: WITHHELD,
+      generation_data: {}
+    )
+
+    set_access_mode("gated")
+    get meeting_path(legacy_meeting)
+
+    assert_response :success
+    assert_no_match(/#{Regexp.escape(WITHHELD)}/, response.body)
+    assert_match(/Sign in to keep reading/, response.body)
+
+    sign_in_as(User.create!(email_address: "legacy-reader@example.com", status: "active"))
+    get meeting_path(legacy_meeting)
+
+    assert_match(/#{Regexp.escape(WITHHELD)}/, response.body)
+    assert_no_match(/Sign in to keep reading/, response.body)
+  end
+
   private
 
     def set_access_mode(mode)
