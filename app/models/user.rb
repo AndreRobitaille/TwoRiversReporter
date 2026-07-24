@@ -102,6 +102,11 @@ class User < ApplicationRecord
     passkey_prompt_dismissed_until.present? && passkey_prompt_dismissed_until.future?
   end
 
+  def status=(value)
+    @status_provided = true
+    super
+  end
+
   def dismiss_passkey_prompt!
     update!(passkey_prompt_dismissed_until: 1.week.from_now)
   end
@@ -109,7 +114,11 @@ class User < ApplicationRecord
   private
 
   def backfill_passwordless_fields
-    self.status ||= "pending"
+    if admin? && !@status_provided
+      self.status = "active"
+    else
+      self.status ||= "pending"
+    end
     self.webauthn_id ||= WebAuthn.generate_user_id
   end
 end

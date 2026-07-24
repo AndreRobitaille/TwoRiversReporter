@@ -18,7 +18,7 @@ class AddPasswordlessFieldsToUsers < ActiveRecord::Migration[8.1]
         users.reset_column_information
         users.find_each do |user|
           user.update_columns(
-            status: user.status.presence || "pending",
+            status: user.status.presence || (user.admin? ? "active" : "pending"),
             webauthn_id: user.webauthn_id.presence || WebAuthn.generate_user_id
           )
         end

@@ -8,6 +8,16 @@ class UserTest < ActiveSupport::TestCase
     assert_equal "member@example.com", user.email_address
   end
 
+  test "admins without explicit status default active and non-admins default pending" do
+    admin = User.create!(email_address: "admin-default@example.com", password: "password123", password_confirmation: "password123", admin: true)
+    member = User.create!(email_address: "member-default@example.com", password: "password123", password_confirmation: "password123")
+
+    assert_equal "active", admin.status
+    assert admin.active_for_authentication?
+    assert_equal "pending", member.status
+    assert_not member.active_for_authentication?
+  end
+
   test "active users can authenticate but pending rejected and disabled users cannot" do
     active = User.create!(email_address: "active@example.com", password: "password123", password_confirmation: "password123", status: "active")
     pending = User.create!(email_address: "pending@example.com", password: "password123", password_confirmation: "password123", status: "pending")
@@ -47,7 +57,7 @@ class UserTest < ActiveSupport::TestCase
 
     legacy.update!(admin: true)
 
-    assert_equal "pending", legacy.status
+    assert_equal "active", legacy.status
     assert legacy.webauthn_id.present?
   end
 
