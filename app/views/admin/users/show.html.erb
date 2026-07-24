@@ -14,19 +14,27 @@
   <% @applications.each do |application| %>
     <li>
       <strong><%= application.status %></strong>
-      <%= application.first_name %> <%= application.last_name %>
-      <%= application.city %>, <%= application.state %>
+      <div>Name: <%= application.first_name %> <%= application.last_name %></div>
+      <div>Street: <%= application.street %></div>
+      <div>City: <%= application.city %></div>
+      <div>State: <%= application.state %></div>
+      <div>Facebook profile URL: <%= application.facebook_profile_url %></div>
       <% if application.application_notes.present? %>
-        — <%= application.application_notes %>
+        <div>Application notes: <%= application.application_notes %></div>
       <% end %>
       <div>Submitted: <%= application.created_at %></div>
       <div>Reviewed: <%= application.reviewed_at %></div>
-      <%= form_with url: reject_user_path(@user), method: :patch do |form| %>
-        <%= form.label :rejection_reason, "Rejection reason" %>
-        <%= form.text_field :rejection_reason %>
-        <%= form.submit "Reject application" %>
+      <% if application.status == "submitted" %>
+        <%= form_with url: reject_user_path(@user), method: :patch do |form| %>
+          <%= form.label :rejection_reason, "Rejection reason" %>
+          <%= form.text_field :rejection_reason %>
+          <%= form.submit "Reject application" %>
+        <% end %>
+        <%= button_to "Approve application", approve_user_path(@user), method: :patch %>
       <% end %>
-      <%= button_to "Approve application", approve_user_path(@user), method: :patch %>
+      <% if application.rejection_reason.present? %>
+        <div>Rejection reason: <%= application.rejection_reason %></div>
+      <% end %>
     </li>
   <% end %>
 </ul>

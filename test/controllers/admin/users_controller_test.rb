@@ -85,19 +85,25 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     disabled_user = User.create!(email_address: "ui-disabled@example.com", password: "password", status: "active", disabled_at: Time.current)
     user.passkey_credentials.create!(external_id: SecureRandom.uuid, public_key: "public-key", sign_count: 0)
     user.sessions.create!(ip_address: "127.0.0.1", user_agent: "test agent", last_seen_at: Time.current, created_at: 1.day.ago)
-    user.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI", application_notes: "Hello", created_at: 2.days.ago)
+    user.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", street: "123 Main St", city: "Two Rivers", state: "WI", facebook_profile_url: "https://facebook.com/jane", application_notes: "Hello", created_at: 2.days.ago)
     sign_in(admin)
 
     with_admin_access do
       get users_path
       assert_response :success
       assert_includes response.body, "Account management"
+      assert_includes response.body, "Account status"
+      assert_includes response.body, "Passkeys"
+      assert_includes response.body, "Application review"
+      assert_includes response.body, "submitted"
 
       get user_path(user)
       assert_response :success
       assert_includes response.body, "Account and application management"
       assert_includes response.body, "Membership applications"
       assert_includes response.body, "Hello"
+      assert_includes response.body, "123 Main St"
+      assert_includes response.body, "Facebook profile URL"
       assert_includes response.body, "Passkeys"
       assert_includes response.body, "Session history"
       assert_includes response.body, "127.0.0.1"

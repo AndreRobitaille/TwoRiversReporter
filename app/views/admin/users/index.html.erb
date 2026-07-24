@@ -17,14 +17,30 @@
     <thead>
       <tr>
         <th>Email</th>
-        <th>MFA enabled</th>
+        <th>Account status</th>
+        <th>Admin</th>
+        <th>Disabled</th>
+        <th>Passkeys</th>
+        <th>Application review</th>
       </tr>
     </thead>
     <tbody>
       <% @users.each do |user| %>
+        <% application = user.membership_applications.order(created_at: :desc).first %>
         <tr>
           <td><%= link_to user.email_address, user_path(user) %></td>
-          <td><%= user.totp_enabled? ? "Yes" : "No" %></td>
+          <td><%= user.status %></td>
+          <td><%= user.admin? ? "Yes" : "No" %></td>
+          <td><%= user.disabled_at.present? ? "Yes" : "No" %></td>
+          <td><%= user.passkey_credentials.count %></td>
+          <td>
+            <% if application.present? %>
+              <%= application.status %>
+              <% if application.first_name.present? || application.last_name.present? %>
+                — <%= [application.first_name, application.last_name].compact.join(" ") %>
+              <% end %>
+            <% end %>
+          </td>
         </tr>
       <% end %>
     </tbody>
