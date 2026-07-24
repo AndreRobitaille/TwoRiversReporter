@@ -1,0 +1,11 @@
+<%# app/views/shared/_gate.html.erb
+    Locals: message (optional) — the headline shown above the two actions. %>
+<% message = local_assigns.fetch(:message, "Sign in to keep reading") %>
+<div class="gate-card">
+  <p class="gate-card__title"><%= message %></p>
+  <p class="gate-card__meta">Access is by approval</p>
+  <div class="gate-card__actions">
+    <%= link_to "Sign in", new_public_session_path, class: "btn btn--primary btn--sm" %>
+    <%= link_to "Request access →", new_application_path, class: "btn btn--secondary btn--sm" %>
+  </div>
+</div>
