@@ -27,7 +27,9 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
 
   test "create sends a magic link for an active user" do
     assert_difference "MagicLink.count", 1 do
+      assert_enqueued_emails 1 do
       post "/session", params: { email_address: " ACTIVE@example.com " }
+      end
     end
 
     magic_link = MagicLink.order(:created_at).last
@@ -35,6 +37,12 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "sign_in", magic_link.purpose
     assert_redirected_to "/session/new"
     assert_equal "If that account can sign in, we sent a link.", flash[:notice]
+  end
+
+  test "unauthenticated destroy redirects to the public sign in page" do
+    delete "/session"
+
+    assert_redirected_to "/session/new"
   end
 
   test "pending rejected and disabled users do not receive links" do

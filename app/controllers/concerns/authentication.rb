@@ -39,17 +39,29 @@ module Authentication
 
     def request_authentication
       session[:return_to_after_authenticating] = request.url
-      redirect_to new_session_path
+      redirect_to authentication_redirect_path
     end
 
     def after_authentication_url
       url = session.delete(:return_to_after_authenticating)
-      return admin_root_url unless url
+      return default_after_authentication_url unless url
 
       uri = URI.parse(url)
-      (uri.host.nil? || uri.host == request.host) ? url : admin_root_url
+      (uri.host.nil? || uri.host == request.host) ? url : default_after_authentication_url
     rescue URI::InvalidURIError
-      admin_root_url
+      default_after_authentication_url
+    end
+
+    def authentication_redirect_path
+      admin_controller? ? new_session_path : new_public_session_path
+    end
+
+    def default_after_authentication_url
+      admin_controller? ? admin_root_url : root_url
+    end
+
+    def admin_controller?
+      controller_path.start_with?("admin/")
     end
 
     def start_new_session_for(user)
