@@ -10,7 +10,9 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
 
     TransactionalEmail.stub(:application_approved, ->(_user, _application, _magic_link) {
       Object.new.tap do |message|
-        message.define_singleton_method(:deliver_now) { delivered = true }
+        message.define_singleton_method(:deliver_now) do
+          delivered = true
+        end
       end
     }) do
       assert_difference("MagicLink.where(purpose: 'sign_in').count", 1) do
@@ -33,17 +35,17 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
 
     TransactionalEmail.stub(:application_approved, ->(_user, _application, _magic_link) {
       Object.new.tap do |message|
-        message.define_singleton_method(:deliver_now) { raise "delivery failed" }
+        message.define_singleton_method(:deliver_now) { raise LoopsDelivery::DeliveryError, "delivery failed" }
       end
     }) do
-      assert_raises(RuntimeError) do
-        with_admin_access { patch approve_user_path(applicant) }
-      end
+      with_admin_access { patch approve_user_path(applicant) }
     end
 
     assert_equal "pending", applicant.reload.status
     assert_equal "submitted", application.reload.status
     assert_equal 0, MagicLink.where(user: applicant, purpose: "sign_in").count
+    assert_redirected_to user_path(applicant)
+    assert_equal "We couldn't send the approval link right now. Please try again.", flash[:alert]
   end
 
   test "admin rejects submitted application" do

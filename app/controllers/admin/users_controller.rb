@@ -26,6 +26,10 @@ module Admin
     end
 
     def approve
+      user = nil
+      application = nil
+      magic_link = nil
+
       ApplicationRecord.transaction do
         user = User.lock.find(@user.id)
         application = user.membership_applications.lock.find_by!(status: "submitted")
@@ -33,9 +37,20 @@ module Admin
 
         user.update!(status: "active", disabled_at: nil)
         application.update!(status: "approved", reviewed_at: Time.current, reviewed_by: Current.session.user)
-        TransactionalEmail.application_approved(user, application, magic_link).deliver_now
       end
+
+      TransactionalEmail.application_approved(user, application, magic_link).deliver_now
       redirect_to user_path(@user), notice: "Application approved."
+    rescue LoopsDelivery::DeliveryError
+      ApplicationRecord.transaction do
+        user = User.lock.find(user.id)
+        application = user.membership_applications.lock.find(application.id)
+        user.update!(status: "pending", disabled_at: Time.current)
+        application.update!(status: "submitted", reviewed_at: nil, reviewed_by: nil)
+        magic_link.destroy! if magic_link&.persisted?
+      end
+
+      redirect_to user_path(@user), alert: "We couldn't send the approval link right now. Please try again."
     end
 
     def reject
