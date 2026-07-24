@@ -30,16 +30,21 @@ class PasskeysControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "registration stores verified credential and clears challenge" do
-    response_payload = {
-      id: "credential-123",
-      public_key: "public-key",
-      sign_count: 0
-    }
-
     credential = OpenStruct.new(id: "credential-123", public_key: "public-key", sign_count: 0, nickname: nil)
     headers = signed_session_headers(@user)
-    WebAuthn::Credential.stub(:from_create, ->(*args, **kwargs) { credential }) do
+    options = Struct.new(:challenge) do
+      def as_json(*) = { challenge: }
+    end.new("registration-challenge")
+    WebAuthn::Credential.stub(:options_for_create, ->(*args, **kwargs) { options }) do
+      WebAuthn::Credential.stub(:from_create, ->(*args, **kwargs) { credential }) do
+      credential.define_singleton_method(:verify) do |challenge, user_verification:|
+        @verified_args = [challenge, user_verification]
+        true
+      end
+      post registration_options_passkeys_url, headers: headers
       post registration_passkeys_url, params: { credential: { raw: "value" } }, headers: headers
+      assert_equal [nil, true], credential.instance_variable_get(:@verified_args)
+      end
     end
 
     assert_response :success
@@ -56,20 +61,44 @@ class PasskeysControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "authentication rejects unknown credentials" do
-    WebAuthn::Credential.stub(:from_get, OpenStruct.new(id: "missing", sign_count: 1)) do
-      post authentication_passkeys_url, params: { credential: { raw: "value" } }
-    end
-
-    assert_response :not_found
-  end
-
-  test "authentication rejects inactive user" do
-    credential = PasskeyCredential.create!(user: @inactive_user, external_id: "credential-123", public_key: "public-key", sign_count: 0)
-    WebAuthn::Credential.stub(:from_get, OpenStruct.new(id: credential.external_id, sign_count: 1)) do
+    WebAuthn::Credential.stub(:from_get, ->(*args, **kwargs) { OpenStruct.new(id: "missing", sign_count: 1) }) do
       post authentication_passkeys_url, params: { credential: { raw: "value" } }
     end
 
     assert_response :unauthorized
+  end
+
+  test "authentication rejects inactive user" do
+    credential = PasskeyCredential.create!(user: @inactive_user, external_id: "credential-123", public_key: "public-key", sign_count: 0)
+    webauthn_credential = OpenStruct.new(id: credential.external_id, sign_count: 1)
+    webauthn_credential.define_singleton_method(:verify) { |challenge, public_key:, sign_count:, user_verification:| true }
+    WebAuthn::Credential.stub(:from_get, ->(*args, **kwargs) { webauthn_credential }) do
+      post authentication_passkeys_url, params: { credential: { raw: "value" } }
+    end
+
+    assert_response :unauthorized
+  end
+
+  test "authenticated users can authenticate with verified credential" do
+    credential = PasskeyCredential.create!(user: @user, external_id: "credential-123", public_key: "public-key", sign_count: 0)
+    webauthn_credential = OpenStruct.new(id: credential.external_id, sign_count: 1)
+    webauthn_credential.define_singleton_method(:verify) do |challenge, public_key:, sign_count:, user_verification:|
+      @verified_args = [challenge, public_key, sign_count, user_verification]
+      true
+    end
+
+    options = Struct.new(:challenge) do
+      def as_json(*) = { challenge: }
+    end.new("authentication-challenge")
+    WebAuthn::Credential.stub(:options_for_get, ->(*args, **kwargs) { options }) do
+      WebAuthn::Credential.stub(:from_get, ->(*args, **kwargs) { webauthn_credential }) do
+        post authentication_options_passkeys_url
+        post authentication_passkeys_url, params: { credential: { raw: "value" } }
+        assert_equal ["authentication-challenge", "public-key", 0, true], webauthn_credential.instance_variable_get(:@verified_args)
+      end
+    end
+
+    assert_response :success
   end
 
   test "update and destroy only affect current user's credentials" do
@@ -78,6 +107,7 @@ class PasskeysControllerTest < ActionDispatch::IntegrationTest
 
     headers = signed_session_headers(@user)
     patch passkey_url(mine), params: { passkey_credential: { nickname: "Renamed" } }, headers: headers
+    assert_redirected_to settings_security_url
     assert_equal "Renamed", mine.reload.nickname
 
     patch passkey_url(other), params: { passkey_credential: { nickname: "Hacked" } }, headers: headers
@@ -85,6 +115,7 @@ class PasskeysControllerTest < ActionDispatch::IntegrationTest
     assert_nil other.reload.nickname
 
     delete passkey_url(mine), headers: headers
+    assert_redirected_to settings_security_url
     assert_raises(ActiveRecord::RecordNotFound) { mine.reload }
     assert_predicate other.reload, :persisted?
   end

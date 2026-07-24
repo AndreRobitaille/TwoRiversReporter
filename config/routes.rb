@@ -23,6 +23,8 @@ Rails.application.routes.draw do
     post :resend_expired_magic_link, on: :collection
   end
 
+  get "settings/security", to: "home#index", as: :settings_security
+
   resources :passkeys, only: %i[update destroy] do
     collection do
       post :registration_options

@@ -2,6 +2,7 @@ class PasskeysController < ApplicationController
   include Authentication
 
   allow_unauthenticated_access only: %i[authentication_options authentication]
+  rate_limit to: 10, within: 3.minutes, only: %i[registration_options registration authentication_options authentication], with: -> { head :too_many_requests }
 
   before_action :load_current_user_credential, only: %i[update destroy]
   rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
@@ -15,7 +16,7 @@ class PasskeysController < ApplicationController
       exclude: credential_ids
     )
 
-    session[:webauthn_registration_challenge] = options.challenge
+    session[:passkey_registration_challenge] = options.challenge
     render json: options
   end
 
@@ -28,31 +29,29 @@ class PasskeysController < ApplicationController
       nickname: credential.nickname
     )
     passkey.save!
-    session.delete(:webauthn_registration_challenge)
     render json: { success: true }
   end
 
   def authentication_options
     options = webauthn_options_for_get(user_verification: :required)
-    session[:webauthn_authentication_challenge] = options.challenge
+    session[:passkey_authentication_challenge] = options.challenge
     render json: options
   end
 
   def authentication
     credential = verified_get_credential
+    return if performed?
     passkey = PasskeyCredential.includes(:user).find_by(external_id: credential.id)
-    return head :not_found unless passkey
     return head :unauthorized unless passkey.user.active_for_authentication?
 
     passkey.update!(sign_count: credential.sign_count, last_used_at: Time.current)
     start_new_session_for(passkey.user)
-    session.delete(:webauthn_authentication_challenge)
     render json: { success: true }
   end
 
   def update
     if @passkey_credential.update(passkey_params)
-      render json: { success: true }
+      redirect_to settings_security_path, status: :see_other
     else
       render json: { errors: @passkey_credential.errors.full_messages }, status: :unprocessable_entity
     end
@@ -60,7 +59,7 @@ class PasskeysController < ApplicationController
 
   def destroy
     @passkey_credential.destroy!
-    head :no_content
+    redirect_to settings_security_path, status: :see_other
   end
 
   private
@@ -78,11 +77,25 @@ class PasskeysController < ApplicationController
     end
 
     def verified_create_credential
-      webauthn_credential_from_create(params[:credential], session[:webauthn_registration_challenge], user_verification: :required)
+      credential = webauthn_credential_from_create(params[:credential])
+      credential.verify(
+        session.delete(:passkey_registration_challenge),
+        user_verification: true
+      )
+      credential
     end
 
     def verified_get_credential
-      webauthn_credential_from_get(params[:credential], session[:webauthn_authentication_challenge], user_verification: :required)
+      credential = webauthn_credential_from_get(params[:credential])
+      passkey = PasskeyCredential.find_by(external_id: credential.id)
+      return head :unauthorized unless passkey
+      credential.verify(
+        session.delete(:passkey_authentication_challenge),
+        public_key: passkey.public_key,
+        sign_count: passkey.sign_count,
+        user_verification: true
+      )
+      credential
     end
 
     def webauthn_options_for_create(**kwargs)
