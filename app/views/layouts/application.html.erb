@@ -120,15 +120,13 @@
       <main class="main-content">
         <div class="container">
           <% if current_user.present? && !current_user.passkey_prompt_dismissed? && !current_user.passkey_credentials.exists? %>
-            <div class="passkey-prompt card mb-6 flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p class="badge badge--warning mb-2">Reminder</p>
-                <p class="mb-0">Add a passkey to this account so the next sign-in is faster and easier.</p>
-              </div>
+            <div class="passkey-prompt attention-card attention-card--warning mb-6">
+              <p class="attention-card__title">Make your next sign-in faster</p>
+              <p class="attention-card__meta">Add a passkey to this account</p>
 
-              <div class="flex flex-wrap gap-2">
-                <%= link_to "Open security settings", settings_security_path, class: "btn btn--secondary btn--sm" %>
-                <%= link_to "Dismiss for a week", settings_passkey_prompt_path, class: "btn btn--ghost btn--sm", data: { turbo_method: :delete } %>
+              <div class="flex flex-wrap gap-2 mt-4">
+                <%= link_to "Add a passkey", settings_security_path, class: "btn btn--secondary btn--sm" %>
+                <%= link_to "Not now", settings_passkey_prompt_path, class: "btn btn--ghost btn--sm", data: { turbo_method: :delete } %>
               </div>
             </div>
           <% end %>

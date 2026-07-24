@@ -48,8 +48,8 @@ class ApplicationLayoutAuthStateTest < ActionDispatch::IntegrationTest
     sign_in_via_magic_link(user)
 
     assert_select ".passkey-prompt", text: /passkey/i
-    assert_select ".passkey-prompt a[href='#{settings_security_path}']", text: "Open security settings"
-    assert_select ".passkey-prompt a[href='#{settings_passkey_prompt_path}'][data-turbo-method='delete']", text: "Dismiss for a week"
+    assert_select ".passkey-prompt a[href='#{settings_security_path}']", text: "Add a passkey"
+    assert_select ".passkey-prompt a[href='#{settings_passkey_prompt_path}'][data-turbo-method='delete']", text: "Not now"
 
     delete settings_passkey_prompt_path, headers: { "HTTP_REFERER" => root_url }
 

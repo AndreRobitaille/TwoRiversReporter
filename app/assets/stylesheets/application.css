@@ -6557,3 +6557,8 @@ th.sortable-header:hover {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* The passkey reminder is a banner, not a clickable card —
+   its buttons are the click targets. */
+.passkey-prompt { cursor: default; }
+.passkey-prompt:hover { box-shadow: none; }
