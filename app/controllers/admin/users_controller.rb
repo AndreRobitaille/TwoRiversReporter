@@ -16,10 +16,10 @@ module Admin
     end
 
     def create
-      @user = User.new(user_params.merge(admin: true))
+      @user = User.new(user_params.merge(admin: true, status: "active"))
 
       if @user.save
-        redirect_to user_path(@user), notice: "Admin user created. They must enroll MFA on first sign-in."
+        redirect_to user_path(@user), notice: "Admin user created."
       else
         render :new, status: :unprocessable_entity
       end
@@ -107,7 +107,7 @@ module Admin
       end
 
       def user_params
-        params.require(:user).permit(:email_address, :password, :password_confirmation)
+        params.require(:user).permit(:email_address)
       end
   end
 end

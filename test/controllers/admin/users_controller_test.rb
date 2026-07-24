@@ -147,6 +147,35 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_equal 0, user.sessions.count
   end
 
+  test "admin can create a passwordless admin user" do
+    admin = create_passkey_admin
+    sign_in(admin)
+
+    assert_difference("User.where(email_address: 'newadmin@example.com').count", 1) do
+      with_admin_access do
+        post users_path, params: { user: { email_address: "newadmin@example.com" } }
+      end
+    end
+
+    created = User.find_by!(email_address: "newadmin@example.com")
+    assert created.admin?
+    assert_equal "active", created.status
+    assert_redirected_to user_path(created)
+    assert_equal "Admin user created.", flash[:notice]
+  end
+
+  test "admin user create requires an email address" do
+    admin = create_passkey_admin
+    sign_in(admin)
+
+    with_admin_access do
+      post users_path, params: { user: { email_address: "" } }
+    end
+
+    assert_response :unprocessable_entity
+    assert_includes response.body, "Email address can&#39;t be blank"
+  end
+
   test "index and show reflect account and application management details" do
     admin = create_passkey_admin
     user = User.create!(email_address: "ui@example.com", status: "active")

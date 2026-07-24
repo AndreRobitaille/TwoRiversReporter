@@ -11,15 +11,6 @@ module Admin
       assert_raises(ActionController::RoutingError) { Rails.application.routes.recognize_path("/admin/account_password/edit", method: :get) }
     end
 
-    test "old admin password and otp paths do not route" do
-      assert_raises(ActionController::RoutingError) { Rails.application.routes.recognize_path("/admin/session/new", method: :get) }
-      assert_raises(ActionController::RoutingError) { Rails.application.routes.recognize_path("/admin/passwords/new", method: :get) }
-      assert_raises(ActionController::RoutingError) { Rails.application.routes.recognize_path("/admin/mfa_session/new", method: :get) }
-      assert_raises(ActionController::RoutingError) { Rails.application.routes.recognize_path("/admin/mfa_setup", method: :get) }
-      assert_raises(ActionController::RoutingError) { Rails.application.routes.recognize_path("/admin/recovery_codes", method: :get) }
-      assert_raises(ActionController::RoutingError) { Rails.application.routes.recognize_path("/admin/account_password/edit", method: :get) }
-    end
-
     test "admin without passkey is redirected to security settings" do
       admin = User.create!(email_address: "admin@example.com", admin: true, status: "active")
       session = Session.create!(user: admin, user_agent: "test", ip_address: "127.0.0.1", last_seen_at: Time.current)
