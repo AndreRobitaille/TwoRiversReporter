@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_24_223005) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -433,6 +433,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.string "user_agent"
     t.bigint "user_id", null: false
     t.index [ "user_id" ], name: "index_sessions_on_user_id"
+  end
+
+  create_table "site_settings", force: :cascade do |t|
+    t.string "access_mode", default: "open", null: false
+    t.datetime "created_at", null: false
+    t.integer "singleton_guard", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index [ "singleton_guard" ], name: "index_site_settings_on_singleton_guard", unique: true
   end
 
   create_table "solid_queue_blocked_executions", force: :cascade do |t|
