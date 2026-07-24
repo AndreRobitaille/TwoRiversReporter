@@ -8,4 +8,7 @@
   <%= form.submit "Send magic link" %>
 <% end %>
 
-<button type="button" data-controller="passkey" data-action="passkey#authenticate">Sign in with passkey</button>
+<div data-controller="passkey" class="mt-4 space-y-2">
+  <button type="button" data-action="passkey#authenticate">Sign in with passkey</button>
+  <p class="text-sm" data-passkey-target="status" aria-live="polite" role="status">Ready.</p>
+</div>

@@ -55,6 +55,7 @@ class PasskeysControllerTest < ActionDispatch::IntegrationTest
     stored = PasskeyCredential.find_by!(external_id: "credential-123")
     assert_equal @user, stored.user
     assert_equal "public-key", stored.public_key
+    assert_equal settings_security_url, response.parsed_body["redirect_to"]
   end
 
   test "registration returns unprocessable entity when ceremony parsing fails" do

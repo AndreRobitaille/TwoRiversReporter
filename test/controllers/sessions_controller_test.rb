@@ -13,7 +13,8 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "form[action='/session'][method='post']"
-    assert_select "button[data-controller='passkey'][data-action='passkey#authenticate']", count: 1
+    assert_select "div[data-controller='passkey'] button[data-action='passkey#authenticate']", count: 1
+    assert_select "[data-passkey-target='status'][aria-live='polite'][role='status']", text: "Ready."
   end
 
   test "create normalizes email and does not reveal unknown accounts" do

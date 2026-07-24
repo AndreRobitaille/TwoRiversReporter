@@ -61,7 +61,9 @@ export default class extends Controller {
       throw new Error("We couldn't save that passkey.")
     }
 
-    this.#setStatus("Passkey saved.")
+    const payload = await this.#readJSON(saveResponse)
+    this.#setStatus("Passkey saved. Reloading…")
+    window.location.assign(payload.redirect_to || payload.redirectTo || window.location.href)
   }
 
   async #authenticateWithPasskey() {

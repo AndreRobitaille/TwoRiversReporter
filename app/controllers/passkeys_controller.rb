@@ -28,7 +28,7 @@ class PasskeysController < ApplicationController
       sign_count: credential.sign_count
     )
     passkey.save!
-    render json: { success: true }
+    render json: { success: true, redirect_to: settings_security_url }
   end
 
   def authentication_options
