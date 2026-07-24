@@ -37,6 +37,16 @@ class AccessHelperTest < ActionView::TestCase
     result = teaser("Short", chars: 100)
 
     assert_match(/Short/, result)
+    assert_match(/teaser-fade/, result)
+  end
+
+  test "escapes html_safe input even when short enough that no truncation fires" do
+    stub_gated(true)
+
+    result = teaser("<script>evil()</script>".html_safe, chars: 500)
+
+    assert_no_match(/<script>/, result)
+    assert_match(/&lt;script&gt;/, result)
   end
 
   test "returns nil for blank text" do
