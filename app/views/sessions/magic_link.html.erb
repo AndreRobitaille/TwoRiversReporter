@@ -1,0 +1,8 @@
+<h1>Check your email</h1>
+
+<p>We found a sign-in link for your account. Click continue to sign in.</p>
+
+<%= form_with url: magic_link_public_session_path, method: :post do |form| %>
+  <%= hidden_field_tag :token, @token %>
+  <%= form.submit "Continue" %>
+<% end %>

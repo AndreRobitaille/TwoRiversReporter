@@ -17,6 +17,12 @@ Rails.application.routes.draw do
   get "topics/explore", to: "topics#explore", as: :topics_explore
   resources :topics, only: %i[index show]
 
+  resource :session, only: %i[new create destroy], controller: "sessions", as: :public_session do
+    get :magic_link, on: :collection
+    post :magic_link, on: :collection
+    post :resend_expired_magic_link, on: :collection
+  end
+
   get "sitemap.xml", to: "sitemaps#show", as: :sitemap, defaults: { format: :xml }
 
   get "admin" => "admin/dashboard#show", as: :admin_root

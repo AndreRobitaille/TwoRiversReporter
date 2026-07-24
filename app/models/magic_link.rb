@@ -5,7 +5,7 @@ class MagicLink < ApplicationRecord
 
   attr_accessor :raw_token
 
-  scope :for_token, ->(token) { where(token_digest: digest_token(token)) }
+  scope :for_token, ->(token) { where(token_digest: MagicLink.send(:digest_token, token)) }
 
   def self.create_for!(user, purpose:, expires_at: 15.minutes.from_now)
     raw_token = SecureRandom.urlsafe_base64(32)
