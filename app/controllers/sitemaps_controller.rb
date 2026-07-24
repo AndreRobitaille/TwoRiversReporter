@@ -7,10 +7,10 @@ class SitemapsController < ApplicationController
   def show
     expires_in 1.hour, public: true
 
-    @topics     = Topic.publicly_visible.order(:id)
-    @meetings   = Meeting.order(:id)
-    @members    = Member.order(:id)
-    @committees = Committee.where(status: %w[active dormant]).order(:id)
+    @topics     = []
+    @meetings   = []
+    @members    = []
+    @committees = []
 
     respond_to do |format|
       format.xml

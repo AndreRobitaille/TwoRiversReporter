@@ -11,7 +11,7 @@ module Admin
     def create
       user = User.authenticate_by(params.permit(:email_address, :password))
 
-      if user&.admin?
+      if user&.admin? && user.active_for_authentication?
         if !AdminMfaPolicy.enforced?
           start_new_session_for user
           redirect_to after_authentication_url

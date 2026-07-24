@@ -7,10 +7,30 @@ class PublicAccessRulesTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "about is public" do
+    get about_url
+    assert_response :success
+  end
+
+  test "sitemap is public" do
+    get sitemap_url
+    assert_response :success
+  end
+
   test "non-exempt pages require login" do
     get meetings_url
 
     assert_redirected_to new_public_session_url
+  end
+
+  test "public application endpoints are still reachable" do
+    get new_application_url
+    assert_response :success
+  end
+
+  test "public passkey auth endpoints are still reachable" do
+    post authentication_options_passkeys_url
+    assert_response :success
   end
 
   test "signed-in users can access member pages" do

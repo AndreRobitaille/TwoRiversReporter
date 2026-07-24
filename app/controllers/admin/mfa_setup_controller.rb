@@ -31,7 +31,7 @@ module Admin
     private
       def set_user
         @user = User.find_by(id: session[:pending_mfa_setup_user_id])
-        return if @user&.admin?
+        return if @user&.admin? && @user.active_for_authentication?
 
         redirect_to new_session_path, alert: "Please sign in again."
       end

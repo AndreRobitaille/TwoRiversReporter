@@ -23,7 +23,7 @@ module Admin
     private
       def set_user
         @user = User.find_by(id: session[:pending_mfa_user_id])
-        return if @user&.admin? && @user.totp_enabled?
+        return if @user&.admin? && @user.active_for_authentication? && @user.totp_enabled?
 
         redirect_to new_session_path, alert: "Please sign in again."
       end
