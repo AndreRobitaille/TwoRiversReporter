@@ -4,7 +4,7 @@ class TransactionalEmail
   Message = Struct.new(:email, :transactional_id, :data_variables, keyword_init: true) do
     def initialize(**kwargs)
       super
-      self.data_variables = data_variables.deep_dup.freeze if data_variables
+      self.data_variables = deep_freeze(data_variables.deep_dup) if data_variables
       freeze
     end
 
@@ -12,6 +12,19 @@ class TransactionalEmail
       return true unless Rails.env.production?
 
       LoopsDelivery.deliver_now(email: email, transactional_id: transactional_id, data_variables: data_variables)
+    end
+
+    private
+
+    def deep_freeze(value)
+      case value
+      when Hash
+        value.each_value { |nested_value| deep_freeze(nested_value) }
+      when Array
+        value.each { |nested_value| deep_freeze(nested_value) }
+      end
+
+      value.freeze
     end
   end
 
