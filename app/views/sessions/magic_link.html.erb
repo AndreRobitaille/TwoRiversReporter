@@ -1,8 +1,18 @@
-<h1>Check your email</h1>
+<% content_for(:title) { "Confirm sign in" } %>
 
-<p>We found a sign-in link for your account. Click continue to sign in.</p>
+<div class="auth-panel">
+  <div class="auth-mark"><%= render "shared/starburst", size: 44 %></div>
 
-<%= form_with url: magic_link_public_session_path, method: :post do |form| %>
-  <%= hidden_field_tag :token, @token %>
-  <%= form.submit "Continue" %>
-<% end %>
+  <h1 class="auth-title">One more tap</h1>
+  <p class="auth-dek">
+    Your link is valid. We ask for this extra tap so that automated email
+    scanners can't use the link before you do.
+  </p>
+
+  <%= render "shared/diamond_divider" %>
+
+  <%= form_with url: magic_link_public_session_path, method: :post do |form| %>
+    <%= hidden_field_tag :token, @token %>
+    <%= form.submit "Continue to my account", class: "btn btn--primary" %>
+  <% end %>
+</div>

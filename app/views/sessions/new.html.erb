@@ -1,14 +1,39 @@
-<h1>Sign in</h1>
+<% content_for(:title) { "Sign in" } %>
 
-<%= tag.div(flash[:alert]) if flash[:alert] %>
-<%= tag.div(flash[:notice]) if flash[:notice] %>
+<div class="auth-panel">
+  <div class="auth-mark"><%= render "shared/starburst", size: 44 %></div>
 
-<%= form_with url: public_session_path, method: :post do |form| %>
-  <%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "email", placeholder: "Enter your email address", value: params[:email_address] %>
-  <%= form.submit "Send magic link" %>
-<% end %>
+  <h1 class="auth-title">Sign in</h1>
+  <p class="auth-dek">We'll email you a link that signs you in. No password to remember.</p>
 
-<div data-controller="passkey" class="mt-4 space-y-2">
-  <button type="button" data-action="passkey#authenticate">Sign in with passkey</button>
-  <p class="text-sm" data-passkey-target="status" aria-live="polite" role="status">Ready.</p>
+  <%= render "shared/diamond_divider" %>
+
+  <%= tag.div(flash[:alert], class: "flash flash--danger") if flash[:alert] %>
+  <%= tag.div(flash[:notice], class: "flash flash--success") if flash[:notice] %>
+
+  <%= form_with url: public_session_path, method: :post do |form| %>
+    <div class="form-group">
+      <%= form.label :email_address, "Email address", class: "form-label" %>
+      <%= form.email_field :email_address,
+            required: true, autofocus: true, autocomplete: "email",
+            placeholder: "you@example.com", class: "form-input",
+            value: params[:email_address] %>
+    </div>
+
+    <%= form.submit "Send magic link", class: "btn btn--primary" %>
+  <% end %>
+
+  <div data-controller="passkey">
+    <div class="auth-alt"><span>or</span></div>
+
+    <button type="button" class="btn btn--secondary" data-action="passkey#authenticate" data-passkey-target="trigger">
+      Sign in with a passkey
+    </button>
+
+    <p class="auth-status" data-passkey-target="status" aria-live="polite" role="status"></p>
+  </div>
+
+  <p class="auth-footnote">
+    New here? <%= link_to "Apply for an account", new_application_path %>.
+  </p>
 </div>
