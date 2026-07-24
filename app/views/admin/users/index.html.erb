@@ -17,11 +17,10 @@
     <thead>
       <tr>
         <th>Email</th>
-        <th>Account status</th>
-        <th>Admin</th>
-        <th>Disabled</th>
+        <th>Status</th>
+        <th>State</th>
         <th>Passkeys</th>
-        <th>Application review</th>
+        <th>Application</th>
       </tr>
     </thead>
     <tbody>
@@ -29,16 +28,26 @@
         <% application = user.membership_applications.order(created_at: :desc).first %>
         <tr>
           <td><%= link_to user.email_address, user_path(user) %></td>
-          <td><%= user.status %></td>
-          <td><%= user.admin? ? "Yes" : "No" %></td>
-          <td><%= user.disabled_at.present? ? "Yes" : "No" %></td>
-          <td><%= user.passkey_credentials.count %></td>
+          <td>
+            <span class="badge badge--<%= user.active_for_authentication? ? "success" : "default" %>">
+              <%= user.status.humanize %>
+            </span>
+          </td>
+          <td>
+            <% if user.admin? %><span class="badge badge--info">Admin</span><% end %>
+            <% if user.disabled_at.present? %><span class="badge badge--danger">Disabled</span><% end %>
+          </td>
+          <td class="data-cell"><%= user.passkey_credentials.count %></td>
           <td>
             <% if application.present? %>
-              <%= application.status %>
+              <span class="badge badge--<%= application.status == "submitted" ? "warning" : "default" %>">
+                <%= application.status.humanize %>
+              </span>
               <% if application.first_name.present? || application.last_name.present? %>
-                — <%= [application.first_name, application.last_name].compact.join(" ") %>
+                <%= [application.first_name, application.last_name].compact_blank.join(" ") %>
               <% end %>
+            <% else %>
+              <span class="detail-term">None</span>
             <% end %>
           </td>
         </tr>

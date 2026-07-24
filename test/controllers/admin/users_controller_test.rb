@@ -207,25 +207,25 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
       get users_path
       assert_response :success
       assert_includes response.body, "Account management"
-      assert_includes response.body, "Account status"
+      assert_includes response.body, "Status"
       assert_includes response.body, "Passkeys"
-      assert_includes response.body, "Application review"
-      assert_includes response.body, "submitted"
+      assert_includes response.body, "Application"
+      assert_includes response.body, "Submitted"
 
       get user_path(user)
       assert_response :success
       assert_includes response.body, "Account and application management"
       assert_includes response.body, "Membership applications"
-      assert_includes response.body, "Created:"
+      assert_includes response.body, "Created"
       assert_includes response.body, "Hello"
       assert_includes response.body, "123 Main St"
-      assert_includes response.body, "Facebook profile URL"
-      assert_includes response.body, "Passkeys"
+      assert_includes response.body, "Facebook profile"
+      assert_includes response.body, "1 passkey"
       assert_includes response.body, "Session history"
       assert_includes response.body, "127.0.0.1"
       assert_includes response.body, "test agent"
-      assert_includes response.body, "Sign-in time"
-      assert_includes response.body, "Last seen time"
+      assert_includes response.body, "Signed in"
+      assert_includes response.body, "Last seen"
       assert_includes response.body, "Status"
       assert_includes response.body, "Rejection reason"
       assert_includes response.body, "Disable account"
