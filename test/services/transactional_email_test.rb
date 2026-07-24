@@ -88,4 +88,20 @@ class TransactionalEmailTest < ActiveSupport::TestCase
       end
     end
   end
+
+  test "production missing admin notification transactional id raises instead of using a placeholder" do
+    user = User.create!(email_address: "applicant@example.com", password: "password123", password_confirmation: "password123", status: "active")
+    application = user.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI")
+
+    Rails.stub(:env, ActiveSupport::StringInquirer.new("production")) do
+      ENV.delete("LOOPS_ADMIN_APPLICATION_NOTIFICATION_TRANSACTIONAL_ID")
+      ENV["ADMIN_NOTIFICATION_EMAIL"] = "admin@example.com"
+
+      assert_raises(TransactionalEmail::MissingTransactionalId) do
+        TransactionalEmail.admin_application_notifications([application])
+      end
+    end
+  ensure
+    ENV.delete("ADMIN_NOTIFICATION_EMAIL")
+  end
 end

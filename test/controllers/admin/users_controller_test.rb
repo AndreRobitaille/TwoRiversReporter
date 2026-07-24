@@ -107,7 +107,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
       assert_response :success
       assert_includes response.body, "Account and application management"
       assert_includes response.body, "Membership applications"
-      assert_includes response.body, "Submitted:"
+      assert_includes response.body, "Created:"
       assert_includes response.body, "Hello"
       assert_includes response.body, "123 Main St"
       assert_includes response.body, "Facebook profile URL"

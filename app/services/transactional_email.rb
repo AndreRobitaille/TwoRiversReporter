@@ -69,7 +69,7 @@ class TransactionalEmail
 
     Message.new(
       email: email,
-      transactional_id: ENV["LOOPS_ADMIN_APPLICATION_NOTIFICATION_TRANSACTIONAL_ID"].presence || "admin_application_notifications",
+      transactional_id: ENV["LOOPS_ADMIN_APPLICATION_NOTIFICATION_TRANSACTIONAL_ID"].presence || default_admin_application_notification_transactional_id,
       data_variables: {
         application_count: applications.size,
         applicant_emails: applications.map { |application| application.user.email_address }
@@ -95,5 +95,11 @@ class TransactionalEmail
     return "application_magic_link" unless Rails.env.production?
 
     raise MissingTransactionalId, "LOOPS_APPLICATION_LINK_TRANSACTIONAL_ID is required in production"
+  end
+
+  def self.default_admin_application_notification_transactional_id
+    return "admin_application_notifications" unless Rails.env.production?
+
+    raise MissingTransactionalId, "LOOPS_ADMIN_APPLICATION_NOTIFICATION_TRANSACTIONAL_ID is required in production"
   end
 end

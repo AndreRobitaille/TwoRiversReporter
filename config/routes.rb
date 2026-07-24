@@ -48,7 +48,7 @@ Rails.application.routes.draw do
     resource :mfa_setup, only: %i[show create], controller: "admin/mfa_setup"
     resource :recovery_codes, only: %i[show create], controller: "admin/recovery_codes"
     resource :account_password, only: %i[edit update], controller: "admin/account_passwords"
-    resources :users, only: %i[index show new create update], controller: "admin/users" do
+    resources :users, only: %i[index show new create], controller: "admin/users" do
       member do
         patch :approve
         patch :reject

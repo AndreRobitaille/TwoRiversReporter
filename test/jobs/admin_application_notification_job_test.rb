@@ -88,4 +88,5 @@ class AdminApplicationNotificationJobTest < ActiveSupport::TestCase
       assert_equal "approved", notified_app.reload.status
     end
   end
+
 end
