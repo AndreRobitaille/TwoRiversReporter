@@ -8,7 +8,17 @@ const DEFAULT_URLS = {
 }
 
 export default class extends Controller {
-  static targets = ["status"]
+  static targets = ["status", "trigger"]
+
+  connect() {
+    if (this.#supportsWebAuthn()) return
+
+    this.triggerTargets.forEach((button) => {
+      button.disabled = true
+    })
+
+    this.#setStatus("This browser doesn't support passkeys — use the email link instead.", "error")
+  }
 
   register = async () => {
     await this.#runCeremony("register")
@@ -20,7 +30,7 @@ export default class extends Controller {
 
   async #runCeremony(kind) {
     if (!this.#supportsWebAuthn()) {
-      this.#setStatus("Your browser doesn't support passkeys.")
+      this.#setStatus("Your browser doesn't support passkeys.", "error")
       return
     }
 
@@ -31,12 +41,12 @@ export default class extends Controller {
         await this.#authenticateWithPasskey()
       }
     } catch (error) {
-      this.#setStatus(error?.message || "That didn't work. Please try again.")
+      this.#setStatus(error?.message || "That didn't work. Please try again.", "error")
     }
   }
 
   async #registerPasskey() {
-    this.#setStatus("Preparing a new passkey…")
+    this.#setStatus("Preparing a new passkey…", "working")
 
     const response = await fetch(this.registrationOptionsUrl, {
       method: "POST",
@@ -48,7 +58,7 @@ export default class extends Controller {
     }
 
     const options = this.#creationOptionsFromJSON(await response.json())
-    this.#setStatus("Waiting for your device…")
+    this.#setStatus("Waiting for your device…", "working")
 
     const credential = await navigator.credentials.create({ publicKey: options })
     if (!credential) throw new Error("No passkey was created.")
@@ -62,12 +72,12 @@ export default class extends Controller {
     }
 
     const payload = await this.#readJSON(saveResponse)
-    this.#setStatus("Passkey saved. Reloading…")
+    this.#setStatus("Passkey saved. Reloading…", "success")
     window.location.assign(payload.redirect_to || payload.redirectTo || window.location.href)
   }
 
   async #authenticateWithPasskey() {
-    this.#setStatus("Checking for a passkey…")
+    this.#setStatus("Checking for a passkey…", "working")
 
     const response = await fetch(this.authenticationOptionsUrl, {
       method: "POST",
@@ -79,7 +89,7 @@ export default class extends Controller {
     }
 
     const options = this.#requestOptionsFromJSON(await response.json())
-    this.#setStatus("Waiting for your passkey…")
+    this.#setStatus("Waiting for your passkey…", "working")
 
     const credential = await navigator.credentials.get({ publicKey: options })
     if (!credential) throw new Error("No passkey was used.")
@@ -93,7 +103,7 @@ export default class extends Controller {
       throw new Error(payload.error || "We couldn't sign you in.")
     }
 
-    this.#setStatus("Signed in. Redirecting…")
+    this.#setStatus("Signed in. Redirecting…", "success")
     window.location.assign(payload.redirect_to || payload.redirectTo || "/")
   }
 
@@ -214,10 +224,17 @@ export default class extends Controller {
     return document.querySelector('meta[name="csrf-token"]')?.content || ""
   }
 
-  #setStatus(message) {
-    if (this.hasStatusTarget) {
-      this.statusTarget.textContent = message
-    }
+  #setStatus(message, state) {
+    if (!this.hasStatusTarget) return
+
+    this.statusTarget.textContent = message || ""
+    this.statusTarget.classList.remove(
+      "auth-status--working",
+      "auth-status--error",
+      "auth-status--success"
+    )
+
+    if (state) this.statusTarget.classList.add(`auth-status--${state}`)
   }
 
   get registrationOptionsUrl() {
