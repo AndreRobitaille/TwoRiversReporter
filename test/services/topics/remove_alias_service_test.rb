@@ -14,7 +14,7 @@ module Topics
     end
 
     test "records a review event when a user is present" do
-      user = User.create!(email_address: "admin@example.com", password: "password", admin: true)
+      user = User.create!(email_address: "admin@example.com", admin: true)
       Current.session = Struct.new(:user).new(user)
       topic = Topic.create!(name: "water main break")
       alias_record = TopicAlias.create!(topic: topic, name: "water-main break")
@@ -27,7 +27,7 @@ module Topics
     end
 
     test "persists removal reason" do
-      user = User.create!(email_address: "admin@example.com", password: "password", admin: true)
+      user = User.create!(email_address: "admin@example.com", admin: true)
       Current.session = Struct.new(:user).new(user)
       topic = Topic.create!(name: "water main break")
       alias_record = TopicAlias.create!(topic: topic, name: "water-main break")

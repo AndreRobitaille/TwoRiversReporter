@@ -19,7 +19,7 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "application start is rate limited" do
-    user = User.create!(email_address: "rate@example.com", password: "password123", password_confirmation: "password123", status: "pending")
+    user = User.create!(email_address: "rate@example.com", status: "pending")
     original_cache = Rails.cache
 
     begin
@@ -40,7 +40,7 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "application start does not mutate active users or create membership applications for them" do
-    user = User.create!(email_address: "active@example.com", password: "password123", password_confirmation: "password123", status: "active")
+    user = User.create!(email_address: "active@example.com", status: "active")
 
     assert_no_difference("MembershipApplication.count") do
       post applications_path, params: { email_address: user.email_address.upcase }
@@ -53,7 +53,7 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "application start does not mutate rejected users or create membership applications for them" do
-    user = User.create!(email_address: "rejected@example.com", password: "password123", password_confirmation: "password123", status: "rejected")
+    user = User.create!(email_address: "rejected@example.com", status: "rejected")
 
     assert_no_difference("MembershipApplication.count") do
       post applications_path, params: { email_address: user.email_address }
@@ -66,7 +66,7 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "verified application form renders from the application token" do
-    user = User.create!(email_address: "verified@example.com", password: "password123", password_confirmation: "password123", status: "pending", disabled_at: Time.current)
+    user = User.create!(email_address: "verified@example.com", status: "pending", disabled_at: Time.current)
     application = user.membership_applications.create!(status: "email_pending")
     link = MagicLink.create_for!(user, purpose: "application")
 
@@ -78,8 +78,8 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "application token cannot render another applicant's application" do
-    user_a = User.create!(email_address: "a@example.com", password: "password123", password_confirmation: "password123", status: "pending", disabled_at: Time.current)
-    user_b = User.create!(email_address: "b@example.com", password: "password123", password_confirmation: "password123", status: "pending", disabled_at: Time.current)
+    user_a = User.create!(email_address: "a@example.com", status: "pending", disabled_at: Time.current)
+    user_b = User.create!(email_address: "b@example.com", status: "pending", disabled_at: Time.current)
     application_b = user_b.membership_applications.create!(status: "email_pending")
     link_a = MagicLink.create_for!(user_a, purpose: "application")
 
@@ -90,7 +90,7 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "missing application IDs do not reveal existence on edit or update" do
-    user = User.create!(email_address: "missing@example.com", password: "password123", password_confirmation: "password123", status: "pending", disabled_at: Time.current)
+    user = User.create!(email_address: "missing@example.com", status: "pending", disabled_at: Time.current)
     application = user.membership_applications.create!(status: "email_pending")
     valid_link = MagicLink.create_for!(user, purpose: "application")
     missing_id = application.id + 10_000
@@ -118,7 +118,7 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "application submission records details and queues admin notification" do
-    user = User.create!(email_address: "submit@example.com", password: "password123", password_confirmation: "password123", status: "pending", disabled_at: Time.current)
+    user = User.create!(email_address: "submit@example.com", status: "pending", disabled_at: Time.current)
     application = user.membership_applications.create!(status: "email_pending")
     link = MagicLink.create_for!(user, purpose: "application")
 
@@ -144,7 +144,7 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "submitted application cannot be edited or resubmitted through an outstanding link" do
-    user = User.create!(email_address: "repeat@example.com", password: "password123", password_confirmation: "password123", status: "pending", disabled_at: Time.current)
+    user = User.create!(email_address: "repeat@example.com", status: "pending", disabled_at: Time.current)
     application = user.membership_applications.create!(status: "email_pending")
     link_a = MagicLink.create_for!(user, purpose: "application")
     link_b = MagicLink.create_for!(user, purpose: "application")
@@ -195,7 +195,7 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "stale editable application instance cannot submit after the database record is already submitted" do
-    user = User.create!(email_address: "stale@example.com", password: "password123", password_confirmation: "password123", status: "pending", disabled_at: Time.current)
+    user = User.create!(email_address: "stale@example.com", status: "pending", disabled_at: Time.current)
     application = user.membership_applications.create!(status: "email_pending")
     link = MagicLink.create_for!(user, purpose: "application")
 
@@ -225,7 +225,7 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "restarting a submitted application does not create a second application record" do
-    user = User.create!(email_address: "restart@example.com", password: "password123", password_confirmation: "password123", status: "pending", disabled_at: Time.current)
+    user = User.create!(email_address: "restart@example.com", status: "pending", disabled_at: Time.current)
 
     assert_difference("MembershipApplication.count", 1) do
       post applications_path, params: { email_address: user.email_address }
@@ -243,8 +243,8 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "application token cannot submit another applicant's application" do
-    user_a = User.create!(email_address: "submit-a@example.com", password: "password123", password_confirmation: "password123", status: "pending", disabled_at: Time.current)
-    user_b = User.create!(email_address: "submit-b@example.com", password: "password123", password_confirmation: "password123", status: "pending", disabled_at: Time.current)
+    user_a = User.create!(email_address: "submit-a@example.com", status: "pending", disabled_at: Time.current)
+    user_b = User.create!(email_address: "submit-b@example.com", status: "pending", disabled_at: Time.current)
     application_b = user_b.membership_applications.create!(status: "email_pending")
     link_a = MagicLink.create_for!(user_a, purpose: "application")
 

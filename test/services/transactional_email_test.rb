@@ -2,7 +2,7 @@ require "test_helper"
 
 class TransactionalEmailTest < ActiveSupport::TestCase
   test "magic_link builds an immutable message with a configured transactional id and no raw token data" do
-    user = User.create!(email_address: "active@example.com", password: "password123", password_confirmation: "password123", status: "active")
+    user = User.create!(email_address: "active@example.com", status: "active")
     magic_link = MagicLink.create_for!(user, purpose: "sign_in")
 
     ENV["LOOPS_MAGIC_LINK_TRANSACTIONAL_ID"] = "sign_in_magic_link_test"
@@ -24,7 +24,7 @@ class TransactionalEmailTest < ActiveSupport::TestCase
   end
 
   test "application_approved sends a sign in compatible link and keeps the token memory only" do
-    user = User.create!(email_address: "applicant@example.com", password: "password123", password_confirmation: "password123", status: "active")
+    user = User.create!(email_address: "applicant@example.com", status: "active")
     application = user.membership_applications.create!(status: "approved", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI")
     magic_link = MagicLink.create_for!(user, purpose: "sign_in")
 
@@ -37,7 +37,7 @@ class TransactionalEmailTest < ActiveSupport::TestCase
   end
 
   test "deliver_now in test does not hit loops and succeeds through the fake path" do
-    user = User.create!(email_address: "active@example.com", password: "password123", password_confirmation: "password123", status: "active")
+    user = User.create!(email_address: "active@example.com", status: "active")
     magic_link = MagicLink.create_for!(user, purpose: "sign_in")
     ENV["LOOPS_MAGIC_LINK_TRANSACTIONAL_ID"] = "sign_in_magic_link_test"
     message = TransactionalEmail.magic_link(user, magic_link)
@@ -50,7 +50,7 @@ class TransactionalEmailTest < ActiveSupport::TestCase
   end
 
   test "magic link send path does not enqueue an active job containing the raw token" do
-    user = User.create!(email_address: "active@example.com", password: "password123", password_confirmation: "password123", status: "active")
+    user = User.create!(email_address: "active@example.com", status: "active")
     magic_link = MagicLink.create_for!(user, purpose: "sign_in")
     before_jobs = ActiveJob::Base.queue_adapter.enqueued_jobs.size
 
@@ -64,7 +64,7 @@ class TransactionalEmailTest < ActiveSupport::TestCase
   end
 
   test "production missing transactional id raises" do
-    user = User.create!(email_address: "active@example.com", password: "password123", password_confirmation: "password123", status: "active")
+    user = User.create!(email_address: "active@example.com", status: "active")
     magic_link = MagicLink.create_for!(user, purpose: "sign_in")
 
     Rails.stub(:env, ActiveSupport::StringInquirer.new("production")) do
@@ -77,7 +77,7 @@ class TransactionalEmailTest < ActiveSupport::TestCase
   end
 
   test "production missing admin notification email raises instead of using a placeholder" do
-    user = User.create!(email_address: "applicant@example.com", password: "password123", password_confirmation: "password123", status: "active")
+    user = User.create!(email_address: "applicant@example.com", status: "active")
     application = user.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI")
 
     Rails.stub(:env, ActiveSupport::StringInquirer.new("production")) do
@@ -90,7 +90,7 @@ class TransactionalEmailTest < ActiveSupport::TestCase
   end
 
   test "production missing admin notification transactional id raises instead of using a placeholder" do
-    user = User.create!(email_address: "applicant@example.com", password: "password123", password_confirmation: "password123", status: "active")
+    user = User.create!(email_address: "applicant@example.com", status: "active")
     application = user.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI")
 
     Rails.stub(:env, ActiveSupport::StringInquirer.new("production")) do

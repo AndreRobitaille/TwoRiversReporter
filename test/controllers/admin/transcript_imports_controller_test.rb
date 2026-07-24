@@ -4,9 +4,9 @@ class Admin::TranscriptImportsControllerTest < ActionDispatch::IntegrationTest
   include ActiveJob::TestHelper
 
   setup do
-    @admin = User.create!(email_address: "transcript-admin@example.com", password: "password123456", admin: true, totp_enabled: true)
+    @admin = User.create!(email_address: "transcript-admin@example.com", admin: true)
     @admin.ensure_totp_secret!
-    @mfa_pending_admin = User.create!(email_address: "transcript-pending@example.com", password: "password123456", admin: true, totp_enabled: false)
+    @mfa_pending_admin = User.create!(email_address: "transcript-pending@example.com", admin: true)
     @mfa_pending_admin.ensure_totp_secret!
     @committee = Committee.create!(name: "Plan Commission")
     @meeting = Meeting.create!(body_name: "Plan Commission Meeting", detail_page_url: "https://example.com/meetings/plan-commission", starts_at: Time.zone.local(2026, 6, 14, 18, 30), committee: @committee)
@@ -24,7 +24,7 @@ class Admin::TranscriptImportsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "password-authenticated but mfa-pending user is blocked" do
-    post session_url, params: { email_address: @mfa_pending_admin.email_address, password: "password123456" }
+    post session_url, params: { email_address: @mfa_pending_admin.email_address }
 
     get admin_transcript_imports_path
     assert_redirected_to new_session_path
@@ -275,7 +275,7 @@ class Admin::TranscriptImportsControllerTest < ActionDispatch::IntegrationTest
   end
 
   def sign_in_as_admin
-    post session_url, params: { email_address: @admin.email_address, password: "password123456" }
+    post session_url, params: { email_address: @admin.email_address }
     post mfa_session_url, params: { code: ROTP::TOTP.new(@admin.totp_secret).now }
   end
 

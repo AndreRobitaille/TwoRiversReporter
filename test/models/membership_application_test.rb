@@ -2,7 +2,7 @@ require "test_helper"
 
 class MembershipApplicationTest < ActiveSupport::TestCase
   test "email_pending applications can omit the submitted fields" do
-    user = User.create!(email_address: "applicant@example.com", password: "password123", password_confirmation: "password123", status: "pending")
+    user = User.create!(email_address: "applicant@example.com", status: "pending")
 
     application = MembershipApplication.new(user: user, status: "email_pending")
 
@@ -10,7 +10,7 @@ class MembershipApplicationTest < ActiveSupport::TestCase
   end
 
   test "submitted applications require identity and location fields" do
-    user = User.create!(email_address: "applicant@example.com", password: "password123", password_confirmation: "password123", status: "pending")
+    user = User.create!(email_address: "applicant@example.com", status: "pending")
 
     application = MembershipApplication.new(user: user, status: "submitted")
 
@@ -22,7 +22,7 @@ class MembershipApplicationTest < ActiveSupport::TestCase
   end
 
   test "submitted applications are valid once the required fields are present" do
-    user = User.create!(email_address: "applicant@example.com", password: "password123", password_confirmation: "password123", status: "pending")
+    user = User.create!(email_address: "applicant@example.com", status: "pending")
 
     application = MembershipApplication.new(
       user: user,
@@ -37,7 +37,7 @@ class MembershipApplicationTest < ActiveSupport::TestCase
   end
 
   test "status must be one of the allowed values" do
-    user = User.create!(email_address: "applicant@example.com", password: "password123", password_confirmation: "password123", status: "pending")
+    user = User.create!(email_address: "applicant@example.com", status: "pending")
 
     application = MembershipApplication.new(user: user, status: "draft")
 

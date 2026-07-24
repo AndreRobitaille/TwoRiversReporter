@@ -2,7 +2,7 @@ require "test_helper"
 
 class MagicLinkTest < ActiveSupport::TestCase
   test "create_for persists digest and keeps raw token in memory only" do
-    user = User.create!(email_address: "active@example.com", password: "password123", password_confirmation: "password123", status: "active")
+    user = User.create!(email_address: "active@example.com", status: "active")
 
     magic_link = MagicLink.create_for!(user, purpose: "admin_login")
 
@@ -13,7 +13,7 @@ class MagicLinkTest < ActiveSupport::TestCase
   end
 
   test "consume! succeeds once and marks token used" do
-    user = User.create!(email_address: "active@example.com", password: "password123", password_confirmation: "password123", status: "active")
+    user = User.create!(email_address: "active@example.com", status: "active")
     magic_link = MagicLink.create_for!(user, purpose: "admin_login")
 
     consumed = MagicLink.consume!(magic_link.raw_token, purpose: "admin_login")
@@ -24,8 +24,8 @@ class MagicLinkTest < ActiveSupport::TestCase
   end
 
   test "consume! rejects expired inactive wrong purpose and missing token" do
-    active_user = User.create!(email_address: "active@example.com", password: "password123", password_confirmation: "password123", status: "active")
-    inactive_user = User.create!(email_address: "inactive@example.com", password: "password123", password_confirmation: "password123", status: "pending")
+    active_user = User.create!(email_address: "active@example.com", status: "active")
+    inactive_user = User.create!(email_address: "inactive@example.com", status: "pending")
 
     expired = MagicLink.create_for!(active_user, purpose: "admin_login", expires_at: 1.minute.ago)
     inactive = MagicLink.create_for!(inactive_user, purpose: "admin_login")

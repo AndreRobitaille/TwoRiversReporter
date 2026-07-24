@@ -2,10 +2,10 @@ require "test_helper"
 
 class AdminTopicDetailWorkspaceTest < ActionDispatch::IntegrationTest
   setup do
-    @admin = User.create!(email_address: "admin@example.com", password: "password", admin: true, totp_enabled: true)
+    @admin = User.create!(email_address: "admin@example.com", admin: true)
     @admin.ensure_totp_secret!
 
-    post session_url, params: { email_address: @admin.email_address, password: "password" }
+    post session_url, params: { email_address: @admin.email_address }
     follow_redirect!
 
     totp = ROTP::TOTP.new(@admin.totp_secret, issuer: "TwoRiversMatters")

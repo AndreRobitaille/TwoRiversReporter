@@ -2,10 +2,10 @@ require "test_helper"
 
 class SessionsControllerTest < ActionDispatch::IntegrationTest
   setup do
-    @active_user = User.create!(email_address: "active@example.com", password: "password123", password_confirmation: "password123", status: "active")
-    @pending_user = User.create!(email_address: "pending@example.com", password: "password123", password_confirmation: "password123", status: "pending")
-    @rejected_user = User.create!(email_address: "rejected@example.com", password: "password123", password_confirmation: "password123", status: "rejected")
-    @disabled_user = User.create!(email_address: "disabled@example.com", password: "password123", password_confirmation: "password123", status: "active", disabled_at: Time.current)
+    @active_user = User.create!(email_address: "active@example.com", status: "active")
+    @pending_user = User.create!(email_address: "pending@example.com", status: "pending")
+    @rejected_user = User.create!(email_address: "rejected@example.com", status: "rejected")
+    @disabled_user = User.create!(email_address: "disabled@example.com", status: "active", disabled_at: Time.current)
   end
 
   test "new renders the sign in form" do

@@ -9,8 +9,8 @@ module Settings
     end
 
     test "shows only the current users passkeys newest first" do
-      user = User.create!(email_address: "security@example.com", password: "password123", password_confirmation: "password123", status: "active")
-      other = User.create!(email_address: "security-other@example.com", password: "password123", password_confirmation: "password123", status: "active")
+      user = User.create!(email_address: "security@example.com", status: "active")
+      other = User.create!(email_address: "security-other@example.com", status: "active")
 
       older = user.passkey_credentials.create!(external_id: "older", public_key: "public", sign_count: 0, nickname: "Desk key", created_at: 2.days.ago)
       newest = user.passkey_credentials.create!(external_id: "newest", public_key: "public", sign_count: 0, created_at: 1.day.ago)
@@ -38,8 +38,8 @@ module Settings
     end
 
     test "dismisses only the signed in users passkey prompt" do
-      user = User.create!(email_address: "prompt@example.com", password: "password123", password_confirmation: "password123", status: "active")
-      other = User.create!(email_address: "other@example.com", password: "password123", password_confirmation: "password123", status: "active")
+      user = User.create!(email_address: "prompt@example.com", status: "active")
+      other = User.create!(email_address: "other@example.com", status: "active")
 
       travel_to Time.current do
         delete settings_passkey_prompt_path, headers: signed_session_headers(user).merge("HTTP_REFERER" => root_url)

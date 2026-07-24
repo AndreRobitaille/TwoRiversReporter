@@ -4,10 +4,10 @@ require "securerandom"
 module Admin
   class TopicsControllerTest < ActionDispatch::IntegrationTest
     setup do
-      @admin = User.create!(email_address: "admin@example.com", password: "password", admin: true, totp_enabled: true)
+      @admin = User.create!(email_address: "admin@example.com", admin: true)
       @admin.ensure_totp_secret!
 
-      post session_url, params: { email_address: "admin@example.com", password: "password" }
+      post session_url, params: { email_address: "admin@example.com" }
       follow_redirect!
 
       totp = ROTP::TOTP.new(@admin.totp_secret, issuer: "TwoRiversMatters")

@@ -78,10 +78,6 @@ class ApplicationsController < ApplicationController
   private
 
   def ensure_pending_disabled_account!(user)
-    password = SecureRandom.urlsafe_base64(32)
-
-    user.password = password if user.new_record? || user.password_digest.blank?
-    user.password_confirmation = password if user.new_record? || user.password_digest.blank?
     user.status = "pending"
     user.disabled_at = Time.current
     user.save!

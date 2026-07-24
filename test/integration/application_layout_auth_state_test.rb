@@ -14,7 +14,7 @@ class ApplicationLayoutAuthStateTest < ActionDispatch::IntegrationTest
   end
 
   test "signed-in users see profile and security links" do
-    user = User.create!(email_address: "member@example.com", password: "password123", password_confirmation: "password123", status: "active")
+    user = User.create!(email_address: "member@example.com", status: "active")
 
     sign_in_via_magic_link(user)
 
@@ -27,7 +27,7 @@ class ApplicationLayoutAuthStateTest < ActionDispatch::IntegrationTest
   end
 
   test "admins without passkeys do not see the admin link" do
-    admin = User.create!(email_address: "admin-no-passkey@example.com", password: "password123", password_confirmation: "password123", status: "active", admin: true)
+    admin = User.create!(email_address: "admin-no-passkey@example.com", status: "active", admin: true)
 
     sign_in_via_magic_link(admin)
 
@@ -36,7 +36,7 @@ class ApplicationLayoutAuthStateTest < ActionDispatch::IntegrationTest
   end
 
   test "admins with passkeys see the admin link" do
-    admin = User.create!(email_address: "admin@example.com", password: "password123", password_confirmation: "password123", status: "active", admin: true)
+    admin = User.create!(email_address: "admin@example.com", status: "active", admin: true)
     admin.passkey_credentials.create!(external_id: "credential-1", public_key: "public-key", sign_count: 0)
 
     sign_in_via_magic_link(admin)
@@ -45,7 +45,7 @@ class ApplicationLayoutAuthStateTest < ActionDispatch::IntegrationTest
   end
 
   test "users without passkeys see a dismissible reminder after magic link sign in" do
-    user = User.create!(email_address: "prompt@example.com", password: "password123", password_confirmation: "password123", status: "active")
+    user = User.create!(email_address: "prompt@example.com", status: "active")
 
     sign_in_via_magic_link(user)
 
@@ -63,7 +63,7 @@ class ApplicationLayoutAuthStateTest < ActionDispatch::IntegrationTest
   end
 
   test "users with passkeys do not see the reminder" do
-    user = User.create!(email_address: "passkey@example.com", password: "password123", password_confirmation: "password123", status: "active")
+    user = User.create!(email_address: "passkey@example.com", status: "active")
     user.passkey_credentials.create!(external_id: "credential-1", public_key: "public-key", sign_count: 0)
 
     sign_in_via_magic_link(user)
@@ -72,7 +72,7 @@ class ApplicationLayoutAuthStateTest < ActionDispatch::IntegrationTest
   end
 
   test "users with a future dismissal do not see the reminder" do
-    user = User.create!(email_address: "dismissed@example.com", password: "password123", password_confirmation: "password123", status: "active", passkey_prompt_dismissed_until: 1.day.from_now)
+    user = User.create!(email_address: "dismissed@example.com", status: "active", passkey_prompt_dismissed_until: 1.day.from_now)
 
     sign_in_via_magic_link(user)
 

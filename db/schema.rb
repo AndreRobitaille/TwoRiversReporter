@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_23_000004) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -724,11 +724,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_23_000004) do
     t.string "email_address", null: false
     t.datetime "email_verified_at"
     t.datetime "passkey_prompt_dismissed_until"
-    t.string "password_digest", null: false
-    t.text "recovery_codes_digest", default: [], null: false, array: true
     t.string "status", default: "pending"
-    t.boolean "totp_enabled", default: false, null: false
-    t.string "totp_secret"
     t.datetime "updated_at", null: false
     t.string "webauthn_id"
     t.index ["email_address"], name: "index_users_on_email_address", unique: true

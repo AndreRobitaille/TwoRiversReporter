@@ -45,11 +45,6 @@ Rails.application.routes.draw do
 
   scope :admin do
     resource :session, only: %i[new create destroy], controller: "admin/sessions"
-    resources :passwords, only: %i[new create edit update], param: :token, controller: "admin/passwords"
-    resource :mfa_session, only: %i[new create], controller: "admin/mfa_sessions"
-    resource :mfa_setup, only: %i[show create], controller: "admin/mfa_setup"
-    resource :recovery_codes, only: %i[show create], controller: "admin/recovery_codes"
-    resource :account_password, only: %i[edit update], controller: "admin/account_passwords"
     resources :users, only: %i[index show new create], controller: "admin/users" do
       member do
         patch :approve

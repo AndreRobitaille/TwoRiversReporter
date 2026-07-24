@@ -2,7 +2,7 @@ require "test_helper"
 
 class PasskeyCredentialTest < ActiveSupport::TestCase
   test "belongs to a user and validates required fields" do
-    user = User.create!(email_address: "passkey@example.com", password: "password123", password_confirmation: "password123")
+    user = User.create!(email_address: "passkey@example.com")
 
     credential = PasskeyCredential.new(user: user, sign_count: nil)
 
@@ -13,7 +13,7 @@ class PasskeyCredentialTest < ActiveSupport::TestCase
   end
 
   test "records ownership metadata" do
-    user = User.create!(email_address: "owner@example.com", password: "password123", password_confirmation: "password123")
+    user = User.create!(email_address: "owner@example.com")
 
     credential = PasskeyCredential.create!(
       user: user,

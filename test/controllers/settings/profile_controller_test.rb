@@ -9,8 +9,8 @@ module Settings
     end
 
     test "shows the current account and latest membership application" do
-      user = User.create!(email_address: "profile@example.com", password: "password123", password_confirmation: "password123", status: "active")
-      reviewer = User.create!(email_address: "reviewer@example.com", password: "password123", password_confirmation: "password123", status: "active")
+      user = User.create!(email_address: "profile@example.com", status: "active")
+      reviewer = User.create!(email_address: "reviewer@example.com", status: "active")
 
       user.membership_applications.create!(status: "email_pending", created_at: 3.days.ago)
       latest_application = user.membership_applications.create!(

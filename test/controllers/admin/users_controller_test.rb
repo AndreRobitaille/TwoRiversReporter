@@ -3,7 +3,7 @@ require "test_helper"
 class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
   test "admin approves submitted application and sends approval link" do
     admin = create_passkey_admin
-    applicant = User.create!(email_address: "approve@example.com", password: "password", status: "pending")
+    applicant = User.create!(email_address: "approve@example.com", status: "pending")
     application = applicant.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI")
     sign_in(admin)
     delivered = false
@@ -29,7 +29,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
 
   test "admin approval remains retryable when approval email construction fails" do
     admin = create_passkey_admin
-    applicant = User.create!(email_address: "approve-fail@example.com", password: "password", status: "pending")
+    applicant = User.create!(email_address: "approve-fail@example.com", status: "pending")
     application = applicant.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI")
     sign_in(admin)
 
@@ -48,7 +48,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
 
   test "admin approval re-raises stale review errors without compensation" do
     admin = create_passkey_admin
-    applicant = User.create!(email_address: "stale@example.com", password: "password", status: "pending")
+    applicant = User.create!(email_address: "stale@example.com", status: "pending")
     applicant.membership_applications.create!(status: "approved", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI")
     session = admin.sessions.create!(ip_address: "127.0.0.1", user_agent: "test", last_seen_at: Time.current)
     Current.session = session
@@ -68,7 +68,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
 
   test "admin approval remains retryable when approval email delivery raises non delivery errors" do
     admin = create_passkey_admin
-    applicant = User.create!(email_address: "approve-runtime@example.com", password: "password", status: "pending")
+    applicant = User.create!(email_address: "approve-runtime@example.com", status: "pending")
     application = applicant.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI")
     sign_in(admin)
 
@@ -89,7 +89,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
 
   test "admin rejects submitted application" do
     admin = create_passkey_admin
-    applicant = User.create!(email_address: "reject@example.com", password: "password", status: "pending")
+    applicant = User.create!(email_address: "reject@example.com", status: "pending")
     application = applicant.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI")
     sign_in(admin)
 
@@ -103,7 +103,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
 
   test "admin can toggle admin role disable user and revoke sessions" do
     admin = create_passkey_admin
-    user = User.create!(email_address: "managed@example.com", password: "password", status: "active")
+    user = User.create!(email_address: "managed@example.com", status: "active")
     session = user.sessions.create!(ip_address: "127.0.0.1", user_agent: "test", last_seen_at: Time.current)
     sign_in(admin)
 
@@ -119,8 +119,8 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
 
   test "admin can re-enable a disabled user but not a pending applicant" do
     admin = create_passkey_admin
-    user = User.create!(email_address: "reenable@example.com", password: "password", status: "active", disabled_at: Time.current)
-    applicant = User.create!(email_address: "pending@example.com", password: "password", status: "pending", disabled_at: Time.current)
+    user = User.create!(email_address: "reenable@example.com", status: "active", disabled_at: Time.current)
+    applicant = User.create!(email_address: "pending@example.com", status: "pending", disabled_at: Time.current)
     sign_in(admin)
 
     with_admin_access { patch disable_user_path(user) }
@@ -136,7 +136,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
 
   test "admin can revoke all sessions for a user" do
     admin = create_passkey_admin
-    user = User.create!(email_address: "managed-all@example.com", password: "password", status: "active")
+    user = User.create!(email_address: "managed-all@example.com", status: "active")
     first_session = user.sessions.create!(ip_address: "127.0.0.1", user_agent: "test", last_seen_at: Time.current)
     user.sessions.create!(ip_address: "127.0.0.1", user_agent: "test", last_seen_at: 1.minute.ago)
     sign_in(admin)
@@ -149,8 +149,8 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
 
   test "index and show reflect account and application management details" do
     admin = create_passkey_admin
-    user = User.create!(email_address: "ui@example.com", password: "password", status: "active")
-    disabled_user = User.create!(email_address: "ui-disabled@example.com", password: "password", status: "active", disabled_at: Time.current)
+    user = User.create!(email_address: "ui@example.com", status: "active")
+    disabled_user = User.create!(email_address: "ui-disabled@example.com", status: "active", disabled_at: Time.current)
     user.passkey_credentials.create!(external_id: SecureRandom.uuid, public_key: "public-key", sign_count: 0)
     user.sessions.create!(ip_address: "127.0.0.1", user_agent: "test agent", last_seen_at: Time.current, created_at: 1.day.ago)
     user.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", street: "123 Main St", city: "Two Rivers", state: "WI", facebook_profile_url: "https://facebook.com/jane", application_notes: "Hello", created_at: 2.days.ago)
@@ -192,15 +192,13 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
   private
 
     def create_passkey_admin
-      user = User.create!(email_address: "admin@example.com", password: "password", admin: true, status: "active")
+      user = User.create!(email_address: "admin@example.com", admin: true, status: "active")
       user.passkey_credentials.create!(external_id: SecureRandom.uuid, public_key: "public-key", sign_count: 0)
       user
     end
 
     def sign_in(user)
-      AdminMfaPolicy.stub(:enforced?, false) do
-        post session_url, params: { email_address: user.email_address, password: "password" }
-      end
+      sign_in_as_admin(user)
     end
 
     def with_admin_access(&block)

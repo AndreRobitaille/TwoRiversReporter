@@ -5,15 +5,12 @@ class AdminTopicFlowsTest < ActionDispatch::IntegrationTest
   setup do
     @admin = User.create!(
       email_address: "admin@example.com",
-      password: "password",
-      password_confirmation: "password",
-      admin: true,
-      totp_enabled: true
+      admin: true
     )
     @admin.ensure_totp_secret!
 
     # Login
-    post session_url, params: { email_address: @admin.email_address, password: "password" }
+    post session_url, params: { email_address: @admin.email_address }
     follow_redirect! # to mfa_session/new
 
     totp = ROTP::TOTP.new(@admin.totp_secret, issuer: "TwoRiversMatters")

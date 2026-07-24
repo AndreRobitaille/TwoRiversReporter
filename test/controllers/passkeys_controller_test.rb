@@ -3,9 +3,9 @@ require "ostruct"
 
 class PasskeysControllerTest < ActionDispatch::IntegrationTest
   setup do
-    @user = User.create!(email_address: "passkey@example.com", password: "password123", password_confirmation: "password123", status: "active")
-    @other_user = User.create!(email_address: "other@example.com", password: "password123", password_confirmation: "password123", status: "active")
-    @inactive_user = User.create!(email_address: "inactive@example.com", password: "password123", password_confirmation: "password123", status: "rejected")
+    @user = User.create!(email_address: "passkey@example.com", status: "active")
+    @other_user = User.create!(email_address: "other@example.com", status: "active")
+    @inactive_user = User.create!(email_address: "inactive@example.com", status: "rejected")
   end
 
   test "unauthenticated users cannot request registration options" do
