@@ -26,18 +26,15 @@ module Admin
     end
 
     def approve
-      application = nil
-
       ApplicationRecord.transaction do
         user = User.lock.find(@user.id)
         application = user.membership_applications.lock.find_by!(status: "submitted")
+        magic_link = MagicLink.create_for!(user, purpose: "sign_in")
 
         user.update!(status: "active", disabled_at: nil)
         application.update!(status: "approved", reviewed_at: Time.current, reviewed_by: Current.session.user)
+        TransactionalEmail.application_approved(user, application, magic_link).deliver_now
       end
-
-      magic_link = MagicLink.create_for!(@user, purpose: "sign_in")
-      TransactionalEmail.application_approved(@user, application, magic_link).deliver_now
       redirect_to user_path(@user), notice: "Application approved."
     end
 

@@ -15,8 +15,6 @@ class AdminApplicationNotificationJob < ApplicationJob
       return if applications.empty?
     end
 
-    message = TransactionalEmail.admin_application_notifications(applications)
-
     batch_sent_at = Time.current
     MembershipApplication.transaction do
       lock_admin_scope!
@@ -29,6 +27,7 @@ class AdminApplicationNotificationJob < ApplicationJob
       applications = MembershipApplication.where(id: claimed_ids).order(:created_at).to_a
     end
 
+    message = TransactionalEmail.admin_application_notifications(applications)
     message.deliver_now
   rescue StandardError
     MembershipApplication.where(id: applications&.map(&:id), admin_notification_sent_at: batch_sent_at).update_all(admin_notification_sent_at: nil) if batch_sent_at.present?
