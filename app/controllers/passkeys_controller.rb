@@ -11,8 +11,7 @@ class PasskeysController < ApplicationController
     credential_ids = current_user.passkey_credentials.pluck(:external_id)
     options = webauthn_options_for_create(
       user: { id: current_user.webauthn_id, name: current_user.email_address, display_name: current_user.email_address },
-      resident_key: :required,
-      user_verification: :required,
+      authenticator_selection: { resident_key: "required", user_verification: "required" },
       exclude: credential_ids
     )
 
@@ -22,11 +21,11 @@ class PasskeysController < ApplicationController
 
   def registration
     credential = verified_create_credential
+    return if performed?
     passkey = current_user.passkey_credentials.new(
       external_id: credential.id,
       public_key: credential.public_key,
-      sign_count: credential.sign_count,
-      nickname: credential.nickname
+      sign_count: credential.sign_count
     )
     passkey.save!
     render json: { success: true }
@@ -83,6 +82,9 @@ class PasskeysController < ApplicationController
         user_verification: true
       )
       credential
+    rescue WebAuthn::Error
+      head :unprocessable_entity
+      nil
     end
 
     def verified_get_credential
@@ -96,6 +98,9 @@ class PasskeysController < ApplicationController
         user_verification: true
       )
       credential
+    rescue WebAuthn::Error
+      head :unauthorized
+      nil
     end
 
     def webauthn_options_for_create(**kwargs)

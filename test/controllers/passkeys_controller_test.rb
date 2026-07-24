@@ -21,7 +21,11 @@ class PasskeysControllerTest < ActionDispatch::IntegrationTest
       end
     end.new("registration-challenge")
     headers = signed_session_headers(@user)
-    WebAuthn::Credential.stub(:options_for_create, ->(*args, **kwargs) { options }) do
+    WebAuthn::Credential.stub(:options_for_create, lambda { |**kwargs|
+      assert_equal({ user: { id: @user.webauthn_id, name: @user.email_address, display_name: @user.email_address }, exclude: [] }, kwargs.except(:authenticator_selection))
+      assert_equal({ resident_key: "required", user_verification: "required" }, kwargs[:authenticator_selection])
+      options
+    }) do
       post registration_options_passkeys_url, headers: headers
     end
 
@@ -30,7 +34,7 @@ class PasskeysControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "registration stores verified credential and clears challenge" do
-    credential = OpenStruct.new(id: "credential-123", public_key: "public-key", sign_count: 0, nickname: nil)
+    credential = OpenStruct.new(id: "credential-123", public_key: "public-key", sign_count: 0)
     headers = signed_session_headers(@user)
     options = Struct.new(:challenge) do
       def as_json(*) = { challenge: }
@@ -53,6 +57,20 @@ class PasskeysControllerTest < ActionDispatch::IntegrationTest
     assert_equal "public-key", stored.public_key
   end
 
+  test "registration returns unprocessable entity when ceremony parsing fails" do
+    headers = signed_session_headers(@user)
+    bad_credential = Object.new
+    bad_credential.define_singleton_method(:verify) { |*| raise WebAuthn::Error, "bad ceremony" }
+    bad_credential.define_singleton_method(:id) { "credential-123" }
+    bad_credential.define_singleton_method(:public_key) { "public-key" }
+    bad_credential.define_singleton_method(:sign_count) { 0 }
+    WebAuthn::Credential.stub(:from_create, ->(*args, **kwargs) { bad_credential }) do
+      post registration_passkeys_url, params: { credential: { raw: "value" } }, headers: headers
+    end
+
+    assert_response :unprocessable_entity
+  end
+
   test "authentication_options stores challenge without login" do
     post authentication_options_passkeys_url
 
@@ -62,6 +80,14 @@ class PasskeysControllerTest < ActionDispatch::IntegrationTest
 
   test "authentication rejects unknown credentials" do
     WebAuthn::Credential.stub(:from_get, ->(*args, **kwargs) { OpenStruct.new(id: "missing", sign_count: 1) }) do
+      post authentication_passkeys_url, params: { credential: { raw: "value" } }
+    end
+
+    assert_response :unauthorized
+  end
+
+  test "authentication returns unauthorized when ceremony parsing fails" do
+    WebAuthn::Credential.stub(:from_get, ->(*args, **kwargs) { raise WebAuthn::Error, "bad ceremony" }) do
       post authentication_passkeys_url, params: { credential: { raw: "value" } }
     end
 
