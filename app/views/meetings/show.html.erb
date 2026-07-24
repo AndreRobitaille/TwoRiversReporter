@@ -104,6 +104,25 @@
       <p class="section-empty">No summary available for this meeting yet.</p>
     <% end %>
 
+    <% if gated_for_visitor? %>
+      <% first_highlight = meeting_highlights(gd).first %>
+      <% if first_highlight.present? %>
+        <section class="meeting-article-section">
+          <div class="home-section-header">
+            <%= render "shared/atom_marker" %>
+            <span class="section-label">Key Decisions</span>
+            <span class="section-line"></span>
+          </div>
+          <div class="meeting-decisions">
+            <div class="meeting-decision">
+              <p class="meeting-decision-text"><%= teaser(first_highlight["text"], chars: 240) %></p>
+            </div>
+          </div>
+        </section>
+      <% end %>
+      <%= render "shared/gate" %>
+    <% else %>
+
     <%# === Key Decisions === %>
     <% highlights = meeting_highlights(gd) %>
     <% if highlights.any? %>
@@ -249,6 +268,8 @@
           </div>
         <% end %>
       </section>
+    <% end %>
+
     <% end %>
 
   <% elsif @summary&.content.present? %>

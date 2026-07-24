@@ -236,17 +236,26 @@ module MeetingsHelper
     end
   end
 
+  # Anonymous visitors in gated mode only ever see the teased first Key
+  # Decision on the page itself (see app/views/meetings/show.html.erb) — the
+  # share text must not hand out anything the page withholds, so it mirrors
+  # that same one-highlight, 240-char cap instead of the full highlight list.
+  GATED_SHARE_HIGHLIGHT_CHARS = 240
+
   def share_text_past_bullets(lines, gd)
     highlights = gd["highlights"] || []
     return if highlights.empty?
 
+    visible = gated_for_visitor? ? highlights.first(1) : highlights.first(5)
+    return if visible.empty?
+
     lines << "Key decisions:"
     lines << ""
-    highlights.first(5).each_with_index do |h, i|
-      bullet = "* #{h["text"]}"
-      bullet += " (#{h["vote"]})" if h["vote"].present?
+    visible.each_with_index do |h, i|
+      bullet = "* #{gated_share_text(h["text"])}"
+      bullet += " (#{h["vote"]})" if h["vote"].present? && !gated_for_visitor?
       lines << bullet
-      lines << "" if i < [ highlights.size, 5 ].min - 1
+      lines << "" if i < visible.size - 1
     end
   end
 
@@ -256,8 +265,9 @@ module MeetingsHelper
 
     # Prefer highlights (plain-language summaries) over raw agenda titles
     bullets = if highlights.any?
-      highlights.first(5).map { |h| h["text"] }
-    elsif items.any?
+      visible = gated_for_visitor? ? highlights.first(1) : highlights.first(5)
+      visible.map { |h| gated_share_text(h["text"]) }
+    elsif items.any? && !gated_for_visitor?
       items.first(5).map { |i| i["agenda_item_title"] }
     end
 
@@ -269,6 +279,14 @@ module MeetingsHelper
       lines << "* #{b}"
       lines << "" if i < bullets.size - 1
     end
+  end
+
+  # Plain-text counterpart to AccessHelper#teaser: same truncation rule, but
+  # no HTML span since this feeds a data-* attribute, not markup. Only trims
+  # when gated — untouched otherwise.
+  def gated_share_text(text)
+    return text unless gated_for_visitor?
+    String.new(text.to_s).truncate(GATED_SHARE_HIGHLIGHT_CHARS, separator: " ", omission: "")
   end
 
   def share_text_agenda_fallback(lines, meeting)
@@ -295,15 +313,22 @@ module MeetingsHelper
     return nil if gd.blank?
 
     highlights = meeting_highlights(gd)
+    return nil if highlights.empty?
+
+    # Gated visitors only ever see the first highlight (teased) — picking a
+    # later highlight just because it has a vote would hand out content the
+    # page itself withholds.
+    if gated_for_visitor?
+      return gated_share_text(highlights.first&.dig("text")).presence
+    end
+
     if meeting.starts_at.present? && meeting.starts_at <= Time.current
       highlight = highlights.find { |h| h["vote"].present? } || highlights.first
       return highlight&.dig("text").presence
     end
 
     highlight = highlights.first
-    return highlight&.dig("text").presence if highlight.present?
-
-    nil
+    highlight&.dig("text").presence
   end
 
   def facebook_share_hook_from_agenda(meeting)

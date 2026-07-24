@@ -449,8 +449,13 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
 
     assert copy_text.present?
     assert facebook_text.present?
-    assert_equal ApplicationController.helpers.share_text(meeting, summary), copy_text
-    assert_equal ApplicationController.helpers.facebook_share_text(meeting, summary), facebook_text
+    # share_text/facebook_share_text now consult gated_for_visitor?, a
+    # controller-scoped helper_method — ApplicationController.helpers is a
+    # detached proxy with no controller behind it, so route through the
+    # view context of the controller that actually served this request.
+    view_context = @controller.view_context
+    assert_equal view_context.share_text(meeting, summary), copy_text
+    assert_equal view_context.facebook_share_text(meeting, summary), facebook_text
     assert_not_equal copy_text, facebook_text
   end
 
