@@ -44,6 +44,8 @@ Rails.application.routes.draw do
   get "admin" => "admin/dashboard#show", as: :admin_root
 
   scope :admin do
+    resource :site_settings, only: %i[show update], controller: "admin/site_settings", as: :admin_site_settings
+
     resources :users, only: %i[index show new create], controller: "admin/users" do
       member do
         patch :approve
