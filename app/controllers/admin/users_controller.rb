@@ -26,10 +26,13 @@ module Admin
     end
 
     def approve
-      application = submitted_application!
+      application = nil
 
       ApplicationRecord.transaction do
-        @user.update!(status: "active", disabled_at: nil)
+        user = User.lock.find(@user.id)
+        application = user.membership_applications.lock.find_by!(status: "submitted")
+
+        user.update!(status: "active", disabled_at: nil)
         application.update!(status: "approved", reviewed_at: Time.current, reviewed_by: Current.session.user)
       end
 
@@ -39,10 +42,11 @@ module Admin
     end
 
     def reject
-      application = submitted_application!
-
       ApplicationRecord.transaction do
-        @user.update!(status: "rejected")
+        user = User.lock.find(@user.id)
+        application = user.membership_applications.lock.find_by!(status: "submitted")
+
+        user.update!(status: "rejected")
         application.update!(status: "rejected", reviewed_at: Time.current, reviewed_by: Current.session.user, rejection_reason: params[:rejection_reason].presence)
       end
 
@@ -55,12 +59,16 @@ module Admin
     end
 
     def disable
-      if @user.disabled_at.present?
+      if @user.disabled_at.present? && @user.status == "active"
         @user.update!(disabled_at: nil)
         notice = "User re-enabled."
       else
-        @user.update!(disabled_at: Time.current)
-        notice = "User disabled."
+        if @user.disabled_at.present?
+          notice = "User remains disabled."
+        else
+          @user.update!(disabled_at: Time.current)
+          notice = "User disabled."
+        end
       end
 
       redirect_to user_path(@user), notice: notice
@@ -80,10 +88,6 @@ module Admin
 
       def set_user
         @user = User.find(params[:id])
-      end
-
-      def submitted_application!
-        @user.membership_applications.find_by!(status: "submitted")
       end
 
       def user_params

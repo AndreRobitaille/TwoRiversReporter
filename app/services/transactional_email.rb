@@ -61,8 +61,14 @@ class TransactionalEmail
   end
 
   def self.admin_application_notifications(applications)
+    email = if Rails.env.production?
+      ENV.fetch("ADMIN_NOTIFICATION_EMAIL") { raise MissingTransactionalId, "ADMIN_NOTIFICATION_EMAIL is required in production" }
+    else
+      ENV["ADMIN_NOTIFICATION_EMAIL"].presence || "admin@example.com"
+    end
+
     Message.new(
-      email: ENV.fetch("ADMIN_NOTIFICATION_EMAIL", "admin@example.com"),
+      email: email,
       transactional_id: ENV["LOOPS_ADMIN_APPLICATION_NOTIFICATION_TRANSACTIONAL_ID"].presence || "admin_application_notifications",
       data_variables: {
         application_count: applications.size,

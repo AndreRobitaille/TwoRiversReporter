@@ -55,15 +55,21 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_not Session.exists?(session.id)
   end
 
-  test "admin can re-enable a disabled user" do
+  test "admin can re-enable a disabled user but not a pending applicant" do
     admin = create_passkey_admin
     user = User.create!(email_address: "reenable@example.com", password: "password", status: "active", disabled_at: Time.current)
+    applicant = User.create!(email_address: "pending@example.com", password: "password", status: "pending", disabled_at: Time.current)
     sign_in(admin)
 
     with_admin_access { patch disable_user_path(user) }
 
     assert_nil user.reload.disabled_at
     assert_redirected_to user_path(user)
+
+    with_admin_access { patch disable_user_path(applicant) }
+
+    assert_predicate applicant.reload.disabled_at, :present?
+    assert_redirected_to user_path(applicant)
   end
 
   test "admin can revoke all sessions for a user" do
@@ -101,6 +107,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
       assert_response :success
       assert_includes response.body, "Account and application management"
       assert_includes response.body, "Membership applications"
+      assert_includes response.body, "Submitted:"
       assert_includes response.body, "Hello"
       assert_includes response.body, "123 Main St"
       assert_includes response.body, "Facebook profile URL"

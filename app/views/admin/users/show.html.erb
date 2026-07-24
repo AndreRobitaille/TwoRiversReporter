@@ -22,7 +22,7 @@
       <% if application.application_notes.present? %>
         <div>Application notes: <%= application.application_notes %></div>
       <% end %>
-      <div>Submitted: <%= application.created_at %></div>
+      <div>Submitted: <%= application.submitted_at || application.created_at %></div>
       <div>Reviewed: <%= application.reviewed_at %></div>
       <% if application.status == "submitted" %>
         <%= form_with url: reject_user_path(@user), method: :patch do |form| %>

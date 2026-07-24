@@ -23,7 +23,7 @@ class AdminApplicationNotificationJob < ApplicationJob
     end
 
     def cooldown_active?
-      MembershipApplication.where("admin_notification_sent_at >= ?", 1.hour.ago)
-                           .exists?
+      last_sent_at = MembershipApplication.where.not(admin_notification_sent_at: nil).maximum(:admin_notification_sent_at)
+      last_sent_at.present? && last_sent_at >= 1.hour.ago
     end
 end
