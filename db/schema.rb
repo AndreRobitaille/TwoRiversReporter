@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_23_000003) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_23_000004) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -428,6 +428,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_23_000003) do
   create_table "sessions", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "ip_address"
+    t.datetime "last_seen_at"
     t.datetime "updated_at", null: false
     t.string "user_agent"
     t.bigint "user_id", null: false
