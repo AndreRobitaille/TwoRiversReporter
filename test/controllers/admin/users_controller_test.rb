@@ -27,25 +27,44 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_equal "approved", application.reload.status
   end
 
-  test "admin approval remains retryable when approval email delivery fails" do
+  test "admin approval remains retryable when approval email construction fails" do
     admin = create_passkey_admin
     applicant = User.create!(email_address: "approve-fail@example.com", password: "password", status: "pending")
     application = applicant.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI")
     sign_in(admin)
 
     TransactionalEmail.stub(:application_approved, ->(_user, _application, _magic_link) {
-      Object.new.tap do |message|
-        message.define_singleton_method(:deliver_now) { raise LoopsDelivery::DeliveryError, "delivery failed" }
-      end
+      raise TransactionalEmail::MissingTransactionalId, "missing id"
     }) do
-      with_admin_access { patch approve_user_path(applicant) }
+      assert_raises(TransactionalEmail::MissingTransactionalId) do
+        with_admin_access { patch approve_user_path(applicant) }
+      end
     end
 
     assert_equal "pending", applicant.reload.status
     assert_equal "submitted", application.reload.status
     assert_equal 0, MagicLink.where(user: applicant, purpose: "sign_in").count
-    assert_redirected_to user_path(applicant)
-    assert_equal "We couldn't send the approval link right now. Please try again.", flash[:alert]
+  end
+
+  test "admin approval remains retryable when approval email delivery raises non delivery errors" do
+    admin = create_passkey_admin
+    applicant = User.create!(email_address: "approve-runtime@example.com", password: "password", status: "pending")
+    application = applicant.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI")
+    sign_in(admin)
+
+    TransactionalEmail.stub(:application_approved, ->(_user, _application, _magic_link) {
+      Object.new.tap do |message|
+        message.define_singleton_method(:deliver_now) { raise RuntimeError, "delivery failed" }
+      end
+    }) do
+      assert_raises(RuntimeError) do
+        with_admin_access { patch approve_user_path(applicant) }
+      end
+    end
+
+    assert_equal "pending", applicant.reload.status
+    assert_equal "submitted", application.reload.status
+    assert_equal 0, MagicLink.where(user: applicant, purpose: "sign_in").count
   end
 
   test "admin rejects submitted application" do

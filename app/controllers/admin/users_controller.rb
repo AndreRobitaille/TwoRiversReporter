@@ -41,7 +41,7 @@ module Admin
 
       TransactionalEmail.application_approved(user, application, magic_link).deliver_now
       redirect_to user_path(@user), notice: "Application approved."
-    rescue LoopsDelivery::DeliveryError
+    rescue StandardError => e
       ApplicationRecord.transaction do
         user = User.lock.find(user.id)
         application = user.membership_applications.lock.find(application.id)
@@ -50,7 +50,7 @@ module Admin
         magic_link.destroy! if magic_link&.persisted?
       end
 
-      redirect_to user_path(@user), alert: "We couldn't send the approval link right now. Please try again."
+      raise e
     end
 
     def reject
