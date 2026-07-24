@@ -61,6 +61,23 @@ class ApplicationLayoutAuthStateTest < ActionDispatch::IntegrationTest
     assert_select ".passkey-prompt", count: 0
   end
 
+  test "users with passkeys do not see the reminder" do
+    user = User.create!(email_address: "passkey@example.com", password: "password123", password_confirmation: "password123", status: "active")
+    user.passkey_credentials.create!(external_id: "credential-1", public_key: "public-key", sign_count: 0)
+
+    sign_in_via_magic_link(user)
+
+    assert_select ".passkey-prompt", count: 0
+  end
+
+  test "users with a future dismissal do not see the reminder" do
+    user = User.create!(email_address: "dismissed@example.com", password: "password123", password_confirmation: "password123", status: "active", passkey_prompt_dismissed_until: 1.day.from_now)
+
+    sign_in_via_magic_link(user)
+
+    assert_select ".passkey-prompt", count: 0
+  end
+
   private
 
     def sign_in_via_magic_link(user)

@@ -31,6 +31,25 @@ module Settings
       assert_includes response.body, 'data-turbo-method="delete"'
     end
 
+    test "requires authentication to dismiss the passkey prompt" do
+      delete settings_passkey_prompt_path, headers: { "HTTP_REFERER" => root_url }
+
+      assert_redirected_to new_public_session_path
+    end
+
+    test "dismisses only the signed in users passkey prompt" do
+      user = User.create!(email_address: "prompt@example.com", password: "password123", password_confirmation: "password123", status: "active")
+      other = User.create!(email_address: "other@example.com", password: "password123", password_confirmation: "password123", status: "active")
+
+      travel_to Time.current do
+        delete settings_passkey_prompt_path, headers: signed_session_headers(user).merge("HTTP_REFERER" => root_url)
+      end
+
+      assert_redirected_to root_url
+      assert_predicate user.reload.passkey_prompt_dismissed_until, :future?
+      assert_nil other.reload.passkey_prompt_dismissed_until
+    end
+
     private
 
       def signed_session_headers(user)

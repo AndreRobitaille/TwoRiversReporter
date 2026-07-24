@@ -39,7 +39,7 @@ module Settings
       assert_includes response.body, latest_application.street
       assert_includes response.body, latest_application.facebook_profile_url
       assert_includes response.body, latest_application.application_notes
-      assert_includes response.body, reviewer.email_address
+      assert_not_includes response.body, reviewer.email_address
       assert_includes response.body, "Submitted"
     end
 

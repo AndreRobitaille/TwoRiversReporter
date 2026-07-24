@@ -103,12 +103,6 @@
           </div>
         <% end %>
 
-        <% if @membership_application.reviewed_by.present? %>
-          <div>
-            <dt class="text-xs uppercase tracking-[0.08em] text-[var(--color-text-secondary)]">Reviewed by</dt>
-            <dd class="mt-1"><%= @membership_application.reviewed_by.email_address %></dd>
-          </div>
-        <% end %>
       </dl>
     <% else %>
       <p class="card-body mb-4">You haven't started a membership application yet.</p>
