@@ -57,7 +57,7 @@ module Authentication
     end
 
     def authentication_redirect_path
-      admin_controller? ? new_session_path : new_public_session_path
+      new_public_session_path
     end
 
     def default_after_authentication_url

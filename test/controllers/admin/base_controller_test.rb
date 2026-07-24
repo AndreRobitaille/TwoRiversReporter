@@ -3,6 +3,7 @@ require "test_helper"
 module Admin
   class BaseControllerTest < ActionDispatch::IntegrationTest
     test "old admin password and otp routes no longer generate" do
+      assert_raises(ActionController::RoutingError) { Rails.application.routes.recognize_path("/admin/session/new", method: :get) }
       assert_raises(ActionController::RoutingError) { Rails.application.routes.recognize_path("/admin/passwords/new", method: :get) }
       assert_raises(ActionController::RoutingError) { Rails.application.routes.recognize_path("/admin/mfa_session/new", method: :get) }
       assert_raises(ActionController::RoutingError) { Rails.application.routes.recognize_path("/admin/mfa_setup", method: :get) }
@@ -11,6 +12,7 @@ module Admin
     end
 
     test "old admin password and otp paths do not route" do
+      assert_raises(ActionController::RoutingError) { Rails.application.routes.recognize_path("/admin/session/new", method: :get) }
       assert_raises(ActionController::RoutingError) { Rails.application.routes.recognize_path("/admin/passwords/new", method: :get) }
       assert_raises(ActionController::RoutingError) { Rails.application.routes.recognize_path("/admin/mfa_session/new", method: :get) }
       assert_raises(ActionController::RoutingError) { Rails.application.routes.recognize_path("/admin/mfa_setup", method: :get) }

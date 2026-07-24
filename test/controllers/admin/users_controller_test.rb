@@ -201,7 +201,8 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
       sign_in_as_admin(user)
     end
 
-    def with_admin_access(&block)
-      AdminMfaPolicy.stub(:enforced?, false, &block)
+    def with_admin_access
+      yield
     end
+
 end

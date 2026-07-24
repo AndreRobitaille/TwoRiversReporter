@@ -9,14 +9,7 @@ module Admin
 
     setup do
       @admin = User.create!(email_address: "admin@example.com", admin: true)
-      @admin.ensure_totp_secret!
-
-      post session_url, params: { email_address: "admin@example.com" }
-      follow_redirect!
-
-      totp = ROTP::TOTP.new(@admin.totp_secret, issuer: "TwoRiversMatters")
-      post mfa_session_url, params: { code: totp.now }
-      follow_redirect!
+      sign_in_as_admin(@admin)
 
       @topic = Topic.create!(name: "Generated Image Topic #{SecureRandom.hex(4)}", status: "approved")
       @meeting = Meeting.create!(detail_page_url: "https://example.com/meetings/#{SecureRandom.hex(4)}", starts_at: Time.current)

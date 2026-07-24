@@ -4,7 +4,7 @@ module Admin
   class MeetingsControllerTest < ActionDispatch::IntegrationTest
     setup do
       @admin = User.create!(email_address: "meeting-admin@example.com", admin: true)
-      @admin.ensure_totp_secret!
+      sign_in_as_admin(@admin)
 
       @committee = Committee.create!(name: "Plan Commission")
       @meeting = Meeting.create!(
@@ -18,15 +18,17 @@ module Admin
     end
 
     test "requires admin authentication" do
+      reset!
       get admin_meeting_url(@meeting)
 
-      assert_redirected_to new_session_path
+      assert_redirected_to new_public_session_path
     end
 
     test "index requires admin authentication" do
+      reset!
       get admin_meetings_url
 
-      assert_redirected_to new_session_path
+      assert_redirected_to new_public_session_path
     end
 
     test "admin can list meetings and reach image management" do
@@ -98,15 +100,5 @@ module Admin
       end
     end
 
-    private
-
-      def sign_in_as_admin
-        post session_url, params: { email_address: @admin.email_address }
-        follow_redirect!
-
-        totp = ROTP::TOTP.new(@admin.totp_secret, issuer: "TwoRiversMatters")
-        post mfa_session_url, params: { code: totp.now }
-        follow_redirect!
-      end
   end
 end

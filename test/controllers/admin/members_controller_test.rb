@@ -3,14 +3,7 @@ require "test_helper"
 class Admin::MembersControllerTest < ActionDispatch::IntegrationTest
   setup do
     @admin = User.create!(email_address: "member-admin@test.com", admin: true)
-    @admin.ensure_totp_secret!
-
-    post session_url, params: { email_address: "member-admin@test.com" }
-    follow_redirect!
-
-    totp = ROTP::TOTP.new(@admin.totp_secret, issuer: "TwoRiversMatters")
-    post mfa_session_url, params: { code: totp.now }
-    follow_redirect!
+    sign_in_as_admin(@admin)
 
     @member = Member.create!(name: "Jane Doe")
   end

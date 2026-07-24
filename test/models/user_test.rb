@@ -30,13 +30,13 @@ class UserTest < ActiveSupport::TestCase
 
   test "nil status backfills active for admins and pending for non-admins" do
     admin = User.connection.select_one(<<~SQL.squish)
-      INSERT INTO users (email_address, password_digest, admin, status, webauthn_id, created_at, updated_at)
-      VALUES ('admin-nil-status@example.com', '#{BCrypt::Password.create("password123")}', true, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      INSERT INTO users (email_address, admin, status, webauthn_id, created_at, updated_at)
+      VALUES ('admin-nil-status@example.com', true, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
       RETURNING *
     SQL
     member = User.connection.select_one(<<~SQL.squish)
-      INSERT INTO users (email_address, password_digest, admin, status, webauthn_id, created_at, updated_at)
-      VALUES ('member-nil-status@example.com', '#{BCrypt::Password.create("password123")}', false, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      INSERT INTO users (email_address, admin, status, webauthn_id, created_at, updated_at)
+      VALUES ('member-nil-status@example.com', false, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
       RETURNING *
     SQL
 
@@ -77,8 +77,8 @@ class UserTest < ActiveSupport::TestCase
 
   test "legacy users with null passwordless fields are backfilled on update" do
     user = User.connection.select_one(<<~SQL.squish)
-      INSERT INTO users (email_address, password_digest, admin, status, webauthn_id, created_at, updated_at)
-      VALUES ('legacy@example.com', '#{BCrypt::Password.create("password123")}', false, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      INSERT INTO users (email_address, admin, status, webauthn_id, created_at, updated_at)
+      VALUES ('legacy@example.com', false, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
       RETURNING *
     SQL
 

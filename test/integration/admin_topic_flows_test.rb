@@ -7,15 +7,7 @@ class AdminTopicFlowsTest < ActionDispatch::IntegrationTest
       email_address: "admin@example.com",
       admin: true
     )
-    @admin.ensure_totp_secret!
-
-    # Login
-    post session_url, params: { email_address: @admin.email_address }
-    follow_redirect! # to mfa_session/new
-
-    totp = ROTP::TOTP.new(@admin.totp_secret, issuer: "TwoRiversMatters")
-    post mfa_session_url, params: { code: totp.now }
-    follow_redirect! # to admin_root
+    sign_in_as_admin(@admin)
 
     suffix = SecureRandom.hex(4)
     @topic1_name = "Topic Alpha #{suffix}"

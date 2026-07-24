@@ -4,14 +4,7 @@ require "securerandom"
 class AdminTopicRepairFlowTest < ActionDispatch::IntegrationTest
   setup do
     @admin = User.create!(email_address: "admin@example.com", admin: true)
-    @admin.ensure_totp_secret!
-
-    post session_url, params: { email_address: @admin.email_address }
-    follow_redirect!
-
-    totp = ROTP::TOTP.new(@admin.totp_secret, issuer: "TwoRiversMatters")
-    post mfa_session_url, params: { code: totp.now }
-    follow_redirect!
+    sign_in_as_admin(@admin)
   end
 
   test "retires bad umbrella topic from repair workspace" do

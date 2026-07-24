@@ -44,7 +44,6 @@ Rails.application.routes.draw do
   get "admin" => "admin/dashboard#show", as: :admin_root
 
   scope :admin do
-    resource :session, only: %i[new create destroy], controller: "admin/sessions"
     resources :users, only: %i[index show new create], controller: "admin/users" do
       member do
         patch :approve

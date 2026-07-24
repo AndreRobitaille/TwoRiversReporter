@@ -39,6 +39,6 @@
   <ul>
     <li><%= link_to "Admin users", users_path %></li>
     <li><%= link_to "Security settings", settings_security_path %></li>
-    <li><%= link_to "Sign out", session_path, data: { turbo_method: :delete } %></li>
+    <li><%= link_to "Sign out", public_session_path, data: { turbo_method: :delete } %></li>
   </ul>
 </div>
