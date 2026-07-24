@@ -14,6 +14,10 @@ class TransactionalEmailTest < ActiveSupport::TestCase
     assert_not_includes message.data_variables.keys, :raw_token
     assert_includes message.data_variables[:sign_in_url], magic_link.raw_token
     assert_predicate message, :frozen?
+
+    assert_raises(FrozenError) { message.data_variables[:sign_in_url] = "/tampered" }
+    assert_raises(FrozenError) { message.data_variables[:new_key] = "value" }
+    assert_includes message.data_variables[:sign_in_url], magic_link.raw_token
   ensure
     ENV.delete("LOOPS_MAGIC_LINK_TRANSACTIONAL_ID")
   end

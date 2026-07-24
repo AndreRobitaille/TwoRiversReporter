@@ -4,6 +4,8 @@ require "uri"
 class LoopsDelivery
   ENDPOINT = URI("https://app.loops.so/api/v1/transactional")
 
+  class DeliveryError < StandardError; end
+
   def self.configured?
     api_key.present?
   end
@@ -23,8 +25,15 @@ class LoopsDelivery
     }.to_json
 
     Net::HTTP.start(ENDPOINT.host, ENDPOINT.port, use_ssl: true) do |http|
-      http.request(request)
+      response = http.request(request)
+      raise DeliveryError, "Loops delivery failed with #{response.code}" unless response.is_a?(Net::HTTPSuccess)
+
+      response
     end
+  rescue StandardError => e
+    raise e if e.is_a?(MissingApiKey)
+
+    raise DeliveryError, "Unable to deliver transactional email via Loops: #{e.message}"
   end
 
   def self.api_key

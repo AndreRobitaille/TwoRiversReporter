@@ -26,17 +26,42 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "create sends a magic link for an active user" do
-    assert_difference "MagicLink.count", 1 do
-      assert_no_enqueued_jobs do
-        post "/session", params: { email_address: " ACTIVE@example.com " }
+    delivered = false
+
+    TransactionalEmail.stub(:magic_link, ->(_user, _magic_link) {
+      Object.new.tap do |message|
+        message.define_singleton_method(:deliver_now) { delivered = true }
+      end
+    }) do
+      assert_difference "MagicLink.count", 1 do
+        assert_no_enqueued_jobs do
+          post "/session", params: { email_address: " ACTIVE@example.com " }
+        end
       end
     end
+
+    assert_predicate delivered, :itself
 
     magic_link = MagicLink.order(:created_at).last
     assert_equal @active_user, magic_link.user
     assert_equal "sign_in", magic_link.purpose
     assert_redirected_to "/session/new"
     assert_equal "If that account can sign in, we sent a link.", flash[:notice]
+  end
+
+  test "create handles delivery failures without a 500" do
+    TransactionalEmail.stub(:magic_link, ->(*) do
+      Object.new.tap do |message|
+        def message.deliver_now
+          raise LoopsDelivery::DeliveryError, "boom"
+        end
+      end
+    end) do
+      post "/session", params: { email_address: "ACTIVE@example.com" }
+    end
+
+    assert_redirected_to "/session/new"
+    assert_equal "We couldn't send a sign-in link right now. Try again later.", flash[:alert]
   end
 
   test "unauthenticated destroy redirects to the public sign in page" do

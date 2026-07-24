@@ -4,6 +4,7 @@ class TransactionalEmail
   Message = Struct.new(:email, :transactional_id, :data_variables, keyword_init: true) do
     def initialize(**kwargs)
       super
+      self.data_variables = data_variables.deep_dup.freeze if data_variables
       freeze
     end
 

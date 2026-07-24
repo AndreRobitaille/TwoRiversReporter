@@ -17,6 +17,8 @@ class SessionsController < ApplicationController
     end
 
     redirect_to new_public_session_path, notice: "If that account can sign in, we sent a link."
+  rescue LoopsDelivery::DeliveryError
+    redirect_to new_public_session_path, alert: "We couldn't send a sign-in link right now. Try again later."
   end
 
   def magic_link
