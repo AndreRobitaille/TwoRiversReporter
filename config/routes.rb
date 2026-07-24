@@ -23,6 +23,15 @@ Rails.application.routes.draw do
     post :resend_expired_magic_link, on: :collection
   end
 
+  resources :passkeys, only: %i[update destroy] do
+    collection do
+      post :registration_options
+      post :registration
+      post :authentication_options
+      post :authentication
+    end
+  end
+
   get "sitemap.xml", to: "sitemaps#show", as: :sitemap, defaults: { format: :xml }
 
   get "admin" => "admin/dashboard#show", as: :admin_root
