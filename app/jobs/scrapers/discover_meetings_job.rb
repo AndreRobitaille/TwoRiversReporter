@@ -64,12 +64,6 @@ module Scrapers
       starts_at = Time.zone.parse(date_span["content"]) rescue nil
       return unless starts_at # Skip if we can't parse date
 
-      # Check cutoff
-      if since && starts_at < since
-        Rails.logger.info "Reached cutoff date #{since} (found #{starts_at}). Stopping."
-        return :stop
-      end
-
       # Title column contains the Body Name (e.g. "City Council Meeting")
       # We might want to clean this up later (remove "Meeting"), but for now keep it raw
       title_text = row.at(".views-field-title").text.strip
@@ -81,6 +75,18 @@ module Scrapers
       detail_url = details_link["href"]
       # Ensure absolute URL
       detail_url = "https://www.two-rivers.org#{detail_url}" unless detail_url.start_with?("http")
+
+      # Check cutoff unless the source is reusing a detail URL for a different meeting date.
+      if since && starts_at < since
+        existing_meeting = Meeting.find_by(detail_page_url: detail_url)
+
+        if existing_meeting && existing_meeting.starts_at&.to_date != starts_at.to_date
+          Rails.logger.info "DiscoverMeetingsJob: detail URL reused for a different date; keeping both meetings"
+        else
+          Rails.logger.info "Reached cutoff date #{since} (found #{starts_at}). Stopping."
+          return :stop
+        end
+      end
 
       # Upsert Meeting
       meeting = find_existing_meeting(starts_at, title_text, detail_url)
