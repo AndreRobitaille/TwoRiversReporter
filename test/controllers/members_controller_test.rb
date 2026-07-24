@@ -126,7 +126,7 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
     guest_peer = Member.create!(name: "Frequent Guest")
     staff_peer = Member.create!(name: "Frequent Staff")
 
-    [meeting_one, meeting_two, meeting_three].each do |meeting|
+    [ meeting_one, meeting_two, meeting_three ].each do |meeting|
       MeetingAttendance.create!(
         meeting: meeting, member: @member,
         status: "present", attendee_type: "voting_member"
@@ -146,7 +146,7 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
       status: "absent", attendee_type: "voting_member"
     )
 
-    [meeting_one, meeting_two, meeting_three].each do |meeting|
+    [ meeting_one, meeting_two, meeting_three ].each do |meeting|
       MeetingAttendance.create!(
         meeting: meeting, member: guest_peer,
         status: "present", attendee_type: "guest"

@@ -120,6 +120,5 @@ module Documents
       document.update!(text_quality: "broken")
       Rails.logger.error("PDF Analysis failed for Document #{document_id}: #{e.message}")
     end
-
   end
 end

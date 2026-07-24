@@ -99,6 +99,5 @@ module Admin
         assert_select "input[type=submit][value='Save upload']", 1
       end
     end
-
   end
 end

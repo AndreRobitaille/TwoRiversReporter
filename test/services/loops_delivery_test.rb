@@ -32,7 +32,7 @@ class LoopsDeliveryTest < ActiveSupport::TestCase
     end
 
     assert_equal({ "email" => "a@example.com", "transactionalId" => "id", "dataVariables" => { "foo" => "bar" } }, body)
-    assert_equal ["Bearer test-key"], headers["authorization"]
+    assert_equal [ "Bearer test-key" ], headers["authorization"]
   ensure
     ENV.delete("LOOPS_API_KEY")
   end

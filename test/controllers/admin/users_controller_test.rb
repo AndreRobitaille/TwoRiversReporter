@@ -251,5 +251,4 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     def with_admin_access
       yield
     end
-
 end

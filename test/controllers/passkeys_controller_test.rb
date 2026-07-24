@@ -42,12 +42,12 @@ class PasskeysControllerTest < ActionDispatch::IntegrationTest
     WebAuthn::Credential.stub(:options_for_create, ->(*args, **kwargs) { options }) do
       WebAuthn::Credential.stub(:from_create, ->(*args, **kwargs) { credential }) do
       credential.define_singleton_method(:verify) do |challenge, user_verification:|
-        @verified_args = [challenge, user_verification]
+        @verified_args = [ challenge, user_verification ]
         true
       end
       post registration_options_passkeys_url, headers: headers
       post registration_passkeys_url, params: { credential: { raw: "value" } }, headers: headers
-      assert_equal [nil, true], credential.instance_variable_get(:@verified_args)
+      assert_equal [ nil, true ], credential.instance_variable_get(:@verified_args)
       end
     end
 
@@ -124,7 +124,7 @@ class PasskeysControllerTest < ActionDispatch::IntegrationTest
     credential = PasskeyCredential.create!(user: @user, external_id: "credential-123", public_key: "public-key", sign_count: 0)
     webauthn_credential = OpenStruct.new(id: credential.external_id, sign_count: 1)
     webauthn_credential.define_singleton_method(:verify) do |challenge, public_key:, sign_count:, user_verification:|
-      @verified_args = [challenge, public_key, sign_count, user_verification]
+      @verified_args = [ challenge, public_key, sign_count, user_verification ]
       true
     end
 
@@ -135,7 +135,7 @@ class PasskeysControllerTest < ActionDispatch::IntegrationTest
       WebAuthn::Credential.stub(:from_get, ->(*args, **kwargs) { webauthn_credential }) do
         post authentication_options_passkeys_url
         post authentication_passkeys_url, params: { credential: { raw: "value" } }
-        assert_equal ["authentication-challenge", "public-key", 0, true], webauthn_credential.instance_variable_get(:@verified_args)
+        assert_equal [ "authentication-challenge", "public-key", 0, true ], webauthn_credential.instance_variable_get(:@verified_args)
       end
     end
 

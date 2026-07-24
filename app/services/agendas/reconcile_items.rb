@@ -112,7 +112,7 @@ module Agendas
     def find_matching_items(candidate, parent_id)
       kind = candidate[:kind].presence || "item"
       scope = meeting.agenda_items.where(number: candidate[:number])
-      scope = kind == "item" ? scope.where(kind: [nil, "item"]) : scope.where(kind: [nil, "section"])
+      scope = kind == "item" ? scope.where(kind: [ nil, "item" ]) : scope.where(kind: [ nil, "section" ])
 
       exact_parent = scope.where(parent_id: parent_id)
       if exact_parent.many?

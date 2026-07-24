@@ -84,7 +84,7 @@ class TransactionalEmailTest < ActiveSupport::TestCase
       ENV.delete("ADMIN_NOTIFICATION_EMAIL")
 
       assert_raises(TransactionalEmail::MissingTransactionalId) do
-        TransactionalEmail.admin_application_notifications([application])
+        TransactionalEmail.admin_application_notifications([ application ])
       end
     end
   end
@@ -98,7 +98,7 @@ class TransactionalEmailTest < ActiveSupport::TestCase
       ENV["ADMIN_NOTIFICATION_EMAIL"] = "admin@example.com"
 
       assert_raises(TransactionalEmail::MissingTransactionalId) do
-        TransactionalEmail.admin_application_notifications([application])
+        TransactionalEmail.admin_application_notifications([ application ])
       end
     end
   ensure

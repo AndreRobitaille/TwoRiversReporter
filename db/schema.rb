@@ -21,8 +21,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.string "name", null: false
     t.bigint "record_id", null: false
     t.string "record_type", null: false
-    t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
-    t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
+    t.index [ "blob_id" ], name: "index_active_storage_attachments_on_blob_id"
+    t.index [ "record_type", "record_id", "name", "blob_id" ], name: "index_active_storage_attachments_uniqueness", unique: true
   end
 
   create_table "active_storage_blobs", force: :cascade do |t|
@@ -34,13 +34,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.string "key", null: false
     t.text "metadata"
     t.string "service_name", null: false
-    t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
+    t.index [ "key" ], name: "index_active_storage_blobs_on_key", unique: true
   end
 
   create_table "active_storage_variant_records", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
-    t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+    t.index [ "blob_id", "variation_digest" ], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
   create_table "agenda_item_documents", force: :cascade do |t|
@@ -48,8 +48,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.datetime "created_at", null: false
     t.bigint "meeting_document_id", null: false
     t.datetime "updated_at", null: false
-    t.index ["agenda_item_id"], name: "index_agenda_item_documents_on_agenda_item_id"
-    t.index ["meeting_document_id"], name: "index_agenda_item_documents_on_meeting_document_id"
+    t.index [ "agenda_item_id" ], name: "index_agenda_item_documents_on_agenda_item_id"
+    t.index [ "meeting_document_id" ], name: "index_agenda_item_documents_on_meeting_document_id"
   end
 
   create_table "agenda_item_topics", force: :cascade do |t|
@@ -57,9 +57,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.datetime "created_at", null: false
     t.bigint "topic_id", null: false
     t.datetime "updated_at", null: false
-    t.index ["agenda_item_id", "topic_id"], name: "idx_agenda_item_topics_unique_pair", unique: true
-    t.index ["agenda_item_id"], name: "index_agenda_item_topics_on_agenda_item_id"
-    t.index ["topic_id"], name: "index_agenda_item_topics_on_topic_id"
+    t.index [ "agenda_item_id", "topic_id" ], name: "idx_agenda_item_topics_unique_pair", unique: true
+    t.index [ "agenda_item_id" ], name: "index_agenda_item_topics_on_agenda_item_id"
+    t.index [ "topic_id" ], name: "index_agenda_item_topics_on_topic_id"
   end
 
   create_table "agenda_items", force: :cascade do |t|
@@ -73,9 +73,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.text "summary"
     t.text "title"
     t.datetime "updated_at", null: false
-    t.index ["kind"], name: "index_agenda_items_on_kind"
-    t.index ["meeting_id"], name: "index_agenda_items_on_meeting_id"
-    t.index ["parent_id"], name: "index_agenda_items_on_parent_id"
+    t.index [ "kind" ], name: "index_agenda_items_on_kind"
+    t.index [ "meeting_id" ], name: "index_agenda_items_on_meeting_id"
+    t.index [ "parent_id" ], name: "index_agenda_items_on_parent_id"
   end
 
   create_table "committee_aliases", force: :cascade do |t|
@@ -83,8 +83,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.datetime "created_at", null: false
     t.string "name", null: false
     t.datetime "updated_at", null: false
-    t.index ["committee_id"], name: "index_committee_aliases_on_committee_id"
-    t.index ["name"], name: "index_committee_aliases_on_name", unique: true
+    t.index [ "committee_id" ], name: "index_committee_aliases_on_committee_id"
+    t.index [ "name" ], name: "index_committee_aliases_on_name", unique: true
   end
 
   create_table "committee_memberships", force: :cascade do |t|
@@ -96,9 +96,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.string "source", default: "admin_manual", null: false
     t.date "started_on"
     t.datetime "updated_at", null: false
-    t.index ["committee_id", "member_id", "ended_on"], name: "idx_committee_memberships_unique_active", unique: true, where: "(ended_on IS NULL)"
-    t.index ["committee_id"], name: "index_committee_memberships_on_committee_id"
-    t.index ["member_id"], name: "index_committee_memberships_on_member_id"
+    t.index [ "committee_id", "member_id", "ended_on" ], name: "idx_committee_memberships_unique_active", unique: true, where: "(ended_on IS NULL)"
+    t.index [ "committee_id" ], name: "index_committee_memberships_on_committee_id"
+    t.index [ "member_id" ], name: "index_committee_memberships_on_member_id"
   end
 
   create_table "committees", force: :cascade do |t|
@@ -111,8 +111,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.string "slug", null: false
     t.string "status", default: "active", null: false
     t.datetime "updated_at", null: false
-    t.index ["name"], name: "index_committees_on_name", unique: true
-    t.index ["slug"], name: "index_committees_on_slug", unique: true
+    t.index [ "name" ], name: "index_committees_on_name", unique: true
+    t.index [ "slug" ], name: "index_committees_on_slug", unique: true
   end
 
   create_table "entities", force: :cascade do |t|
@@ -136,7 +136,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.datetime "updated_at", null: false
     t.text "verification_notes"
     t.date "verified_on"
-    t.index ["entity_id"], name: "index_entity_facts_on_entity_id"
+    t.index [ "entity_id" ], name: "index_entity_facts_on_entity_id"
   end
 
   create_table "entity_mentions", force: :cascade do |t|
@@ -149,9 +149,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.text "quote"
     t.string "raw_name"
     t.datetime "updated_at", null: false
-    t.index ["entity_id"], name: "index_entity_mentions_on_entity_id"
-    t.index ["meeting_document_id"], name: "index_entity_mentions_on_meeting_document_id"
-    t.index ["meeting_id"], name: "index_entity_mentions_on_meeting_id"
+    t.index [ "entity_id" ], name: "index_entity_mentions_on_entity_id"
+    t.index [ "meeting_document_id" ], name: "index_entity_mentions_on_meeting_document_id"
+    t.index [ "meeting_id" ], name: "index_entity_mentions_on_meeting_id"
   end
 
   create_table "extractions", force: :cascade do |t|
@@ -161,7 +161,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.integer "page_number"
     t.text "raw_text"
     t.datetime "updated_at", null: false
-    t.index ["meeting_document_id"], name: "index_extractions_on_meeting_document_id"
+    t.index [ "meeting_document_id" ], name: "index_extractions_on_meeting_document_id"
   end
 
   create_table "generated_images", force: :cascade do |t|
@@ -186,12 +186,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.datetime "updated_at", null: false
     t.bigint "uploaded_by_id"
     t.jsonb "visual_brief", default: {}, null: false
-    t.index ["imageable_type", "imageable_id", "status", "purpose"], name: "index_generated_images_current_lookup"
-    t.index ["imageable_type", "imageable_id"], name: "index_generated_images_on_imageable"
-    t.index ["source_briefing_id"], name: "index_generated_images_on_source_briefing_id"
-    t.index ["source_content_fingerprint"], name: "index_generated_images_on_source_content_fingerprint"
-    t.index ["source_summary_id"], name: "index_generated_images_on_source_summary_id"
-    t.index ["uploaded_by_id"], name: "index_generated_images_on_uploaded_by_id"
+    t.index [ "imageable_type", "imageable_id", "status", "purpose" ], name: "index_generated_images_current_lookup"
+    t.index [ "imageable_type", "imageable_id" ], name: "index_generated_images_on_imageable"
+    t.index [ "source_briefing_id" ], name: "index_generated_images_on_source_briefing_id"
+    t.index [ "source_content_fingerprint" ], name: "index_generated_images_on_source_content_fingerprint"
+    t.index [ "source_summary_id" ], name: "index_generated_images_on_source_summary_id"
+    t.index [ "uploaded_by_id" ], name: "index_generated_images_on_uploaded_by_id"
   end
 
   create_table "knowledge_chunks", force: :cascade do |t|
@@ -202,7 +202,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.bigint "knowledge_source_id", null: false
     t.json "metadata"
     t.datetime "updated_at", null: false
-    t.index ["knowledge_source_id"], name: "index_knowledge_chunks_on_knowledge_source_id"
+    t.index [ "knowledge_source_id" ], name: "index_knowledge_chunks_on_knowledge_source_id"
   end
 
   create_table "knowledge_source_topics", force: :cascade do |t|
@@ -212,9 +212,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.bigint "topic_id", null: false
     t.datetime "updated_at", null: false
     t.boolean "verified", default: false
-    t.index ["knowledge_source_id", "topic_id"], name: "index_ks_topics_on_source_and_topic", unique: true
-    t.index ["knowledge_source_id"], name: "index_knowledge_source_topics_on_knowledge_source_id"
-    t.index ["topic_id"], name: "index_knowledge_source_topics_on_topic_id"
+    t.index [ "knowledge_source_id", "topic_id" ], name: "index_ks_topics_on_source_and_topic", unique: true
+    t.index [ "knowledge_source_id" ], name: "index_knowledge_source_topics_on_knowledge_source_id"
+    t.index [ "topic_id" ], name: "index_knowledge_source_topics_on_topic_id"
   end
 
   create_table "knowledge_sources", force: :cascade do |t|
@@ -232,9 +232,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.datetime "updated_at", null: false
     t.text "verification_notes"
     t.date "verified_on"
-    t.index ["meeting_id"], name: "index_knowledge_sources_on_meeting_id"
-    t.index ["origin"], name: "index_knowledge_sources_on_origin"
-    t.index ["status"], name: "index_knowledge_sources_on_status"
+    t.index [ "meeting_id" ], name: "index_knowledge_sources_on_meeting_id"
+    t.index [ "origin" ], name: "index_knowledge_sources_on_origin"
+    t.index [ "status" ], name: "index_knowledge_sources_on_status"
   end
 
   create_table "magic_links", force: :cascade do |t|
@@ -245,9 +245,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.datetime "updated_at", null: false
     t.datetime "used_at"
     t.bigint "user_id", null: false
-    t.index ["token_digest"], name: "index_magic_links_on_token_digest", unique: true
-    t.index ["user_id", "purpose"], name: "index_magic_links_on_user_id_and_purpose"
-    t.index ["user_id"], name: "index_magic_links_on_user_id"
+    t.index [ "token_digest" ], name: "index_magic_links_on_token_digest", unique: true
+    t.index [ "user_id", "purpose" ], name: "index_magic_links_on_user_id_and_purpose"
+    t.index [ "user_id" ], name: "index_magic_links_on_user_id"
   end
 
   create_table "meeting_attendances", force: :cascade do |t|
@@ -258,9 +258,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.bigint "member_id", null: false
     t.string "status", null: false
     t.datetime "updated_at", null: false
-    t.index ["meeting_id", "member_id"], name: "index_meeting_attendances_on_meeting_id_and_member_id", unique: true
-    t.index ["meeting_id"], name: "index_meeting_attendances_on_meeting_id"
-    t.index ["member_id"], name: "index_meeting_attendances_on_member_id"
+    t.index [ "meeting_id", "member_id" ], name: "index_meeting_attendances_on_meeting_id_and_member_id", unique: true
+    t.index [ "meeting_id" ], name: "index_meeting_attendances_on_meeting_id"
+    t.index [ "member_id" ], name: "index_meeting_attendances_on_member_id"
   end
 
   create_table "meeting_documents", force: :cascade do |t|
@@ -281,8 +281,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.integer "text_chars"
     t.string "text_quality"
     t.datetime "updated_at", null: false
-    t.index ["meeting_id"], name: "index_meeting_documents_on_meeting_id"
-    t.index ["search_vector"], name: "index_meeting_documents_on_search_vector", using: :gin
+    t.index [ "meeting_id" ], name: "index_meeting_documents_on_meeting_id"
+    t.index [ "search_vector" ], name: "index_meeting_documents_on_search_vector", using: :gin
   end
 
   create_table "meeting_summaries", force: :cascade do |t|
@@ -292,7 +292,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.bigint "meeting_id", null: false
     t.string "summary_type"
     t.datetime "updated_at", null: false
-    t.index ["meeting_id"], name: "index_meeting_summaries_on_meeting_id"
+    t.index [ "meeting_id" ], name: "index_meeting_summaries_on_meeting_id"
   end
 
   create_table "meetings", force: :cascade do |t|
@@ -308,7 +308,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.datetime "starts_at"
     t.string "status"
     t.datetime "updated_at", null: false
-    t.index ["committee_id"], name: "index_meetings_on_committee_id"
+    t.index [ "committee_id" ], name: "index_meetings_on_committee_id"
   end
 
   create_table "member_aliases", force: :cascade do |t|
@@ -316,15 +316,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.bigint "member_id", null: false
     t.string "name", null: false
     t.datetime "updated_at", null: false
-    t.index ["member_id"], name: "index_member_aliases_on_member_id"
-    t.index ["name"], name: "index_member_aliases_on_name", unique: true
+    t.index [ "member_id" ], name: "index_member_aliases_on_member_id"
+    t.index [ "name" ], name: "index_member_aliases_on_name", unique: true
   end
 
   create_table "members", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name"
     t.datetime "updated_at", null: false
-    t.index ["name"], name: "index_members_on_name", unique: true
+    t.index [ "name" ], name: "index_members_on_name", unique: true
   end
 
   create_table "membership_applications", force: :cascade do |t|
@@ -344,9 +344,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.datetime "submitted_at"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
-    t.index ["reviewed_by_id"], name: "index_membership_applications_on_reviewed_by_id"
-    t.index ["status"], name: "index_membership_applications_on_status"
-    t.index ["user_id"], name: "index_membership_applications_on_user_id"
+    t.index [ "reviewed_by_id" ], name: "index_membership_applications_on_reviewed_by_id"
+    t.index [ "status" ], name: "index_membership_applications_on_status"
+    t.index [ "user_id" ], name: "index_membership_applications_on_user_id"
   end
 
   create_table "motions", force: :cascade do |t|
@@ -356,8 +356,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.bigint "meeting_id", null: false
     t.string "outcome"
     t.datetime "updated_at", null: false
-    t.index ["agenda_item_id"], name: "index_motions_on_agenda_item_id"
-    t.index ["meeting_id"], name: "index_motions_on_meeting_id"
+    t.index [ "agenda_item_id" ], name: "index_motions_on_agenda_item_id"
+    t.index [ "meeting_id" ], name: "index_motions_on_meeting_id"
   end
 
   create_table "passkey_credentials", force: :cascade do |t|
@@ -369,8 +369,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.integer "sign_count", default: 0, null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
-    t.index ["external_id"], name: "index_passkey_credentials_on_external_id", unique: true
-    t.index ["user_id"], name: "index_passkey_credentials_on_user_id"
+    t.index [ "external_id" ], name: "index_passkey_credentials_on_external_id", unique: true
+    t.index [ "user_id" ], name: "index_passkey_credentials_on_user_id"
   end
 
   create_table "prompt_runs", force: :cascade do |t|
@@ -385,8 +385,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.bigint "source_id"
     t.string "source_type"
     t.float "temperature"
-    t.index ["prompt_template_key", "created_at"], name: "index_prompt_runs_on_prompt_template_key_and_created_at"
-    t.index ["source_type", "source_id"], name: "index_prompt_runs_on_source_type_and_source_id"
+    t.index [ "prompt_template_key", "created_at" ], name: "index_prompt_runs_on_prompt_template_key_and_created_at"
+    t.index [ "source_type", "source_id" ], name: "index_prompt_runs_on_source_type_and_source_id"
   end
 
   create_table "prompt_templates", force: :cascade do |t|
@@ -400,7 +400,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.text "system_role"
     t.datetime "updated_at", null: false
     t.text "usage_context"
-    t.index ["key"], name: "index_prompt_templates_on_key", unique: true
+    t.index [ "key" ], name: "index_prompt_templates_on_key", unique: true
   end
 
   create_table "prompt_versions", force: :cascade do |t|
@@ -410,8 +410,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.string "model_tier", null: false
     t.bigint "prompt_template_id", null: false
     t.text "system_role"
-    t.index ["prompt_template_id", "created_at"], name: "index_prompt_versions_on_prompt_template_id_and_created_at"
-    t.index ["prompt_template_id"], name: "index_prompt_versions_on_prompt_template_id"
+    t.index [ "prompt_template_id", "created_at" ], name: "index_prompt_versions_on_prompt_template_id_and_created_at"
+    t.index [ "prompt_template_id" ], name: "index_prompt_versions_on_prompt_template_id"
   end
 
   create_table "redirects", force: :cascade do |t|
@@ -422,7 +422,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.string "source_path", null: false
     t.integer "status_code", default: 301, null: false
     t.datetime "updated_at", null: false
-    t.index ["source_path"], name: "index_redirects_on_source_path", unique: true
+    t.index [ "source_path" ], name: "index_redirects_on_source_path", unique: true
   end
 
   create_table "sessions", force: :cascade do |t|
@@ -432,7 +432,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.datetime "updated_at", null: false
     t.string "user_agent"
     t.bigint "user_id", null: false
-    t.index ["user_id"], name: "index_sessions_on_user_id"
+    t.index [ "user_id" ], name: "index_sessions_on_user_id"
   end
 
   create_table "solid_queue_blocked_executions", force: :cascade do |t|
@@ -442,24 +442,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.bigint "job_id", null: false
     t.integer "priority", default: 0, null: false
     t.string "queue_name", null: false
-    t.index ["concurrency_key", "priority", "job_id"], name: "index_solid_queue_blocked_executions_for_release"
-    t.index ["expires_at", "concurrency_key"], name: "index_solid_queue_blocked_executions_for_maintenance"
-    t.index ["job_id"], name: "index_solid_queue_blocked_executions_on_job_id", unique: true
+    t.index [ "concurrency_key", "priority", "job_id" ], name: "index_solid_queue_blocked_executions_for_release"
+    t.index [ "expires_at", "concurrency_key" ], name: "index_solid_queue_blocked_executions_for_maintenance"
+    t.index [ "job_id" ], name: "index_solid_queue_blocked_executions_on_job_id", unique: true
   end
 
   create_table "solid_queue_claimed_executions", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "job_id", null: false
     t.bigint "process_id"
-    t.index ["job_id"], name: "index_solid_queue_claimed_executions_on_job_id", unique: true
-    t.index ["process_id", "job_id"], name: "index_solid_queue_claimed_executions_on_process_id_and_job_id"
+    t.index [ "job_id" ], name: "index_solid_queue_claimed_executions_on_job_id", unique: true
+    t.index [ "process_id", "job_id" ], name: "index_solid_queue_claimed_executions_on_process_id_and_job_id"
   end
 
   create_table "solid_queue_failed_executions", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "error"
     t.bigint "job_id", null: false
-    t.index ["job_id"], name: "index_solid_queue_failed_executions_on_job_id", unique: true
+    t.index [ "job_id" ], name: "index_solid_queue_failed_executions_on_job_id", unique: true
   end
 
   create_table "solid_queue_jobs", force: :cascade do |t|
@@ -473,17 +473,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.string "queue_name", null: false
     t.datetime "scheduled_at"
     t.datetime "updated_at", null: false
-    t.index ["active_job_id"], name: "index_solid_queue_jobs_on_active_job_id"
-    t.index ["class_name"], name: "index_solid_queue_jobs_on_class_name"
-    t.index ["finished_at"], name: "index_solid_queue_jobs_on_finished_at"
-    t.index ["queue_name", "finished_at"], name: "index_solid_queue_jobs_for_filtering"
-    t.index ["scheduled_at", "finished_at"], name: "index_solid_queue_jobs_for_alerting"
+    t.index [ "active_job_id" ], name: "index_solid_queue_jobs_on_active_job_id"
+    t.index [ "class_name" ], name: "index_solid_queue_jobs_on_class_name"
+    t.index [ "finished_at" ], name: "index_solid_queue_jobs_on_finished_at"
+    t.index [ "queue_name", "finished_at" ], name: "index_solid_queue_jobs_for_filtering"
+    t.index [ "scheduled_at", "finished_at" ], name: "index_solid_queue_jobs_for_alerting"
   end
 
   create_table "solid_queue_pauses", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "queue_name", null: false
-    t.index ["queue_name"], name: "index_solid_queue_pauses_on_queue_name", unique: true
+    t.index [ "queue_name" ], name: "index_solid_queue_pauses_on_queue_name", unique: true
   end
 
   create_table "solid_queue_processes", force: :cascade do |t|
@@ -495,9 +495,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.string "name", null: false
     t.integer "pid", null: false
     t.bigint "supervisor_id"
-    t.index ["last_heartbeat_at"], name: "index_solid_queue_processes_on_last_heartbeat_at"
-    t.index ["name", "supervisor_id"], name: "index_solid_queue_processes_on_name_and_supervisor_id", unique: true
-    t.index ["supervisor_id"], name: "index_solid_queue_processes_on_supervisor_id"
+    t.index [ "last_heartbeat_at" ], name: "index_solid_queue_processes_on_last_heartbeat_at"
+    t.index [ "name", "supervisor_id" ], name: "index_solid_queue_processes_on_name_and_supervisor_id", unique: true
+    t.index [ "supervisor_id" ], name: "index_solid_queue_processes_on_supervisor_id"
   end
 
   create_table "solid_queue_ready_executions", force: :cascade do |t|
@@ -505,9 +505,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.bigint "job_id", null: false
     t.integer "priority", default: 0, null: false
     t.string "queue_name", null: false
-    t.index ["job_id"], name: "index_solid_queue_ready_executions_on_job_id", unique: true
-    t.index ["priority", "job_id"], name: "index_solid_queue_poll_all"
-    t.index ["queue_name", "priority", "job_id"], name: "index_solid_queue_poll_by_queue"
+    t.index [ "job_id" ], name: "index_solid_queue_ready_executions_on_job_id", unique: true
+    t.index [ "priority", "job_id" ], name: "index_solid_queue_poll_all"
+    t.index [ "queue_name", "priority", "job_id" ], name: "index_solid_queue_poll_by_queue"
   end
 
   create_table "solid_queue_recurring_executions", force: :cascade do |t|
@@ -515,8 +515,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.bigint "job_id", null: false
     t.datetime "run_at", null: false
     t.string "task_key", null: false
-    t.index ["job_id"], name: "index_solid_queue_recurring_executions_on_job_id", unique: true
-    t.index ["task_key", "run_at"], name: "index_solid_queue_recurring_executions_on_task_key_and_run_at", unique: true
+    t.index [ "job_id" ], name: "index_solid_queue_recurring_executions_on_job_id", unique: true
+    t.index [ "task_key", "run_at" ], name: "index_solid_queue_recurring_executions_on_task_key_and_run_at", unique: true
   end
 
   create_table "solid_queue_recurring_tasks", force: :cascade do |t|
@@ -531,8 +531,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.string "schedule", null: false
     t.boolean "static", default: true, null: false
     t.datetime "updated_at", null: false
-    t.index ["key"], name: "index_solid_queue_recurring_tasks_on_key", unique: true
-    t.index ["static"], name: "index_solid_queue_recurring_tasks_on_static"
+    t.index [ "key" ], name: "index_solid_queue_recurring_tasks_on_key", unique: true
+    t.index [ "static" ], name: "index_solid_queue_recurring_tasks_on_static"
   end
 
   create_table "solid_queue_scheduled_executions", force: :cascade do |t|
@@ -541,8 +541,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.integer "priority", default: 0, null: false
     t.string "queue_name", null: false
     t.datetime "scheduled_at", null: false
-    t.index ["job_id"], name: "index_solid_queue_scheduled_executions_on_job_id", unique: true
-    t.index ["scheduled_at", "priority", "job_id"], name: "index_solid_queue_dispatch_all"
+    t.index [ "job_id" ], name: "index_solid_queue_scheduled_executions_on_job_id", unique: true
+    t.index [ "scheduled_at", "priority", "job_id" ], name: "index_solid_queue_dispatch_all"
   end
 
   create_table "solid_queue_semaphores", force: :cascade do |t|
@@ -551,9 +551,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.string "key", null: false
     t.datetime "updated_at", null: false
     t.integer "value", default: 1, null: false
-    t.index ["expires_at"], name: "index_solid_queue_semaphores_on_expires_at"
-    t.index ["key", "value"], name: "index_solid_queue_semaphores_on_key_and_value"
-    t.index ["key"], name: "index_solid_queue_semaphores_on_key", unique: true
+    t.index [ "expires_at" ], name: "index_solid_queue_semaphores_on_expires_at"
+    t.index [ "key", "value" ], name: "index_solid_queue_semaphores_on_key_and_value"
+    t.index [ "key" ], name: "index_solid_queue_semaphores_on_key", unique: true
   end
 
   create_table "stance_observations", force: :cascade do |t|
@@ -568,9 +568,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.float "sentiment"
     t.string "topic"
     t.datetime "updated_at", null: false
-    t.index ["entity_id"], name: "index_stance_observations_on_entity_id"
-    t.index ["meeting_document_id"], name: "index_stance_observations_on_meeting_document_id"
-    t.index ["meeting_id"], name: "index_stance_observations_on_meeting_id"
+    t.index [ "entity_id" ], name: "index_stance_observations_on_entity_id"
+    t.index [ "meeting_document_id" ], name: "index_stance_observations_on_meeting_document_id"
+    t.index [ "meeting_id" ], name: "index_stance_observations_on_meeting_id"
   end
 
   create_table "topic_aliases", force: :cascade do |t|
@@ -578,8 +578,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.string "name", null: false
     t.bigint "topic_id", null: false
     t.datetime "updated_at", null: false
-    t.index ["name"], name: "index_topic_aliases_on_name", unique: true
-    t.index ["topic_id"], name: "index_topic_aliases_on_topic_id"
+    t.index [ "name" ], name: "index_topic_aliases_on_name", unique: true
+    t.index [ "topic_id" ], name: "index_topic_aliases_on_topic_id"
   end
 
   create_table "topic_appearances", force: :cascade do |t|
@@ -593,12 +593,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.jsonb "source_ref"
     t.bigint "topic_id", null: false
     t.datetime "updated_at", null: false
-    t.index ["agenda_item_id"], name: "index_topic_appearances_on_agenda_item_id"
-    t.index ["committee_id"], name: "index_topic_appearances_on_committee_id"
-    t.index ["meeting_id"], name: "index_topic_appearances_on_meeting_id"
-    t.index ["topic_id", "appeared_at"], name: "index_topic_appearances_on_topic_id_and_appeared_at"
-    t.index ["topic_id", "meeting_id", "agenda_item_id"], name: "idx_topic_appearances_unique_triple", unique: true
-    t.index ["topic_id"], name: "index_topic_appearances_on_topic_id"
+    t.index [ "agenda_item_id" ], name: "index_topic_appearances_on_agenda_item_id"
+    t.index [ "committee_id" ], name: "index_topic_appearances_on_committee_id"
+    t.index [ "meeting_id" ], name: "index_topic_appearances_on_meeting_id"
+    t.index [ "topic_id", "appeared_at" ], name: "index_topic_appearances_on_topic_id_and_appeared_at"
+    t.index [ "topic_id", "meeting_id", "agenda_item_id" ], name: "idx_topic_appearances_unique_triple", unique: true
+    t.index [ "topic_id" ], name: "index_topic_appearances_on_topic_id"
   end
 
   create_table "topic_blocklists", force: :cascade do |t|
@@ -606,7 +606,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.string "name", null: false
     t.string "reason"
     t.datetime "updated_at", null: false
-    t.index ["name"], name: "index_topic_blocklists_on_name", unique: true
+    t.index [ "name" ], name: "index_topic_blocklists_on_name", unique: true
   end
 
   create_table "topic_briefings", force: :cascade do |t|
@@ -621,8 +621,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.bigint "triggering_meeting_id"
     t.string "upcoming_headline"
     t.datetime "updated_at", null: false
-    t.index ["topic_id"], name: "index_topic_briefings_on_topic_id", unique: true
-    t.index ["triggering_meeting_id"], name: "index_topic_briefings_on_triggering_meeting_id"
+    t.index [ "topic_id" ], name: "index_topic_briefings_on_topic_id", unique: true
+    t.index [ "triggering_meeting_id" ], name: "index_topic_briefings_on_triggering_meeting_id"
   end
 
   create_table "topic_review_events", force: :cascade do |t|
@@ -634,10 +634,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.bigint "topic_id", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id"
-    t.index ["created_at"], name: "index_topic_review_events_on_created_at"
-    t.index ["topic_id", "created_at"], name: "index_topic_review_events_on_topic_id_and_created_at"
-    t.index ["topic_id"], name: "index_topic_review_events_on_topic_id"
-    t.index ["user_id"], name: "index_topic_review_events_on_user_id"
+    t.index [ "created_at" ], name: "index_topic_review_events_on_created_at"
+    t.index [ "topic_id", "created_at" ], name: "index_topic_review_events_on_topic_id_and_created_at"
+    t.index [ "topic_id" ], name: "index_topic_review_events_on_topic_id"
+    t.index [ "user_id" ], name: "index_topic_review_events_on_user_id"
   end
 
   create_table "topic_status_events", force: :cascade do |t|
@@ -649,8 +649,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.jsonb "source_ref"
     t.bigint "topic_id", null: false
     t.datetime "updated_at", null: false
-    t.index ["topic_id", "occurred_at"], name: "index_topic_status_events_on_topic_id_and_occurred_at"
-    t.index ["topic_id"], name: "index_topic_status_events_on_topic_id"
+    t.index [ "topic_id", "occurred_at" ], name: "index_topic_status_events_on_topic_id_and_occurred_at"
+    t.index [ "topic_id" ], name: "index_topic_status_events_on_topic_id"
   end
 
   create_table "topic_summaries", force: :cascade do |t|
@@ -661,9 +661,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.string "summary_type", default: "topic_digest", null: false
     t.bigint "topic_id", null: false
     t.datetime "updated_at", null: false
-    t.index ["meeting_id"], name: "index_topic_summaries_on_meeting_id"
-    t.index ["topic_id", "meeting_id", "summary_type"], name: "idx_on_topic_id_meeting_id_summary_type_4aa4bd999d", unique: true
-    t.index ["topic_id"], name: "index_topic_summaries_on_topic_id"
+    t.index [ "meeting_id" ], name: "index_topic_summaries_on_meeting_id"
+    t.index [ "topic_id", "meeting_id", "summary_type" ], name: "idx_on_topic_id_meeting_id_summary_type_4aa4bd999d", unique: true
+    t.index [ "topic_id" ], name: "index_topic_summaries_on_topic_id"
   end
 
   create_table "topics", force: :cascade do |t|
@@ -686,15 +686,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.string "slug"
     t.string "status", default: "approved", null: false
     t.datetime "updated_at", null: false
-    t.index ["canonical_name"], name: "index_topics_on_canonical_name", unique: true
-    t.index ["first_seen_at"], name: "index_topics_on_first_seen_at"
-    t.index ["lifecycle_status"], name: "index_topics_on_lifecycle_status"
-    t.index ["name"], name: "index_topics_on_name"
-    t.index ["name"], name: "index_topics_on_name_trgm", opclass: :gin_trgm_ops, using: :gin
-    t.index ["resident_impact_score"], name: "index_topics_on_resident_impact_score"
-    t.index ["reuse_strategy"], name: "index_topics_on_reuse_strategy"
-    t.index ["review_status"], name: "index_topics_on_review_status"
-    t.index ["slug"], name: "index_topics_on_slug", unique: true
+    t.index [ "canonical_name" ], name: "index_topics_on_canonical_name", unique: true
+    t.index [ "first_seen_at" ], name: "index_topics_on_first_seen_at"
+    t.index [ "lifecycle_status" ], name: "index_topics_on_lifecycle_status"
+    t.index [ "name" ], name: "index_topics_on_name"
+    t.index [ "name" ], name: "index_topics_on_name_trgm", opclass: :gin_trgm_ops, using: :gin
+    t.index [ "resident_impact_score" ], name: "index_topics_on_resident_impact_score"
+    t.index [ "reuse_strategy" ], name: "index_topics_on_reuse_strategy"
+    t.index [ "review_status" ], name: "index_topics_on_review_status"
+    t.index [ "slug" ], name: "index_topics_on_slug", unique: true
   end
 
   create_table "transcript_imports", force: :cascade do |t|
@@ -711,10 +711,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.json "step_logs", default: [], null: false
     t.datetime "updated_at", null: false
     t.string "youtube_url", null: false
-    t.index ["created_at"], name: "index_transcript_imports_on_created_at"
-    t.index ["meeting_document_id"], name: "index_transcript_imports_on_meeting_document_id"
-    t.index ["meeting_id"], name: "index_transcript_imports_on_meeting_id"
-    t.index ["status"], name: "index_transcript_imports_on_status"
+    t.index [ "created_at" ], name: "index_transcript_imports_on_created_at"
+    t.index [ "meeting_document_id" ], name: "index_transcript_imports_on_meeting_document_id"
+    t.index [ "meeting_id" ], name: "index_transcript_imports_on_meeting_id"
+    t.index [ "status" ], name: "index_transcript_imports_on_status"
   end
 
   create_table "users", force: :cascade do |t|
@@ -727,9 +727,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.string "status", default: "pending"
     t.datetime "updated_at", null: false
     t.string "webauthn_id"
-    t.index ["email_address"], name: "index_users_on_email_address", unique: true
-    t.index ["status"], name: "index_users_on_status"
-    t.index ["webauthn_id"], name: "index_users_on_webauthn_id", unique: true
+    t.index [ "email_address" ], name: "index_users_on_email_address", unique: true
+    t.index [ "status" ], name: "index_users_on_status"
+    t.index [ "webauthn_id" ], name: "index_users_on_webauthn_id", unique: true
   end
 
   create_table "votes", force: :cascade do |t|
@@ -738,9 +738,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_000000) do
     t.bigint "motion_id", null: false
     t.datetime "updated_at", null: false
     t.string "value"
-    t.index ["member_id"], name: "index_votes_on_member_id"
-    t.index ["motion_id", "member_id"], name: "idx_votes_unique_per_motion", unique: true
-    t.index ["motion_id"], name: "index_votes_on_motion_id"
+    t.index [ "member_id" ], name: "index_votes_on_member_id"
+    t.index [ "motion_id", "member_id" ], name: "idx_votes_unique_per_motion", unique: true
+    t.index [ "motion_id" ], name: "index_votes_on_motion_id"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"

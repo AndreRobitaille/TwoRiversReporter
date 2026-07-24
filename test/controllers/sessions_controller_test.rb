@@ -72,7 +72,7 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "pending rejected and disabled users do not receive links" do
-    [@pending_user, @rejected_user, @disabled_user].each do |user|
+    [ @pending_user, @rejected_user, @disabled_user ].each do |user|
       assert_no_difference "MagicLink.count" do
         post "/session", params: { email_address: user.email_address }
       end
@@ -142,7 +142,7 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     used.update!(used_at: Time.current)
     expired = MagicLink.create_for!(@active_user, purpose: "sign_in", expires_at: 1.minute.ago)
 
-    ["missing", used.raw_token, expired.raw_token].each do |token|
+    [ "missing", used.raw_token, expired.raw_token ].each do |token|
       post "/session/magic_link", params: { token: token }
 
       assert_redirected_to "/session/new"

@@ -46,7 +46,7 @@ class AdminApplicationNotificationJobTest < ActiveSupport::TestCase
     old_applicant = User.create!(email_address: "old@example.com", status: "pending")
     old_app = old_applicant.membership_applications.create!(status: "submitted", first_name: "Old", last_name: "User", city: "Two Rivers", state: "WI", created_at: 2.hours.ago)
 
-    TransactionalEmail.stub(:admin_application_notifications, Object.new.tap { |message| message.define_singleton_method(:deliver_now) {} }) do
+    TransactionalEmail.stub(:admin_application_notifications, Object.new.tap { |message| message.define_singleton_method(:deliver_now) { } }) do
       AdminApplicationNotificationJob.perform_now(old_app.id)
     end
 
@@ -117,7 +117,7 @@ class AdminApplicationNotificationJobTest < ActiveSupport::TestCase
       captured_emails = nil
       message = Object.new
       message.define_singleton_method(:deliver_now) do
-        raise "unexpected applicant emails: #{captured_emails.inspect}" unless captured_emails == [claimed_applicant.email_address]
+        raise "unexpected applicant emails: #{captured_emails.inspect}" unless captured_emails == [ claimed_applicant.email_address ]
         true
       end
 
@@ -127,10 +127,10 @@ class AdminApplicationNotificationJobTest < ActiveSupport::TestCase
       }
 
       relation = Object.new
-      relation.define_singleton_method(:pluck) { |*| [claimed_app.id] }
+      relation.define_singleton_method(:pluck) { |*| [ claimed_app.id ] }
 
       MembershipApplication.stub(:where, ->(*args) {
-        if args.first.is_a?(Hash) && args.first[:id] == [claimed_app.id, stale_app.id] && args.first[:status] == "submitted"
+        if args.first.is_a?(Hash) && args.first[:id] == [ claimed_app.id, stale_app.id ] && args.first[:status] == "submitted"
           relation
         else
           MembershipApplication.all.where(*args)
@@ -156,7 +156,7 @@ class AdminApplicationNotificationJobTest < ActiveSupport::TestCase
       captured_emails = nil
       message = Object.new
       message.define_singleton_method(:deliver_now) do
-        raise "unexpected applicant emails: #{captured_emails.inspect}" unless captured_emails == [claimed_applicant.email_address]
+        raise "unexpected applicant emails: #{captured_emails.inspect}" unless captured_emails == [ claimed_applicant.email_address ]
         true
       end
 
@@ -167,10 +167,10 @@ class AdminApplicationNotificationJobTest < ActiveSupport::TestCase
 
       MembershipApplication.stub(:where, ->(*args) {
         relation = MembershipApplication.all.where(*args)
-        if args.first.is_a?(Hash) && args.first[:id] == [claimed_app.id, stale_app.id] && args.first[:status] == "submitted"
+        if args.first.is_a?(Hash) && args.first[:id] == [ claimed_app.id, stale_app.id ] && args.first[:status] == "submitted"
           relation.define_singleton_method(:pluck) do |*|
             stale_app.update!(status: "approved")
-            [claimed_app.id, stale_app.id]
+            [ claimed_app.id, stale_app.id ]
           end
         end
         relation
@@ -201,12 +201,11 @@ class AdminApplicationNotificationJobTest < ActiveSupport::TestCase
       fresh_applicant = User.create!(email_address: "fresh-cooldown@example.com", status: "pending")
       fresh_app = fresh_applicant.membership_applications.create!(status: "submitted", first_name: "Fresh", last_name: "User", city: "Two Rivers", state: "WI")
 
-      TransactionalEmail.stub(:admin_application_notifications, Object.new.tap { |message| message.define_singleton_method(:deliver_now) {} }) do
+      TransactionalEmail.stub(:admin_application_notifications, Object.new.tap { |message| message.define_singleton_method(:deliver_now) { } }) do
         AdminApplicationNotificationJob.perform_now(fresh_app.id)
       end
       assert_nil fresh_app.reload.admin_notification_sent_at
       assert_equal "approved", notified_app.reload.status
     end
   end
-
 end
