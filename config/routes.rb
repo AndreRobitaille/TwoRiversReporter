@@ -16,6 +16,7 @@ Rails.application.routes.draw do
   resources :members, only: %i[show]
   get "topics/explore", to: "topics#explore", as: :topics_explore
   resources :topics, only: %i[index show]
+  resources :applications, only: %i[new create edit update]
 
   namespace :settings do
     resource :security, only: %i[show], controller: "security"

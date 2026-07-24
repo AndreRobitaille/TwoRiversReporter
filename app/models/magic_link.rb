@@ -25,7 +25,7 @@ class MagicLink < ApplicationRecord
 
     transaction do
       magic_link = lock.find_by(token_digest: digest, purpose: purpose)
-      raise InvalidToken unless magic_link&.unused? && magic_link.unexpired? && magic_link.user.active_for_authentication?
+      raise InvalidToken unless magic_link&.unused? && magic_link.unexpired? && user_allowed_for_purpose?(magic_link.user, purpose)
 
       magic_link.update!(used_at: Time.current)
       magic_link
@@ -35,12 +35,13 @@ class MagicLink < ApplicationRecord
   end
 
   def self.confirmable?(token, purpose:)
-    for_token(token)
-      .where(purpose: purpose)
-      .usable
-      .joins(:user)
-      .where(users: { status: "active", disabled_at: nil })
-      .exists?
+    scope = for_token(token).where(purpose: purpose).usable.joins(:user)
+
+    if purpose == "application"
+      scope.where(users: { status: "pending" }).where.not(users: { disabled_at: nil }).exists?
+    else
+      scope.where(users: { status: "active", disabled_at: nil }).exists?
+    end
   end
 
   def unused?
@@ -55,4 +56,11 @@ class MagicLink < ApplicationRecord
     OpenSSL::HMAC.hexdigest("SHA256", Rails.application.secret_key_base, token.to_s)
   end
   private_class_method :digest_token
+
+  def self.user_allowed_for_purpose?(user, purpose)
+    return user.status == "pending" && user.disabled_at.present? if purpose == "application"
+
+    user.active_for_authentication?
+  end
+  private_class_method :user_allowed_for_purpose?
 end

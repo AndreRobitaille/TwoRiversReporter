@@ -39,13 +39,34 @@ class TransactionalEmail
     )
   end
 
+  def self.application_link(user, membership_application, magic_link)
+    transactional_id = application_link_transactional_id
+    Message.new(
+      email: user.email_address,
+      transactional_id: transactional_id,
+      data_variables: {
+        application_url: Rails.application.routes.url_helpers.edit_application_path(membership_application, token: magic_link.raw_token)
+      }
+    )
+  end
+
   def self.magic_link_transactional_id
     ENV["LOOPS_MAGIC_LINK_TRANSACTIONAL_ID"].presence || default_magic_link_transactional_id
+  end
+
+  def self.application_link_transactional_id
+    ENV["LOOPS_APPLICATION_LINK_TRANSACTIONAL_ID"].presence || default_application_link_transactional_id
   end
 
   def self.default_magic_link_transactional_id
     return "sign_in_magic_link" unless Rails.env.production?
 
     raise MissingTransactionalId, "LOOPS_MAGIC_LINK_TRANSACTIONAL_ID is required in production"
+  end
+
+  def self.default_application_link_transactional_id
+    return "application_magic_link" unless Rails.env.production?
+
+    raise MissingTransactionalId, "LOOPS_APPLICATION_LINK_TRANSACTIONAL_ID is required in production"
   end
 end

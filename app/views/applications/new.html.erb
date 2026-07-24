@@ -1,0 +1,20 @@
+<div class="card card--narrow">
+  <div class="card-header">
+    <h1 class="card-title">Start your membership application</h1>
+    <p class="card-subtitle">We’ll send a private link to finish the form.</p>
+  </div>
+
+  <%= tag.div(flash[:alert], class: "flash flash--danger") if flash[:alert] %>
+  <%= tag.div(flash[:notice], class: "flash flash--success") if flash[:notice] %>
+
+  <%= form_with url: applications_path, local: true do |form| %>
+    <div class="form-group">
+      <%= form.label :email_address, "Email", class: "form-label" %>
+      <%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "email", placeholder: "you@example.com", class: "form-input", value: params[:email_address] %>
+    </div>
+
+    <div class="flex gap-2 items-center">
+      <%= form.submit "Send application link", class: "btn btn--primary" %>
+    </div>
+  <% end %>
+</div>
