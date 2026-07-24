@@ -20,24 +20,20 @@ class UserTest < ActiveSupport::TestCase
     assert_not disabled.active_for_authentication?
   end
 
-  test "admin access requires active status and at least one passkey" do
-    admin_without_passkey = User.create!(email_address: "admin-no-passkey@example.com", password: "password123", password_confirmation: "password123", status: "active")
-    admin_with_passkey = User.create!(email_address: "admin-with-passkey@example.com", password: "password123", password_confirmation: "password123", status: "active")
+  test "admin access requires admin status, active authentication, and at least one passkey" do
+    non_admin_with_passkey = User.create!(email_address: "member-with-passkey@example.com", password: "password123", password_confirmation: "password123", status: "active")
+    admin_with_passkey = User.create!(email_address: "admin-with-passkey@example.com", password: "password123", password_confirmation: "password123", status: "active", admin: true)
     User.connection.execute(
       <<~SQL.squish
         INSERT INTO passkey_credentials (external_id, public_key, sign_count, user_id, created_at, updated_at)
-        VALUES ('cred-123', 'public-key', 0, #{admin_with_passkey.id}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        VALUES ('cred-123', 'public-key', 0, #{non_admin_with_passkey.id}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+               ('cred-456', 'public-key', 0, #{admin_with_passkey.id}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
       SQL
     )
-    inactive_admin = User.create!(email_address: "inactive-admin@example.com", password: "password123", password_confirmation: "password123", status: "pending")
-    User.connection.execute(
-      <<~SQL.squish
-        INSERT INTO passkey_credentials (external_id, public_key, sign_count, user_id, created_at, updated_at)
-        VALUES ('cred-456', 'public-key', 0, #{inactive_admin.id}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-      SQL
-    )
+    inactive_admin = User.create!(email_address: "inactive-admin@example.com", password: "password123", password_confirmation: "password123", status: "pending", admin: true)
+    User.connection.execute("INSERT INTO passkey_credentials (external_id, public_key, sign_count, user_id, created_at, updated_at) VALUES ('cred-789', 'public-key', 0, #{inactive_admin.id}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
 
-    assert_not admin_without_passkey.admin_access_ready?
+    assert_not non_admin_with_passkey.admin_access_ready?
     assert admin_with_passkey.admin_access_ready?
     assert_not inactive_admin.admin_access_ready?
   end

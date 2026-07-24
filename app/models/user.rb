@@ -93,7 +93,7 @@ class User < ApplicationRecord
   end
 
   def admin_access_ready?
-    return false unless active_for_authentication?
+    return false unless admin? && active_for_authentication?
 
     self.class.connection.select_value(
       self.class.sanitize_sql_array(["SELECT 1 FROM passkey_credentials WHERE user_id = ? LIMIT 1", id])
