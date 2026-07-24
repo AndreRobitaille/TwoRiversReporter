@@ -57,6 +57,15 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_predicate magic_link.reload, :unused?
   end
 
+  test "get magic_link without token redirects to sign in without consuming anything" do
+    assert_no_difference "MagicLink.count" do
+      get "/session/magic_link"
+    end
+
+    assert_redirected_to "/session/new"
+    assert_match /sign in/i, flash[:alert]
+  end
+
   test "get magic_link rejects expired sign in tokens gracefully" do
     magic_link = MagicLink.create_for!(@active_user, purpose: "sign_in", expires_at: 1.minute.ago)
 
@@ -108,7 +117,9 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "post resend_expired_magic_link redirects with a generic notice" do
-    post "/session/resend_expired_magic_link"
+    assert_no_difference "MagicLink.count" do
+      post "/session/resend_expired_magic_link"
+    end
 
     assert_redirected_to "/session/new"
     assert_equal "If that account can sign in, we sent a link.", flash[:notice]
