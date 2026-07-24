@@ -32,7 +32,7 @@
       <% end %>
     </div>
     <% if headline %>
-      <p class="meetings-card-headline"><%= headline %></p>
+      <p class="meetings-card-headline"><%= teaser(headline, chars: 90, fade: :inline) %></p>
     <% end %>
     <% if approved_topics.any? %>
       <div class="meetings-topic-pills">
