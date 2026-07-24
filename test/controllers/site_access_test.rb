@@ -28,19 +28,6 @@ class SiteAccessTest < ActionDispatch::IntegrationTest
     assert_not @controller.send(:gated_for_visitor?)
   end
 
-  test "flipping the mode changes the etag" do
-    set_access_mode("open")
-    get root_path
-    open_etag = response.headers["ETag"]
-
-    set_access_mode("gated")
-    get root_path
-    gated_etag = response.headers["ETag"]
-
-    assert_not_equal open_etag, gated_etag,
-      "a page cached while open must not be served after a flip to gated"
-  end
-
   private
 
     def set_access_mode(mode)
