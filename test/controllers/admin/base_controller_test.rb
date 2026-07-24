@@ -27,5 +27,18 @@ module Admin
 
       assert_response :success
     end
+
+    test "non-admin is denied admin access" do
+      user = User.create!(email_address: "member@example.com", password: "password", status: "active")
+      session = Session.create!(user: user, user_agent: "test", ip_address: "127.0.0.1", last_seen_at: Time.current)
+
+      jar = ActionDispatch::TestRequest.create.cookie_jar
+      jar.signed[:session_id] = session.id
+      cookies[:session_id] = jar[:session_id]
+      get admin_root_url
+
+      assert_redirected_to root_url
+      assert_equal "You do not have access to that section.", flash[:alert]
+    end
   end
 end
