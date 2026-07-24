@@ -176,6 +176,24 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Email address can&#39;t be blank"
   end
 
+  test "new admin user form is passwordless and does not mention MFA" do
+    admin = create_passkey_admin
+    sign_in(admin)
+
+    with_admin_access { get new_user_path }
+
+    assert_response :success
+    assert_includes response.body, "Create an active admin account."
+    assert_includes response.body, "<input"
+    assert_includes response.body, "name=\"user[email_address]\""
+    assert_includes response.body, "autocomplete=\"username\""
+    assert_includes response.body, "Create admin"
+    assert_no_match(/password/i, response.body)
+    assert_no_match(/mfa/i, response.body)
+    assert_no_match(/temporary password/i, response.body)
+    assert_no_match(/totp/i, response.body)
+  end
+
   test "index and show reflect account and application management details" do
     admin = create_passkey_admin
     user = User.create!(email_address: "ui@example.com", status: "active")
