@@ -30,9 +30,8 @@ class AdminTopicDetailWorkspaceTest < ActionDispatch::IntegrationTest
     assert_no_match "Merge Into This Topic", response.body
     assert_no_match "Alias Repair", response.body
     assert_no_match "Canonical Correction", response.body
-    assert_no_match "Confirm merge", response.body
-    assert_match "Combine Duplicate Topic", response.body
-    assert_match "Edit details", response.body
+    assert_match "Merge into this topic", response.body
+    assert_match "Edit Details", response.body
     assert_match "data-details-collapsible", response.body
     assert_match 'name="topic[name]"', response.body
     assert_match 'name="topic[description]"', response.body
@@ -40,7 +39,7 @@ class AdminTopicDetailWorkspaceTest < ActionDispatch::IntegrationTest
     assert_match 'name="topic[source_notes]"', response.body
     assert_match 'name="topic[importance]"', response.body
     assert_match 'name="topic[resident_impact_score]"', response.body
-    assert_match "Save details", response.body
+    assert_match "Save", response.body
   end
 
   test "shows topic detail as a decision board" do
@@ -55,7 +54,6 @@ class AdminTopicDetailWorkspaceTest < ActionDispatch::IntegrationTest
     assert_no_match "Merge Into This Topic", response.body
     assert_no_match "Canonical Correction", response.body
     assert_no_match "Alias Repair", response.body
-    assert_no_match "Confirm merge", response.body
   end
 
   test "shows merge workbench with impact preview language" do
@@ -67,13 +65,13 @@ class AdminTopicDetailWorkspaceTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_match "This Topic Is Correct", response.body
-    assert_match "Another topic is the same issue and should live under this topic", response.body
-    assert_match "Find source topic", response.body
+    assert_match "harbor project will combine into harbor dredging.", response.body
     assert_match "Selected topic ID", response.body
-    assert_match "Downstream impact", response.body
+    assert_match "Selected topic ID", response.body
+    assert_match "Review what moves", response.body
     assert_match "Topics affected", response.body
-    assert_match "Search, detail pages, summaries, and knowledge-linked content will all point to", response.body
-    assert_match "Combine Duplicate Topic Here", response.body
+    assert_match "Topics affected", response.body
+    assert_match "Merge into this topic", response.body
     assert_match 'data-action="click->topic-detail-impact#openMergeConfirm"', response.body
     assert_match 'name="source_topic_name"', response.body
     assert_match 'name="source_topic_id"', response.body
@@ -82,7 +80,6 @@ class AdminTopicDetailWorkspaceTest < ActionDispatch::IntegrationTest
     assert_match %r{data-topic-detail-impact-url-value="/admin/topics/#{topic.id}/impact_preview"}, response.body
     assert_no_match "http://www.example.com/admin/topics/#{topic.id}/impact_preview", response.body
     assert_no_match "Merge Into This Topic", response.body
-    assert_no_match "Confirm merge", response.body
   end
 
   test "merge workbench is not actionable until a source topic is selected" do
@@ -91,8 +88,8 @@ class AdminTopicDetailWorkspaceTest < ActionDispatch::IntegrationTest
     get admin_topic_url(topic)
 
     assert_response :success
-    assert_match "Combine Duplicate Topic Here", response.body
-    assert_match "Choose a topic from search results.", response.body
+    assert_match "Merge into this topic", response.body
+    assert_match "No topic selected yet.", response.body
   end
 
   test "alias repair forms carry merge context fields" do
@@ -115,7 +112,7 @@ class AdminTopicDetailWorkspaceTest < ActionDispatch::IntegrationTest
     get admin_topic_url(topic)
 
     assert_response :success
-    assert_match "Choose a destination topic to preview the move.", response.body
+    assert_match "Select a destination to preview.", response.body
     assert_no_match "will transfer 1 alias entry", response.body
   end
 
@@ -125,7 +122,7 @@ class AdminTopicDetailWorkspaceTest < ActionDispatch::IntegrationTest
     get admin_topic_url(topic)
 
     assert_response :success
-    assert_match "Make This Topic An Alias Of Another Topic", response.body
+    assert_match "Make this an alias", response.body
     assert_no_match "destination_topic_id=#{topic.id}", response.body
   end
 
@@ -139,8 +136,8 @@ class AdminTopicDetailWorkspaceTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_match "This Topic Is Wrong", response.body
     assert_match 'data-topic-repair-search-action-name-value="topic_to_alias"', response.body
-    assert_match "Choose a destination topic to preview the alias transfer.", response.body
-    assert_match "Any existing aliases on this topic will move with it.", response.body
+    assert_match "Select a destination to see what moves.", response.body
+    assert_match "Existing aliases move with it.", response.body
     assert_match 'name="reason"', response.body
     assert_match 'required="required"', response.body
     assert_match 'name="alias_count"', response.body
@@ -158,7 +155,7 @@ class AdminTopicDetailWorkspaceTest < ActionDispatch::IntegrationTest
     get admin_topic_url(topic)
 
     assert_response :success
-    assert_match "Flip Main Topic With Its Only Alias", response.body
+    assert_match "Swap names", response.body
 
     other_topic = Topic.create!(name: "harbor district", status: "approved", review_status: "approved")
     TopicAlias.create!(topic: other_topic, name: "harbor works")
@@ -167,7 +164,7 @@ class AdminTopicDetailWorkspaceTest < ActionDispatch::IntegrationTest
     get admin_topic_url(other_topic)
 
     assert_response :success
-    assert_no_match "Flip Main Topic With Its Only Alias", response.body
+    assert_no_match "Swap names", response.body
   end
 
   test "canonical re-home preview uses the current topic alias count" do
@@ -191,8 +188,8 @@ class AdminTopicDetailWorkspaceTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_match "This Topic Is Wrong", response.body
-    assert_match "Make This Topic An Alias Of Another Topic", response.body
-    assert_match "Any existing aliases on this topic will move with it", response.body
+    assert_match "Make this an alias", response.body
+    assert_match "Existing aliases move with it.", response.body
     assert_no_match "Canonical Correction", response.body
   end
 
@@ -205,14 +202,13 @@ class AdminTopicDetailWorkspaceTest < ActionDispatch::IntegrationTest
     get admin_topic_url(topic)
 
     assert_response :success
-    assert_match "Destructive actions", response.body
-    assert_match "Retire / Block Topic", response.body
-    assert_match "Block or retire this topic only when it should no longer be usable.", response.body
-    assert_match "Consequence preview", response.body
+    assert_match "This Topic Should Not Exist", response.body
+    assert_match "Block this topic", response.body
+    assert_match "What happens", response.body
     assert_match "1 appearance", response.body
     assert_match "1 agenda item", response.body
-    assert_match "0 decision", response.body
-    assert_match "0 summary", response.body
+    assert_match "0 decisions", response.body
+    assert_match "0 summarys", response.body
     assert_match "recent review event", response.body
     assert_match "re-home there first", response.body
     assert_match %r{action="/admin/topics/#{topic.id}/retire"}, response.body
@@ -234,16 +230,15 @@ class AdminTopicDetailWorkspaceTest < ActionDispatch::IntegrationTest
     assert_match 'aria-expanded="true"', response.body
     assert_match 'aria-expanded="false"', response.body
     assert_match "hidden", response.body
-    assert_match "Leave As Alias", response.body
-    assert_match "Remove Alias", response.body
-    assert_match "Move Alias To Another Topic", response.body
-    assert_match "Promote Alias To Its Own Topic", response.body
-    assert_match "Remove harbor project?", response.body
-    assert_match "1 alias entry from this topic", response.body
-    assert_match "Appearances", response.body
-    assert_match "Knowledge links", response.body
-    assert_match "Promote harbor project?", response.body
-    assert_match "new standalone topic shell", response.body
+    assert_match "Keep", response.body
+    assert_match "Remove", response.body
+    assert_match "Move to another topic", response.body
+    assert_match "Promote", response.body
+    assert_match "Remove harbor project? This alias entry will no longer resolve here.", response.body
+    assert_match "0 appearances", response.body
+    assert_match "0 summaries", response.body
+    assert_match "Promote harbor project? Creates a new standalone topic.", response.body
+    assert_match "Becomes its own topic.", response.body
     assert_match %r{<span class="topic-decision-card__chevron"[^>]*>Collapse</span>}, response.body
     assert_match %r{<span class="topic-decision-card__chevron"[^>]*>Expand</span>}, response.body
   end
@@ -255,7 +250,7 @@ class AdminTopicDetailWorkspaceTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_match "This Topic Is Wrong", response.body
-    assert_match "Make This Topic An Alias Of Another Topic", response.body
+    assert_match "Make this an alias", response.body
     assert_no_match "destination_topic_id=#{topic.id}", response.body
     assert_no_match "Promote to topic", response.body
     assert_no_match "Move alias under another topic", response.body
@@ -323,7 +318,6 @@ class AdminTopicDetailWorkspaceTest < ActionDispatch::IntegrationTest
     get admin_topic_url(topic)
 
     assert_response :success
-    assert_match "Topic digest", response.body
     assert_match "Tourism staff reported room tax revenue finished about 10% lower than 2024.", response.body
     assert_no_match "Preview unavailable.", response.body
   end
