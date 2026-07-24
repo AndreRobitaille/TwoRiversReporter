@@ -23,19 +23,32 @@ class UserTest < ActiveSupport::TestCase
   test "admin access requires admin status, active authentication, and at least one passkey" do
     non_admin_with_passkey = User.create!(email_address: "member-with-passkey@example.com", password: "password123", password_confirmation: "password123", status: "active")
     admin_with_passkey = User.create!(email_address: "admin-with-passkey@example.com", password: "password123", password_confirmation: "password123", status: "active", admin: true)
-    User.connection.execute(
-      <<~SQL.squish
-        INSERT INTO passkey_credentials (external_id, public_key, sign_count, user_id, created_at, updated_at)
-        VALUES ('cred-123', 'public-key', 0, #{non_admin_with_passkey.id}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-               ('cred-456', 'public-key', 0, #{admin_with_passkey.id}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-      SQL
-    )
+    PasskeyCredential.create!(external_id: "cred-123", public_key: "public-key", sign_count: 0, user: non_admin_with_passkey)
+    PasskeyCredential.create!(external_id: "cred-456", public_key: "public-key", sign_count: 0, user: admin_with_passkey)
     inactive_admin = User.create!(email_address: "inactive-admin@example.com", password: "password123", password_confirmation: "password123", status: "pending", admin: true)
-    User.connection.execute("INSERT INTO passkey_credentials (external_id, public_key, sign_count, user_id, created_at, updated_at) VALUES ('cred-789', 'public-key', 0, #{inactive_admin.id}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
+    PasskeyCredential.create!(external_id: "cred-789", public_key: "public-key", sign_count: 0, user: inactive_admin)
 
     assert_not non_admin_with_passkey.admin_access_ready?
     assert admin_with_passkey.admin_access_ready?
     assert_not inactive_admin.admin_access_ready?
+  end
+
+  test "legacy users with null passwordless fields are backfilled on update" do
+    user = User.connection.select_one(<<~SQL.squish)
+      INSERT INTO users (email_address, password_digest, admin, status, webauthn_id, created_at, updated_at)
+      VALUES ('legacy@example.com', '#{BCrypt::Password.create("password123")}', false, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      RETURNING *
+    SQL
+
+    legacy = User.find(user["id"])
+
+    assert_nil legacy.read_attribute_before_type_cast("status")
+    assert_nil legacy.webauthn_id
+
+    legacy.update!(admin: true)
+
+    assert_equal "pending", legacy.status
+    assert legacy.webauthn_id.present?
   end
 
   test "status rejects disabled and nil" do
@@ -46,8 +59,8 @@ class UserTest < ActiveSupport::TestCase
     assert_not_empty user.errors[:status]
 
     user.status = nil
-    assert_not user.valid?
-    assert_not_empty user.errors[:status]
+    assert user.valid?
+    assert_equal "pending", user.status
   end
 
   test "passkey prompt suppression expires after timestamp" do

@@ -9,7 +9,7 @@ class User < ApplicationRecord
 
   normalizes :email_address, with: ->(e) { e.strip.downcase }
 
-  before_validation :assign_webauthn_id, on: :create
+  before_validation :backfill_passwordless_fields
 
   validates :email_address, presence: true, uniqueness: true
   validates :status, inclusion: { in: %w[pending active rejected] }
@@ -95,9 +95,7 @@ class User < ApplicationRecord
   def admin_access_ready?
     return false unless admin? && active_for_authentication?
 
-    self.class.connection.select_value(
-      self.class.sanitize_sql_array(["SELECT 1 FROM passkey_credentials WHERE user_id = ? LIMIT 1", id])
-    ).present?
+    passkey_credentials.exists?
   end
 
   def passkey_prompt_dismissed?
@@ -110,7 +108,8 @@ class User < ApplicationRecord
 
   private
 
-  def assign_webauthn_id
+  def backfill_passwordless_fields
+    self.status ||= "pending"
     self.webauthn_id ||= WebAuthn.generate_user_id
   end
 end
