@@ -33,7 +33,7 @@ module Authentication
     end
 
     def find_session_by_cookie
-      session_id = cookies.signed[:session_id] || session[:session_id]
+      session_id = cookies.signed[:session_id]
       Session.find_by(id: session_id) if session_id
     end
 
@@ -56,7 +56,6 @@ module Authentication
       user.sessions.create!(user_agent: request.user_agent, ip_address: request.remote_ip, last_seen_at: Time.current).tap do |session|
         Current.session = session
         cookies.signed.permanent[:session_id] = session.id
-        self.session[:session_id] = session.id
       end
     end
 
@@ -70,7 +69,6 @@ module Authentication
       Current.session&.destroy
       Current.session = nil
       cookies.delete(:session_id)
-      session.delete(:session_id)
       nil
     end
 end

@@ -6,9 +6,11 @@ class SessionTest < ActiveSupport::TestCase
 
     active_session = Session.create!(user: user, last_seen_at: 1.day.ago)
     inactive_session = Session.create!(user: user, last_seen_at: 181.days.ago)
+    nil_last_seen_session = Session.create!(user: user, last_seen_at: nil)
 
     assert_not active_session.inactive?
     assert inactive_session.inactive?
+    assert nil_last_seen_session.inactive?
   end
 
   test "touch_last_seen_if_stale! updates only stale sessions" do
