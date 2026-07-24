@@ -28,7 +28,7 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
   test "create sends a magic link for an active user" do
     assert_difference "MagicLink.count", 1 do
       assert_enqueued_emails 1 do
-      post "/session", params: { email_address: " ACTIVE@example.com " }
+        post "/session", params: { email_address: " ACTIVE@example.com " }
       end
     end
 
