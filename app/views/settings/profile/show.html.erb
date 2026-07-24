@@ -17,7 +17,7 @@
       <dt class="detail-term">Account status</dt>
       <dd class="detail-value">
         <span class="badge badge--<%= current_user.active_for_authentication? ? "success" : "warning" %>">
-          <%= current_user.status.humanize %>
+          <%= current_user.status&.humanize || "Unknown" %>
         </span>
       </dd>
 
@@ -49,7 +49,7 @@
       <dl class="detail-list">
         <dt class="detail-term">Status</dt>
         <dd class="detail-value">
-          <span class="badge <%= status_badge %>"><%= application.status.humanize %></span>
+          <span class="badge <%= status_badge %>"><%= application.status&.humanize || "Unknown" %></span>
         </dd>
 
         <% if application.first_name.present? || application.last_name.present? %>

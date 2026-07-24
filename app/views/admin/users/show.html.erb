@@ -4,7 +4,7 @@
 </div>
 
 <div class="flex flex-wrap gap-2 items-center mb-4">
-  <span class="badge badge--<%= @user.active_for_authentication? ? "success" : "default" %>"><%= @user.status.humanize %></span>
+  <span class="badge badge--<%= @user.active_for_authentication? ? "success" : "default" %>"><%= @user.status&.humanize || "Unknown" %></span>
   <% if @user.admin? %><span class="badge badge--info">Admin</span><% end %>
   <% if @user.disabled_at.present? %><span class="badge badge--danger">Disabled</span><% end %>
   <span class="badge badge--default"><%= pluralize(@user.passkey_credentials.count, "passkey") %></span>
@@ -29,7 +29,7 @@
   <% @applications.each do |application| %>
     <div class="attention-card review-card <%= "review-card--pending" if application.status == "submitted" %>">
       <span class="badge badge--<%= application.status == "submitted" ? "warning" : "default" %>">
-        <%= application.status.humanize %>
+        <%= application.status&.humanize || "Unknown" %>
       </span>
 
       <dl class="detail-list mt-4">

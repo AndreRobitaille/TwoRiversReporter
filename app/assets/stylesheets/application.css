@@ -6431,6 +6431,8 @@ th.sortable-header:hover {
   gap: var(--space-3);
 }
 
+/* The row owns the vertical rhythm so paired fields don't double it. */
+.form-row { margin-bottom: var(--space-4); }
 .form-row .form-group { margin-bottom: 0; }
 
 @media (max-width: 30rem) {
@@ -6562,3 +6564,12 @@ th.sortable-header:hover {
    its buttons are the click targets. */
 .passkey-prompt { cursor: default; }
 .passkey-prompt:hover { box-shadow: none; }
+
+/* Disabled buttons — the system had no disabled state, so a disabled
+   control was indistinguishable from an active one. */
+.btn:disabled,
+.btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
