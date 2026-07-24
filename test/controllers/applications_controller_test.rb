@@ -89,6 +89,34 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "That application link is invalid or expired. Please request a new one.", flash[:alert]
   end
 
+  test "missing application IDs do not reveal existence on edit or update" do
+    user = User.create!(email_address: "missing@example.com", password: "password123", password_confirmation: "password123", status: "pending", disabled_at: Time.current)
+    application = user.membership_applications.create!(status: "email_pending")
+    valid_link = MagicLink.create_for!(user, purpose: "application")
+    missing_id = application.id + 10_000
+
+    get edit_application_path(missing_id, token: valid_link.raw_token)
+
+    assert_redirected_to new_application_path
+    assert_equal "That application link is invalid or expired. Please request a new one.", flash[:alert]
+
+    patch application_path(missing_id), params: {
+      token: valid_link.raw_token,
+      membership_application: {
+        first_name: "Jane",
+        last_name: "Member",
+        street: "123 Main St",
+        city: "Two Rivers",
+        state: "WI",
+        facebook_profile_url: "https://www.facebook.com/jane.member",
+        application_notes: "I live here."
+      }
+    }
+
+    assert_redirected_to new_application_path
+    assert_equal "That application link is invalid or expired. Please request a new one.", flash[:alert]
+  end
+
   test "application submission records details and queues admin notification" do
     user = User.create!(email_address: "submit@example.com", password: "password123", password_confirmation: "password123", status: "pending", disabled_at: Time.current)
     application = user.membership_applications.create!(status: "email_pending")
@@ -164,6 +192,36 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_application_path
     assert_equal "submitted", application.reload.status
     assert_equal "Jane", application.first_name
+  end
+
+  test "stale editable application instance cannot submit after the database record is already submitted" do
+    user = User.create!(email_address: "stale@example.com", password: "password123", password_confirmation: "password123", status: "pending", disabled_at: Time.current)
+    application = user.membership_applications.create!(status: "email_pending")
+    link = MagicLink.create_for!(user, purpose: "application")
+
+    stale_application = MembershipApplication.find(application.id)
+    application.update!(status: "submitted", first_name: "Existing", last_name: "Member", city: "Two Rivers", state: "WI")
+
+    assert_no_enqueued_jobs do
+      patch application_path(stale_application), params: {
+        token: link.raw_token,
+        membership_application: {
+          first_name: "Jane",
+          last_name: "Member",
+          street: "123 Main St",
+          city: "Two Rivers",
+          state: "WI",
+          facebook_profile_url: "https://www.facebook.com/jane.member",
+          application_notes: "I live here."
+        }
+      }
+    end
+
+    assert_redirected_to new_application_path
+    assert_equal "That application link is invalid or expired. Please request a new one.", flash[:alert]
+    assert_equal "submitted", application.reload.status
+    assert_equal "Existing", application.first_name
+    assert_equal 0, ActionMailer::Base.deliveries.size
   end
 
   test "restarting a submitted application does not create a second application record" do

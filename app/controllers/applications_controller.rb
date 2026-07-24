@@ -36,15 +36,19 @@ class ApplicationsController < ApplicationController
   end
 
   def edit
-    @membership_application = MembershipApplication.find(params[:id])
+    @membership_application = MembershipApplication.find_by(id: params[:id])
     @token = params[:token].to_s
+
+    return redirect_to(new_application_path, alert: invalid_application_link_message) if @membership_application.nil?
 
     redirect_to new_application_path, alert: invalid_application_link_message unless editable_application_token_matches_current_application?
   end
 
   def update
-    @membership_application = MembershipApplication.find(params[:id])
+    @membership_application = MembershipApplication.find_by(id: params[:id])
     @token = params[:token].to_s
+
+    return redirect_to(new_application_path, alert: invalid_application_link_message) if @membership_application.nil?
 
     unless editable_application_token_matches_current_application?
       return redirect_to(new_application_path, alert: invalid_application_link_message)
@@ -52,7 +56,8 @@ class ApplicationsController < ApplicationController
 
     saved = false
 
-    ApplicationRecord.transaction do
+    @membership_application.with_lock do
+      raise ActiveRecord::Rollback unless @membership_application.email_pending?
       raise ActiveRecord::Rollback unless application_token_matches_current_application?
 
       MagicLink.consume!(@token, purpose: "application")
