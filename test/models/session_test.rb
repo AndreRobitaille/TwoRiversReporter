@@ -13,6 +13,28 @@ class SessionTest < ActiveSupport::TestCase
     assert nil_last_seen_session.inactive?
   end
 
+  test "migration backfills nil last_seen_at to keep existing sessions active" do
+    user = User.create!(email_address: "migration@example.com", password: "password123", password_confirmation: "password123", status: "active")
+
+    session = Session.connection.select_one(<<~SQL.squish)
+      INSERT INTO sessions (user_id, user_agent, ip_address, last_seen_at, created_at, updated_at)
+      VALUES (#{user.id}, 'test', '127.0.0.1', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      RETURNING *
+    SQL
+
+    migrated = Session.find(session["id"])
+
+    assert migrated.inactive?
+
+    Session.connection.execute(<<~SQL.squish)
+      UPDATE sessions
+      SET last_seen_at = CURRENT_TIMESTAMP
+      WHERE last_seen_at IS NULL
+    SQL
+
+    assert_not Session.find(session["id"]).inactive?
+  end
+
   test "touch_last_seen_if_stale! updates only stale sessions" do
     user = User.create!(email_address: "active@example.com", password: "password123", password_confirmation: "password123", status: "active")
     session = Session.create!(user: user, last_seen_at: 20.minutes.ago)

@@ -55,7 +55,12 @@ module Authentication
     def start_new_session_for(user)
       user.sessions.create!(user_agent: request.user_agent, ip_address: request.remote_ip, last_seen_at: Time.current).tap do |session|
         Current.session = session
-        cookies.signed.permanent[:session_id] = session.id
+        cookies.signed.permanent[:session_id] = {
+          value: session.id,
+          httponly: true,
+          same_site: :lax,
+          secure: Rails.env.production?
+        }
       end
     end
 

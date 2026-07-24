@@ -18,6 +18,38 @@ class UserTest < ActiveSupport::TestCase
     assert_not member.active_for_authentication?
   end
 
+  test "explicit admin status is preserved on later updates" do
+    admin = User.create!(email_address: "admin-pending@example.com", password: "password123", password_confirmation: "password123", admin: true, status: "pending")
+
+    assert_equal "pending", admin.status
+
+    admin.update!(disabled_at: Time.current)
+
+    assert_equal "pending", admin.reload.status
+  end
+
+  test "nil status backfills active for admins and pending for non-admins" do
+    admin = User.connection.select_one(<<~SQL.squish)
+      INSERT INTO users (email_address, password_digest, admin, status, webauthn_id, created_at, updated_at)
+      VALUES ('admin-nil-status@example.com', '#{BCrypt::Password.create("password123")}', true, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      RETURNING *
+    SQL
+    member = User.connection.select_one(<<~SQL.squish)
+      INSERT INTO users (email_address, password_digest, admin, status, webauthn_id, created_at, updated_at)
+      VALUES ('member-nil-status@example.com', '#{BCrypt::Password.create("password123")}', false, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      RETURNING *
+    SQL
+
+    admin_user = User.find(admin["id"])
+    member_user = User.find(member["id"])
+
+    admin_user.update!(disabled_at: Time.current)
+    member_user.update!(disabled_at: Time.current)
+
+    assert_equal "active", admin_user.reload.status
+    assert_equal "pending", member_user.reload.status
+  end
+
   test "active users can authenticate but pending rejected and disabled users cannot" do
     active = User.create!(email_address: "active@example.com", password: "password123", password_confirmation: "password123", status: "active")
     pending = User.create!(email_address: "pending@example.com", password: "password123", password_confirmation: "password123", status: "pending")

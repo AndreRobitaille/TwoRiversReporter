@@ -7,6 +7,10 @@ module Admin
         admin = User.create!(email_address: "admin@example.com", password: "password", admin: true, totp_enabled: false)
 
         post session_url, params: { email_address: admin.email_address, password: "password" }
+
+        set_cookie = Array(response.headers["Set-Cookie"])
+
+        assert set_cookie.any? { |cookie| cookie.downcase.include?("session_id=") && cookie.downcase.include?("httponly") && cookie.downcase.include?("samesite=lax") }
         get admin_root_url
 
         assert_response :success

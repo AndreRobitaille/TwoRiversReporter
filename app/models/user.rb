@@ -114,10 +114,10 @@ class User < ApplicationRecord
   private
 
   def backfill_passwordless_fields
-    if admin? && !@status_provided
-      self.status = "active"
-    else
-      self.status ||= "pending"
+    if new_record? && !@status_provided
+      self.status = admin? ? "active" : "pending"
+    elsif status.nil?
+      self.status = admin? ? "active" : "pending"
     end
     self.webauthn_id ||= WebAuthn.generate_user_id
   end
