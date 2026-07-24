@@ -19,7 +19,9 @@ Rails.application.routes.draw do
   resources :applications, only: %i[new create edit update]
 
   namespace :settings do
+    resource :profile, only: %i[show], controller: "profile"
     resource :security, only: %i[show], controller: "security"
+    resource :passkey_prompt, only: %i[destroy], controller: "passkey_prompts"
   end
 
   resource :session, only: %i[new create destroy], controller: "sessions", as: :public_session do
