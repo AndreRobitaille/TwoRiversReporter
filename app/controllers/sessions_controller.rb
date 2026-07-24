@@ -24,7 +24,7 @@ class SessionsController < ApplicationController
     if request.post?
       consume_magic_link!
     else
-      redirect_to(new_public_session_path, alert: friendly_invalid_token_message) unless MagicLink.for_token(@token).exists?
+      redirect_to(new_public_session_path, alert: friendly_invalid_token_message) unless MagicLink.confirmable?(@token, purpose: "sign_in")
     end
   end
 

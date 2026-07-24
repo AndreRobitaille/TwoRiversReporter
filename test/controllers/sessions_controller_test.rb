@@ -57,6 +57,34 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_predicate magic_link.reload, :unused?
   end
 
+  test "get magic_link rejects expired sign in tokens gracefully" do
+    magic_link = MagicLink.create_for!(@active_user, purpose: "sign_in", expires_at: 1.minute.ago)
+
+    get "/session/magic_link", params: { token: magic_link.raw_token }
+
+    assert_redirected_to "/session/new"
+    assert_match /sign in/i, flash[:alert]
+  end
+
+  test "get magic_link rejects used sign in tokens gracefully" do
+    magic_link = MagicLink.create_for!(@active_user, purpose: "sign_in")
+    magic_link.update!(used_at: Time.current)
+
+    get "/session/magic_link", params: { token: magic_link.raw_token }
+
+    assert_redirected_to "/session/new"
+    assert_match /sign in/i, flash[:alert]
+  end
+
+  test "get magic_link rejects wrong purpose tokens gracefully" do
+    magic_link = MagicLink.create_for!(@active_user, purpose: "resend_expired_sign_in")
+
+    get "/session/magic_link", params: { token: magic_link.raw_token }
+
+    assert_redirected_to "/session/new"
+    assert_match /sign in/i, flash[:alert]
+  end
+
   test "post magic_link signs in and redirects root" do
     magic_link = MagicLink.create_for!(@active_user, purpose: "sign_in")
 
@@ -77,6 +105,13 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
       assert_redirected_to "/session/new"
       assert_match /sign in/i, flash[:alert]
     end
+  end
+
+  test "post resend_expired_magic_link redirects with a generic notice" do
+    post "/session/resend_expired_magic_link"
+
+    assert_redirected_to "/session/new"
+    assert_equal "If that account can sign in, we sent a link.", flash[:notice]
   end
 
   test "destroy signs out" do

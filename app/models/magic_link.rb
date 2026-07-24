@@ -7,6 +7,8 @@ class MagicLink < ApplicationRecord
 
   scope :for_token, ->(token) { where(token_digest: MagicLink.send(:digest_token, token)) }
 
+  scope :usable, -> { where(used_at: nil).where("expires_at > ?", Time.current) }
+
   def self.create_for!(user, purpose:, expires_at: 15.minutes.from_now)
     raw_token = SecureRandom.urlsafe_base64(32)
 
@@ -30,6 +32,15 @@ class MagicLink < ApplicationRecord
     end
   rescue ActiveRecord::RecordNotFound
     raise InvalidToken
+  end
+
+  def self.confirmable?(token, purpose:)
+    for_token(token)
+      .where(purpose: purpose)
+      .usable
+      .joins(:user)
+      .where(users: { status: "active", disabled_at: nil })
+      .exists?
   end
 
   def unused?
