@@ -46,7 +46,7 @@ Every gated surface uses these and nothing else. No scattered `if authenticated?
 
 A `SiteSetting` singleton row with an `access_mode` column (`open` / `gated`), read through `SiteSetting.gated?` and memoized per request on `Current`.
 
-Singleton enforcement: `SiteSetting.instance` does `first_or_create!`, and a partial unique index on a constant column prevents a second row. Reads never create — a missing row falls back to the default rather than writing during a GET.
+Singleton enforcement: `SiteSetting.instance` returns `first || new(...)` — never `first_or_create!` — and a unique index on a constant column prevents a second row. Reads never create: a missing row falls back to an unsaved default rather than writing during a GET.
 
 **Default is `open`**, including on a fresh database. Most people cloning this repo want a working public site, and an `open` default means shipping this change alters nothing about a running deployment until someone deliberately flips the switch — no migration quietly locking down a live site.
 
