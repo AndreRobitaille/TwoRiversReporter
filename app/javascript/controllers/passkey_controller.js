@@ -11,13 +11,14 @@ export default class extends Controller {
   static targets = ["status", "trigger"]
 
   connect() {
-    if (this.#supportsWebAuthn()) return
+    const reason = this.#unavailableReason()
+    if (!reason) return
 
     this.triggerTargets.forEach((button) => {
       button.disabled = true
     })
 
-    this.#setStatus("This browser doesn't support passkeys — use the email link instead.", "error")
+    this.#setStatus(reason, "error")
   }
 
   register = async () => {
@@ -29,8 +30,9 @@ export default class extends Controller {
   }
 
   async #runCeremony(kind) {
-    if (!this.#supportsWebAuthn()) {
-      this.#setStatus("Your browser doesn't support passkeys.", "error")
+    const reason = this.#unavailableReason()
+    if (reason) {
+      this.#setStatus(reason, "error")
       return
     }
 
@@ -206,6 +208,22 @@ export default class extends Controller {
     }
 
     return bytes.buffer
+  }
+
+  // Passkeys can be unavailable for two very different reasons, and saying the wrong
+  // one sends people debugging the wrong thing. The WebAuthn API is [SecureContext]
+  // only, so on plain HTTP the browser hides it entirely — which looks identical to
+  // a browser that lacks support. Check the origin first.
+  #unavailableReason() {
+    if (!window.isSecureContext) {
+      return "Passkeys need a secure connection. This page isn't on HTTPS — use the email link instead."
+    }
+
+    if (!this.#supportsWebAuthn()) {
+      return "This browser doesn't support passkeys — use the email link instead."
+    }
+
+    return null
   }
 
   #supportsWebAuthn() {
