@@ -55,6 +55,17 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_not Session.exists?(session.id)
   end
 
+  test "admin can re-enable a disabled user" do
+    admin = create_passkey_admin
+    user = User.create!(email_address: "reenable@example.com", password: "password", status: "active", disabled_at: Time.current)
+    sign_in(admin)
+
+    with_admin_access { patch disable_user_path(user) }
+
+    assert_nil user.reload.disabled_at
+    assert_redirected_to user_path(user)
+  end
+
   test "admin can revoke all sessions for a user" do
     admin = create_passkey_admin
     user = User.create!(email_address: "managed-all@example.com", password: "password", status: "active")

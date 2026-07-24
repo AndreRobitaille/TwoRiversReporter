@@ -17,8 +17,7 @@ class AdminApplicationNotificationJob < ApplicationJob
   private
 
     def cooldown_active?
-      MembershipApplication.where(status: "submitted")
-                           .where("admin_notification_sent_at >= ?", 1.hour.ago)
+      MembershipApplication.where("admin_notification_sent_at >= ?", 1.hour.ago)
                            .exists?
     end
 end

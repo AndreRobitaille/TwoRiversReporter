@@ -65,4 +65,25 @@ class AdminApplicationNotificationJobTest < ActiveSupport::TestCase
       end
     end
   end
+
+  test "keeps cooldown active when a previously notified application is approved within the hour" do
+    notified_applicant = User.create!(email_address: "notified@example.com", password: "password", status: "pending")
+    notified_app = notified_applicant.membership_applications.create!(status: "submitted", first_name: "Notified", last_name: "User", city: "Two Rivers", state: "WI", created_at: 90.minutes.ago)
+
+    TransactionalEmail.stub(:admin_application_notifications, Object.new.tap { |message| message.define_singleton_method(:deliver_now) {} }) do
+      AdminApplicationNotificationJob.perform_now(notified_app.id)
+    end
+
+    notified_app.update!(status: "approved")
+
+    travel 30.minutes do
+      fresh_applicant = User.create!(email_address: "fresh-cooldown@example.com", password: "password", status: "pending")
+      fresh_app = fresh_applicant.membership_applications.create!(status: "submitted", first_name: "Fresh", last_name: "User", city: "Two Rivers", state: "WI")
+
+      assert_no_difference -> { MembershipApplication.where.not(admin_notification_sent_at: nil).count } do
+        AdminApplicationNotificationJob.perform_now(fresh_app.id)
+      end
+      assert_nil fresh_app.reload.admin_notification_sent_at
+    end
+  end
 end
