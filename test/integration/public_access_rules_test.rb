@@ -18,7 +18,10 @@ class PublicAccessRulesTest < ActionDispatch::IntegrationTest
   end
 
   test "non-exempt pages require login" do
-    get meetings_url
+    # Admin surfaces stay gated in both access modes; meetings (and the other
+    # four public controllers) were restored to anonymous access by the
+    # tiered-public-access plan — see docs/superpowers/plans/2026-07-24-tiered-public-access.md.
+    get admin_root_url
 
     assert_redirected_to new_public_session_url
   end

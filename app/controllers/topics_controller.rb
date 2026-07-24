@@ -2,6 +2,8 @@ class TopicsController < ApplicationController
   include HighlightSignals
   include LoadsGeneratedImages
 
+  allow_unauthenticated_access
+
   def index
     @search_query = params[:q].presence
 

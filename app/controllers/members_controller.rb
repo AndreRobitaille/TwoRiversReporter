@@ -1,4 +1,6 @@
 class MembersController < ApplicationController
+  allow_unauthenticated_access
+
   # Motion descriptions that are procedural — filter from "Other Votes"
   PROCEDURAL_PATTERNS = [
     /adjourn/i,
