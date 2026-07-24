@@ -1,53 +1,67 @@
-<div class="card card--narrow">
-  <div class="card-header">
-    <h1 class="card-title">Complete your application</h1>
-    <p class="card-subtitle">Please finish the details below before submitting.</p>
-  </div>
+<% content_for(:title) { "Complete your application" } %>
+
+<div class="auth-panel auth-panel--wide">
+  <span class="auth-step">Step 2 of 2</span>
+  <h1 class="auth-title">Complete your application</h1>
+  <p class="auth-dek">A few details so we know who you are. This goes to a person, not a robot.</p>
+
+  <%= render "shared/diamond_divider" %>
 
   <% if @membership_application.errors.any? %>
-    <div class="flash flash--danger"><%= @membership_application.errors.full_messages.to_sentence %></div>
+    <div class="flash flash--danger">
+      <ul class="mb-0">
+        <% @membership_application.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
   <% end %>
 
   <%= form_with model: @membership_application, url: application_path(@membership_application), method: :patch, local: true do |form| %>
     <%= hidden_field_tag :token, @token %>
 
-    <div class="form-group">
-      <%= form.label :first_name, "First name", class: "form-label" %>
-      <%= form.text_field :first_name, required: true, autocomplete: "given-name", class: "form-input" %>
-    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <%= form.label :first_name, "First name", class: "form-label" %>
+        <%= form.text_field :first_name, required: true, autocomplete: "given-name", class: "form-input" %>
+      </div>
 
-    <div class="form-group">
-      <%= form.label :last_name, "Last name", class: "form-label" %>
-      <%= form.text_field :last_name, required: true, autocomplete: "family-name", class: "form-input" %>
+      <div class="form-group">
+        <%= form.label :last_name, "Last name", class: "form-label" %>
+        <%= form.text_field :last_name, required: true, autocomplete: "family-name", class: "form-input" %>
+      </div>
     </div>
 
     <div class="form-group">
       <%= form.label :street, "Street address", class: "form-label" %>
       <%= form.text_field :street, autocomplete: "street-address", class: "form-input" %>
+      <span class="form-hint">Optional.</span>
     </div>
 
-    <div class="form-group">
-      <%= form.label :city, "City", class: "form-label" %>
-      <%= form.text_field :city, required: true, autocomplete: "address-level2", class: "form-input" %>
-    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <%= form.label :city, "City", class: "form-label" %>
+        <%= form.text_field :city, required: true, autocomplete: "address-level2", class: "form-input" %>
+      </div>
 
-    <div class="form-group">
-      <%= form.label :state, "State", class: "form-label" %>
-      <%= form.text_field :state, required: true, maxlength: 2, autocomplete: "address-level1", class: "form-input" %>
+      <div class="form-group">
+        <%= form.label :state, "State", class: "form-label" %>
+        <%= form.text_field :state, required: true, maxlength: 2, autocomplete: "address-level1", class: "form-input" %>
+      </div>
     </div>
 
     <div class="form-group">
       <%= form.label :facebook_profile_url, "Facebook profile", class: "form-label" %>
       <%= form.url_field :facebook_profile_url, placeholder: "https://www.facebook.com/your.name", autocomplete: "url", class: "form-input" %>
+      <span class="form-hint">Optional. Helps us confirm you're a real neighbor.</span>
     </div>
 
     <div class="form-group">
-      <%= form.label :application_notes, "Application notes", class: "form-label" %>
+      <%= form.label :application_notes, "Anything you'd like us to know", class: "form-label" %>
       <%= form.text_area :application_notes, rows: 5, class: "form-input" %>
+      <span class="form-hint">Optional.</span>
     </div>
 
-    <div class="flex gap-2 items-center">
-      <%= form.submit "Submit application", class: "btn btn--primary" %>
-    </div>
+    <%= form.submit "Submit application", class: "btn btn--primary" %>
   <% end %>
 </div>
