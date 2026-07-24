@@ -55,6 +55,7 @@ class ApplicationLayoutAuthStateTest < ActionDispatch::IntegrationTest
 
     delete settings_passkey_prompt_path, headers: { "HTTP_REFERER" => root_url }
 
+    assert_response :see_other
     assert_redirected_to root_url
     follow_redirect!
 
