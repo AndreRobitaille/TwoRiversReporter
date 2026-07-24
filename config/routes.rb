@@ -17,13 +17,15 @@ Rails.application.routes.draw do
   get "topics/explore", to: "topics#explore", as: :topics_explore
   resources :topics, only: %i[index show]
 
+  namespace :settings do
+    resource :security, only: %i[show], controller: "security"
+  end
+
   resource :session, only: %i[new create destroy], controller: "sessions", as: :public_session do
     get :magic_link, on: :collection
     post :magic_link, on: :collection
     post :resend_expired_magic_link, on: :collection
   end
-
-  get "settings/security", to: "home#index", as: :settings_security
 
   resources :passkeys, only: %i[update destroy] do
     collection do

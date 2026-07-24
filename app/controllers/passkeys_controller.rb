@@ -45,7 +45,7 @@ class PasskeysController < ApplicationController
 
     passkey.update!(sign_count: credential.sign_count, last_used_at: Time.current)
     start_new_session_for(passkey.user)
-    render json: { success: true }
+    render json: { success: true, redirect_to: after_authentication_url }
   end
 
   def update
