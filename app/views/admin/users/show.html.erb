@@ -19,6 +19,8 @@
       <% if application.application_notes.present? %>
         — <%= application.application_notes %>
       <% end %>
+      <div>Submitted: <%= application.created_at %></div>
+      <div>Reviewed: <%= application.reviewed_at %></div>
       <%= form_with url: reject_user_path(@user), method: :patch do |form| %>
         <%= form.label :rejection_reason, "Rejection reason" %>
         <%= form.text_field :rejection_reason %>
@@ -36,7 +38,11 @@
 <ul>
   <% @sessions.each do |session| %>
     <li>
-      <%= session.id %> — <%= session.last_seen_at %>
+      <div>IP address: <%= session.ip_address %></div>
+      <div>User agent: <%= session.user_agent %></div>
+      <div>Sign-in time: <%= session.created_at %></div>
+      <div>Last seen time: <%= session.last_seen_at %></div>
+      <div>Status: <%= session.inactive? ? "Inactive" : "Active" %></div>
       <%= button_to "Revoke", revoke_session_user_path(@user, session_id: session.id), method: :delete %>
     </li>
   <% end %>

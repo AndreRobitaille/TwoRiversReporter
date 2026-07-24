@@ -2,7 +2,7 @@ class AdminApplicationNotificationJob < ApplicationJob
   queue_as :default
 
   def perform(membership_application_id)
-    return if sent_within_hour?(membership_application_id)
+    return if cooldown_active?
 
     applications = MembershipApplication.where(status: "submitted", admin_notification_sent_at: nil)
                                        .order(:created_at)
@@ -16,10 +16,9 @@ class AdminApplicationNotificationJob < ApplicationJob
 
   private
 
-    def sent_within_hour?(membership_application_id)
-      application = MembershipApplication.find_by(id: membership_application_id)
-      return false unless application&.admin_notification_sent_at
-
-      application.admin_notification_sent_at >= 1.hour.ago
+    def cooldown_active?
+      MembershipApplication.where(status: "submitted")
+                           .where("admin_notification_sent_at >= ?", 1.hour.ago)
+                           .exists?
     end
 end
