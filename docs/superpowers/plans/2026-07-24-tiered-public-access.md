@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - **Withheld text is never rendered.** Not `display: none`, not CSS-blurred, not `aria-hidden`. If a visitor may not read it, it must not appear in the response body. Every gated surface gets a test asserting a known phrase is *absent*.
-- **No new gating conditionals outside the two primitives.** Surfaces call `teaser(...)` and `render "shared/gate"`. They do not write `if authenticated?`.
+- **Gating branches on `gated_for_visitor?` only.** Views may branch on that predicate to choose what to render, and must call `teaser(...)` and `render "shared/gate"` rather than reimplementing truncation or hand-rolling a sign-in card. Views must never call `authenticated?`, `Current.user`, or `SiteSetting` directly — the predicate is the single seam.
 - **Routing never depends on mode.** No page redirects based on `access_mode`; only rendering changes.
 - **Default `access_mode` is `open`.** A fresh database and an existing deployment both stay public until someone flips the switch.
 - **Admin surfaces are unaffected by `access_mode`** — they stay behind `Admin::BaseController` in both modes.
@@ -1680,7 +1680,10 @@ class AnonymousLeakSweepTest < ActionDispatch::IntegrationTest
       }
     )
 
-    @topic = Topic.create!(name: "Sweep Topic", status: "approved", canonical_name: SECRET)
+    # The canary must never sit in a field a gated page legitimately shows.
+    # Topic name and canonical_name appear in page headers and card titles, so
+    # the canary goes only in withheld body content.
+    @topic = Topic.create!(name: "Sweep Topic", status: "approved", canonical_name: "Sweep Topic")
     @topic.create_topic_briefing!(
       headline: "A routine headline that is fine to show.",
       generation_tier: "full",
