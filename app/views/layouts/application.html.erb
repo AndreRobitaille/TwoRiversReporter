@@ -106,8 +106,7 @@
             <%= link_to "About", about_path, class: ("active" if controller_name == "pages") %>
 
             <% if authenticated? %>
-              <%= link_to "Profile", settings_profile_path, class: ("active" if current_path == "settings/profile") %>
-              <%= link_to "Security", settings_security_path, class: ("active" if current_path == "settings/security") %>
+              <%= link_to "Account", settings_profile_path, class: ("active" if current_path.start_with?("settings/")) %>
               <%= link_to "Admin", admin_root_path, class: ("active" if current_path.start_with?("admin/")) if current_user&.admin_access_ready? %>
               <%= link_to "Sign out", public_session_path, data: { turbo_method: :delete } %>
             <% else %>

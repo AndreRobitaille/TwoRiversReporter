@@ -7,19 +7,17 @@ class ApplicationLayoutAuthStateTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "nav.site-nav a", text: "Sign in"
     assert_select "nav.site-nav a", text: "Apply"
-    assert_select "nav.site-nav a", text: "Profile", count: 0
-    assert_select "nav.site-nav a", text: "Security", count: 0
+    assert_select "nav.site-nav a", text: "Account", count: 0
     assert_select "nav.site-nav a", text: "Admin", count: 0
     assert_select "nav.site-nav a", text: "Sign out", count: 0
   end
 
-  test "signed-in users see profile and security links" do
+  test "signed-in users see the account link" do
     user = User.create!(email_address: "member@example.com", status: "active")
 
     sign_in_via_magic_link(user)
 
-    assert_select "nav.site-nav a", text: "Profile"
-    assert_select "nav.site-nav a", text: "Security"
+    assert_select "nav.site-nav a[href='#{settings_profile_path}']", text: "Account"
     assert_select "nav.site-nav a", text: "Sign out"
     assert_select "nav.site-nav a", text: "Sign in", count: 0
     assert_select "nav.site-nav a", text: "Apply", count: 0
@@ -32,7 +30,7 @@ class ApplicationLayoutAuthStateTest < ActionDispatch::IntegrationTest
     sign_in_via_magic_link(admin)
 
     assert_select "nav.site-nav a", text: "Admin", count: 0
-    assert_select "nav.site-nav a", text: "Security"
+    assert_select "nav.site-nav a", text: "Account"
   end
 
   test "admins with passkeys see the admin link" do

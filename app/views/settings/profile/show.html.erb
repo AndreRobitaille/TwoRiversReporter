@@ -1,111 +1,95 @@
-<% content_for(:title) { "Profile" } %>
+<% content_for(:title) { "Account — Profile" } %>
 <% content_for(:description) { "Read-only account and membership application details." } %>
 
-<div class="page-header">
-  <h1 class="page-title">Profile</h1>
-  <p class="page-subtitle">Read-only account details and your latest membership application.</p>
-</div>
+<%= render "settings/header" %>
+<%= render "settings/tabs", current: :profile %>
 
-<div class="grid gap-6 lg:grid-cols-2">
-  <section class="card card--narrow">
+<div class="settings-grid">
+  <section class="card">
     <div class="card-header">
       <h2 class="card-title">Account</h2>
-      <p class="card-subtitle">What we know about this sign-in.</p>
     </div>
 
-    <dl class="space-y-4">
-      <div>
-        <dt class="text-xs uppercase tracking-[0.08em] text-[var(--color-text-secondary)]">Email address</dt>
-        <dd class="mt-1 font-semibold"><%= current_user.email_address %></dd>
-      </div>
+    <dl class="detail-list">
+      <dt class="detail-term">Email address</dt>
+      <dd class="detail-value"><%= current_user.email_address %></dd>
 
-      <div>
-        <dt class="text-xs uppercase tracking-[0.08em] text-[var(--color-text-secondary)]">Account status</dt>
-        <dd class="mt-1">
-          <span class="badge badge--<%= current_user.active_for_authentication? ? 'success' : 'warning' %>"><%= current_user.status.humanize %></span>
-        </dd>
-      </div>
+      <dt class="detail-term">Account status</dt>
+      <dd class="detail-value">
+        <span class="badge badge--<%= current_user.active_for_authentication? ? "success" : "warning" %>">
+          <%= current_user.status.humanize %>
+        </span>
+      </dd>
 
-      <div>
-        <dt class="text-xs uppercase tracking-[0.08em] text-[var(--color-text-secondary)]">Admin access</dt>
-        <dd class="mt-1"><%= current_user.admin? ? "Yes" : "No" %></dd>
-      </div>
+      <dt class="detail-term">Admin access</dt>
+      <dd class="detail-value"><%= current_user.admin? ? "Yes" : "No" %></dd>
 
-      <div>
-        <dt class="text-xs uppercase tracking-[0.08em] text-[var(--color-text-secondary)]">Passkeys</dt>
-        <dd class="mt-1"><%= current_user.passkey_credentials.exists? ? pluralize(current_user.passkey_credentials.count, "passkey") : "None" %></dd>
-      </div>
+      <dt class="detail-term">Passkeys</dt>
+      <dd class="detail-value">
+        <% passkey_count = current_user.passkey_credentials.count %>
+        <%= passkey_count.positive? ? pluralize(passkey_count, "passkey") : "None yet" %>
+      </dd>
     </dl>
   </section>
 
-  <section class="card card--narrow">
+  <section class="card">
     <div class="card-header">
-      <h2 class="card-title">Latest membership application</h2>
-      <p class="card-subtitle">The most recent application attached to this account.</p>
+      <h2 class="card-title">Membership application</h2>
     </div>
 
     <% if @membership_application.present? %>
-      <% status_badge = case @membership_application.status
+      <% application = @membership_application %>
+      <% status_badge = case application.status
       when "approved" then "badge--success"
       when "rejected" then "badge--danger"
       when "submitted" then "badge--info"
       else "badge--default"
       end %>
 
-      <dl class="space-y-4">
-        <div>
-          <dt class="text-xs uppercase tracking-[0.08em] text-[var(--color-text-secondary)]">Status</dt>
-          <dd class="mt-1"><span class="badge <%= status_badge %>"><%= @membership_application.status.humanize %></span></dd>
-        </div>
+      <dl class="detail-list">
+        <dt class="detail-term">Status</dt>
+        <dd class="detail-value">
+          <span class="badge <%= status_badge %>"><%= application.status.humanize %></span>
+        </dd>
 
-        <% if @membership_application.first_name.present? || @membership_application.last_name.present? %>
-          <div>
-            <dt class="text-xs uppercase tracking-[0.08em] text-[var(--color-text-secondary)]">Name</dt>
-            <dd class="mt-1"><%= [@membership_application.first_name, @membership_application.last_name].compact.join(" ") %></dd>
-          </div>
+        <% if application.first_name.present? || application.last_name.present? %>
+          <dt class="detail-term">Name</dt>
+          <dd class="detail-value"><%= [application.first_name, application.last_name].compact_blank.join(" ") %></dd>
         <% end %>
 
-        <% if @membership_application.street.present? || @membership_application.city.present? || @membership_application.state.present? %>
-          <div>
-            <dt class="text-xs uppercase tracking-[0.08em] text-[var(--color-text-secondary)]">Address</dt>
-            <dd class="mt-1">
-              <%= safe_join([
-                @membership_application.street,
-                [@membership_application.city, @membership_application.state].compact.join(", ")
-              ].compact_blank, tag.br) %>
-            </dd>
-          </div>
+        <% if application.street.present? || application.city.present? || application.state.present? %>
+          <dt class="detail-term">Address</dt>
+          <dd class="detail-value">
+            <%= safe_join([
+                  application.street,
+                  [application.city, application.state].compact_blank.join(", ")
+                ].compact_blank, tag.br) %>
+          </dd>
         <% end %>
 
-        <% if @membership_application.facebook_profile_url.present? %>
-          <div>
-            <dt class="text-xs uppercase tracking-[0.08em] text-[var(--color-text-secondary)]">Facebook profile</dt>
-            <dd class="mt-1 break-all"><%= link_to @membership_application.facebook_profile_url, @membership_application.facebook_profile_url, target: "_blank", rel: "noopener" %></dd>
-          </div>
+        <% if application.facebook_profile_url.present? %>
+          <dt class="detail-term">Facebook profile</dt>
+          <dd class="detail-value">
+            <%= link_to application.facebook_profile_url, application.facebook_profile_url,
+                  target: "_blank", rel: "noopener" %>
+          </dd>
         <% end %>
 
-        <% if @membership_application.application_notes.present? %>
-          <div>
-            <dt class="text-xs uppercase tracking-[0.08em] text-[var(--color-text-secondary)]">Notes</dt>
-            <dd class="mt-1 whitespace-pre-wrap"><%= @membership_application.application_notes %></dd>
-          </div>
+        <% if application.application_notes.present? %>
+          <dt class="detail-term">Notes</dt>
+          <dd class="detail-value detail-value--preserve"><%= application.application_notes %></dd>
         <% end %>
 
-        <div>
-          <dt class="text-xs uppercase tracking-[0.08em] text-[var(--color-text-secondary)]">Submitted</dt>
-          <dd class="mt-1"><%= l(@membership_application.submitted_at || @membership_application.created_at, format: :long) %></dd>
-        </div>
+        <dt class="detail-term">Submitted</dt>
+        <dd class="detail-value"><%= l(application.submitted_at || application.created_at, format: :long) %></dd>
 
-        <% if @membership_application.reviewed_at.present? %>
-          <div>
-            <dt class="text-xs uppercase tracking-[0.08em] text-[var(--color-text-secondary)]">Reviewed</dt>
-            <dd class="mt-1"><%= l(@membership_application.reviewed_at, format: :long) %></dd>
-          </div>
+        <% if application.reviewed_at.present? %>
+          <dt class="detail-term">Reviewed</dt>
+          <dd class="detail-value"><%= l(application.reviewed_at, format: :long) %></dd>
         <% end %>
-
       </dl>
     <% else %>
-      <p class="card-body mb-4">You haven't started a membership application yet.</p>
+      <p class="card-body">You haven't started a membership application yet.</p>
       <%= link_to "Start an application", new_application_path, class: "btn btn--primary" %>
     <% end %>
   </section>

@@ -1,15 +1,16 @@
-<% content_for(:title) { "Security settings" } %>
+<% content_for(:title) { "Account — Security" } %>
 <% content_for(:description) { "Manage the passkeys attached to your account." } %>
 
-<div class="page-header">
-  <h1 class="page-title">Security settings</h1>
-  <p class="page-subtitle">Manage how you sign in to this account.</p>
-</div>
+<%= render "settings/header" %>
+<%= render "settings/tabs", current: :security %>
 
-<div class="card card--narrow">
+<div class="card">
   <div class="card-header">
     <h2 class="card-title">Passkeys</h2>
-    <p class="card-subtitle">Add a passkey from this device or another nearby device. You can keep more than one.</p>
+    <p class="card-subtitle">
+      Passkeys let you sign in without a password. They stay on your devices and
+      use whatever unlocks them — a fingerprint, a face, or a PIN.
+    </p>
   </div>
 
   <section
@@ -18,35 +19,31 @@
     data-passkey-registration-url-value="<%= registration_passkeys_path(format: :json) %>"
     data-passkey-authentication-options-url-value="<%= authentication_options_passkeys_path(format: :json) %>"
     data-passkey-authentication-url-value="<%= authentication_passkeys_path(format: :json) %>"
-    class="space-y-4"
   >
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <p class="card-body mb-0">Passkeys let you sign in without typing a password. They stay on your devices and use your device's built-in protection.</p>
+    <button type="button" class="btn btn--primary" data-action="passkey#register" data-passkey-target="trigger">
+      Register a passkey
+    </button>
 
-      <button type="button" class="btn btn--primary" data-action="passkey#register">Register a passkey</button>
-    </div>
-
-    <p class="card-body text-sm mb-0" data-passkey-target="status" aria-live="polite">Ready.</p>
+    <p class="auth-status" data-passkey-target="status" aria-live="polite" role="status"></p>
 
     <% if @passkey_credentials.any? %>
-      <ul class="space-y-3 mt-4">
+      <ul class="passkey-list">
         <% @passkey_credentials.each do |credential| %>
-          <li class="card flex items-center justify-between gap-4 p-4">
-            <div class="min-w-0">
-              <p class="font-semibold mb-1"><%= credential.nickname.presence || "Unnamed passkey" %></p>
-              <p class="card-subtitle mb-0">Added <%= l(credential.created_at.to_date, format: :long) %></p>
+          <li class="passkey-item">
+            <div class="passkey-item__body">
+              <p class="passkey-item__name"><%= credential.nickname.presence || "Unnamed passkey" %></p>
+              <p class="passkey-item__meta">Added <%= l(credential.created_at.to_date, format: :long) %></p>
             </div>
 
-            <%= link_to "Remove",
-                  passkey_path(credential),
+            <%= link_to "Remove", passkey_path(credential),
                   class: "btn btn--danger btn--sm",
                   data: { turbo_method: :delete, turbo_confirm: "Remove this passkey?" } %>
           </li>
         <% end %>
       </ul>
     <% else %>
-      <div class="mt-4 rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-surface-raised)] p-4">
-        <p class="mb-0">You haven't added any passkeys yet. Register one to make future sign-ins faster.</p>
+      <div class="empty-state mt-4">
+        You haven't added any passkeys yet. Register one to make future sign-ins faster.
       </div>
     <% end %>
   </section>

@@ -31,10 +31,11 @@ module Settings
       get settings_profile_path, headers: signed_session_headers(user)
 
       assert_response :success
-      assert_select "h1", text: "Profile"
+      assert_select "h1", text: "Account"
+      assert_select "nav.tab-bar a[aria-current='page']", text: "Profile"
       assert_includes response.body, user.email_address
       assert_includes response.body, "Active"
-      assert_includes response.body, "Latest membership application"
+      assert_includes response.body, "Membership application"
       assert_includes response.body, latest_application.first_name
       assert_includes response.body, latest_application.street
       assert_includes response.body, latest_application.facebook_profile_url
