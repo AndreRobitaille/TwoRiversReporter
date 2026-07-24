@@ -39,6 +39,7 @@ export default class extends Controller {
     this.#setStatus("Preparing a new passkey…")
 
     const response = await fetch(this.registrationOptionsUrl, {
+      method: "POST",
       headers: this.#jsonHeaders()
     })
 
@@ -67,6 +68,7 @@ export default class extends Controller {
     this.#setStatus("Checking for a passkey…")
 
     const response = await fetch(this.authenticationOptionsUrl, {
+      method: "POST",
       headers: this.#jsonHeaders()
     })
 
