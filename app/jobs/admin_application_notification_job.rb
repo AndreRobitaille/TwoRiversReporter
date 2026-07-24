@@ -12,13 +12,12 @@ class AdminApplicationNotificationJob < ApplicationJob
                                          .order(:created_at)
                                          .to_a
       return if applications.empty?
-
-      batch_sent_at = Time.current
-      MembershipApplication.where(id: applications.map(&:id)).update_all(admin_notification_sent_at: batch_sent_at)
-      applications.each { |application| application.admin_notification_sent_at = batch_sent_at }
     end
 
     TransactionalEmail.admin_application_notifications(applications).deliver_now
+
+    batch_sent_at = Time.current
+    MembershipApplication.where(id: applications.map(&:id)).update_all(admin_notification_sent_at: batch_sent_at)
   end
 
   private

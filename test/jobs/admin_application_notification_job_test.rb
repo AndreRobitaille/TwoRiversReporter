@@ -66,6 +66,43 @@ class AdminApplicationNotificationJobTest < ActiveSupport::TestCase
     end
   end
 
+  test "leaves submitted applications retryable when message construction raises" do
+    travel 2.hours do
+      applicant = User.create!(email_address: "retry-build@example.com", password: "password", status: "pending")
+      application = applicant.membership_applications.create!(status: "submitted", first_name: "Retry", last_name: "Build", city: "Two Rivers", state: "WI")
+
+      original = TransactionalEmail.method(:admin_application_notifications)
+      begin
+        TransactionalEmail.define_singleton_method(:admin_application_notifications) { |*| raise "boom" }
+        assert_raises(RuntimeError) { AdminApplicationNotificationJob.perform_now(application.id) }
+      ensure
+        TransactionalEmail.define_singleton_method(:admin_application_notifications, original)
+      end
+
+      assert_nil application.reload.admin_notification_sent_at
+    end
+  end
+
+  test "leaves submitted applications retryable when delivery raises" do
+    travel 2.hours do
+      applicant = User.create!(email_address: "retry-delivery@example.com", password: "password", status: "pending")
+      application = applicant.membership_applications.create!(status: "submitted", first_name: "Retry", last_name: "Delivery", city: "Two Rivers", state: "WI")
+
+      original = TransactionalEmail.method(:admin_application_notifications)
+      begin
+        message = Object.new
+        message.define_singleton_method(:deliver_now) { raise "delivery failed" }
+        TransactionalEmail.define_singleton_method(:admin_application_notifications) { |*| message }
+
+        assert_raises(RuntimeError) { AdminApplicationNotificationJob.perform_now(application.id) }
+      ensure
+        TransactionalEmail.define_singleton_method(:admin_application_notifications, original)
+      end
+
+      assert_nil application.reload.admin_notification_sent_at
+    end
+  end
+
   test "keeps cooldown active when a previously notified application is approved within the hour" do
     notified_applicant = User.create!(email_address: "notified@example.com", password: "password", status: "pending")
     notified_app = notified_applicant.membership_applications.create!(
