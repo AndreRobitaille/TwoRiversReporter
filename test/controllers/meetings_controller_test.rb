@@ -5,6 +5,9 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
   IMAGE_BYTES = Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO0yMjoAAAAASUVORK5CYII=")
 
   setup do
+    @user = User.create!(email_address: "member@example.com", status: "active")
+    sign_in_as(@user)
+
     @meeting = Meeting.create!(
       body_name: "City Council",
       meeting_type: "Regular",
