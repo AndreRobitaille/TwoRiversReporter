@@ -38,7 +38,7 @@ module Admin
       assert_select "th", text: "Signals"
       assert_select "th", text: "Mentions"
       assert_select "a[href=?]", admin_topic_path(@topic), text: @topic.name
-      assert_select "a[href=?]", admin_topic_path(@topic), text: "Open Topic"
+      assert_select "a[href=?]", admin_topic_path(@topic), text: "Open"
       assert_match /cleanup candidate/i, response.body
       assert_match /cleanup alt/i, response.body
       assert_no_match "Recently changed ·", response.body
