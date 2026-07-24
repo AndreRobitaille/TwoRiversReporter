@@ -6,7 +6,7 @@
 - `WEBAUTHN_RP_NAME`
 - `LOOPS_API_KEY`
 - `ADMIN_NOTIFICATION_EMAIL`
-- Optional transactional IDs:
+- Transactional IDs required in production:
   - `LOOPS_MAGIC_LINK_TRANSACTIONAL_ID`
   - `LOOPS_APPLICATION_LINK_TRANSACTIONAL_ID`
   - `LOOPS_ADMIN_APPLICATION_NOTIFICATION_TRANSACTIONAL_ID`
@@ -25,7 +25,7 @@ rg "fake|bypass|preview|debug|password|totp|recovery_code|LOOPS|WEBAUTHN" app co
 ```
 
 Findings:
-- Password/TOTP references are limited to historical docs/tests and passwordless admin assertions.
+- Password/TOTP references are limited to historical docs/tests, passwordless admin assertions, and unreachable legacy password reset views with no active routes.
 - `app/services/transactional_email.rb` uses env-gated transactional IDs and only renders magic-link URLs at send time.
 - `app/controllers/admin/base_controller.rb` requires `Current.user.admin?`, `active_for_authentication?`, and a passkey credential.
 - `app/controllers/sessions_controller.rb` remains the single sign-in path for magic links.

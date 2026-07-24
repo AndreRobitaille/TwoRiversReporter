@@ -2,21 +2,19 @@ require "test_helper"
 
 class PasswordlessApplicationFlowTest < ActionDispatch::IntegrationTest
   test "applicant can apply, be approved, sign in, and access a member page" do
-    delivered_application_url = nil
-    delivered_approval_url = nil
+    delivered_messages = []
+    application_link = TransactionalEmail.method(:application_link)
+    application_approved = TransactionalEmail.method(:application_approved)
 
-    TransactionalEmail.stub(:application_link, ->(_user, _application, magic_link) {
-      delivered_application_url = "/applications/#{_application.id}/edit?token=#{CGI.escape(magic_link.raw_token)}"
-
-      Object.new.tap do |message|
-        message.define_singleton_method(:deliver_now) { true }
-      end
+    TransactionalEmail.stub(:application_link, ->(user, application, magic_link) {
+      application_link.call(user, application, magic_link).tap { |message| delivered_messages << message }
     }) do
       post applications_path, params: { email_address: "flow@example.com" }
     end
 
     assert_redirected_to new_application_path
-    assert_predicate delivered_application_url, :present?
+    application_message = delivered_messages.last
+    delivered_application_url = application_message.data_variables.fetch(:application_url)
 
     application_token = Rack::Utils.parse_nested_query(URI.parse(delivered_application_url).query)["token"]
     application = MembershipApplication.order(:created_at).last
@@ -41,12 +39,8 @@ class PasswordlessApplicationFlowTest < ActionDispatch::IntegrationTest
     assert_redirected_to root_path
     assert_equal "submitted", application.reload.status
 
-    TransactionalEmail.stub(:application_approved, ->(_user, _application, magic_link) {
-      delivered_approval_url = "/session/magic_link?token=#{CGI.escape(magic_link.raw_token)}"
-
-      Object.new.tap do |message|
-        message.define_singleton_method(:deliver_now) { true }
-      end
+    TransactionalEmail.stub(:application_approved, ->(user, application, magic_link) {
+      application_approved.call(user, application, magic_link).tap { |message| delivered_messages << message }
     }) do
       admin = User.create!(email_address: "admin@example.com", admin: true, status: "active")
       admin.passkey_credentials.create!(external_id: SecureRandom.uuid, public_key: "public-key", sign_count: 0)
@@ -58,16 +52,15 @@ class PasswordlessApplicationFlowTest < ActionDispatch::IntegrationTest
       assert_equal "active", applicant.reload.status
     end
 
-    assert_predicate delivered_approval_url, :present?
+    assert_equal "approved", application.reload.status
+
+    approval_message = delivered_messages.last
+    delivered_approval_url = approval_message.data_variables.fetch(:sign_in_url)
 
     post "/session/magic_link", params: { token: Rack::Utils.parse_nested_query(URI.parse(delivered_approval_url).query)["token"] }
 
     assert_redirected_to "/"
-
-    session = Session.order(:created_at).last
-    jar = ActionDispatch::TestRequest.create.cookie_jar
-    jar.signed[:session_id] = session.id
-    cookies[:session_id] = jar[:session_id]
+    assert_equal application.user, Session.order(:created_at).last.user
 
     get settings_security_url
 
