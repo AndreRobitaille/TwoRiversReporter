@@ -3,6 +3,7 @@ class AdminApplicationNotificationJob < ApplicationJob
 
   def perform(membership_application_id)
     MembershipApplication.transaction do
+      lock_admin_scope!
       return if cooldown_active?
 
       applications = MembershipApplication.lock.where(status: "submitted", admin_notification_sent_at: nil)
@@ -16,6 +17,10 @@ class AdminApplicationNotificationJob < ApplicationJob
   end
 
   private
+
+    def lock_admin_scope!
+      User.order(:id).lock.first!
+    end
 
     def cooldown_active?
       MembershipApplication.where("admin_notification_sent_at >= ?", 1.hour.ago)
