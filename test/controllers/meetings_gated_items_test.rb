@@ -203,20 +203,21 @@ class MeetingsGatedItemsTest < ActionDispatch::IntegrationTest
     assert_not_nil description
     assert_not_includes description, LEDE_TAIL
 
+    # The Share control emits no payload at all for a gated visitor (see
+    # MeetingDocumentChipGatingTest) — there is no data-share-*-value
+    # attribute left for withheld text to ride along in.
     share = response.body[/data-share-copy-text-value="([^"]*)"/, 1]
-    assert_not_nil share, "the share control must still render"
-    assert_not_includes share, LEDE_TAIL
-    assert_not_includes share, DECISION_TAIL,
-      "the page shows only a few words of each Key Decision, so share text may not carry the rest"
-    assert_not_includes share, VOTE_VALUE,
-      "vote tallies are not on the gated page at all, so they may not ride along in share text"
+    assert_nil share, "gated visitors get no share payload, so this attribute must be absent entirely"
   end
 
-  # `share_text_upcoming_bullets` lists agenda item titles when a preview
-  # summary has item_details and no highlights. Those titles are now on the
-  # gated page in full, so the anonymous canary sweep can no longer prove the
-  # guard fires; this pins its behaviour directly instead.
-  test "gated share text carries no agenda bullets even though the page shows the titles" do
+  # `share_text_upcoming_bullets` used to list agenda item titles when a
+  # preview summary has item_details and no highlights, guarded so gated
+  # visitors never got them in the share payload. The gated Share control no
+  # longer emits any payload at all, which is a strictly stronger guarantee —
+  # this pins that the title still renders on the page itself (unchanged)
+  # while the share attribute that used to carry the guarded text is gone
+  # entirely, not just scrubbed.
+  test "titles render in full on an upcoming agenda-preview meeting, with no share payload at all" do
     upcoming = Meeting.create!(body_name: "City Council Meeting", starts_at: 6.days.from_now,
       detail_page_url: "https://example.com/teased-upcoming")
     upcoming.meeting_summaries.create!(
@@ -234,10 +235,8 @@ class MeetingsGatedItemsTest < ActionDispatch::IntegrationTest
 
     assert_select ".meeting-item-card-title", text: "#{ITEM_TITLE} upcoming"
 
-    share = response.body[/data-share-copy-text-value="([^"]*)"/, 1]
-    assert_not_nil share
-    assert_not_includes share, "On the agenda:",
-      "gated share text must not rebuild the agenda list"
+    assert_no_match(/data-share-/, response.body,
+      "no data-share-*-value attribute may be emitted for a gated visitor")
   end
 
   test "a section with nothing in it keeps its empty state rather than vanishing" do

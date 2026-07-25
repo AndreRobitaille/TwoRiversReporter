@@ -56,6 +56,16 @@ class AnonymousLeakSweepTest < ActionDispatch::IntegrationTest
       committee: @committee,
       detail_page_url: "https://example.com/meetings/sweep"
     )
+    # Document chip URLs are their own leak vector (a gated visitor could
+    # click straight through to the official PDF) — see
+    # MeetingDocumentChipGatingTest for the dedicated coverage. This document
+    # folds that vector into the general net: a gated visitor renders the
+    # chip label with no href, so the canary in the URL never reaches the
+    # body; a signed-in member gets the real href and the canary lands there.
+    @meeting.meeting_documents.create!(
+      document_type: "minutes_pdf",
+      source_url: "https://example.com/minutes-#{SECRET}.pdf"
+    )
     @meeting.meeting_summaries.create!(
       summary_type: "minutes_recap",
       generation_data: {
