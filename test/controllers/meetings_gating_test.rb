@@ -85,6 +85,44 @@ class MeetingsGatingTest < ActionDispatch::IntegrationTest
     assert_no_match(/Sign in to keep reading/, response.body)
   end
 
+  # An agenda-only meeting renders no summary at all, so the gated page body is
+  # just the header. But `meeting_share_description` and `share_text` both fell
+  # back to listing agenda item titles, which handed a gated visitor content the
+  # topic show page withholds from them ("Coming Up" sits below the gate). Three
+  # channels carried it: <meta name="description">/og:/twitter:,
+  # data-share-copy-text-value, and the Facebook hook prepend.
+  WITHHELD_AGENDA_TITLE = "Shoreline setback variance request".freeze
+
+  test "agenda-only meeting withholds agenda item titles from meta and share text" do
+    upcoming = Meeting.create!(body_name: "City Council Meeting", starts_at: 5.days.from_now,
+      detail_page_url: "https://example.com/upcoming-meeting")
+    upcoming.agenda_items.create!(title: WITHHELD_AGENDA_TITLE, order_index: 1)
+
+    set_access_mode("gated")
+    get meeting_path(upcoming)
+
+    assert_response :success
+    assert_no_match(/#{Regexp.escape(WITHHELD_AGENDA_TITLE)}/, response.body)
+    # Falls all the way back to the bare body-name/date sentence.
+    assert_match(/<meta name="description" content="Two Rivers City Council — [^"]*">/, response.body)
+
+    sign_in_as(User.create!(email_address: "agenda-reader@example.com", status: "active"))
+    get meeting_path(upcoming)
+
+    assert_match(/#{Regexp.escape(WITHHELD_AGENDA_TITLE)}/, response.body)
+  end
+
+  test "open mode still lists agenda item titles for anonymous visitors" do
+    upcoming = Meeting.create!(body_name: "City Council Meeting", starts_at: 5.days.from_now,
+      detail_page_url: "https://example.com/upcoming-open-meeting")
+    upcoming.agenda_items.create!(title: WITHHELD_AGENDA_TITLE, order_index: 1)
+
+    set_access_mode("open")
+    get meeting_path(upcoming)
+
+    assert_match(/#{Regexp.escape(WITHHELD_AGENDA_TITLE)}/, response.body)
+  end
+
   private
 
     def set_access_mode(mode)

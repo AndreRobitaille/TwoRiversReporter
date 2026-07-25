@@ -94,7 +94,16 @@ module MeetingsHelper
   def meeting_share_description(meeting)
     summary = preferred_meeting_summary(meeting)
     headline = summary&.generation_data&.dig("headline")
+    # The headline is the lede a gated visitor already sees on the page, so it
+    # is safe to echo. Everything below is not.
     return headline if headline.present?
+
+    # Agenda item titles are withheld from gated anonymous visitors: the topic
+    # show page hides them behind the gate in "Coming Up", and meeting show
+    # never renders them at all. Listing them in the meta description handed a
+    # crawler-visible copy to exactly the visitor the gate turned away, so a
+    # gated visitor drops straight to the bare body-name/date sentence.
+    return bare_meeting_description(meeting) if gated_for_visitor?
 
     items = substantive_agenda_items(meeting)
     return agenda_fallback_description(meeting, items) if items.any?
@@ -289,7 +298,13 @@ module MeetingsHelper
     String.new(text.to_s).truncate(GATED_SHARE_HIGHLIGHT_CHARS, separator: " ", omission: "")
   end
 
+  # Same rule as meeting_share_description: agenda item titles sit below the
+  # gate, so they must not be smuggled out through data-share-copy-text-value.
+  # `share_text_upcoming_bullets` already guards its item_details branch this
+  # way; this fallback (summary absent entirely) was the one path that didn't.
   def share_text_agenda_fallback(lines, meeting)
+    return if gated_for_visitor?
+
     items = substantive_agenda_items(meeting)
       .reject { |ai| ai.title&.match?(/\A(CALL TO ORDER|ROLL CALL|ADJOURNMENT|PUBLIC INPUT)\z/i) }
     return if items.empty?
@@ -332,6 +347,9 @@ module MeetingsHelper
   end
 
   def facebook_share_hook_from_agenda(meeting)
+    # Third channel for the same withheld agenda title — the Facebook hook
+    # prepends the first substantive agenda item verbatim.
+    return nil if gated_for_visitor?
     return nil unless meeting.starts_at.present? && meeting.starts_at > Time.current
 
     item = substantive_agenda_items(meeting).first
