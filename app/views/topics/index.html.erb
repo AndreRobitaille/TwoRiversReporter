@@ -38,11 +38,13 @@
 
     <% if @search_results.any? %>
       <div class="topics-list" id="all-topics-cards">
-        <% @search_results.each do |topic| %>
+        <% (gated_for_visitor? ? @search_results.first(2) : @search_results).each do |topic| %>
           <%= render "topics/topic_card", topic: topic, highlight_signals: {} %>
         <% end %>
       </div>
-      <% if @pagy.next %>
+      <% if gated_for_visitor? && @search_results.size > 2 %>
+        <%= render "shared/gate", message: "Sign in to see all results" %>
+      <% elsif @pagy.next %>
         <div class="topics-show-more">
           <%= link_to "Show more results", topics_path(q: params[:q], page: @pagy.next), class: "btn btn--secondary" %>
         </div>
@@ -67,42 +69,46 @@
       </div>
 
       <div class="topics-hero-grid" id="hero-topics">
-        <% @hero_topics.each do |topic| %>
+        <% (gated_for_visitor? ? @hero_topics.first(2) : @hero_topics).each do |topic| %>
           <%= render "topics/topic_card", topic: topic, highlight_signals: @highlight_signals %>
         <% end %>
       </div>
     </section>
   <% end %>
 
-  <%# === ALL TOPICS === %>
-  <% if @topics.present? %>
-    <section class="topics-section">
-      <div class="home-section-header">
-        <%= render "shared/atom_marker", size: 20 %>
-        <span class="section-label">All Topics</span>
-        <span class="section-line"></span>
-        <span id="topics-count" class="topics-count">
-          <%= @pagy.to %> of <%= @pagy.count %>
-        </span>
-      </div>
+  <% if gated_for_visitor? %>
+    <%= render "shared/gate", message: "Sign in to see every topic" %>
+  <% else %>
+    <%# === ALL TOPICS === %>
+    <% if @topics.present? %>
+      <section class="topics-section">
+        <div class="home-section-header">
+          <%= render "shared/atom_marker", size: 20 %>
+          <span class="section-label">All Topics</span>
+          <span class="section-line"></span>
+          <span id="topics-count" class="topics-count">
+            <%= @pagy.to %> of <%= @pagy.count %>
+          </span>
+        </div>
 
-      <div class="topics-list" id="all-topics-cards" data-section="all-topics">
-        <% @topics.each do |topic| %>
-          <%= render "topics/topic_card", topic: topic, highlight_signals: {} %>
-        <% end %>
-      </div>
+        <div class="topics-list" id="all-topics-cards" data-section="all-topics">
+          <% @topics.each do |topic| %>
+            <%= render "topics/topic_card", topic: topic, highlight_signals: {} %>
+          <% end %>
+        </div>
 
-      <div id="all-topics-page">
-        <% if @pagy.next %>
-          <div class="topics-show-more">
-            <%= link_to topics_path(page: @pagy.next, format: :turbo_stream),
-                  class: "btn btn--secondary" do %>
-              Show more
-            <% end %>
-          </div>
-        <% end %>
-      </div>
-    </section>
+        <div id="all-topics-page">
+          <% if @pagy.next %>
+            <div class="topics-show-more">
+              <%= link_to topics_path(page: @pagy.next, format: :turbo_stream),
+                    class: "btn btn--secondary" do %>
+                Show more
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
   <% end %>
 
 <% else %>

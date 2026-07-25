@@ -13,7 +13,13 @@ class TopicsController < ApplicationController
                           .includes(:topic_briefing)
                           .order(Arel.sql("resident_impact_score DESC NULLS LAST"), last_activity_at: :desc, id: :desc)
 
-      @pagy, @search_results = pagy(:offset, search_scope, limit: 20)
+      # Gated anonymous visitors are pinned to page 1: the view caps them to
+      # two cards regardless, but without this, `?page=2` would still hand
+      # back a *different* two topics (results 21-22, etc.), letting the
+      # cap be walked around two cards at a time. Signed-in / open-mode
+      # behavior is untouched (page: nil defers to the normal params[:page]
+      # resolution).
+      @pagy, @search_results = pagy(:offset, search_scope, page: (1 if gated_for_visitor?), limit: 20)
       @meeting_refs = build_meeting_refs(@search_results.map(&:id))
       @topic_generated_images = generated_images_for(@search_results, surface: :og)
     else
@@ -40,7 +46,11 @@ class TopicsController < ApplicationController
                           .where.not(id: hero_ids)
                           .order(last_activity_at: :desc, id: :desc)
 
-      @pagy, @topics = pagy(:offset, remaining_scope, limit: 20)
+      # Same page-pin as the search branch above, for consistency (the "All
+      # Topics" section is fully replaced by the gate when gated, so this
+      # scope is currently unreachable from the HTML view anyway — but the
+      # pin keeps the data-fetch itself safe if that ever changes).
+      @pagy, @topics = pagy(:offset, remaining_scope, page: (1 if gated_for_visitor?), limit: 20)
 
       # Preload briefings to avoid N+1 on cards
       ActiveRecord::Associations::Preloader.new(
