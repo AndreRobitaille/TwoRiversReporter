@@ -67,6 +67,11 @@
           </dd>
         <% end %>
 
+        <% if application.phone.present? %>
+          <dt class="detail-term">Phone</dt>
+          <dd class="detail-value"><%= application.phone %></dd>
+        <% end %>
+
         <% if application.facebook_profile_url.present? %>
           <dt class="detail-term">Facebook profile</dt>
           <dd class="detail-value">

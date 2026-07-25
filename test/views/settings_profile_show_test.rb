@@ -43,7 +43,30 @@ class SettingsProfileShowTest < ActionView::TestCase
     assert_match(/Jane/, rendered)
   end
 
+  test "the profile page shows the phone number the applicant gave" do
+    render_submitted_application("view-phone@example.com", phone: "(920) 555-0148")
+
+    assert_match(/\(920\) 555-0148/, rendered)
+  end
+
   private
+
+    def render_submitted_application(email, **application_attributes)
+      user = User.create!(email_address: email, status: "active")
+      application = user.membership_applications.create!(
+        {
+          status: "submitted",
+          first_name: "Jane",
+          last_name: "Member",
+          street: "123 Main St",
+          city: "Two Rivers",
+          state: "WI",
+          submitted_at: 2.days.ago
+        }.merge(application_attributes)
+      )
+
+      render_profile(user, application)
+    end
 
     # `current_user` is a controller helper method, so it does not exist on a
     # bare view test context — define it on the view under test.

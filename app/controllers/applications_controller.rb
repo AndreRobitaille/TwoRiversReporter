@@ -84,7 +84,7 @@ class ApplicationsController < ApplicationController
   end
 
   def membership_application_params
-    params.require(:membership_application).permit(:first_name, :last_name, :street, :city, :state, :facebook_profile_url, :application_notes)
+    params.require(:membership_application).permit(:first_name, :last_name, :street, :city, :state, :phone, :facebook_profile_url, :application_notes)
   end
 
   def application_token_matches_current_application?

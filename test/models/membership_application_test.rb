@@ -89,6 +89,23 @@ class MembershipApplicationTest < ActiveSupport::TestCase
     assert_includes application.errors[:street], "can't be blank"
   end
 
+  test "phone is optional and round-trips" do
+    user = User.create!(email_address: "phone@example.com", status: "pending")
+
+    without_phone = user.membership_applications.create!(
+      status: "submitted",
+      first_name: "Jane",
+      last_name: "Member",
+      street: "123 Main St",
+      city: "Two Rivers",
+      state: "WI"
+    )
+    assert_nil without_phone.reload.phone
+
+    without_phone.update!(phone: "(920) 555-0148 ext. 2")
+    assert_equal "(920) 555-0148 ext. 2", without_phone.reload.phone
+  end
+
   test "status must be one of the allowed values" do
     user = User.create!(email_address: "applicant@example.com", status: "pending")
 

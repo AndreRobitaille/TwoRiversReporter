@@ -165,6 +165,48 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
     assert_nil application.submitted_at
   end
 
+  test "application submission records an optional phone number" do
+    user = User.create!(email_address: "phone-submit@example.com", status: "pending", disabled_at: Time.current)
+    application = user.membership_applications.create!(status: "email_pending")
+    link = MagicLink.create_for!(user, purpose: "application")
+
+    patch application_path(application), params: {
+      token: link.raw_token,
+      membership_application: {
+        first_name: "Jane",
+        last_name: "Member",
+        street: "123 Main St",
+        city: "Two Rivers",
+        state: "WI",
+        phone: "(920) 555-0148"
+      }
+    }
+
+    assert_redirected_to root_path
+    assert_equal "(920) 555-0148", application.reload.phone
+  end
+
+  test "application submission succeeds with no phone number at all" do
+    user = User.create!(email_address: "no-phone@example.com", status: "pending", disabled_at: Time.current)
+    application = user.membership_applications.create!(status: "email_pending")
+    link = MagicLink.create_for!(user, purpose: "application")
+
+    patch application_path(application), params: {
+      token: link.raw_token,
+      membership_application: {
+        first_name: "Jane",
+        last_name: "Member",
+        street: "123 Main St",
+        city: "Two Rivers",
+        state: "WI"
+      }
+    }
+
+    assert_redirected_to root_path
+    assert_equal "submitted", application.reload.status
+    assert_nil application.phone
+  end
+
   test "the applicant form marks the street address required and drops its optional hint" do
     render_application_form("street-required@example.com")
 
@@ -173,6 +215,17 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
     street_group = css_select("input[name='membership_application[street]']").first.parent
     assert_empty street_group.css(".form-hint"),
       "street should no longer read as optional: #{street_group.css(".form-hint").text.inspect}"
+  end
+
+  test "the applicant form offers an optional phone number" do
+    render_application_form("phone-field@example.com")
+
+    assert_select "input[name='membership_application[phone]'][type='tel'][autocomplete='tel']"
+    assert_select "input[name='membership_application[phone]'][required]", false,
+      "phone is optional and must not be marked required"
+
+    phone_group = css_select("input[name='membership_application[phone]']").first.parent
+    assert_equal "Optional.", phone_group.css(".form-hint").text.strip
   end
 
   test "submitted application cannot be edited or resubmitted through an outstanding link" do

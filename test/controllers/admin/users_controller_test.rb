@@ -194,6 +194,13 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_no_match(/totp/i, response.body)
   end
 
+  test "admin review page shows the applicant's phone number" do
+    render_application_review("review-phone@example.com", phone: "(920) 555-0148")
+
+    assert_includes response.body, "Phone"
+    assert_includes response.body, "(920) 555-0148"
+  end
+
   # Applications submitted before street became required have none on file.
   # Approving one saves the record, so a blanket presence validation would make
   # them permanently unreviewable.
@@ -299,5 +306,25 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
 
     def with_admin_access
       yield
+    end
+
+    def render_application_review(email, **application_attributes)
+      admin = create_passkey_admin
+      applicant = User.create!(email_address: email, status: "pending")
+      applicant.membership_applications.create!(
+        {
+          status: "submitted",
+          first_name: "Jane",
+          last_name: "Member",
+          street: "123 Main St",
+          city: "Two Rivers",
+          state: "WI"
+        }.merge(application_attributes)
+      )
+      sign_in(admin)
+
+      with_admin_access { get user_path(applicant) }
+
+      assert_response :success
     end
 end

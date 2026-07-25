@@ -50,6 +50,12 @@
     </div>
 
     <div class="form-group">
+      <%= form.label :phone, "Phone number", class: "form-label" %>
+      <%= form.telephone_field :phone, autocomplete: "tel", class: "form-input" %>
+      <span class="form-hint">Optional.</span>
+    </div>
+
+    <div class="form-group">
       <%= form.label :facebook_profile_url, "Facebook profile", class: "form-label" %>
       <%= form.url_field :facebook_profile_url, placeholder: "https://www.facebook.com/your.name", autocomplete: "url", class: "form-input" %>
       <span class="form-hint">Optional. Helps us confirm you're a real neighbor.</span>
