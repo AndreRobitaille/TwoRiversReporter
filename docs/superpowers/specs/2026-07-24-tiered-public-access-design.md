@@ -69,7 +69,7 @@ This is deliberate. Toggling `before_action` chains at runtime is fragile, and i
 | Surface | Anonymous sees in `gated` | Gate placement |
 |---|---|---|
 | Home | Everything | none |
-| Meetings index | Full cards — date slab, committee, topic pills, image. `.meetings-card-headline` faded at ~90 chars | one card after the first list |
+| Meetings index | Full cards — date slab, committee, topic pills, image. `.meetings-card-headline` faded at ~90 chars | per-card sign-in note below the faded headline (no page-level gate box) |
 | Meeting show | Header, committee, date, source banner, headline, first ~240 chars of summary, fading | replaces everything below |
 | Topics index | First two cards only; `.topics-card-headline` faded | replaces the remaining list |
 | Topic show | Header, dek, **What to Watch** in full | after What to Watch |

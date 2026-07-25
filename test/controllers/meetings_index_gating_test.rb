@@ -59,49 +59,66 @@ class MeetingsIndexGatingTest < ActionDispatch::IntegrationTest
     assert_match(/asked staff to return with options/, response.body)
   end
 
-  # The gate is the only thing on this page that tells a stranger access
-  # exists and can be applied for. Faded headlines with no sign-in card are
-  # exactly the "no reason to want access, no idea applying is possible"
-  # problem the feature exists to solve.
-  GATE_COPY = "Sign in to read every meeting".freeze
+  # The owner rejected the large page-level gate box on this surface. The
+  # replacement is a small sign-in note directly under each faded headline —
+  # it is the only thing on this page that tells a stranger access exists
+  # and can be applied for, so it must survive per card, not once per page.
+  NOTE_COPY = "Sign in to read this meeting".freeze
 
-  test "anonymous visitor gets a gate card on the meetings index" do
+  test "anonymous visitor gets a per-card sign-in note on the meetings index" do
     set_access_mode("gated")
 
     get meetings_path
 
     assert_response :success
-    assert_match(/#{Regexp.escape(GATE_COPY)}/, response.body)
+    assert_match(/#{Regexp.escape(NOTE_COPY)}/, response.body)
   end
 
-  test "anonymous visitor gets a gate card on meetings search results" do
+  test "anonymous visitor gets a per-card sign-in note on meetings search results" do
     set_access_mode("gated")
 
     get meetings_path(q: "Council")
 
     assert_response :success
-    assert_match(/#{Regexp.escape(GATE_COPY)}/, response.body)
+    assert_match(/#{Regexp.escape(NOTE_COPY)}/, response.body)
   end
 
-  test "signed-in member sees no gate card on either meetings list" do
+  test "signed-in member sees no sign-in note on either meetings list" do
     set_access_mode("gated")
     sign_in_as(User.create!(email_address: "gate-reader@example.com", status: "active"))
 
     get meetings_path
-    assert_no_match(/#{Regexp.escape(GATE_COPY)}/, response.body)
+    assert_no_match(/#{Regexp.escape(NOTE_COPY)}/, response.body)
 
     get meetings_path(q: "Council")
-    assert_no_match(/#{Regexp.escape(GATE_COPY)}/, response.body)
+    assert_no_match(/#{Regexp.escape(NOTE_COPY)}/, response.body)
   end
 
-  test "open mode shows no gate card on either meetings list" do
+  test "open mode shows no sign-in note on either meetings list" do
     set_access_mode("open")
 
     get meetings_path
-    assert_no_match(/#{Regexp.escape(GATE_COPY)}/, response.body)
+    assert_no_match(/#{Regexp.escape(NOTE_COPY)}/, response.body)
 
     get meetings_path(q: "Council")
-    assert_no_match(/#{Regexp.escape(GATE_COPY)}/, response.body)
+    assert_no_match(/#{Regexp.escape(NOTE_COPY)}/, response.body)
+  end
+
+  # The owner's specific complaint was the large gate box breaking the flow
+  # between "Coming Up" and "What Happened" — pin its absence so nobody
+  # reintroduces `render "shared/gate"` on this page.
+  test "meetings index never renders the large gate card, gated or open" do
+    set_access_mode("gated")
+    get meetings_path
+    assert_no_match(/gate-card/, response.body)
+    get meetings_path(q: "Council")
+    assert_no_match(/gate-card/, response.body)
+
+    set_access_mode("open")
+    get meetings_path
+    assert_no_match(/gate-card/, response.body)
+    get meetings_path(q: "Council")
+    assert_no_match(/gate-card/, response.body)
   end
 
   private
