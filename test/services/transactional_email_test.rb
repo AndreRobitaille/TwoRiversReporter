@@ -104,4 +104,21 @@ class TransactionalEmailTest < ActiveSupport::TestCase
   ensure
     ENV.delete("ADMIN_NOTIFICATION_EMAIL")
   end
+
+  test "no_account addresses the typed email and carries an apply url" do
+    message = TransactionalEmail.no_account("stranger@example.com")
+
+    assert_equal "stranger@example.com", message.email
+    assert_equal "no_account", message.transactional_id
+    assert_match(%r{/applications/new}, message.data_variables[:apply_url])
+  end
+
+  test "application_pending addresses the applicant" do
+    user = User.create!(email_address: "waiting@example.com", status: "pending", disabled_at: Time.current)
+
+    message = TransactionalEmail.application_pending(user)
+
+    assert_equal "waiting@example.com", message.email
+    assert_equal "application_pending", message.transactional_id
+  end
 end
