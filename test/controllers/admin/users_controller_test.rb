@@ -201,6 +201,13 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "(920) 555-0148"
   end
 
+  test "admin review page shows the IP the application was submitted from" do
+    render_application_review("review-ip@example.com", submitted_ip: "203.0.113.9")
+
+    assert_includes response.body, "IP address"
+    assert_includes response.body, "203.0.113.9"
+  end
+
   # Applications submitted before street became required have none on file.
   # Approving one saves the record, so a blanket presence validation would make
   # them permanently unreviewable.

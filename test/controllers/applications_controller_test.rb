@@ -207,6 +207,89 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
     assert_nil application.phone
   end
 
+  # In production the app sits behind kamal-proxy inside a Docker network, so
+  # REMOTE_ADDR is always the proxy's private address and the visitor's real
+  # address arrives only in X-Forwarded-For. Rails' RemoteIp middleware resolves
+  # it because Docker's 172.16/12 range is in the default trusted-proxy list.
+  # Model the deployed shape here — a bare REMOTE_ADDR test would pass even if
+  # that resolution broke and every applicant were logged as 172.x.
+  test "application submission records the forwarded client IP, not the proxy address" do
+    user = User.create!(email_address: "ip@example.com", status: "pending", disabled_at: Time.current)
+    application = user.membership_applications.create!(status: "email_pending")
+    link = MagicLink.create_for!(user, purpose: "application")
+
+    patch application_path(application),
+      params: {
+        token: link.raw_token,
+        membership_application: {
+          first_name: "Jane",
+          last_name: "Member",
+          street: "123 Main St",
+          city: "Two Rivers",
+          state: "WI"
+        }
+      },
+      headers: { "REMOTE_ADDR" => "172.18.0.5", "HTTP_X_FORWARDED_FOR" => "203.0.113.9" }
+
+    assert_redirected_to root_path
+    assert_equal "203.0.113.9", application.reload.submitted_ip
+  end
+
+  test "a crafted submission cannot set its own submitted IP" do
+    user = User.create!(email_address: "spoof-ip@example.com", status: "pending", disabled_at: Time.current)
+    application = user.membership_applications.create!(status: "email_pending")
+    link = MagicLink.create_for!(user, purpose: "application")
+
+    patch application_path(application),
+      params: {
+        token: link.raw_token,
+        membership_application: {
+          first_name: "Jane",
+          last_name: "Member",
+          street: "123 Main St",
+          city: "Two Rivers",
+          state: "WI",
+          submitted_ip: "8.8.8.8"
+        }
+      },
+      headers: { "REMOTE_ADDR" => "172.18.0.5", "HTTP_X_FORWARDED_FOR" => "203.0.113.9" }
+
+    assert_redirected_to root_path
+    assert_equal "203.0.113.9", application.reload.submitted_ip
+  end
+
+  # Defence in depth. The merge in #update already overwrites whatever the
+  # applicant sends, so loosening `permit` alone would not change the stored
+  # value — which is exactly why the omission needs its own assertion. Without
+  # one, the next person to add a field could permit `submitted_ip` and no test
+  # would notice.
+  test "submitted_ip is not among the permitted application params" do
+    controller = ApplicationsController.new
+    controller.params = ActionController::Parameters.new(
+      membership_application: { first_name: "Jane", phone: "(920) 555-0148", submitted_ip: "8.8.8.8" }
+    )
+
+    permitted = controller.send(:membership_application_params)
+
+    assert permitted.key?("first_name")
+    assert permitted.key?("phone")
+    assert_not permitted.key?("submitted_ip")
+  end
+
+  test "the applicant form neither mentions nor exposes the recorded IP" do
+    user = User.create!(email_address: "quiet-ip@example.com", status: "pending", disabled_at: Time.current)
+    application = user.membership_applications.create!(status: "email_pending")
+    link = MagicLink.create_for!(user, purpose: "application")
+
+    get edit_application_path(application, token: link.raw_token),
+      headers: { "REMOTE_ADDR" => "172.18.0.5", "HTTP_X_FORWARDED_FOR" => "203.0.113.9" }
+
+    assert_response :success
+    assert_no_match(/203\.0\.113\.9/, response.body)
+    assert_no_match(/submitted_ip/, response.body)
+    assert_no_match(/IP address/i, response.body)
+  end
+
   test "the applicant form marks the street address required and drops its optional hint" do
     render_application_form("street-required@example.com")
 

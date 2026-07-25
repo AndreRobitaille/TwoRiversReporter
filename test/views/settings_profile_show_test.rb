@@ -49,6 +49,15 @@ class SettingsProfileShowTest < ActionView::TestCase
     assert_match(/\(920\) 555-0148/, rendered)
   end
 
+  # The applicant is never told their IP was recorded. It exists for the admin
+  # review page only.
+  test "the profile page never shows the recorded IP" do
+    render_submitted_application("view-ip@example.com", submitted_ip: "203.0.113.9")
+
+    assert_no_match(/203\.0\.113\.9/, rendered)
+    assert_no_match(/IP address/i, rendered)
+  end
+
   private
 
     def render_submitted_application(email, **application_attributes)

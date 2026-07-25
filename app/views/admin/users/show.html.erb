@@ -61,6 +61,11 @@
         <dt class="detail-term"><%= application.submitted_at.present? ? "Submitted" : "Created" %></dt>
         <dd class="detail-value"><%= l(application.submitted_at || application.created_at, format: :long) %></dd>
 
+        <%# Admin-only. The applicant is never shown this and is never told it
+            is recorded — see settings/profile/show.html.erb, which omits it. %>
+        <dt class="detail-term">IP address</dt>
+        <dd class="detail-value data-cell"><%= application.submitted_ip.presence || "—" %></dd>
+
         <% if application.reviewed_at.present? %>
           <dt class="detail-term">Reviewed</dt>
           <dd class="detail-value"><%= l(application.reviewed_at, format: :long) %></dd>

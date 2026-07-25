@@ -62,7 +62,11 @@ class ApplicationsController < ApplicationController
 
       MagicLink.consume!(@token, purpose: "application")
       saved = @membership_application.update(
-        membership_application_params.merge(status: "submitted", submitted_at: Time.current)
+        membership_application_params.merge(
+          status: "submitted",
+          submitted_at: Time.current,
+          submitted_ip: request.remote_ip
+        )
       )
       raise ActiveRecord::Rollback unless saved
     end
@@ -83,6 +87,8 @@ class ApplicationsController < ApplicationController
     user.save!
   end
 
+  # `submitted_ip` is deliberately absent: it is set from `request.remote_ip` in
+  # `update`, not from anything the applicant can type into the form.
   def membership_application_params
     params.require(:membership_application).permit(:first_name, :last_name, :street, :city, :state, :phone, :facebook_profile_url, :application_notes)
   end
