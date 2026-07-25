@@ -68,7 +68,7 @@ This is deliberate. Toggling `before_action` chains at runtime is fragile, and i
 
 | Surface | Anonymous sees in `gated` | Gate placement |
 |---|---|---|
-| Home | Everything | none |
+| Home | Topic names, meeting names, dates and counts in full. Every AI-generated card headline/description (`.story-headline`, `.wire-headline`, `.list-desc`) faded at `HomeHelper::GATED_CARD_HEADLINE_CHARS` (38 — roughly six words) | per-card inline sign-in note immediately after the faded text (no page-level gate box) |
 | Meetings index | Full cards — date slab, committee, topic pills, image. `.meetings-card-headline` faded at ~90 chars | per-card sign-in note below the faded headline (no page-level gate box) |
 | Meeting show | Header, committee, date, source banner, headline, first ~240 chars of summary, fading | replaces everything below |
 | Topics index | First two cards only; `.topics-card-headline` faded | replaces the remaining list |
