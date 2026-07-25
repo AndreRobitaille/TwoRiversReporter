@@ -69,6 +69,56 @@ class TopicsIndexGatingTest < ActionDispatch::IntegrationTest
     assert_match(/Sign in to see every topic/, response.body)
   end
 
+  # The non-search assertion above passes with or without the `page: (1 if
+  # gated_for_visitor?)` pin in TopicsController#index, because the whole "All
+  # Topics" section is replaced by the gate on the non-search branch — the pin
+  # is inert there. The search branch is where it does real work: the view caps
+  # `@search_results.first(2)`, so without the pin `?q=…&page=2` hands back a
+  # *different* two topics (results 21-22), walking the cap forward two cards
+  # at a time. That is leak #3's exact shape.
+  #
+  # This asserts card *identity*, not count: a count-only assertion passes
+  # while the visitor walks the entire result set.
+  test "anonymous visitor cannot use ?q=&page=N to walk past the first two search results" do
+    # 25 topics beat the page size of 20, so page 2 is a genuinely different
+    # slice. `search_by_text` orders by name, so the numeric suffixes fix which
+    # topics land on which page.
+    25.times { |i| Topic.create!(name: format("Capwalk Sample Topic %02d", i), status: "approved") }
+
+    set_access_mode("gated")
+
+    get topics_path(q: "Capwalk")
+    assert_response :success
+    page_one = card_names(response.body)
+
+    get topics_path(q: "Capwalk", page: 2)
+    assert_response :success
+    page_two = card_names(response.body)
+
+    assert_equal 2, page_one.size, "the gated search branch should render exactly two cards"
+    # `maintain_derived_fields` normalizes name to lowercase on save.
+    assert_equal %w[00 01].map { |n| "capwalk sample topic #{n}" }, page_one
+    assert_equal page_one, page_two,
+      "?q=&page=2 handed an anonymous visitor a different two topics — the cap is walkable"
+  end
+
+  test "signed-in member still gets a real second page of search results" do
+    25.times { |i| Topic.create!(name: format("Capwalk Sample Topic %02d", i), status: "approved") }
+
+    set_access_mode("gated")
+    sign_in_as(User.create!(email_address: "capwalk-reader@example.com", status: "active"))
+
+    get topics_path(q: "Capwalk")
+    page_one = card_names(response.body)
+
+    get topics_path(q: "Capwalk", page: 2)
+    page_two = card_names(response.body)
+
+    assert_equal 20, page_one.size
+    assert_equal 5, page_two.size
+    assert_empty page_one & page_two, "pagination should not repeat topics for a signed-in member"
+  end
+
   test "anonymous visitor gets no cards and no count via turbo_stream, even with a page param" do
     set_access_mode("gated")
 
@@ -95,6 +145,11 @@ class TopicsIndexGatingTest < ActionDispatch::IntegrationTest
   end
 
   private
+
+    # Card identity, in render order, from `<h3 class="topics-card-name">`.
+    def card_names(body)
+      body.scan(/class="topics-card-name">([^<]*)</).flatten.map(&:strip)
+    end
 
     def set_access_mode(mode)
       SiteSetting.delete_all
