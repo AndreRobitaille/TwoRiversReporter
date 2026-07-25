@@ -63,8 +63,13 @@ class AnonymousLeakSweepTest < ActionDispatch::IntegrationTest
         # stay clean — a canary here would be a false failure, not a leak.
         "headline" => SAFE_HEADLINE,
         "highlights" => [
-          { "text" => "#{HIGHLIGHT_FILLER} #{SECRET}" },
-          { "text" => "Second decision withheld entirely: #{SECRET}", "vote" => "5-0" }
+          # The vote tally rides on the *first* highlight deliberately. Gated
+          # visitors see only `highlights.first(1)`, so a canary on any later
+          # highlight cannot reach the vote-suffix guard in
+          # `share_text_past_bullets` — dropping that guard survived the whole
+          # suite until this tally moved here.
+          { "text" => "#{HIGHLIGHT_FILLER} #{SECRET}", "vote" => "5-0 #{SECRET}" },
+          { "text" => "Second decision withheld entirely: #{SECRET}", "vote" => "4-1" }
         ],
         "public_input" => [ { "speaker" => "Resident One", "summary" => "Spoke about #{SECRET}." } ],
         "item_details" => [
@@ -101,6 +106,60 @@ class AnonymousLeakSweepTest < ActionDispatch::IntegrationTest
     # exists to catch would be masked by an unrelated truncation.
     @upcoming_item = @upcoming_meeting.agenda_items.create!(
       title: "#{SECRET} easement", order_index: 1
+    )
+
+    # (d) upcoming meeting *with* an agenda-preview summary. Distinct from (c):
+    # `share_text_body` only takes its `upcoming` branch when generation_data
+    # is present, so without a future-dated meeting that has a summary, the
+    # gated guards in `share_text_upcoming_bullets` are dead code as far as
+    # every test is concerned — verified by mutating them and watching the
+    # whole suite stay green.
+    @upcoming_summarized = Meeting.create!(
+      body_name: "Sweep Commission Preview Meeting",
+      starts_at: 9.days.from_now,
+      committee: @committee,
+      detail_page_url: "https://example.com/meetings/sweep-preview"
+    )
+    @upcoming_summarized.meeting_summaries.create!(
+      summary_type: "agenda_preview",
+      generation_data: {
+        "headline" => SAFE_HEADLINE,
+        "highlights" => [
+          { "text" => "#{HIGHLIGHT_FILLER} #{SECRET}" },
+          # Short and unteasable: `gated_share_text` truncates at 240 chars, so
+          # a second highlight this short emits the canary whole the moment the
+          # one-highlight cap is lifted.
+          { "text" => "Second agenda item withheld entirely: #{SECRET}" }
+        ],
+        "item_details" => [
+          { "agenda_item_title" => "Marina lease renewal #{SECRET}",
+            "summary" => "Staff will present #{SECRET}." }
+        ]
+      }
+    )
+
+    # (e) upcoming meeting whose preview summary has item_details but *no*
+    # highlights. `share_text_upcoming_bullets` reaches its item_details
+    # branch only when the highlights list is empty, so fixture (d) — which
+    # has both — never executes it. Without this second fixture, dropping the
+    # `&& !gated_for_visitor?` from that branch survives the whole suite, and
+    # that is leak #4's exact shape (agenda item titles in share text).
+    @upcoming_items_only = Meeting.create!(
+      body_name: "Sweep Commission Items-Only Meeting",
+      starts_at: 11.days.from_now,
+      committee: @committee,
+      detail_page_url: "https://example.com/meetings/sweep-items-only"
+    )
+    @upcoming_items_only.meeting_summaries.create!(
+      summary_type: "agenda_preview",
+      generation_data: {
+        "headline" => SAFE_HEADLINE,
+        "highlights" => [],
+        "item_details" => [
+          { "agenda_item_title" => "Shoreline setback variance #{SECRET}",
+            "summary" => "Staff will present #{SECRET}." }
+        ]
+      }
     )
   end
 
@@ -246,6 +305,8 @@ class AnonymousLeakSweepTest < ActionDispatch::IntegrationTest
       "meeting show (generation_data)" => meeting_path(@meeting),
       "meeting show (legacy content)" => meeting_path(@legacy_meeting),
       "meeting show (agenda only)" => meeting_path(@upcoming_meeting),
+      "meeting show (upcoming, agenda_preview summary)" => meeting_path(@upcoming_summarized),
+      "meeting show (upcoming, item_details only)" => meeting_path(@upcoming_items_only),
       "committee show" => committee_path(@committee.slug),
       "member show" => member_path(@member)
     }
