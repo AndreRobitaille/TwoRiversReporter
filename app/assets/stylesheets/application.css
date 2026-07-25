@@ -6581,7 +6581,12 @@ th.sortable-header:hover {
    ========================================================================== */
 
 .teaser-fade {
-  display: inline-block;
+  /* Must be `block`, not `inline-block`: inline-block is an atomic inline
+     box that establishes its own formatting context, so it cannot wrap
+     around a float (e.g. the meeting/topic card thumbnail). That pushed
+     the whole teased headline below the floated image instead of wrapping
+     beside it. `block` wraps beside floats like normal text does. */
+  display: block;
   -webkit-mask-image: linear-gradient(to bottom, var(--color-text) 45%, transparent 100%);
   mask-image: linear-gradient(to bottom, var(--color-text) 45%, transparent 100%);
 }
