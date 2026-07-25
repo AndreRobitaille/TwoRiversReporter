@@ -6477,6 +6477,11 @@ th.sortable-header:hover {
   gap: var(--space-3);
 }
 
+/* Two fields of equal standing (e.g. First name / Last name). The default
+   2fr/1fr split exists for City / State, where the second field is a
+   two-character abbreviation; a name pair has no such hierarchy. */
+.form-row--equal { grid-template-columns: 1fr 1fr; }
+
 /* The row owns the vertical rhythm so paired fields don't double it. */
 .form-row { margin-bottom: var(--space-4); }
 .form-row .form-group { margin-bottom: 0; }
