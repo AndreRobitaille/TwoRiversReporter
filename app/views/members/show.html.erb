@@ -56,17 +56,43 @@
       <span class="section-line"></span>
     </div>
 
-    <% if @topic_groups.any? %>
-      <% @topic_groups.each do |group| %>
-        <div class="member-topic-group">
-          <h3 class="member-topic-name">
-            <%= link_to group[:topic].canonical_name, topic_path(group[:topic]) %>
-          </h3>
-          <div class="member-topic-votes">
-            <% group[:votes].each do |vote| %>
-              <div class="member-vote-row">
+    <% if gated_for_visitor? %>
+      <%= render "shared/gate" %>
+    <% else %>
+      <% if @topic_groups.any? %>
+        <% @topic_groups.each do |group| %>
+          <div class="member-topic-group">
+            <h3 class="member-topic-name">
+              <%= link_to group[:topic].canonical_name, topic_path(group[:topic]) %>
+            </h3>
+            <div class="member-topic-votes">
+              <% group[:votes].each do |vote| %>
+                <div class="member-vote-row">
+                  <div class="member-vote-motion">
+                    <span class="member-vote-date"><%= vote.motion.meeting.starts_at&.strftime("%b %-d, %Y") %></span>
+                    <%= link_to vote_context(vote), meeting_path(vote.motion.meeting) %>
+                  </div>
+                  <div class="member-vote-result">
+                    <span class="vote-value <%= vote_color_class(vote.value) %>"><%= vote.value.titleize %></span>
+                    <span class="member-vote-split"><%= vote_split(vote.motion) %> · <%= vote.motion.outcome&.titleize || "Unknown" %></span>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      <% end %>
+
+      <% if @other_votes.any? %>
+        <details class="member-other-votes">
+          <summary>Other Votes (<%= @other_votes.size %>)</summary>
+          <p class="member-other-votes-desc">Procedural and routine votes.</p>
+          <div class="member-other-votes-list">
+            <% @other_votes.each do |vote| %>
+              <div class="member-vote-row member-vote-row--compact">
                 <div class="member-vote-motion">
                   <span class="member-vote-date"><%= vote.motion.meeting.starts_at&.strftime("%b %-d, %Y") %></span>
+                  <span class="member-vote-body"><%= vote.motion.meeting.body_name %></span>
                   <%= link_to vote_context(vote), meeting_path(vote.motion.meeting) %>
                 </div>
                 <div class="member-vote-result">
@@ -76,34 +102,12 @@
               </div>
             <% end %>
           </div>
-        </div>
+        </details>
       <% end %>
-    <% end %>
 
-    <% if @other_votes.any? %>
-      <details class="member-other-votes">
-        <summary>Other Votes (<%= @other_votes.size %>)</summary>
-        <p class="member-other-votes-desc">Procedural and routine votes.</p>
-        <div class="member-other-votes-list">
-          <% @other_votes.each do |vote| %>
-            <div class="member-vote-row member-vote-row--compact">
-              <div class="member-vote-motion">
-                <span class="member-vote-date"><%= vote.motion.meeting.starts_at&.strftime("%b %-d, %Y") %></span>
-                <span class="member-vote-body"><%= vote.motion.meeting.body_name %></span>
-                <%= link_to vote_context(vote), meeting_path(vote.motion.meeting) %>
-              </div>
-              <div class="member-vote-result">
-                <span class="vote-value <%= vote_color_class(vote.value) %>"><%= vote.value.titleize %></span>
-                <span class="member-vote-split"><%= vote_split(vote.motion) %> · <%= vote.motion.outcome&.titleize || "Unknown" %></span>
-              </div>
-            </div>
-          <% end %>
-        </div>
-      </details>
-    <% end %>
-
-    <% if @topic_groups.empty? && @other_votes.empty? %>
-      <p class="section-empty">No voting record found for this official.</p>
+      <% if @topic_groups.empty? && @other_votes.empty? %>
+        <p class="section-empty">No voting record found for this official.</p>
+      <% end %>
     <% end %>
   </section>
 
