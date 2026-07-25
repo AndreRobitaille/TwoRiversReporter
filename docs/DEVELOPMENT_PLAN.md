@@ -553,6 +553,68 @@ Topic navigation follows these principles:
 
 ------------------------------------------------------------------------
 
+## Site Access Model
+
+Everything described above in Public Website Structure is what the site
+shows when access is fully open. Whether an anonymous visitor actually
+receives all of it depends on a site-wide access mode.
+
+A `SiteSetting` singleton holds `access_mode`, switchable by an admin at
+`/admin/site_settings` with no deploy:
+
+- **`open`** — the site behaves exactly as described above. Everything is
+  visible to anonymous visitors. **This is the default**, including on a
+  fresh database, so shipping the access-mode feature changes nothing
+  about a running deployment until an admin deliberately flips the
+  switch.
+- **`gated`** — anonymous visitors get a teaser tier on each public page:
+  enough to know what the site covers, not enough to read the reporting
+  itself. Signed-in members with an approved account always see
+  everything, in both modes.
+
+Routing never depends on the mode — no page redirects an anonymous
+visitor between modes, and no page requires an account to be reached.
+Only the amount rendered changes. Which sections stay visible and where
+each page's teaser cuts off is specified per surface (Home, Meetings
+index/show, Topics index/show, Committee show, Member show, Search) in
+`docs/superpowers/specs/2026-07-24-tiered-public-access-design.md` —
+that table is authoritative for surface-by-surface detail and is
+intentionally not duplicated here.
+
+Admin surfaces are unaffected by `access_mode` in both modes.
+
+### The invariant
+
+**Withheld content is never rendered.** Not hidden with CSS, not
+blurred, not `aria-hidden`, and not smuggled into `data-` attributes,
+`title=`/`alt=`, `<meta>` tags (including `og:`/`twitter:`), inline
+JSON, turbo-stream payloads, or `?page=N` / format-variant responses of
+the same URL. If an anonymous visitor may not read something, it must
+not appear in the response body, by any route. A helper that builds
+share text, a meta description, or any other out-of-band content must
+consult the gating predicate itself — gating the primary view template
+is not sufficient. This is a hard architectural constraint, not a
+preference: five real leaks of exactly this shape were found and fixed
+while building the feature.
+
+Views and helpers gate on one predicate, `gated_for_visitor?`, and two
+shared primitives — a `teaser` truncation helper and a `shared/_gate`
+sign-in prompt partial. They never branch on authentication state or
+`SiteSetting` directly; the predicate is the only seam.
+
+### Sign-in and access requests
+
+Independent of access mode, every address submitted at sign-in receives
+a definitive answer by email — a magic link for an approved account, an
+application invitation for no account, or a pending-review notice for an
+application awaiting review — while the browser's response is identical
+across all three cases. That non-disclosure is deliberate: in a small
+city, letting a visitor probe who holds an account would expose those
+residents to local retaliation. A per-address throttle limits how often
+the same address can be mailed.
+
+------------------------------------------------------------------------
+
 ## Quality Bar
 
 The system must:
