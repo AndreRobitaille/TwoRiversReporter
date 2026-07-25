@@ -121,4 +121,26 @@ class TransactionalEmailTest < ActiveSupport::TestCase
     assert_equal "waiting@example.com", message.email
     assert_equal "application_pending", message.transactional_id
   end
+
+  test "production missing no_account transactional id raises instead of using a placeholder" do
+    Rails.stub(:env, ActiveSupport::StringInquirer.new("production")) do
+      ENV.delete("LOOPS_NO_ACCOUNT_TRANSACTIONAL_ID")
+
+      assert_raises(TransactionalEmail::MissingTransactionalId) do
+        TransactionalEmail.no_account("stranger@example.com")
+      end
+    end
+  end
+
+  test "production missing application_pending transactional id raises instead of using a placeholder" do
+    user = User.create!(email_address: "waiting@example.com", status: "pending", disabled_at: Time.current)
+
+    Rails.stub(:env, ActiveSupport::StringInquirer.new("production")) do
+      ENV.delete("LOOPS_APPLICATION_PENDING_TRANSACTIONAL_ID")
+
+      assert_raises(TransactionalEmail::MissingTransactionalId) do
+        TransactionalEmail.application_pending(user)
+      end
+    end
+  end
 end
