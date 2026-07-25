@@ -106,6 +106,14 @@ This is the only mechanism that answers "I applied — did it work?", which in a
 1. No withheld text appears in any anonymous response body — by any route.
 
    Implementation found three leaks that rendered-text inspection would never catch, so this invariant explicitly covers: `data-` attributes, `<meta>` tags including og: and twitter:, turbo-stream payloads, and alternate `?page=N` or `format:` variants of the same URL. A helper that builds share text or a meta description must consult `gated_for_visitor?` itself; gating the view alone is insufficient.
+
+   **Seven by the end.** That count of three is where this spec was written, not where the work finished. Four more surfaced later, and the last two are the instructive ones:
+
+   4. Agenda item titles escaped through the meeting page's meta description and both `data-share-*` attributes on agenda-only meetings.
+   5. `Topic.search_by_text` matched on `topic_briefings.headline`, so `/topics?q=<substring>` confirmed the contents of withheld headlines one character at a time. **The response body contained none of the withheld bytes — its *shape* was a function of them.** No body-inspection test can see this class; it was found by reading the query, not the output.
+   6 and 7. Halving the meeting lede turned the meta description and the share payload into leaks. Both had been justified on the grounds that "the page already shows this text" — true when written, false the moment the page changed, and nothing re-checked them.
+
+   The lesson worth carrying: leaks 1, 2, 4, 6 and 7 were all the same shape — a helper deriving text from content the page displayed, whose justification expired silently when the page was edited. **After changing what any gated surface renders, re-audit every helper that derives text from it.**
 2. `og_controller` and `sitemaps#show` are public in both modes.
 3. Admin surfaces are gated in both modes, unaffected by `access_mode`.
 4. A page cached while `open` must not be served after a flip to `gated`. **No code is required for this** — verified empirically on 2026-07-24: `Rack::ETag` and `Rack::ConditionalGet` are in the middleware stack, Rails sends `Cache-Control: max-age=0, private, must-revalidate`, and the ETag is derived from the response body. Every request therefore revalidates against the origin, the server re-renders under the current mode, and a page whose content differs between modes already gets a distinct ETag. A page whose content is identical in both modes is correct to serve from cache.
