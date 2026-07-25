@@ -311,6 +311,16 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Optional.", phone_group.css(".form-hint").text.strip
   end
 
+  test "the applicant form carries no hint under the notes field" do
+    render_application_form("notes-hint@example.com")
+
+    assert_select "textarea[name='membership_application[application_notes]']"
+
+    notes_group = css_select("textarea[name='membership_application[application_notes]']").first.parent
+    assert_empty notes_group.css(".form-hint"),
+      "the notes field should carry no hint: #{notes_group.css(".form-hint").text.inspect}"
+  end
+
   test "submitted application cannot be edited or resubmitted through an outstanding link" do
     user = User.create!(email_address: "repeat@example.com", status: "pending", disabled_at: Time.current)
     application = user.membership_applications.create!(status: "email_pending")
