@@ -94,9 +94,11 @@ module MeetingsHelper
   def meeting_share_description(meeting)
     summary = preferred_meeting_summary(meeting)
     headline = summary&.generation_data&.dig("headline")
-    # The headline is the lede a gated visitor already sees on the page, so it
-    # is safe to echo. Everything below is not.
-    return headline if headline.present?
+    # The headline is the lede, and a gated visitor only sees the first
+    # GATED_LEDE_CHARS of it (the rest fades out because it was never
+    # rendered). Echo exactly that much and no more — a full headline here
+    # would hand the withheld tail to the visitor the gate just turned away.
+    return gated_lede_text(headline) if headline.present?
 
     # Agenda item titles are withheld from gated anonymous visitors: the topic
     # show page hides them behind the gate in "Coming Up", and meeting show
@@ -245,38 +247,40 @@ module MeetingsHelper
     end
   end
 
-  # Anonymous visitors in gated mode only ever see the teased first Key
-  # Decision on the page itself (see app/views/meetings/show.html.erb) — the
-  # share text must not hand out anything the page withholds, so it mirrors
-  # that same one-highlight, 240-char cap instead of the full highlight list.
-  GATED_SHARE_HIGHLIGHT_CHARS = 240
-
+  # Anonymous visitors in gated mode see no Key Decision text at all on the
+  # page itself — below the gate they get placeholder geometry, not prose (see
+  # app/views/meetings/_gated_skeleton.html.erb). The share payload therefore
+  # carries no highlight text either. This used to tease the first highlight
+  # at 240 characters, which was correct only while the page did the same.
   def share_text_past_bullets(lines, gd)
-    highlights = gd["highlights"] || []
-    return if highlights.empty?
+    return if gated_for_visitor?
 
-    visible = gated_for_visitor? ? highlights.first(1) : highlights.first(5)
+    highlights = gd["highlights"] || []
+    visible = highlights.first(5)
     return if visible.empty?
 
     lines << "Key decisions:"
     lines << ""
     visible.each_with_index do |h, i|
-      bullet = "* #{gated_share_text(h["text"])}"
-      bullet += " (#{h["vote"]})" if h["vote"].present? && !gated_for_visitor?
+      bullet = "* #{h["text"]}"
+      bullet += " (#{h["vote"]})" if h["vote"].present?
       lines << bullet
       lines << "" if i < visible.size - 1
     end
   end
 
   def share_text_upcoming_bullets(lines, gd)
+    # Same rule as the past-meeting bullets: highlights and agenda item titles
+    # are both below the gate now, so neither leaves through share text.
+    return if gated_for_visitor?
+
     highlights = gd["highlights"] || []
     items = gd["item_details"] || []
 
     # Prefer highlights (plain-language summaries) over raw agenda titles
     bullets = if highlights.any?
-      visible = gated_for_visitor? ? highlights.first(1) : highlights.first(5)
-      visible.map { |h| gated_share_text(h["text"]) }
-    elsif items.any? && !gated_for_visitor?
+      highlights.first(5).map { |h| h["text"] }
+    elsif items.any?
       items.first(5).map { |i| i["agenda_item_title"] }
     end
 
@@ -290,12 +294,16 @@ module MeetingsHelper
     end
   end
 
-  # Plain-text counterpart to AccessHelper#teaser: same truncation rule, but
-  # no HTML span since this feeds a data-* attribute, not markup. Only trims
-  # when gated — untouched otherwise.
-  def gated_share_text(text)
+  # How much of the lede a gated visitor may read. The view teases the
+  # headline at this length via AccessHelper#teaser; `gated_lede_text` is the
+  # plain-text counterpart for the meta description and share payload, which
+  # feed attributes rather than markup. Same truncation rule, so the three
+  # channels cannot disagree about where the sentence stops.
+  GATED_LEDE_CHARS = 200
+
+  def gated_lede_text(text)
     return text unless gated_for_visitor?
-    String.new(text.to_s).truncate(GATED_SHARE_HIGHLIGHT_CHARS, separator: " ", omission: "")
+    String.new(text.to_s).truncate(GATED_LEDE_CHARS, separator: " ", omission: "")
   end
 
   # Same rule as meeting_share_description: agenda item titles sit below the
@@ -327,15 +335,12 @@ module MeetingsHelper
   def facebook_share_hook_from_summary(meeting, gd)
     return nil if gd.blank?
 
+    # Gated visitors see no highlight text anywhere on the page, so the
+    # Facebook hook has nothing it is allowed to prepend.
+    return nil if gated_for_visitor?
+
     highlights = meeting_highlights(gd)
     return nil if highlights.empty?
-
-    # Gated visitors only ever see the first highlight (teased) — picking a
-    # later highlight just because it has a vote would hand out content the
-    # page itself withholds.
-    if gated_for_visitor?
-      return gated_share_text(highlights.first&.dig("text")).presence
-    end
 
     if meeting.starts_at.present? && meeting.starts_at <= Time.current
       highlight = highlights.find { |h| h["vote"].present? } || highlights.first
@@ -370,7 +375,7 @@ module MeetingsHelper
     meeting_url = "https://#{PRODUCTION_HOST}/meetings/#{meeting.id}"
 
     if gd.present?
-      headline = gd["headline"] if include_headline
+      headline = gated_lede_text(gd["headline"]) if include_headline
       lines << headline if headline.present?
       lines << "" if headline.present?
 
