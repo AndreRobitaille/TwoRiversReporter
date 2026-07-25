@@ -9,16 +9,15 @@ class SessionsController < ApplicationController
 
   def create
     email = params[:email_address].to_s.strip.downcase
-    user = User.find_by(email_address: email)
 
-    if user&.active_for_authentication?
-      link = MagicLink.create_for!(user, purpose: "sign_in")
-      TransactionalEmail.magic_link(user, link).deliver_now
-    end
+    # Every branch below produces the same redirect. The identical response is
+    # what prevents address enumeration; the email is what gives a real person
+    # a definitive answer.
+    deliver_sign_in_response(email) unless SignInAttempt.throttled?(email)
 
-    redirect_to new_public_session_path, notice: "If that account can sign in, we sent a link."
+    redirect_to new_public_session_path, notice: "Check your email — we've sent you a message."
   rescue LoopsDelivery::DeliveryError
-    redirect_to new_public_session_path, alert: "We couldn't send a sign-in link right now. Try again later."
+    redirect_to new_public_session_path, alert: "We couldn't send that message right now. Try again later."
   end
 
   def magic_link
@@ -31,7 +30,7 @@ class SessionsController < ApplicationController
   end
 
   def resend_expired_magic_link
-    redirect_to new_public_session_path, notice: "If that account can sign in, we sent a link."
+    redirect_to new_public_session_path, notice: "Check your email — we've sent you a message."
   end
 
   def destroy
@@ -40,6 +39,20 @@ class SessionsController < ApplicationController
   end
 
   private
+
+    def deliver_sign_in_response(email)
+      SignInAttempt.record!(email)
+      user = User.find_by(email_address: email)
+
+      if user&.active_for_authentication?
+        link = MagicLink.create_for!(user, purpose: "sign_in")
+        TransactionalEmail.magic_link(user, link).deliver_now
+      elsif user&.status == "pending"
+        TransactionalEmail.application_pending(user).deliver_now
+      else
+        TransactionalEmail.no_account(email).deliver_now
+      end
+    end
 
     def friendly_invalid_token_message
       "That sign in link is invalid or expired. Please request a new one."

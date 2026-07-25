@@ -23,7 +23,7 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_redirected_to "/session/new"
-    assert_equal "If that account can sign in, we sent a link.", flash[:notice]
+    assert_equal "Check your email — we've sent you a message.", flash[:notice]
   end
 
   test "create sends a magic link for an active user" do
@@ -47,7 +47,7 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_equal @active_user, magic_link.user
     assert_equal "sign_in", magic_link.purpose
     assert_redirected_to "/session/new"
-    assert_equal "If that account can sign in, we sent a link.", flash[:notice]
+    assert_equal "Check your email — we've sent you a message.", flash[:notice]
   end
 
   test "create handles delivery failures without a 500" do
@@ -62,7 +62,7 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_redirected_to "/session/new"
-    assert_equal "We couldn't send a sign-in link right now. Try again later.", flash[:alert]
+    assert_equal "We couldn't send that message right now. Try again later.", flash[:alert]
   end
 
   test "unauthenticated destroy redirects to the public sign in page" do
@@ -78,7 +78,7 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
       end
 
       assert_redirected_to "/session/new"
-      assert_equal "If that account can sign in, we sent a link.", flash[:notice]
+      assert_equal "Check your email — we've sent you a message.", flash[:notice]
     end
   end
 
@@ -156,7 +156,7 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_redirected_to "/session/new"
-    assert_equal "If that account can sign in, we sent a link.", flash[:notice]
+    assert_equal "Check your email — we've sent you a message.", flash[:notice]
   end
 
   test "destroy signs out" do
