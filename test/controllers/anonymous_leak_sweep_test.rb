@@ -131,8 +131,13 @@ class AnonymousLeakSweepTest < ActionDispatch::IntegrationTest
           # one-highlight cap is lifted.
           { "text" => "Second agenda item withheld entirely: #{SECRET}" }
         ],
+        # The title stays clean: meeting show renders `agenda_item_title` in
+        # full below the gate (owner's call — a title is barely more than the
+        # agenda text the city already posts), so a canary here would be
+        # legitimately visible and produce a false failure. The canary lives in
+        # the summary instead, past the GATED_ITEM_BODY_CHARS teaser boundary.
         "item_details" => [
-          { "agenda_item_title" => "Marina lease renewal #{SECRET}",
+          { "agenda_item_title" => "Marina lease renewal",
             "summary" => "Staff will present #{SECRET}." }
         ]
       }
@@ -141,9 +146,15 @@ class AnonymousLeakSweepTest < ActionDispatch::IntegrationTest
     # (e) upcoming meeting whose preview summary has item_details but *no*
     # highlights. `share_text_upcoming_bullets` reaches its item_details
     # branch only when the highlights list is empty, so fixture (d) — which
-    # has both — never executes it. Without this second fixture, dropping the
-    # `&& !gated_for_visitor?` from that branch survives the whole suite, and
-    # that is leak #4's exact shape (agenda item titles in share text).
+    # has both — never executes it.
+    #
+    # This fixture used to carry the canary in `agenda_item_title` to catch
+    # leak #4 (agenda item titles in share text). It can't any more: gated
+    # meeting show now renders those titles in full, so the same string is
+    # legitimately on the page and a canary there means nothing. The guard on
+    # that branch is kept as conservative defence and is pinned behaviourally
+    # instead — see "gated share text carries no agenda bullets" in
+    # test/controllers/meetings_gated_items_test.rb.
     @upcoming_items_only = Meeting.create!(
       body_name: "Sweep Commission Items-Only Meeting",
       starts_at: 11.days.from_now,
@@ -156,7 +167,7 @@ class AnonymousLeakSweepTest < ActionDispatch::IntegrationTest
         "headline" => SAFE_HEADLINE,
         "highlights" => [],
         "item_details" => [
-          { "agenda_item_title" => "Shoreline setback variance #{SECRET}",
+          { "agenda_item_title" => "Shoreline setback variance",
             "summary" => "Staff will present #{SECRET}." }
         ]
       }
@@ -351,8 +362,12 @@ class AnonymousLeakSweepTest < ActionDispatch::IntegrationTest
       "the 90-char card teaser must cut before the canary"
     assert_includes TEASED_HEADLINE.truncate(120), SECRET,
       "committee show truncates headlines at 120 chars and must still show the canary"
-    assert_not_includes String.new("#{HIGHLIGHT_FILLER} #{SECRET}").truncate(240, separator: " ", omission: ""), SECRET,
-      "the 240-char meeting-show teaser must cut before the canary"
+    assert_not_includes String.new("#{HIGHLIGHT_FILLER} #{SECRET}").truncate(
+      MeetingsHelper::GATED_ITEM_BODY_CHARS, separator: " ", omission: ""
+    ), SECRET, "the meeting-show highlight teaser must cut before the canary"
+    assert_not_includes String.new("Staff will present #{SECRET}.").truncate(
+      MeetingsHelper::GATED_ITEM_BODY_CHARS, separator: " ", omission: ""
+    ), SECRET, "the meeting-show item-summary teaser must cut before the canary"
     assert_not_includes @topic.canonical_name.to_s.upcase, SECRET,
       "the canary must never land in canonical_name (it is force-lowercased and publicly shown)"
   end
