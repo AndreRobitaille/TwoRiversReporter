@@ -4,7 +4,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
   test "admin approves submitted application and sends approval link" do
     admin = create_passkey_admin
     applicant = User.create!(email_address: "approve@example.com", status: "pending")
-    application = applicant.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI")
+    application = applicant.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", street: "123 Main St", city: "Two Rivers", state: "WI")
     sign_in(admin)
     delivered = false
 
@@ -30,7 +30,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
   test "admin approval remains retryable when approval email construction fails" do
     admin = create_passkey_admin
     applicant = User.create!(email_address: "approve-fail@example.com", status: "pending")
-    application = applicant.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI")
+    application = applicant.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", street: "123 Main St", city: "Two Rivers", state: "WI")
     sign_in(admin)
 
     TransactionalEmail.stub(:application_approved, ->(_user, _application, _magic_link) {
@@ -49,7 +49,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
   test "admin approval re-raises stale review errors without compensation" do
     admin = create_passkey_admin
     applicant = User.create!(email_address: "stale@example.com", status: "pending")
-    applicant.membership_applications.create!(status: "approved", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI")
+    applicant.membership_applications.create!(status: "approved", first_name: "Jane", last_name: "Member", street: "123 Main St", city: "Two Rivers", state: "WI")
     session = admin.sessions.create!(ip_address: "127.0.0.1", user_agent: "test", last_seen_at: Time.current)
     Current.session = session
 
@@ -69,7 +69,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
   test "admin approval remains retryable when approval email delivery raises non delivery errors" do
     admin = create_passkey_admin
     applicant = User.create!(email_address: "approve-runtime@example.com", status: "pending")
-    application = applicant.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI")
+    application = applicant.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", street: "123 Main St", city: "Two Rivers", state: "WI")
     sign_in(admin)
 
     TransactionalEmail.stub(:application_approved, ->(_user, _application, _magic_link) {
@@ -90,7 +90,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
   test "admin rejects submitted application" do
     admin = create_passkey_admin
     applicant = User.create!(email_address: "reject@example.com", status: "pending")
-    application = applicant.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI")
+    application = applicant.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", street: "123 Main St", city: "Two Rivers", state: "WI")
     sign_in(admin)
 
     with_admin_access { patch reject_user_path(applicant), params: { rejection_reason: "Not verified" } }
@@ -192,6 +192,55 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_no_match(/mfa/i, response.body)
     assert_no_match(/temporary password/i, response.body)
     assert_no_match(/totp/i, response.body)
+  end
+
+  # Applications submitted before street became required have none on file.
+  # Approving one saves the record, so a blanket presence validation would make
+  # them permanently unreviewable.
+  test "admin can still approve an application submitted before street was required" do
+    admin = create_passkey_admin
+    applicant = User.create!(email_address: "legacy-approve@example.com", status: "pending")
+    application = applicant.membership_applications.create!(
+      status: "submitted",
+      first_name: "Legacy",
+      last_name: "Applicant",
+      street: "123 Main St",
+      city: "Two Rivers",
+      state: "WI"
+    )
+    application.update_column(:street, nil)
+    sign_in(admin)
+
+    TransactionalEmail.stub(:application_approved, ->(_user, _application, _magic_link) {
+      Object.new.tap { |message| message.define_singleton_method(:deliver_now) { true } }
+    }) do
+      with_admin_access { patch approve_user_path(applicant) }
+    end
+
+    assert_redirected_to user_path(applicant)
+    assert_equal "approved", application.reload.status
+    assert_equal "active", applicant.reload.status
+  end
+
+  test "admin can still reject an application submitted before street was required" do
+    admin = create_passkey_admin
+    applicant = User.create!(email_address: "legacy-reject@example.com", status: "pending")
+    application = applicant.membership_applications.create!(
+      status: "submitted",
+      first_name: "Legacy",
+      last_name: "Applicant",
+      street: "123 Main St",
+      city: "Two Rivers",
+      state: "WI"
+    )
+    application.update_column(:street, nil)
+    sign_in(admin)
+
+    with_admin_access { patch reject_user_path(applicant), params: { rejection_reason: "Not a resident." } }
+
+    assert_redirected_to user_path(applicant)
+    assert_equal "rejected", application.reload.status
+    assert_equal "Not a resident.", application.rejection_reason
   end
 
   test "index and show reflect account and application management details" do

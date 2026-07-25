@@ -30,7 +30,7 @@ class TransactionalEmailTest < ActiveSupport::TestCase
 
   test "application_approved sends a sign in compatible link and keeps the token memory only" do
     user = User.create!(email_address: "applicant@example.com", status: "active")
-    application = user.membership_applications.create!(status: "approved", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI")
+    application = user.membership_applications.create!(status: "approved", first_name: "Jane", last_name: "Member", street: "123 Main St", city: "Two Rivers", state: "WI")
     magic_link = MagicLink.create_for!(user, purpose: "sign_in")
 
     message = TransactionalEmail.application_approved(user, application, magic_link)
@@ -95,7 +95,7 @@ class TransactionalEmailTest < ActiveSupport::TestCase
 
   test "production missing admin notification email raises instead of using a placeholder" do
     user = User.create!(email_address: "applicant@example.com", status: "active")
-    application = user.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI")
+    application = user.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", street: "123 Main St", city: "Two Rivers", state: "WI")
 
     Rails.stub(:env, ActiveSupport::StringInquirer.new("production")) do
       ENV.delete("ADMIN_NOTIFICATION_EMAIL")
@@ -108,7 +108,7 @@ class TransactionalEmailTest < ActiveSupport::TestCase
 
   test "production missing admin notification transactional id raises instead of using a placeholder" do
     user = User.create!(email_address: "applicant@example.com", status: "active")
-    application = user.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI")
+    application = user.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", street: "123 Main St", city: "Two Rivers", state: "WI")
 
     Rails.stub(:env, ActiveSupport::StringInquirer.new("production")) do
       ENV.delete("LOOPS_ADMIN_APPLICATION_NOTIFICATION_TRANSACTIONAL_ID")
@@ -241,7 +241,7 @@ class TransactionalEmailTest < ActiveSupport::TestCase
     # test can compare this list against what the class actually exposes.
     def message_builders
       user = User.create!(email_address: "sweep@example.com", status: "active")
-      application = user.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI")
+      application = user.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", street: "123 Main St", city: "Two Rivers", state: "WI")
       magic_link = MagicLink.create_for!(user, purpose: "sign_in")
 
       {

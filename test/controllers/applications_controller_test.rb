@@ -143,6 +143,38 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
     assert_not user.active_for_authentication?
   end
 
+  test "application submission without a street is rejected and stays editable" do
+    user = User.create!(email_address: "no-street@example.com", status: "pending", disabled_at: Time.current)
+    application = user.membership_applications.create!(status: "email_pending")
+    link = MagicLink.create_for!(user, purpose: "application")
+
+    assert_no_enqueued_jobs do
+      patch application_path(application), params: {
+        token: link.raw_token,
+        membership_application: {
+          first_name: "Jane",
+          last_name: "Member",
+          city: "Two Rivers",
+          state: "WI"
+        }
+      }
+    end
+
+    assert_response :unprocessable_entity
+    assert_equal "email_pending", application.reload.status
+    assert_nil application.submitted_at
+  end
+
+  test "the applicant form marks the street address required and drops its optional hint" do
+    render_application_form("street-required@example.com")
+
+    assert_select "input[name='membership_application[street]'][required]"
+
+    street_group = css_select("input[name='membership_application[street]']").first.parent
+    assert_empty street_group.css(".form-hint"),
+      "street should no longer read as optional: #{street_group.css(".form-hint").text.inspect}"
+  end
+
   test "submitted application cannot be edited or resubmitted through an outstanding link" do
     user = User.create!(email_address: "repeat@example.com", status: "pending", disabled_at: Time.current)
     application = user.membership_applications.create!(status: "email_pending")
@@ -200,7 +232,7 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
     link = MagicLink.create_for!(user, purpose: "application")
 
     stale_application = MembershipApplication.find(application.id)
-    application.update!(status: "submitted", first_name: "Existing", last_name: "Member", city: "Two Rivers", state: "WI")
+    application.update!(status: "submitted", first_name: "Existing", last_name: "Member", street: "123 Main St", city: "Two Rivers", state: "WI")
 
     assert_no_enqueued_jobs do
       patch application_path(stale_application), params: {
@@ -232,7 +264,7 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
     end
 
     application = user.membership_applications.order(:created_at).last
-    application.update!(status: "submitted", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI")
+    application.update!(status: "submitted", first_name: "Jane", last_name: "Member", street: "123 Main St", city: "Two Rivers", state: "WI")
 
     assert_no_difference("MembershipApplication.count") do
       post applications_path, params: { email_address: user.email_address }
@@ -267,4 +299,16 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "pending", user_b.reload.status
     assert_equal 0, ActionMailer::Base.deliveries.size
   end
+
+  private
+
+    def render_application_form(email)
+      user = User.create!(email_address: email, status: "pending", disabled_at: Time.current)
+      application = user.membership_applications.create!(status: "email_pending")
+      link = MagicLink.create_for!(user, purpose: "application")
+
+      get edit_application_path(application, token: link.raw_token)
+
+      assert_response :success
+    end
 end
