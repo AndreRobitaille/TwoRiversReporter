@@ -69,6 +69,17 @@ class ApplicationLayoutAuthStateTest < ActionDispatch::IntegrationTest
     assert_select ".passkey-prompt", count: 0
   end
 
+  test "the reminder does not render anywhere in the settings area" do
+    user = User.create!(email_address: "no-passkey-in-settings@example.com", status: "active")
+
+    sign_in_via_magic_link(user)
+    get settings_profile_path
+    assert_select ".passkey-prompt", count: 0
+
+    get settings_security_path
+    assert_select ".passkey-prompt", count: 0
+  end
+
   test "users with a future dismissal do not see the reminder" do
     user = User.create!(email_address: "dismissed@example.com", status: "active", passkey_prompt_dismissed_until: 1.day.from_now)
 
