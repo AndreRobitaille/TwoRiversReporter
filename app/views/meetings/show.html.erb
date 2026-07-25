@@ -98,29 +98,18 @@
     <% headline = meeting_headline(gd) %>
     <% if headline.present? %>
       <div class="meeting-article-lede">
-        <p><%= headline %></p>
+        <%# Gated visitors get a taste of the lede, not all of it. The same cap
+            is applied to the meta description and the share payload in
+            MeetingsHelper — the teased tail is withheld content everywhere. %>
+        <p><%= teaser(headline, chars: MeetingsHelper::GATED_LEDE_CHARS, fade: :block) %></p>
       </div>
     <% else %>
       <p class="section-empty">No summary available for this meeting yet.</p>
     <% end %>
 
     <% if gated_for_visitor? %>
-      <% first_highlight = meeting_highlights(gd).first %>
-      <% if first_highlight.present? %>
-        <section class="meeting-article-section">
-          <div class="home-section-header">
-            <%= render "shared/atom_marker" %>
-            <span class="section-label">Key Decisions</span>
-            <span class="section-line"></span>
-          </div>
-          <div class="meeting-decisions">
-            <div class="meeting-decision">
-              <p class="meeting-decision-text"><%= teaser(first_highlight["text"], chars: 240) %></p>
-            </div>
-          </div>
-        </section>
-      <% end %>
       <%= render "shared/gate" %>
+      <%= render "meetings/gated_skeleton", gd: gd %>
     <% else %>
 
     <%# === Key Decisions === %>

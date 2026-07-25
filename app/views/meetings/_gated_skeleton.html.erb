@@ -1,0 +1,84 @@
+<%# Everything below the gate on meeting show, rendered as placeholder geometry.
+
+    Locals: gd — the meeting summary's generation_data hash.
+
+    No withheld word reaches the response from here. `gd` is read only to
+    count items per section and to pick a *quantized* size bucket per item;
+    see the "Gated skeleton geometry" comment in app/helpers/access_helper.rb
+    for exactly what is quantized and why raising the fidelity of these bars
+    would reopen a side channel.
+
+    Section headings are static labels, and item counts are volume
+    information the owner deliberately exposes ("show how much stuff there is
+    to read"). Everything else here is a grey box.
+
+    The bars are aria-hidden: there is no real content behind them to
+    conceal, so announcing a wall of meaningless boxes helps nobody. Each
+    section pairs them with an sr-only sentence carrying the same information
+    a sighted visitor gets — what is withheld, and how many items. %>
+
+<% decisions = meeting_highlights(gd) %>
+<% speakers = meeting_public_input(gd) %>
+<% agenda_items = meeting_item_details(gd) %>
+
+<% if decisions.any? %>
+  <section class="meeting-article-section">
+    <div class="home-section-header">
+      <%= render "shared/atom_marker" %>
+      <span class="section-label">Key Decisions</span>
+      <span class="section-line"></span>
+    </div>
+    <p class="sr-only">
+      <%= pluralize(decisions.size, "key decision") %> withheld. Sign in to read <%= decisions.size == 1 ? "it" : "them" %>.
+    </p>
+    <div class="gated-skeleton" aria-hidden="true">
+      <% decisions.each_with_index do |decision, index| %>
+        <div class="gated-skeleton__card gated-skeleton__card--decision">
+          <%= skeleton_bars(decision["text"], index: index) %>
+        </div>
+      <% end %>
+    </div>
+  </section>
+<% end %>
+
+<% if speakers.any? %>
+  <section class="meeting-article-section">
+    <div class="home-section-header">
+      <%= render "shared/atom_marker" %>
+      <span class="section-label">Public Input · <%= speakers.size %> <%= "speaker".pluralize(speakers.size) %></span>
+      <span class="section-line"></span>
+    </div>
+    <p class="sr-only">
+      <%= pluralize(speakers.size, "public comment") %> withheld. Sign in to read <%= speakers.size == 1 ? "it" : "them" %>.
+    </p>
+    <div class="gated-skeleton" aria-hidden="true">
+      <% speakers.each_with_index do |speaker, index| %>
+        <div class="gated-skeleton__card">
+          <%= skeleton_title_bar(speaker["speaker"]) %>
+          <%= skeleton_bars(speaker["summary"], index: index) %>
+        </div>
+      <% end %>
+    </div>
+  </section>
+<% end %>
+
+<% if agenda_items.any? %>
+  <section class="meeting-article-section">
+    <div class="home-section-header">
+      <%= render "shared/atom_marker" %>
+      <span class="section-label">Agenda Items</span>
+      <span class="section-line"></span>
+    </div>
+    <p class="sr-only">
+      <%= pluralize(agenda_items.size, "agenda item") %> withheld, along with their outcomes and roll call votes. Sign in to read <%= agenda_items.size == 1 ? "it" : "them" %>.
+    </p>
+    <div class="gated-skeleton" aria-hidden="true">
+      <% agenda_items.each_with_index do |item, index| %>
+        <div class="gated-skeleton__card">
+          <%= skeleton_title_bar(item["agenda_item_title"]) %>
+          <%= skeleton_bars(item["summary"], index: index) %>
+        </div>
+      <% end %>
+    </div>
+  </section>
+<% end %>
