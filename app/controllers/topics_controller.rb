@@ -8,10 +8,20 @@ class TopicsController < ApplicationController
     @search_query = params[:q].presence
 
     if @search_query
-      search_scope = Topic.publicly_visible
-                          .search_by_text(@search_query)
-                          .includes(:topic_briefing)
-                          .order(Arel.sql("resident_impact_score DESC NULLS LAST"), last_activity_at: :desc, id: :desc)
+      # Gated anonymous visitors search the public record only — name,
+      # canonical name, description, aliases. `search_by_text` also matches
+      # generated briefing headlines, which would make the *shape* of this
+      # results list a function of text the gate withholds (see the scope
+      # comment in Topic). Signed-in members and open mode keep full search.
+      matches = if gated_for_visitor?
+        Topic.publicly_visible.search_by_public_text(@search_query)
+      else
+        Topic.publicly_visible.search_by_text(@search_query)
+      end
+
+      search_scope = matches
+                       .includes(:topic_briefing)
+                       .order(Arel.sql("resident_impact_score DESC NULLS LAST"), last_activity_at: :desc, id: :desc)
 
       # Gated anonymous visitors are pinned to page 1: the view caps them to
       # two cards regardless, but without this, `?page=2` would still hand

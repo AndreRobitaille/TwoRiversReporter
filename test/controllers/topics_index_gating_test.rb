@@ -119,6 +119,61 @@ class TopicsIndexGatingTest < ActionDispatch::IntegrationTest
     assert_empty page_one & page_two, "pagination should not repeat topics for a signed-in member"
   end
 
+  # Search matching on `topic_briefings.headline` leaks no withheld *bytes*,
+  # but it makes the shape of the results list a function of them: `?q=<tail
+  # of a headline the 90-char teaser cuts off>` returns a card and `?q=<that
+  # plus one character>` returns nothing, which confirms withheld text one
+  # character at a time. It also reaches headlines belonging to topics the
+  # two-card cap never shows at all. The canary sweep cannot see this because
+  # the oracle lives in the response's shape, not its content.
+  ORACLE_HEADLINE = "The commission quietly deferred the riverfront boardwalk repair schedule " \
+                    "until the marina lease question is settled zqxoracletail".freeze
+
+  test "anonymous visitor cannot confirm withheld headline text through search" do
+    topic = Topic.create!(name: "Riverfront Boardwalk Repairs", status: "approved")
+    topic.create_topic_briefing!(headline: ORACLE_HEADLINE, generation_tier: "headline_only")
+
+    set_access_mode("gated")
+
+    get topics_path(q: "zqxoracletail")
+
+    assert_response :success
+    assert_empty card_names(response.body),
+      "?q=<substring of a withheld headline> returned a card — search is a confirm-oracle over gated text"
+    # The searcher's own query is echoed back in the form field and the empty
+    # state; that is their input, not withheld content. What must not appear
+    # is any evidence that a topic matched it.
+    assert_match(/No topics found for/, response.body)
+  end
+
+  # Positive control for the assertion above: without this, that test would
+  # pass just as well if the fixture rendered nothing for anybody.
+  test "signed-in member can still search briefing headlines" do
+    topic = Topic.create!(name: "Riverfront Boardwalk Repairs", status: "approved")
+    topic.create_topic_briefing!(headline: ORACLE_HEADLINE, generation_tier: "headline_only")
+
+    set_access_mode("gated")
+    sign_in_as(User.create!(email_address: "headline-searcher@example.com", status: "active"))
+
+    get topics_path(q: "zqxoracletail")
+
+    assert_response :success
+    assert_equal [ "riverfront boardwalk repairs" ], card_names(response.body)
+  end
+
+  # ...and the gated path must still be a working search, not a broken one.
+  test "anonymous visitor can still search topics by name" do
+    topic = Topic.create!(name: "Riverfront Boardwalk Repairs", status: "approved")
+    topic.create_topic_briefing!(headline: ORACLE_HEADLINE, generation_tier: "headline_only")
+
+    set_access_mode("gated")
+
+    get topics_path(q: "Boardwalk")
+
+    assert_response :success
+    assert_equal [ "riverfront boardwalk repairs" ], card_names(response.body)
+  end
+
   test "anonymous visitor gets no cards and no count via turbo_stream, even with a page param" do
     set_access_mode("gated")
 

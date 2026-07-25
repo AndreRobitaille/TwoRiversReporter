@@ -45,21 +45,53 @@ class Topic < ApplicationRecord
   scope :review_approved, -> { where(review_status: "approved") }
   scope :review_blocked, -> { where(review_status: "blocked") }
 
-  scope :search_by_text, ->(query) {
+  # Columns that describe a topic rather than narrate it: the topic's own
+  # name, its canonical form, its scope description, and its aliases. All of
+  # these are visible to every visitor on a topic card, so matching against
+  # them tells an anonymous searcher nothing the page would not already show.
+  PUBLIC_SEARCH_COLUMNS = [
+    "LOWER(topics.name)",
+    "LOWER(topics.canonical_name)",
+    "LOWER(topics.description)",
+    "LOWER(topic_aliases.name)"
+  ].freeze
+
+  # AI-generated narrative. Gated visitors see at most the first 90 characters
+  # of this on a card, and only for the two topics the anonymous cap admits.
+  BRIEFING_SEARCH_COLUMN = "LOWER(topic_briefings.headline)".freeze
+
+  # Full-text search, including generated briefing headlines. Safe only for
+  # signed-in members, open mode, and admin surfaces.
+  scope :search_by_text, ->(query) { text_search(query, briefing_headlines: true) }
+
+  # Public-record search: name / canonical name / description / aliases, never
+  # `topic_briefings.headline`. Matching on the headline makes the *shape* of
+  # the results list a function of withheld text — `?q=<tail of a withheld
+  # headline>` returns a card, `?q=<that plus one character>` returns nothing,
+  # which is a one-character-resolution confirm oracle over content the gate
+  # exists to withhold. The response body carries no withheld bytes either
+  # way, so the canary sweep is structurally blind to it. Use this scope for
+  # anonymous visitors in gated mode.
+  scope :search_by_public_text, ->(query) { text_search(query, briefing_headlines: false) }
+
+  # Shared body of the two search scopes above. Kept as one method so the two
+  # cannot drift apart in anything except the briefing-headline term.
+  def self.text_search(query, briefing_headlines:)
     return none if query.blank?
     normalized_query = normalize_name(query)
     return none if normalized_query.blank?
 
     term = "%#{sanitize_sql_like(normalized_query)}%"
-    left_outer_joins(:topic_briefing)
-      .left_outer_joins(:topic_aliases)
-      .where(
-        "LOWER(topics.name) LIKE :q OR LOWER(topics.canonical_name) LIKE :q OR LOWER(topics.description) LIKE :q OR LOWER(topic_briefings.headline) LIKE :q OR LOWER(topic_aliases.name) LIKE :q",
-        q: term
-      )
+    columns = PUBLIC_SEARCH_COLUMNS.dup
+    columns << BRIEFING_SEARCH_COLUMN if briefing_headlines
+
+    relation = left_outer_joins(:topic_aliases)
+    relation = relation.left_outer_joins(:topic_briefing) if briefing_headlines
+    relation
+      .where(columns.map { |column| "#{column} LIKE :q" }.join(" OR "), q: term)
       .distinct
       .order(:name)
-  }
+  end
 
   scope :similar_to, ->(query, threshold = 0.7) {
     where("similarity(name, ?) > ?", query, threshold)
