@@ -2,6 +2,14 @@ require "test_helper"
 require "ostruct"
 
 class TopicsHelperTest < ActionView::TestCase
+  # topic_share_description consults gated_for_visitor? (normally a
+  # controller helper_method) to withhold the AI headline for gated
+  # anonymous visitors. Defaults to the open-mode behavior most tests
+  # below were written against; override per-test with stub_gated.
+  def gated_for_visitor?
+    @gated || false
+  end
+
   test "motion_outcome_text returns outcome with vote count" do
     votes = [
       OpenStruct.new(value: "yes"),
@@ -315,4 +323,22 @@ class TopicsHelperTest < ActionView::TestCase
     assert_equal "Downtown parking study in Two Rivers, WI — every city meeting where it's come up, every vote, and what's still unresolved.",
       topic_share_description(topic)
   end
+
+  test "topic_share_description withholds the briefing headline for a gated visitor" do
+    briefing = OpenStruct.new(headline: "Council has voted to fund only half of replacement line items.")
+    topic = OpenStruct.new(name: "Lead Pipe Replacement", topic_briefing: briefing)
+
+    stub_gated(true)
+    result = topic_share_description(topic)
+
+    assert_equal "Lead pipe replacement in Two Rivers, WI — every city meeting where it's come up, every vote, and what's still unresolved.",
+      result
+    assert_no_match(/replacement line items/, result)
+  end
+
+  private
+
+    def stub_gated(value)
+      @gated = value
+    end
 end
