@@ -37,9 +37,16 @@
       <% end %>
       <% transcript = @meeting.latest_document("transcript") %>
       <% if transcript %>
-        <%= link_to safe_external_url(transcript.source_url), target: "_blank", rel: "noopener", class: "meeting-doc-link" do %>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          Watch Recording
+        <% if gated_for_visitor? %>
+          <span class="meeting-doc-link meeting-doc-link--disabled" title="Sign in to open">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Watch Recording
+          </span>
+        <% else %>
+          <%= link_to safe_external_url(transcript.source_url), target: "_blank", rel: "noopener", class: "meeting-doc-link" do %>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Watch Recording
+          <% end %>
         <% end %>
       <% end %>
       <% if gated_for_visitor? %>

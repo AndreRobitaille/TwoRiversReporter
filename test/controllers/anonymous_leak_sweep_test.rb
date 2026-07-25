@@ -66,6 +66,13 @@ class AnonymousLeakSweepTest < ActionDispatch::IntegrationTest
       document_type: "minutes_pdf",
       source_url: "https://example.com/minutes-#{SECRET}.pdf"
     )
+    # The transcript ("Watch Recording") chip is gated the same way and shares
+    # this fixture's net — see MeetingDocumentChipGatingTest for dedicated
+    # coverage of that chip specifically.
+    @meeting.meeting_documents.create!(
+      document_type: "transcript",
+      source_url: "https://www.youtube.com/watch?v=#{SECRET}"
+    )
     @meeting.meeting_summaries.create!(
       summary_type: "minutes_recap",
       generation_data: {
