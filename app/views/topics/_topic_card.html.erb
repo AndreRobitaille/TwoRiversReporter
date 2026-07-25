@@ -21,7 +21,7 @@
       <h3 class="topics-card-name"><%= topic.name %></h3>
     </div>
     <% if topic.topic_briefing&.headline.present? %>
-      <p class="topics-card-headline"><%= topic.topic_briefing.headline %></p>
+      <p class="topics-card-headline"><%= teaser(topic.topic_briefing.headline, chars: 90, fade: :inline) %></p>
     <% end %>
     <div class="topics-card-footer">
       <% if ref %>
