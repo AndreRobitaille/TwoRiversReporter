@@ -6,10 +6,15 @@
 - `WEBAUTHN_RP_NAME`
 - `LOOPS_API_KEY`
 - `ADMIN_NOTIFICATION_EMAIL`
-- Transactional IDs required in production:
-  - `LOOPS_MAGIC_LINK_TRANSACTIONAL_ID`
-  - `LOOPS_APPLICATION_LINK_TRANSACTIONAL_ID`
-  - `LOOPS_ADMIN_APPLICATION_NOTIFICATION_TRANSACTIONAL_ID`
+- Loops transactional IDs: see the **Loops Transactional Templates** table in
+  `.claude/skills/deploying/SKILL.md`, which is the single source of truth for
+  which templates exist, which env var carries each id, and which still need to
+  be created in Loops. Do not duplicate the list here — it drifted once already.
+
+`TransactionalEmail.verify_transactional_ids!` runs from
+`config/initializers/verify_transactional_email_ids.rb` and makes a production
+container refuse to boot when any of those ids is unset, so a missing id fails
+the deploy rather than reaching a user.
 
 ## Safety notes
 - Production mail delivery fails closed when required Loops IDs or admin notification email are missing.

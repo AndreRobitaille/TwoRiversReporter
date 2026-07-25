@@ -116,6 +116,16 @@ Outside production these ids fall back to literal defaults (`no_account`,
 `application_pending`, `sign_in_magic_link`, ...) and `Message#deliver_now` is a
 no-op, so local and test runs never hit Loops.
 
+**Enforced at boot.** `config/initializers/verify_transactional_email_ids.rb`
+calls `TransactionalEmail.verify_transactional_ids!`, which reads all five ids
+when `Rails.env.production?`. A missing var raises `MissingTransactionalId`
+during boot, the container never becomes healthy, and Kamal rolls the deploy
+back — so a forgotten id costs you a failed deploy instead of a broken sign-in
+form. If a deploy fails with `LOOPS_..._TRANSACTIONAL_ID is required in
+production` in `bin/kamal logs`, that is this guard: set the var and redeploy.
+The guard is skipped when `SECRET_KEY_BASE_DUMMY` is set, so the Docker build's
+`assets:precompile` step is unaffected.
+
 ### Recurring Jobs (Solid Queue, `config/recurring.yml`)
 
 | Job | Schedule | Purpose |
