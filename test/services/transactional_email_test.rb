@@ -12,13 +12,18 @@ class TransactionalEmailTest < ActiveSupport::TestCase
     assert_equal user.email_address, message.email
     assert_equal "sign_in_magic_link_test", message.transactional_id
     assert_not_includes message.data_variables.keys, :raw_token
-    assert_includes message.data_variables[:sign_in_url], magic_link.raw_token
+    # Absolute, not a bare path: an email client has no page to resolve
+    # "/session/magic_link?token=..." against, so a path here is a dead link on
+    # the one route anybody signs in through.
+    assert_equal "http://example.com/session/magic_link?token=#{CGI.escape(magic_link.raw_token)}",
+      message.data_variables[:sign_in_url]
     assert_predicate message, :frozen?
 
     assert_raises(FrozenError) { message.data_variables[:sign_in_url] = "/tampered" }
     assert_raises(FrozenError) { message.data_variables[:new_key] = "value" }
     assert_raises(FrozenError) { message.data_variables[:sign_in_url] << "&tampered=1" }
-    assert_includes message.data_variables[:sign_in_url], magic_link.raw_token
+    assert_equal "http://example.com/session/magic_link?token=#{CGI.escape(magic_link.raw_token)}",
+      message.data_variables[:sign_in_url]
   ensure
     ENV.delete("LOOPS_MAGIC_LINK_TRANSACTIONAL_ID")
   end
@@ -32,8 +37,20 @@ class TransactionalEmailTest < ActiveSupport::TestCase
 
     assert_equal user.email_address, message.email
     assert_equal TransactionalEmail.send(:magic_link_transactional_id), message.transactional_id
-    assert_includes message.data_variables[:sign_in_url], magic_link.raw_token
+    assert_equal "http://example.com/session/magic_link?token=#{CGI.escape(magic_link.raw_token)}",
+      message.data_variables[:sign_in_url]
     assert_not_includes message.data_variables.keys, :application_url
+  end
+
+  test "application_link carries an absolute edit url with the token intact" do
+    user = User.create!(email_address: "applicant@example.com", status: "pending", disabled_at: Time.current)
+    application = user.membership_applications.create!(status: "email_pending", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI")
+    magic_link = MagicLink.create_for!(user, purpose: "application")
+
+    message = TransactionalEmail.application_link(user, application, magic_link)
+
+    assert_equal "http://example.com/applications/#{application.to_param}/edit?token=#{CGI.escape(magic_link.raw_token)}",
+      message.data_variables[:application_url]
   end
 
   test "deliver_now in test does not hit loops and succeeds through the fake path" do
@@ -110,7 +127,7 @@ class TransactionalEmailTest < ActiveSupport::TestCase
 
     assert_equal "stranger@example.com", message.email
     assert_equal "no_account", message.transactional_id
-    assert_match(%r{/applications/new}, message.data_variables[:apply_url])
+    assert_equal "http://example.com/applications/new", message.data_variables[:apply_url]
   end
 
   test "application_pending addresses the applicant" do
@@ -180,10 +197,60 @@ class TransactionalEmailTest < ActiveSupport::TestCase
     TransactionalEmail::TRANSACTIONAL_ID_READERS.each { |reader| ENV.delete(env_var_for(reader)) }
   end
 
+  test "every url handed to Loops is absolute, across every builder" do
+    urls_checked = 0
+
+    message_builders.each do |builder, build_message|
+      build_message.call.data_variables.each do |key, value|
+        Array(value).each do |entry|
+          next unless entry.is_a?(String)
+
+          if key.to_s.end_with?("_url")
+            urls_checked += 1
+            assert_match(%r{\Ahttps?://[^/]+/}, entry,
+              "#{builder} sends #{key} as #{entry.inspect} — a Loops template drops this into an <a href>, where a bare path is a dead link")
+          else
+            assert_no_match(%r{\A/}, entry,
+              "#{builder} sends #{key} as #{entry.inspect}, which looks like a bare path")
+          end
+        end
+      end
+    end
+
+    assert_operator urls_checked, :>=, 4, "the sweep found no URLs to check — message_builders is probably not building anything"
+  end
+
+  test "the absolute url sweep names every builder TransactionalEmail exposes" do
+    # A new builder that mails a bare path fails the sweep above without anyone
+    # remembering to add an assertion for it — but only if the sweep can see it,
+    # so a builder missing from message_builders fails here first.
+    exposed = TransactionalEmail.methods(false).map(&:to_s)
+      .reject { |name| name.end_with?("_transactional_id") || name == "verify_transactional_ids!" }
+
+    assert_equal exposed.sort, message_builders.keys.map(&:to_s).sort
+  end
+
   private
 
     # :magic_link_transactional_id => "LOOPS_MAGIC_LINK_TRANSACTIONAL_ID"
     def env_var_for(reader)
       "LOOPS_#{reader.to_s.upcase}"
+    end
+
+    # One invocation per public builder, keyed by method name so the coverage
+    # test can compare this list against what the class actually exposes.
+    def message_builders
+      user = User.create!(email_address: "sweep@example.com", status: "active")
+      application = user.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI")
+      magic_link = MagicLink.create_for!(user, purpose: "sign_in")
+
+      {
+        magic_link: -> { TransactionalEmail.magic_link(user, magic_link) },
+        application_link: -> { TransactionalEmail.application_link(user, application, magic_link) },
+        application_approved: -> { TransactionalEmail.application_approved(user, application, magic_link) },
+        admin_application_notifications: -> { TransactionalEmail.admin_application_notifications([ application ]) },
+        no_account: -> { TransactionalEmail.no_account("stranger@example.com") },
+        application_pending: -> { TransactionalEmail.application_pending(user) }
+      }
     end
 end
