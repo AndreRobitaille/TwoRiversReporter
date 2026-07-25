@@ -42,6 +42,13 @@
           <%= render "meetings/meeting_card", meeting: meeting %>
         <% end %>
       </div>
+      <%# Unlike the topics index, the meetings index does not cap the card
+          count for gated visitors — the spec withholds only the headline tail
+          (teased in the card partial). The gate is here so a stranger who
+          lands on a search result still learns that applying is possible. %>
+      <% if gated_for_visitor? %>
+        <%= render "shared/gate", message: "Sign in to read every meeting" %>
+      <% end %>
       <% if @pagy.next %>
         <div class="meetings-show-more">
           <%= link_to "Show more results", meetings_path(q: params[:q], page: @pagy.next), class: "btn btn--secondary" %>
@@ -92,6 +99,14 @@
       </details>
     <% elsif @upcoming_enriched.empty? %>
       <p class="meetings-empty-note">No upcoming meetings scheduled</p>
+    <% end %>
+
+    <%# Design spec, per-surface table: "Meetings index ... one card after the
+        first list." The list itself is not withheld here, only the tail of
+        each headline — the gate is the affordance, so a stranger has a reason
+        to want access and knows applying is possible. %>
+    <% if gated_for_visitor? %>
+      <%= render "shared/gate", message: "Sign in to read every meeting" %>
     <% end %>
   </section>
 
