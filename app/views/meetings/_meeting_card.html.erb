@@ -33,6 +33,14 @@
     </div>
     <% if headline %>
       <p class="meetings-card-headline"><%= teaser(headline, chars: 90, fade: :inline) %></p>
+      <%# The card itself is already an <a> — nesting the sign-in prompt in
+          another <a> would be invalid HTML that browsers unnest, breaking
+          the layout. This is a styled span, not a link; the visitor lands
+          on the gated meeting page via the card's own click target either
+          way. %>
+      <% if gated_for_visitor? %>
+        <span class="meetings-card-signin-note">Sign in to read this meeting &rarr;</span>
+      <% end %>
     <% end %>
     <% if approved_topics.any? %>
       <div class="meetings-topic-pills">
