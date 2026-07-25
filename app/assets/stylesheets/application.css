@@ -2842,7 +2842,10 @@ details[open] summary {
    one big <a>, and a nested <a> would be invalid HTML the browser unnests. */
 .meetings-card-signin-note {
   display: block;
-  margin-top: var(--space-1);
+  /* Breathing room on both sides: the faded headline runs out immediately
+     above and the topic pills start immediately below, so without this the
+     note reads as part of whichever it is nearer. */
+  margin: var(--space-3) 0;
   font-family: var(--font-data);
   font-size: var(--font-size-xs);
   text-transform: uppercase;
