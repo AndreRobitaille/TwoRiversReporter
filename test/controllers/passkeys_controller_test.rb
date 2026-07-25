@@ -161,6 +161,49 @@ class PasskeysControllerTest < ActionDispatch::IntegrationTest
     assert_predicate other.reload, :persisted?
   end
 
+  test "a signed-in user can rename their own passkey" do
+    mine = PasskeyCredential.create!(user: @user, external_id: "mine", public_key: "public-key", sign_count: 0)
+    headers = signed_session_headers(@user)
+
+    patch passkey_url(mine), params: { passkey_credential: { nickname: "Desk key" } }, headers: headers
+
+    assert_redirected_to settings_security_url
+    assert_equal "Desk key", mine.reload.nickname
+  end
+
+  test "a user cannot rename another user's passkey" do
+    theirs = PasskeyCredential.create!(user: @other_user, external_id: "theirs", public_key: "public-key", sign_count: 0, nickname: "Original")
+    headers = signed_session_headers(@user)
+
+    patch passkey_url(theirs), params: { passkey_credential: { nickname: "Hijacked" } }, headers: headers
+
+    assert_response :not_found
+    assert_equal "Original", theirs.reload.nickname
+  end
+
+  test "nickname is the only attribute a user can change through the passkey update endpoint" do
+    mine = PasskeyCredential.create!(user: @user, external_id: "mine", public_key: "original-public-key", sign_count: 3)
+    headers = signed_session_headers(@user)
+
+    patch passkey_url(mine), params: {
+      passkey_credential: {
+        nickname: "My Yubikey",
+        external_id: "attacker-controlled-id",
+        public_key: "attacker-controlled-key",
+        sign_count: 999,
+        user_id: @other_user.id
+      }
+    }, headers: headers
+
+    assert_redirected_to settings_security_url
+    mine.reload
+    assert_equal "My Yubikey", mine.nickname
+    assert_equal "mine", mine.external_id
+    assert_equal "original-public-key", mine.public_key
+    assert_equal 3, mine.sign_count
+    assert_equal @user.id, mine.user_id
+  end
+
   private
 
     def signed_session_headers(user)

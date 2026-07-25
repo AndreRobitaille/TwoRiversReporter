@@ -35,9 +35,17 @@
               <p class="passkey-item__meta">Added <%= l(credential.created_at.to_date, format: :long) %></p>
             </div>
 
-            <%= link_to "Remove", passkey_path(credential),
-                  class: "btn btn--danger btn--sm",
-                  data: { turbo_method: :delete, turbo_confirm: "Remove this passkey?" } %>
+            <div class="passkey-item__actions">
+              <%= form_with url: passkey_path(credential), method: :patch, local: true, class: "passkey-item__rename" do %>
+                <%= text_field_tag "passkey_credential[nickname]", credential.nickname,
+                      class: "form-input", placeholder: "Name this passkey", aria: { label: "Rename passkey" } %>
+                <%= submit_tag "Save", class: "btn btn--secondary btn--sm" %>
+              <% end %>
+
+              <%= link_to "Remove", passkey_path(credential),
+                    class: "btn btn--danger btn--sm",
+                    data: { turbo_method: :delete, turbo_confirm: "Remove this passkey?" } %>
+            </div>
           </li>
         <% end %>
       </ul>
