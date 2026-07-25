@@ -24,4 +24,30 @@ class SignInAttemptTest < ActiveSupport::TestCase
 
     assert SignInAttempt.throttled?("someone@example.com")
   end
+
+  test "release! lifts the throttle for an address" do
+    SignInAttempt.record!("someone@example.com")
+
+    SignInAttempt.release!("someone@example.com")
+
+    assert_not SignInAttempt.throttled?("someone@example.com")
+  end
+
+  test "release! normalizes the address like record! and throttled?" do
+    SignInAttempt.record!("someone@example.com")
+
+    SignInAttempt.release!("  Someone@Example.com  ")
+
+    assert_not SignInAttempt.throttled?("someone@example.com")
+  end
+
+  test "release! leaves other addresses throttled" do
+    SignInAttempt.record!("someone@example.com")
+    SignInAttempt.record!("other@example.com")
+
+    SignInAttempt.release!("someone@example.com")
+
+    assert_not SignInAttempt.throttled?("someone@example.com")
+    assert SignInAttempt.throttled?("other@example.com")
+  end
 end

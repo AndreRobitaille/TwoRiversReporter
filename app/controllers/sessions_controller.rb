@@ -17,6 +17,9 @@ class SessionsController < ApplicationController
 
     redirect_to new_public_session_path, notice: "Check your email — we've sent you a message."
   rescue LoopsDelivery::DeliveryError
+    # The attempt was recorded before delivery was tried. Give it back, or "try
+    # again later" would be a lie for the next 15 minutes.
+    SignInAttempt.release!(email)
     redirect_to new_public_session_path, alert: "We couldn't send that message right now. Try again later."
   end
 

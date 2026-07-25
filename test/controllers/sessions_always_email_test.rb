@@ -55,6 +55,32 @@ class SessionsAlwaysEmailTest < ActionDispatch::IntegrationTest
     assert_equal 1, bodies.uniq.size, "responses must be indistinguishable across account states"
   end
 
+  test "a delivery failure releases the throttle so an immediate retry really retries" do
+    User.create!(email_address: "flaky@example.com", status: "active")
+
+    failing = Object.new
+    def failing.deliver_now
+      raise LoopsDelivery::DeliveryError, "loops is down"
+    end
+
+    TransactionalEmail.stub(:magic_link, ->(*) { failing }) do
+      post public_session_path, params: { email_address: "flaky@example.com" }
+    end
+
+    assert_equal "We couldn't send that message right now. Try again later.", flash[:alert]
+    assert_not SignInAttempt.throttled?("flaky@example.com"),
+      "a delivery that never happened must not consume the address's throttle window"
+
+    sent = []
+    stub_delivery(sent) do
+      post public_session_path, params: { email_address: "flaky@example.com" }
+    end
+
+    assert_equal [ TransactionalEmail.magic_link_transactional_id ], sent.map(&:transactional_id),
+      "the retry must actually attempt delivery rather than being silently throttled"
+    assert_equal "Check your email — we've sent you a message.", flash[:notice]
+  end
+
   test "a throttled address sends no second email" do
     SignInAttempt.record!("stranger@example.com")
 
