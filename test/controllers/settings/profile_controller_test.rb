@@ -44,6 +44,26 @@ module Settings
       assert_includes response.body, "Submitted"
     end
 
+    # A member granted access directly (the owner's own admin account is the
+    # motivating case) has no application row. Inviting them to apply for
+    # access they already hold is nonsense, and reads as an account error.
+    test "active member with no application is not invited to apply" do
+      user = User.create!(email_address: "granted@example.com", status: "active")
+
+      get settings_profile_path, headers: signed_session_headers(user)
+
+      assert_response :success
+      assert_includes response.body, "Membership application"
+      assert_not_includes response.body, "Start an application"
+      assert_includes response.body, "Your account is active"
+    end
+
+    # The invitation must survive for people who genuinely need it. Only an
+    # active user can hold a session (Authentication#resume_session drops the
+    # cookie otherwise), so the pending case is unreachable from here and is
+    # covered at the view level instead — see
+    # test/views/settings_profile_show_test.rb.
+
     private
 
       def signed_session_headers(user)

@@ -88,6 +88,15 @@
           <dd class="detail-value"><%= l(application.reviewed_at, format: :long) %></dd>
         <% end %>
       </dl>
+    <% elsif current_user.active_for_authentication? %>
+      <%# Members granted access directly (the owner's own admin account, for
+          one) have no application row but already have an account. Inviting
+          them to apply for access they hold reads as an error. State the
+          fact and offer nothing. `active_for_authentication?` — not
+          `status == "active"` — is the predicate that actually means "this
+          person has access": it also requires `disabled_at` to be blank, and
+          a disabled account has none. %>
+      <p class="card-body">Your account is active, so there's no application on file.</p>
     <% else %>
       <p class="card-body">You haven't started a membership application yet.</p>
       <%= link_to "Start an application", new_application_path, class: "btn btn--primary" %>
