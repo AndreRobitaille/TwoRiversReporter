@@ -3176,6 +3176,17 @@ details[open] summary {
   border-color: var(--color-teal);
 }
 
+/* Gated chip: same shape, no working link/action. Order matters here — this
+   must sit after --muted/--share so it wins the cascade on chips carrying
+   both modifiers (City Website, Share). */
+.meeting-doc-link--disabled,
+.meeting-doc-link--disabled:hover {
+  color: var(--color-text-muted);
+  background: none;
+  border-color: var(--color-border);
+  cursor: not-allowed;
+}
+
 .meeting-docs-separator {
   display: inline-block;
   width: 1px;
