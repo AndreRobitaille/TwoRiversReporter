@@ -2839,18 +2839,37 @@ details[open] summary {
 
 /* Per-card sign-in affordance for gated visitors. Quiet by design — a small
    inline note, not a call-to-action block. Not a link: the card is already
-   one big <a>, and a nested <a> would be invalid HTML the browser unnests. */
+   one big <a>, and a nested <a> would be invalid HTML the browser unnests.
+
+   One rule, two surfaces: `.home-signin-note` is the same affordance on the
+   homepage cards. Shared so the two can't drift into different-looking
+   answers to the same question. Only placement differs, below. */
+.meetings-card-signin-note,
+.home-signin-note {
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-teal);
+}
+
 .meetings-card-signin-note {
   display: block;
   /* Breathing room on both sides: the faded headline runs out immediately
      above and the topic pills start immediately below, so without this the
      note reads as part of whichever it is nearer. */
   margin: var(--space-5) 0;
-  font-family: var(--font-data);
-  font-size: var(--font-size-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--color-teal);
+}
+
+/* Homepage cards put the note on the same line as the text it follows, so
+   the fade runs straight into it. `inline` (not block) for that reason;
+   `nowrap` keeps "Sign in to read more" from breaking across two lines, and
+   `flex-shrink: 0` protects it where the parent is a flex row (wire rows). */
+.home-signin-note {
+  display: inline;
+  margin-left: var(--space-2);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* --- Topic Pills --- */

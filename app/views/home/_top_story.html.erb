@@ -26,7 +26,7 @@
     <% end %>
     <div class="story-topic"><%= topic.name %></div>
     <% if headline.present? %>
-      <p class="story-headline"><%= headline %></p>
+      <p class="story-headline"><%= teaser(headline, chars: HomeHelper::GATED_CARD_HEADLINE_CHARS, fade: :inline) %><% if gated_for_visitor? %> <%= render "home/signin_note" %><% end %></p>
     <% end %>
     <div class="story-footer">
       <% if meeting_ref %>

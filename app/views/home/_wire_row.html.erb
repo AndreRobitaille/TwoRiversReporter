@@ -1,9 +1,16 @@
 <%# Compact wire row. Locals: topic, headline %>
 <%= link_to topic_path(topic), class: "wire-list-item" do %>
   <span class="list-topic"><%= topic.name %></span>
+  <%# Both candidates are AI-generated: the briefing headline, and (per
+      Topics::GenerateDescriptionJob) the topic description that stands in
+      for it. Gate whichever one renders. %>
   <% latest = headline.presence || topic.description %>
   <% if latest.present? %>
-    <span class="list-desc"><%= latest %></span>
+    <span class="list-desc"><%= teaser(latest, chars: HomeHelper::GATED_CARD_HEADLINE_CHARS, fade: :inline) %></span>
+    <%# Sibling of .list-desc, not a child: the row's desc is `overflow:
+        hidden; text-overflow: ellipsis` on desktop, so a note nested inside
+        it could be ellipsized away. %>
+    <% if gated_for_visitor? %><%= render "home/signin_note" %><% end %>
   <% end %>
   <span class="list-arrow">→</span>
 <% end %>

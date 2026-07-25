@@ -1,0 +1,6 @@
+<%# Inline sign-in affordance that trails a faded homepage card headline.
+    Mirrors meetings/_meeting_card's `.meetings-card-signin-note` — same
+    typography, same reason for being a <span> rather than an <a>: every
+    home card is already wrapped in one big link, and a nested <a> is
+    invalid HTML the browser unnests, which breaks the card layout. %>
+<span class="home-signin-note">Sign in to read more &rarr;</span>

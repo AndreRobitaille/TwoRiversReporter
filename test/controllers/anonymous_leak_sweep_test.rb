@@ -247,16 +247,20 @@ class AnonymousLeakSweepTest < ActionDispatch::IntegrationTest
     )
 
     # Second topic: its briefing headline carries the canary past the 90-char
-    # card teaser. `reuse_strategy: "unsafe_for_auto_reuse"` keeps it out of
-    # `Topic.reusable`, and therefore off the homepage, where the spec says
-    # briefing headlines render in full ("Home | Everything | none").
+    # card teaser and past the 38-char homepage teaser.
+    #
+    # It is deliberately left `canonical` (the default) so it lands in
+    # `Topic.reusable` and, at impact 5 with day-old activity, becomes the
+    # homepage's lead story. That is what puts the home path under the
+    # presence half of the sweep: home used to be PRESENCE_EXEMPT on the
+    # grounds that it rendered briefing headlines in full to everyone, and
+    # that stopped being true when the homepage cards were gated.
     @topic_headline = Topic.create!(
       name: "Sweep Harbor Dredging",
       status: "approved",
       lifecycle_status: "active",
       resident_impact_score: 5,
-      last_activity_at: 1.day.ago,
-      reuse_strategy: "unsafe_for_auto_reuse"
+      last_activity_at: 1.day.ago
     )
     @harbor_item = @meeting.agenda_items.create!(title: "Harbor dredging schedule", order_index: 2)
     AgendaItemTopic.create!(topic: @topic_headline, agenda_item: @harbor_item)
@@ -280,7 +284,7 @@ class AnonymousLeakSweepTest < ActionDispatch::IntegrationTest
         status: "approved",
         lifecycle_status: "active",
         # 1 is the validation floor and stays under HomeController's
-        # WIRE_MIN_IMPACT of 2, so fillers never reach the ungated homepage.
+        # WIRE_MIN_IMPACT of 2, so fillers never reach the homepage.
         resident_impact_score: 1,
         last_activity_at: (10 + i).days.ago,
         reuse_strategy: "unsafe_for_auto_reuse"
@@ -357,9 +361,6 @@ class AnonymousLeakSweepTest < ActionDispatch::IntegrationTest
   # Paths where the canary is invisible to *every* visitor. Each is a
   # deliberate product decision, not a broken fixture.
   PRESENCE_EXEMPT = {
-    "home" => "The homepage is ungated by design (design spec: \"Home | Everything | none\"), " \
-      "so it renders no withheld content to anyone. It stays in the absence sweep to prove " \
-      "summary/briefing body text never reaches the home cards.",
     "committees index" => "The committees index is ungated by design and renders only committee " \
       "names and hardcoded card descriptions — there is no AI-generated content on it at all.",
     "meetings index" => MEETINGS_INDEX_REASON,
@@ -377,6 +378,9 @@ class AnonymousLeakSweepTest < ActionDispatch::IntegrationTest
     # If any of these drift, the sweep silently stops testing what it claims.
     assert_not_includes String.new(TEASED_HEADLINE).truncate(90, separator: " ", omission: ""), SECRET,
       "the 90-char card teaser must cut before the canary"
+    assert_not_includes String.new(TEASED_HEADLINE).truncate(
+      HomeHelper::GATED_CARD_HEADLINE_CHARS, separator: " ", omission: ""
+    ), SECRET, "the homepage card teaser must cut before the canary"
     assert_includes TEASED_HEADLINE.truncate(120), SECRET,
       "committee show truncates headlines at 120 chars and must still show the canary"
     assert_not_includes String.new("#{HIGHLIGHT_FILLER} #{SECRET}").truncate(

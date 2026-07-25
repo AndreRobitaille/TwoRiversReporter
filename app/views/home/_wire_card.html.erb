@@ -17,7 +17,12 @@
   <div class="wire-body">
     <div class="wire-topic"><%= topic.name %></div>
     <% if headline.present? %>
-      <p class="wire-headline"><%= truncate(headline, length: 120) %></p>
+      <%# Two different jobs, so two branches rather than one nested call: the
+          120-char truncate is a layout cap for people allowed to read the
+          whole headline, the teaser is an access cut. Composing them
+          (teasing an already-truncated string) would work but reads as a
+          double truncation with one boundary that never fires. %>
+      <p class="wire-headline"><% if gated_for_visitor? %><%= teaser(headline, chars: HomeHelper::GATED_CARD_HEADLINE_CHARS, fade: :inline) %> <%= render "home/signin_note" %><% else %><%= truncate(headline, length: 120) %><% end %></p>
     <% end %>
     <div class="wire-footer">
       <% if meeting_ref %>
