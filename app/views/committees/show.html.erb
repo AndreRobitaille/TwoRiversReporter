@@ -52,31 +52,35 @@
       <span class="section-line"></span>
     </div>
 
-    <% if @recent_topics.any? %>
-      <div class="committee-activity">
-        <% @recent_topics.each do |topic| %>
-          <% headline = @headlines[topic.id] %>
-          <%= link_to topic_path(topic), class: "committee-activity-item" do %>
-            <div class="committee-activity-header">
-              <span class="committee-activity-topic"><%= topic.canonical_name %></span>
-              <% if topic.respond_to?(:latest_meeting_date) && topic.latest_meeting_date %>
-                <span class="committee-activity-date"><%= topic.latest_meeting_date.strftime("%b %-d") %></span>
-              <% end %>
-            </div>
-            <% if headline.present? %>
-              <p class="committee-activity-headline"><%= truncate(headline, length: 120) %></p>
-            <% elsif topic.description.present? %>
-              <p class="committee-activity-desc"><%= truncate(topic.description, length: 120) %></p>
-            <% end %>
-            <span class="committee-activity-cta">Topic details &rarr;</span>
-          <% end %>
-        <% end %>
-      </div>
-      <div class="committee-activity-footer">
-        <%= link_to "Browse all topics →", topics_path %>
-      </div>
+    <% if gated_for_visitor? %>
+      <%= render "shared/gate" %>
     <% else %>
-      <p class="section-empty">No recent activity tracked for this committee.</p>
+      <% if @recent_topics.any? %>
+        <div class="committee-activity">
+          <% @recent_topics.each do |topic| %>
+            <% headline = @headlines[topic.id] %>
+            <%= link_to topic_path(topic), class: "committee-activity-item" do %>
+              <div class="committee-activity-header">
+                <span class="committee-activity-topic"><%= topic.canonical_name %></span>
+                <% if topic.respond_to?(:latest_meeting_date) && topic.latest_meeting_date %>
+                  <span class="committee-activity-date"><%= topic.latest_meeting_date.strftime("%b %-d") %></span>
+                <% end %>
+              </div>
+              <% if headline.present? %>
+                <p class="committee-activity-headline"><%= truncate(headline, length: 120) %></p>
+              <% elsif topic.description.present? %>
+                <p class="committee-activity-desc"><%= truncate(topic.description, length: 120) %></p>
+              <% end %>
+              <span class="committee-activity-cta">Topic details &rarr;</span>
+            <% end %>
+          <% end %>
+        </div>
+        <div class="committee-activity-footer">
+          <%= link_to "Browse all topics →", topics_path %>
+        </div>
+      <% else %>
+        <p class="section-empty">No recent activity tracked for this committee.</p>
+      <% end %>
     <% end %>
   </section>
 
