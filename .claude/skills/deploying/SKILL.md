@@ -68,6 +68,54 @@ The same ordering applies before regenerating generated civic images in producti
 `config/master.key` is gitignored, so git worktrees don't get it. Symlink it:
 `ln -s /home/andre/Development/TwoRiversReporter/config/master.key config/master.key`
 
+### Loops Transactional Templates (BLOCKING pre-deploy checklist)
+
+Every transactional email is a template created in the Loops dashboard. The app
+reads each template's id from an env var and **fails closed in production**: a
+missing id raises `TransactionalEmail::MissingTransactionalId`, which is not
+rescued by the controllers. A missing id therefore takes down the flow that
+sends it. Set all of these in the Kamal env (`config/deploy.yml`) before deploy.
+
+| Env var | Loops template | Sent when | Status |
+|---------|----------------|-----------|--------|
+| `LOOPS_API_KEY` | — | All delivery | Live |
+| `LOOPS_MAGIC_LINK_TRANSACTIONAL_ID` | Sign-in magic link | Active member requests sign-in; application approved | Live |
+| `LOOPS_APPLICATION_LINK_TRANSACTIONAL_ID` | Application magic link | Applicant resumes their application | Live |
+| `LOOPS_ADMIN_APPLICATION_NOTIFICATION_TRANSACTIONAL_ID` | Admin application digest | Pending applications need review | Live |
+| `LOOPS_NO_ACCOUNT_TRANSACTIONAL_ID` | No account | Sign-in requested for an address with no account | **Must be created** |
+| `LOOPS_APPLICATION_PENDING_TRANSACTIONAL_ID` | Application pending | Sign-in requested by an applicant still under review | **Must be created** |
+
+**The last two templates do not exist in Loops yet.** They are required by the
+"always answer sign-in attempts by email" change: `SessionsController#create`
+now emails a definitive answer on every branch, so two of the three branches
+call templates that must exist before this ships. If either id is unset in
+production, every sign-in attempt for an unknown or pending address raises and
+returns a 500 — which both breaks sign-in and reintroduces the address
+enumeration leak the change exists to close.
+
+Pre-deploy checklist for these two:
+
+1. Create both templates in the Loops dashboard.
+2. Copy their transactional ids into the Kamal env as
+   `LOOPS_NO_ACCOUNT_TRANSACTIONAL_ID` and
+   `LOOPS_APPLICATION_PENDING_TRANSACTIONAL_ID`.
+3. Deploy.
+4. Smoke-test all three sign-in branches (unknown address, pending applicant,
+   active member) against production and confirm each receives its email.
+
+Content guidance for whoever writes the templates. No emoji — standing project
+rule for all user-facing copy.
+
+- **No account** (data variable: `apply_url`) — "Someone asked for a sign-in
+  link for this address. There's no account here. If that was you, here's how to
+  request one: `{{apply_url}}`."
+- **Application pending** (no data variables) — "Your application is still under
+  review. We'll email you as soon as it's decided."
+
+Outside production these ids fall back to literal defaults (`no_account`,
+`application_pending`, `sign_in_magic_link`, ...) and `Message#deliver_now` is a
+no-op, so local and test runs never hit Loops.
+
 ### Recurring Jobs (Solid Queue, `config/recurring.yml`)
 
 | Job | Schedule | Purpose |
