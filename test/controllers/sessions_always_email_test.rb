@@ -34,12 +34,24 @@ class SessionsAlwaysEmailTest < ActionDispatch::IntegrationTest
     assert_equal [ TransactionalEmail.magic_link_transactional_id ], sent.map(&:transactional_id)
   end
 
-  test "all three branches produce an identical browser response" do
+  test "a malformed address is dropped before the mail provider and before the throttle" do
+    sent = []
+    stub_delivery(sent) do
+      post public_session_path, params: { email_address: "asdf" }
+    end
+
+    assert_empty sent, "an address the mail provider cannot deliver to must never be handed to it"
+    assert_not SignInAttempt.throttled?("asdf"), "junk input must not consume a throttle slot"
+    assert_redirected_to new_public_session_path
+    assert_equal "Check your email — we've sent you a message.", flash[:notice]
+  end
+
+  test "all four branches produce an identical browser response" do
     User.create!(email_address: "member2@example.com", status: "active")
     User.create!(email_address: "waiting2@example.com", status: "pending", disabled_at: Time.current)
 
     bodies = with_forgery_protection do
-      [ "member2@example.com", "waiting2@example.com", "nobody2@example.com" ].map do |email|
+      [ "member2@example.com", "waiting2@example.com", "nobody2@example.com", "asdf" ].map do |email|
         SignInAttempt.delete_all
         get new_public_session_path
         token = response.body[/name="authenticity_token" value="([^"]*)"/, 1]

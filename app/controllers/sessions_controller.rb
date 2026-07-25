@@ -13,7 +13,13 @@ class SessionsController < ApplicationController
     # Every branch below produces the same redirect. The identical response is
     # what prevents address enumeration; the email is what gives a real person
     # a definitive answer.
-    deliver_sign_in_response(email) unless SignInAttempt.throttled?(email)
+    #
+    # A malformed address is dropped here rather than rejected: it cannot be
+    # delivered to, and telling the browser about it would make "not a real
+    # address" distinguishable from "not an account" — the exact distinction
+    # this action exists to hide. It is dropped *before* SignInAttempt so
+    # garbage input cannot burn a real address's throttle window either.
+    deliver_sign_in_response(email) if User.deliverable_address?(email) && !SignInAttempt.throttled?(email)
 
     redirect_to new_public_session_path, notice: "Check your email — we've sent you a message."
   rescue LoopsDelivery::DeliveryError
