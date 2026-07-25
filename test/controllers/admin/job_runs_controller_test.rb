@@ -7,19 +7,9 @@ class Admin::JobRunsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @admin = User.create!(
       email_address: "jobrun-admin@example.com",
-      password: "password123456",
-      admin: true,
-      totp_enabled: true
+      admin: true
     )
-    @admin.ensure_totp_secret!
-
-    post session_url, params: {
-      email_address: @admin.email_address,
-      password: "password123456"
-    }
-    post mfa_session_url, params: {
-      code: ROTP::TOTP.new(@admin.totp_secret).now
-    }
+    sign_in_as_admin(@admin)
 
     @meeting = Meeting.create!(
       body_name: "City Council",

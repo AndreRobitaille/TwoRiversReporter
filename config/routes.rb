@@ -16,19 +16,46 @@ Rails.application.routes.draw do
   resources :members, only: %i[show]
   get "topics/explore", to: "topics#explore", as: :topics_explore
   resources :topics, only: %i[index show]
+  resources :applications, only: %i[new create edit update]
+
+  namespace :settings do
+    resource :profile, only: %i[show], controller: "profile"
+    resource :security, only: %i[show], controller: "security"
+    resource :passkey_prompt, only: %i[destroy], controller: "passkey_prompts"
+  end
+
+  resource :session, only: %i[new create destroy], controller: "sessions", as: :public_session do
+    get :magic_link, on: :collection
+    post :magic_link, on: :collection
+    post :resend_expired_magic_link, on: :collection
+  end
+
+  resources :passkeys, only: %i[update destroy] do
+    collection do
+      post :registration_options
+      post :registration
+      post :authentication_options
+      post :authentication
+    end
+  end
 
   get "sitemap.xml", to: "sitemaps#show", as: :sitemap, defaults: { format: :xml }
 
   get "admin" => "admin/dashboard#show", as: :admin_root
 
   scope :admin do
-    resource :session, only: %i[new create destroy], controller: "admin/sessions"
-    resources :passwords, only: %i[new create edit update], param: :token, controller: "admin/passwords"
-    resource :mfa_session, only: %i[new create], controller: "admin/mfa_sessions"
-    resource :mfa_setup, only: %i[show create], controller: "admin/mfa_setup"
-    resource :recovery_codes, only: %i[show create], controller: "admin/recovery_codes"
-    resource :account_password, only: %i[edit update], controller: "admin/account_passwords"
-    resources :users, only: %i[index new create], controller: "admin/users"
+    resource :site_settings, only: %i[show update], controller: "admin/site_settings", as: :admin_site_settings
+
+    resources :users, only: %i[index show new create], controller: "admin/users" do
+      member do
+        patch :approve
+        patch :reject
+        patch :toggle_admin
+        patch :disable
+        delete :revoke_session
+        delete :revoke_all_sessions
+      end
+    end
 
     resources :knowledge_sources, controller: "admin/knowledge_sources", as: :admin_knowledge_sources do
       post :reingest, on: :member

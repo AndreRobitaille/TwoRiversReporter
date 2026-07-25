@@ -1,0 +1,30 @@
+<% content_for(:title) { "Apply for an account" } %>
+
+<div class="auth-panel">
+  <div class="auth-mark"><%= render "shared/starburst", size: 56 %></div>
+
+  <span class="auth-step">Step 1 of 2</span>
+  <h1 class="auth-title">Apply</h1>
+  <p class="auth-dek">Tell us your email and we'll send a private link to finish the form.</p>
+
+  <%= render "shared/diamond_divider" %>
+
+  <%= tag.div(flash[:alert], class: "flash flash--danger") if flash[:alert] %>
+  <%= tag.div(flash[:notice], class: "flash flash--success") if flash[:notice] %>
+
+  <%= form_with url: applications_path, local: true do |form| %>
+    <div class="form-group">
+      <%= form.label :email_address, "Email address", class: "form-label" %>
+      <%= form.email_field :email_address,
+            required: true, autofocus: true, autocomplete: "email",
+            placeholder: "you@example.com", class: "form-input",
+            value: params[:email_address] %>
+    </div>
+
+    <%= form.submit "Send application link", class: "btn btn--primary" %>
+  <% end %>
+
+  <p class="auth-footnote">
+    Already have an account? <%= link_to "Sign in", new_public_session_path %>.
+  </p>
+</div>

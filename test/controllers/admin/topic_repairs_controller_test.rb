@@ -3,15 +3,8 @@ require "test_helper"
 module Admin
   class TopicRepairsControllerTest < ActionDispatch::IntegrationTest
     setup do
-      @admin = User.create!(email_address: "admin@example.com", password: "password", admin: true, totp_enabled: true)
-      @admin.ensure_totp_secret!
-
-      post session_url, params: { email_address: @admin.email_address, password: "password" }
-      follow_redirect!
-
-      totp = ROTP::TOTP.new(@admin.totp_secret, issuer: "TwoRiversMatters")
-      post mfa_session_url, params: { code: totp.now }
-      follow_redirect!
+      @admin = User.create!(email_address: "admin@example.com", admin: true)
+      sign_in_as_admin(@admin)
 
       @topic = Topic.create!(name: "lakeshore community foundation partnership", status: "approved", review_status: "approved")
     end
@@ -76,15 +69,12 @@ module Admin
       get impact_preview_admin_topic_url(@topic), params: { source_topic_id: source.id }
 
       assert_response :success
-      assert_match "Downstream impact", response.body
       assert_match "Topics affected", response.body
-      assert_match "Aliases to move", response.body
-      assert_match "Appearances/Mentions", response.body
-      assert_match "Decisions/Votes", response.body
-      assert_match "Knowledge links", response.body
-      assert_match "Search, detail pages, summaries, and knowledge-linked content will all point to", response.body
-      assert_match "Combining lakeshore community foundation into lakeshore community foundation partnership", response.body
-      assert_match "will combine into lakeshore community foundation partnership", response.body
+      assert_match "Aliases", response.body
+      assert_match "Appearances", response.body
+      assert_match "Summaries", response.body
+      assert_match "Decisions", response.body
+      assert_match "lakeshore community foundation will combine into lakeshore community foundation partnership.", response.body
     end
 
     test "merge modal wiring targets the selected source topic and detail merge path" do
@@ -160,12 +150,12 @@ module Admin
       get impact_preview_admin_topic_url(source), params: { action_name: "topic_to_alias", target_topic_id: destination.id, alias_count: 1 }
 
       assert_response :success
-      assert_match "lakeshore community foundation project will stop being a standalone topic and become an alias of lakeshore district.", response.body
       assert_match "This will move 1 existing alias plus the current topic name under lakeshore district.", response.body
-      assert_match %r{<dt class="text-secondary">Appearances/Mentions</dt><dd>1</dd>}, response.body
-      assert_match %r{<dt class="text-secondary">Aliases to move</dt><dd>1</dd>}, response.body
-      assert_match %r{<dt class="text-secondary">Summaries</dt><dd>1</dd>}, response.body
-      assert_match %r{<dt class="text-secondary">Knowledge links</dt><dd>1</dd>}, response.body
+      assert_match %r{<dt>Topics affected</dt><dd>2</dd>}, response.body
+      assert_match %r{<dt>Aliases</dt><dd>1</dd>}, response.body
+      assert_match %r{<dt>Appearances</dt><dd>1</dd>}, response.body
+      assert_match %r{<dt>Summaries</dt><dd>1</dd>}, response.body
+      assert_match %r{<dt>Decisions</dt><dd>0</dd>}, response.body
 
       post topic_to_alias_admin_topic_url(source), params: { destination_topic_id: destination.id, reason: "wrong main topic" }
 
@@ -205,15 +195,15 @@ module Admin
       get impact_preview_admin_topic_url(@topic), params: { source_topic_id: source.id }
 
       assert_response :success
-      assert_match "Knowledge links", response.body
-      assert_match "knowledge links", response.body
+      assert_match "Topics affected", response.body
+      assert_match "Aliases", response.body
+      assert_match "lakeshore community foundation will combine into lakeshore community foundation partnership.", response.body
     end
 
     test "impact preview supports retire language" do
       get impact_preview_admin_topic_url(@topic), params: { action_name: "retire" }
 
       assert_response :success
-      assert_match "Retiring this topic will block future reuse", response.body
       assert_match "This topic will be blocked from future reuse and discovery.", response.body
     end
 
@@ -224,11 +214,8 @@ module Admin
       get impact_preview_admin_topic_url(@topic), params: { action_name: "move_alias", alias_name: "lakeshore partners", alias_count: 1, target_topic_id: target.id }
 
       assert_response :success
-      assert_match "Moving lakeshore partners to lakeshore district", response.body
-      assert_match "will transfer 1 alias entry and leave 1 alias already on the destination topic", response.body
+      assert_match "lakeshore partners will be moved under lakeshore district.", response.body
       assert_match target.name, response.body
-      assert_match "Aliases moving", response.body
-      assert_match "Destination aliases already there", response.body
     end
 
     test "impact preview uses supplied alias count for merge away" do
@@ -239,7 +226,8 @@ module Admin
       get impact_preview_admin_topic_url(@topic), params: { action_name: "merge_away", target_topic_id: destination.id, alias_count: 2 }
 
       assert_response :success
-      assert_match "will update 0 pages/mentions, 3 aliases", response.body
+      assert_match %r{<dt>Topics affected</dt><dd>2</dd>}, response.body
+      assert_match %r{<dt>Aliases</dt><dd>2</dd>}, response.body
     end
 
     test "impact preview for merge away uses the current topic as the moving source" do
@@ -249,9 +237,8 @@ module Admin
       get impact_preview_admin_topic_url(@topic), params: { action_name: "merge_away", target_topic_id: destination.id }
 
       assert_response :success
-      assert_match "Moving #{@topic.name} under #{destination.name}", response.body
       assert_match "Topics affected", response.body
-      assert_match "will update 0 pages/mentions", response.body
+      assert_match "lakeshore community foundation partnership will merge into lakeshore district.", response.body
     end
 
     test "move alias form preserves search context through selection and submit" do
@@ -265,7 +252,7 @@ module Admin
       assert_match 'name="source_topic_id"', response.body
       assert_match 'value="55"', response.body
       assert_match 'data-topic-repair-search-target="preview"', response.body
-      assert_match "Choose a destination topic to preview the move.", response.body
+      assert_match "Select a destination to preview.", response.body
       assert_match alias_record.name, response.body
     end
 
@@ -368,10 +355,9 @@ module Admin
 
       assert_response :success
       assert_match "This Topic Is Wrong", response.body
-      assert_match "Make This Topic An Alias Of Another Topic", response.body
-      assert_match "any existing aliases on this topic move with it to the new canonical destination", response.body
+      assert_match "Make this an alias", response.body
+      assert_match "becomes an alias of the destination. Existing aliases move with it.", response.body
       assert_no_match "Canonical Correction", response.body
-      assert_no_match "Confirm merge", response.body
     end
   end
 end

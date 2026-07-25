@@ -3,15 +3,8 @@ require "test_helper"
 module Admin
   class SearchesControllerTest < ActionDispatch::IntegrationTest
     setup do
-      @admin = User.create!(email_address: "admin@example.com", password: "password", admin: true, totp_enabled: true)
-      @admin.ensure_totp_secret!
-
-      post session_url, params: { email_address: "admin@example.com", password: "password" }
-      follow_redirect!
-
-      totp = ROTP::TOTP.new(@admin.totp_secret, issuer: "TwoRiversMatters")
-      post mfa_session_url, params: { code: totp.now }
-      follow_redirect!
+      @admin = User.create!(email_address: "admin@example.com", admin: true)
+      sign_in_as_admin(@admin)
 
       seed_prompt_templates
     end
@@ -51,7 +44,7 @@ module Admin
     end
 
     test "unauthenticated users are redirected" do
-      delete session_url
+      delete public_session_url
       get admin_search_url
       assert_response :redirect
     end

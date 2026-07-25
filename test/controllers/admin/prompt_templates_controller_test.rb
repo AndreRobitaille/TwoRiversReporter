@@ -4,19 +4,9 @@ class Admin::PromptTemplatesControllerTest < ActionDispatch::IntegrationTest
   setup do
     @admin = User.create!(
       email_address: "prompt-admin@example.com",
-      password: "password123456",
-      admin: true,
-      totp_enabled: true
+      admin: true
     )
-    @admin.ensure_totp_secret!
-
-    post session_url, params: {
-      email_address: @admin.email_address,
-      password: "password123456"
-    }
-    post mfa_session_url, params: {
-      code: ROTP::TOTP.new(@admin.totp_secret).now
-    }
+    sign_in_as_admin(@admin)
 
     @template = PromptTemplate.create!(
       key: "test_prompt",

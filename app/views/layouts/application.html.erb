@@ -79,6 +79,7 @@
 
   <body class="theme-living-room">
     <div class="site-wrapper">
+      <% current_path = controller_path %>
       <header class="site-header">
         <div class="container">
           <%= link_to root_path, class: "site-logo" do %>
@@ -103,12 +104,33 @@
             <%= link_to "Topics", topics_path, class: ("active" if controller_name == "topics") %>
             <%= link_to "Committees", committees_path, class: ("active" if controller_name == "committees") %>
             <%= link_to "About", about_path, class: ("active" if controller_name == "pages") %>
+
+            <% if authenticated? %>
+              <%= link_to "Account", settings_profile_path, class: ("active" if current_path.start_with?("settings/")) %>
+              <%= link_to "Admin", admin_root_path, class: ("active" if current_path.start_with?("admin/")) if current_user&.admin_access_ready? %>
+              <%= link_to "Sign out", public_session_path, data: { turbo_method: :delete } %>
+            <% else %>
+              <%= link_to "Sign in", new_public_session_path, class: ("active" if current_path == "sessions") %>
+              <%= link_to "Apply", new_application_path, class: ("active" if current_path == "applications") %>
+            <% end %>
           </nav>
         </div>
       </header>
 
       <main class="main-content">
         <div class="container">
+          <% if current_user.present? && !current_user.passkey_prompt_dismissed? && !current_user.passkey_credentials.exists? %>
+            <div class="passkey-prompt attention-card attention-card--warning mb-6">
+              <p class="attention-card__title">Make your next sign-in faster</p>
+              <p class="attention-card__meta">Add a passkey to this account</p>
+
+              <div class="flex flex-wrap gap-2 mt-4">
+                <%= link_to "Add a passkey", settings_security_path, class: "btn btn--secondary btn--sm" %>
+                <%= link_to "Not now", settings_passkey_prompt_path, class: "btn btn--ghost btn--sm", data: { turbo_method: :delete } %>
+              </div>
+            </div>
+          <% end %>
+
           <%= yield %>
         </div>
       </main>

@@ -1,6 +1,8 @@
 class MeetingsController < ApplicationController
   include LoadsGeneratedImages
 
+  allow_unauthenticated_access
+
   UPCOMING_WINDOW = 21.days
   RECENT_WINDOW = 21.days
 

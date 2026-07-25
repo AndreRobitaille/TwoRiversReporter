@@ -36,8 +36,10 @@ Rails.application.configure do
   # ActionMailer::Base.deliveries array.
   config.action_mailer.delivery_method = :test
 
-  # Set host to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "example.com" }
+  # Host used by every link we build outside of a request: mailer templates and
+  # the absolute URLs TransactionalEmail hands to Loops. The transactional email
+  # tests assert against this host, so changing it changes those expectations.
+  config.action_mailer.default_url_options = { protocol: "http", host: "example.com" }
 
   # Print deprecation notices to the stderr.
   config.active_support.deprecation = :stderr
@@ -50,4 +52,12 @@ Rails.application.configure do
 
   # Raise error when a before_action's only/except options reference missing actions.
   config.action_controller.raise_on_missing_callback_actions = true
+
+  # Never read the real Loops API key from credentials during tests. With a key
+  # present, LoopsDelivery stops short-circuiting on a blank key and POSTs to the
+  # live Loops API — real email to real addresses. Tests set ENV["LOOPS_API_KEY"]
+  # themselves when they need one. This is config rather than a Rails.env check
+  # because several tests stub Rails.env to "production", which would defeat an
+  # environment-based guard exactly when delivery is most likely to fire.
+  config.x.loops_api_key_from_credentials = false
 end

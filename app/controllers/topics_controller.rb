@@ -2,16 +2,34 @@ class TopicsController < ApplicationController
   include HighlightSignals
   include LoadsGeneratedImages
 
+  allow_unauthenticated_access
+
   def index
     @search_query = params[:q].presence
 
     if @search_query
-      search_scope = Topic.publicly_visible
-                          .search_by_text(@search_query)
-                          .includes(:topic_briefing)
-                          .order(Arel.sql("resident_impact_score DESC NULLS LAST"), last_activity_at: :desc, id: :desc)
+      # Gated anonymous visitors search the public record only — name,
+      # canonical name, description, aliases. `search_by_text` also matches
+      # generated briefing headlines, which would make the *shape* of this
+      # results list a function of text the gate withholds (see the scope
+      # comment in Topic). Signed-in members and open mode keep full search.
+      matches = if gated_for_visitor?
+        Topic.publicly_visible.search_by_public_text(@search_query)
+      else
+        Topic.publicly_visible.search_by_text(@search_query)
+      end
 
-      @pagy, @search_results = pagy(:offset, search_scope, limit: 20)
+      search_scope = matches
+                       .includes(:topic_briefing)
+                       .order(Arel.sql("resident_impact_score DESC NULLS LAST"), last_activity_at: :desc, id: :desc)
+
+      # Gated anonymous visitors are pinned to page 1: the view caps them to
+      # two cards regardless, but without this, `?page=2` would still hand
+      # back a *different* two topics (results 21-22, etc.), letting the
+      # cap be walked around two cards at a time. Signed-in / open-mode
+      # behavior is untouched (page: nil defers to the normal params[:page]
+      # resolution).
+      @pagy, @search_results = pagy(:offset, search_scope, page: (1 if gated_for_visitor?), limit: 20)
       @meeting_refs = build_meeting_refs(@search_results.map(&:id))
       @topic_generated_images = generated_images_for(@search_results, surface: :og)
     else
@@ -38,7 +56,11 @@ class TopicsController < ApplicationController
                           .where.not(id: hero_ids)
                           .order(last_activity_at: :desc, id: :desc)
 
-      @pagy, @topics = pagy(:offset, remaining_scope, limit: 20)
+      # Same page-pin as the search branch above, for consistency (the "All
+      # Topics" section is fully replaced by the gate when gated, so this
+      # scope is currently unreachable from the HTML view anyway — but the
+      # pin keeps the data-fetch itself safe if that ever changes).
+      @pagy, @topics = pagy(:offset, remaining_scope, page: (1 if gated_for_visitor?), limit: 20)
 
       # Preload briefings to avoid N+1 on cards
       ActiveRecord::Associations::Preloader.new(

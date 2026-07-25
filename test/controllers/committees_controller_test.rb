@@ -2,6 +2,9 @@ require "test_helper"
 
 class CommitteesControllerTest < ActionDispatch::IntegrationTest
   setup do
+    @user = User.create!(email_address: "member@example.com", status: "active")
+    sign_in_as(@user)
+
     @council = Committee.create!(
       name: "City Council",
       slug: "city-council",

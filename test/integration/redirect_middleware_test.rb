@@ -1,6 +1,11 @@
 require "test_helper"
 
 class RedirectMiddlewareTest < ActionDispatch::IntegrationTest
+  setup do
+    @user = User.create!(email_address: "member@example.com", status: "active")
+    sign_in_as(@user)
+  end
+
   test "301s a request whose path has a redirect" do
     Redirect.create!(source_path: "/topics/766", destination: "/topics/176")
 

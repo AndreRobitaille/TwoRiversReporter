@@ -23,5 +23,20 @@ module ActiveSupport
       require_relative "support/prompt_template_seeds"
       PromptTemplateSeeds.create_all!
     end
+
+    def sign_in_as_admin(user = nil)
+      user ||= instance_variable_get(:@admin)
+      sign_in_as(user)
+    end
+
+    def sign_in_as(user = nil)
+      user ||= instance_variable_get(:@user)
+      user.passkey_credentials.create!(external_id: SecureRandom.uuid, public_key: "public-key", sign_count: 0) unless user.passkey_credentials.exists?
+
+      session = Session.create!(user: user, user_agent: "test", ip_address: "127.0.0.1", last_seen_at: Time.current)
+      jar = ActionDispatch::TestRequest.create.cookie_jar
+      jar.signed[:session_id] = session.id
+      cookies[:session_id] = jar[:session_id]
+    end
   end
 end

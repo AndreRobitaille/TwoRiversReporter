@@ -4,37 +4,35 @@ class Admin::TranscriptImportsControllerTest < ActionDispatch::IntegrationTest
   include ActiveJob::TestHelper
 
   setup do
-    @admin = User.create!(email_address: "transcript-admin@example.com", password: "password123456", admin: true, totp_enabled: true)
-    @admin.ensure_totp_secret!
-    @mfa_pending_admin = User.create!(email_address: "transcript-pending@example.com", password: "password123456", admin: true, totp_enabled: false)
-    @mfa_pending_admin.ensure_totp_secret!
+    @admin = User.create!(email_address: "transcript-admin@example.com", admin: true)
+    @mfa_pending_admin = User.create!(email_address: "transcript-pending@example.com", admin: true, status: "pending")
     @committee = Committee.create!(name: "Plan Commission")
     @meeting = Meeting.create!(body_name: "Plan Commission Meeting", detail_page_url: "https://example.com/meetings/plan-commission", starts_at: Time.zone.local(2026, 6, 14, 18, 30), committee: @committee)
   end
 
   test "unauthenticated access is blocked" do
     get admin_transcript_imports_path
-    assert_redirected_to new_session_path
+    assert_redirected_to new_public_session_path
 
     post admin_transcript_imports_path, params: { transcript_import: { meeting_id: @meeting.id, youtube_url: youtube_url } }
-    assert_redirected_to new_session_path
+    assert_redirected_to new_public_session_path
 
     post check_url_admin_transcript_imports_path, params: { transcript_import: { youtube_url: youtube_url } }
-    assert_redirected_to new_session_path
+    assert_redirected_to new_public_session_path
   end
 
   test "password-authenticated but mfa-pending user is blocked" do
-    post session_url, params: { email_address: @mfa_pending_admin.email_address, password: "password123456" }
+    sign_in_as_admin(@mfa_pending_admin)
 
     get admin_transcript_imports_path
-    assert_redirected_to new_session_path
+    assert_redirected_to new_public_session_path
 
     post admin_transcript_imports_path, params: { transcript_import: { meeting_id: @meeting.id, youtube_url: youtube_url } }
-    assert_redirected_to new_session_path
+    assert_redirected_to new_public_session_path
   end
 
   test "authenticated admin can see transcript imports page" do
-    sign_in_as_admin
+    sign_in_as_admin(@admin)
 
     get admin_transcript_imports_path
 
@@ -272,11 +270,6 @@ class Admin::TranscriptImportsControllerTest < ActionDispatch::IntegrationTest
       00:00:01,000 --> 00:00:03,000
       Welcome to the uploaded transcript.
     SRT
-  end
-
-  def sign_in_as_admin
-    post session_url, params: { email_address: @admin.email_address, password: "password123456" }
-    post mfa_session_url, params: { code: ROTP::TOTP.new(@admin.totp_secret).now }
   end
 
   def youtube_url

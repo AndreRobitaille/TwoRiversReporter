@@ -27,6 +27,32 @@ env:
     GA_MEASUREMENT_ID: G-KEC1YZ61WZ
     GENERATED_IMAGES_ENABLED: "true"
 
+    # Absolute URLs in transactional email are built from this. A bare path in
+    # an email is not clickable, so a wrong value here silently breaks sign-in.
+    APP_HOST: tworiversmatters.com
+
+    # WebAuthn is [SecureContext]-only and rp_id must match the live domain.
+    # The initializer defaults to "localhost"; unset here, passkeys would fail
+    # on production with no error raised anywhere.
+    WEBAUTHN_ORIGIN: https://tworiversmatters.com
+    WEBAUTHN_RP_ID: tworiversmatters.com
+    WEBAUTHN_RP_NAME: Two Rivers Matters
+
+    ADMIN_NOTIFICATION_EMAIL: andre@tworiversmatters.com
+
+    # Loops transactional template ids. Not secrets — they identify templates,
+    # they do not authorise anything; LOOPS_API_KEY is the credential.
+    # All five are required in production: config/initializers/
+    # verify_transactional_email_ids.rb refuses to boot without them, because a
+    # partial setup would answer 500 for unknown addresses and 302 for real
+    # ones, which is the account-enumeration leak the identical response exists
+    # to prevent.
+    LOOPS_MAGIC_LINK_TRANSACTIONAL_ID: cms0uhdt5147h0j0hixl946xa
+    LOOPS_APPLICATION_LINK_TRANSACTIONAL_ID: cms0uszcu14lm0j0hq9e5a3o0
+    LOOPS_ADMIN_APPLICATION_NOTIFICATION_TRANSACTIONAL_ID: cms0ux49w00510jvlhvgj00d0
+    LOOPS_NO_ACCOUNT_TRANSACTIONAL_ID: cms0v0mnr00aw0jx8hodlsdl2
+    LOOPS_APPLICATION_PENDING_TRANSACTIONAL_ID: cms0v4kom00hw0jyttkozowl0
+
 aliases:
   console: app exec --interactive --reuse "bin/rails console"
   shell: app exec --interactive --reuse "bash"

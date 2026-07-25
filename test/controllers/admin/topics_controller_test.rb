@@ -4,15 +4,8 @@ require "securerandom"
 module Admin
   class TopicsControllerTest < ActionDispatch::IntegrationTest
     setup do
-      @admin = User.create!(email_address: "admin@example.com", password: "password", admin: true, totp_enabled: true)
-      @admin.ensure_totp_secret!
-
-      post session_url, params: { email_address: "admin@example.com", password: "password" }
-      follow_redirect!
-
-      totp = ROTP::TOTP.new(@admin.totp_secret, issuer: "TwoRiversMatters")
-      post mfa_session_url, params: { code: totp.now }
-      follow_redirect!
+      @admin = User.create!(email_address: "admin@example.com", admin: true)
+      sign_in_as_admin(@admin)
 
       @topic = Topic.create!(name: "Topic A #{SecureRandom.hex(4)}")
     end
@@ -38,7 +31,7 @@ module Admin
       assert_select "th", text: "Signals"
       assert_select "th", text: "Mentions"
       assert_select "a[href=?]", admin_topic_path(@topic), text: @topic.name
-      assert_select "a[href=?]", admin_topic_path(@topic), text: "Open Topic"
+      assert_select "a[href=?]", admin_topic_path(@topic), text: "Open"
       assert_match /cleanup candidate/i, response.body
       assert_match /cleanup alt/i, response.body
       assert_no_match "Recently changed ·", response.body

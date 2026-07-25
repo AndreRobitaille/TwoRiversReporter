@@ -5,20 +5,9 @@ class AdminTopicFlowsTest < ActionDispatch::IntegrationTest
   setup do
     @admin = User.create!(
       email_address: "admin@example.com",
-      password: "password",
-      password_confirmation: "password",
-      admin: true,
-      totp_enabled: true
+      admin: true
     )
-    @admin.ensure_totp_secret!
-
-    # Login
-    post session_url, params: { email_address: @admin.email_address, password: "password" }
-    follow_redirect! # to mfa_session/new
-
-    totp = ROTP::TOTP.new(@admin.totp_secret, issuer: "TwoRiversMatters")
-    post mfa_session_url, params: { code: totp.now }
-    follow_redirect! # to admin_root
+    sign_in_as_admin(@admin)
 
     suffix = SecureRandom.hex(4)
     @topic1_name = "Topic Alpha #{suffix}"
@@ -41,9 +30,9 @@ class AdminTopicFlowsTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", admin_topic_path(@topic1), text: @topic1_name.downcase
     assert_select "a[href=?]", admin_topic_path(@topic2), text: @topic2_name.downcase
     assert_select "a[href=?]", admin_topic_path(@topic3), text: @topic3_name.downcase
-    assert_select "a.btn--secondary[href=?]", admin_topic_path(@topic1), text: "Open Topic"
-    assert_select "a.btn--secondary[href=?]", admin_topic_path(@topic2), text: "Open Topic"
-    assert_select "a.btn--secondary[href=?]", admin_topic_path(@topic3), text: "Open Topic"
+    assert_select "a.btn--secondary[href=?]", admin_topic_path(@topic1), text: "Open"
+    assert_select "a.btn--secondary[href=?]", admin_topic_path(@topic2), text: "Open"
+    assert_select "a.btn--secondary[href=?]", admin_topic_path(@topic3), text: "Open"
     assert_match "Signals", response.body
   end
 

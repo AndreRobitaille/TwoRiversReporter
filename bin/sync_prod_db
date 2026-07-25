@@ -148,17 +148,12 @@ psql -d "$LOCAL_DB_NAME" -v ON_ERROR_STOP=1 -q -f "$DUMP_FILE" >/dev/null
 
 # --- Scrub auth -----------------------------------------------------------
 
-info "Scrubbing admin auth (password → 'password', TOTP cleared)"
-# update_all bypasses callbacks, validations, and dirty tracking — which matters
-# because `encrypts :totp_secret` can trip AR encryption when reading old values
-# via the normal update! path.
+info "Scrubbing admin auth to passwordless defaults"
+# update_all bypasses callbacks, validations, and dirty tracking.
 bin/rails runner -e development '
-  digest = BCrypt::Password.create("password")
   count = User.update_all(
-    password_digest: digest,
-    totp_secret: nil,
-    totp_enabled: false,
-    recovery_codes_digest: []
+    admin: false,
+    passkey_prompt_dismissed_until: nil
   )
   puts "  scrubbed #{count} user(s)"
 '
@@ -178,5 +173,5 @@ SQL
 echo
 info "Done."
 echo "  Local DB:  $LOCAL_DB_NAME"
-echo "  Admin login: email from production, password = 'password'"
+echo "  Admin login: use passkey or passwordless sign-in flow"
 echo "  To see admin emails: bin/rails runner 'puts User.pluck(:email_address)'"

@@ -1,7 +1,14 @@
 module Admin
   class UsersController < BaseController
+    before_action :set_user, only: %i[show approve reject toggle_admin disable revoke_session revoke_all_sessions]
+
     def index
-      @users = User.where(admin: true).order(:email_address)
+      @users = User.order(:email_address)
+    end
+
+    def show
+      @applications = @user.membership_applications.order(created_at: :desc)
+      @sessions = @user.sessions.order(last_seen_at: :desc)
     end
 
     def new
@@ -9,18 +16,98 @@ module Admin
     end
 
     def create
-      @user = User.new(user_params.merge(admin: true))
+      @user = User.new(user_params.merge(admin: true, status: "active"))
 
       if @user.save
-        redirect_to users_path, notice: "Admin user created. They must enroll MFA on first sign-in."
+        redirect_to user_path(@user), notice: "Admin user created."
       else
         render :new, status: :unprocessable_entity
       end
     end
 
+    def approve
+      user = nil
+      application = nil
+      magic_link = nil
+
+      ApplicationRecord.transaction do
+        user = User.lock.find(@user.id)
+        application = user.membership_applications.lock.find_by!(status: "submitted")
+        magic_link = MagicLink.create_for!(user, purpose: "sign_in")
+
+        user.update!(status: "active", disabled_at: nil)
+        application.update!(status: "approved", reviewed_at: Time.current, reviewed_by: Current.session.user)
+      end
+
+      begin
+        TransactionalEmail.application_approved(user, application, magic_link).deliver_now
+      rescue StandardError => e
+        raise e unless user && application && magic_link
+
+        ApplicationRecord.transaction do
+          user = User.lock.find(user.id)
+          application = user.membership_applications.lock.find(application.id)
+          user.update!(status: "pending", disabled_at: Time.current)
+          application.update!(status: "submitted", reviewed_at: nil, reviewed_by: nil)
+          magic_link.destroy! if magic_link.persisted?
+        end
+
+        raise e
+      end
+      redirect_to user_path(@user), notice: "Application approved."
+    end
+
+    def reject
+      ApplicationRecord.transaction do
+        user = User.lock.find(@user.id)
+        application = user.membership_applications.lock.find_by!(status: "submitted")
+
+        user.update!(status: "rejected")
+        application.update!(status: "rejected", reviewed_at: Time.current, reviewed_by: Current.session.user, rejection_reason: params[:rejection_reason].presence)
+      end
+
+      redirect_to user_path(@user), notice: "Application rejected."
+    end
+
+    def toggle_admin
+      @user.update!(admin: !@user.admin?)
+      redirect_to user_path(@user), notice: "Admin role updated."
+    end
+
+    def disable
+      if @user.disabled_at.present? && @user.status == "active"
+        @user.update!(disabled_at: nil)
+        notice = "User re-enabled."
+      else
+        if @user.disabled_at.present?
+          notice = "User remains disabled."
+        else
+          @user.update!(disabled_at: Time.current)
+          notice = "User disabled."
+        end
+      end
+
+      redirect_to user_path(@user), notice: notice
+    end
+
+    def revoke_session
+      @user.sessions.find(params[:session_id]).destroy!
+      redirect_to user_path(@user), notice: "Session revoked."
+    end
+
+    def revoke_all_sessions
+      @user.sessions.delete_all
+      redirect_to user_path(@user), notice: "All sessions revoked."
+    end
+
     private
+
+      def set_user
+        @user = User.find(params[:id])
+      end
+
       def user_params
-        params.require(:user).permit(:email_address, :password, :password_confirmation)
+        params.require(:user).permit(:email_address)
       end
   end
 end

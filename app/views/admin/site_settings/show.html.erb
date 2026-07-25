@@ -1,0 +1,45 @@
+<%# app/views/admin/site_settings/show.html.erb %>
+<div class="page-header">
+  <h1 class="page-title">Site access</h1>
+  <p class="page-subtitle">Who can read the site without an account</p>
+</div>
+
+<% if flash[:notice] %>
+  <div class="flash flash--success"><%= flash[:notice] %></div>
+<% end %>
+
+<div class="section-header">
+  <%= render "shared/atom_marker", theme: "silo" %>
+  <span class="section-header__label">Access mode</span>
+  <div class="section-header__line"></div>
+</div>
+
+<%= form_with model: @site_setting, url: admin_site_settings_path, method: :patch do |form| %>
+  <% if @site_setting.errors.any? %>
+    <div class="flash flash--danger">
+      <ul>
+        <% @site_setting.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <label class="form-label" for="site_setting_access_mode_open">
+      <%= form.radio_button :access_mode, "open", id: "site_setting_access_mode_open" %>
+      Open — anyone can read everything
+    </label>
+    <p class="form-hint">The site behaves as a fully public civic resource.</p>
+  </div>
+
+  <div class="form-group">
+    <label class="form-label" for="site_setting_access_mode_gated">
+      <%= form.radio_button :access_mode, "gated", id: "site_setting_access_mode_gated" %>
+      Gated — anonymous visitors see a preview only
+    </label>
+    <p class="form-hint">Summaries, briefings, and voting records require an approved account.</p>
+  </div>
+
+  <%= form.submit "Save access mode", class: "btn btn--primary" %>
+<% end %>

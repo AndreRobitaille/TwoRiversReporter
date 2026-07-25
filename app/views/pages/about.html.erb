@@ -7,11 +7,19 @@
   <header class="about-hook">
     <span class="about-eyebrow">About This Site</span>
     <h1 class="topic-article-title">Your City Hall.<br>In Plain English.</h1>
-    <p class="topic-article-dek">This is not a city website. It's an independent project built by a Two Rivers resident to help you understand what's actually happening at city hall — using nothing but the city's own public documents.</p>
+    <% if gated_for_visitor? %>
+      <p class="topic-article-dek">This is not a city website. It's an independent project built by a Two Rivers resident to make what's actually happening at city hall understandable — using nothing but the city's own public documents. Reading it is by approval.</p>
+    <% else %>
+      <p class="topic-article-dek">This is not a city website. It's an independent project built by a Two Rivers resident to help you understand what's actually happening at city hall — using nothing but the city's own public documents.</p>
+    <% end %>
   </header>
 
   <%# === Anchor Bar === %>
   <nav class="about-anchor-bar" aria-label="Page sections">
+    <% if gated_for_visitor? %>
+      <a href="#getting-access">Getting Access</a>
+      <span class="about-anchor-sep"><%= render "shared/atom_marker", size: 14 %></span>
+    <% end %>
     <a href="#why-this-exists">Why This Exists</a>
     <span class="about-anchor-sep"><%= render "shared/atom_marker", size: 14 %></span>
     <a href="#when-we-update">When We Update</a>
@@ -22,6 +30,25 @@
     <span class="about-anchor-sep"><%= render "shared/atom_marker", size: 14 %></span>
     <a href="#under-the-hood">Under the Hood</a>
   </nav>
+
+  <%# === Getting Access (gated mode only) === %>
+  <% if gated_for_visitor? %>
+    <section id="getting-access" class="topic-article-section">
+      <div class="home-section-header">
+        <%= render "shared/atom_marker" %>
+        <span class="section-label">Getting Access</span>
+        <span class="section-line"></span>
+      </div>
+
+      <div class="about-faq">
+        <p class="about-faq-answer">Access to this site is by approval. Without an account you'll see headlines and the opening of each summary; the full summaries, topic histories, and analysis are for approved members.</p>
+        <p class="about-faq-answer">To ask for an account, fill out the short application. Approval is personal rather than automatic, so it isn't instant.</p>
+        <p class="about-faq-answer">The city's own records are not behind this. Agendas, meeting packets, minutes, and recorded council meetings are public documents and stay public — on the City of Two Rivers website and the city's YouTube channel. What's gated is the reading, summarizing, and connecting done on top of them.</p>
+      </div>
+
+      <%= render "shared/gate", message: "Request access, or sign in" %>
+    </section>
+  <% end %>
 
   <%# === Why This Exists === %>
   <section id="why-this-exists" class="topic-article-section">
@@ -34,14 +61,22 @@
     <div class="about-faq">
       <p class="about-faq-answer">Residents deserve to understand what their city government is doing. That shouldn't require attending every meeting, reading every packet, or already knowing how municipal government works.</p>
       <p class="about-faq-answer">The city posts documents because state law requires it. But posting a 100-page PDF is not the same as helping people understand what's in it. The information is technically public, but it's not practically accessible — not for people with jobs, families, and limited time.</p>
-      <p class="about-faq-answer">This site exists to close that gap. It reads the documents so you don't have to. It explains what happened in plain language. It tracks issues over time so you can see the whole story, not just one meeting's snapshot. And it's built to ask the questions that residents would ask:</p>
+      <% if gated_for_visitor? %>
+        <p class="about-faq-answer">This site exists to close that gap. It reads the documents, explains what happened in plain language, and tracks issues over time so the whole story is visible instead of one meeting's snapshot. Reading that work is currently by approval — the section above explains how to ask. And it's built to ask the questions that residents would ask:</p>
+      <% else %>
+        <p class="about-faq-answer">This site exists to close that gap. It reads the documents so you don't have to. It explains what happened in plain language. It tracks issues over time so you can see the whole story, not just one meeting's snapshot. And it's built to ask the questions that residents would ask:</p>
+      <% end %>
       <ul class="about-faq-list">
         <li>Who benefits from this decision?</li>
         <li>Does the city's explanation match what actually happened?</li>
         <li>Has this been deferred three times without resolution?</li>
         <li>Why did this quietly disappear from the agenda?</li>
       </ul>
-      <p class="about-faq-answer">None of that is adversarial. It's what accountability looks like. The city does its job, and residents get to see how it's going.</p>
+      <% if gated_for_visitor? %>
+        <p class="about-faq-answer">None of that is adversarial. It's what accountability looks like: the city does its job, and there's a plain-language record of how it's going.</p>
+      <% else %>
+        <p class="about-faq-answer">None of that is adversarial. It's what accountability looks like. The city does its job, and residents get to see how it's going.</p>
+      <% end %>
     </div>
   </section>
 
@@ -108,13 +143,23 @@
         without having to attend every meeting or read every set of minutes.
       </li>
       <li class="about-pipeline-connector" aria-hidden="true">&darr;</li>
-      <li class="about-pipeline-step">
-        <strong>You get what the city's website doesn't give you.</strong>
-        The city posts documents. This site reads them for you, explains what happened and why it matters,
-        tracks how issues evolve over time, and surfaces the things that affect your taxes, your neighborhood,
-        and your daily life — without requiring you to sit through a three-hour meeting or decode
-        a 50-page PDF.
-      </li>
+      <% if gated_for_visitor? %>
+        <li class="about-pipeline-step">
+          <strong>The result is what the city's website doesn't provide.</strong>
+          The city posts documents. This site reads them, explains what happened and why it matters,
+          tracks how issues evolve over time, and surfaces the things that hit household budgets,
+          neighborhoods, and daily life — without anyone having to sit through a three-hour meeting
+          or decode a 50-page PDF.
+        </li>
+      <% else %>
+        <li class="about-pipeline-step">
+          <strong>You get what the city's website doesn't give you.</strong>
+          The city posts documents. This site reads them for you, explains what happened and why it matters,
+          tracks how issues evolve over time, and surfaces the things that affect your taxes, your neighborhood,
+          and your daily life — without requiring you to sit through a three-hour meeting or decode
+          a 50-page PDF.
+        </li>
+      <% end %>
     </ol>
   </section>
 

@@ -2,6 +2,14 @@ require "test_helper"
 require "ostruct"
 
 class MeetingsHelperTest < ActionView::TestCase
+  # share_text/facebook_share_text consult gated_for_visitor? (normally a
+  # controller helper_method) to withhold highlights beyond the first for
+  # gated anonymous visitors. None of the tests below exercise gating, so
+  # default to the open-mode behavior they were all written against.
+  def gated_for_visitor?
+    false
+  end
+
   test "meeting_status_badge returns nil for upcoming meeting with no documents" do
     meeting = OpenStruct.new(document_status: :none, starts_at: 2.days.from_now, meeting_summaries: [])
     assert_nil meeting_status_badge(meeting)

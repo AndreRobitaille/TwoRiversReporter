@@ -1,4 +1,6 @@
 class CommitteesController < ApplicationController
+  allow_unauthenticated_access
+
   # Governance groupings matching the committee connections diagram.
   # These are stable for a small city — if a new committee is created,
   # add it here. Unmatched committees fall into :advisory by default.

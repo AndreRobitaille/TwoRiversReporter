@@ -1,28 +1,39 @@
-<%= turbo_stream.append "all-topics-cards" do %>
-  <% @topics.each do |topic| %>
-    <%= render "topics/topic_card", topic: topic, highlight_signals: {} %>
-  <% end %>
-<% end %>
-
-<%= turbo_stream.replace "all-topics-page" do %>
-  <div id="all-topics-page">
-    <% if @pagy.next %>
-      <div class="topics-show-more">
-        <%= link_to topics_path(page: @pagy.next, format: :turbo_stream),
-              class: "btn btn--secondary" do %>
-          Show more
-        <% end %>
-      </div>
-    <% else %>
-      <div class="topics-show-more">
-        <span class="topics-card-meta">All topics loaded</span>
-      </div>
+<%# Gated anonymous visitors never receive paginated topic cards or the
+    total count over turbo_stream. The "Show more" link that drives this
+    request only ever renders inside the (ungated) "All Topics" section, so
+    there is no legitimate gated caller — but the format is reachable
+    directly (`/topics?page=2&format=turbo_stream`), bypassing the two-card
+    cap enforced in index.html.erb. Render nothing in that case: the
+    all-topics-cards/all-topics-page/topics-count targets don't exist in the
+    gated HTML page to begin with (the whole section is replaced by the gate
+    card), so there's no real mount point to update anyway. %>
+<% unless gated_for_visitor? %>
+  <%= turbo_stream.append "all-topics-cards" do %>
+    <% @topics.each do |topic| %>
+      <%= render "topics/topic_card", topic: topic, highlight_signals: {} %>
     <% end %>
-  </div>
-<% end %>
+  <% end %>
 
-<%= turbo_stream.replace "topics-count" do %>
-  <span id="topics-count" class="topics-count">
-    <%= @pagy.to %> of <%= @pagy.count %>
-  </span>
+  <%= turbo_stream.replace "all-topics-page" do %>
+    <div id="all-topics-page">
+      <% if @pagy.next %>
+        <div class="topics-show-more">
+          <%= link_to topics_path(page: @pagy.next, format: :turbo_stream),
+                class: "btn btn--secondary" do %>
+            Show more
+          <% end %>
+        </div>
+      <% else %>
+        <div class="topics-show-more">
+          <span class="topics-card-meta">All topics loaded</span>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%= turbo_stream.replace "topics-count" do %>
+    <span id="topics-count" class="topics-count">
+      <%= @pagy.to %> of <%= @pagy.count %>
+    </span>
+  <% end %>
 <% end %>

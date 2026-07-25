@@ -8,15 +8,8 @@ module Admin
     include ActiveJob::TestHelper
 
     setup do
-      @admin = User.create!(email_address: "admin@example.com", password: "password", admin: true, totp_enabled: true)
-      @admin.ensure_totp_secret!
-
-      post session_url, params: { email_address: "admin@example.com", password: "password" }
-      follow_redirect!
-
-      totp = ROTP::TOTP.new(@admin.totp_secret, issuer: "TwoRiversMatters")
-      post mfa_session_url, params: { code: totp.now }
-      follow_redirect!
+      @admin = User.create!(email_address: "admin@example.com", admin: true)
+      sign_in_as_admin(@admin)
 
       @topic = Topic.create!(name: "Generated Image Topic #{SecureRandom.hex(4)}", status: "approved")
       @meeting = Meeting.create!(detail_page_url: "https://example.com/meetings/#{SecureRandom.hex(4)}", starts_at: Time.current)

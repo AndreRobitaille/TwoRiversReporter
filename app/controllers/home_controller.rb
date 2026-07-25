@@ -1,6 +1,8 @@
 class HomeController < ApplicationController
   include LoadsGeneratedImages
 
+  allow_unauthenticated_access only: :index
+
   ACTIVITY_WINDOW = 30.days
   TOP_STORY_LIMIT = 2
   WIRE_MIN_IMPACT = 2

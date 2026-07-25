@@ -1,0 +1,50 @@
+<% content_for(:title) { "Account — Security" } %>
+<% content_for(:description) { "Manage the passkeys attached to your account." } %>
+
+<%= render "settings/header" %>
+<%= render "settings/tabs", current: :security %>
+
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title">Passkeys</h2>
+    <p class="card-subtitle">
+      Passkeys let you sign in without a password. They stay on your devices and
+      use whatever unlocks them — a fingerprint, a face, or a PIN.
+    </p>
+  </div>
+
+  <section
+    data-controller="passkey"
+    data-passkey-registration-options-url-value="<%= registration_options_passkeys_path(format: :json) %>"
+    data-passkey-registration-url-value="<%= registration_passkeys_path(format: :json) %>"
+    data-passkey-authentication-options-url-value="<%= authentication_options_passkeys_path(format: :json) %>"
+    data-passkey-authentication-url-value="<%= authentication_passkeys_path(format: :json) %>"
+  >
+    <button type="button" class="btn btn--primary" data-action="passkey#register" data-passkey-target="trigger">
+      Register a passkey
+    </button>
+
+    <p class="auth-status" data-passkey-target="status" aria-live="polite" role="status"></p>
+
+    <% if @passkey_credentials.any? %>
+      <ul class="passkey-list">
+        <% @passkey_credentials.each do |credential| %>
+          <li class="passkey-item">
+            <div class="passkey-item__body">
+              <p class="passkey-item__name"><%= credential.nickname.presence || "Unnamed passkey" %></p>
+              <p class="passkey-item__meta">Added <%= l(credential.created_at.to_date, format: :long) %></p>
+            </div>
+
+            <%= link_to "Remove", passkey_path(credential),
+                  class: "btn btn--danger btn--sm",
+                  data: { turbo_method: :delete, turbo_confirm: "Remove this passkey?" } %>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <div class="empty-state mt-4">
+        You haven't added any passkeys yet. Register one to make future sign-ins faster.
+      </div>
+    <% end %>
+  </section>
+</div>

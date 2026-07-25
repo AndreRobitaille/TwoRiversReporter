@@ -24,24 +24,26 @@
       <span class="section-line"></span>
     </div>
 
-    <% if @memberships.any? %>
-      <div class="committee-roster">
-        <% sort_memberships(@memberships, @council_member_ids).each do |cm| %>
-          <%= link_to member_path(cm.member), class: "committee-member" do %>
-            <span class="committee-member-name"><%= cm.member.name %></span>
-            <span class="committee-member-badges">
-              <% if cm.role.present? && cm.role.in?(%w[chair vice_chair]) %>
-                <span class="badge badge--primary"><%= cm.role.titleize.tr("_", " ") %></span>
-              <% end %>
-              <% if @council_member_ids.include?(cm.member_id) %>
-                <span class="badge badge--info">Council Member</span>
-              <% end %>
-            </span>
+    <% unless gated_for_visitor? %>
+      <% if @memberships.any? %>
+        <div class="committee-roster">
+          <% sort_memberships(@memberships, @council_member_ids).each do |cm| %>
+            <%= link_to member_path(cm.member), class: "committee-member" do %>
+              <span class="committee-member-name"><%= cm.member.name %></span>
+              <span class="committee-member-badges">
+                <% if cm.role.present? && cm.role.in?(%w[chair vice_chair]) %>
+                  <span class="badge badge--primary"><%= cm.role.titleize.tr("_", " ") %></span>
+                <% end %>
+                <% if @council_member_ids.include?(cm.member_id) %>
+                  <span class="badge badge--info">Council Member</span>
+                <% end %>
+              </span>
+            <% end %>
           <% end %>
-        <% end %>
-      </div>
-    <% else %>
-      <p class="section-empty">No current members on record.</p>
+        </div>
+      <% else %>
+        <p class="section-empty">No current members on record.</p>
+      <% end %>
     <% end %>
   </section>
 
@@ -52,33 +54,39 @@
       <span class="section-line"></span>
     </div>
 
-    <% if @recent_topics.any? %>
-      <div class="committee-activity">
-        <% @recent_topics.each do |topic| %>
-          <% headline = @headlines[topic.id] %>
-          <%= link_to topic_path(topic), class: "committee-activity-item" do %>
-            <div class="committee-activity-header">
-              <span class="committee-activity-topic"><%= topic.canonical_name %></span>
-              <% if topic.respond_to?(:latest_meeting_date) && topic.latest_meeting_date %>
-                <span class="committee-activity-date"><%= topic.latest_meeting_date.strftime("%b %-d") %></span>
+    <% unless gated_for_visitor? %>
+      <% if @recent_topics.any? %>
+        <div class="committee-activity">
+          <% @recent_topics.each do |topic| %>
+            <% headline = @headlines[topic.id] %>
+            <%= link_to topic_path(topic), class: "committee-activity-item" do %>
+              <div class="committee-activity-header">
+                <span class="committee-activity-topic"><%= topic.canonical_name %></span>
+                <% if topic.respond_to?(:latest_meeting_date) && topic.latest_meeting_date %>
+                  <span class="committee-activity-date"><%= topic.latest_meeting_date.strftime("%b %-d") %></span>
+                <% end %>
+              </div>
+              <% if headline.present? %>
+                <p class="committee-activity-headline"><%= truncate(headline, length: 120) %></p>
+              <% elsif topic.description.present? %>
+                <p class="committee-activity-desc"><%= truncate(topic.description, length: 120) %></p>
               <% end %>
-            </div>
-            <% if headline.present? %>
-              <p class="committee-activity-headline"><%= truncate(headline, length: 120) %></p>
-            <% elsif topic.description.present? %>
-              <p class="committee-activity-desc"><%= truncate(topic.description, length: 120) %></p>
+              <span class="committee-activity-cta">Topic details &rarr;</span>
             <% end %>
-            <span class="committee-activity-cta">Topic details &rarr;</span>
           <% end %>
-        <% end %>
-      </div>
-      <div class="committee-activity-footer">
-        <%= link_to "Browse all topics →", topics_path %>
-      </div>
-    <% else %>
-      <p class="section-empty">No recent activity tracked for this committee.</p>
+        </div>
+        <div class="committee-activity-footer">
+          <%= link_to "Browse all topics →", topics_path %>
+        </div>
+      <% else %>
+        <p class="section-empty">No recent activity tracked for this committee.</p>
+      <% end %>
     <% end %>
   </section>
+
+  <% if gated_for_visitor? %>
+    <%= render "shared/gate" %>
+  <% end %>
 
   <%= link_to committees_path, class: "back-link" do %>
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

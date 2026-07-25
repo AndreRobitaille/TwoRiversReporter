@@ -50,6 +50,10 @@
     </section>
   <% end %>
 
+  <% if gated_for_visitor? %>
+    <%= render "shared/gate" %>
+  <% else %>
+
   <%# === Coming Up === %>
   <% if @upcoming.any? %>
     <section class="topic-article-section topic-article-section--upcoming">
@@ -199,6 +203,8 @@
       <p class="section-empty">No meeting activity recorded for this topic yet.</p>
     <% end %>
   </section>
+
+  <% end %>
 
 </article>
 

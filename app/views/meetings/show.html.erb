@@ -14,39 +14,79 @@
     <h1 class="meeting-article-title"><%= meeting_name %></h1>
 
     <div class="meeting-article-docs">
+      <%# Gated visitors get the same chips minus the working URL: a <span>
+          carries no href, so the source PDF is not in the response at all —
+          not truncated, not CSS-hidden, not recoverable from devtools. The
+          icon and label stay so a visitor can tell a Minutes/Agenda/Packet
+          document exists; only the address and the click are withheld. %>
       <% @meeting.latest_documents("minutes_pdf", "agenda_pdf", "packet_pdf")
            .select { |d| d.source_url.present? }
            .each do |doc| %>
-        <%= link_to safe_external_url(doc.source_url), target: "_blank", rel: "noopener", class: "meeting-doc-link" do %>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          <%= doc.document_type.sub("_pdf", "").sub("_html", "").humanize %>
+        <% label = doc.document_type.sub("_pdf", "").sub("_html", "").humanize %>
+        <% if gated_for_visitor? %>
+          <span class="meeting-doc-link meeting-doc-link--disabled" title="Sign in to open">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <%= label %>
+          </span>
+        <% else %>
+          <%= link_to safe_external_url(doc.source_url), target: "_blank", rel: "noopener", class: "meeting-doc-link" do %>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <%= label %>
+          <% end %>
         <% end %>
       <% end %>
       <% transcript = @meeting.latest_document("transcript") %>
       <% if transcript %>
-        <%= link_to safe_external_url(transcript.source_url), target: "_blank", rel: "noopener", class: "meeting-doc-link" do %>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          Watch Recording
+        <% if gated_for_visitor? %>
+          <span class="meeting-doc-link meeting-doc-link--disabled" title="Sign in to open">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Watch Recording
+          </span>
+        <% else %>
+          <%= link_to safe_external_url(transcript.source_url), target: "_blank", rel: "noopener", class: "meeting-doc-link" do %>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Watch Recording
+          <% end %>
         <% end %>
       <% end %>
-      <%= link_to safe_external_url(@meeting.detail_page_url), target: "_blank", rel: "noopener", class: "meeting-doc-link meeting-doc-link--muted" do %>
-        City Website ↗
+      <% if gated_for_visitor? %>
+        <span class="meeting-doc-link meeting-doc-link--muted meeting-doc-link--disabled" title="Sign in to open">
+          City Website ↗
+        </span>
+      <% else %>
+        <%= link_to safe_external_url(@meeting.detail_page_url), target: "_blank", rel: "noopener", class: "meeting-doc-link meeting-doc-link--muted" do %>
+          City Website ↗
+        <% end %>
       <% end %>
       <span class="meeting-docs-separator"></span>
-      <div class="share-wrapper" data-controller="share"
-           data-share-copy-text-value="<%= share_text(@meeting, @summary) %>"
-           data-share-facebook-text-value="<%= facebook_share_text(@meeting, @summary) %>"
-           data-share-url-value="https://<%= MeetingsHelper::PRODUCTION_HOST %>/meetings/<%= @meeting.id %>"
-           data-action="click@window->share#close keydown.esc@window->share#closeOnEscape">
-        <button type="button" class="meeting-doc-link meeting-doc-link--share" data-action="share#toggle" data-share-target="toggleButton">
+      <%# Gated visitors get a visibly-disabled Share button and nothing
+          else: no data-controller, no data-share-*-value payload (the copy
+          text and Facebook text both embed withheld summary content), and no
+          dropdown — its two items are actions, not information, so there is
+          nothing about them worth preserving for a visitor who can't use
+          them. The button stays so the affordance is still legible rather
+          than vanishing. %>
+      <% if gated_for_visitor? %>
+        <button type="button" class="meeting-doc-link meeting-doc-link--share meeting-doc-link--disabled" disabled title="Sign in to share">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
           Share
         </button>
-        <div class="share-dropdown" data-share-target="dropdown" hidden>
-          <button type="button" class="share-dropdown-item" data-action="share#copy" data-share-target="copyButton">Copy summary</button>
-          <button type="button" class="share-dropdown-item" data-action="share#facebook">Share on Facebook</button>
+      <% else %>
+        <div class="share-wrapper" data-controller="share"
+             data-share-copy-text-value="<%= share_text(@meeting, @summary) %>"
+             data-share-facebook-text-value="<%= facebook_share_text(@meeting, @summary) %>"
+             data-share-url-value="https://<%= MeetingsHelper::PRODUCTION_HOST %>/meetings/<%= @meeting.id %>"
+             data-action="click@window->share#close keydown.esc@window->share#closeOnEscape">
+          <button type="button" class="meeting-doc-link meeting-doc-link--share" data-action="share#toggle" data-share-target="toggleButton">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            Share
+          </button>
+          <div class="share-dropdown" data-share-target="dropdown" hidden>
+            <button type="button" class="share-dropdown-item" data-action="share#copy" data-share-target="copyButton">Copy summary</button>
+            <button type="button" class="share-dropdown-item" data-action="share#facebook">Share on Facebook</button>
+          </div>
         </div>
-      </div>
+      <% end %>
     </div>
   </header>
 
@@ -98,11 +138,19 @@
     <% headline = meeting_headline(gd) %>
     <% if headline.present? %>
       <div class="meeting-article-lede">
-        <p><%= headline %></p>
+        <%# Gated visitors get a taste of the lede, not all of it. The same cap
+            is applied to the meta description and the share payload in
+            MeetingsHelper — the teased tail is withheld content everywhere. %>
+        <p><%= teaser(headline, chars: MeetingsHelper::GATED_LEDE_CHARS, fade: :block) %></p>
       </div>
     <% else %>
       <p class="section-empty">No summary available for this meeting yet.</p>
     <% end %>
+
+    <% if gated_for_visitor? %>
+      <%= render "shared/gate" %>
+      <%= render "meetings/gated_items", gd: gd %>
+    <% else %>
 
     <%# === Key Decisions === %>
     <% highlights = meeting_highlights(gd) %>
@@ -250,18 +298,23 @@
         <% end %>
       </section>
     <% end %>
+    <% end %>
 
   <% elsif @summary&.content.present? %>
-    <section class="meeting-article-section">
-      <div class="home-section-header">
-        <%= render "shared/atom_marker" %>
-        <span class="section-label"><%= @summary.summary_type == "minutes_recap" ? "Meeting Recap" : "Packet Analysis" %></span>
-        <span class="section-line"></span>
-      </div>
-      <div class="prose meeting-legacy-recap">
-        <%= markdown @summary.content %>
-      </div>
-    </section>
+    <% if gated_for_visitor? %>
+      <%= render "shared/gate" %>
+    <% else %>
+      <section class="meeting-article-section">
+        <div class="home-section-header">
+          <%= render "shared/atom_marker" %>
+          <span class="section-label"><%= @summary.summary_type == "minutes_recap" ? "Meeting Recap" : "Packet Analysis" %></span>
+          <span class="section-line"></span>
+        </div>
+        <div class="prose meeting-legacy-recap">
+          <%= markdown @summary.content %>
+        </div>
+      </section>
+    <% end %>
 
   <% else %>
     <p class="section-empty">No summary available for this meeting yet.</p>

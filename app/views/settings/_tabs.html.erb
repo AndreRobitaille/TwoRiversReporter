@@ -1,0 +1,8 @@
+<nav class="tab-bar" aria-label="Account sections">
+  <%= link_to "Profile", settings_profile_path,
+        class: "tab #{'active' if current == :profile}",
+        aria: { current: ("page" if current == :profile) } %>
+  <%= link_to "Security", settings_security_path,
+        class: "tab #{'active' if current == :security}",
+        aria: { current: ("page" if current == :security) } %>
+</nav>

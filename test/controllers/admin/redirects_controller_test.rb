@@ -2,15 +2,8 @@ require "test_helper"
 
 class Admin::RedirectsControllerTest < ActionDispatch::IntegrationTest
   setup do
-    @admin = User.create!(email_address: "redirect-admin@test.com", password: "password", admin: true, totp_enabled: true)
-    @admin.ensure_totp_secret!
-
-    post session_url, params: { email_address: "redirect-admin@test.com", password: "password" }
-    follow_redirect!
-
-    totp = ROTP::TOTP.new(@admin.totp_secret, issuer: "TwoRiversMatters")
-    post mfa_session_url, params: { code: totp.now }
-    follow_redirect!
+    @admin = User.create!(email_address: "redirect-admin@test.com", admin: true)
+    sign_in_as_admin(@admin)
 
     @redirect = Redirect.create!(source_path: "/topics/766", destination: "/topics/176")
   end
@@ -18,7 +11,7 @@ class Admin::RedirectsControllerTest < ActionDispatch::IntegrationTest
   test "requires admin authentication" do
     reset!
     get admin_redirects_url
-    assert_redirected_to new_session_url
+    assert_redirected_to new_public_session_url
   end
 
   test "index lists redirects" do

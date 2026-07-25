@@ -94,7 +94,21 @@ module MeetingsHelper
   def meeting_share_description(meeting)
     summary = preferred_meeting_summary(meeting)
     headline = summary&.generation_data&.dig("headline")
-    return headline if headline.present?
+    # The headline is the lede, and a gated visitor only sees the first
+    # GATED_LEDE_CHARS of it (the rest fades out because it was never
+    # rendered). Echo exactly that much and no more — a full headline here
+    # would hand the withheld tail to the visitor the gate just turned away.
+    return gated_lede_text(headline) if headline.present?
+
+    # These are DB `AgendaItem` titles, not the `item_details` titles the gated
+    # page renders in full — a different field, scraped rather than
+    # summarized, and still withheld: the topic show page hides them behind
+    # the gate in "Coming Up", and meeting show never renders this field to a
+    # gated visitor under any branch. Listing them in the meta description
+    # handed a crawler-visible copy to exactly the visitor the gate turned
+    # away, so a gated visitor drops straight to the bare body-name/date
+    # sentence.
+    return bare_meeting_description(meeting) if gated_for_visitor?
 
     items = substantive_agenda_items(meeting)
     return agenda_fallback_description(meeting, items) if items.any?
@@ -236,21 +250,43 @@ module MeetingsHelper
     end
   end
 
+  # Below the gate, a Key Decision is a GATED_ITEM_BODY_CHARS fragment — three
+  # to five words (see app/views/meetings/_gated_items.html.erb). A share
+  # payload made of stubs that short would be noise, so gated share text
+  # carries no highlight text at all: strictly less than the page shows, which
+  # is the only direction that is ever safe. This used to tease the first
+  # highlight at 240 characters, which was correct only while the page did the
+  # same.
   def share_text_past_bullets(lines, gd)
+    return if gated_for_visitor?
+
     highlights = gd["highlights"] || []
-    return if highlights.empty?
+    visible = highlights.first(5)
+    return if visible.empty?
 
     lines << "Key decisions:"
     lines << ""
-    highlights.first(5).each_with_index do |h, i|
+    visible.each_with_index do |h, i|
       bullet = "* #{h["text"]}"
       bullet += " (#{h["vote"]})" if h["vote"].present?
       lines << bullet
-      lines << "" if i < [ highlights.size, 5 ].min - 1
+      lines << "" if i < visible.size - 1
     end
   end
 
   def share_text_upcoming_bullets(lines, gd)
+    # Highlights: same rule as the past-meeting bullets — the page shows only a
+    # few words of each, so the payload shows none.
+    #
+    # Agenda item titles: these are now rendered *in full* below the gate, so
+    # this branch would no longer leak anything the page withholds. The guard
+    # stays anyway. `item_details` titles and the DB `AgendaItem` titles that
+    # `share_text_agenda_fallback` reaches for are different fields with
+    # different gating, and one early return that covers both is easier to keep
+    # honest than a per-field exception. Anything the payload drops that the
+    # page shows is a cosmetic loss; the reverse is a leak.
+    return if gated_for_visitor?
+
     highlights = gd["highlights"] || []
     items = gd["item_details"] || []
 
@@ -271,7 +307,32 @@ module MeetingsHelper
     end
   end
 
+  # How much of the lede a gated visitor may read. The view teases the
+  # headline at this length via AccessHelper#teaser; `gated_lede_text` is the
+  # plain-text counterpart for the meta description and share payload, which
+  # feed attributes rather than markup. Same truncation rule, so the three
+  # channels cannot disagree about where the sentence stops.
+  GATED_LEDE_CHARS = 100
+
+  # How much of an item body — highlight text, public-input summary, agenda
+  # item summary — a gated visitor may read below the gate. Roughly three to
+  # five words: enough to tell what the item is about, not enough to be the
+  # item. `teaser` cuts back to a word boundary, so the rendered fragment is
+  # at most this many characters and usually a few less.
+  GATED_ITEM_BODY_CHARS = 30
+
+  def gated_lede_text(text)
+    return text unless gated_for_visitor?
+    String.new(text.to_s).truncate(GATED_LEDE_CHARS, separator: " ", omission: "")
+  end
+
+  # Same rule as meeting_share_description: agenda item titles sit below the
+  # gate, so they must not be smuggled out through data-share-copy-text-value.
+  # `share_text_upcoming_bullets` already guards its item_details branch this
+  # way; this fallback (summary absent entirely) was the one path that didn't.
   def share_text_agenda_fallback(lines, meeting)
+    return if gated_for_visitor?
+
     items = substantive_agenda_items(meeting)
       .reject { |ai| ai.title&.match?(/\A(CALL TO ORDER|ROLL CALL|ADJOURNMENT|PUBLIC INPUT)\z/i) }
     return if items.empty?
@@ -294,19 +355,26 @@ module MeetingsHelper
   def facebook_share_hook_from_summary(meeting, gd)
     return nil if gd.blank?
 
+    # Gated visitors see a few words of each highlight and no more, so there
+    # is no full sentence here the Facebook hook is allowed to prepend.
+    return nil if gated_for_visitor?
+
     highlights = meeting_highlights(gd)
+    return nil if highlights.empty?
+
     if meeting.starts_at.present? && meeting.starts_at <= Time.current
       highlight = highlights.find { |h| h["vote"].present? } || highlights.first
       return highlight&.dig("text").presence
     end
 
     highlight = highlights.first
-    return highlight&.dig("text").presence if highlight.present?
-
-    nil
+    highlight&.dig("text").presence
   end
 
   def facebook_share_hook_from_agenda(meeting)
+    # Third channel for the same withheld agenda title — the Facebook hook
+    # prepends the first substantive agenda item verbatim.
+    return nil if gated_for_visitor?
     return nil unless meeting.starts_at.present? && meeting.starts_at > Time.current
 
     item = substantive_agenda_items(meeting).first
@@ -327,7 +395,7 @@ module MeetingsHelper
     meeting_url = "https://#{PRODUCTION_HOST}/meetings/#{meeting.id}"
 
     if gd.present?
-      headline = gd["headline"] if include_headline
+      headline = gated_lede_text(gd["headline"]) if include_headline
       lines << headline if headline.present?
       lines << "" if headline.present?
 

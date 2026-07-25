@@ -25,6 +25,9 @@ gem "bcrypt", "~> 3.1.7"
 # TOTP (Authenticator apps) for admin MFA
 gem "rotp", "~> 6.3"
 
+# WebAuthn/passkey support
+gem "webauthn"
+
 # Vector similarity search in Postgres (RAG)
 gem "pgvector", "~> 0.3"
 

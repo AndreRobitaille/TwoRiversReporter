@@ -2,15 +2,8 @@ require "test_helper"
 
 class Admin::CommitteesControllerTest < ActionDispatch::IntegrationTest
   setup do
-    @admin = User.create!(email_address: "committee-admin@test.com", password: "password", admin: true, totp_enabled: true)
-    @admin.ensure_totp_secret!
-
-    post session_url, params: { email_address: "committee-admin@test.com", password: "password" }
-    follow_redirect!
-
-    totp = ROTP::TOTP.new(@admin.totp_secret, issuer: "TwoRiversMatters")
-    post mfa_session_url, params: { code: totp.now }
-    follow_redirect!
+    @admin = User.create!(email_address: "committee-admin@test.com", admin: true)
+    sign_in_as_admin(@admin)
 
     @committee = Committee.create!(
       name: "Plan Commission",

@@ -57,8 +57,10 @@ Rails.application.configure do
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.
   # config.action_mailer.raise_delivery_errors = false
 
-  # Set host to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "example.com" }
+  # Host used by every link we build outside of a request: mailer templates and
+  # the absolute URLs TransactionalEmail hands to Loops. Override with APP_HOST
+  # if the site ever moves or a staging box needs its own links.
+  config.action_mailer.default_url_options = { protocol: "https", host: ENV.fetch("APP_HOST", "tworiversmatters.com") }
 
   # Specify outgoing SMTP server. Remember to add smtp/* credentials via bin/rails credentials:edit.
   # config.action_mailer.smtp_settings = {

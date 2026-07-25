@@ -42,6 +42,10 @@
           <%= render "meetings/meeting_card", meeting: meeting %>
         <% end %>
       </div>
+      <%# Unlike the topics index, the meetings index does not cap the card
+          count for gated visitors — the spec withholds only the headline tail
+          (teased per-card in "meetings/meeting_card", with a small sign-in
+          note below it — no large gate box here). %>
       <% if @pagy.next %>
         <div class="meetings-show-more">
           <%= link_to "Show more results", meetings_path(q: params[:q], page: @pagy.next), class: "btn btn--secondary" %>
@@ -93,6 +97,10 @@
     <% elsif @upcoming_enriched.empty? %>
       <p class="meetings-empty-note">No upcoming meetings scheduled</p>
     <% end %>
+
+    <%# Design spec, per-surface table: the meetings index withholds only the
+        tail of each headline (teased per-card in "meetings/meeting_card"),
+        with a small sign-in note below it — no large gate box on this page. %>
   </section>
 
   <%# === WHAT HAPPENED === %>

@@ -1,0 +1,132 @@
+<div class="page-header">
+  <h1 class="page-title"><%= @user.email_address %></h1>
+  <p class="page-subtitle">Account and application management</p>
+</div>
+
+<div class="flex flex-wrap gap-2 items-center mb-4">
+  <span class="badge badge--<%= @user.active_for_authentication? ? "success" : "default" %>"><%= @user.status&.humanize || "Unknown" %></span>
+  <% if @user.admin? %><span class="badge badge--info">Admin</span><% end %>
+  <% if @user.disabled_at.present? %><span class="badge badge--danger">Disabled</span><% end %>
+  <span class="badge badge--default"><%= pluralize(@user.passkey_credentials.count, "passkey") %></span>
+</div>
+
+<div class="flex flex-wrap gap-2 mb-6">
+  <%= button_to(@user.disabled_at? ? "Re-enable account" : "Disable account",
+        disable_user_path(@user), method: :patch, class: "btn btn--secondary") %>
+  <%= button_to(@user.admin? ? "Remove admin" : "Make admin",
+        toggle_admin_user_path(@user), method: :patch, class: "btn btn--secondary") %>
+  <%= button_to "Revoke all sessions",
+        revoke_all_sessions_user_path(@user), method: :delete, class: "btn btn--secondary" %>
+</div>
+
+<div class="section-header">
+  <%= render "shared/atom_marker", theme: "silo" %>
+  <span class="section-header__label">Membership applications</span>
+  <div class="section-header__line"></div>
+</div>
+
+<% if @applications.any? %>
+  <% @applications.each do |application| %>
+    <div class="attention-card review-card <%= "review-card--pending" if application.status == "submitted" %>">
+      <span class="badge badge--<%= application.status == "submitted" ? "warning" : "default" %>">
+        <%= application.status&.humanize || "Unknown" %>
+      </span>
+
+      <dl class="detail-list mt-4">
+        <dt class="detail-term">Name</dt>
+        <dd class="detail-value"><%= [application.first_name, application.last_name].compact_blank.join(" ").presence || "—" %></dd>
+
+        <dt class="detail-term">Address</dt>
+        <dd class="detail-value">
+          <%= [application.street, [application.city, application.state].compact_blank.join(", ")].compact_blank.join(" · ").presence || "—" %>
+        </dd>
+
+        <% if application.facebook_profile_url.present? %>
+          <dt class="detail-term">Facebook profile</dt>
+          <dd class="detail-value">
+            <%= link_to application.facebook_profile_url, application.facebook_profile_url, target: "_blank", rel: "noopener" %>
+          </dd>
+        <% end %>
+
+        <% if application.application_notes.present? %>
+          <dt class="detail-term">Notes</dt>
+          <dd class="detail-value detail-value--preserve"><%= application.application_notes %></dd>
+        <% end %>
+
+        <dt class="detail-term"><%= application.submitted_at.present? ? "Submitted" : "Created" %></dt>
+        <dd class="detail-value"><%= l(application.submitted_at || application.created_at, format: :long) %></dd>
+
+        <% if application.reviewed_at.present? %>
+          <dt class="detail-term">Reviewed</dt>
+          <dd class="detail-value"><%= l(application.reviewed_at, format: :long) %></dd>
+        <% end %>
+
+        <% if application.rejection_reason.present? %>
+          <dt class="detail-term">Rejection reason</dt>
+          <dd class="detail-value"><%= application.rejection_reason %></dd>
+        <% end %>
+      </dl>
+
+      <% if application.status == "submitted" %>
+        <div class="review-card__actions">
+          <%= form_with url: reject_user_path(@user), method: :patch, class: "flex flex-wrap gap-2 items-center" do |form| %>
+            <div class="form-group review-card__reason">
+              <%= form.label :rejection_reason, "Rejection reason", class: "form-label" %>
+              <%= form.text_field :rejection_reason, class: "form-input" %>
+            </div>
+            <%= form.submit "Reject", class: "btn btn--danger" %>
+          <% end %>
+
+          <%= button_to "Approve application", approve_user_path(@user), method: :patch, class: "btn btn--primary" %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+<% else %>
+  <div class="empty-state">No membership applications for this account.</div>
+<% end %>
+
+<div class="section-header mt-4">
+  <%= render "shared/atom_marker", theme: "silo" %>
+  <span class="section-header__label">Session history</span>
+  <div class="section-header__line"></div>
+</div>
+
+<% if @sessions.any? %>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Status</th>
+          <th>IP address</th>
+          <th>Device</th>
+          <th>Signed in</th>
+          <th>Last seen</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @sessions.each do |session| %>
+          <tr>
+            <td>
+              <span class="badge badge--<%= session.inactive? ? "default" : "success" %>">
+                <%= session.inactive? ? "Inactive" : "Active" %>
+              </span>
+            </td>
+            <td class="data-cell"><%= session.ip_address %></td>
+            <td class="truncate-cell" title="<%= session.user_agent %>"><%= session.user_agent %></td>
+            <td class="data-cell"><%= l(session.created_at, format: :long) %></td>
+            <td class="data-cell"><%= session.last_seen_at ? l(session.last_seen_at, format: :long) : "—" %></td>
+            <td>
+              <%= button_to "Revoke",
+                    revoke_session_user_path(@user, session_id: session.id),
+                    method: :delete, class: "btn btn--danger btn--sm" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <div class="empty-state">No sessions recorded for this account.</div>
+<% end %>

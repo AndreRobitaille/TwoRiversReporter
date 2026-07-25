@@ -17,8 +17,8 @@ module Agendas
       end
 
       assert_equal [
-        [parent.id, "7.", "ACTION ITEMS", "section", nil, 1],
-        [child.id, "A.", "Old Harbor Title", "item", parent.id, 2]
+        [ parent.id, "7.", "ACTION ITEMS", "section", nil, 1 ],
+        [ child.id, "A.", "Old Harbor Title", "item", parent.id, 2 ]
       ], meeting.reload.agenda_items.order(:id).pluck(:id, :number, :title, :kind, :parent_id, :order_index)
     end
 
@@ -113,8 +113,8 @@ module Agendas
       end
 
       assert_equal [
-        [parent.id, "7.", "ACTION ITEMS", "section", nil, 1],
-        [existing.id, "A.", "Old Harbor Title", "item", parent.id, 2]
+        [ parent.id, "7.", "ACTION ITEMS", "section", nil, 1 ],
+        [ existing.id, "A.", "Old Harbor Title", "item", parent.id, 2 ]
       ], meeting.reload.agenda_items.order(:id).pluck(:id, :number, :title, :kind, :parent_id, :order_index)
     end
 
@@ -140,7 +140,7 @@ module Agendas
       Agendas::ReconcileItems.new(meeting: meeting, candidates: candidates).call
 
       assert_nil meeting.agenda_items.find_by(id: stale.id)
-      assert_equal [ [meeting.agenda_items.first.id, "1.", "CALL TO ORDER"] ], meeting.agenda_items.order(:id).pluck(:id, :number, :title)
+      assert_equal [ [ meeting.agenda_items.first.id, "1.", "CALL TO ORDER" ] ], meeting.agenda_items.order(:id).pluck(:id, :number, :title)
       assert_equal Agendas::ReconcileItems.digest_for_candidates(candidates), meeting.reload.agenda_structure_digest
     end
 
@@ -182,7 +182,7 @@ module Agendas
 
       assert_nil meeting.agenda_items.find_by(id: parent.id)
       assert_nil meeting.agenda_items.find_by(id: child.id)
-      assert_equal [ [meeting.agenda_items.first.id, "1.", "CALL TO ORDER"] ], meeting.agenda_items.order(:id).pluck(:id, :number, :title)
+      assert_equal [ [ meeting.agenda_items.first.id, "1.", "CALL TO ORDER" ] ], meeting.agenda_items.order(:id).pluck(:id, :number, :title)
     end
 
     test "raises and rolls back when a stale unmatched row still has topic appearances" do

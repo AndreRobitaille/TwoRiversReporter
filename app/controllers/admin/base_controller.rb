@@ -5,22 +5,19 @@ module Admin
     layout "admin"
 
     before_action :require_admin
-    before_action :require_admin_mfa
+    before_action :require_admin_passkey
 
     private
       def require_admin
-        return if Current.user&.admin?
+        return if Current.user&.admin? && Current.user.active_for_authentication?
 
-        terminate_session if Current.session
-        redirect_to new_session_path, alert: "Not authorized."
+        redirect_to root_path, alert: "You do not have access to that section."
       end
 
-      def require_admin_mfa
-        return unless AdminMfaPolicy.enforced?
-        return if Current.user&.totp_enabled?
+      def require_admin_passkey
+        return if Current.user.passkey_credentials.exists?
 
-        terminate_session if Current.session
-        redirect_to new_session_path, alert: "Multi-factor authentication is required."
+        redirect_to settings_security_path, alert: "Add a passkey before using admin tools."
       end
   end
 end

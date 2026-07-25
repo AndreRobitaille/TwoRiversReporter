@@ -1,0 +1,96 @@
+<% content_for(:title) { "Account — Profile" } %>
+<% content_for(:description) { "Read-only account and membership application details." } %>
+
+<%= render "settings/header" %>
+<%= render "settings/tabs", current: :profile %>
+
+<div class="settings-grid">
+  <section class="card">
+    <div class="card-header">
+      <h2 class="card-title">Account</h2>
+    </div>
+
+    <dl class="detail-list">
+      <dt class="detail-term">Email address</dt>
+      <dd class="detail-value"><%= current_user.email_address %></dd>
+
+      <dt class="detail-term">Account status</dt>
+      <dd class="detail-value">
+        <span class="badge badge--<%= current_user.active_for_authentication? ? "success" : "warning" %>">
+          <%= current_user.status&.humanize || "Unknown" %>
+        </span>
+      </dd>
+
+      <dt class="detail-term">Admin access</dt>
+      <dd class="detail-value"><%= current_user.admin? ? "Yes" : "No" %></dd>
+
+      <dt class="detail-term">Passkeys</dt>
+      <dd class="detail-value">
+        <% passkey_count = current_user.passkey_credentials.count %>
+        <%= passkey_count.positive? ? pluralize(passkey_count, "passkey") : "None yet" %>
+      </dd>
+    </dl>
+  </section>
+
+  <section class="card">
+    <div class="card-header">
+      <h2 class="card-title">Membership application</h2>
+    </div>
+
+    <% if @membership_application.present? %>
+      <% application = @membership_application %>
+      <% status_badge = case application.status
+      when "approved" then "badge--success"
+      when "rejected" then "badge--danger"
+      when "submitted" then "badge--info"
+      else "badge--default"
+      end %>
+
+      <dl class="detail-list">
+        <dt class="detail-term">Status</dt>
+        <dd class="detail-value">
+          <span class="badge <%= status_badge %>"><%= application.status&.humanize || "Unknown" %></span>
+        </dd>
+
+        <% if application.first_name.present? || application.last_name.present? %>
+          <dt class="detail-term">Name</dt>
+          <dd class="detail-value"><%= [application.first_name, application.last_name].compact_blank.join(" ") %></dd>
+        <% end %>
+
+        <% if application.street.present? || application.city.present? || application.state.present? %>
+          <dt class="detail-term">Address</dt>
+          <dd class="detail-value">
+            <%= safe_join([
+                  application.street,
+                  [application.city, application.state].compact_blank.join(", ")
+                ].compact_blank, tag.br) %>
+          </dd>
+        <% end %>
+
+        <% if application.facebook_profile_url.present? %>
+          <dt class="detail-term">Facebook profile</dt>
+          <dd class="detail-value">
+            <%= link_to application.facebook_profile_url, application.facebook_profile_url,
+                  target: "_blank", rel: "noopener" %>
+          </dd>
+        <% end %>
+
+        <% if application.application_notes.present? %>
+          <dt class="detail-term">Notes</dt>
+          <dd class="detail-value detail-value--preserve"><%= application.application_notes %></dd>
+        <% end %>
+
+        <dt class="detail-term">Submitted</dt>
+        <dd class="detail-value"><%= l(application.submitted_at || application.created_at, format: :long) %></dd>
+
+        <% if application.reviewed_at.present? %>
+          <dt class="detail-term">Reviewed</dt>
+          <dd class="detail-value"><%= l(application.reviewed_at, format: :long) %></dd>
+        <% end %>
+      </dl>
+    <% else %>
+      <p class="card-body">You haven't started a membership application yet.</p>
+      <%= link_to "Start an application", new_application_path, class: "btn btn--primary" %>
+    <% end %>
+  </section>
+</div>
