@@ -194,11 +194,15 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_no_match(/totp/i, response.body)
   end
 
-  test "admin review page shows the applicant's phone number" do
+  test "admin review page shows the applicant's phone number normalised for display only" do
     render_application_review("review-phone@example.com", phone: "(920) 555-0148")
 
     assert_includes response.body, "Phone"
-    assert_includes response.body, "(920) 555-0148"
+    assert_includes response.body, "920-555-0148"
+    assert_not_includes response.body, "(920) 555-0148",
+      "the parenthesised form must not survive into the rendered page"
+    assert_equal "(920) 555-0148", MembershipApplication.last.phone,
+      "display formatting must not rewrite the stored value"
   end
 
   test "admin review page shows the IP the application was submitted from" do
@@ -299,6 +303,155 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # ---- hard deletion -------------------------------------------------------
+
+  test "admin deletes a user along with its sessions, passkeys, magic links and applications" do
+    admin = create_passkey_admin
+    applicant = User.create!(email_address: "delete-me@example.com", status: "active")
+    applicant.sessions.create!(user_agent: "test", ip_address: "127.0.0.1", last_seen_at: Time.current)
+    applicant.passkey_credentials.create!(external_id: SecureRandom.uuid, public_key: "public-key", sign_count: 0)
+    MagicLink.create_for!(applicant, purpose: "sign_in")
+    applicant.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", street: "123 Main St", city: "Two Rivers", state: "WI")
+    applicant_id = applicant.id
+    sign_in(admin)
+
+    with_admin_access { delete user_path(applicant) }
+
+    assert_redirected_to users_path
+    assert_not User.exists?(applicant_id)
+    assert_empty Session.where(user_id: applicant_id), "sessions must not outlive the account"
+    assert_empty PasskeyCredential.where(user_id: applicant_id), "passkeys must not outlive the account"
+    assert_empty MagicLink.where(user_id: applicant_id), "magic links must not outlive the account"
+    assert_empty MembershipApplication.where(user_id: applicant_id), "applications must not outlive the account"
+  end
+
+  test "deleting an admin who reviewed other applications leaves those applications standing" do
+    admin = create_passkey_admin
+    departing = User.create!(email_address: "departing@example.com", admin: true, status: "active")
+    applicant = User.create!(email_address: "already-reviewed@example.com", status: "active")
+    reviewed = applicant.membership_applications.create!(
+      status: "approved", first_name: "Jane", last_name: "Member", street: "123 Main St",
+      city: "Two Rivers", state: "WI", reviewed_by: departing, reviewed_at: Time.current
+    )
+    departing_id = departing.id
+    sign_in(admin)
+
+    with_admin_access { delete user_path(departing) }
+
+    assert_redirected_to users_path
+    assert_not User.exists?(departing_id)
+    assert MembershipApplication.exists?(reviewed.id)
+    assert_nil reviewed.reload.reviewed_by_id
+  end
+
+  test "an admin cannot delete their own account" do
+    admin = create_passkey_admin
+    sign_in(admin)
+
+    with_admin_access { delete user_path(admin) }
+
+    assert_redirected_to user_path(admin)
+    assert_equal "You cannot delete your own account.", flash[:alert]
+    assert User.exists?(admin.id), "the acting admin's own account must survive"
+  end
+
+  # Two independent guards stop the site being left with no admin: the
+  # controller's self-deletion check, and User's before_destroy. Through the
+  # router the first always fires first, so this test lifts it to prove the
+  # second is really there — and that the controller turns its exception into a
+  # sentence rather than a 500.
+  test "a last admin refusal from the model surfaces as an alert, not a crash" do
+    admin = create_passkey_admin
+    sign_in(admin)
+
+    without_self_deletion_guard do
+      with_admin_access { delete user_path(admin) }
+    end
+
+    assert_redirected_to user_path(admin)
+    assert_equal "You cannot delete the last admin account.", flash[:alert]
+    assert User.exists?(admin.id), "the site must never be left with no admin"
+    assert_equal 1, User.where(admin: true).count
+  end
+
+  test "the delete button is hidden for the acting admin and for the last admin" do
+    admin = create_passkey_admin
+    sign_in(admin)
+
+    with_admin_access { get user_path(admin) }
+
+    assert_response :success
+    assert_not_includes response.body, "Delete account permanently"
+  end
+
+  test "the delete button is offered for a deletable account" do
+    admin = create_passkey_admin
+    applicant = User.create!(email_address: "deletable@example.com", status: "active")
+    sign_in(admin)
+
+    with_admin_access { get user_path(applicant) }
+
+    assert_response :success
+    assert_includes response.body, "Delete account permanently"
+    assert_includes response.body, "turbo-confirm"
+  end
+
+  test "a non-admin cannot delete a user" do
+    member = User.create!(email_address: "not-an-admin@example.com", status: "active")
+    victim = User.create!(email_address: "victim@example.com", status: "active")
+    sign_in_as(member)
+
+    delete user_path(victim)
+
+    assert_redirected_to root_path
+    assert User.exists?(victim.id), "a signed-in non-admin must not be able to delete an account"
+  end
+
+  test "a signed out visitor cannot delete a user" do
+    victim = User.create!(email_address: "victim-anon@example.com", status: "active")
+
+    delete user_path(victim)
+
+    assert_redirected_to new_public_session_path
+    assert User.exists?(victim.id)
+  end
+
+  test "admin deletes a single application without touching the account" do
+    admin = create_passkey_admin
+    applicant = User.create!(email_address: "duplicate-application@example.com", status: "pending")
+    application = applicant.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", street: "123 Main St", city: "Two Rivers", state: "WI")
+    sign_in(admin)
+
+    with_admin_access { delete admin_membership_application_path(application) }
+
+    assert_redirected_to user_path(applicant)
+    assert_not MembershipApplication.exists?(application.id)
+    assert User.exists?(applicant.id), "deleting an application must leave the account alone"
+    assert_equal "pending", applicant.reload.status
+  end
+
+  test "a non-admin cannot delete an application" do
+    member = User.create!(email_address: "not-an-admin-2@example.com", status: "active")
+    applicant = User.create!(email_address: "protected-application@example.com", status: "pending")
+    application = applicant.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", street: "123 Main St", city: "Two Rivers", state: "WI")
+    sign_in_as(member)
+
+    delete admin_membership_application_path(application)
+
+    assert_redirected_to root_path
+    assert MembershipApplication.exists?(application.id), "a signed-in non-admin must not be able to delete an application"
+  end
+
+  test "a signed out visitor cannot delete an application" do
+    applicant = User.create!(email_address: "protected-application-2@example.com", status: "pending")
+    application = applicant.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", street: "123 Main St", city: "Two Rivers", state: "WI")
+
+    delete admin_membership_application_path(application)
+
+    assert_redirected_to new_public_session_path
+    assert MembershipApplication.exists?(application.id)
+  end
+
   private
 
     def create_passkey_admin
@@ -313,6 +466,19 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
 
     def with_admin_access
       yield
+    end
+
+    # Minitest parallelises by forking, and tests inside a process run serially,
+    # so swapping a method on the controller class is contained to this example.
+    def without_self_deletion_guard
+      klass = Admin::UsersController
+      original = klass.instance_method(:refuse_self_deletion)
+      klass.send(:define_method, :refuse_self_deletion) { nil }
+      klass.send(:private, :refuse_self_deletion)
+      yield
+    ensure
+      klass.send(:define_method, :refuse_self_deletion, original)
+      klass.send(:private, :refuse_self_deletion)
     end
 
     def render_application_review(email, **application_attributes)

@@ -1,6 +1,9 @@
 <% if flash[:notice] %>
   <div class="flash flash--success"><%= flash[:notice] %></div>
 <% end %>
+<% if flash[:alert] %>
+  <div class="flash flash--danger"><%= flash[:alert] %></div>
+<% end %>
 
 <div class="page-header">
   <h1 class="page-title">Account management</h1>

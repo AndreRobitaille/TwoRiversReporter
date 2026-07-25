@@ -1,6 +1,7 @@
 module Admin
   class UsersController < BaseController
-    before_action :set_user, only: %i[show approve reject toggle_admin disable revoke_session revoke_all_sessions]
+    before_action :set_user, only: %i[show approve reject toggle_admin disable revoke_session revoke_all_sessions destroy]
+    before_action :refuse_self_deletion, only: :destroy
 
     def index
       @users = User.order(:email_address)
@@ -100,11 +101,35 @@ module Admin
       redirect_to user_path(@user), notice: "All sessions revoked."
     end
 
+    # Irreversible. Sessions, magic links, passkeys and membership applications
+    # go with the account; rows that merely reference it (applications this user
+    # reviewed, images they uploaded, topic review events they recorded) are
+    # nullified by User's associations so the record survives the reviewer.
+    def destroy
+      email = @user.email_address
+      @user.destroy!
+      redirect_to users_path, notice: "Deleted #{email} and everything attached to it."
+    rescue User::LastAdminError
+      # The model owns this invariant, so it holds for the console and rake too.
+      # Catching it here just turns a 500 into a sentence.
+      redirect_to user_path(@user), alert: "You cannot delete the last admin account."
+    end
+
     private
 
       def set_user
         @user = User.find(params[:id])
       end
+
+      # There is one owner-admin in production. Deleting your own account from
+      # inside the admin area is unrecoverable — no UI exists to create the
+      # first admin back.
+      def refuse_self_deletion
+        return unless @user.id == Current.user&.id
+
+        redirect_to user_path(@user), alert: "You cannot delete your own account."
+      end
+
 
       def user_params
         params.require(:user).permit(:email_address)

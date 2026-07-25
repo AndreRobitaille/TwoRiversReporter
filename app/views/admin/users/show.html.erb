@@ -1,3 +1,10 @@
+<% if flash[:notice] %>
+  <div class="flash flash--success"><%= flash[:notice] %></div>
+<% end %>
+<% if flash[:alert] %>
+  <div class="flash flash--danger"><%= flash[:alert] %></div>
+<% end %>
+
 <div class="page-header">
   <h1 class="page-title"><%= @user.email_address %></h1>
   <p class="page-subtitle">Account and application management</p>
@@ -17,6 +24,15 @@
         toggle_admin_user_path(@user), method: :patch, class: "btn btn--secondary") %>
   <%= button_to "Revoke all sessions",
         revoke_all_sessions_user_path(@user), method: :delete, class: "btn btn--secondary" %>
+
+  <%# Hidden for your own account and for the last remaining admin. The
+      controller refuses both regardless — this only keeps the button from
+      offering something it will not do. %>
+  <% if @user.id != current_user.id && !@user.last_admin? %>
+    <%= button_to "Delete account permanently",
+          user_path(@user), method: :delete, class: "btn btn--danger",
+          form: { data: { turbo_confirm: "Permanently delete #{@user.email_address}? This removes the account, its sessions, passkeys, magic links and applications. It cannot be undone." } } %>
+  <% end %>
 </div>
 
 <div class="section-header">
@@ -90,6 +106,14 @@
           <%= button_to "Approve application", approve_user_path(@user), method: :patch, class: "btn btn--primary" %>
         </div>
       <% end %>
+
+      <%# Deleting the application leaves the account alone — approve/reject stay
+          the normal path, this is for duplicates and junk. %>
+      <div class="review-card__actions">
+        <%= button_to "Delete application permanently",
+              admin_membership_application_path(application), method: :delete, class: "btn btn--danger btn--sm",
+              form: { data: { turbo_confirm: "Permanently delete this application? The account stays; only the application record is removed. It cannot be undone." } } %>
+      </div>
     </div>
   <% end %>
 <% else %>
