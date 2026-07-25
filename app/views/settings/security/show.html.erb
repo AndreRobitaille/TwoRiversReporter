@@ -21,7 +21,7 @@
     data-passkey-authentication-url-value="<%= authentication_passkeys_path(format: :json) %>"
   >
     <button type="button" class="btn btn--primary" data-action="passkey#register" data-passkey-target="trigger">
-      Register a passkey
+      Add a passkey
     </button>
 
     <p class="auth-status" data-passkey-target="status" aria-live="polite" role="status"></p>
@@ -43,7 +43,7 @@
       </ul>
     <% else %>
       <div class="empty-state mt-4">
-        You haven't added any passkeys yet. Register one to make future sign-ins faster.
+        You haven't added any passkeys yet. Add one to make future sign-ins faster.
       </div>
     <% end %>
   </section>

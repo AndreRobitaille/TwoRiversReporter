@@ -21,7 +21,7 @@ module Settings
       assert_response :success
       assert_includes response.body, 'data-controller="passkey"'
       assert_includes response.body, 'data-passkey-target="status"'
-      assert_includes response.body, "Register a passkey"
+      assert_includes response.body, "Add a passkey"
       assert_includes response.body, "Unnamed passkey"
       assert_includes response.body, "Desk key"
       assert_not_includes response.body, "Their key"
