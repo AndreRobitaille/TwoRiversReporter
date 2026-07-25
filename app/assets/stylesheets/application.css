@@ -6605,6 +6605,14 @@ th.sortable-header:hover {
 }
 
 .teaser-fade--inline {
+  /* `inline`, not the base `block`: a block box is full-width, so a
+     horizontal gradient fades the right edge of the box — which is empty
+     whitespace whenever the last line is short, leaving the truncation
+     point with no visible fade at all. An inline box hugs the text, so the
+     fade lands where the sentence actually stops. Do not use `inline` on
+     the base class: across many lines the mask is applied per line
+     fragment, which fades every line instead of only the tail. */
+  display: inline;
   -webkit-mask-image: linear-gradient(to right, var(--color-text) 65%, transparent 100%);
   mask-image: linear-gradient(to right, var(--color-text) 65%, transparent 100%);
 }
