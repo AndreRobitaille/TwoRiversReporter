@@ -5,12 +5,11 @@ require "test_helper"
 # halves of that deal — what a gated visitor is allowed to read, and what must
 # never reach the response at all.
 class MeetingsGatedItemsTest < ActionDispatch::IntegrationTest
-  # The lede is teased at MeetingsHelper::GATED_LEDE_CHARS (200). The head sits
+  # The lede is teased at MeetingsHelper::GATED_LEDE_CHARS (100). The head sits
   # inside that window and the tail past it, so one fixture proves both that
   # the visitor gets a genuine taste and that the remainder never ships.
-  LEDE_HEAD = "The council spent the evening on the harbor dredging permit renewal, " \
-    "working through the marina lease schedule and the shoreline setback rules that " \
-    "govern the north basin before turning to the winter parking ordinance".freeze
+  LEDE_HEAD = "The council spent the evening on the harbor dredging permit renewal and the " \
+    "marina lease".freeze
   LEDE_TAIL = "PENUMBRA_WITHHELD_LEDE_TAIL".freeze
 
   # Item bodies: the head fits inside GATED_ITEM_BODY_CHARS, the tail does not.
@@ -79,7 +78,7 @@ class MeetingsGatedItemsTest < ActionDispatch::IntegrationTest
       MeetingsHelper::GATED_LEDE_CHARS, separator: " ", omission: ""
     )
 
-    assert_includes teased, "north basin",
+    assert_equal LEDE_HEAD, teased,
       "the fixture must leave a genuine taste of the lede inside the window"
     assert_not_includes teased, LEDE_TAIL,
       "the fixture tail must sit past the window or this file proves nothing"

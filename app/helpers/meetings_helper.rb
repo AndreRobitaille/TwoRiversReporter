@@ -312,7 +312,7 @@ module MeetingsHelper
   # plain-text counterpart for the meta description and share payload, which
   # feed attributes rather than markup. Same truncation rule, so the three
   # channels cannot disagree about where the sentence stops.
-  GATED_LEDE_CHARS = 200
+  GATED_LEDE_CHARS = 100
 
   # How much of an item body — highlight text, public-input summary, agenda
   # item summary — a gated visitor may read below the gate. Roughly three to
