@@ -146,6 +146,26 @@ class MeetingsGatedSkeletonTest < ActionDispatch::IntegrationTest
     assert_select "p.sr-only", text: /#{ITEM_COUNT} agenda items withheld/
   end
 
+  test "a section with nothing in it keeps its empty state rather than vanishing" do
+    bare = Meeting.create!(body_name: "City Council Meeting", starts_at: 2.days.ago,
+      detail_page_url: "https://example.com/bare-meeting")
+    bare.meeting_summaries.create!(
+      summary_type: "minutes_recap",
+      generation_data: {
+        "headline" => "Council met briefly.",
+        "highlights" => [ { "text" => "Council adjourned early." } ],
+        "public_input" => []
+      }
+    )
+
+    set_access_mode("gated")
+    get meeting_path(bare)
+
+    assert_select ".section-label", text: "Public Input"
+    assert_select ".section-empty", text: /No public comments/
+    assert_select ".gated-skeleton", 1, "only Key Decisions has anything to stand in for"
+  end
+
   test "signed-in member sees the real prose and no skeleton at all" do
     set_access_mode("gated")
     sign_in_as(User.create!(email_address: "skeleton-reader@example.com", status: "active"))

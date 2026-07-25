@@ -41,13 +41,16 @@
   </section>
 <% end %>
 
-<% if speakers.any? %>
-  <section class="meeting-article-section">
-    <div class="home-section-header">
-      <%= render "shared/atom_marker" %>
-      <span class="section-label">Public Input · <%= speakers.size %> <%= "speaker".pluralize(speakers.size) %></span>
-      <span class="section-line"></span>
-    </div>
+<%# Public Input keeps its empty state rather than vanishing, so the gated
+    page has the same section structure a member sees. "No public comments"
+    is a static label about an absence — there is nothing to withhold. %>
+<section class="meeting-article-section">
+  <div class="home-section-header">
+    <%= render "shared/atom_marker" %>
+    <span class="section-label">Public Input<% if speakers.any? %> · <%= speakers.size %> <%= "speaker".pluralize(speakers.size) %><% end %></span>
+    <span class="section-line"></span>
+  </div>
+  <% if speakers.any? %>
     <p class="sr-only">
       <%= pluralize(speakers.size, "public comment") %> withheld. Sign in to read <%= speakers.size == 1 ? "it" : "them" %>.
     </p>
@@ -59,8 +62,10 @@
         </div>
       <% end %>
     </div>
-  </section>
-<% end %>
+  <% else %>
+    <p class="section-empty">No public comments or communications recorded for this meeting.</p>
+  <% end %>
+</section>
 
 <% if agenda_items.any? %>
   <section class="meeting-article-section">
