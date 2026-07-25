@@ -36,8 +36,18 @@ class LoopsDelivery
     raise DeliveryError, "Unable to deliver transactional email via Loops: #{e.message}"
   end
 
+  # Credentials first, ENV as the escape hatch — the same order the OpenAI and
+  # Gemini keys use. Production reads it from config/credentials.yml.enc, which
+  # Kamal already unlocks via RAILS_MASTER_KEY, so no extra secret is needed.
+  #
+  # The test environment opts out via config (see config/environments/test.rb).
+  # It is config rather than a Rails.env check because tests stub Rails.env to
+  # "production", which would defeat an environment-based guard precisely when
+  # delivery is most likely to fire.
   def self.api_key
-    ENV["LOOPS_API_KEY"]
+    return ENV["LOOPS_API_KEY"] if Rails.application.config.x.loops_api_key_from_credentials == false
+
+    Rails.application.credentials.loops_api_key || ENV["LOOPS_API_KEY"]
   end
 
   class MissingApiKey < StandardError; end
