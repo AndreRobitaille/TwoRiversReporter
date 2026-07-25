@@ -456,6 +456,18 @@
   margin-right: var(--space-2);
 }
 
+/* Gated rows only: let the description shrink to its (teased) content so the
+   sign-in note that follows sits against the text rather than being pushed to
+   the far right by a full-width flex item. The arrow keeps its right edge via
+   auto margin. Ungated rows never carry the modifier and are unchanged. */
+.wire-list-item--teased .list-desc {
+  flex: 0 1 auto;
+}
+
+.wire-list-item--teased .list-arrow {
+  margin-left: auto;
+}
+
 .wire-list-item .list-arrow {
   color: var(--color-text-muted);
   flex-shrink: 0;

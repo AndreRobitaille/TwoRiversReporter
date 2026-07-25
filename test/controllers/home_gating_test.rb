@@ -69,6 +69,11 @@ class HomeGatingTest < ActionDispatch::IntegrationTest
     assert_select ".wire-headline", minimum: 1
     assert_select ".wire-list-item .list-desc", minimum: 1
 
+    # Gated wire rows carry a layout modifier that stops the flexed
+    # description from stretching across the row and stranding the sign-in
+    # note against the far-right arrow.
+    assert_select ".wire-list-item--teased", minimum: 1
+
     assert_match(/The commission postponed the/, response.body)
     assert_no_match(/sediment testing/, response.body)
 
@@ -108,6 +113,7 @@ class HomeGatingTest < ActionDispatch::IntegrationTest
     assert_match(/second reading in September/, response.body)
     assert_no_match(/#{Regexp.escape(NOTE_COPY)}/, response.body)
     assert_no_match(/teaser-fade/, response.body)
+    assert_no_match(/wire-list-item--teased/, response.body)
   end
 
   test "open mode shows whole headlines anonymously and no sign-in note" do
@@ -121,6 +127,7 @@ class HomeGatingTest < ActionDispatch::IntegrationTest
     assert_match(/second reading in September/, response.body)
     assert_no_match(/#{Regexp.escape(NOTE_COPY)}/, response.body)
     assert_no_match(/teaser-fade/, response.body)
+    assert_no_match(/wire-list-item--teased/, response.body)
   end
 
   # The homepage's meta description is a hand-written constant in
