@@ -64,127 +64,117 @@ The same ordering applies before regenerating generated civic images in producti
 - `RAILS_MASTER_KEY` — from `config/master.key` (gitignored), injected via `.kamal/secrets`
 - `TWO_RIVERS_REPORTER_DATABASE_PASSWORD` — from `.env` (gitignored), shared between app and Postgres container
 - `KAMAL_REGISTRY_PASSWORD` — from `gh auth token` (GitHub PAT with `write:packages` scope)
-- `LOOPS_API_KEY` — **not defined yet**; required by the first passwordless-auth
-  deploy. See the checklist below.
+- `LOOPS_API_KEY` — in **encrypted credentials** (`config/credentials.yml.enc`),
+  under the key `loops_api_key`. It is not an env var and is not in
+  `.kamal/secrets`; Kamal already unlocks it in production via
+  `RAILS_MASTER_KEY`. `LoopsDelivery.api_key` reads credentials first and falls
+  back to `ENV["LOOPS_API_KEY"]` as an escape hatch. Edit with
+  `bin/rails credentials:edit`.
 
 `config/master.key` is gitignored, so git worktrees don't get it. Symlink it:
 `ln -s /home/andre/Development/TwoRiversReporter/config/master.key config/master.key`
 
-### Passwordless Auth Environment (BLOCKING pre-deploy checklist)
+### Passwordless Auth Configuration (deployed)
 
-**Passwordless auth has never been deployed.** Nothing in this section is set in
-production today — the deploy config on `master` contains no `LOOPS_*`,
-`WEBAUTHN_*`, or `ADMIN_NOTIFICATION_EMAIL` entry, and `.kamal/secrets` defines
-only `RAILS_MASTER_KEY`, `KAMAL_REGISTRY_PASSWORD`,
-`TWO_RIVERS_REPORTER_DATABASE_PASSWORD`, and `POSTGRES_PASSWORD`. Read the
-`Kamal env` column below as the state of the deploy config, not the state of the
-Loops dashboard; the two columns are independent and both must be satisfied.
+Passwordless auth is live. Everything below is already set — this section
+documents where each value lives and what breaks if it is lost, not a list of
+things to do.
 
 Every transactional email is a template created in the Loops dashboard. The app
-reads each template's id from an env var and **fails closed in production**: a
-missing id raises `TransactionalEmail::MissingTransactionalId`, which is not
-rescued by the controllers. A missing id therefore takes down the flow that
-sends it.
+reads each template's id from an env var, and the five ids plus the WebAuthn
+settings, `ADMIN_NOTIFICATION_EMAIL` and `APP_HOST` are all in
+`config/deploy.yml` under `env: clear:` — they identify templates and hosts,
+they do not authorise anything. Read `config/deploy.yml` for the current
+values; do not copy them here, or the two will drift.
 
-| Env var | Loops template | Sent when | Kamal env |
-|---------|----------------|-----------|-----------|
-| `LOOPS_API_KEY` | — | All delivery | **Not set** |
-| `LOOPS_MAGIC_LINK_TRANSACTIONAL_ID` | Exists | Active member requests sign-in; application approved | **Not set** |
-| `LOOPS_APPLICATION_LINK_TRANSACTIONAL_ID` | Exists | Applicant resumes their application | **Not set** |
-| `LOOPS_ADMIN_APPLICATION_NOTIFICATION_TRANSACTIONAL_ID` | Exists | Pending applications need review | **Not set** |
-| `LOOPS_NO_ACCOUNT_TRANSACTIONAL_ID` | **Must be created** | Sign-in requested for an address with no account | **Not set** |
-| `LOOPS_APPLICATION_PENDING_TRANSACTIONAL_ID` | **Must be created** | Sign-in requested by an applicant still under review | **Not set** |
-| `WEBAUTHN_ORIGIN` | — | Passkey registration and authentication | **Not set** |
-| `WEBAUTHN_RP_ID` | — | Passkey registration and authentication | **Not set** |
-| `WEBAUTHN_RP_NAME` | — | Passkey registration and authentication | **Not set** |
-| `ADMIN_NOTIFICATION_EMAIL` | — | Recipient of the admin application digest | **Not set** |
+| Env var | Where it lives | Sent / used when | If it is wrong or missing |
+|---------|----------------|------------------|---------------------------|
+| `LOOPS_API_KEY` | `config/credentials.yml.enc` | Every Loops delivery | Container boots healthy, then every sign-in 500s (`LoopsDelivery::MissingApiKey`) |
+| `LOOPS_MAGIC_LINK_TRANSACTIONAL_ID` | `deploy.yml` `env: clear:` | Active member requests sign-in; application approved (`sign_in_url`) | Production refuses to boot |
+| `LOOPS_APPLICATION_LINK_TRANSACTIONAL_ID` | `deploy.yml` `env: clear:` | Applicant resumes their application (`application_url`) | Production refuses to boot |
+| `LOOPS_ADMIN_APPLICATION_NOTIFICATION_TRANSACTIONAL_ID` | `deploy.yml` `env: clear:` | Pending applications need review (`application_count`, `applicant_emails`) | Production refuses to boot |
+| `LOOPS_NO_ACCOUNT_TRANSACTIONAL_ID` | `deploy.yml` `env: clear:` | Sign-in requested for an address with no account (`apply_url`) | Production refuses to boot |
+| `LOOPS_APPLICATION_PENDING_TRANSACTIONAL_ID` | `deploy.yml` `env: clear:` | Sign-in requested by an applicant still under review (no variables) | Production refuses to boot |
+| `ADMIN_NOTIFICATION_EMAIL` | `deploy.yml` `env: clear:` | Recipient of the admin application digest | Boots clean; the admin digest raises at send time |
+| `APP_HOST` | `deploy.yml` `env: clear:` | `config.action_mailer.default_url_options` in `config/environments/production.rb` | Boots clean; emailed URLs point at the wrong host or become unclickable |
+| `WEBAUTHN_ORIGIN` | `deploy.yml` `env: clear:` | Passkey registration and authentication | Boots clean; every passkey is silently rejected |
+| `WEBAUTHN_RP_ID` | `deploy.yml` `env: clear:` | Passkey registration and authentication | Boots clean; every passkey is silently rejected |
+| `WEBAUTHN_RP_NAME` | `deploy.yml` `env: clear:` | Passkey registration and authentication | Cosmetic only (name shown in the OS passkey prompt) |
 
-**The last two Loops templates do not exist in the dashboard yet.** They are
-required by the "always answer sign-in attempts by email" change:
-`SessionsController#create` now emails a definitive answer on every branch, so
-two of the three branches call templates that must exist before this ships. If
-either id is unset in production, every sign-in attempt for an unknown or
-pending address raises and returns a 500 — which both breaks sign-in and
-reintroduces the address enumeration leak the change exists to close.
+Outside production the transactional ids fall back to literal defaults
+(`no_account`, `application_pending`, `sign_in_magic_link`, ...) and
+`TransactionalEmail::Message#deliver_now` is a no-op, so local and test runs
+never hit Loops.
 
-Pre-deploy checklist:
+**The five ids are enforced at boot, and that is deliberate.**
+`config/initializers/verify_transactional_email_ids.rb` calls
+`TransactionalEmail.verify_transactional_ids!`, which reads all five ids when
+`Rails.env.production?`. A missing one raises
+`TransactionalEmail::MissingTransactionalId` during boot, the container never
+becomes healthy, and Kamal rolls the deploy back.
 
-0. **Confirm the starting state.** `command grep -c LOOPS_ config/deploy.yml`
-   returns `0` today. If it still returns `0` when you deploy, the boot guard
-   below will refuse the container and Kamal will roll the deploy back.
-1. Create the two missing templates in the Loops dashboard (content guidance
-   below).
-2. **Set all ten vars in the deploy config.** None of them exist there today.
-   - The five transactional ids go in `config/deploy.yml` under `env: clear:` —
-     they are template identifiers, not credentials:
-     `LOOPS_MAGIC_LINK_TRANSACTIONAL_ID`,
-     `LOOPS_APPLICATION_LINK_TRANSACTIONAL_ID`,
-     `LOOPS_ADMIN_APPLICATION_NOTIFICATION_TRANSACTIONAL_ID`,
-     `LOOPS_NO_ACCOUNT_TRANSACTIONAL_ID`,
-     `LOOPS_APPLICATION_PENDING_TRANSACTIONAL_ID`.
-   - `LOOPS_API_KEY` is a credential: add it to `.kamal/secrets` **and** list it
-     under `env: secret:` in `config/deploy.yml`. Kamal needs both — a name in
-     `.kamal/secrets` that is not listed in `env: secret:` is never injected.
-   - `WEBAUTHN_ORIGIN` (`https://tworiversmatters.com`), `WEBAUTHN_RP_ID`
-     (`tworiversmatters.com`), and `WEBAUTHN_RP_NAME` go in `env: clear:`.
-     These have development defaults (`http://localhost:3000` / `localhost`),
-     so leaving them unset does **not** fail the deploy — it silently ships a
-     production site where no passkey can ever be registered or used.
-   - `ADMIN_NOTIFICATION_EMAIL` goes in `env: clear:`.
-3. Deploy.
-4. **Smoke-test all three sign-in branches** (unknown address, pending
-   applicant, active member) against production and confirm each receives its
-   email — then register and use a passkey. This step is not optional: the boot
-   guard checks that the ids are *present*, never that they are *correct*. A
-   transposed or stale transactional id boots a perfectly healthy container that
-   sends nothing, or sends the wrong template, on the branch you typo'd. The
-   smoke test is the only thing that catches that.
+The reason it fails the deploy rather than degrading is enumeration. Nothing
+rescues `MissingTransactionalId` at request time, and
+`SessionsController#create` answers every address with the same redirect
+precisely so a visitor cannot tell which addresses hold accounts. Drop the
+no-account template id and an unknown address 500s while a real one still
+302s — a perfect address oracle, and in a small city that exposes the people
+who hold accounts. A partial setup must not be reachable, so it is not
+allowed to boot.
 
-Content guidance for whoever writes the templates. No emoji — standing project
-rule for all user-facing copy.
-
-- **No account** (data variable: `apply_url`) — "Someone asked for a sign-in
-  link for this address. There's no account here. If that was you, here's how to
-  request one: `{{apply_url}}`."
-- **Application pending** (no data variables) — "Your application is still under
-  review. We'll email you as soon as it's decided."
-
-Outside production these ids fall back to literal defaults (`no_account`,
-`application_pending`, `sign_in_magic_link`, ...) and `Message#deliver_now` is a
-no-op, so local and test runs never hit Loops.
-
-**Enforced at boot.** `config/initializers/verify_transactional_email_ids.rb`
-calls `TransactionalEmail.verify_transactional_ids!`, which reads all five ids
-when `Rails.env.production?`. A missing var raises `MissingTransactionalId`
-during boot, the container never becomes healthy, and Kamal rolls the deploy
-back — so a forgotten id costs you a failed deploy instead of a broken sign-in
-form. If a deploy fails with `LOOPS_..._TRANSACTIONAL_ID is required in
-production` in `bin/kamal logs`, that is this guard: set the var and redeploy.
-The guard is skipped when `SECRET_KEY_BASE_DUMMY` is set, so the Docker build's
-`assets:precompile` step is unaffected.
+The guard is skipped when `SECRET_KEY_BASE_DUMMY` is set. `docker build` runs
+`assets:precompile` with `RAILS_ENV=production` but none of the real env, so
+without that skip the guard would break every image build.
 
 **What the boot guard does *not* cover.** `TRANSACTIONAL_ID_READERS` lists the
-five transactional ids and nothing else. Three vars slip past it:
+five transactional ids and nothing else:
 
-- `LOOPS_API_KEY` — checked only at send time, in `LoopsDelivery.deliver_now`.
-  A deploy that sets the five ids but not the key boots healthy and then raises
-  `LoopsDelivery::MissingApiKey` on every sign-in attempt. `SessionsController`
-  does not rescue it, so that is a 500 on every branch and a total sign-in
-  outage. It is uniform across all three branches, so it is not an enumeration
-  oracle — but it is the whole front door. Verify it separately:
+- `LOOPS_API_KEY` is checked only at send time, in `LoopsDelivery.deliver_now`.
+  A deploy with all five ids but no key boots healthy and then raises
+  `LoopsDelivery::MissingApiKey` on every sign-in attempt. It is uniform across
+  all three branches, so it is not an enumeration oracle — but it is the whole
+  front door, and sign-in is the only way in. Verify it separately:
   `bin/kamal app exec 'bin/rails runner "puts LoopsDelivery.configured?"'`
   must print `true`.
-- `ADMIN_NOTIFICATION_EMAIL` — also send-time only, raised from
+- `ADMIN_NOTIFICATION_EMAIL` is also send-time only, raised from
   `TransactionalEmail.admin_application_notifications`. Its absence breaks the
   admin digest, not sign-in.
-- `WEBAUTHN_ORIGIN` / `WEBAUTHN_RP_ID` / `WEBAUTHN_RP_NAME` — these have
-  development defaults, so nothing raises at all. A production container
-  running with `rp_id: "localhost"` boots clean, serves every page, and
-  silently rejects every passkey.
+- `WEBAUTHN_ORIGIN` / `WEBAUTHN_RP_ID` / `WEBAUTHN_RP_NAME` have development
+  defaults in `config/initializers/webauthn.rb` (`http://localhost:3000` /
+  `localhost`), so nothing raises at all. A production container running with
+  `rp_id: "localhost"` boots clean, serves every page, and silently rejects
+  every passkey.
 
-The boot guard is a presence check, never a correctness check. A typo'd or
-stale id passes it. Only the production smoke test (checklist step 4) catches
-that, which is why step 4 has to actually be run.
+**Loops' sending domain must stay verified.** An unverified domain still
+accepts the API call and returns success — the delivery then silently never
+arrives. Nothing in the app can detect this. If sign-in emails stop showing up
+while `LoopsDelivery.configured?` is `true` and no errors are logged, check
+domain verification in the Loops dashboard first.
+
+**The boot guard is a presence check, never a correctness check.** A transposed
+or stale id passes it and boots a perfectly healthy container that sends
+nothing, or sends the wrong template, on the branch you typo'd. After any
+change to the ids, smoke-test all three sign-in branches against production
+(unknown address, pending applicant, active member), confirm each receives its
+email, then register and use a passkey. That is the only thing that catches it.
+
+No emoji in any template copy — standing project rule for all user-facing text.
+
+### Database Backups (still not automated)
+
+There is no backup cron. Several manual dumps were taken during the
+passwordless-auth work and live on the dev machine in `~/backups/tworivers/`,
+including a `-preauth-` dump taken before the migration that dropped the
+password, TOTP and recovery-code columns.
+
+```bash
+ssh root@178.156.250.235 \
+  "docker exec two_rivers_reporter-db pg_dump -U two_rivers_reporter two_rivers_reporter_production" \
+  | gzip > ~/backups/tworivers/two_rivers_reporter_production-$(date -u +%Y%m%dT%H%M%SZ).sql.gz
+```
+
+Take one before any destructive migration. The Postgres data lives in a Docker
+volume (`two_rivers_reporter_pgdata`) with nothing else guarding it.
 
 ### Recurring Jobs (Solid Queue, `config/recurring.yml`)
 
@@ -198,8 +188,11 @@ that, which is why step 4 has to actually be run.
 - `config/deploy.yml` — Kamal configuration (servers, registry, accessories, env)
 - `.kamal/secrets` — Secret sourcing (shell expressions, not raw values)
 - `.env` — Database password (gitignored, required for deploys)
+- `config/initializers/verify_transactional_email_ids.rb` — Boot guard that refuses a production container missing a Loops transactional id
+- `config/initializers/webauthn.rb` — Reads the three `WEBAUTHN_*` vars; defaults to localhost when unset
 - `config/postgres/init.sql` — Creates cache/queue/cable databases and pgvector extension
 - `Dockerfile` — Production image (Ruby 4.0, poppler-utils, tesseract, yt-dlp, jemalloc)
 - `app/views/og/default.html.erb` + `lib/tasks/og.rake` + `public/og-image.png` + `vendor/fonts/Outfit-Black.ttf` — social preview image. Edit the ERB, then run `bin/rails og:generate` to regenerate the PNG. Commit both.
 
-**Not yet automated:** database backups. High priority.
+**Not yet automated:** database backups. High priority — see *Database Backups*
+above for the manual command and where existing dumps live.

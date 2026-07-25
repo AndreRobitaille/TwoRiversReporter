@@ -1,15 +1,12 @@
 # Passwordless auth operations
 
-## Required production env vars
-- `WEBAUTHN_ORIGIN`
-- `WEBAUTHN_RP_ID`
-- `WEBAUTHN_RP_NAME`
-- `LOOPS_API_KEY`
-- `ADMIN_NOTIFICATION_EMAIL`
-- Loops transactional IDs: see the **Loops Transactional Templates** table in
-  `.claude/skills/deploying/SKILL.md`, which is the single source of truth for
-  which templates exist, which env var carries each id, and which still need to
-  be created in Loops. Do not duplicate the list here — it drifted once already.
+## Production configuration
+
+Deployed and live. The **Passwordless Auth Configuration** section of
+`.claude/skills/deploying/SKILL.md` is the single source of truth for every
+value: which env var carries which Loops transactional id, that `LOOPS_API_KEY`
+lives in encrypted credentials rather than an env var, and what breaks when
+each one is wrong. Do not duplicate the list here — it drifted once already.
 
 `TransactionalEmail.verify_transactional_ids!` runs from
 `config/initializers/verify_transactional_email_ids.rb` and makes a production
