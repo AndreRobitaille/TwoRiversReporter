@@ -1,6 +1,29 @@
 class TransactionalEmail
   class MissingTransactionalId < StandardError; end
 
+  # Every Loops template this app can send. Each reader raises
+  # MissingTransactionalId in production when its env var is unset.
+  TRANSACTIONAL_ID_READERS = %i[
+    magic_link_transactional_id
+    application_link_transactional_id
+    admin_application_notification_transactional_id
+    no_account_transactional_id
+    application_pending_transactional_id
+  ].freeze
+
+  # Called from an initializer so a production container refuses to boot when a
+  # transactional id is missing. Nothing rescues MissingTransactionalId at
+  # request time, so an unset id would otherwise surface as a 500 on the exact
+  # sign-in branches that must stay indistinguishable — a missing id for the
+  # no-account template would turn "unknown address" into a 500 and "known
+  # address" into a 302, which is a perfect address-enumeration oracle.
+  def self.verify_transactional_ids!
+    return true unless Rails.env.production?
+
+    TRANSACTIONAL_ID_READERS.each { |reader| public_send(reader) }
+    true
+  end
+
   Message = Struct.new(:email, :transactional_id, :data_variables, keyword_init: true) do
     def initialize(**kwargs)
       super
@@ -69,7 +92,7 @@ class TransactionalEmail
 
     Message.new(
       email: email,
-      transactional_id: ENV["LOOPS_ADMIN_APPLICATION_NOTIFICATION_TRANSACTIONAL_ID"].presence || default_admin_application_notification_transactional_id,
+      transactional_id: admin_application_notification_transactional_id,
       data_variables: {
         application_count: applications.size,
         applicant_emails: applications.map { |application| application.user.email_address }
@@ -93,6 +116,10 @@ class TransactionalEmail
       transactional_id: application_pending_transactional_id,
       data_variables: {}
     )
+  end
+
+  def self.admin_application_notification_transactional_id
+    ENV["LOOPS_ADMIN_APPLICATION_NOTIFICATION_TRANSACTIONAL_ID"].presence || default_admin_application_notification_transactional_id
   end
 
   def self.no_account_transactional_id

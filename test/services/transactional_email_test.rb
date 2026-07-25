@@ -143,4 +143,47 @@ class TransactionalEmailTest < ActiveSupport::TestCase
       end
     end
   end
+
+  test "verify_transactional_ids! is a no-op outside production" do
+    TransactionalEmail::TRANSACTIONAL_ID_READERS.each { |reader| ENV.delete(env_var_for(reader)) }
+
+    assert TransactionalEmail.verify_transactional_ids!
+  end
+
+  test "verify_transactional_ids! passes in production when every id is set" do
+    TransactionalEmail::TRANSACTIONAL_ID_READERS.each { |reader| ENV[env_var_for(reader)] = "set-#{reader}" }
+
+    Rails.stub(:env, ActiveSupport::StringInquirer.new("production")) do
+      assert TransactionalEmail.verify_transactional_ids!
+    end
+  ensure
+    TransactionalEmail::TRANSACTIONAL_ID_READERS.each { |reader| ENV.delete(env_var_for(reader)) }
+  end
+
+  test "verify_transactional_ids! raises in production for each missing id in turn" do
+    readers = TransactionalEmail::TRANSACTIONAL_ID_READERS
+    assert_equal 5, readers.size, "every Loops template must be covered by the boot guard"
+
+    readers.each do |missing|
+      readers.each { |reader| ENV[env_var_for(reader)] = "set-#{reader}" }
+      ENV.delete(env_var_for(missing))
+
+      Rails.stub(:env, ActiveSupport::StringInquirer.new("production")) do
+        error = assert_raises(TransactionalEmail::MissingTransactionalId, "#{missing} is not covered by the boot guard") do
+          TransactionalEmail.verify_transactional_ids!
+        end
+
+        assert_match env_var_for(missing), error.message
+      end
+    end
+  ensure
+    TransactionalEmail::TRANSACTIONAL_ID_READERS.each { |reader| ENV.delete(env_var_for(reader)) }
+  end
+
+  private
+
+    # :magic_link_transactional_id => "LOOPS_MAGIC_LINK_TRANSACTIONAL_ID"
+    def env_var_for(reader)
+      "LOOPS_#{reader.to_s.upcase}"
+    end
 end
