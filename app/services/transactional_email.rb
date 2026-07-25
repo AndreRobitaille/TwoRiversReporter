@@ -51,13 +51,19 @@ class TransactionalEmail
     end
   end
 
+  # Every URL below is absolute. A Loops template drops these straight into an
+  # `<a href>` in an email client, where there is no page to resolve a bare path
+  # against — "/session/magic_link?token=..." is simply not clickable, and the
+  # magic link is the only way anyone signs in. The host comes from
+  # config.action_mailer.default_url_options (config/environments/*.rb), so no
+  # environment's domain is written down here.
   def self.magic_link(user, magic_link)
     transactional_id = magic_link_transactional_id
     Message.new(
       email: user.email_address,
       transactional_id: transactional_id,
       data_variables: {
-        sign_in_url: "/session/magic_link?token=#{CGI.escape(magic_link.raw_token)}"
+        sign_in_url: sign_in_url(magic_link)
       }
     )
   end
@@ -68,7 +74,7 @@ class TransactionalEmail
       email: user.email_address,
       transactional_id: transactional_id,
       data_variables: {
-        application_url: Rails.application.routes.url_helpers.edit_application_path(membership_application, token: magic_link.raw_token)
+        application_url: url_helpers.edit_application_url(membership_application, token: magic_link.raw_token, **url_options)
       }
     )
   end
@@ -78,7 +84,7 @@ class TransactionalEmail
       email: user.email_address,
       transactional_id: magic_link_transactional_id,
       data_variables: {
-        sign_in_url: "/session/magic_link?token=#{CGI.escape(magic_link.raw_token)}"
+        sign_in_url: sign_in_url(magic_link)
       }
     )
   end
@@ -105,7 +111,7 @@ class TransactionalEmail
       email: email_address,
       transactional_id: no_account_transactional_id,
       data_variables: {
-        apply_url: Rails.application.routes.url_helpers.new_application_path
+        apply_url: url_helpers.new_application_url(**url_options)
       }
     )
   end
@@ -117,6 +123,30 @@ class TransactionalEmail
       data_variables: {}
     )
   end
+
+  # The token is appended by hand instead of being passed to the route helper so
+  # the CGI.escape below stays exactly as it was. A token mangled in transit does
+  # not match a stored digest, and the sign-in fails with nothing to look at.
+  def self.sign_in_url(magic_link)
+    "#{url_helpers.magic_link_public_session_url(**url_options)}?token=#{CGI.escape(magic_link.raw_token)}"
+  end
+  private_class_method :sign_in_url
+
+  def self.url_helpers
+    Rails.application.routes.url_helpers
+  end
+  private_class_method :url_helpers
+
+  # The one host configured per environment. Handed to each helper explicitly
+  # rather than assigned to Rails.application.routes.default_url_options: route
+  # set defaults outrank the request's own host at request time, so setting them
+  # globally rewrites every redirect the app issues to this host — which, among
+  # other things, drops the session cookie on any other hostname the app answers
+  # on.
+  def self.url_options
+    Rails.application.config.action_mailer.default_url_options
+  end
+  private_class_method :url_options
 
   def self.admin_application_notification_transactional_id
     ENV["LOOPS_ADMIN_APPLICATION_NOTIFICATION_TRANSACTIONAL_ID"].presence || default_admin_application_notification_transactional_id
