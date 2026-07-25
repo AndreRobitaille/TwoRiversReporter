@@ -8,9 +8,35 @@
 
 **Tech Stack:** Rails 8.1, Ruby 4.0, Minitest, Propshaft (no asset build step), hand-written `application.css`, Loops for transactional email.
 
+## Status — 2026-07-24
+
+**Tasks 1–11 are complete and reviewed.** Stages 1, 2, and 3 are done. Remaining: Tasks 12–17 (committee show, member show, the adversarial sweep, and all of Stage 5).
+
+Execution ledger with every finding, ruling, and deferred minor: `.superpowers/sdd/2026-07-24-tiered-public-access/progress.md` (git-ignored). Read it before resuming.
+
+Two plan defects were found and corrected during execution, both committed: the `etag` requirement (removed — see security invariant 4 in the spec) and a leak-sweep canary placed in a field gated pages legitimately display.
+
+## What Execution Taught Us
+
+These were not in the original plan. They are now binding on every remaining task.
+
+**Withheld content leaks through non-visible channels.** Three separate instances were found by implementers, none of which a visual check would catch:
+
+1. `MeetingsHelper#share_text` embedded all five full AI highlights in `data-share-copy-text-value` / `data-share-facebook-text-value` on the meeting page.
+2. `TopicsHelper#topic_share_description` put the untruncated AI headline into `<meta name="description">` and the og:/twitter: tags on the topic page.
+3. `TopicsController#index` let `?page=N` walk the two-card cap forward two topics at a time on search, and `index.turbo_stream.erb` served the full paginated card list plus the total count regardless of the HTML cap.
+
+Every remaining surface task must check `data-` attributes, `title=`, `alt=`, `<meta>` including og:/twitter:, inline JSON, turbo-stream payloads, and any `?page=N` or format variant — not just rendered text.
+
+**A helper called from a view may call `gated_for_visitor?`.** That is how leaks 1 and 2 were fixed. Views still must not call `authenticated?`, `Current.user`, or `SiteSetting` directly.
+
+**Fixtures that render nothing produce tests that assert nothing.** Several tasks lost time to fixtures that silently produced an empty section, making the absence assertion pass for the wrong reason. Before asserting content is absent for an anonymous visitor, prove it is present for a signed-in one.
+
+**Pin both `teaser` parameters in tests.** Assertions that only prove gating happened let a wrong `chars:` or `fade:` value pass silently, and `fade: :block` on a single-line headline is a visible defect. Assert the exact modifier class and a truncation boundary measured against the real fixture string.
+
 ## Global Constraints
 
-- **Withheld text is never rendered.** Not `display: none`, not CSS-blurred, not `aria-hidden`. If a visitor may not read it, it must not appear in the response body. Every gated surface gets a test asserting a known phrase is *absent*.
+- **Withheld text is never rendered.** Not `display: none`, not CSS-blurred, not `aria-hidden`, **not in a `data-` attribute, meta tag, turbo-stream payload, or any `?page=N` / format variant.** If a visitor may not read it, it must not appear in the response body by any route. Every gated surface gets a test asserting a known phrase is *absent* from the raw body.
 - **Gating branches on `gated_for_visitor?` only.** Views may branch on that predicate to choose what to render, and must call `teaser(...)` and `render "shared/gate"` rather than reimplementing truncation or hand-rolling a sign-in card. Views must never call `authenticated?`, `Current.user`, or `SiteSetting` directly — the predicate is the single seam.
 - **Routing never depends on mode.** No page redirects based on `access_mode`; only rendering changes.
 - **Default `access_mode` is `open`.** A fresh database and an existing deployment both stay public until someone flips the switch.
@@ -1701,6 +1727,14 @@ class AnonymousLeakSweepTest < ActionDispatch::IntegrationTest
   end
 end
 ```
+
+**Expand the fixture and path list beyond the skeleton above — this is the requirement, not the code shown.** Execution found leaks that a naive sweep would miss. The fixture must plant the canary in every withheld field, and the path list must include every variant:
+
+- **Topic show, all four gated sections.** The Task 11 fixture only populated "The Story", so Coming Up, Key Decisions, and Record were never exercised by the suite. Plant the canary in an upcoming `TopicAppearance`, a `Motion` linked to an agenda item, and a `factual_record` entry as well.
+- **Meeting show, both summary paths.** One fixture with `generation_data` populated, and a second with only `content` set and `generation_data` blank — that second one selects the legacy recap branch, which shipped ungated until review caught it.
+- **Committee show and member show**, once Tasks 12 and 13 land.
+- **Format and pagination variants:** `?page=2`, `?page=3`, `?q=<term>&page=2`, `format: :turbo_stream`, and `?page=2&format=turbo_stream` on both index pages.
+- **Non-visible channels:** assert the canary is absent from the whole raw body, which already covers `data-` attributes and meta tags — but add an explicit assertion on `<meta name="description">` content for the two detail pages that build it from a helper.
 
 - [ ] **Step 2: Run it**
 
