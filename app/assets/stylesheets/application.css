@@ -2845,7 +2845,7 @@ details[open] summary {
   /* Breathing room on both sides: the faded headline runs out immediately
      above and the topic pills start immediately below, so without this the
      note reads as part of whichever it is nearer. */
-  margin: var(--space-3) 0;
+  margin: var(--space-5) 0;
   font-family: var(--font-data);
   font-size: var(--font-size-xs);
   text-transform: uppercase;
