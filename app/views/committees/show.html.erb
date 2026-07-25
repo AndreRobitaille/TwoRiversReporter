@@ -24,24 +24,26 @@
       <span class="section-line"></span>
     </div>
 
-    <% if @memberships.any? %>
-      <div class="committee-roster">
-        <% sort_memberships(@memberships, @council_member_ids).each do |cm| %>
-          <%= link_to member_path(cm.member), class: "committee-member" do %>
-            <span class="committee-member-name"><%= cm.member.name %></span>
-            <span class="committee-member-badges">
-              <% if cm.role.present? && cm.role.in?(%w[chair vice_chair]) %>
-                <span class="badge badge--primary"><%= cm.role.titleize.tr("_", " ") %></span>
-              <% end %>
-              <% if @council_member_ids.include?(cm.member_id) %>
-                <span class="badge badge--info">Council Member</span>
-              <% end %>
-            </span>
+    <% unless gated_for_visitor? %>
+      <% if @memberships.any? %>
+        <div class="committee-roster">
+          <% sort_memberships(@memberships, @council_member_ids).each do |cm| %>
+            <%= link_to member_path(cm.member), class: "committee-member" do %>
+              <span class="committee-member-name"><%= cm.member.name %></span>
+              <span class="committee-member-badges">
+                <% if cm.role.present? && cm.role.in?(%w[chair vice_chair]) %>
+                  <span class="badge badge--primary"><%= cm.role.titleize.tr("_", " ") %></span>
+                <% end %>
+                <% if @council_member_ids.include?(cm.member_id) %>
+                  <span class="badge badge--info">Council Member</span>
+                <% end %>
+              </span>
+            <% end %>
           <% end %>
-        <% end %>
-      </div>
-    <% else %>
-      <p class="section-empty">No current members on record.</p>
+        </div>
+      <% else %>
+        <p class="section-empty">No current members on record.</p>
+      <% end %>
     <% end %>
   </section>
 
@@ -52,9 +54,7 @@
       <span class="section-line"></span>
     </div>
 
-    <% if gated_for_visitor? %>
-      <%= render "shared/gate" %>
-    <% else %>
+    <% unless gated_for_visitor? %>
       <% if @recent_topics.any? %>
         <div class="committee-activity">
           <% @recent_topics.each do |topic| %>
@@ -83,6 +83,10 @@
       <% end %>
     <% end %>
   </section>
+
+  <% if gated_for_visitor? %>
+    <%= render "shared/gate" %>
+  <% end %>
 
   <%= link_to committees_path, class: "back-link" do %>
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
