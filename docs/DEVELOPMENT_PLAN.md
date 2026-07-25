@@ -594,8 +594,11 @@ not appear in the response body, by any route. A helper that builds
 share text, a meta description, or any other out-of-band content must
 consult the gating predicate itself — gating the primary view template
 is not sufficient. This is a hard architectural constraint, not a
-preference: five real leaks of exactly this shape were found and fixed
-while building the feature.
+preference: seven real leaks of exactly this shape were found and fixed
+while building the feature. Several were helpers that built share text
+or a meta description from content the page displayed at the time the
+helper was written — a justification that expired silently when the page
+changed.
 
 Views and helpers gate on one predicate, `gated_for_visitor?`, and two
 shared primitives — a `teaser` truncation helper and a `shared/_gate`
@@ -604,14 +607,86 @@ sign-in prompt partial. They never branch on authentication state or
 
 ### Sign-in and access requests
 
-Independent of access mode, every address submitted at sign-in receives
-a definitive answer by email — a magic link for an approved account, an
-application invitation for no account, or a pending-review notice for an
-application awaiting review — while the browser's response is identical
-across all three cases. That non-disclosure is deliberate: in a small
-city, letting a visitor probe who holds an account would expose those
-residents to local retaliation. A per-address throttle limits how often
-the same address can be mailed.
+Access mode changes what an anonymous visitor is shown; it never changes
+who can hold an account or how they get one. Both are described in
+Membership and Authentication below.
+
+------------------------------------------------------------------------
+
+## Membership and Authentication
+
+**The site has no passwords.** No password, TOTP, recovery-code or other
+MFA mechanism exists anywhere in the application, and the columns that
+once held them have been dropped. There is nothing for a member to
+remember, nothing to reuse from another site, and nothing to leak in a
+database compromise.
+
+An account is an email address. Two things can prove control of it:
+
+- **A magic link** — a single-use, short-lived link mailed to the
+  address. Only a digest of the token is stored, so the database never
+  holds anything that could be replayed.
+- **A passkey** — a WebAuthn credential bound to the site's domain,
+  registered after a first sign-in. Phishing-resistant, and the normal
+  path for anyone who signs in often.
+
+### Membership is granted, not self-served
+
+Anyone may apply. Nobody is admitted automatically. An applicant gives
+an email address, receives a link back to a form, submits their name and
+address and any note they want to add, and waits for an administrator to
+approve or reject it. Approval activates the account and mails a sign-in
+link; rejection records a reason.
+
+This is deliberate. The audience is one small city, the reporting is
+about identifiable neighbours, and open registration would make the
+membership list a resource for anyone who wanted one. A human decision
+per member is affordable at this scale and is the point.
+
+Administrators are created only by other administrators, never through
+the application flow, and the application is the only self-service
+route into the system.
+
+### Constraints
+
+These are architectural requirements, not implementation preferences.
+
+- **Sign-in must not disclose who holds an account.** Every address
+  submitted at sign-in gets the same response in the browser, whether it
+  belongs to an active member, an application still under review, or
+  nobody at all. The distinction is delivered by email, to the person
+  who actually controls the address. In a small city, letting a visitor
+  probe who holds an account would expose those residents to local
+  retaliation. Any change that makes the three cases distinguishable —
+  a different message, status, redirect or delay — breaks this.
+- **A partial email configuration must not be reachable.** The
+  non-disclosure property depends on every sign-in branch being able to
+  send its message. A deployment missing any of them is refused at boot
+  rather than allowed to serve, because a branch that fails is a branch
+  that is distinguishable. See the `deploying` skill.
+- **Emailed links must be absolute.** They are read in a mail client,
+  where a bare path resolves against nothing. The magic link is the only
+  way most members can sign in.
+- **Sign-in is rate-limited per address and per source**, so the mail
+  path cannot be used to flood an inbox or to enumerate by volume.
+- **Administrative tools require a passkey**, over and above being an
+  administrator. Email alone is not sufficient to reach anything that
+  can change the site or its membership.
+- **Sessions are long-lived but not permanent.** A session expires after
+  a long fixed period of inactivity, refreshed by use. Members are not
+  asked to sign in repeatedly; an abandoned session does not stay valid
+  forever. Administrators can revoke any session, or all of a user's
+  sessions, at any time.
+- **All transactional mail goes through one path.** There is a single
+  outbound email seam and a single provider. Nothing else in the
+  application sends mail.
+
+Data model, flow-by-flow behaviour and error handling are specified in
+`docs/superpowers/specs/2026-07-23-passwordless-auth-and-applications-design.md`;
+the visual treatment is in
+`docs/superpowers/specs/2026-07-24-passwordless-auth-visual-design.md`.
+Production configuration and its failure modes are in the `deploying`
+skill. None of that is duplicated here.
 
 ------------------------------------------------------------------------
 
@@ -658,10 +733,13 @@ GitHub issues now affect the live production server. Priority areas:
 3. **Monitoring** — Job failures on production should be visible.
    The admin dashboard at `/admin/job_runs` shows job history.
 
-4. **Data safety** — Production database backups are not yet
+4. **Data safety** — Production database backups are still not
    automated. The Postgres data lives in a Docker volume
    (`two_rivers_reporter_pgdata`). A `pg_dump` cron should be
-   set up.
+   set up. Backups taken so far have been manual; the command and
+   the location of the existing dumps are in the `deploying` skill.
+   A destructive migration (dropping the password, TOTP and
+   recovery-code columns) has already shipped against this.
 
 ### Jobs That Need Recurring Schedules
 
