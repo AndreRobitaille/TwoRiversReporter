@@ -100,11 +100,14 @@ module MeetingsHelper
     # would hand the withheld tail to the visitor the gate just turned away.
     return gated_lede_text(headline) if headline.present?
 
-    # Agenda item titles are withheld from gated anonymous visitors: the topic
-    # show page hides them behind the gate in "Coming Up", and meeting show
-    # never renders them at all. Listing them in the meta description handed a
-    # crawler-visible copy to exactly the visitor the gate turned away, so a
-    # gated visitor drops straight to the bare body-name/date sentence.
+    # These are DB `AgendaItem` titles, not the `item_details` titles the gated
+    # page renders in full — a different field, scraped rather than
+    # summarized, and still withheld: the topic show page hides them behind
+    # the gate in "Coming Up", and meeting show never renders this field to a
+    # gated visitor under any branch. Listing them in the meta description
+    # handed a crawler-visible copy to exactly the visitor the gate turned
+    # away, so a gated visitor drops straight to the bare body-name/date
+    # sentence.
     return bare_meeting_description(meeting) if gated_for_visitor?
 
     items = substantive_agenda_items(meeting)
@@ -247,11 +250,13 @@ module MeetingsHelper
     end
   end
 
-  # Anonymous visitors in gated mode see no Key Decision text at all on the
-  # page itself — below the gate they get placeholder geometry, not prose (see
-  # app/views/meetings/_gated_skeleton.html.erb). The share payload therefore
-  # carries no highlight text either. This used to tease the first highlight
-  # at 240 characters, which was correct only while the page did the same.
+  # Below the gate, a Key Decision is a GATED_ITEM_BODY_CHARS fragment — three
+  # to five words (see app/views/meetings/_gated_items.html.erb). A share
+  # payload made of stubs that short would be noise, so gated share text
+  # carries no highlight text at all: strictly less than the page shows, which
+  # is the only direction that is ever safe. This used to tease the first
+  # highlight at 240 characters, which was correct only while the page did the
+  # same.
   def share_text_past_bullets(lines, gd)
     return if gated_for_visitor?
 
@@ -270,8 +275,16 @@ module MeetingsHelper
   end
 
   def share_text_upcoming_bullets(lines, gd)
-    # Same rule as the past-meeting bullets: highlights and agenda item titles
-    # are both below the gate now, so neither leaves through share text.
+    # Highlights: same rule as the past-meeting bullets — the page shows only a
+    # few words of each, so the payload shows none.
+    #
+    # Agenda item titles: these are now rendered *in full* below the gate, so
+    # this branch would no longer leak anything the page withholds. The guard
+    # stays anyway. `item_details` titles and the DB `AgendaItem` titles that
+    # `share_text_agenda_fallback` reaches for are different fields with
+    # different gating, and one early return that covers both is easier to keep
+    # honest than a per-field exception. Anything the payload drops that the
+    # page shows is a cosmetic loss; the reverse is a leak.
     return if gated_for_visitor?
 
     highlights = gd["highlights"] || []
@@ -300,6 +313,13 @@ module MeetingsHelper
   # feed attributes rather than markup. Same truncation rule, so the three
   # channels cannot disagree about where the sentence stops.
   GATED_LEDE_CHARS = 200
+
+  # How much of an item body — highlight text, public-input summary, agenda
+  # item summary — a gated visitor may read below the gate. Roughly three to
+  # five words: enough to tell what the item is about, not enough to be the
+  # item. `teaser` cuts back to a word boundary, so the rendered fragment is
+  # at most this many characters and usually a few less.
+  GATED_ITEM_BODY_CHARS = 30
 
   def gated_lede_text(text)
     return text unless gated_for_visitor?
@@ -335,8 +355,8 @@ module MeetingsHelper
   def facebook_share_hook_from_summary(meeting, gd)
     return nil if gd.blank?
 
-    # Gated visitors see no highlight text anywhere on the page, so the
-    # Facebook hook has nothing it is allowed to prepend.
+    # Gated visitors see a few words of each highlight and no more, so there
+    # is no full sentence here the Facebook hook is allowed to prepend.
     return nil if gated_for_visitor?
 
     highlights = meeting_highlights(gd)

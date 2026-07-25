@@ -1,0 +1,102 @@
+<%# Everything below the gate on meeting show: the real page, cut short.
+
+    Locals: gd — the meeting summary's generation_data hash.
+
+    A gated visitor sees the same sections a member sees, in the same order,
+    with every item present — the point is that you can tell there are eight
+    agenda items and read the first few words of each. Titles render whole
+    (`agenda_item_title`, `speaker`); they are barely more than the agenda
+    text the city already posts. Bodies are teased to
+    MeetingsHelper::GATED_ITEM_BODY_CHARS and fade at the cut.
+
+    The fade is a visual disguise for a cut that already happened on the
+    server. `teaser` truncates before the string reaches the response, so the
+    withheld tail is not in the DOM, not in an attribute, and not recoverable
+    from devtools. Never swap this for a CSS blur or a `display: none` on full
+    text.
+
+    Deliberately absent, per the owner: votes and vote tallies, `decision`
+    badges, roll call breakdowns, public-hearing lines, citations, and topic
+    doors. Those are not truncated here — they are not rendered at all. %>
+
+<% decisions = meeting_highlights(gd) %>
+<% speakers = meeting_public_input(gd) %>
+<% agenda_items = meeting_item_details(gd) %>
+
+<% if decisions.any? %>
+  <section class="meeting-article-section">
+    <div class="home-section-header">
+      <%= render "shared/atom_marker" %>
+      <span class="section-label">Key Decisions</span>
+      <span class="section-line"></span>
+    </div>
+    <div class="meeting-decisions">
+      <%# Highlights carry no title field, so a teased fragment of `text` is
+          the whole item. Do not invent a heading for them. %>
+      <% decisions.each do |decision| %>
+        <div class="meeting-decision">
+          <p class="meeting-decision-text">
+            <%= teaser(decision["text"], chars: MeetingsHelper::GATED_ITEM_BODY_CHARS, fade: :inline) %>
+          </p>
+        </div>
+      <% end %>
+    </div>
+  </section>
+<% end %>
+
+<%# Public Input keeps its empty state rather than vanishing, so the gated
+    page has the same section structure a member sees. "No public comments"
+    is a static label about an absence — there is nothing to withhold. %>
+<section class="meeting-article-section">
+  <div class="home-section-header">
+    <%= render "shared/atom_marker" %>
+    <span class="section-label">Public Input<% if speakers.any? %> · <%= speakers.size %> <%= "speaker".pluralize(speakers.size) %><% end %></span>
+    <span class="section-line"></span>
+  </div>
+  <% if speakers.any? %>
+    <div class="public-input-list">
+      <% speakers.each do |pi| %>
+        <div class="public-input-item">
+          <div class="public-input-attribution">
+            <span class="public-input-speaker"><%= pi["speaker"] %></span>
+            <% if pi["type"] == "communication" %>
+              <span class="public-input-type">relayed constituent feedback</span>
+            <% end %>
+          </div>
+          <%# Same redaction scrub the member view applies, run *before* the
+              teaser so a summary that opens with "[Address redacted.]" does
+              not spend its whole allowance on the marker. %>
+          <p class="public-input-summary">
+            <%= teaser(pi["summary"]&.gsub(/\s*\[Address redacted\.?\]\s*/i, " ")&.strip,
+                  chars: MeetingsHelper::GATED_ITEM_BODY_CHARS, fade: :inline) %>
+          </p>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="section-empty">No public comments or communications recorded for this meeting.</p>
+  <% end %>
+</section>
+
+<% if agenda_items.any? %>
+  <section class="meeting-article-section">
+    <div class="home-section-header">
+      <%= render "shared/atom_marker" %>
+      <span class="section-label">Agenda Items</span>
+      <span class="section-line"></span>
+    </div>
+    <%# Every item, not a subset: the count is the information. %>
+    <% agenda_items.each_with_index do |item, item_idx| %>
+      <div class="meeting-item-card" id="agenda-item-<%= item_idx %>">
+        <div class="meeting-item-card-header">
+          <div class="meeting-item-card-title"><%= item["agenda_item_title"] %></div>
+        </div>
+        <% if item["summary"].present? %>
+          <div class="meeting-item-card-summary">
+            <%= teaser(item["summary"], chars: MeetingsHelper::GATED_ITEM_BODY_CHARS, fade: :inline) %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </section>
+<% end %>
