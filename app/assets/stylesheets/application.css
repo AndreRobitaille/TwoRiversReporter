@@ -6525,6 +6525,7 @@ th.sortable-header:hover {
 
 .passkey-item {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-4);
   padding: var(--space-3) var(--space-4);
@@ -6552,6 +6553,24 @@ th.sortable-header:hover {
   letter-spacing: 0.06em;
   color: var(--color-text-secondary);
   margin: var(--space-1) 0 0;
+}
+
+.passkey-item__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.passkey-item__rename {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.passkey-item__rename .form-input {
+  width: auto;
+  max-width: 11rem;
 }
 
 /* ============================================
@@ -6588,8 +6607,15 @@ th.sortable-header:hover {
 }
 
 /* The passkey reminder is a banner, not a clickable card —
-   its buttons are the click targets. */
-.passkey-prompt { cursor: default; }
+   its buttons are the click targets. Constrained like the other
+   reading-measure content blocks (.topic-article, .meeting-article)
+   so two short lines and two buttons don't stretch full-width. */
+.passkey-prompt {
+  max-width: 38rem;
+  margin-left: auto;
+  margin-right: auto;
+  cursor: default;
+}
 .passkey-prompt:hover { box-shadow: none; }
 
 /* Disabled buttons — the system had no disabled state, so a disabled

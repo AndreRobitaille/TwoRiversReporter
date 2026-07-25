@@ -119,7 +119,7 @@
 
       <main class="main-content">
         <div class="container">
-          <% if current_user.present? && !current_user.passkey_prompt_dismissed? && !current_user.passkey_credentials.exists? %>
+          <% if current_user.present? && !current_user.passkey_prompt_dismissed? && !current_user.passkey_credentials.exists? && !current_path.start_with?("settings/") %>
             <div class="passkey-prompt attention-card attention-card--warning mb-6">
               <p class="attention-card__title">Make your next sign-in faster</p>
               <p class="attention-card__meta">Add a passkey to this account</p>
