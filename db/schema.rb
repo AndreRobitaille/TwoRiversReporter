@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_25_022208) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_25_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -335,6 +335,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_25_022208) do
     t.string "facebook_profile_url"
     t.string "first_name"
     t.string "last_name"
+    t.string "phone"
     t.text "rejection_reason"
     t.datetime "reviewed_at"
     t.bigint "reviewed_by_id"
@@ -342,6 +343,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_25_022208) do
     t.string "status", default: "email_pending", null: false
     t.string "street"
     t.datetime "submitted_at"
+    t.string "submitted_ip"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index [ "reviewed_by_id" ], name: "index_membership_applications_on_reviewed_by_id"
