@@ -1,0 +1,32 @@
+<% content_for(:title) { "Application received" } %>
+
+<div class="auth-panel auth-panel--wide">
+  <div class="auth-mark"><%= render "shared/starburst", size: 56 %></div>
+
+  <h1 class="auth-title">Application received</h1>
+  <p class="auth-dek">Your application is in. Nothing more is needed from you.</p>
+
+  <%= render "shared/diamond_divider" %>
+
+  <div class="prose">
+    <p>
+      A person reads every application — this part is not automated. Expect a
+      decision within 24 hours.
+    </p>
+
+    <p>
+      You will get an email either way. If you are approved, that email contains
+      your sign-in link. That link is how you get in, so there is no account to
+      sign in to until it arrives.
+    </p>
+
+    <p>
+      Please do not apply again. A second application will not speed anything up,
+      and duplicates slow the review down.
+    </p>
+  </div>
+
+  <p class="auth-footnote">
+    In the meantime, <%= link_to "read the site", root_path %>.
+  </p>
+</div>

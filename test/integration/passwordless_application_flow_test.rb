@@ -36,7 +36,7 @@ class PasswordlessApplicationFlowTest < ActionDispatch::IntegrationTest
       }
     }
 
-    assert_redirected_to root_path
+    assert_redirected_to submitted_applications_path
     assert_equal "submitted", application.reload.status
 
     TransactionalEmail.stub(:application_approved, ->(user, application, magic_link) {

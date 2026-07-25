@@ -16,7 +16,9 @@ Rails.application.routes.draw do
   resources :members, only: %i[show]
   get "topics/explore", to: "topics#explore", as: :topics_explore
   resources :topics, only: %i[index show]
-  resources :applications, only: %i[new create edit update]
+  resources :applications, only: %i[new create edit update] do
+    get :submitted, on: :collection
+  end
 
   namespace :settings do
     resource :profile, only: %i[show], controller: "profile"
@@ -46,7 +48,7 @@ Rails.application.routes.draw do
   scope :admin do
     resource :site_settings, only: %i[show update], controller: "admin/site_settings", as: :admin_site_settings
 
-    resources :users, only: %i[index show new create], controller: "admin/users" do
+    resources :users, only: %i[index show new create destroy], controller: "admin/users" do
       member do
         patch :approve
         patch :reject
@@ -56,6 +58,8 @@ Rails.application.routes.draw do
         delete :revoke_all_sessions
       end
     end
+
+    resources :membership_applications, only: %i[destroy], controller: "admin/membership_applications", as: :admin_membership_applications
 
     resources :knowledge_sources, controller: "admin/knowledge_sources", as: :admin_knowledge_sources do
       post :reingest, on: :member

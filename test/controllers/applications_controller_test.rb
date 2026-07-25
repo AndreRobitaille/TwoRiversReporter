@@ -18,6 +18,82 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Check your email for the application link.", flash[:notice]
   end
 
+  test "a malformed address creates nothing and is not distinguishable from a real one" do
+    assert_no_difference([ "User.count", "MembershipApplication.count", "MagicLink.count" ]) do
+      post applications_path, params: { email_address: "asdf" }
+    end
+
+    assert_redirected_to new_application_path
+    assert_equal "Check your email for the application link.", flash[:notice]
+  end
+
+  # ---- the confirmation screen ---------------------------------------------
+
+  test "a submitted application lands on a confirmation page, not the homepage" do
+    user = User.create!(email_address: "confirmation@example.com", status: "pending", disabled_at: Time.current)
+    application = user.membership_applications.create!(status: "email_pending")
+    link = MagicLink.create_for!(user, purpose: "application")
+
+    patch application_path(application), params: {
+      token: link.raw_token,
+      membership_application: { first_name: "Jane", last_name: "Member", street: "123 Main St", city: "Two Rivers", state: "WI" }
+    }
+
+    assert_redirected_to submitted_applications_path
+    follow_redirect!
+
+    assert_response :success
+    assert_includes response.body, "Application received"
+  end
+
+  test "the confirmation page sets expectations and does not imply the applicant can sign in" do
+    get submitted_applications_path
+
+    assert_response :success
+    assert_includes response.body, "24 hours"
+    assert_includes response.body, "either way"
+    assert_match(/do not apply again/i, response.body)
+
+    # A countdown or meta refresh would send the applicant somewhere they cannot
+    # use. There is nowhere to send them until an admin has acted.
+    assert_no_match(/http-equiv=["']refresh["']/i, response.body)
+    assert_no_match(/setTimeout/i, response.body)
+
+    # No sign-in affordance in the panel itself — the account does not exist
+    # yet. The global header still carries one; that is site chrome, not this
+    # page telling the applicant to go and sign in.
+    panel = response.body[/<div class="auth-panel.*?<\/main>/m]
+
+    assert panel.present?, "expected the confirmation panel to render"
+    assert_no_match(/href="#{Regexp.escape(new_public_session_path)}"/, panel)
+    assert_no_match(/sign in now|log in|you can now/i, panel)
+  end
+
+  test "the confirmation page is reachable signed out and needs no token" do
+    get submitted_applications_path
+
+    assert_response :success
+  end
+
+  test "the two name fields share one row and one width" do
+    user = User.create!(email_address: "name-widths@example.com", status: "pending", disabled_at: Time.current)
+    application = user.membership_applications.create!(status: "email_pending")
+    link = MagicLink.create_for!(user, purpose: "application")
+
+    get edit_application_path(application, token: link.raw_token)
+
+    assert_response :success
+    # The default .form-row is 2fr/1fr — correct for City / State, wrong for a
+    # name pair. The --equal modifier is what makes the two inputs match.
+    assert_includes response.body, 'class="form-row form-row--equal"'
+    assert_match(/form-row form-row--equal.*first_name.*last_name/m, response.body)
+
+    # The markup alone proves nothing — an undefined class fails silently.
+    stylesheet = Rails.root.join("app/assets/stylesheets/application.css").read
+
+    assert_match(/\.form-row--equal\s*\{[^}]*grid-template-columns:\s*1fr 1fr/, stylesheet)
+  end
+
   test "application start is rate limited" do
     user = User.create!(email_address: "rate@example.com", status: "pending")
     original_cache = Rails.cache
@@ -137,7 +213,7 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
       }
     end
 
-    assert_redirected_to root_path
+    assert_redirected_to submitted_applications_path
     assert_equal "submitted", application.reload.status
     assert_equal "pending", user.reload.status
     assert_not user.active_for_authentication?
@@ -182,7 +258,7 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
       }
     }
 
-    assert_redirected_to root_path
+    assert_redirected_to submitted_applications_path
     assert_equal "(920) 555-0148", application.reload.phone
   end
 
@@ -202,7 +278,7 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
       }
     }
 
-    assert_redirected_to root_path
+    assert_redirected_to submitted_applications_path
     assert_equal "submitted", application.reload.status
     assert_nil application.phone
   end
@@ -231,7 +307,7 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
       },
       headers: { "REMOTE_ADDR" => "172.18.0.5", "HTTP_X_FORWARDED_FOR" => "203.0.113.9" }
 
-    assert_redirected_to root_path
+    assert_redirected_to submitted_applications_path
     assert_equal "203.0.113.9", application.reload.submitted_ip
   end
 
@@ -254,7 +330,7 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
       },
       headers: { "REMOTE_ADDR" => "172.18.0.5", "HTTP_X_FORWARDED_FOR" => "203.0.113.9" }
 
-    assert_redirected_to root_path
+    assert_redirected_to submitted_applications_path
     assert_equal "203.0.113.9", application.reload.submitted_ip
   end
 

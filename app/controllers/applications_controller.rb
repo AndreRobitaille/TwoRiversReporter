@@ -1,7 +1,7 @@
 class ApplicationsController < ApplicationController
   include Authentication
 
-  allow_unauthenticated_access only: %i[new create edit update]
+  allow_unauthenticated_access only: %i[new create edit update submitted]
   rate_limit to: 10, within: 3.minutes, only: :create, with: -> { redirect_to new_application_path, alert: "Try again later." }
   before_action :throttle_application_start!, only: :create
 
@@ -9,9 +9,20 @@ class ApplicationsController < ApplicationController
     @membership_application = MembershipApplication.new
   end
 
+  # Terminal confirmation for a submitted application. Deliberately carries no
+  # applicant data and needs no token: there is nothing here that isn't already
+  # in the email, and a stateless page survives the applicant reloading it,
+  # bookmarking it, or opening it on another device.
+  def submitted
+  end
+
   def create
     email = params[:email_address].to_s.strip.downcase
     return redirect_to(new_application_path, notice: "Check your email for the application link.") if email.blank?
+    # Same notice as every other branch: an unusable address must not be
+    # distinguishable from a usable one, and User now rejects the format
+    # outright, so saving one would raise instead of redirecting.
+    return redirect_to(new_application_path, notice: "Check your email for the application link.") unless User.deliverable_address?(email)
 
     user = User.find_or_initialize_by(email_address: email)
     return redirect_to(new_application_path, notice: "Check your email for the application link.") unless user.new_record? || user.status == "pending"
@@ -73,7 +84,7 @@ class ApplicationsController < ApplicationController
 
     if saved
       AdminApplicationNotificationJob.perform_later(@membership_application.id)
-      redirect_to root_path, status: :see_other
+      redirect_to submitted_applications_path, status: :see_other
     else
       render :edit, status: :unprocessable_entity
     end
