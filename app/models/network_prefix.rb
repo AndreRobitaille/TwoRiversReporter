@@ -22,7 +22,7 @@ class NetworkPrefix
 
     mask = address.ipv4? ? IPV4_MASK : IPV6_MASK
     "#{address.mask(mask)}/#{mask}"
-  rescue IPAddr::Error
+  rescue ArgumentError, EncodingError
     nil
   end
 end
