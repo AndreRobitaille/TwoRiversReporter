@@ -30,7 +30,7 @@ module Authentication
 
       session = find_session_by_cookie
       return clear_session_cookie! unless session
-      return clear_session_cookie! if session.inactive? || !session.user.active_for_authentication?
+      return clear_session_cookie!(session) if session.expired? || !session.user.active_for_authentication?
 
       session.touch_last_seen_if_stale!
       Current.session = session
@@ -86,8 +86,8 @@ module Authentication
       cookies.delete(:session_id)
     end
 
-    def clear_session_cookie!
-      Current.session&.destroy
+    def clear_session_cookie!(session = Current.session)
+      session&.destroy
       Current.session = nil
       cookies.delete(:session_id)
       nil
