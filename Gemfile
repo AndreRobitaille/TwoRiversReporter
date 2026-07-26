@@ -80,3 +80,8 @@ gem "ruby-openai", "~> 8.3"
 gem "kramdown", "~> 2.5"
 gem "redcarpet", "~> 3.6"
 gem "diffy", "~> 3.4"
+
+# Reduces user-agent strings to a browser family and platform for session
+# device matching. Already present as an actionpack dependency; declared here
+# because this app uses it directly.
+gem "useragent"

@@ -485,6 +485,7 @@ DEPENDENCIES
   thruster
   turbo-rails
   tzinfo-data
+  useragent
   web-console
   webauthn
 
