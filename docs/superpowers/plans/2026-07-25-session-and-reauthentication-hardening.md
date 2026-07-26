@@ -36,6 +36,7 @@
 | `app/models/network_prefix.rb` | Mask an IP string to its network prefix. Nothing else. |
 | `app/models/device_fingerprint.rb` | Reduce a user-agent string to browser family and platform. Nothing else. |
 | `app/models/session_context.rb` | Hold a prefix + fingerprint pair; compare it to a `Session`, apply it to a `Session`. |
+| `app/models/session_context_backfill.rb` | Derive context for session rows that have none. Called by the migration and by its test. |
 | `app/controllers/concerns/reauthentication.rb` | The two gates and their format-aware denial response. |
 | `app/controllers/concerns/webauthn_verification.rb` | WebAuthn "get" ceremony verification, shared by passkey sign-in and reauth. |
 | `app/controllers/reauthentications_controller.rb` | The step-up challenge and its two paths. |
@@ -574,20 +575,59 @@ git commit -m "feat: add DeviceFingerprint for version-stable device matching"
 
 **Files:**
 - Create: `db/migrate/<timestamp>_add_context_to_sessions.rb`
+- Create: `app/models/session_context_backfill.rb`
 - Modify: `db/schema.rb` (generated)
 - Test: `test/models/session_context_backfill_test.rb`
 
 **Interfaces:**
 - Consumes: `NetworkPrefix.for`, `DeviceFingerprint.for`
-- Produces: `sessions.ip_prefix` (string), `sessions.device_fingerprint` (string), `sessions.reauthenticated_at` (datetime)
+- Produces: `sessions.ip_prefix` (string), `sessions.device_fingerprint` (string), `sessions.reauthenticated_at` (datetime); `SessionContextBackfill.run!` → Integer (number of rows updated)
 
 **Why the backfill matters:** this is the single thing standing between the production deploy and every live member being challenged at once. A session row whose `ip_prefix` is NULL will not match any request.
+
+**Why the backfill is a class and not migration-inline:** the test must exercise the code the migration actually runs. A test that re-implements the same SQL passes no matter what the migration says, which is precisely the "assertion that passes for the wrong reason" failure this codebase has been bitten by. The class uses raw SQL through the connection rather than the `Session` model, so the migration stays independent of a model that will keep changing.
 
 - [ ] **Step 1: Generate the migration**
 
 Run: `bin/rails generate migration AddContextToSessions`
 
-- [ ] **Step 2: Write the migration**
+- [ ] **Step 2: Write the backfill class**
+
+Create `app/models/session_context_backfill.rb`:
+
+```ruby
+# Derives ip_prefix and device_fingerprint for session rows that have neither,
+# from the ip_address and user_agent already stored on them.
+#
+# Extracted from the migration rather than written inline so that its test runs
+# this exact code. A test that re-implements the backfill's SQL passes whatever
+# the migration does, which would leave the most lockout-critical step in this
+# project with no real regression test.
+#
+# Raw SQL through the connection, not the Session model: a migration has to keep
+# working when the model moves on. NetworkPrefix and DeviceFingerprint are pure
+# functions with no schema coupling, so calling them is safe.
+class SessionContextBackfill
+  def self.run!
+    connection = ActiveRecord::Base.connection
+    rows = connection.select_all("SELECT id, ip_address, user_agent FROM sessions WHERE ip_prefix IS NULL AND device_fingerprint IS NULL")
+
+    rows.each do |row|
+      connection.execute(<<~SQL.squish)
+        UPDATE sessions
+        SET ip_prefix = #{connection.quote(NetworkPrefix.for(row["ip_address"]))},
+            device_fingerprint = #{connection.quote(DeviceFingerprint.for(row["user_agent"]))},
+            reauthenticated_at = created_at
+        WHERE id = #{Integer(row["id"])}
+      SQL
+    end
+
+    rows.length
+  end
+end
+```
+
+- [ ] **Step 3: Write the migration**
 
 Replace the generated file's contents:
 
@@ -605,24 +645,8 @@ class AddContextToSessions < ActiveRecord::Migration[8.1]
     # reauthenticated_at is seeded from created_at because the user genuinely
     # did authenticate then. An old timestamp is not fresh, so this grants
     # nothing to a stale session.
-    #
-    # Raw SQL rather than the Session model: a migration must keep working when
-    # the model moves on. The two value objects are pure functions with no
-    # schema coupling, so referencing them is safe.
     say_with_time "backfilling session context" do
-      rows = select_all("SELECT id, ip_address, user_agent FROM sessions")
-
-      rows.each do |row|
-        execute(<<~SQL.squish)
-          UPDATE sessions
-          SET ip_prefix = #{quote(NetworkPrefix.for(row["ip_address"]))},
-              device_fingerprint = #{quote(DeviceFingerprint.for(row["user_agent"]))},
-              reauthenticated_at = created_at
-          WHERE id = #{Integer(row["id"])}
-        SQL
-      end
-
-      rows.length
+      SessionContextBackfill.run!
     end
   end
 
@@ -634,16 +658,16 @@ class AddContextToSessions < ActiveRecord::Migration[8.1]
 end
 ```
 
-- [ ] **Step 3: Write the failing backfill test**
+- [ ] **Step 4: Write the failing backfill test**
 
 Create `test/models/session_context_backfill_test.rb`:
 
 ```ruby
 require "test_helper"
 
-# The migration's backfill is the difference between a quiet deploy and every
-# live member being challenged at once. It is asserted by re-running the same
-# SQL the migration runs, against a row inserted without context.
+# The backfill is the difference between a quiet deploy and every live member
+# being challenged at once. These tests call SessionContextBackfill.run! —
+# the same method the migration calls — so a change to the backfill fails here.
 class SessionContextBackfillTest < ActiveSupport::TestCase
   test "backfill derives context from the columns already on the row" do
     user = User.create!(email_address: "backfill@example.com", status: "active")
@@ -658,7 +682,7 @@ class SessionContextBackfillTest < ActiveSupport::TestCase
     session = Session.find(row["id"])
     session.update_columns(ip_prefix: nil, device_fingerprint: nil, reauthenticated_at: nil)
 
-    apply_backfill
+    SessionContextBackfill.run!
 
     session.reload
     assert_equal "203.0.113.0/24", session.ip_prefix
@@ -673,7 +697,7 @@ class SessionContextBackfillTest < ActiveSupport::TestCase
     session = Session.create!(user: user, ip_address: "203.0.113.45", user_agent: chrome_mac, last_seen_at: Time.current)
     session.update_columns(ip_prefix: nil, device_fingerprint: nil)
 
-    apply_backfill
+    SessionContextBackfill.run!
 
     context = SessionContext.new(
       ip_prefix: NetworkPrefix.for("203.0.113.99"),
@@ -684,27 +708,27 @@ class SessionContextBackfillTest < ActiveSupport::TestCase
       "a backfilled session still matches after a browser update and an address change inside the same /24"
   end
 
-  private
+  test "run! reports how many rows it touched and leaves stamped rows alone" do
+    user = User.create!(email_address: "counted@example.com", status: "active")
 
-    def apply_backfill
-      rows = Session.connection.select_all("SELECT id, ip_address, user_agent FROM sessions WHERE ip_prefix IS NULL")
+    already_stamped = Session.create!(
+      user: user, ip_address: "198.51.100.7", user_agent: nil,
+      ip_prefix: "10.0.0.0/24", device_fingerprint: "kept|value", last_seen_at: Time.current
+    )
+    Session.create!(user: user, ip_address: "203.0.113.45", user_agent: nil, last_seen_at: Time.current)
+      .update_columns(ip_prefix: nil, device_fingerprint: nil)
 
-      rows.each do |row|
-        Session.connection.execute(<<~SQL.squish)
-          UPDATE sessions
-          SET ip_prefix = #{Session.connection.quote(NetworkPrefix.for(row["ip_address"]))},
-              device_fingerprint = #{Session.connection.quote(DeviceFingerprint.for(row["user_agent"]))},
-              reauthenticated_at = created_at
-          WHERE id = #{Integer(row["id"])}
-        SQL
-      end
-    end
+    assert_equal 1, SessionContextBackfill.run!,
+      "only rows with no context at all are candidates"
+    assert_equal "10.0.0.0/24", already_stamped.reload.ip_prefix,
+      "an already-anchored session must not be re-derived; that would silently re-anchor a live session"
+  end
 end
 ```
 
-**NOTE:** the second test uses `SessionContext`, which Task 5 creates. Implement Task 4 Steps 1–6 first, then return and enable that second test after Task 5. Mark it with `skip "awaiting SessionContext (Task 5)"` as the first line of the test body until then.
+**NOTE:** the second test uses `SessionContext`, which Task 5 creates. Implement Task 4 Steps 1–7 first, then return and enable that second test after Task 5. Mark it with `skip "awaiting SessionContext (Task 5)"` as the first line of the test body until then.
 
-- [ ] **Step 4: Run the migration**
+- [ ] **Step 5: Run the migration**
 
 ```bash
 bin/rails db:migrate
@@ -719,41 +743,54 @@ git diff --stat db/schema.rb
 
 Expected: a small diff. If the whole file is rewritten, the `bin/rubocop -A` step was skipped.
 
-- [ ] **Step 5: Run the test**
+- [ ] **Step 6: Run the test**
 
 Run: `bin/rails test test/models/session_context_backfill_test.rb`
-Expected: PASS for the first test, skip for the second.
+Expected: PASS for the first and third tests, skip for the second.
 
-- [ ] **Step 6: Mutation-verify the backfill**
+- [ ] **Step 7: Mutation-verify the backfill**
 
-In `db/migrate/<timestamp>_add_context_to_sessions.rb`, temporarily comment out the whole `say_with_time` block. Then:
+Because the test calls `SessionContextBackfill.run!` — the same method the migration calls — mutating the backfill breaks the test directly. Two mutations:
 
-```bash
-bin/rails db:rollback
-bin/rails db:migrate
-```
+**(a) Break the derivation.** In `app/models/session_context_backfill.rb`, temporarily change the `ip_prefix` assignment to `#{connection.quote(nil)}`.
 
 Run: `bin/rails test test/models/session_context_backfill_test.rb`
+Expected: FAIL — "backfill derives context from the columns already on the row"
 
-The test applies its own copy of the backfill, so it still passes — which is the point of the next check. Instead verify the migration itself:
+**Restore and rerun. Expected: PASS.**
+
+**(b) Break the candidate filter.** Temporarily change the `WHERE` clause to `WHERE 1=1`.
+
+Run: `bin/rails test test/models/session_context_backfill_test.rb`
+Expected: FAIL — "run! reports how many rows it touched and leaves stamped rows alone" (it returns 2, and re-anchors a live session)
+
+**Restore and rerun. Expected: PASS.**
+
+- [ ] **Step 8: Confirm the migration actually calls it**
+
+The tests cover the backfill; this covers the wiring.
 
 ```bash
-bin/rails runner 'u = User.create!(email_address: "mut-#{SecureRandom.hex(4)}@example.com", status: "active"); s = Session.create!(user: u, ip_address: "203.0.113.45", user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36", last_seen_at: Time.current); s.update_columns(ip_prefix: nil); puts "before rollback: #{s.reload.ip_prefix.inspect}"'
+bin/rails runner 'u = User.create!(email_address: "mut-#{SecureRandom.hex(4)}@example.com", status: "active"); Session.create!(user: u, ip_address: "203.0.113.45", user_agent: nil, last_seen_at: Time.current).update_columns(ip_prefix: nil, device_fingerprint: nil)'
 bin/rails db:rollback
 bin/rails db:migrate
 bin/rails runner 'puts "after remigrate: #{Session.order(:id).last.ip_prefix.inspect}"'
 ```
 
-Expected with the backfill commented out: `after remigrate: nil`
-**Restore the `say_with_time` block, rollback and remigrate, and repeat. Expected: `after remigrate: "203.0.113.0/24"`.**
+Expected: `after remigrate: "203.0.113.0/24"`
 
-Then clean up: `bin/rails runner 'User.where("email_address LIKE ?", "mut-%@example.com").destroy_all'`
+Then temporarily comment out the `SessionContextBackfill.run!` line in the migration and repeat the rollback/migrate/check.
+Expected: `after remigrate: nil`
 
-- [ ] **Step 7: Lint and commit**
+**Restore the line, rollback and remigrate once more, and confirm the prefix returns.**
+
+Clean up: `bin/rails runner 'User.where("email_address LIKE ?", "mut-%@example.com").destroy_all'`
+
+- [ ] **Step 9: Lint and commit**
 
 ```bash
 bin/rubocop
-git add db/migrate db/schema.rb test/models/session_context_backfill_test.rb
+git add db/migrate db/schema.rb app/models/session_context_backfill.rb test/models/session_context_backfill_test.rb
 git commit -m "feat: record network prefix and device fingerprint on sessions"
 ```
 
@@ -1740,7 +1777,23 @@ and simplify the final assertion to:
 ```
 
 Run: `bin/rails test test/controllers/reauthentications_controller_test.rb`
-Expected: the verification rejects the forged assertion before ownership matters, so this may pass either way. If it does, note in the test file that the ownership check is defence in depth behind signature verification, and keep the test.
+
+**You must determine which layer actually produces the rejection, and say so.** A test whose failure mode nobody can name is the "passes for the wrong reason" pattern this project has repeatedly been bitten by, so finding out is part of the task, not optional.
+
+Two outcomes are possible:
+
+- **The test fails with the unscoped lookup.** The ownership scope is the guard. Restore the scoped form, confirm PASS, and leave the test as written.
+- **The test passes either way.** Signature verification rejected the forged assertion before ownership was ever consulted. Prove that is what happened — add `puts`/`Rails.logger` instrumentation, or step through `verified_get_credential`, until you can point at the line that returns first. Then restore the scoped form and replace the test's comment with what you found, naming the real guard, for example:
+
+  ```ruby
+  # Rejected by signature verification in WebauthnVerification#verified_get_credential
+  # before the ownership scope is consulted — a forged assertion cannot get that far.
+  # The Current.user scope in #passkey is the guard for a *validly signed* assertion
+  # from another account's credential, which cannot be constructed in a test without
+  # a real authenticator.
+  ```
+
+Report in your task report which of the two you observed and the evidence for it. Do not guess.
 
 **Restore the `Current.user.passkey_credentials.find_by` form and rerun. Expected: PASS.**
 
