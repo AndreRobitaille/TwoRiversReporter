@@ -33,6 +33,7 @@ If guidance overlaps, follow this order:
 - Homepage / topic show / meeting show / transcript pipeline → the `page-architecture` skill
 - Sign-in, sessions, applications, admin access, transactional email → `docs/superpowers/specs/2026-07-23-passwordless-auth-and-applications-design.md`
 - Anything an anonymous visitor can see → `docs/superpowers/specs/2026-07-24-tiered-public-access-design.md`
+- Session lifetime, step-up reauthentication, IP or device matching → `docs/superpowers/specs/2026-07-25-session-and-reauthentication-hardening-design.md`
 
 ## Commands
 
@@ -122,7 +123,36 @@ YouTube Channel → DiscoverTranscriptsJob (match videos to recent council meeti
 - **Membership is by application.** `MembershipApplication` moves `email_pending → submitted → approved | rejected`. `User.status` is `pending | active | rejected`, gated by `active_for_authentication?` (active **and** `disabled_at` blank). Admin approval at `/admin/users/:id` activates the account and emails a magic link in one transaction; a delivery failure rolls the approval back.
 - **Admin access needs a passkey.** `Admin::BaseController` requires admin + `active_for_authentication?` + at least one `PasskeyCredential`. A magic-link-only admin is redirected to `/settings/security`.
 - **Throttles.** `SignInAttempt` allows one delivery per address per `SignInAttempt::WINDOW` (15 minutes), released via `SignInAttempt.release!` when delivery actually fails so an outage doesn't lock someone out. Separately, `rate_limit to: 10, within: 3.minutes` per IP on sessions, applications and passkeys.
-- **Sessions.** `Session::INACTIVITY_LIMIT` (currently 180 days) is rolling, not absolute — `touch_last_seen_if_stale!` refreshes `last_seen_at` at most once per `Session::TOUCH_INTERVAL`. `resume_session` destroys the session and clears the cookie when it goes inactive or the user stops being active.
+- **Sessions.** `Session::INACTIVITY_LIMIT` (60 days) is rolling — `touch_last_seen_if_stale!`
+  refreshes `last_seen_at` at most once per `Session::TOUCH_INTERVAL`. `Session::ABSOLUTE_LIFETIME`
+  (1 year, from `created_at`) is a hard ceiling that active use cannot extend. `Session#expired?`
+  ORs the two, and `resume_session` destroys the session and clears the cookie when it expires or
+  the user stops being active.
+- **Sessions are anchored to a context.** `ip_prefix` (IPv4 /24, IPv6 /48 via `NetworkPrefix`) and
+  `device_fingerprint` (browser family and platform, version discarded, via `DeviceFingerprint`)
+  are recorded at sign-in and compared on every admin request through `SessionContext`.
+  **A mismatch never destroys a session** — it withholds sensitive surfaces until a step-up.
+  `Reauthentication#require_verified_context` guards the admin boundary;
+  `require_fresh_reauthentication` guards hard-deleting a user or application, creating or granting
+  admin, and adding or removing a passkey, requiring proof within `Session::REAUTH_FRESHNESS`
+  (15 minutes) regardless of context. The accepted cost: entering `/admin` from a genuinely new
+  network costs one passkey tap. On mobile, moving between cell towers can cross a /24, so
+  occasional taps during phone admin use are expected behavior, not a defect.
+- **A step-up rewrites the recorded context and stamps `reauthenticated_at`**, so accepting a new
+  network and proving you are still there are one operation. A fresh sign-in also stamps it, which
+  is what lets a new member add a first passkey without a second email.
+- **The step-up magic link is the ordinary sign-in link, deliberately.** An emailed link often
+  opens in a different browser than the one awaiting step-up — tapped from a phone while the
+  session sits in desktop Chrome — where a reauth-specific token would have no session to apply to.
+  Do not replace it with a dedicated purpose without solving that.
+- **`ReauthenticationsController` is gated by neither callback.** Gating it redirects the page that
+  fixes an unverified context to itself and locks out every admin at once. There is a test for this.
+- **Destructive admin actions are recorded as `AuditEvent`s** with `actor_email` and `subject_label`
+  snapshots, because those actions delete their own subjects. `AuditEvent.record!` and the
+  corresponding `destroy!`/`update!` share one `ApplicationRecord.transaction`, so a refused
+  deletion leaves no audit row. Readable at `/admin/audit_events`, linked from the admin dashboard's
+  "Security & Users" card. `ExpiredAuthRecordsCleanupJob` runs daily at 4am (`config/recurring.yml`)
+  sweeping expired sessions, used/expired magic links, and sign-in attempts past their window.
 - **All transactional email goes through `TransactionalEmail` → `LoopsDelivery`.** No ActionMailer views, no other delivery path. `LOOPS_API_KEY` comes from encrypted credentials; outside production `Message#deliver_now` is a no-op, so local and test runs never hit Loops.
 
 Two properties are load-bearing and easy to break without noticing:

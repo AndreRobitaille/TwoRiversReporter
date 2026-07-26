@@ -673,10 +673,24 @@ These are architectural requirements, not implementation preferences.
   administrator. Email alone is not sufficient to reach anything that
   can change the site or its membership.
 - **Sessions are long-lived but not permanent.** A session expires after
-  a long fixed period of inactivity, refreshed by use. Members are not
-  asked to sign in repeatedly; an abandoned session does not stay valid
-  forever. Administrators can revoke any session, or all of a user's
-  sessions, at any time.
+  60 days of inactivity, refreshed by use, and never lives past one year
+  from creation regardless of how often it is used — a rolling limit and
+  a hard ceiling, so an abandoned session does not stay valid forever and
+  a continuously-used one does not stay valid indefinitely either.
+  Members are not asked to sign in repeatedly under ordinary use.
+  Administrators can revoke any session, or all of a user's sessions, at
+  any time.
+- **A session that resurfaces somewhere unfamiliar is not trusted with
+  everything it was trusted with before.** The site notices when a
+  cookie is being used from a different network or a different browser
+  than it was last seen in, and asks for a fresh proof of identity —
+  a step-up — before allowing the highest-risk actions: deleting a
+  member or their application, granting or creating admin access, or
+  changing a member's passkeys. A mismatch never signs anyone out or
+  blocks ordinary browsing; it only withholds those specific actions
+  until the step-up succeeds. The cost of this is accepted deliberately:
+  an administrator working from a genuinely new network or device pays
+  for it with one extra proof of identity.
 - **All transactional mail goes through one path.** There is a single
   outbound email seam and a single provider. Nothing else in the
   application sends mail.
@@ -684,7 +698,10 @@ These are architectural requirements, not implementation preferences.
 Data model, flow-by-flow behaviour and error handling are specified in
 `docs/superpowers/specs/2026-07-23-passwordless-auth-and-applications-design.md`;
 the visual treatment is in
-`docs/superpowers/specs/2026-07-24-passwordless-auth-visual-design.md`.
+`docs/superpowers/specs/2026-07-24-passwordless-auth-visual-design.md`;
+session lifetime, step-up reauthentication and the network/device
+matching behind it are specified in
+`docs/superpowers/specs/2026-07-25-session-and-reauthentication-hardening-design.md`.
 Production configuration and its failure modes are in the `deploying`
 skill. None of that is duplicated here.
 

@@ -182,6 +182,7 @@ volume (`two_rivers_reporter_pgdata`) with nothing else guarding it.
 |-----|----------|---------|
 | `clear_solid_queue_finished_jobs` | Hourly at :12 | Prune completed job records |
 | `refresh_topic_descriptions` | Mondays at 3am | Regenerate stale topic descriptions (90-day threshold) |
+| `cleanup_expired_auth_records` | Daily at 4am | `ExpiredAuthRecordsCleanupJob` — deletes expired sessions, used/expired magic links, and sign-in attempts past their throttle window |
 
 ### Key Files
 
@@ -196,3 +197,26 @@ volume (`two_rivers_reporter_pgdata`) with nothing else guarding it.
 
 **Not yet automated:** database backups. High priority — see *Database Backups*
 above for the manual command and where existing dumps live.
+
+## Reauthentication lockout recovery
+
+If the step-up rules misfire, the console is the escape hatch. The magic-link fallback means a
+member who can read their email is never fully blocked, so this is for genuine emergencies only.
+
+Grant a session an immediate step-up window:
+
+```bash
+bin/kamal app exec "bin/rails runner 'u = User.find_by(email_address: \"andre@xyzmodem.com\"); s = u.sessions.order(:last_seen_at).last; s.update_columns(reauthenticated_at: Time.current); puts s.slice(:id, :ip_prefix, :device_fingerprint, :reauthenticated_at)'"
+```
+
+Re-anchor a session to wherever it is now being used, clearing a context mismatch:
+
+```bash
+bin/kamal app exec "bin/rails runner 'u = User.find_by(email_address: \"andre@xyzmodem.com\"); s = u.sessions.order(:last_seen_at).last; s.update_columns(ip_prefix: nil, device_fingerprint: nil); puts \"cleared; the next request re-challenges, then adopts the new context\"'"
+```
+
+Inspect what a session is anchored to before changing anything:
+
+```bash
+bin/kamal app exec "bin/rails runner 'User.find_by(email_address: \"andre@xyzmodem.com\").sessions.order(:last_seen_at).each { |s| puts s.slice(:id, :ip_address, :ip_prefix, :device_fingerprint, :reauthenticated_at, :last_seen_at).inspect }'"
+```
