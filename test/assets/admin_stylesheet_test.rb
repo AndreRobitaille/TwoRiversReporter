@@ -258,27 +258,59 @@ class AdminStylesheetTest < ActiveSupport::TestCase
     props.flat_map { |p| [ p ] + SHORTHAND_EXPANSION.fetch(p, []) }.to_set
   end
 
-  # Collects every MODIFIER of `base` that application.css defines, whether
-  # written as a bare `.base--x` (the common case) or already `.theme-silo
-  # .base--x` (the pre-revamp badge case) — both forms describe what a
-  # resident, or an admin before this file existed, actually saw, and either
-  # one is what a new `.theme-silo .base` rule in admin.css can clobber.
-  # Properties from both forms are unioned per modifier name.
-  def application_css_modifiers_of(base, app_rules)
-    bare = /\A\.#{Regexp.escape(base)}--([a-zA-Z0-9_-]+)\z/
-    scoped = /\A\.theme-silo\s+\.#{Regexp.escape(base)}--([a-zA-Z0-9_-]+)\z/
+  # Collects every VARIANT of `base` that application.css defines — a flat
+  # modifier (`.base--x`), a pseudo-class on the base itself (`.base:hover`),
+  # or a pseudo-class on a modifier (`.base--x:hover`) — whether written bare
+  # or already `.theme-silo`-scoped there (the pre-revamp badge case).
+  # `(--[a-zA-Z0-9_-]+)?` and `(:[a-zA-Z-]+)?` are both optional so a single
+  # pattern covers all three shapes; the fully-bare "no modifier, no pseudo"
+  # match (the base's own rest-state rule in application.css, e.g. plain
+  # `.card { ... }`) is discarded — that's the "shared name is overridden at
+  # all" question the "shared component names" test above already owns, not
+  # this one. Keyed by `[modifier_suffix, pseudo_suffix]` (either or both may
+  # be nil); properties from bare and already-scoped forms are unioned.
+  def application_css_variants_of(base, app_rules)
+    pattern = /\A(?:\.theme-silo\s+)?\.#{Regexp.escape(base)}(--[a-zA-Z0-9_-]+)?(:[a-zA-Z-]+)?\z/
     found = Hash.new { |h, k| h[k] = Set.new }
     app_rules.each do |rule|
       rule[:selectors].each do |sel|
-        match = sel.match(bare) || sel.match(scoped)
+        match = sel.match(pattern)
         next unless match
-        found[match[1]] |= expand_properties(rule[:properties])
+        modifier_suffix, pseudo_suffix = match[1], match[2]
+        next if modifier_suffix.nil? && pseudo_suffix.nil?
+        found[[ modifier_suffix, pseudo_suffix ]] |= expand_properties(rule[:properties])
       end
     end
     found
   end
 
-  test "scoped base components do not clobber a modifier's colour-carrying properties without a reassertion" do
+  # The colour-carrying properties of `.theme-silo .base#{pseudo_suffix}` in
+  # ADMIN.CSS, if such a rule exists (e.g. `.theme-silo .btn:hover`) — a
+  # second, independent way a variant can get clobbered: a base's own pseudo
+  # rule (one class-equivalent more specific than a bare `.base--x:pseudo`
+  # modifier rule) can beat that modifier's pseudo rule outright, not just
+  # tie with it. This is exactly the mechanism behind three of fix-round-1's
+  # `.btn--*:hover` fixes (`.theme-silo .btn:hover` at (0,3,0) beat
+  # `.btn--danger:hover` at (0,2,0) outright).
+  def admin_css_base_pseudo_props(base, pseudo_suffix, admin_rules)
+    return Set.new unless pseudo_suffix
+    rule = admin_rules.find { |r| r[:selectors].include?(".theme-silo .#{base}#{pseudo_suffix}") }
+    rule ? expand_properties(rule[:properties]) : Set.new
+  end
+
+  # Task 11 fix-round-2: `.card--clickable` has zero usages anywhere in
+  # app/views (confirmed via grep across the whole app, not just admin), so
+  # `.theme-silo .card--clickable:hover` would be dead code today — the
+  # coordinator asked this be *noted*, not fixed, unlike `.card--highlighted`
+  # in round 1 (also then-unused, but fixed anyway since it cost nothing and
+  # a real element could pick up the class at any time). Listed here, not
+  # silently ignored, so if `.card--clickable` is ever wired up without
+  # anyone re-running this sweep, this exception is the one place that has
+  # to be revisited — search this constant, not the whole file, when that
+  # happens. See task-11-report.md, "Fix round 2", for the full reasoning.
+  KNOWN_DEFERRED_CLOBBERS = Set[".theme-silo .card--clickable:hover"].freeze
+
+  test "scoped base components do not clobber a variant's colour-carrying properties without a reassertion" do
     admin_rules = parse_flat_rules(css)
     app_rules = parse_flat_rules(Rails.root.join("app/assets/stylesheets/application.css").read)
 
@@ -300,22 +332,32 @@ class AdminStylesheetTest < ActiveSupport::TestCase
       next unless base_rule # this BASE isn't scoped (yet) here — nothing to guard
 
       base_color_props = expand_properties(base_rule[:properties]) & COLOR_PROPERTIES
-      next if base_color_props.empty? # base doesn't touch anything colour-carrying at all
 
-      application_css_modifiers_of(base, app_rules).each do |modifier_name, modifier_props|
-        modifier_color_props = modifier_props & COLOR_PROPERTIES
-        next if (base_color_props & modifier_color_props).empty?
+      application_css_variants_of(base, app_rules).each do |(modifier_suffix, pseudo_suffix), variant_props|
+        variant_color_props = variant_props & COLOR_PROPERTIES
+        next if variant_color_props.empty?
 
-        modifier_selector = ".#{base}--#{modifier_name}"
-        missing << ".theme-silo #{modifier_selector}" unless admin_selectors.include?(".theme-silo #{modifier_selector}")
+        # Either the base's own rest-state rule (ties on specificity, wins
+        # because admin.css loads after application.css) or the base's own
+        # same-pseudo rule (wins outright on specificity) can be the thing
+        # that clobbers this variant — check both, not just the rest-state
+        # one, or the three `.btn--*:hover` instances from round 1 would be
+        # invisible to this test.
+        competing_props = base_color_props | admin_css_base_pseudo_props(base, pseudo_suffix, admin_rules)
+        next if (competing_props & variant_color_props).empty?
+
+        required_selector = ".theme-silo .#{base}#{modifier_suffix}#{pseudo_suffix}"
+        next if KNOWN_DEFERRED_CLOBBERS.include?(required_selector)
+        missing << required_selector unless admin_selectors.include?(required_selector)
       end
     end
 
     assert_empty missing.uniq.sort,
-      "these modifiers share a colour-carrying property with their scoped base " \
-      "rule but admin.css has no `.theme-silo` reassertion for them, so the base " \
-      "rule's specificity (or, when application.css already scoped the modifier " \
-      "too, admin.css loading after application.css) silently flattens their " \
-      "colour to the base's: #{missing.uniq.sort.join(', ')}"
+      "these variants (modifiers, and/or pseudo-classes on the base or a " \
+      "modifier) share a colour-carrying property with their scoped base " \
+      "rule but admin.css has no `.theme-silo` reassertion for them, so the " \
+      "base rule's specificity (or, when application.css already scoped the " \
+      "variant too, admin.css loading after application.css) silently " \
+      "flattens their colour to the base's: #{missing.uniq.sort.join(', ')}"
   end
 end

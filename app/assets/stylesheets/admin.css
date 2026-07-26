@@ -916,6 +916,23 @@
   font-size: var(--adm-font-size);
   color: var(--color-text);
 }
+/* application.css's `.form-input:focus-visible, .form-select:focus-visible,
+ * .form-textarea:focus-visible` sets `border-color: var(--color-teal)` (plus
+ * an unaffected box-shadow ring). The base rule above's `border` shorthand
+ * is (0,2,0); `.form-input:focus-visible` etc. are also (0,2,0) (one class +
+ * one pseudo-class each) — a tie admin.css wins by loading after
+ * application.css, same mechanism as the badge border-tint clobbers in
+ * fix-round-1, just on a pseudo-class this time instead of a `--modifier`.
+ * Every text input, select, and textarea in the admin never showed a teal
+ * focus border because of this — subtle since the box-shadow ring still
+ * rendered, but live on every admin form. Reasserted here, after the base
+ * rule, so intra-file order settles the tie in this file's favor.
+ */
+.theme-silo .form-input:focus-visible,
+.theme-silo .form-select:focus-visible,
+.theme-silo .form-textarea:focus-visible {
+  border-color: var(--color-teal);
+}
 /* application.css's unscoped `.form-textarea--code` gives the prompt-editor
  * code fields a subtly tinted background (a hardcoded off-white hex there,
  * pre-existing) to read as distinct from a plain field. This file's base
