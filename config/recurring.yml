@@ -29,3 +29,7 @@ production:
     class: GeneratedImages::RefreshHomepageTopicsJob
     queue: default
     schedule: every 6 hours
+  cleanup_expired_auth_records:
+    class: ExpiredAuthRecordsCleanupJob
+    queue: default
+    schedule: every day at 4am
