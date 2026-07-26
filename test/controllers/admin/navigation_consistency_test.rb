@@ -76,5 +76,14 @@ module Admin
       assert_no_match(/onclick=/, response.body,
         "inline handlers break under CSP; use a Stimulus action")
     end
+
+    test "admin loads its own stylesheet and not the public page stylesheets" do
+      get admin_root_url
+
+      assert_select "link[rel=stylesheet][href*='admin']", count: 1
+      assert_select "link[rel=stylesheet][href*='application']", count: 1
+      assert_select "link[rel=stylesheet][href*='home']", count: 0
+      assert_select "link[rel=stylesheet][href*='about']", count: 0
+    end
   end
 end

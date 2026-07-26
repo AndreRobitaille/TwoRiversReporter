@@ -1,0 +1,34 @@
+/* app/assets/stylesheets/admin.css
+ *
+ * The Silo admin visual system — "Instrument" density.
+ *
+ * Loaded ONLY by app/views/layouts/admin.html.erb, and always AFTER
+ * application.css, from which it inherits every design token and the
+ * .theme-silo palette. It defines no colours of its own.
+ *
+ * Order matters and is enforced by convention:
+ *   1. Density base       — type scale and rhythm for a worked-in surface
+ *   2. Shell & sidebar    — the admin chrome
+ *   3. Components         — the twelve, and only the twelve
+ *   4. Utilities          — transitional, unscoped, LAST so they win ties
+ *
+ * Rule: a page may not invent a class name. If a view needs something the
+ * components lack, grow the component here and update
+ * docs/superpowers/specs/2026-07-26-admin-ui-revamp-design.md.
+ */
+
+/* ============================================
+   1. Density base
+   ============================================ */
+
+/* ============================================
+   2. Shell & sidebar
+   ============================================ */
+
+/* ============================================
+   3. Components
+   ============================================ */
+
+/* ============================================
+   4. Utilities (transitional — removed in Phase 2)
+   ============================================ */
