@@ -530,9 +530,22 @@ class DeviceFingerprint
 
     agent = UserAgent.parse(user_agent_string.to_s)
     "#{agent.browser}|#{agent.platform}".downcase
+  rescue ArgumentError, EncodingError
+    # The User-Agent header is entirely attacker-controlled, and `blank?`
+    # raises ArgumentError on a string carrying an invalid byte sequence for
+    # its encoding — before UserAgent.parse is ever reached. Without this,
+    # `User-Agent: \xFF` is a 500 on every request that carries it, and this
+    # method runs on every request.
+    #
+    # ArgumentError also subsumes anything UserAgent might raise on a
+    # pathological header; EncodingError covers a non-ASCII-compatible
+    # encoding surviving `blank?` and failing later.
+    nil
   end
 end
 ```
+
+**Verified before this plan step was written:** `"\x00\xff invalid bytes".blank?` raises `ArgumentError` in this app's Rails environment, while `"garbage-string".blank?` and `"<script>alert(1)</script>".blank?` do not. The rescue is what makes the "does not raise on junk input" test above pass; it is not speculative defence.
 
 - [ ] **Step 5: Run the test to verify it passes**
 
@@ -560,6 +573,17 @@ Run: `bin/rails test test/models/device_fingerprint_test.rb`
 Expected: FAIL — "returns nil for blank input" (it returns `"mozilla|"`)
 
 **Restore and rerun. Expected: PASS.**
+
+- [ ] **Step 7b: Mutation-verify the rescue**
+
+Temporarily remove the `rescue ArgumentError, EncodingError` clause and its `nil`.
+
+Run: `bin/rails test test/models/device_fingerprint_test.rb`
+Expected: FAIL — "does not raise on junk input", with `ArgumentError: invalid byte sequence in UTF-8` raised from the `blank?` call on the `"\x00\xff invalid bytes"` input.
+
+**Restore and rerun. Expected: PASS.**
+
+If that mutation does **not** fail, stop and report it rather than proceeding — it would mean the invalid-byte input is not reaching `blank?` the way this plan expects, and the rescue would then be an unproven guard.
 
 - [ ] **Step 8: Lint and commit**
 
