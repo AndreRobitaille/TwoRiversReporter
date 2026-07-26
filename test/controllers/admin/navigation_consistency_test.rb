@@ -45,5 +45,27 @@ module Admin
       # label/href still matches.
       assert_select "nav.adm-sidebar > a.adm-sidebar__link", count: Admin::Navigation.items.size
     end
+
+    test "dashboard links to exactly the same items as the sidebar, and no others" do
+      get admin_root_url
+      assert_response :success
+
+      expected = Admin::Navigation.items.map do |item|
+        Rails.application.routes.url_helpers.public_send(item.path_helper)
+      end.sort
+
+      dashboard_links = css_select("main .adm-launcher a").map { |a| a["href"] }.sort
+
+      assert_equal expected, dashboard_links,
+        "dashboard and Admin::Navigation disagree — this is the exact drift the constant exists to prevent"
+    end
+
+    test "dashboard shows each item's description" do
+      get admin_root_url
+
+      Admin::Navigation.items.each do |item|
+        assert_match item.description, response.body
+      end
+    end
   end
 end
