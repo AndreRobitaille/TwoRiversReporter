@@ -37,16 +37,11 @@ class NetworkPrefixTest < ActiveSupport::TestCase
     assert_nil NetworkPrefix.for("<script>")
   end
 
-  test "returns nil for invalid byte sequences (ArgumentError escape class)" do
-    # IPAddr.new can raise ArgumentError for strings with invalid byte sequences,
-    # not just IPAddr::Error. This must be caught to prevent 500 errors on every request.
+  test "returns nil when String#strip raises EncodingError on invalid bytes" do
+    # String#strip can raise Encoding::CompatibilityError on invalid byte sequences
+    # before IPAddr.new is ever reached. This is why EncodingError is in the rescue
+    # and why rescue IPAddr::Error alone was insufficient. The ArgumentError half
+    # of the rescue is proven by the "not-an-ip" test above (IPAddr::InvalidAddressError).
     assert_nil NetworkPrefix.for("203.0.113.45\xFF")
-  end
-
-  test "returns nil for incompatible encodings (EncodingError escape class)" do
-    # String#strip can raise Encoding::CompatibilityError before IPAddr.new is reached.
-    # This must be caught to prevent 500 errors on every request.
-    incompatible_encoding = "203.0.113.45\xFF".force_encoding("UTF-8")
-    assert_nil NetworkPrefix.for(incompatible_encoding)
   end
 end
