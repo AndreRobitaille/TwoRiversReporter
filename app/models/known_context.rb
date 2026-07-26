@@ -42,9 +42,19 @@ class KnownContext < ApplicationRecord
     ) do |record|
       record.last_seen_at = Time.current
     end
-    known.update!(last_seen_at: Time.current)
 
-    evict_beyond_cap!(user)
+    # previously_new_record? tells the create path (last_seen_at already set by
+    # the block above, cap only now at risk of being exceeded) apart from the
+    # create_or_find_by! rescue path (an existing row, whose last_seen_at
+    # still needs refreshing but whose existence never touched the cap).
+    # Without this split, every call did both unconditionally: a redundant
+    # UPDATE on the create path, and a cap scan on a mere touch nowhere near
+    # the cap.
+    if known.previously_new_record?
+      evict_beyond_cap!(user)
+    else
+      known.update!(last_seen_at: Time.current)
+    end
   end
 
   # Whether this pair has been seen before for this user. Touches last_seen_at

@@ -65,3 +65,38 @@
     <% end %>
   </section>
 </div>
+
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title">Networks and browsers we remember</h2>
+    <p class="card-subtitle">
+      Each time you sign in or confirm it's you, we record the network you were
+      on and the kind of browser you were using, so we can tell when a sign-in
+      doesn't look like one of yours and ask you to confirm it. A network
+      entry below isn't your address, but it isn't nothing either — it's the
+      block of addresses your provider was using at the time, which can place
+      you within a city or a neighborhood. We keep each entry for 90 days
+      after it was last used, then delete it automatically.
+    </p>
+  </div>
+
+  <% if @known_contexts.any? %>
+    <ul class="passkey-list">
+      <% @known_contexts.each do |context| %>
+        <li class="passkey-item">
+          <div class="passkey-item__body">
+            <p class="passkey-item__name"><%= describe_known_context_device(context.device_fingerprint) %></p>
+            <p class="passkey-item__meta">
+              Network <%= context.ip_prefix.presence || "unknown" %>
+              &middot; Last used <%= l(context.last_seen_at.to_date, format: :long) %>
+            </p>
+          </div>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <div class="empty-state mt-4">
+      We haven't recorded any networks or browsers for your account yet.
+    </div>
+  <% end %>
+</div>

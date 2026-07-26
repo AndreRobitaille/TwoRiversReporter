@@ -3,6 +3,15 @@ module Admin
     before_action :set_user, only: %i[show approve reject toggle_admin disable revoke_session revoke_all_sessions destroy]
     before_action :refuse_self_deletion, only: :destroy
     before_action :require_fresh_reauthentication, only: %i[create destroy toggle_admin]
+    # Strict, not the tolerant admin-boundary gate. The tolerant grace (a
+    # recent step-up counts even from a drifted context) exists only because
+    # that gate runs on every page load — a strict check there would loop
+    # forever on a rotating egress. These three are each one deliberate
+    # operation, not a repeated look, so the grace bought nothing here and
+    # cost real protection: without this, a cookie replayed from another
+    # network within fifteen minutes of the victim's sign-in could hard-delete
+    # a user account, the most irreversible action in the app.
+    before_action :require_matching_context, only: %i[create destroy toggle_admin]
 
     def index
       @users = User.order(:email_address)

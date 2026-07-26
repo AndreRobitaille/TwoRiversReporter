@@ -5,6 +5,7 @@ module Settings
 
     def show
       @passkey_credentials = Current.user.passkey_credentials.order(created_at: :desc, id: :desc)
+      @known_contexts = Current.user.known_contexts.order(last_seen_at: :desc)
 
       # PasskeysController gates add and remove on a fresh step-up *and* an
       # exactly matching context. This page-level gate has to ask the same

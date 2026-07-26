@@ -403,9 +403,12 @@ pattern, and `actor_email` is why `:nullify` loses nothing.
 - Sessions past `INACTIVITY_LIMIT` or `ABSOLUTE_LIFETIME`
 - `MagicLink` rows that are used or expired
 - `SignInAttempt` rows older than `SignInAttempt::WINDOW`
+- `KnownContext` rows past `KnownContext::RETENTION`
 
-All three accumulate forever today. `SignInAttempt` gains a row per sign-in attempt and is only ever
-read inside a 15-minute window; `MagicLink` rows are dead the moment they are used.
+All four accumulate forever today. `SignInAttempt` gains a row per sign-in attempt and is only ever
+read inside a 15-minute window; `MagicLink` rows are dead the moment they are used; `KnownContext`
+rows are a coarse location trail with no further use once stale, which is the deal the retention
+section above describes.
 
 Idempotent per repo convention: safe to re-run, deletes only rows already unusable.
 
