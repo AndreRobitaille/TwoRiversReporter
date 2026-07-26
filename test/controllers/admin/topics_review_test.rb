@@ -218,5 +218,32 @@ module Admin
       assert_equal topic.name, row.name
       assert_equal "proposed", row.review_status
     end
+
+    # --- Fix round 1: update's turbo_stream branch must match its html
+    # sibling's status handling, or an invalid save silently succeeds (200)
+    # and renders a row built from the invalid in-memory @topic. ---
+
+    test "updating via turbo_stream on success replaces the row" do
+      topic = Topic.create!(name: "valid name #{SecureRandom.hex(4)}", status: "approved", review_status: "approved")
+
+      patch admin_topic_path(topic), params: { topic: { description: "A fresh description" } }, as: :turbo_stream
+
+      assert_response :success
+      assert_match "turbo-stream", response.media_type
+      assert_match "topic_#{topic.id}", response.body
+      assert_equal "A fresh description", topic.reload.description
+    end
+
+    test "updating via turbo_stream with an invalid name returns unprocessable_entity and does not corrupt the row" do
+      original_name = "valid name #{SecureRandom.hex(4)}"
+      topic = Topic.create!(name: original_name, status: "approved", review_status: "approved")
+
+      patch admin_topic_path(topic), params: { topic: { name: "" } }, as: :turbo_stream
+
+      assert_response :unprocessable_entity
+      assert_equal original_name.downcase, topic.reload.name, "the invalid save must not have persisted"
+      assert_no_match ">#{admin_topic_path(topic)}<", response.body,
+        "an invalid save must not fall back to rendering the topic's own URL as the row's visible link text"
+    end
   end
 end

@@ -51,11 +51,19 @@ module Admin
             render :show, status: :unprocessable_entity
           end
           format.turbo_stream {
+            # The row partial has no way to surface field-level errors, so on
+            # failure it must fall back to the topic's last-known-good
+            # persisted state, not the poisoned in-memory @topic — otherwise
+            # e.g. an invalid `name: ""` normalizes to nil before validation
+            # runs (Topic#maintain_derived_fields), and row_for(@topic) builds
+            # a row whose link_to has a nil body, which link_to then renders
+            # as the raw URL. #reload discards the failed in-memory changes
+            # while leaving @topic.errors intact for anything else reading it.
             render turbo_stream: turbo_stream.replace(
               helpers.dom_id(@topic),
               partial: "admin/topics/inbox_row",
-              locals: { row: Admin::Topics::InboxQuery.row_for(@topic) }
-            )
+              locals: { row: Admin::Topics::InboxQuery.row_for(@topic.reload) }
+            ), status: :unprocessable_entity
           }
           format.json { render json: { success: false, errors: @topic.errors.full_messages }, status: :unprocessable_entity }
         end
