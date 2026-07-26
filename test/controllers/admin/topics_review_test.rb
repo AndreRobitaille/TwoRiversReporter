@@ -277,5 +277,50 @@ module Admin
       assert_match "Name can&#39;t be blank", response.body,
         "the row replacement must surface the validation error, or a rejected save looks identical to a successful one"
     end
+
+    # --- Task 14: harvest the mention-preview expander from the dead
+    # _topic.html.erb partial before Task 15 deletes it ---
+
+    test "rows with mentions offer an expandable preview" do
+      topic = Topic.create!(name: "mentions #{SecureRandom.hex(4)}", status: "approved", review_status: "approved")
+      meeting = Meeting.create!(body_name: "City Council", meeting_type: "Regular", starts_at: Time.current,
+                                status: "minutes_posted", detail_page_url: "http://example.com/m/#{SecureRandom.hex(6)}")
+      item = AgendaItem.create!(meeting: meeting, number: 1, title: "Sidewalk item", order_index: 1)
+      AgendaItemTopic.create!(topic: topic, agenda_item: item)
+
+      get admin_topics_url
+
+      assert_select "tbody#topic_#{topic.id}[data-controller='row-toggle']"
+      assert_select "tbody#topic_#{topic.id} button[data-action='row-toggle#toggle']"
+      assert_select "tbody#topic_#{topic.id} tr[data-row-toggle-target='details'][hidden]"
+    end
+
+    test "rows without mentions disable the preview button" do
+      topic = Topic.create!(name: "nomentions #{SecureRandom.hex(4)}", status: "approved", review_status: "approved")
+      get admin_topics_url
+
+      assert_select "tbody#topic_#{topic.id} button[disabled]"
+    end
+
+    # --- Task 14: the turbo replacement paths render this partial with only
+    # `row:` (and `errors:` on failure) — neither `topic:` nor
+    # `preview_window:` is passed. The partial must tolerate their absence. ---
+
+    test "approving via turbo_stream still renders the row without topic or preview_window locals" do
+      topic = proposed_topic
+      post approve_admin_topic_path(topic), as: :turbo_stream
+
+      assert_response :success
+      assert_match "topic_#{topic.id}", response.body
+    end
+
+    test "an invalid turbo_stream update still renders the row without topic or preview_window locals" do
+      topic = Topic.create!(name: "valid name #{SecureRandom.hex(4)}", status: "approved", review_status: "approved")
+
+      patch admin_topic_path(topic), params: { topic: { name: "" } }, as: :turbo_stream
+
+      assert_response :unprocessable_entity
+      assert_match "topic_#{topic.id}", response.body
+    end
   end
 end

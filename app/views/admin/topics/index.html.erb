@@ -42,8 +42,14 @@
           <th></th>
         </tr>
       </thead>
+      <% topics_by_id = Topic.where(id: @inbox_rows.map(&:topic_id))
+                             .includes(agenda_items: :meeting)
+                             .index_by(&:id) %>
       <% @inbox_rows.each do |row| %>
-        <%= render "inbox_row", row: row %>
+        <%= render "inbox_row",
+              row: row,
+              topic: topics_by_id[row.topic_id],
+              preview_window: preview_window_from_params(params) %>
       <% end %>
     </table>
   </div>

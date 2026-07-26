@@ -9,7 +9,13 @@
                else
                  "adm-table__row--ok"
                end %>
-<tbody id="topic_<%= row.topic_id %>">
+<%# render_turbo_update and update's failure branch both re-render this
+    partial with only `row:` (and `errors:` on failure) — neither `topic:`
+    nor `preview_window:` is passed. Default them so those turbo paths don't
+    raise; the preview block below already handles a nil topic. %>
+<% topic = local_assigns[:topic] %>
+<% preview_window = local_assigns.fetch(:preview_window, nil) %>
+<tbody id="topic_<%= row.topic_id %>" data-controller="row-toggle">
   <tr class="<%= row_state %>">
     <td>
       <div class="font-semibold">
@@ -54,6 +60,20 @@
     </td>
     <td class="text-right">
       <div class="flex gap-2 justify-end">
+        <% has_mentions = row.mention_count.positive? %>
+        <button type="button"
+                class="btn btn--sm"
+                <% if has_mentions %>
+                  data-action="row-toggle#toggle"
+                  data-row-toggle-target="button"
+                  aria-expanded="false"
+                  aria-controls="topic_<%= row.topic_id %>_preview"
+                <% else %>
+                  disabled
+                <% end %>>
+          Preview
+        </button>
+
         <% if row.review_status == "proposed" %>
           <%= button_to "Approve", approve_admin_topic_path(row.topic_id), method: :post, class: "btn btn--success btn--sm" %>
           <%= button_to "Block", block_admin_topic_path(row.topic_id), method: :post, class: "btn btn--danger btn--sm" %>
@@ -72,6 +92,44 @@
 
         <%= link_to "Open", admin_topic_path(row.topic_id), class: "btn btn--sm" %>
       </div>
+    </td>
+  </tr>
+  <tr id="topic_<%= row.topic_id %>_preview" data-row-toggle-target="details" hidden>
+    <td colspan="8">
+      <%# Guarded by has_mentions (set above, same test the Preview button
+          uses): topic_recent_mentions issues its own query even for a topic
+          with zero agenda_items, so calling it unconditionally for every one
+          of up to 200 inbox rows would fire that query ~200 times over,
+          almost always to discover nothing. Skipping it for the rows whose
+          button is already disabled removes that cost entirely for the
+          common case without changing what a click ever reveals. %>
+      <% mentions = topic && has_mentions ? topic_recent_mentions(topic, limit: 3) : [] %>
+      <% if mentions.any? %>
+        <% mentions.each do |agenda_item| %>
+          <% preview = topic_mention_preview(agenda_item, topic, window: preview_window) %>
+          <div class="mb-3">
+            <div class="font-semibold">
+              <%= agenda_item.meeting.body_name %>
+              <% if agenda_item.meeting.starts_at.present? %>
+                <span class="timestamp"><%= agenda_item.meeting.starts_at.to_date %></span>
+              <% end %>
+            </div>
+            <div class="table-desc"><%= agenda_item.title %></div>
+            <% if preview %>
+              <div class="adm-panel mt-1">
+                <div class="italic"><%= highlight_preview_terms(preview[:text], preview[:terms]) %></div>
+                <% if preview[:document_type].present? %>
+                  <div class="timestamp">
+                    <%= preview[:document_type].to_s.humanize %><%= " · page #{preview[:page_number]}" if preview[:page_number].present? %>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      <% else %>
+        <p class="table-desc m-0">No recent mentions.</p>
+      <% end %>
     </td>
   </tr>
 </tbody>
