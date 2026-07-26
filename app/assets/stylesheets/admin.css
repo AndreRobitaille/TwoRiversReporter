@@ -495,12 +495,23 @@
  * are replaced by this component's 1px hairline and `--color-text-muted`
  * (sticky positioning is untouched — neither rule sets it, so it
  * survives); and on row hover, this component paints
- * `--color-surface-hover` on each <td>, which sits visually on top of the
- * old `.admin-topics-table tbody tr:hover` background painted on the
- * parent <tr> — so a hovered `--row--warn` row's `!important` warning
- * tint is covered by the plain hover tint for as long as the pointer is
- * over it. Nothing here restyles or deletes those rules; Phase 2 owns
- * that cleanup.
+ * `--color-surface-hover` (a translucent black, ~3%) on each <td>, which
+ * composites OVER the `!important` warning tint painted on the parent
+ * <tr> rather than replacing it — verified empirically in headless
+ * Chromium (screenshotted, with `:hover` state confirmed via
+ * `matches(':hover')` before each capture, not inferred): the warm tint's
+ * rendered pixel value shifts by exactly the ~3% the token specifies and
+ * is otherwise unchanged, so hovering a flagged row does not erase its
+ * state tint. It is nonetheless pinned exactly with the rule below rather
+ * than left to a 3% shift, since that background is the row's ONLY
+ * rendered state signal: `.admin-topics-table__row--proposed/--blocked/
+ * --approved` (the moved block above) set `border-left` directly on a
+ * `<tr>`, and a border authored on a `<tr>` is never painted, in any
+ * border-collapse mode, in any browser — table row boxes render their
+ * background but not their own border. Those three rules have always been
+ * dead CSS; the warn tint's background is not "one of several" state
+ * indicators, it is the only one that has ever rendered. Nothing here
+ * restyles or deletes the moved rules; Phase 2 owns that cleanup.
  */
 .theme-silo table,
 .theme-silo .table,
@@ -539,6 +550,17 @@
 .theme-silo .table tbody tr:hover td,
 .theme-silo .adm-table tbody tr:hover td {
   background: var(--color-surface-hover);
+}
+
+/* A flagged row's warning tint is its only rendered state signal (see the
+ * component note above), so pin it exactly rather than let the generic
+ * hover rule shift it ~3% — a hovered `--row--warn` row should look
+ * identical to an unhovered one, not "the same tint, slightly darker."
+ * (0,3,1): three classes (.theme-silo, .admin-topics-table__row--warn,
+ * :hover) beats the generic hover rule's (0,2,4) on class-count alone,
+ * regardless of its extra element steps, so this wins without !important. */
+.theme-silo .admin-topics-table__row--warn:hover td {
+  background: transparent;
 }
 
 /* IDs, timestamps, counts — monospace so columns align for straight-down
