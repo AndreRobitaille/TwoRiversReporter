@@ -1,0 +1,39 @@
+<% content_for(:title) { "Audit log" } %>
+
+<div class="page-header">
+  <h1 class="page-title">Audit log</h1>
+  <p class="page-subtitle">Destructive and privilege-changing admin actions, newest first</p>
+</div>
+
+<% if @audit_events.any? %>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>When</th>
+          <th>Who</th>
+          <th>Action</th>
+          <th>Subject</th>
+          <th>From</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @audit_events.each do |event| %>
+          <tr>
+            <td><%= l(event.created_at, format: :short) %></td>
+            <td><%= event.actor_email.presence || "(deleted account)" %></td>
+            <td><%= event.action %></td>
+            <td><%= event.subject_label.presence || "—" %></td>
+            <td><%= event.ip_address.presence || "—" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <% if @audit_events.size == Admin::AuditEventsController::LIMIT %>
+    <p class="page-subtitle">Showing the most recent <%= Admin::AuditEventsController::LIMIT %> events.</p>
+  <% end %>
+<% else %>
+  <div class="empty-state">No audit events recorded yet.</div>
+<% end %>

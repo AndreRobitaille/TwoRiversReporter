@@ -9,6 +9,8 @@ module Admin
       current_mode = @site_setting.access_mode
 
       if @site_setting.update(site_setting_params)
+        AuditEvent.record!(actor: Current.user, action: "site_setting.access_mode",
+          request: request, metadata: { from: current_mode, to: @site_setting.access_mode })
         redirect_to admin_site_settings_path, notice: "Access mode is now #{@site_setting.access_mode}."
       else
         # #update mutates access_mode to the rejected value even though it

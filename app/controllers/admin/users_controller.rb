@@ -21,6 +21,7 @@ module Admin
       @user = User.new(user_params.merge(admin: true, status: "active"))
 
       if @user.save
+        AuditEvent.record!(actor: Current.user, action: "user.create", subject: @user, label: @user.email_address, request: request)
         redirect_to user_path(@user), notice: "Admin user created."
       else
         render :new, status: :unprocessable_entity
@@ -56,10 +57,16 @@ module Admin
 
         raise e
       end
+      # Only reached once the transaction has committed and the email has
+      # actually gone out; the compensation path above re-raises before
+      # getting here, so a failed approval never leaves an audit row behind.
+      AuditEvent.record!(actor: Current.user, action: "membership_application.approve", subject: application, label: user.email_address, request: request)
       redirect_to user_path(@user), notice: "Application approved."
     end
 
     def reject
+      application = nil
+
       ApplicationRecord.transaction do
         user = User.lock.find(@user.id)
         application = user.membership_applications.lock.find_by!(status: "submitted")
@@ -68,11 +75,15 @@ module Admin
         application.update!(status: "rejected", reviewed_at: Time.current, reviewed_by: Current.session.user, rejection_reason: params[:rejection_reason].presence)
       end
 
+      AuditEvent.record!(actor: Current.user, action: "membership_application.reject", subject: application,
+        label: @user.email_address, request: request, metadata: { reason: application.rejection_reason })
       redirect_to user_path(@user), notice: "Application rejected."
     end
 
     def toggle_admin
       @user.update!(admin: !@user.admin?)
+      AuditEvent.record!(actor: Current.user, action: "user.toggle_admin", subject: @user, label: @user.email_address,
+        request: request, metadata: { admin: @user.admin? })
       redirect_to user_path(@user), notice: "Admin role updated."
     end
 
@@ -80,12 +91,16 @@ module Admin
       if @user.disabled_at.present? && @user.status == "active"
         @user.update!(disabled_at: nil)
         notice = "User re-enabled."
+        AuditEvent.record!(actor: Current.user, action: "user.disable", subject: @user, label: @user.email_address,
+          request: request, metadata: { disabled: false })
       else
         if @user.disabled_at.present?
           notice = "User remains disabled."
         else
           @user.update!(disabled_at: Time.current)
           notice = "User disabled."
+          AuditEvent.record!(actor: Current.user, action: "user.disable", subject: @user, label: @user.email_address,
+            request: request, metadata: { disabled: true })
         end
       end
 
@@ -93,12 +108,16 @@ module Admin
     end
 
     def revoke_session
-      @user.sessions.find(params[:session_id]).destroy!
+      session = @user.sessions.find(params[:session_id])
+      session.destroy!
+      AuditEvent.record!(actor: Current.user, action: "session.revoke", subject: session, label: @user.email_address, request: request)
       redirect_to user_path(@user), notice: "Session revoked."
     end
 
     def revoke_all_sessions
-      @user.sessions.delete_all
+      count = @user.sessions.delete_all
+      AuditEvent.record!(actor: Current.user, action: "session.revoke_all", subject: @user, label: @user.email_address,
+        request: request, metadata: { count: count })
       redirect_to user_path(@user), notice: "All sessions revoked."
     end
 
@@ -108,7 +127,22 @@ module Admin
     # nullified by User's associations so the record survives the reviewer.
     def destroy
       email = @user.email_address
-      @user.destroy!
+      # Recording before the delete is deliberate, but recording and deleting
+      # also have to share one transaction for the deliberate part to mean
+      # anything: AuditEvent.record! commits and returns on its own, and
+      # destroy! opens a transaction of its own moments later — two
+      # sequential top-level statements, not one. Left that way, a refused
+      # deletion (LastAdminError from destroy!'s own, separate transaction)
+      # cannot retroactively undo an insert that already committed before
+      # destroy! was even called, and the audit log fills with "deleted"
+      # events for accounts that were never deleted. Wrapping both in one
+      # ApplicationRecord.transaction makes destroy!'s raise roll back the
+      # record with it, so a refused deletion leaves no record and a
+      # successful one always does.
+      ApplicationRecord.transaction do
+        AuditEvent.record!(actor: Current.user, action: "user.destroy", subject: @user, label: email, request: request)
+        @user.destroy!
+      end
       redirect_to users_path, notice: "Deleted #{email} and everything attached to it."
     rescue User::LastAdminError
       # The model owns this invariant, so it holds for the console and rake too.

@@ -9,6 +9,8 @@ module Admin
     def destroy
       application = MembershipApplication.find(params[:id])
       user = application.user
+      AuditEvent.record!(actor: Current.user, action: "membership_application.destroy",
+        subject: application, label: user.email_address, request: request)
       application.destroy!
 
       redirect_to user_path(user), notice: "Application deleted."

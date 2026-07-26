@@ -67,6 +67,8 @@ Rails.application.routes.draw do
 
     resources :membership_applications, only: %i[destroy], controller: "admin/membership_applications", as: :admin_membership_applications
 
+    resources :audit_events, only: %i[index], controller: "admin/audit_events", as: :admin_audit_events
+
     resources :knowledge_sources, controller: "admin/knowledge_sources", as: :admin_knowledge_sources do
       post :reingest, on: :member
     end
