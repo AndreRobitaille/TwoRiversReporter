@@ -67,5 +67,14 @@ module Admin
         assert_match item.description, response.body
       end
     end
+
+    test "the drawer is driven by Stimulus, not an inline handler" do
+      get admin_root_url
+
+      assert_select "[data-controller='admin-sidebar']", count: 1
+      assert_select "[data-action='click->admin-sidebar#toggle']"
+      assert_no_match(/onclick=/, response.body,
+        "inline handlers break under CSP; use a Stimulus action")
+    end
   end
 end
