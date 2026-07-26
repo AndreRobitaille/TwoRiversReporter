@@ -489,29 +489,46 @@
  * `.theme-silo table thead th` / `.theme-silo table tbody td` rules below
  * ((0,1,2) vs (0,1,3)), so this component wins the properties both set —
  * that's how the topics table picks up Instrument density (tighter
- * padding, the shared hover tint) without editing that view. Two
- * consequences worth knowing rather than rediscovering: the old header's
- * 2px `--color-border-strong` bottom border and `--color-text-secondary`
- * are replaced by this component's 1px hairline and `--color-text-muted`
- * (sticky positioning is untouched — neither rule sets it, so it
- * survives); and on row hover, this component paints
- * `--color-surface-hover` (a translucent black, ~3%) on each <td>, which
- * composites OVER the `!important` warning tint painted on the parent
- * <tr> rather than replacing it — verified empirically in headless
- * Chromium (screenshotted, with `:hover` state confirmed via
- * `matches(':hover')` before each capture, not inferred): the warm tint's
- * rendered pixel value shifts by exactly the ~3% the token specifies and
- * is otherwise unchanged, so hovering a flagged row does not erase its
- * state tint. It is nonetheless pinned exactly with the rule below rather
- * than left to a 3% shift, since that background is the row's ONLY
- * rendered state signal: `.admin-topics-table__row--proposed/--blocked/
- * --approved` (the moved block above) set `border-left` directly on a
- * `<tr>`, and a border authored on a `<tr>` is never painted, in any
- * border-collapse mode, in any browser — table row boxes render their
- * background but not their own border. Those three rules have always been
- * dead CSS; the warn tint's background is not "one of several" state
- * indicators, it is the only one that has ever rendered. Nothing here
- * restyles or deletes the moved rules; Phase 2 owns that cleanup.
+ * padding, the shared hover tint) without editing that view. Consequences
+ * worth knowing rather than rediscovering:
+ *
+ * - Header: the old 2px `--color-border-strong` bottom border and
+ *   `--color-text-secondary` are replaced by this component's 1px hairline
+ *   and `--color-text-muted` (sticky positioning is untouched — neither
+ *   rule sets it, so it survives).
+ *
+ * - Border-collapse mode changed, and that has a real, load-bearing effect:
+ *   `.theme-silo table { border-collapse: collapse; }` is (0,1,1), which
+ *   out-specifies the moved `.admin-topics-table { border-collapse:
+ *   separate; }` at (0,1,0) — confirmed via `getComputedStyle(table)
+ *   .borderCollapse` in headless Chromium, not inferred from source, and
+ *   it reads `"collapse"`. This matters because the row-state rules
+ *   `.admin-topics-table__row--proposed/--blocked/--approved` set
+ *   `border-left: 3px solid ...` directly on the `<tr>`. Under the
+ *   *separated* borders model a border authored on a table row never
+ *   paints — only under *collapsing* borders do row/row-group borders
+ *   participate in the border-conflict resolution and actually render.
+ *   Screenshotting `.admin-topics-table` confirms exactly that: sampling
+ *   the leftmost 3px of a proposed/approved row's pixels returns the
+ *   row's own border color precisely (e.g. `rgb(212,135,42)` for a
+ *   proposed/warning row), not the row background. So flipping this table
+ *   into collapse mode is what makes those three previously-decorative
+ *   rules start rendering — they are live and are this table's primary,
+ *   always-visible state signal, not a fallback to the warn background.
+ *
+ * - Row hover: this component paints `--color-surface-hover` (translucent
+ *   black, ~3%) on each <td>, which composites OVER whatever the row
+ *   itself painted (including the `!important` warn background) rather
+ *   than replacing it — also verified empirically (pixel value shifts by
+ *   exactly the ~3% the token specifies, with `:hover` state confirmed via
+ *   `matches(':hover')` immediately before each capture). The left-border
+ *   state signal above is unaffected by hover either way, since hover only
+ *   touches the `<td>` background. No override is needed or present here:
+ *   a flagged row keeps its border untouched and its background tint
+ *   barely darkens, both correct.
+ *
+ * Nothing here restyles or deletes the moved rules; Phase 2 owns that
+ * cleanup.
  */
 .theme-silo table,
 .theme-silo .table,
@@ -550,17 +567,6 @@
 .theme-silo .table tbody tr:hover td,
 .theme-silo .adm-table tbody tr:hover td {
   background: var(--color-surface-hover);
-}
-
-/* A flagged row's warning tint is its only rendered state signal (see the
- * component note above), so pin it exactly rather than let the generic
- * hover rule shift it ~3% — a hovered `--row--warn` row should look
- * identical to an unhovered one, not "the same tint, slightly darker."
- * (0,3,1): three classes (.theme-silo, .admin-topics-table__row--warn,
- * :hover) beats the generic hover rule's (0,2,4) on class-count alone,
- * regardless of its extra element steps, so this wins without !important. */
-.theme-silo .admin-topics-table__row--warn:hover td {
-  background: transparent;
 }
 
 /* IDs, timestamps, counts — monospace so columns align for straight-down
