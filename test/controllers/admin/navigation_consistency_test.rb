@@ -31,5 +31,19 @@ module Admin
 
       assert_select "nav.adm-sidebar a[aria-current=page]", count: 1, text: "All Topics"
     end
+
+    test "the sidebar renders exactly one link per navigation item, no more and no fewer" do
+      get admin_root_url
+      assert_response :success
+
+      # Direct children of nav.adm-sidebar with class adm-sidebar__link excludes
+      # both the .adm-sidebar__brand link and the links nested inside
+      # .adm-sidebar__foot (Public Site / Security / Sign Out), which are not
+      # direct children of the nav. This guards against the partial hardcoding
+      # a list that happens to match Admin::Navigation.items today: an extra
+      # or missing link changes this count even if every existing item's
+      # label/href still matches.
+      assert_select "nav.adm-sidebar > a.adm-sidebar__link", count: Admin::Navigation.items.size
+    end
   end
 end
