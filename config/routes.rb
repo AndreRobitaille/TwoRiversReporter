@@ -32,6 +32,12 @@ Rails.application.routes.draw do
     post :resend_expired_magic_link, on: :collection
   end
 
+  resource :reauthentication, only: %i[new], controller: "reauthentications" do
+    post :passkey_options
+    post :passkey
+    post :magic_link
+  end
+
   resources :passkeys, only: %i[update destroy] do
     collection do
       post :registration_options

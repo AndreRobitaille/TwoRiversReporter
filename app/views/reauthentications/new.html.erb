@@ -1,0 +1,41 @@
+<% content_for(:title) { "Confirm it's you" } %>
+
+<div class="auth-panel">
+  <div class="auth-mark"><%= render "shared/starburst", size: 56 %></div>
+
+  <h1 class="auth-title">Confirm it's you</h1>
+  <p class="auth-dek">
+    This is a new network or browser for your account, or it has been a while
+    since you last confirmed. Confirm once and you can carry on.
+  </p>
+
+  <%= render "shared/diamond_divider" %>
+
+  <%= tag.div(flash[:alert], class: "flash flash--danger") if flash[:alert] %>
+  <%= tag.div(flash[:notice], class: "flash flash--success") if flash[:notice] %>
+
+  <% if @passkey_available %>
+    <div
+      data-controller="passkey"
+      data-passkey-authentication-options-url-value="<%= passkey_options_reauthentication_path(format: :json) %>"
+      data-passkey-authentication-url-value="<%= passkey_reauthentication_path(format: :json) %>"
+    >
+      <button type="button" class="btn btn--primary" data-action="passkey#authenticate" data-passkey-target="trigger">
+        Confirm with a passkey
+      </button>
+
+      <p class="auth-status" data-passkey-target="status" aria-live="polite" role="status"></p>
+    </div>
+
+    <div class="auth-alt"><span>or</span></div>
+  <% end %>
+
+  <%= form_with url: magic_link_reauthentication_path, method: :post do |form| %>
+    <%= form.submit "Email me a link instead", class: @passkey_available ? "btn btn--secondary" : "btn btn--primary" %>
+  <% end %>
+
+  <p class="auth-footnote">
+    The link works in any browser. Opening it signs you in there and takes you
+    back to what you were doing.
+  </p>
+</div>
