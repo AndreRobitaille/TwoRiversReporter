@@ -30,9 +30,9 @@ class AdminTopicFlowsTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", admin_topic_path(@topic1), text: @topic1_name.downcase
     assert_select "a[href=?]", admin_topic_path(@topic2), text: @topic2_name.downcase
     assert_select "a[href=?]", admin_topic_path(@topic3), text: @topic3_name.downcase
-    assert_select "a.btn--secondary[href=?]", admin_topic_path(@topic1), text: "Open"
-    assert_select "a.btn--secondary[href=?]", admin_topic_path(@topic2), text: "Open"
-    assert_select "a.btn--secondary[href=?]", admin_topic_path(@topic3), text: "Open"
+    assert_select "a.btn--sm[href=?]", admin_topic_path(@topic1), text: "Open"
+    assert_select "a.btn--sm[href=?]", admin_topic_path(@topic2), text: "Open"
+    assert_select "a.btn--sm[href=?]", admin_topic_path(@topic3), text: "Open"
     assert_match "Signals", response.body
   end
 

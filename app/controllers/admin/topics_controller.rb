@@ -53,8 +53,8 @@ module Admin
           format.turbo_stream {
             render turbo_stream: turbo_stream.replace(
               helpers.dom_id(@topic),
-              partial: "admin/topics/topic",
-              locals: { topic: @topic, preview_window: helpers.preview_window_from_params(params) }
+              partial: "admin/topics/inbox_row",
+              locals: { row: Admin::Topics::InboxQuery.row_for(@topic) }
             )
           }
           format.json { render json: { success: false, errors: @topic.errors.full_messages }, status: :unprocessable_entity }
@@ -174,8 +174,8 @@ module Admin
         format.turbo_stream {
           render turbo_stream: turbo_stream.replace(
             helpers.dom_id(@topic),
-            partial: "admin/topics/topic",
-            locals: { topic: @topic, preview_window: helpers.preview_window_from_params(params) }
+            partial: "admin/topics/inbox_row",
+            locals: { row: Admin::Topics::InboxQuery.row_for(@topic) }
           )
         }
         format.html { redirect_back fallback_location: admin_topics_path, notice: message }

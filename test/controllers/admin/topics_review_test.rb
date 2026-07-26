@@ -1,4 +1,5 @@
 require "test_helper"
+require "securerandom"
 
 module Admin
   class TopicsReviewTest < ActionDispatch::IntegrationTest
@@ -10,6 +11,11 @@ module Admin
       @proposed_topic = Topic.create!(name: "Proposed Topic", status: "proposed", review_status: "proposed")
       @approved_topic = Topic.create!(name: "Approved Topic", status: "approved", review_status: "approved")
       @blocked_topic = Topic.create!(name: "Blocked Topic", status: "blocked", review_status: "blocked")
+    end
+
+    def proposed_topic
+      Topic.create!(name: "proposed #{SecureRandom.hex(4)}",
+                    status: "proposed", review_status: "proposed", lifecycle_status: "active")
     end
 
     test "should filter by review_status" do
@@ -136,6 +142,81 @@ module Admin
 
       @approved_topic.reload
       assert_equal "proposed", @approved_topic.review_status
+    end
+
+    # --- Task 12: triage actions restored to the inbox row itself ---
+
+    test "each inbox row carries a dom id turbo can replace" do
+      topic = proposed_topic
+      get admin_topics_url
+
+      assert_select "tbody#topic_#{topic.id}", count: 1
+    end
+
+    test "a proposed topic offers approve and block from the index" do
+      topic = proposed_topic
+      get admin_topics_url
+
+      assert_select "form[action=?]", approve_admin_topic_path(topic)
+      assert_select "form[action=?]", block_admin_topic_path(topic)
+    end
+
+    test "an approved topic offers needs-review and block" do
+      topic = Topic.create!(name: "approved #{SecureRandom.hex(4)}", status: "approved", review_status: "approved")
+      get admin_topics_url
+
+      assert_select "form[action=?]", needs_review_admin_topic_path(topic)
+      assert_select "form[action=?]", block_admin_topic_path(topic)
+    end
+
+    test "a blocked topic offers unblock" do
+      topic = Topic.create!(name: "blocked #{SecureRandom.hex(4)}", status: "blocked", review_status: "blocked")
+      get admin_topics_url
+
+      assert_select "form[action=?]", unblock_admin_topic_path(topic)
+    end
+
+    test "every row offers pin or unpin" do
+      pinned = Topic.create!(name: "pinned #{SecureRandom.hex(4)}", status: "approved", review_status: "approved", pinned: true)
+      unpinned = Topic.create!(name: "unpinned #{SecureRandom.hex(4)}", status: "approved", review_status: "approved")
+      get admin_topics_url
+
+      assert_select "form[action=?]", unpin_admin_topic_path(pinned)
+      assert_select "form[action=?]", pin_admin_topic_path(unpinned)
+    end
+
+    test "approving actually approves and returns a replaceable row" do
+      topic = proposed_topic
+
+      post approve_admin_topic_path(topic), as: :turbo_stream
+
+      assert_response :success
+      assert_equal "approved", topic.reload.status
+      assert_equal "approved", topic.review_status
+      assert_match "turbo-stream", response.media_type
+      assert_match "topic_#{topic.id}", response.body,
+        "the turbo stream must target the id the index actually rendered"
+    end
+
+    test "blocking blocks the topic" do
+      topic = proposed_topic
+      post block_admin_topic_path(topic), as: :turbo_stream
+      assert_equal "blocked", topic.reload.status
+    end
+
+    test "pinning pins the topic" do
+      topic = Topic.create!(name: "topin #{SecureRandom.hex(4)}", status: "approved", review_status: "approved")
+      post pin_admin_topic_path(topic), as: :turbo_stream
+      assert topic.reload.pinned?
+    end
+
+    test "row_for builds a row from a topic" do
+      topic = proposed_topic
+      row = Admin::Topics::InboxQuery.row_for(topic)
+
+      assert_equal topic.id, row.topic_id
+      assert_equal topic.name, row.name
+      assert_equal "proposed", row.review_status
     end
   end
 end

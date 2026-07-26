@@ -41,11 +41,9 @@
           <th></th>
         </tr>
       </thead>
-      <tbody>
-        <% @inbox_rows.each do |row| %>
-          <%= render "inbox_row", row: row %>
-        <% end %>
-      </tbody>
+      <% @inbox_rows.each do |row| %>
+        <%= render "inbox_row", row: row %>
+      <% end %>
     </table>
   </div>
 </div>
