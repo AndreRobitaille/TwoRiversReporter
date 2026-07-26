@@ -71,9 +71,15 @@ module Reauthentication
       # options response and report the wrong error entirely.
       return head :forbidden if request.format.json?
 
-      # Only a GET is worth returning to. Storing a POST url would send the user
-      # back to a route that does not answer GET once they have reauthenticated.
-      session[:return_to_after_authenticating] = request.get? ? request.url : request.referer
+      # Only retrieval requests are worth returning to. Storing a mutation URL
+      # would send the user back to a route that does not answer GET once they
+      # have reauthenticated.
+      return_to = if request.get? || request.head?
+        request.url
+      else
+        request.referer
+      end
+      session[:return_to_after_authenticating] = return_to
       redirect_to new_reauthentication_path
     end
 end

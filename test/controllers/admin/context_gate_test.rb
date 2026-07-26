@@ -55,6 +55,16 @@ module Admin
       assert_equal admin_site_settings_url, request.session[:return_to_after_authenticating]
     end
 
+    test "a HEAD request remembers its own destination like GET" do
+      session = sign_in_as(@admin)
+      session.update_columns(ip_prefix: "198.51.100.0/24", reauthenticated_at: 16.minutes.ago)
+
+      head admin_site_settings_url
+
+      assert_redirected_to new_reauthentication_url
+      assert_equal admin_site_settings_url, request.session[:return_to_after_authenticating]
+    end
+
     test "stepping up restores access from the new network" do
       session = sign_in_as(@admin)
       session.update_columns(ip_prefix: "198.51.100.0/24", reauthenticated_at: 16.minutes.ago)

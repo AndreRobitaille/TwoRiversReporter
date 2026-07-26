@@ -15,15 +15,24 @@ class SessionContextBackfill
     rows = connection.select_all("SELECT id, ip_address, user_agent FROM sessions WHERE ip_prefix IS NULL AND device_fingerprint IS NULL")
 
     rows.each do |row|
-      connection.execute(<<~SQL.squish)
+      connection.exec_update(<<~SQL.squish, "Backfill session context", query_attributes(row))
         UPDATE sessions
-        SET ip_prefix = #{connection.quote(NetworkPrefix.for(row["ip_address"]))},
-            device_fingerprint = #{connection.quote(DeviceFingerprint.for(row["user_agent"]))},
+        SET ip_prefix = $1,
+            device_fingerprint = $2,
             reauthenticated_at = created_at
-        WHERE id = #{Integer(row["id"])}
+        WHERE id = $3
       SQL
     end
 
     rows.length
   end
+
+  def self.query_attributes(row)
+    [
+      ActiveRecord::Relation::QueryAttribute.new("ip_prefix", NetworkPrefix.for(row["ip_address"]), ActiveRecord::Type::String.new),
+      ActiveRecord::Relation::QueryAttribute.new("device_fingerprint", DeviceFingerprint.for(row["user_agent"]), ActiveRecord::Type::String.new),
+      ActiveRecord::Relation::QueryAttribute.new("id", row["id"], ActiveRecord::Type::Integer.new)
+    ]
+  end
+  private_class_method :query_attributes
 end
