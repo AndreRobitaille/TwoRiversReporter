@@ -119,4 +119,35 @@ class AdminStylesheetTest < ActiveSupport::TestCase
   test "collapses the sidebar to a drawer on small screens" do
     assert_match(/@media\s*\(max-width:\s*900px\)/, css)
   end
+
+  # `.theme-silo h1, h2, h3, h4 { ... }` is a class+type selector — specificity
+  # (0,1,1). Any admin component class rendered directly on a heading element
+  # must be scoped as `.theme-silo .the-class` (0,2,0) to reliably win that
+  # tie, regardless of source order. A bare `.the-class` (0,1,0) loses no
+  # matter where it's written in the file. This test is data-driven from the
+  # actual view markup (not a hardcoded pair of classes) so it keeps working
+  # as Tasks 10-11 add headings to new components.
+  def adm_classes_on_headings
+    Dir[Rails.root.join("app/views/admin/**/*.erb")].flat_map do |path|
+      File.read(path).scan(/<h[1-4][^>]*\bclass="([^"]*)"/).flatten
+    end.flat_map { |class_list| class_list.split(/\s+/) }
+       .select { |cls| cls.start_with?("adm-") }
+       .uniq
+  end
+
+  test "adm-* classes rendered on headings are .theme-silo-scoped to beat the element-qualified heading rule" do
+    heading_classes = adm_classes_on_headings
+    assert_not_empty heading_classes,
+      "expected at least one .adm-* class to be rendered on a heading element " \
+      "in app/views/admin — if this is legitimately zero now, this test has nothing to check"
+
+    unscoped = heading_classes.reject do |cls|
+      css.match?(/\.theme-silo\s+\.#{Regexp.escape(cls)}(?![a-zA-Z0-9_-])/)
+    end
+
+    assert_empty unscoped,
+      "these classes render on h1-h4 elements but their admin.css rule is not " \
+      "`.theme-silo .the-class`-scoped, so `.theme-silo h1..h4` (0,1,1) silently " \
+      "wins the properties both set: #{unscoped.join(', ')}"
+  end
 end
