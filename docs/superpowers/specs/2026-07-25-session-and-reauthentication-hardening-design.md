@@ -116,13 +116,17 @@ as proving you are still there.
 If the context changes again later — the phone moves again — the session returns to unverified.
 That is correct: each new network is separately vouched for.
 
-### Two gates
+### Three gates
 
-Both live in a `Reauthentication` controller concern.
+All three live in a `Reauthentication` controller concern. Two ask about the context and differ only
+in whether they tolerate a recent step-up; the third ignores the context entirely.
 
-**`require_verified_context`** — added to `Admin::BaseController` after the existing `require_admin`
-and `require_admin_passkey` callbacks. Redirects to the challenge when
-`SessionContext.from_request(request).matches?(Current.session)` is false.
+**`require_matching_context`** — the strict form. Redirects to the challenge unless
+`SessionContext.from_request(request).matches?(Current.session)`.
+
+**`require_matching_context_or_recent_step_up`** — the tolerant form. Also passes when the session
+was stepped up within `Session::REAUTH_FRESHNESS`. Added to `Admin::BaseController` after the
+existing `require_admin` and `require_admin_passkey` callbacks.
 
 Placed at the admin boundary rather than on a list of actions, so every admin screen is covered,
 including screens built later. There is no allowlist that someone can forget to update.
@@ -136,14 +140,44 @@ expiry, so a link that took twelve minutes to arrive still grants a usable windo
 
 Applied to:
 
-| Action | Why |
-|---|---|
-| `Admin::UsersController#destroy` | Irreversible; deletes an account and everything attached |
-| `Admin::MembershipApplicationsController#destroy` | Irreversible |
-| `Admin::UsersController#create` | Creates an admin account |
-| `Admin::UsersController#toggle_admin` | Grants admin; durable privilege escalation |
-| `PasskeysController#registration_options`, `#registration` | Adds a credential to the account |
-| `PasskeysController#destroy` | Removes a credential from the account |
+| Action | Context gate | Freshness gate | Why |
+|---|---|---|---|
+| Every `Admin::BaseController` descendant | Tolerant | — | Whole boundary; no allowlist to forget |
+| `Admin::UsersController#destroy` | Tolerant (inherited) | Yes | Irreversible; deletes an account and everything attached |
+| `Admin::MembershipApplicationsController#destroy` | Tolerant (inherited) | Yes | Irreversible |
+| `Admin::UsersController#create` | Tolerant (inherited) | Yes | Creates an admin account |
+| `Admin::UsersController#toggle_admin` | Tolerant (inherited) | Yes | Grants admin; durable privilege escalation |
+| `PasskeysController#registration_options`, `#registration` | **Strict** | Yes | Adds a credential to the account |
+| `PasskeysController#destroy` | **Strict** | Yes | Removes a credential from the account |
+
+`PasskeysController#authentication_options` and `#authentication` carry neither. They are the
+unauthenticated sign-in path; there is no session to match a context against, and gating them would
+break passkey sign-in outright.
+
+### Why the two context gates differ
+
+The asymmetry is the point, and each half exists because of the other.
+
+**The admin boundary tolerates churn because it is checked on every page load.** On an egress whose
+address rotates across /24 boundaries between requests — iCloud Private Relay, carrier CGNAT, a
+corporate proxy pool — a strict check there challenges, accepts the step-up, and challenges again on
+the very next page, unbounded. The step-up rewrites the context, but the context has already moved
+again. Honouring a step-up for its 15-minute window is what turns that loop into one tap. A gate that
+cannot be satisfied is a lockout, and lockout is the risk this design is shaped around.
+
+**Passkey add and remove stay strict because they are already gated on freshness.** If the context
+check there also passed on freshness, it would be redundant with `require_fresh_reauthentication` and
+would catch nothing: a cookie stolen and replayed from another network within fifteen minutes of the
+victim's sign-in — sign-in stamps `reauthenticated_at` — would register an attacker's credential with
+nothing tripped. That is the account-takeover persistence move in a passwordless system, and it is
+exactly the remote-replay case the context signal exists to catch. Changing a credential is one
+deliberate action rather than a page loaded repeatedly, so an extra tap after a network change is an
+acceptable price and no loop can form.
+
+The named cost of the grace: within the 15 minutes after a genuine sign-in or step-up, a replayed
+cookie from another network can read the admin area and reach the actions gated on freshness alone.
+That window was accepted in exchange for an admin area that is usable from a rotating egress. The
+credential surface, which is where a stolen session becomes permanent, is not part of the trade.
 
 The passkey actions are self-service — `PasskeysController` is the member's own
 `/settings/security`, and `load_current_user_credential` scopes to
@@ -158,8 +192,7 @@ out of their own site.
 
 ### Gate failure responses are format-aware
 
-`require_verified_context` and `require_fresh_reauthentication` both guard HTML actions and JSON
-endpoints, and a redirect is wrong for the latter.
+All three gates guard HTML actions and JSON endpoints, and a redirect is wrong for the latter.
 
 - **HTML** — redirect to `/reauthentication/new`, storing the original URL in
   `session[:return_to_after_authenticating]`. This is the same slot the sign-in flow uses, and it is
@@ -170,10 +203,13 @@ endpoints, and a redirect is wrong for the latter.
   options response and report a misleading error.
 
 Because a bare 403 gives the member nothing to act on, `/settings/security` also gates its passkey
-management controls at the page level: when the session is not freshly reauthenticated, the "Add a
+management controls at the page level, asking the *same* pair of questions the controller asks —
+freshly reauthenticated **and** an exactly matching context. When either is missing, the "Add a
 passkey" button and the per-credential "Remove" links are replaced by a single link to the challenge
-page. The JSON 403 is then unreachable through normal use and exists as defence in depth, because a
-UI-level gate is not a security control.
+page. Gating the page on freshness alone would render a button whose endpoint answers 403, and
+`passkey_controller.js` would report that as a failed ceremony rather than as a step-up prompt. The
+JSON 403 is then unreachable through normal use and exists as defence in depth, because a UI-level
+gate is not a security control.
 
 `PasskeysController#destroy` is an ordinary HTML delete, so it takes the redirect path.
 
@@ -226,7 +262,14 @@ recently-reauthenticated session, redirected to the original destination through
 the existing `sign_in_magic_link` Loops template, so **no new production configuration is required**.
 
 `ReauthenticationsController#magic_link` is rate limited per IP with the existing
-`rate_limit to: 10, within: 3.minutes` pattern. It deliberately does **not** record a
+`rate_limit to: 10, within: 3.minutes` pattern, and the passkey endpoints get their own limit. Each
+declaration carries an explicit `name:`, because Rails keys the counter on
+`["rate-limit", scope, name, by]` and defaults `scope` to the controller path: unnamed, the two would
+share one budget. Sharing it would mean five failed passkey taps (two requests each) exhaust the
+budget and the email fallback answers "Try again later." — the fallback consumed by the failures it
+exists to rescue. This is the only controller in the app with two limits.
+
+`magic_link` deliberately does **not** record a
 `SignInAttempt`: the caller is already authenticated so there is no address to enumerate, and
 recording one would let a member burn their own 15-minute sign-in throttle from inside the app.
 
@@ -347,19 +390,29 @@ Lockout is the primary risk, so each mitigation is stated as a requirement rathe
    thrown into step-up by the deploy. Backfilling `reauthenticated_at` from `created_at` is honest —
    the user did authenticate then — and harmless, because an old timestamp is not fresh.
 2. **Pre-deploy production check**: count the sessions the 60-day rule will invalidate, and confirm
-   `andre@xyzmodem.com`'s session is not among them.
+   `andre@xyzmodem.com`'s session is not among them. The count has to be taken against the *old*
+   image, where `Session::INACTIVITY_LIMIT` is still 180 days, so the command writes 60 days out
+   literally rather than reading the constant.
 3. **Database backup before the migration**, per the `deploying` skill.
-4. **Post-deploy verification**: sign in, enter `/admin`, complete a step-up, confirm admin access.
-5. **Console recovery documented** in the `deploying` skill: a `bin/kamal app exec` one-liner that
-   clears a session's context or stamps `reauthenticated_at` directly.
+4. **Post-deploy verification**: sign in, enter `/admin`, complete a step-up, confirm admin access,
+   then add and remove a passkey. The last step is the one that proves the recorded context is
+   actually right, because the grace at the admin boundary can mask a wrong anchor for 15 minutes.
+5. **Console recovery documented** in the `deploying` skill. The useful recovery is to *re-anchor* a
+   session — write the `ip_prefix` and `device_fingerprint` the next request will actually produce,
+   derived through `NetworkPrefix.for` and `DeviceFingerprint.for`. Stamping `reauthenticated_at`
+   alone buys 15 minutes of admin access through the tolerant gate but does not satisfy the strict
+   one. Setting the context columns to `nil` fixes nothing at all: `matches?` is strict equality
+   including `nil`, so a nil-context row matches no real request.
 6. **The magic-link fallback means no rule can fully block a member who can read their email.** This
    is the structural guarantee behind all of the above.
 
 ### Accepted cost
 
-Entering `/admin` from a genuinely new network costs one passkey tap. On mobile, moving between
-cell towers can cross a /24, so occasional taps during phone admin use are expected behaviour rather
-than a defect. This is recorded here so it is not later mistaken for a bug.
+Entering `/admin` from a genuinely new network costs one passkey tap, and that tap then covers the
+next 15 minutes even if the address keeps moving. Adding or removing a passkey from a network the
+session has drifted away from costs a tap of its own, because that surface does not accept the grace.
+On mobile, moving between cell towers can cross a /24, so occasional taps during phone admin use are
+expected behaviour rather than a defect. This is recorded here so it is not later mistaken for a bug.
 
 ## Tests
 
@@ -379,14 +432,33 @@ the test fails, restore. Inspection is not evidence.
 ### Integration
 
 - An expired session is cleared by `resume_session` (both expiry causes)
-- Admin entry with a mismatched context redirects to the challenge; with a matching context it does
-  not
+- Admin entry with a mismatched context and no recent step-up redirects to the challenge; with a
+  matching context it does not
 - Each fresh-reauth action rejects a stale session and accepts a fresh one
 - A passkey step-up marks the session, updates its context, and does **not** create a second session
 - The magic-link fallback signs in and honours the return-to
 - `start_new_session_for` stamps `reauthenticated_at`, so first-passkey setup works immediately
 - Audit events are written with actor and subject snapshots intact after the subject is deleted
 - The cleanup job removes expired rows and leaves live ones
+
+### The asymmetry gets a test file of its own
+
+One session state — context drifted, step-up still fresh — asserted against both surfaces in the
+same file, because the pair is the behaviour and neither half means anything alone:
+
+- That state **reaches** `/admin`. Remove the grace and this fails, and the admin area loops on a
+  rotating egress.
+- That state **cannot** request registration options, register a credential, or remove one. Remove
+  the strict gate and these fail, and a replayed cookie gains durable access.
+- A control alongside them: the same session with its context restored *can* request registration
+  options, so a refusal caused by something unrelated cannot pass as the gate working.
+
+The two rate limits get a test too, proving the buckets are independent in both directions:
+exhausting the passkey limit leaves the email fallback usable, and exhausting the email limit leaves
+the passkey path usable. The test environment's `:null_store` makes rate limiting inert and each
+declaration captures its store when the class body runs, so the test substitutes a counting store at
+the one remaining seam — `ActionController::RateLimiting#rate_limiting`, which receives the store per
+request — and forwards the real declared `name:`, `scope:` and `by:` to the real implementation.
 
 ### Tests that exist because this feature fails silently
 

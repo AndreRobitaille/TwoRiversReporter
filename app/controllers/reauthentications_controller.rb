@@ -5,9 +5,16 @@ class ReauthenticationsController < ApplicationController
   include Authentication
   include WebauthnVerification
 
-  rate_limit to: 10, within: 3.minutes, only: %i[magic_link],
+  # Two limits, so both need an explicit name:. Rails builds the counter key
+  # from ["rate-limit", scope, name, by], and scope defaults to the controller
+  # path for both — so unnamed, these two would share one budget per IP. A
+  # step-up costs two passkey requests (options, then assertion), so five failed
+  # taps would exhaust the shared budget and the email fallback would answer
+  # "Try again later." — the fallback consumed by the failures it exists to
+  # rescue.
+  rate_limit to: 10, within: 3.minutes, only: %i[magic_link], name: "magic_link",
     with: -> { redirect_to new_reauthentication_path, alert: "Try again later." }
-  rate_limit to: 10, within: 3.minutes, only: %i[passkey_options passkey],
+  rate_limit to: 10, within: 3.minutes, only: %i[passkey_options passkey], name: "passkey",
     with: -> { head :too_many_requests }
 
   def new

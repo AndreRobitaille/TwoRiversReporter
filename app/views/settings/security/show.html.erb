@@ -20,7 +20,7 @@
     data-passkey-authentication-options-url-value="<%= authentication_options_passkeys_path(format: :json) %>"
     data-passkey-authentication-url-value="<%= authentication_passkeys_path(format: :json) %>"
   >
-    <% if @reauthentication_fresh %>
+    <% if @passkey_management_unlocked %>
       <button type="button" class="btn btn--primary" data-action="passkey#register" data-passkey-target="trigger">
         Add a passkey
       </button>
@@ -49,7 +49,7 @@
                 <%= submit_tag "Save", class: "btn btn--secondary btn--sm" %>
               <% end %>
 
-              <% if @reauthentication_fresh %>
+              <% if @passkey_management_unlocked %>
                 <%= link_to "Remove", passkey_path(credential),
                       class: "btn btn--danger btn--sm",
                       data: { turbo_method: :delete, turbo_confirm: "Remove this passkey?" } %>

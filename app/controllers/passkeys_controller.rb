@@ -12,6 +12,19 @@ class PasskeysController < ApplicationController
   # require_admin_passkey locks them out of their own site.
   before_action :require_fresh_reauthentication, only: %i[registration_options registration destroy]
 
+  # The strict context gate, and deliberately not the tolerant one the admin
+  # boundary uses. Freshness alone is already required above, so a gate that
+  # also passed on freshness would add nothing: a cookie stolen and replayed
+  # from another network within fifteen minutes of the victim's sign-in would
+  # register an attacker's credential with nothing tripped. Changing a
+  # credential is one deliberate action, not a page loaded repeatedly, so one
+  # extra tap after a network change is an acceptable cost and no challenge
+  # loop can form here.
+  #
+  # Not applied to authentication_options/authentication: those are the
+  # unauthenticated sign-in path, where there is no session to match against.
+  before_action :require_matching_context, only: %i[registration_options registration destroy]
+
   before_action :load_current_user_credential, only: %i[update destroy]
   rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
 

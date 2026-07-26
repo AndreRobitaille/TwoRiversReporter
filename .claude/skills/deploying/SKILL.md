@@ -198,25 +198,117 @@ volume (`two_rivers_reporter_pgdata`) with nothing else guarding it.
 **Not yet automated:** database backups. High priority — see *Database Backups*
 above for the manual command and where existing dumps live.
 
-## Reauthentication lockout recovery
+## Session and reauthentication rules
 
-If the step-up rules misfire, the console is the escape hatch. The magic-link fallback means a
-member who can read their email is never fully blocked, so this is for genuine emergencies only.
+Sessions are anchored to a context — `ip_prefix` (IPv4 /24, IPv6 /48) and `device_fingerprint`
+(browser family and platform) — and two gates read it. The admin boundary passes when the context
+matches **or** the session was stepped up within the last 15 minutes. Adding or removing a passkey
+requires a strictly matching context *and* a step-up in that window. Full design:
+`docs/superpowers/specs/2026-07-25-session-and-reauthentication-hardening-design.md`.
 
-Grant a session an immediate step-up window:
+### Pre-deploy check (run before the deploy, not after)
+
+The shortened `INACTIVITY_LIMIT` signs out every session it has already outlived, so count them
+first and confirm the owner's is not among them. Run this **against the old image**, which is why
+60 days is written out rather than read from `Session::INACTIVITY_LIMIT` — that constant is still
+180 days in the container you are about to replace:
 
 ```bash
-bin/kamal app exec "bin/rails runner 'u = User.find_by(email_address: \"andre@xyzmodem.com\"); s = u.sessions.order(:last_seen_at).last; s.update_columns(reauthenticated_at: Time.current); puts s.slice(:id, :ip_prefix, :device_fingerprint, :reauthenticated_at)'"
+bin/kamal app exec "bin/rails runner 'doomed = Session.where(\"last_seen_at IS NULL OR last_seen_at < ?\", 60.days.ago); owner = User.find_by(email_address: \"andre@xyzmodem.com\"); puts \"sessions total: \" + Session.count.to_s; puts \"invalidated by the 60-day rule: \" + doomed.count.to_s; puts \"owner sessions invalidated: \" + doomed.where(user_id: owner.id).count.to_s'"
 ```
 
-Re-anchor a session to wherever it is now being used, clearing a context mismatch:
+If the owner's count is anything but `0`, sign in again from the browser you intend to deploy from
+before continuing — that refreshes `last_seen_at` and takes the session out of the doomed set.
+
+Then take a database backup (see *Database Backups* above). The context migration backfills every
+existing session, and a backfill is not something to run without a dump behind it.
+
+### Post-deploy verification walk
+
+Confirm the backfill first. Both counts must be `0`; a session missing `ip_prefix` while holding an
+`ip_address` means the backfill did not run, and every live member would be challenged at once:
 
 ```bash
-bin/kamal app exec "bin/rails runner 'u = User.find_by(email_address: \"andre@xyzmodem.com\"); s = u.sessions.order(:last_seen_at).last; s.update_columns(ip_prefix: nil, device_fingerprint: nil); puts \"cleared; the next request re-challenges, then adopts the new context\"'"
+bin/kamal app exec "bin/rails runner 'puts \"sessions: \" + Session.count.to_s; puts \"missing ip_prefix: \" + Session.where(ip_prefix: nil).where.not(ip_address: nil).count.to_s; puts \"missing reauthenticated_at: \" + Session.where(reauthenticated_at: nil).count.to_s'"
 ```
 
-Inspect what a session is anchored to before changing anything:
+Then walk it in a browser, on `https://tworiversmatters.com`:
+
+1. Sign in with a magic link. Confirm you land on the page you asked for, not the home page.
+2. Open `/admin`. Expect either the dashboard (the backfilled context matched) or the step-up page
+   at `/reauthentication` — both are correct outcomes.
+3. If challenged, complete the step-up with a passkey. Expect to land on `/admin`, and expect the
+   next few admin pages to load without challenging again.
+4. Open `/settings/security`, add a passkey, then remove it. That surface requires a strictly
+   matching context, so it is the one that proves the anchor is right rather than merely tolerated.
+5. Open `/admin/audit_events` and confirm the actions from step 4 onwards are recorded.
+
+Recipe 3 is the one that catches a broken anchor, because the grace window can hide one at the admin
+boundary for 15 minutes.
+
+### Reauthentication lockout recovery
+
+The console is the escape hatch when the step-up rules misfire. The magic-link fallback means a
+member who can read their email is never fully blocked — signing in again mints a fresh session with
+a correct context and a fresh step-up — so this is for the case where email delivery is also broken.
+
+| Symptom | Recipe |
+|---|---|
+| Not sure what is wrong | *Inspect*, always first |
+| `/admin` challenges, the step-up succeeds, and the next page challenges again | *Re-anchor*. A rotating egress needs the recorded prefix rewritten, not another step-up |
+| Locked out of `/admin` and need 15 minutes to work | *Stamp a step-up window* |
+| `/settings/security` refuses to add or remove a passkey | *Re-anchor*. That gate is strict; a stamped window alone does not satisfy it |
+
+**Inspect** what a session is anchored to before changing anything. Note the `id` you mean to act
+on — the recipes below target the most recently seen session, which is the wrong one if you have
+several:
 
 ```bash
 bin/kamal app exec "bin/rails runner 'User.find_by(email_address: \"andre@xyzmodem.com\").sessions.order(:last_seen_at).each { |s| puts s.slice(:id, :ip_address, :ip_prefix, :device_fingerprint, :reauthenticated_at, :last_seen_at).inspect }'"
+```
+
+**Re-anchor** a session to the network and browser the next request will actually come from. This is
+the durable fix: it writes the values the app will compute on arrival, so both gates pass. Get the
+egress address from the machine you will browse from — not from the server, and not from the
+session's stored `ip_address`, which is where it used to be:
+
+```bash
+curl -s https://api.ipify.org; echo
+```
+
+```bash
+bin/kamal app exec "bin/rails runner 'ip = \"203.0.113.45\"; s = User.find_by(email_address: \"andre@xyzmodem.com\").sessions.order(:last_seen_at).last; s.update_columns(ip_prefix: NetworkPrefix.for(ip), device_fingerprint: DeviceFingerprint.for(s.user_agent), reauthenticated_at: Time.current); puts s.slice(:id, :ip_prefix, :device_fingerprint, :reauthenticated_at).inspect'"
+```
+
+Substitute the real address for `203.0.113.45`. That command keeps the browser half of the anchor,
+derived from the session's own recorded `user_agent`, which is correct whenever only the network
+changed. If you are moving the session to a **different browser**, paste that browser's User-Agent
+string in as well:
+
+```bash
+bin/kamal app exec "bin/rails runner 'ip = \"203.0.113.45\"; ua = \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36\"; s = User.find_by(email_address: \"andre@xyzmodem.com\").sessions.order(:last_seen_at).last; s.update_columns(ip_prefix: NetworkPrefix.for(ip), device_fingerprint: DeviceFingerprint.for(ua), reauthenticated_at: Time.current); puts s.slice(:id, :ip_prefix, :device_fingerprint, :reauthenticated_at).inspect'"
+```
+
+The User-Agent goes inside the Ruby script, which is itself inside single quotes inside the shell's
+double quotes. No mainstream browser's User-Agent contains a single quote; if one ever does, write
+the script to a file on the server and run that instead of fighting the quoting.
+
+Do **not** set the context columns to `nil` to "clear" a mismatch. `SessionContext#matches?` is
+strict equality including `nil`, so a nil-context row matches no real request: mismatched before,
+mismatched after.
+
+**Stamp a step-up window** to get into `/admin` for 15 minutes without touching the anchor. The
+admin gate honours a recent step-up as well as a matching context, which is what makes this work —
+but it expires, and it does **not** open passkey add or remove, which require the context to match:
+
+```bash
+bin/kamal app exec "bin/rails runner 's = User.find_by(email_address: \"andre@xyzmodem.com\").sessions.order(:last_seen_at).last; s.update_columns(reauthenticated_at: Time.current); puts s.slice(:id, :ip_prefix, :device_fingerprint, :reauthenticated_at).inspect'"
+```
+
+**Last resort**, if a session is beyond saving: destroy it and sign in again. A new session records
+the correct context on arrival, and `start_new_session_for` stamps `reauthenticated_at`, so first
+passkey setup works immediately:
+
+```bash
+bin/kamal app exec "bin/rails runner 'User.find_by(email_address: \"andre@xyzmodem.com\").sessions.destroy_all; puts \"sessions destroyed; sign in again\"'"
 ```

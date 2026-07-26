@@ -132,12 +132,23 @@ YouTube Channel → DiscoverTranscriptsJob (match videos to recent council meeti
   `device_fingerprint` (browser family and platform, version discarded, via `DeviceFingerprint`)
   are recorded at sign-in and compared on every admin request through `SessionContext`.
   **A mismatch never destroys a session** — it withholds sensitive surfaces until a step-up.
-  `Reauthentication#require_verified_context` guards the admin boundary;
   `require_fresh_reauthentication` guards hard-deleting a user or application, creating or granting
   admin, and adding or removing a passkey, requiring proof within `Session::REAUTH_FRESHNESS`
   (15 minutes) regardless of context. The accepted cost: entering `/admin` from a genuinely new
   network costs one passkey tap. On mobile, moving between cell towers can cross a /24, so
   occasional taps during phone admin use are expected behavior, not a defect.
+- **The two context gates are asymmetric on purpose, and must stay a pair.**
+  `Reauthentication#require_matching_context_or_recent_step_up` guards the admin boundary and passes
+  when the context matches **or** the session was stepped up inside `REAUTH_FRESHNESS`; that gate runs
+  on every page load, and on an egress that rotates addresses between requests (iCloud Private Relay,
+  CGNAT, a proxy pool) a strict check there loops forever — challenge, step-up, challenge.
+  `require_matching_context` is strict and guards `PasskeysController` registration and destroy, which
+  are already behind `require_fresh_reauthentication`: a context check that also passed on freshness
+  would be redundant, and a cookie replayed from another network minutes after the victim signed in
+  would register an attacker's passkey — durable access outliving the cookie, with no password to
+  change to evict it. Collapsing the two into one reintroduces one bug or the other.
+  `/settings/security` asks both questions at the page level so it never renders a control whose
+  endpoint answers 403.
 - **A step-up rewrites the recorded context and stamps `reauthenticated_at`**, so accepting a new
   network and proving you are still there are one operation. A fresh sign-in also stamps it, which
   is what lets a new member add a first passkey without a second email.
@@ -145,8 +156,11 @@ YouTube Channel → DiscoverTranscriptsJob (match videos to recent council meeti
   opens in a different browser than the one awaiting step-up — tapped from a phone while the
   session sits in desktop Chrome — where a reauth-specific token would have no session to apply to.
   Do not replace it with a dedicated purpose without solving that.
-- **`ReauthenticationsController` is gated by neither callback.** Gating it redirects the page that
-  fixes an unverified context to itself and locks out every admin at once. There is a test for this.
+- **`ReauthenticationsController` is gated by none of the callbacks.** Gating it redirects the page
+  that fixes an unverified context to itself and locks out every admin at once. There is a test for
+  this. Its two `rate_limit` declarations each carry an explicit `name:` — Rails keys the counter on
+  `["rate-limit", scope, name, by]` and both default `scope` to the controller path, so unnamed they
+  would share one budget and failed passkey taps would throttle the email fallback.
 - **Destructive admin actions are recorded as `AuditEvent`s** with `actor_email` and `subject_label`
   snapshots, because those actions delete their own subjects. `AuditEvent.record!` and the
   corresponding `destroy!`/`update!` share one `ApplicationRecord.transaction`, so a refused
