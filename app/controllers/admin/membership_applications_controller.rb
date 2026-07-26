@@ -9,9 +9,14 @@ module Admin
     def destroy
       application = MembershipApplication.find(params[:id])
       user = application.user
-      AuditEvent.record!(actor: Current.user, action: "membership_application.destroy",
-        subject: application, label: user.email_address, request: request)
-      application.destroy!
+      # Same reasoning as Admin::UsersController#destroy: record! and
+      # destroy! must share one transaction, or a future failure inside
+      # destroy! can't unwind an insert that already committed on its own.
+      ApplicationRecord.transaction do
+        AuditEvent.record!(actor: Current.user, action: "membership_application.destroy",
+          subject: application, label: user.email_address, request: request)
+        application.destroy!
+      end
 
       redirect_to user_path(user), notice: "Application deleted."
     end

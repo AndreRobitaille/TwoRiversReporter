@@ -123,7 +123,24 @@ module Admin
       assert_equal true, event.metadata["disabled"]
     end
 
-    test "re-enabling a user does not double record when the account is already active" do
+    test "re-enabling a disabled active user records an audit event with disabled false" do
+      # A distinct call site from the disable branch above: @user.disabled_at
+      # present AND status active is the only path into the re-enable branch
+      # (lines 91-95), which is otherwise untested — a user that is only
+      # disabled (not pending) hits this branch, not the "remains disabled" one.
+      disabled_user = User.create!(email_address: "disabled-audit@example.com", status: "active", disabled_at: Time.current)
+      sign_in_as(@admin)
+
+      assert_difference -> { AuditEvent.where(action: "user.disable").count }, 1 do
+        patch disable_user_url(disabled_user)
+      end
+
+      event = AuditEvent.where(action: "user.disable").last
+      assert_equal "disabled-audit@example.com", event.subject_label
+      assert_equal false, event.metadata["disabled"]
+    end
+
+    test "disabling a pending, already-disabled applicant is a no-op and records nothing" do
       # The "remains disabled" branch is a no-op on a pending applicant; it
       # must not record an event for a state change that never happened.
       applicant = User.create!(email_address: "pending-audit@example.com", status: "pending", disabled_at: Time.current)
