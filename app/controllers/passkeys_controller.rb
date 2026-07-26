@@ -1,5 +1,6 @@
 class PasskeysController < ApplicationController
   include Authentication
+  include WebauthnVerification
 
   allow_unauthenticated_access only: %i[authentication_options authentication]
   rate_limit to: 10, within: 3.minutes, only: %i[registration_options registration authentication_options authentication], with: -> { head :too_many_requests }
@@ -38,7 +39,7 @@ class PasskeysController < ApplicationController
   end
 
   def authentication
-    credential = verified_get_credential
+    credential = verified_get_credential(params[:credential], challenge_key: :passkey_authentication_challenge)
     return if performed?
     passkey = PasskeyCredential.includes(:user).find_by(external_id: credential.id)
     return head :unauthorized unless passkey.user.active_for_authentication?
@@ -88,23 +89,6 @@ class PasskeysController < ApplicationController
       nil
     end
 
-    def verified_get_credential
-      credential = webauthn_credential_from_get(params[:credential])
-      return if performed?
-      passkey = PasskeyCredential.find_by(external_id: credential.id)
-      return head :unauthorized unless passkey
-      credential.verify(
-        session.delete(:passkey_authentication_challenge),
-        public_key: passkey.public_key,
-        sign_count: passkey.sign_count,
-        user_verification: true
-      )
-      credential
-    rescue WebAuthn::Error
-      head :unauthorized
-      nil
-    end
-
     def webauthn_options_for_create(**kwargs)
       WebAuthn::Credential.options_for_create(**kwargs)
     end
@@ -117,13 +101,6 @@ class PasskeysController < ApplicationController
       WebAuthn::Credential.from_create(*args, **kwargs)
     rescue NoMethodError, TypeError, ArgumentError
       head :unprocessable_entity
-      nil
-    end
-
-    def webauthn_credential_from_get(*args, **kwargs)
-      WebAuthn::Credential.from_get(*args, **kwargs)
-    rescue NoMethodError, TypeError, ArgumentError
-      head :unauthorized
       nil
     end
 
