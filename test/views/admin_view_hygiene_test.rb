@@ -5,21 +5,36 @@ require "test_helper"
 # 32 of 60 views referencing class names no stylesheet defined, and ~50
 # inline style attributes standing in for components that did not exist.
 class AdminViewHygieneTest < ActiveSupport::TestCase
-  STYLESHEETS = Rails.root.glob("app/assets/stylesheets/*.css")
+  # Mirrors the admin layout's stylesheet_link_tag calls
+  # (app/views/layouts/admin.html.erb) — update this list if that layout's
+  # stylesheets change. home.css and about.css are deliberately excluded:
+  # the admin layout never loads them, so a class defined only there would
+  # look "defined" to this guard while being unstyled on every admin page —
+  # the exact failure this guard exists to catch, through a different door.
+  STYLESHEETS = %w[application admin].map { |name| Rails.root.join("app/assets/stylesheets/#{name}.css") }
   VIEWS = Rails.root.glob("app/views/admin/**/*.erb")
 
-  # Class names built by ERB interpolation can't be checked statically.
-  # Only literal, fully-formed class attributes are considered.
-  LITERAL_CLASS_ATTR = /class="([^"<%]*)"/
+  # Class names built by ERB interpolation (`<%= %>`) or Ruby string
+  # interpolation (`#{}`) can't be checked statically. Only literal,
+  # fully-formed class values are considered, in either the HTML attribute
+  # form (`class="..."`) or the Rails helper form (`class: "..."`, as in
+  # `link_to ..., class: "btn"`).
+  LITERAL_CLASS_PATTERNS = [
+    /class="([^"]*)"/,
+    /class:\s*"([^"]*)"/
+  ].freeze
 
   def defined_classes
     @defined_classes ||= STYLESHEETS.flat_map { |f| f.read.scan(/\.([a-zA-Z_][a-zA-Z0-9_-]*)/) }.flatten.to_set
   end
 
   def classes_used_in(path)
-    path.read.scan(LITERAL_CLASS_ATTR).flatten
-        .flat_map(&:split)
-        .grep(/\A[a-zA-Z][a-zA-Z0-9_-]*\z/)
+    text = path.read
+    LITERAL_CLASS_PATTERNS
+      .flat_map { |pattern| text.scan(pattern).flatten }
+      .reject { |value| value.include?("<%") || value.include?('#{') }
+      .flat_map(&:split)
+      .grep(/\A[a-zA-Z][a-zA-Z0-9_-]*\z/)
   end
 
   test "every class an admin view names is defined by some stylesheet" do

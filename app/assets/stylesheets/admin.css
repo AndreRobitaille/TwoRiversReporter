@@ -464,6 +464,16 @@
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
 }
+/* The primary link in a table cell's name column, e.g. prompt_templates/index —
+ * bold to read as the row's title, the same treatment `.font-semibold` gives
+ * the topic-name link in admin_topics/_inbox_row; `.table-desc` supplies the
+ * secondary line underneath. */
+.theme-silo .table-name { font-weight: var(--font-weight-semibold); }
+/* A link that should read as part of its surrounding (already-styled) text
+ * rather than as a normal accent-colored link — e.g. the meeting name inside
+ * topics/_evidence_snapshot's `.topic-evidence-item__meeting`, which sets its
+ * own font-weight and expects the link inside it to match, not stand out. */
+.theme-silo .text-inherit { color: inherit; }
 .theme-silo .badge--muted {
   color: var(--color-text-muted);
   background: var(--color-surface-raised);
@@ -471,6 +481,9 @@
 }
 .theme-silo .prose--sm { font-size: var(--font-size-sm); }
 .theme-silo .table-responsive { overflow-x: auto; }
+/* Row-select checkbox in topics/_topic — tinted to match the rest of the
+ * Silo palette instead of the browser default. */
+.theme-silo .form-checkbox { accent-color: var(--color-accent); cursor: pointer; }
 
 /* --- Data table ----------------------------------------------------------
  * Ten admin views use a bare, unclassed <table>; app/views/admin/meetings
@@ -666,24 +679,31 @@
 .mb-1 { margin-bottom: var(--space-1); }
 .mb-3 { margin-bottom: var(--space-3); }
 .mx-2 { margin-left: var(--space-2); margin-right: var(--space-2); }
+.mr-2 { margin-right: var(--space-2); }
 .my-6 { margin-top: var(--space-6); margin-bottom: var(--space-6); }
 .p-3 { padding: var(--space-3); }
 .p-4 { padding: var(--space-4); }
 .p-6 { padding: var(--space-6); }
+.px-2 { padding-left: var(--space-2); padding-right: var(--space-2); }
+.py-1 { padding-top: var(--space-1); padding-bottom: var(--space-1); }
 .gap-3 { gap: var(--space-3); }
 .gap-6 { gap: var(--space-6); }
 .space-y-2 > * + * { margin-top: var(--space-2); }
 .space-y-3 > * + * { margin-top: var(--space-3); }
+.space-y-4 > * + * { margin-top: var(--space-4); }
 .space-y-6 > * + * { margin-top: var(--space-6); }
 
 /* --- layout --- */
 .grid { display: grid; }
 .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .grow { flex-grow: 1; }
+.inline-flex { display: inline-flex; }
 .items-start { align-items: flex-start; }
+.items-end { align-items: flex-end; }
 .justify-end { justify-content: flex-end; }
 .align-middle { vertical-align: middle; }
 .w-8 { width: 2rem; }
+.w-16 { width: 4rem; }
 .whitespace-nowrap { white-space: nowrap; }
 .cursor-pointer { cursor: pointer; }
 
