@@ -40,4 +40,15 @@ class DeviceFingerprintTest < ActiveSupport::TestCase
       DeviceFingerprint.for("\x00\xff invalid bytes")
     end
   end
+
+  test "returns nil when UserAgent.parse raises EncodingError on non-ASCII-compatible encoding" do
+    # String#blank? survives a non-ASCII-compatible encoding like UTF-16LE (it rescues
+    # internally and retries with an encoding-specific regex), so this input sails past
+    # the blank guard and reaches UserAgent.parse, which raises
+    # Encoding::CompatibilityError matching its US-ASCII regexes against a UTF-16LE
+    # string. This is why EncodingError is in the rescue and why ArgumentError alone
+    # (the "does not raise on junk input" path, raised earlier by .blank? itself) would
+    # not be enough.
+    assert_nil DeviceFingerprint.for("Mozilla/5.0 Chrome/140.0.0.0".encode("UTF-16LE"))
+  end
 end

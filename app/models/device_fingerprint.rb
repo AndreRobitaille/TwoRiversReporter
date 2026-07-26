@@ -1,5 +1,3 @@
-require "useragent"
-
 # Reduces a user-agent string to a browser family and platform, discarding the
 # version. Exact user-agent matching would report a new device on every Chrome
 # auto-update — roughly monthly, for every user.
