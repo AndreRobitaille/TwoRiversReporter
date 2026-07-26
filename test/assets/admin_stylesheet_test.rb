@@ -150,4 +150,19 @@ class AdminStylesheetTest < ActiveSupport::TestCase
       "`.theme-silo .the-class`-scoped, so `.theme-silo h1..h4` (0,1,1) silently " \
       "wins the properties both set: #{unscoped.join(', ')}"
   end
+
+  DATA_COMPONENTS = %w[
+    adm-table adm-table__sort adm-table__row--ok adm-table__row--warn adm-table__row--danger
+    adm-chip adm-chip--ok adm-chip--warn adm-chip--danger adm-chip--info adm-chip--neutral
+    adm-pagination adm-empty table
+  ].freeze
+
+  test "defines the data table, chips, pagination, and empty state" do
+    missing = DATA_COMPONENTS.reject { |c| css.match?(/\.#{Regexp.escape(c)}(?![a-zA-Z0-9_-])/) }
+    assert_empty missing, "admin.css does not define: #{missing.join(', ')}"
+  end
+
+  test "table metadata cells use the data typeface" do
+    assert_match(/--font-data/, css)
+  end
 end

@@ -371,6 +371,12 @@
   font-family: var(--font-data);
   font-size: var(--font-size-sm);
   font-variant-numeric: tabular-nums;
+  /* Mentions/Last Seen/Last Activity — the latter two are bare <td>s (see
+   * admin/topics/_inbox_row.html.erb) reached by neither `.data-cell` nor
+   * `td.text-right` above, so without an explicit nowrap here a plain date
+   * like "2026-07-26" line-breaks after a hyphen and defeats the
+   * straight-down scanning this column exists for. */
+  white-space: nowrap;
 }
 
 /* Row status indicator — colored left border */
@@ -465,6 +471,149 @@
 }
 .theme-silo .prose--sm { font-size: var(--font-size-sm); }
 .theme-silo .table-responsive { overflow-x: auto; }
+
+/* --- Data table ----------------------------------------------------------
+ * Ten admin views use a bare, unclassed <table>; app/views/admin/meetings
+ * uses the explicit `.table` class instead. Styling both the element and
+ * the class inside .theme-silo means every one of them inherits the
+ * component with no view edits; .adm-table is the explicit opt-in for new
+ * markup. Row state rides a 3px left edge so a failed or flagged row is
+ * findable without reading it.
+ *
+ * NOTE: this also reaches app/views/admin/topics — its <table
+ * class="admin-topics-table"> is still a bare <table> underneath. That
+ * table already carries hand-written rules (moved verbatim above, Task 9)
+ * on selectors like `.admin-topics-table thead th` and
+ * `.admin-topics-table tbody td`. Because those combine one class with
+ * fewer element steps, several are LOWER specificity than the generic
+ * `.theme-silo table thead th` / `.theme-silo table tbody td` rules below
+ * ((0,1,2) vs (0,1,3)), so this component wins the properties both set —
+ * that's how the topics table picks up Instrument density (tighter
+ * padding, the shared hover tint) without editing that view. Two
+ * consequences worth knowing rather than rediscovering: the old header's
+ * 2px `--color-border-strong` bottom border and `--color-text-secondary`
+ * are replaced by this component's 1px hairline and `--color-text-muted`
+ * (sticky positioning is untouched — neither rule sets it, so it
+ * survives); and on row hover, this component paints
+ * `--color-surface-hover` on each <td>, which sits visually on top of the
+ * old `.admin-topics-table tbody tr:hover` background painted on the
+ * parent <tr> — so a hovered `--row--warn` row's `!important` warning
+ * tint is covered by the plain hover tint for as long as the pointer is
+ * over it. Nothing here restyles or deletes those rules; Phase 2 owns
+ * that cleanup.
+ */
+.theme-silo table,
+.theme-silo .table,
+.theme-silo .adm-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-surface);
+  font-size: var(--adm-font-size);
+}
+
+.theme-silo table thead th,
+.theme-silo .table thead th,
+.theme-silo .adm-table thead th {
+  padding: var(--space-2) var(--adm-row-pad-x);
+  border-top: var(--adm-hairline);
+  border-bottom: var(--adm-hairline);
+  background: var(--color-bg);
+  font-family: var(--font-data);
+  font-size: 0.5625rem;
+  font-weight: var(--font-weight-normal);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  text-align: left;
+}
+
+.theme-silo table tbody td,
+.theme-silo .table tbody td,
+.theme-silo .adm-table tbody td {
+  padding: var(--adm-row-pad-y) var(--adm-row-pad-x);
+  border-bottom: 1px solid var(--color-surface-raised);
+  vertical-align: middle;
+}
+
+.theme-silo table tbody tr:hover td,
+.theme-silo .table tbody tr:hover td,
+.theme-silo .adm-table tbody tr:hover td {
+  background: var(--color-surface-hover);
+}
+
+/* IDs, timestamps, counts — monospace so columns align for straight-down
+ * scanning, and non-wrapping so a date can't fold onto a second line and
+ * defeat the reason this density works (a wrapped "2026-07-26" breaks
+ * straight-down scanning as badly as no monospace at all). This is the
+ * whole reason the density choice works.
+ *
+ * Scoped to `.data-cell` / `td.text-right` only — never to the bare `td`
+ * above. The topic-name column legitimately wraps long names; nowrapping
+ * every cell would blow the table width out on that column instead.
+ */
+.theme-silo .data-cell,
+.theme-silo td.text-right {
+  font-family: var(--font-data);
+  font-size: var(--adm-font-size-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.theme-silo .adm-table__sort {
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+.theme-silo .adm-table__sort:hover { color: var(--color-accent); }
+
+.theme-silo .adm-table__row--ok     { box-shadow: inset 3px 0 0 var(--color-success); }
+.theme-silo .adm-table__row--warn   { box-shadow: inset 3px 0 0 var(--color-warning); }
+.theme-silo .adm-table__row--danger { box-shadow: inset 3px 0 0 var(--color-danger); }
+
+/* --- Status chips --- */
+.theme-silo .adm-chip {
+  display: inline-block;
+  padding: 1px var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-family: var(--font-data);
+  font-size: 0.5625rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+.theme-silo .adm-chip--ok      { color: var(--color-success); background: var(--color-success-light); border-color: var(--color-success); }
+.theme-silo .adm-chip--warn    { color: var(--color-warning); background: var(--color-warning-light); border-color: var(--color-warning); }
+.theme-silo .adm-chip--danger  { color: var(--color-danger);  background: var(--color-danger-light);  border-color: var(--color-danger); }
+.theme-silo .adm-chip--info    { color: var(--color-ai-text); background: var(--color-ai-bg);         border-color: var(--color-ai-border); }
+.theme-silo .adm-chip--neutral { color: var(--color-text-muted); background: var(--color-surface-raised); }
+
+/* --- Pagination --- */
+.theme-silo .adm-pagination {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  margin-top: var(--space-4);
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* --- Empty state --- */
+.theme-silo .adm-empty,
+.theme-silo .empty-state {
+  padding: var(--space-6);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  text-align: center;
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
 
 /* ============================================
    4. Utilities (transitional — removed in Phase 2)
