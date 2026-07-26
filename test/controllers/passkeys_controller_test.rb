@@ -206,12 +206,20 @@ class PasskeysControllerTest < ActionDispatch::IntegrationTest
 
   private
 
-    # Deliberately not sign_in_as: that helper creates a passkey credential
-    # for the user if they have none, and several tests here (e.g. the
-    # registration_options "exclude: []" assertion) depend on @user starting
-    # with zero passkeys. The context stamp still has to match what an
-    # integration request sends so a later context-mismatch gate does not
-    # intercept these requests.
+    # Deliberately manual, not sign_in_as/sign_in_with_session:
+    #
+    # 1. sign_in_as creates a passkey credential for the user if they have
+    #    none, and several tests here (e.g. the registration_options
+    #    "exclude: []" assertion) depend on @user starting with zero
+    #    passkeys.
+    # 2. This helper hands back a raw "Cookie" header for the caller to pass
+    #    explicitly per request (`headers: signed_session_headers(user)`).
+    #    sign_in_with_session sets the cookie on the integration session's
+    #    own persistent cookie jar instead — a different mechanism this
+    #    file's call sites aren't using.
+    #
+    # The context stamp still has to match what an integration request sends
+    # so a later context-mismatch gate does not intercept these requests.
     def signed_session_headers(user)
       session = Session.create!(
         user: user, user_agent: nil, ip_address: "127.0.0.1",
@@ -220,8 +228,8 @@ class PasskeysControllerTest < ActionDispatch::IntegrationTest
         reauthenticated_at: Time.current, last_seen_at: Time.current
       )
       req = ActionDispatch::TestRequest.create
-      cookie_store = ActionDispatch::Cookies::CookieJar.build(req, {})
-      cookie_store.signed[:session_id] = session.id
-      { "Cookie" => cookie_store.to_header }
+      jar = ActionDispatch::Cookies::CookieJar.build(req, {})
+      jar.signed[:session_id] = session.id
+      { "Cookie" => jar.to_header }
     end
 end

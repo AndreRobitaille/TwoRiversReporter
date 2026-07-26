@@ -173,7 +173,6 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
   private
 
     def session_user_id
-      request_cookies = @request.cookie_jar
-      request_cookies.signed[:session_id] && Session.find_by(id: request_cookies.signed[:session_id])&.user_id
+      @request.cookie_jar.signed[:session_id] && Session.find_by(id: @request.cookie_jar.signed[:session_id])&.user_id
     end
 end
