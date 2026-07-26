@@ -102,4 +102,21 @@ class AdminStylesheetTest < ActiveSupport::TestCase
     missing = PAGE_CONTAINERS.reject { |c| css.match?(/\.#{Regexp.escape(c)}(?![a-zA-Z0-9_-])/) }
     assert_empty missing, "admin.css does not define: #{missing.join(', ')}"
   end
+
+  SHELL = %w[
+    adm-shell adm-sidebar adm-sidebar__brand adm-sidebar__group adm-sidebar__link
+    adm-sidebar__link--current adm-sidebar__foot adm-main adm-container
+    adm-drawer-toggle adm-scrim adm-launcher adm-launcher__group adm-launcher__title
+    adm-launcher__list adm-launcher__item adm-launcher__link adm-launcher__desc
+    adm-page-header adm-page-header__eyebrow adm-page-header__title adm-page-header__meta
+  ].freeze
+
+  test "defines the shell, sidebar, launcher, and page header" do
+    missing = SHELL.reject { |c| css.match?(/\.#{Regexp.escape(c)}(?![a-zA-Z0-9_-])/) }
+    assert_empty missing, "admin.css does not define: #{missing.join(', ')}"
+  end
+
+  test "collapses the sidebar to a drawer on small screens" do
+    assert_match(/@media\s*\(max-width:\s*900px\)/, css)
+  end
 end

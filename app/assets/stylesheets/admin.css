@@ -21,13 +21,387 @@
    1. Density base
    ============================================ */
 
+/* Admin pages are worked in, not read. 13px base with tight rhythm fits
+ * roughly twice the rows of the public site's 16px. Metadata is monospace so
+ * IDs, timestamps and durations align into columns the eye can scan straight
+ * down; colour is reserved for state, so a failure is findable without reading.
+ */
+.theme-silo {
+  --adm-font-size: 0.8125rem;   /* 13px */
+  --adm-font-size-sm: 0.75rem;  /* 12px */
+  --adm-row-pad-y: var(--space-2);
+  --adm-row-pad-x: var(--space-3);
+  --adm-hairline: 1px solid var(--color-border);
+  --adm-sidebar-width: 186px;
+}
+
+.theme-silo {
+  font-size: var(--adm-font-size);
+}
+
+.theme-silo h1,
+.theme-silo h2,
+.theme-silo h3,
+.theme-silo h4 {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 var(--space-2);
+}
+
+.theme-silo h1 { font-size: 1.1875rem; font-weight: var(--font-weight-bold); }
+.theme-silo h2 { font-size: 0.9375rem; font-weight: var(--font-weight-semibold); }
+.theme-silo h3 { font-size: 0.8125rem; font-weight: var(--font-weight-semibold); }
+.theme-silo h4 { font-size: 0.75rem; font-weight: var(--font-weight-semibold); }
+
+.theme-silo p { margin: 0 0 var(--space-3); }
+
 /* ============================================
    2. Shell & sidebar
    ============================================ */
 
+.adm-shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+/* --- Sidebar --- */
+.adm-sidebar {
+  flex: none;
+  width: var(--adm-sidebar-width);
+  padding: var(--space-3) 0 var(--space-6);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  overflow-y: auto;
+}
+
+.adm-sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-4) var(--space-3);
+  font-family: var(--font-display);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-inverse);
+  text-decoration: none;
+}
+.adm-sidebar__brand:hover { color: var(--color-text-inverse); text-decoration: none; }
+
+.adm-sidebar__group {
+  padding: 0 var(--space-4);
+  margin: var(--space-4) 0 var(--space-1);
+  font-family: var(--font-data);
+  font-size: 0.5625rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.4);
+}
+
+.adm-sidebar__link {
+  display: block;
+  padding: var(--space-1) var(--space-4);
+  font-family: var(--font-display);
+  font-size: 0.71875rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.84);
+  text-decoration: none;
+}
+.adm-sidebar__link:hover {
+  background: rgb(255 255 255 / 0.08);
+  color: var(--color-text-inverse);
+  text-decoration: none;
+}
+.adm-sidebar__link--current {
+  background: rgb(255 255 255 / 0.13);
+  color: var(--color-text-inverse);
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+
+.adm-sidebar__foot {
+  margin-top: var(--space-6);
+  padding-top: var(--space-3);
+  border-top: 1px solid rgb(255 255 255 / 0.15);
+}
+
+/* --- Main --- */
+.adm-main { flex: 1; min-width: 0; }
+.adm-container {
+  max-width: 1200px;
+  padding: var(--space-5) var(--space-6) var(--space-12);
+}
+
+/* --- Page header --- */
+.adm-page-header { margin-bottom: var(--space-4); }
+.adm-page-header__eyebrow {
+  font-family: var(--font-data);
+  font-size: 0.5625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-1);
+}
+.adm-page-header__title {
+  font-family: var(--font-display);
+  font-size: 1.1875rem;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  margin: 0 0 var(--space-1);
+}
+.adm-page-header__meta {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+}
+
+/* --- Dashboard launcher --- */
+.adm-launcher {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-4);
+}
+.adm-launcher__group {
+  padding: var(--space-4);
+  border: var(--adm-hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+.adm-launcher__title {
+  margin: 0 0 var(--space-3);
+  font-size: 0.6875rem;
+  letter-spacing: 0.05em;
+  color: var(--color-primary);
+}
+.adm-launcher__list { list-style: none; margin: 0; padding: 0; }
+.adm-launcher__item { padding: var(--space-1) 0; }
+.adm-launcher__item + .adm-launcher__item { border-top: 1px solid var(--color-surface-raised); }
+.adm-launcher__link {
+  display: block;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+  text-decoration: none;
+}
+.adm-launcher__link:hover { color: var(--color-accent); }
+.adm-launcher__desc {
+  display: block;
+  font-size: var(--adm-font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* --- Drawer chrome: hidden above the breakpoint --- */
+.adm-drawer-toggle { display: none; }
+.adm-scrim { display: none; }
+
+@media (max-width: 900px) {
+  .adm-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 40;
+    transform: translateX(-100%);
+    transition: transform var(--transition-normal);
+  }
+  .adm-shell--drawer-open .adm-sidebar { transform: translateX(0); }
+
+  .adm-drawer-toggle {
+    display: inline-flex;
+    position: fixed;
+    top: var(--space-2);
+    left: var(--space-2);
+    z-index: 50;
+    padding: var(--space-2);
+    border: var(--adm-hairline);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text);
+  }
+
+  .adm-shell--drawer-open .adm-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    background: rgb(0 0 0 / 0.4);
+  }
+
+  .adm-container { padding: var(--space-12) var(--space-4) var(--space-8); }
+
+  .grid-cols-2 { grid-template-columns: 1fr; }
+}
+
 /* ============================================
    3. Components
    ============================================ */
+
+/* --- Moved verbatim from application.css (Task 9 step 5): styled the old
+   top-nav admin chrome's two-column layout and the topics inbox filter bar
+   and table. Not yet restyled — that's Tasks 10-11. --- */
+
+.admin-two-column {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 20rem;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.admin-two-column__main,
+.admin-two-column__aside {
+  min-width: 0;
+}
+
+.admin-sidebar {
+  position: sticky;
+  top: 1rem;
+}
+
+.admin-sidebar .card {
+  height: 100%;
+}
+
+.admin-sidebar ol {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--color-text-secondary);
+}
+
+.admin-sidebar li + li {
+  margin-top: var(--space-2);
+}
+
+.admin-sidebar h2 {
+  margin-bottom: var(--space-3);
+}
+
+/* --- Admin Topics: Filter Bar --- */
+
+.admin-topics-filters {
+  display: grid;
+  grid-template-columns: 1fr repeat(3, auto) auto auto auto;
+  gap: var(--space-3);
+  align-items: end;
+  margin-bottom: var(--space-5);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.admin-topics-filters .form-input {
+  font-size: var(--font-size-sm);
+}
+
+.admin-topics-filters select.form-input {
+  width: auto;
+  min-width: 9rem;
+}
+
+.admin-topics-filters__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+/* --- Admin Topics: Table --- */
+
+.admin-topics-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.admin-topics-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 2px solid var(--color-border-strong);
+  background: var(--color-surface);
+}
+
+.admin-topics-table__sort-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.admin-topics-table__sort-link:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.admin-topics-table tbody td {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.admin-topics-table tbody tr:hover {
+  background: var(--color-primary-light);
+}
+
+.admin-topics-table__row--warn {
+  border-left: 3px solid var(--color-warning);
+  background: color-mix(in srgb, var(--color-warning-light) 40%, var(--color-surface)) !important;
+}
+
+.admin-topics-table__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.admin-topics-table td.text-right,
+.admin-topics-table th.text-right {
+  text-align: right;
+}
+
+.admin-topics-table td:nth-child(4),
+.admin-topics-table td:nth-child(5),
+.admin-topics-table td:nth-child(6) {
+  font-family: var(--font-data);
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Row status indicator — colored left border */
+.admin-topics-table__row--proposed {
+  border-left: 3px solid var(--color-warning);
+}
+
+.admin-topics-table__row--blocked {
+  border-left: 3px solid var(--color-danger);
+}
+
+.admin-topics-table__row--approved {
+  border-left: 3px solid var(--color-success);
+}
+
+@media (max-width: 900px) {
+  .admin-topics-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+  .admin-topics-filters .form-input:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .admin-two-column {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-sidebar {
+    position: static;
+  }
+}
 
 /* --- Page containers whose BEM children were styled but whose parents were not --- */
 .theme-silo .topic-board-header { display: block; }
