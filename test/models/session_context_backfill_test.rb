@@ -26,7 +26,6 @@ class SessionContextBackfillTest < ActiveSupport::TestCase
   end
 
   test "a backfilled session matches a request from the same network and browser" do
-    skip "awaiting SessionContext (Task 5)"
     user = User.create!(email_address: "matching@example.com", status: "active")
     chrome_mac = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
 

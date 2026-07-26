@@ -31,4 +31,17 @@ class Session < ApplicationRecord
 
     update!(last_seen_at: Time.current)
   end
+
+  def recently_reauthenticated?
+    reauthenticated_at.present? && reauthenticated_at >= REAUTH_FRESHNESS.ago
+  end
+
+  # A step-up both proves the person is still there and accepts wherever they
+  # now are. Keeping these one operation means there is a single rule to reason
+  # about: either the recorded context matches the request or it does not.
+  def reauthenticate!(context)
+    context.apply_to(self)
+    self.reauthenticated_at = Time.current
+    save!
+  end
 end
