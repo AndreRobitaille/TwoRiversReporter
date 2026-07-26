@@ -1,11 +1,16 @@
 module Admin
   class BaseController < ApplicationController
     include Authentication
+    include Reauthentication
 
     layout "admin"
 
     before_action :require_admin
     before_action :require_admin_passkey
+    # Last of the three deliberately. require_admin must answer first, or a
+    # stranger with a mismatched context would be sent to a step-up page and
+    # learn that this URL is an admin area at all.
+    before_action :require_verified_context
 
     private
       def require_admin
