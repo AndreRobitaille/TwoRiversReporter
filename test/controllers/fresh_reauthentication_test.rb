@@ -63,6 +63,16 @@ class FreshReauthenticationTest < ActionDispatch::IntegrationTest
     assert_not @member.reload.admin?
   end
 
+  test "disabling a user requires a fresh reauthentication" do
+    session = sign_in_as(@admin)
+    session.update_columns(reauthenticated_at: 16.minutes.ago)
+
+    patch disable_user_url(@member)
+
+    assert_redirected_to new_reauthentication_url
+    assert_predicate @member.reload.disabled_at, :blank?
+  end
+
   test "approving an application does not require a fresh reauthentication" do
     @member.update!(status: "pending", disabled_at: Time.current)
     @member.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", street: "123 Main St", city: "Two Rivers", state: "WI")

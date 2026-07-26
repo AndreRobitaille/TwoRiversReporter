@@ -6,4 +6,10 @@ class DeployConfigTest < ActiveSupport::TestCase
 
     assert_equal "true", deploy.dig("env", "clear", "GENERATED_IMAGES_ENABLED")
   end
+
+  test "the production proxy caps request bodies before Rack parses them" do
+    deploy = YAML.load_file(Rails.root.join("config/deploy.yml"))
+
+    assert_equal 25.megabytes, deploy.dig("env", "clear", "MAX_REQUEST_BODY")
+  end
 end

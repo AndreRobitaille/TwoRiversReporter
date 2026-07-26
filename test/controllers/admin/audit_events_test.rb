@@ -35,7 +35,7 @@ module Admin
       end
 
       assert_redirected_to user_path(@admin)
-      assert_equal "You cannot delete the last admin account.", flash[:alert]
+      assert_equal "At least one active admin with a passkey must remain.", flash[:alert]
     end
 
     test "deleting an application records an audit event" do

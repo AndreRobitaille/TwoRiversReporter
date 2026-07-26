@@ -2,16 +2,19 @@ module Admin
   class UsersController < BaseController
     before_action :set_user, only: %i[show approve reject toggle_admin disable revoke_session revoke_all_sessions destroy]
     before_action :refuse_self_deletion, only: :destroy
-    before_action :require_fresh_reauthentication, only: %i[create destroy toggle_admin]
+    before_action :refuse_self_admin_lockout, only: %i[toggle_admin disable]
+    before_action :require_fresh_reauthentication, only: %i[create destroy toggle_admin disable]
     # Strict, not the tolerant admin-boundary gate. The tolerant grace (a
     # recent step-up counts even from a drifted context) exists only because
     # that gate runs on every page load — a strict check there would loop
-    # forever on a rotating egress. These three are each one deliberate
+    # forever on a rotating egress. These four are each one deliberate
     # operation, not a repeated look, so the grace bought nothing here and
     # cost real protection: without this, a cookie replayed from another
     # network within fifteen minutes of the victim's sign-in could hard-delete
     # a user account, the most irreversible action in the app.
-    before_action :require_matching_context, only: %i[create destroy toggle_admin]
+    before_action :require_matching_context, only: %i[create destroy toggle_admin disable]
+
+    rescue_from User::LastAdminError, with: :redirect_after_last_admin_refusal
 
     def index
       @users = User.order(:email_address)
@@ -153,10 +156,6 @@ module Admin
         @user.destroy!
       end
       redirect_to users_path, notice: "Deleted #{email} and everything attached to it."
-    rescue User::LastAdminError
-      # The model owns this invariant, so it holds for the console and rake too.
-      # Catching it here just turns a 500 into a sentence.
-      redirect_to user_path(@user), alert: "You cannot delete the last admin account."
     end
 
     private
@@ -174,6 +173,15 @@ module Admin
         redirect_to user_path(@user), alert: "You cannot delete your own account."
       end
 
+      def refuse_self_admin_lockout
+        return unless @user.id == Current.user&.id
+
+        redirect_to user_path(@user), alert: "You cannot remove your own admin access."
+      end
+
+      def redirect_after_last_admin_refusal
+        redirect_to user_path(@user), alert: "At least one active admin with a passkey must remain."
+      end
 
       def user_params
         params.require(:user).permit(:email_address)

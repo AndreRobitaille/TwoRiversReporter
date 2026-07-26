@@ -80,6 +80,10 @@ class PasskeysController < ApplicationController
   def destroy
     @passkey_credential.destroy!
     redirect_to settings_security_path, status: :see_other
+  rescue User::LastAdminError
+    redirect_to settings_security_path,
+      alert: "At least one active admin with a passkey must remain.",
+      status: :see_other
   end
 
   private

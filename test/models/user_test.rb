@@ -195,6 +195,36 @@ class UserTest < ActiveSupport::TestCase
     assert User.exists?(sole.id), "the site's only admin must survive a destroy attempt"
   end
 
+  test "the last usable admin cannot be demoted or disabled outside the admin controller" do
+    sole = User.create!(email_address: "usable-admin@example.com", admin: true, status: "active")
+    sole.passkey_credentials.create!(external_id: SecureRandom.uuid, public_key: "public-key", sign_count: 0)
+
+    assert_raises(User::LastAdminError) { sole.update!(admin: false) }
+    assert_predicate sole.reload, :admin?
+
+    assert_raises(User::LastAdminError) { sole.update!(disabled_at: Time.current) }
+    assert_predicate sole.reload.disabled_at, :blank?
+  end
+
+  test "admin authority can be removed once another usable admin exists" do
+    departing = User.create!(email_address: "departing-usable@example.com", admin: true, status: "active")
+    remaining = User.create!(email_address: "remaining-usable@example.com", admin: true, status: "active")
+    departing.passkey_credentials.create!(external_id: SecureRandom.uuid, public_key: "public-key", sign_count: 0)
+    remaining.passkey_credentials.create!(external_id: SecureRandom.uuid, public_key: "public-key", sign_count: 0)
+
+    assert_nothing_raised { departing.update!(admin: false) }
+    assert_not_predicate departing.reload, :admin?
+    assert_predicate remaining, :admin_access_ready?
+  end
+
+  test "the last usable admin cannot remove their final passkey" do
+    sole = User.create!(email_address: "last-passkey@example.com", admin: true, status: "active")
+    passkey = sole.passkey_credentials.create!(external_id: SecureRandom.uuid, public_key: "public-key", sign_count: 0)
+
+    assert_raises(User::LastAdminError) { passkey.destroy! }
+    assert PasskeyCredential.exists?(passkey.id)
+  end
+
   test "the last admin guard blocks destroy even with non-admin members present" do
     sole = User.create!(email_address: "irreplaceable-2@example.com", admin: true, status: "active")
     User.create!(email_address: "just-a-member@example.com", status: "active")
@@ -216,7 +246,8 @@ class UserTest < ActiveSupport::TestCase
 
   test "an admin can be destroyed once another admin exists" do
     first = User.create!(email_address: "handover-from@example.com", admin: true, status: "active")
-    User.create!(email_address: "handover-to@example.com", admin: true, status: "active")
+    second = User.create!(email_address: "handover-to@example.com", admin: true, status: "active")
+    second.passkey_credentials.create!(external_id: SecureRandom.uuid, public_key: "public-key", sign_count: 0)
 
     assert_nothing_raised { first.destroy! }
     assert_not User.exists?(first.id)
@@ -225,6 +256,7 @@ class UserTest < ActiveSupport::TestCase
   test "deleting a user takes its own records and leaves referencing rows standing" do
     admin = User.create!(email_address: "departing-admin@example.com", admin: true, status: "active")
     other_admin = User.create!(email_address: "remaining-admin@example.com", admin: true, status: "active")
+    other_admin.passkey_credentials.create!(external_id: SecureRandom.uuid, public_key: "public-key", sign_count: 0)
 
     admin.sessions.create!(user_agent: "test", ip_address: "127.0.0.1", last_seen_at: Time.current)
     admin.passkey_credentials.create!(external_id: SecureRandom.uuid, public_key: "public-key", sign_count: 0)
@@ -260,7 +292,8 @@ class UserTest < ActiveSupport::TestCase
 
   test "deleting a user nullifies generated images they uploaded rather than destroying site content" do
     admin = User.create!(email_address: "image-uploader@example.com", admin: true, status: "active")
-    User.create!(email_address: "image-uploader-backup@example.com", admin: true, status: "active")
+    backup_admin = User.create!(email_address: "image-uploader-backup@example.com", admin: true, status: "active")
+    backup_admin.passkey_credentials.create!(external_id: SecureRandom.uuid, public_key: "public-key", sign_count: 0)
     topic = Topic.create!(name: "user-deletion-uploaded-image")
     image = GeneratedImage.create!(imageable: topic, status: "ready", uploaded_by: admin, admin_override: true)
 

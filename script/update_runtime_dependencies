@@ -1,0 +1,28 @@
+#!/usr/bin/env ruby
+
+require "optparse"
+require_relative "../lib/runtime_dependency_updater"
+
+options = { check: false, dry_run: false }
+OptionParser.new do |parser|
+  parser.banner = "Usage: script/update_runtime_dependencies [options]"
+  parser.on("--check", "Exit unsuccessfully when runtime pins are stale") { options[:check] = true }
+  parser.on("--dry-run", "Show stale files without changing them") { options[:dry_run] = true }
+end.parse!
+
+updater = RuntimeDependencyUpdater.new(root: File.expand_path("..", __dir__))
+changes = updater.changes
+
+if changes.empty?
+  puts "Runtime dependency pins are current."
+  exit
+end
+
+puts "Runtime dependency updates available:"
+changes.each { |change| puts "  #{change.path}" }
+
+exit 1 if options[:check]
+exit if options[:dry_run]
+
+updater.apply!(changes)
+puts "Updated #{changes.length} file(s)."

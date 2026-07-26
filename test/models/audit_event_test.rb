@@ -4,6 +4,7 @@ class AuditEventTest < ActiveSupport::TestCase
   setup do
     @admin = User.create!(email_address: "auditor@example.com", admin: true, status: "active")
     @second_admin = User.create!(email_address: "auditor2@example.com", admin: true, status: "active")
+    @second_admin.passkey_credentials.create!(external_id: SecureRandom.uuid, public_key: "public-key", sign_count: 0)
   end
 
   test "record! snapshots the actor email and the subject label" do

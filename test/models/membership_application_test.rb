@@ -106,6 +106,36 @@ class MembershipApplicationTest < ActiveSupport::TestCase
     assert_equal "(920) 555-0148 ext. 2", without_phone.reload.phone
   end
 
+  test "Facebook profile URLs must use HTTPS and a Facebook host" do
+    application = build_submitted_application
+
+    [
+      "javascript:alert(document.domain)",
+      "http://facebook.com/jane",
+      "https://facebook.com.evil.example/jane",
+      "https://example.com/jane"
+    ].each do |unsafe_url|
+      application.facebook_profile_url = unsafe_url
+
+      assert_not application.valid?, "#{unsafe_url.inspect} should be rejected"
+      assert_includes application.errors[:facebook_profile_url], "must be a secure Facebook URL"
+    end
+
+    [ "https://facebook.com/jane", "https://www.facebook.com/jane", "https://m.facebook.com/jane" ].each do |safe_url|
+      application.facebook_profile_url = safe_url
+
+      assert application.valid?, "#{safe_url.inspect} should be accepted"
+    end
+  end
+
+  test "a legacy unsafe Facebook URL does not prevent reviewing an application" do
+    application = build_submitted_application
+    application.save!
+    application.update_column(:facebook_profile_url, "javascript:alert(document.domain)")
+
+    assert application.update(status: "approved", reviewed_at: Time.current)
+  end
+
   test "status must be one of the allowed values" do
     user = User.create!(email_address: "applicant@example.com", status: "pending")
 
@@ -114,4 +144,19 @@ class MembershipApplicationTest < ActiveSupport::TestCase
     assert_not application.valid?
     assert_includes application.errors[:status], "is not included in the list"
   end
+
+  private
+
+    def build_submitted_application
+      user = User.create!(email_address: "facebook-profile-#{SecureRandom.hex(4)}@example.com", status: "pending")
+      MembershipApplication.new(
+        user: user,
+        status: "submitted",
+        first_name: "Jane",
+        last_name: "Member",
+        street: "123 Main St",
+        city: "Two Rivers",
+        state: "WI"
+      )
+    end
 end

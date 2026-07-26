@@ -171,6 +171,18 @@ class PasskeysControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Desk key", mine.reload.nickname
   end
 
+  test "the last usable admin cannot remove their final passkey" do
+    admin = User.create!(email_address: "sole-passkey-admin@example.com", status: "active", admin: true)
+    passkey = admin.passkey_credentials.create!(external_id: "sole-admin-passkey", public_key: "public-key", sign_count: 0)
+    headers = signed_session_headers(admin)
+
+    delete passkey_url(passkey), headers: headers
+
+    assert_redirected_to settings_security_url
+    assert_equal "At least one active admin with a passkey must remain.", flash[:alert]
+    assert PasskeyCredential.exists?(passkey.id)
+  end
+
   test "a user cannot rename another user's passkey" do
     theirs = PasskeyCredential.create!(user: @other_user, external_id: "theirs", public_key: "public-key", sign_count: 0, nickname: "Original")
     headers = signed_session_headers(@user)

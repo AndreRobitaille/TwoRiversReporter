@@ -18,10 +18,12 @@
 </div>
 
 <div class="flex flex-wrap gap-2 mb-6">
-  <%= button_to(@user.disabled_at? ? "Re-enable account" : "Disable account",
-        disable_user_path(@user), method: :patch, class: "btn btn--secondary") %>
-  <%= button_to(@user.admin? ? "Remove admin" : "Make admin",
-        toggle_admin_user_path(@user), method: :patch, class: "btn btn--secondary") %>
+  <% if @user.id != current_user.id %>
+    <%= button_to(@user.disabled_at? ? "Re-enable account" : "Disable account",
+          disable_user_path(@user), method: :patch, class: "btn btn--secondary") %>
+    <%= button_to(@user.admin? ? "Remove admin" : "Make admin",
+          toggle_admin_user_path(@user), method: :patch, class: "btn btn--secondary") %>
+  <% end %>
   <%= button_to "Revoke all sessions",
         revoke_all_sessions_user_path(@user), method: :delete, class: "btn btn--secondary" %>
 
@@ -65,7 +67,7 @@
         <% if application.facebook_profile_url.present? %>
           <dt class="detail-term">Facebook profile</dt>
           <dd class="detail-value">
-            <%= link_to application.facebook_profile_url, application.facebook_profile_url, target: "_blank", rel: "noopener" %>
+            <%= link_to application.facebook_profile_url, safe_external_url(application.facebook_profile_url), target: "_blank", rel: "noopener" %>
           </dd>
         <% end %>
 

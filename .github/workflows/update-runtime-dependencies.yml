@@ -1,0 +1,85 @@
+name: Update runtime dependencies
+
+on:
+  schedule:
+    - cron: "17 9 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: runtime-dependency-updates
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GITHUB_TOKEN: ${{ github.token }}
+      UPDATE_BRANCH: automation/runtime-dependencies
+
+    steps:
+      - name: Checkout the default branch
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+
+      - name: Refresh pinned runtime dependencies
+        run: ruby script/update_runtime_dependencies
+
+      - name: Detect changes
+        id: changes
+        run: |
+          if git diff --quiet -- Dockerfile .ruby-version; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate generated changes
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          ruby -c lib/runtime_dependency_updater.rb
+          ruby -c script/update_runtime_dependencies
+          ruby test/lib/runtime_dependency_updater_test.rb
+          ruby script/update_runtime_dependencies --check
+          docker build --check .
+          docker build --tag two-rivers-reporter-runtime-check .
+          git diff --check
+
+      - name: Open or refresh the update pull request
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin "+$UPDATE_BRANCH:refs/remotes/origin/$UPDATE_BRANCH" || true
+          git checkout -B "$UPDATE_BRANCH"
+          git add Dockerfile .ruby-version
+          git commit -m "build: update pinned runtimes"
+          git push --force-with-lease origin "HEAD:$UPDATE_BRANCH"
+
+          body_file="$(mktemp)"
+          {
+            echo "Automated weekly refresh of pinned production runtimes."
+            echo
+            echo "The updater changed only Dockerfile and .ruby-version, kept Ruby versions synchronized,"
+            echo "used official release metadata, required sha256 digests, and passed Dockerfile validation."
+            echo
+            echo "This pull request does not deploy or merge itself."
+          } > "$body_file"
+
+          if gh pr view "$UPDATE_BRANCH" --json number >/dev/null 2>&1; then
+            gh pr edit "$UPDATE_BRANCH" \
+              --title "build: update pinned runtimes" \
+              --body-file "$body_file"
+          else
+            gh pr create \
+              --base master \
+              --head "$UPDATE_BRANCH" \
+              --title "build: update pinned runtimes" \
+              --body-file "$body_file"
+          fi

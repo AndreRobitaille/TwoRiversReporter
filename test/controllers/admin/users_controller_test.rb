@@ -117,6 +117,23 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_not Session.exists?(session.id)
   end
 
+  test "an admin cannot demote or disable their own account" do
+    admin = create_passkey_admin
+    sign_in(admin)
+
+    with_admin_access { patch toggle_admin_user_path(admin) }
+
+    assert_redirected_to user_path(admin)
+    assert_equal "You cannot remove your own admin access.", flash[:alert]
+    assert_predicate admin.reload, :admin?
+
+    with_admin_access { patch disable_user_path(admin) }
+
+    assert_redirected_to user_path(admin)
+    assert_equal "You cannot remove your own admin access.", flash[:alert]
+    assert_predicate admin.reload.disabled_at, :blank?
+  end
+
   test "admin can re-enable a disabled user but not a pending applicant" do
     admin = create_passkey_admin
     user = User.create!(email_address: "reenable@example.com", status: "active", disabled_at: Time.current)
@@ -369,7 +386,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_redirected_to user_path(admin)
-    assert_equal "You cannot delete the last admin account.", flash[:alert]
+    assert_equal "At least one active admin with a passkey must remain.", flash[:alert]
     assert User.exists?(admin.id), "the site must never be left with no admin"
     assert_equal 1, User.where(admin: true).count
   end
@@ -382,6 +399,8 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_not_includes response.body, "Delete account permanently"
+    assert_not_includes response.body, "Disable account"
+    assert_not_includes response.body, "Remove admin"
   end
 
   test "the delete button is offered for a deletable account" do

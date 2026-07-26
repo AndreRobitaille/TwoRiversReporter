@@ -6,6 +6,7 @@ class MembershipApplication < ApplicationRecord
 
   validates :status, inclusion: { in: STATUSES }
   validates :first_name, :last_name, :city, :state, presence: true, unless: :email_pending?
+  validate :facebook_profile_url_is_secure_facebook_url, if: :facebook_profile_url_changed?
 
   # Street joined the required set in July 2026. Applications submitted before
   # then have none on file, and a blanket presence check would make those rows
@@ -22,6 +23,18 @@ class MembershipApplication < ApplicationRecord
   end
 
   private
+
+    def facebook_profile_url_is_secure_facebook_url
+      return if facebook_profile_url.blank?
+
+      uri = URI.parse(facebook_profile_url)
+      host = uri.host.to_s.downcase
+      return if uri.scheme&.casecmp?("https") && (host == "facebook.com" || host.end_with?(".facebook.com"))
+
+      errors.add(:facebook_profile_url, "must be a secure Facebook URL")
+    rescue URI::InvalidURIError
+      errors.add(:facebook_profile_url, "must be a secure Facebook URL")
+    end
 
     def street_required?
       return false if email_pending?

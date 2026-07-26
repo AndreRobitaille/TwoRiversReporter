@@ -24,6 +24,10 @@ env:
     DB_HOST: two_rivers_reporter-db
     WEB_CONCURRENCY: 2
     RAILS_LOG_LEVEL: info
+    # Thruster enforces this before Rack parses multipart input. The largest
+    # application upload is 10 MiB; 25 MiB leaves room for request overhead and
+    # ordinary transcript/PDF administration without permitting unbounded bodies.
+    MAX_REQUEST_BODY: 26214400
     GA_MEASUREMENT_ID: G-KEC1YZ61WZ
     GENERATED_IMAGES_ENABLED: "true"
 

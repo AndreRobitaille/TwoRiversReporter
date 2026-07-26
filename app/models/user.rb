@@ -57,6 +57,7 @@ class User < ApplicationRecord
   # comes from the surrounding transaction, which rolls the lot back either way,
   # so no test asserts on the ordering.
   before_destroy :refuse_to_leave_the_site_without_an_admin, prepend: true
+  before_update :refuse_to_remove_last_usable_admin, if: :removing_admin_authority?
 
   validates :email_address, presence: true, uniqueness: true
 
@@ -73,6 +74,11 @@ class User < ApplicationRecord
   validates :status, inclusion: { in: %w[pending active rejected] }
   validates :webauthn_id, presence: true, uniqueness: true
 
+  scope :usable_admins, -> {
+    where(admin: true, status: "active", disabled_at: nil)
+      .where(id: PasskeyCredential.select(:user_id))
+  }
+
   # Cheap pre-flight for controllers that must not let a malformed address reach
   # the throttle or the mail provider, and must not reveal that they rejected it.
   def self.deliverable_address?(value)
@@ -85,6 +91,13 @@ class User < ApplicationRecord
     return false unless admin?
 
     !User.where(admin: true).where.not(id: id).exists?
+  end
+
+  def self.with_admin_roster_lock
+    transaction do
+      where(admin: true).order(:id).lock.load
+      yield
+    end
   end
 
   def active_for_authentication?
@@ -113,7 +126,35 @@ class User < ApplicationRecord
   private
 
   def refuse_to_leave_the_site_without_an_admin
-    raise LastAdminError, "cannot delete the last admin account" if last_admin?
+    return unless admin?
+
+    refuse_if_no_other_usable_admin!
+  end
+
+  def refuse_to_remove_last_usable_admin
+    refuse_if_no_other_usable_admin!
+  end
+
+  def refuse_if_no_other_usable_admin!
+    User.with_admin_roster_lock do
+      return if User.usable_admins.where.not(id: id).exists?
+
+      raise LastAdminError, "at least one active admin with a passkey must remain"
+    end
+  end
+
+  def removing_admin_authority?
+    return false unless will_save_change_to_admin? || will_save_change_to_status? || will_save_change_to_disabled_at?
+    return false unless admin_access_was_ready?
+
+    !admin? || status != "active" || disabled_at.present?
+  end
+
+  def admin_access_was_ready?
+    attribute_in_database("admin") &&
+      attribute_in_database("status") == "active" &&
+      attribute_in_database("disabled_at").nil? &&
+      passkey_credentials.exists?
   end
 
   def backfill_passwordless_fields

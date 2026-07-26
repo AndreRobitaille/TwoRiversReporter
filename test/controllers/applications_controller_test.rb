@@ -219,6 +219,31 @@ class ApplicationsControllerTest < ActionDispatch::IntegrationTest
     assert_not user.active_for_authentication?
   end
 
+  test "application submission rejects a crafted unsafe Facebook URL without consuming the link" do
+    user = User.create!(email_address: "unsafe-facebook@example.com", status: "pending", disabled_at: Time.current)
+    application = user.membership_applications.create!(status: "email_pending")
+    link = MagicLink.create_for!(user, purpose: "application")
+
+    assert_no_enqueued_jobs do
+      patch application_path(application), params: {
+        token: link.raw_token,
+        membership_application: {
+          first_name: "Jane",
+          last_name: "Member",
+          street: "123 Main St",
+          city: "Two Rivers",
+          state: "WI",
+          facebook_profile_url: "javascript:alert(document.domain)"
+        }
+      }
+    end
+
+    assert_response :unprocessable_entity
+    assert_includes response.body, "Facebook profile url must be a secure Facebook URL"
+    assert_equal "email_pending", application.reload.status
+    assert_predicate link.reload, :unused?
+  end
+
   test "application submission without a street is rejected and stays editable" do
     user = User.create!(email_address: "no-street@example.com", status: "pending", disabled_at: Time.current)
     application = user.membership_applications.create!(status: "email_pending")

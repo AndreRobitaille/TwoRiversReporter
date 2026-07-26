@@ -22,6 +22,37 @@ description: Use when deploying TwoRiversReporter to production, running command
 
 **Gotcha:** all `bin/kamal` commands require the env vars exported first (`source .env && export TWO_RIVERS_REPORTER_DATABASE_PASSWORD`). `.env` keys are not auto-exported to Kamal; prefer `env: clear:` in `deploy.yml` for non-secrets.
 
+## Automated Runtime Maintenance
+
+The `Update runtime dependencies` GitHub Actions workflow runs weekly and can
+also be dispatched manually. It opens or refreshes a pull request; it never
+merges or deploys.
+
+One repository setting is required before activation: under **Settings →
+Actions → General → Workflow permissions**, enable **Allow GitHub Actions to
+create and approve pull requests**. GitHub combines creation and approval in
+one setting; this workflow requests write access but contains no approval or
+merge step.
+
+The updater changes only `Dockerfile` and `.ruby-version`. It keeps the latest
+stable Ruby version and amd64 image digest together, including new Ruby release
+series, and refreshes the Dockerfile frontend, Deno, and yt-dlp pins from
+official release metadata. Missing or malformed SHA-256 digests, mismatched
+Ruby files, and version downgrades make the job fail without opening a pull
+request. Before pushing the update branch, the job performs a complete
+production image build so the new Ruby image, binary checksums, gems, and asset
+compilation are verified together.
+
+| Task | Command |
+|------|---------|
+| Preview available runtime updates | `ruby script/update_runtime_dependencies --dry-run` |
+| Apply runtime updates locally | `ruby script/update_runtime_dependencies` |
+| Fail if committed pins are stale | `ruby script/update_runtime_dependencies --check` |
+
+Review and merge the maintenance pull request normally, then use the standard
+Kamal deploy process above when ready. Dependabot separately maintains Bundler
+and GitHub Actions dependencies.
+
 ## Prompt Template Deploy Ordering
 
 After editing `lib/prompt_template_data.rb`, production ordering matters:

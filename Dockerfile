@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1@sha256:e82bbc85c3cb06cf2a5a27b058208b43984448acbcd6a832cd1491933d4376dd
 # check=error=true
 
 # This Dockerfile is designed for production, not development. Use with Kamal or build'n'run by hand:
@@ -8,20 +8,27 @@
 # For a containerized dev environment, see Dev Containers: https://guides.rubyonrails.org/getting_started_with_devcontainer.html
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version
-ARG RUBY_VERSION=4.0.0
-FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
+ARG RUBY_VERSION=4.0.6
+ARG RUBY_IMAGE_DIGEST=sha256:1736dcdb97ab9bbeb4cab662d65da919de6a684681d035d17a30af8876f7674e
+FROM docker.io/library/ruby:$RUBY_VERSION-slim@$RUBY_IMAGE_DIGEST AS base
+
+ARG DENO_VERSION=2.9.4
+ARG DENO_SHA256=c24f955d9fbfe0ea5ae2b501c8e71ae76e31e4c9782390a54a284b3364fda725
+ARG YT_DLP_VERSION=2026.07.04
+ARG YT_DLP_SHA256=6bbb3d314cde4febe36e5fa1d55462e29c974f63444e707871834f6d8cc210ae
 
 # Rails app lives here
 WORKDIR /rails
 
 # Install base packages
-ARG YT_DLP_CACHE_BUST=2026-06-30
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y curl libjemalloc2 libvips nodejs postgresql-client poppler-utils tesseract-ocr unzip && \
-    curl -L https://github.com/denoland/deno/releases/latest/download/deno-x86_64-unknown-linux-gnu.zip -o /tmp/deno.zip && \
+    curl --fail --show-error --location "https://github.com/denoland/deno/releases/download/v${DENO_VERSION}/deno-x86_64-unknown-linux-gnu.zip" -o /tmp/deno.zip && \
+    echo "${DENO_SHA256}  /tmp/deno.zip" | sha256sum --check --strict && \
     unzip -q /tmp/deno.zip -d /usr/local/bin && \
     rm /tmp/deno.zip && \
-    curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux -o /usr/local/bin/yt-dlp && \
+    curl --fail --show-error --location "https://github.com/yt-dlp/yt-dlp/releases/download/${YT_DLP_VERSION}/yt-dlp_linux" -o /usr/local/bin/yt-dlp && \
+    echo "${YT_DLP_SHA256}  /usr/local/bin/yt-dlp" | sha256sum --check --strict && \
     chmod +x /usr/local/bin/yt-dlp && \
     yt-dlp --version && \
     deno --version && \
@@ -32,7 +39,7 @@ RUN apt-get update -qq && \
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
-    BUNDLE_WITHOUT="development" \
+    BUNDLE_WITHOUT="development:test" \
     LD_PRELOAD="/usr/local/lib/libjemalloc.so"
 
 # Throw-away build stage to reduce size of final image
