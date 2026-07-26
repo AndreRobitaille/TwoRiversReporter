@@ -19,12 +19,12 @@ class User < ApplicationRecord
   # a user raises ActiveRecord::InvalidForeignKey — every one of these columns
   # has a foreign key to users and none of them cascade at the database level.
   #
-  # :nullify rather than :destroy in all three cases. Each row is somebody
+  # :nullify rather than :destroy in all four cases. Each row is somebody
   # else's record: an applicant's own application (which merely happens to name
-  # this admin as its reviewer), site content, and a topic moderation audit
-  # trail. Losing the pointer to a deleted account is acceptable; losing the row
-  # is not. All three columns are nullable and all three inverse associations
-  # are already declared `optional: true`.
+  # this admin as its reviewer), site content, a topic moderation audit trail,
+  # and the audit trail below. Losing the pointer to a deleted account is
+  # acceptable; losing the row is not. All four columns are nullable and all
+  # four inverse associations are already declared `optional: true`.
   has_many :reviewed_membership_applications,
     class_name: "MembershipApplication", foreign_key: :reviewed_by_id,
     inverse_of: :reviewed_by, dependent: :nullify
@@ -32,6 +32,13 @@ class User < ApplicationRecord
     class_name: "GeneratedImage", foreign_key: :uploaded_by_id,
     inverse_of: :uploaded_by, dependent: :nullify
   has_many :topic_review_events, dependent: :nullify
+  # A fourth instance of the pattern above. audit_events.actor_id is a foreign
+  # key to users with no cascade, so without this, deleting a user who has ever
+  # recorded an audit event raises ActiveRecord::InvalidForeignKey — and user
+  # deletion is one of the actions this trail exists to record. :nullify loses
+  # nothing, because actor_email holds the snapshot.
+  has_many :audit_events,
+    foreign_key: :actor_id, inverse_of: :actor, dependent: :nullify
 
   normalizes :email_address, with: ->(e) { e.strip.downcase }
 
