@@ -13,11 +13,13 @@ module Admin
 
     test "admin without passkey is redirected to security settings" do
       admin = User.create!(email_address: "admin@example.com", admin: true, status: "active")
-      session = Session.create!(user: admin, user_agent: "test", ip_address: "127.0.0.1", last_seen_at: Time.current)
-
-      jar = ActionDispatch::TestRequest.create.cookie_jar
-      jar.signed[:session_id] = session.id
-      cookies[:session_id] = jar[:session_id]
+      session = Session.create!(
+        user: admin, user_agent: nil, ip_address: "127.0.0.1",
+        ip_prefix: NetworkPrefix.for("127.0.0.1"),
+        device_fingerprint: DeviceFingerprint.for(nil),
+        reauthenticated_at: Time.current, last_seen_at: Time.current
+      )
+      sign_in_with_session(session)
       get admin_root_url
 
       assert_redirected_to settings_security_url
@@ -27,11 +29,7 @@ module Admin
     test "admin with passkey can access admin pages" do
       admin = User.create!(email_address: "admin@example.com", admin: true, status: "active")
       admin.passkey_credentials.create!(external_id: "cred-123", public_key: "public-key", sign_count: 0)
-      session = Session.create!(user: admin, user_agent: "test", ip_address: "127.0.0.1", last_seen_at: Time.current)
-
-      jar = ActionDispatch::TestRequest.create.cookie_jar
-      jar.signed[:session_id] = session.id
-      cookies[:session_id] = jar[:session_id]
+      sign_in_as(admin)
       get admin_root_url
 
       assert_response :success
@@ -39,11 +37,13 @@ module Admin
 
     test "non-admin is denied admin access" do
       user = User.create!(email_address: "member@example.com", status: "active")
-      session = Session.create!(user: user, user_agent: "test", ip_address: "127.0.0.1", last_seen_at: Time.current)
-
-      jar = ActionDispatch::TestRequest.create.cookie_jar
-      jar.signed[:session_id] = session.id
-      cookies[:session_id] = jar[:session_id]
+      session = Session.create!(
+        user: user, user_agent: nil, ip_address: "127.0.0.1",
+        ip_prefix: NetworkPrefix.for("127.0.0.1"),
+        device_fingerprint: DeviceFingerprint.for(nil),
+        reauthenticated_at: Time.current, last_seen_at: Time.current
+      )
+      sign_in_with_session(session)
       get admin_root_url
 
       assert_redirected_to root_url

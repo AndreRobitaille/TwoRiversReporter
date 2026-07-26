@@ -28,7 +28,8 @@ module Settings
         created_at: 1.day.ago
       )
 
-      get settings_profile_path, headers: signed_session_headers(user)
+      sign_in_as(user)
+      get settings_profile_path
 
       assert_response :success
       assert_select "h1", text: "Account"
@@ -50,7 +51,8 @@ module Settings
     test "active member with no application is not invited to apply" do
       user = User.create!(email_address: "granted@example.com", status: "active")
 
-      get settings_profile_path, headers: signed_session_headers(user)
+      sign_in_as(user)
+      get settings_profile_path
 
       assert_response :success
       assert_includes response.body, "Membership application"
@@ -63,15 +65,5 @@ module Settings
     # cookie otherwise), so the pending case is unreachable from here and is
     # covered at the view level instead — see
     # test/views/settings_profile_show_test.rb.
-
-    private
-
-      def signed_session_headers(user)
-        session = Session.create!(user: user, last_seen_at: Time.current)
-        req = ActionDispatch::TestRequest.create
-        jar = ActionDispatch::Cookies::CookieJar.build(req, {})
-        jar.signed[:session_id] = session.id
-        { "Cookie" => jar.to_header }
-      end
   end
 end

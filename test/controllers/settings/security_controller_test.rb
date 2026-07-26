@@ -16,7 +16,8 @@ module Settings
       newest = user.passkey_credentials.create!(external_id: "newest", public_key: "public", sign_count: 0, created_at: 1.day.ago)
       other.passkey_credentials.create!(external_id: "theirs", public_key: "public", sign_count: 0, nickname: "Their key")
 
-      get settings_security_path, headers: signed_session_headers(user)
+      sign_in_as(user)
+      get settings_security_path
 
       assert_response :success
       assert_includes response.body, 'data-controller="passkey"'
@@ -42,22 +43,13 @@ module Settings
       other = User.create!(email_address: "other@example.com", status: "active")
 
       travel_to Time.current do
-        delete settings_passkey_prompt_path, headers: signed_session_headers(user).merge("HTTP_REFERER" => root_url)
+        sign_in_as(user)
+        delete settings_passkey_prompt_path, headers: { "HTTP_REFERER" => root_url }
       end
 
       assert_redirected_to root_url
       assert_predicate user.reload.passkey_prompt_dismissed_until, :future?
       assert_nil other.reload.passkey_prompt_dismissed_until
     end
-
-    private
-
-      def signed_session_headers(user)
-        session = Session.create!(user: user, last_seen_at: Time.current)
-        req = ActionDispatch::TestRequest.create
-        jar = ActionDispatch::Cookies::CookieJar.build(req, {})
-        jar.signed[:session_id] = session.id
-        { "Cookie" => jar.to_header }
-      end
   end
 end

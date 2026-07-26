@@ -69,7 +69,19 @@ module Authentication
     end
 
     def start_new_session_for(user)
-      user.sessions.create!(user_agent: request.user_agent, ip_address: request.remote_ip, last_seen_at: Time.current).tap do |session|
+      context = SessionContext.from_request(request)
+
+      user.sessions.create!(
+        user_agent: request.user_agent,
+        ip_address: request.remote_ip,
+        ip_prefix: context.ip_prefix,
+        device_fingerprint: context.device_fingerprint,
+        # A fresh sign-in is itself a proof of identity, so it opens the
+        # step-up window. Without this, a new member's first passkey would
+        # require a second magic link immediately after the first.
+        reauthenticated_at: Time.current,
+        last_seen_at: Time.current
+      ).tap do |session|
         Current.session = session
         cookies.signed.permanent[:session_id] = {
           value: session.id,

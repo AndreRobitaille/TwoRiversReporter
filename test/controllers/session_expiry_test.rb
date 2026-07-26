@@ -3,8 +3,7 @@ require "test_helper"
 class SessionExpiryTest < ActionDispatch::IntegrationTest
   test "a session past the absolute lifetime is cleared on the next request" do
     user = User.create!(email_address: "aged@example.com", status: "active")
-    sign_in_as(user)
-    session = user.sessions.sole
+    session = sign_in_as(user)
     session.update_columns(created_at: 400.days.ago, last_seen_at: Time.current)
 
     get settings_security_url
@@ -15,8 +14,7 @@ class SessionExpiryTest < ActionDispatch::IntegrationTest
 
   test "a session idle past the inactivity limit is cleared on the next request" do
     user = User.create!(email_address: "idle@example.com", status: "active")
-    sign_in_as(user)
-    session = user.sessions.sole
+    session = sign_in_as(user)
     session.update_columns(last_seen_at: 61.days.ago)
 
     get settings_security_url
@@ -27,8 +25,7 @@ class SessionExpiryTest < ActionDispatch::IntegrationTest
 
   test "a live session is not cleared" do
     user = User.create!(email_address: "live@example.com", status: "active")
-    sign_in_as(user)
-    session = user.sessions.sole
+    session = sign_in_as(user)
 
     get settings_security_url
 

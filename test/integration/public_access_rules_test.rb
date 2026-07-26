@@ -39,11 +39,7 @@ class PublicAccessRulesTest < ActionDispatch::IntegrationTest
   test "signed-in users can access member pages" do
     user = User.create!(email_address: "member@example.com", status: "active")
     meeting = Meeting.create!(body_name: "City Council", starts_at: 1.day.ago, detail_page_url: "http://example.com/meeting")
-    session = Session.create!(user: user, user_agent: "test", ip_address: "127.0.0.1", last_seen_at: Time.current)
-
-    jar = ActionDispatch::TestRequest.create.cookie_jar
-    jar.signed[:session_id] = session.id
-    cookies[:session_id] = jar[:session_id]
+    sign_in_as(user)
     get meeting_url(meeting)
 
     assert_response :success
@@ -51,11 +47,13 @@ class PublicAccessRulesTest < ActionDispatch::IntegrationTest
 
   test "settings security remains accessible to signed-in admins without passkeys" do
     admin = User.create!(email_address: "admin@example.com", admin: true, status: "active")
-    session = Session.create!(user: admin, user_agent: "test", ip_address: "127.0.0.1", last_seen_at: Time.current)
-
-    jar = ActionDispatch::TestRequest.create.cookie_jar
-    jar.signed[:session_id] = session.id
-    cookies[:session_id] = jar[:session_id]
+    session = Session.create!(
+      user: admin, user_agent: nil, ip_address: "127.0.0.1",
+      ip_prefix: NetworkPrefix.for("127.0.0.1"),
+      device_fingerprint: DeviceFingerprint.for(nil),
+      reauthenticated_at: Time.current, last_seen_at: Time.current
+    )
+    sign_in_with_session(session)
     get settings_security_url
 
     assert_response :success
