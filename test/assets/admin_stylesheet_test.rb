@@ -165,4 +165,21 @@ class AdminStylesheetTest < ActiveSupport::TestCase
   test "table metadata cells use the data typeface" do
     assert_match(/--font-data/, css)
   end
+
+  CHROME_COMPONENTS = %w[
+    adm-toolbar adm-seg adm-seg__option adm-seg__option--on
+    adm-panel adm-panel__label adm-detail adm-detail__main adm-detail__rail
+  ].freeze
+
+  test "defines the toolbar, segmented control, panel, and detail layout" do
+    missing = CHROME_COMPONENTS.reject { |c| css.match?(/\.#{Regexp.escape(c)}(?![a-zA-Z0-9_-])/) }
+    assert_empty missing, "admin.css does not define: #{missing.join(', ')}"
+  end
+
+  test "shared component names are overridden scoped to the admin theme only" do
+    %w[card btn badge form-input flash modal].each do |shared|
+      assert_match(/\.theme-silo\s+\.#{Regexp.escape(shared)}(?![a-zA-Z0-9_-])/, css,
+        ".#{shared} must be overridden as `.theme-silo .#{shared}` so the public site is untouched")
+    end
+  end
 end

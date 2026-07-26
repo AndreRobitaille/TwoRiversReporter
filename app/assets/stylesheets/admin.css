@@ -656,6 +656,231 @@
   color: var(--color-text-muted);
 }
 
+/* --- Toolbar and segmented control --- */
+.theme-silo .adm-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  margin-bottom: var(--space-3);
+}
+
+.theme-silo .adm-seg {
+  display: inline-flex;
+  border: var(--adm-hairline);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+.theme-silo .adm-seg__option {
+  padding: var(--space-1) var(--space-3);
+  border: 0;
+  border-right: var(--adm-hairline);
+  background: transparent;
+  font-family: var(--font-data);
+  font-size: 0.59375rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  cursor: pointer;
+}
+.theme-silo .adm-seg__option:last-child { border-right: 0; }
+.theme-silo .adm-seg__option:hover { background: var(--color-surface-hover); text-decoration: none; }
+.theme-silo .adm-seg__option--on {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+/* --- Panel ---
+ * `.theme-silo .card` is (0,2,0) and now reaches every `.card` already used
+ * in admin views (admin-sidebar's card, the merge/repair-confirm modals'
+ * `.card modal__panel`, `_ai_decisions`, `_history_snapshot`,
+ * meetings/topics index cards). None of those combine `.card` with another
+ * class-qualified rule at (0,2,0) or higher other than `.modal__panel`
+ * below (source order settles that one — see the Modal section) and
+ * `.admin-sidebar .card { height: 100%; }`, which sets an unrelated
+ * property, so this is a clean density retrofit, not a fight. Two spots
+ * where `.card` sits beside the transitional `.p-6` utility
+ * (repair_confirm_modal's `modal__panel card p-6`, topics/index's inline
+ * `style="padding: var(--space-5)"`) are already covered by this file's own
+ * utilities-section rule (scoped component beats unscoped utility) or by an
+ * inline style outranking everything — pre-existing, not something this
+ * task changes.
+ */
+.theme-silo .adm-panel,
+.theme-silo .card {
+  padding: var(--space-4);
+  border: var(--adm-hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+.theme-silo .adm-panel__label,
+.theme-silo .topic-panel-label {
+  margin-bottom: var(--space-2);
+  font-family: var(--font-data);
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* --- Detail layout: main column plus a rail ---
+ * `.admin-two-column` picks up this rule at (0,2,0), which fully re-sets
+ * every property the old unscoped `.admin-two-column` block above (Task 9,
+ * moved verbatim, (0,1,0)) also sets — display, grid-template-columns, gap,
+ * align-items — so that older block is now dead weight for those four
+ * declarations rather than a live fallback. Left in place rather than
+ * deleted, matching this file's established convention (see the data-table
+ * comment below) of not editing moved legacy rules outside their own task;
+ * Phase 2 owns deleting it.
+ */
+.theme-silo .adm-detail,
+.theme-silo .admin-two-column,
+.theme-silo .topic-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: var(--space-5);
+  align-items: start;
+}
+.theme-silo .adm-detail__main,
+.theme-silo .adm-detail__rail { min-width: 0; }
+
+@media (max-width: 900px) {
+  .theme-silo .adm-detail,
+  .theme-silo .admin-two-column,
+  .theme-silo .topic-detail-layout { grid-template-columns: 1fr; }
+}
+
+/* --- Buttons --- */
+.theme-silo .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border: var(--adm-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-family: var(--font-display);
+  font-size: 0.625rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text);
+  text-decoration: none;
+  cursor: pointer;
+}
+.theme-silo .btn:hover { background: var(--color-surface-hover); text-decoration: none; }
+.theme-silo .btn--primary   { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-text-inverse); }
+.theme-silo .btn--primary:hover { background: var(--color-primary-hover); }
+.theme-silo .btn--danger    { background: var(--color-danger); border-color: var(--color-danger); color: var(--color-text-inverse); }
+.theme-silo .btn--success   { background: var(--color-success); border-color: var(--color-success); color: var(--color-text-inverse); }
+.theme-silo .btn--ghost     { background: transparent; border-color: transparent; color: var(--color-text-secondary); }
+.theme-silo .btn--ghost:hover { border-color: var(--color-border); }
+.theme-silo .btn--sm        { padding: 1px var(--space-2); font-size: 0.5625rem; }
+.theme-silo .btn[disabled]  { opacity: 0.45; cursor: not-allowed; }
+
+/* --- Badges: keep the shared name, adopt chip proportions.
+ * application.css already carries a `.theme-silo .badge { border: 1px solid
+ * transparent; }` rule (its own pre-revamp Silo tweak) at the same (0,2,0)
+ * specificity as this one; because admin.css loads after application.css,
+ * this rule wins the tie and its explicit `border` replaces theirs, which
+ * is the point — chip borders, not a transparent placeholder. The
+ * `.badge--default/--primary/--success/--warning/--danger` modifier rules
+ * in application.css are untouched (different selector, not overridden
+ * here) and keep layering their background/color/border-color on top.
+ */
+.theme-silo .badge {
+  display: inline-block;
+  padding: 1px var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-data);
+  font-size: 0.5625rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* --- Forms ---
+ * Style .form-label ONLY. A bare `label` selector here would be specificity
+ * 0-1-1 and would beat .job-type-card (0-1-0, application.css:6083), whose
+ * markup is a <label> — it would wreck the Run a Job page. Several admin
+ * labels also wrap whole sentences (site_settings/show), which is why this
+ * stays sentence case rather than the uppercase micro-label treatment used
+ * by .adm-panel__label and table headers, where text is short by construction.
+ */
+.theme-silo .form-label {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-size: var(--adm-font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+}
+.theme-silo .form-input,
+.theme-silo .form-select,
+.theme-silo .form-textarea,
+.theme-silo input[type="text"],
+.theme-silo input[type="search"],
+.theme-silo input[type="url"],
+.theme-silo input[type="date"],
+.theme-silo input[type="number"],
+.theme-silo select,
+.theme-silo textarea {
+  padding: var(--space-1) var(--space-2);
+  border: var(--adm-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-family: var(--font-body);
+  font-size: var(--adm-font-size);
+  color: var(--color-text);
+}
+.theme-silo .form-textarea--code {
+  font-family: var(--font-data);
+  font-size: var(--adm-font-size-sm);
+  line-height: var(--line-height-normal);
+}
+.theme-silo .form-group { margin-bottom: var(--space-3); }
+.theme-silo .form-hint {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* --- Flash --- */
+.theme-silo .flash {
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--adm-font-size);
+}
+.theme-silo .flash--success { border-color: var(--color-success); background: var(--color-success-light); }
+.theme-silo .flash--danger  { border-color: var(--color-danger);  background: var(--color-danger-light); }
+
+/* --- Modal ---
+ * The brief's interface list calls for a scoped override of the shared
+ * `.modal` name itself, not just `.modal__panel` — the backdrop overlay
+ * gets breathing room at Instrument density so the panel isn't flush to
+ * the viewport edge on narrow admin screens; `.modal` is a flex container
+ * (application.css), so padding here simply shrinks its content box and the
+ * centered panel keeps centering. `.modal__panel`'s padding/border/
+ * border-radius/background duplicate `.adm-panel`/`.card` above at the same
+ * (0,2,0) specificity; this rule is later in the file so it wins the tie,
+ * layering in the larger padding and box-shadow a modal needs over a plain
+ * panel — both already agree on border/border-radius/background, so the
+ * combined `.card modal__panel` markup (repair_confirm_modal, merge_modal)
+ * renders identically either way on those three properties.
+ */
+.theme-silo .modal { padding: var(--space-4); }
+.theme-silo .modal__panel {
+  padding: var(--space-5);
+  border: var(--adm-hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+}
+
 /* ============================================
    4. Utilities (transitional — removed in Phase 2)
    ============================================ */
