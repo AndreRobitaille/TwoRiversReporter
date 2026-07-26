@@ -210,7 +210,15 @@ not.
 | `device_fingerprint` | The `DeviceFingerprint` value; nullable |
 | `last_seen_at` | Not null; when this context was last used |
 
-Unique on `(user_id, ip_prefix, device_fingerprint)`, indexed on `last_seen_at` for the sweep.
+Unique on `(user_id, ip_prefix, device_fingerprint)` **with `nulls_not_distinct: true`**, indexed on
+`last_seen_at` for the sweep.
+
+The `nulls_not_distinct` is load-bearing, not decoration. Postgres treats two `NULL`s as distinct by
+default, so a plain unique index would let `(user, nil, nil)` — or any pair with one nil half —
+insert a fresh duplicate row on every single sign-in, silently defeating both the uniqueness the
+upsert relies on and the `MAX_PER_USER` cap. Either half is legitimately nil whenever `NetworkPrefix`
+or `DeviceFingerprint` cannot derive a value, which is not an edge case: a request with no
+`User-Agent` header produces a nil fingerprint, and the test suite's own default does exactly that.
 
 **A known context is the pair, not the prefix alone.** Remembering only networks would discard the
 device half, which is the stronger of the two — a new browser on a familiar network is a real
