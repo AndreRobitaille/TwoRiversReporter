@@ -62,7 +62,7 @@ module Admin
             render turbo_stream: turbo_stream.replace(
               helpers.dom_id(@topic),
               partial: "admin/topics/inbox_row",
-              locals: { row: Admin::Topics::InboxQuery.row_for(@topic.reload) }
+              locals: { row: Admin::Topics::InboxQuery.row_for(@topic.reload), errors: @topic.errors.full_messages }
             ), status: :unprocessable_entity
           }
           format.json { render json: { success: false, errors: @topic.errors.full_messages }, status: :unprocessable_entity }

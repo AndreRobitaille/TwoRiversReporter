@@ -262,5 +262,20 @@ module Admin
       assert_no_match ">#{admin_topic_path(topic)}<", response.body,
         "an invalid save must not fall back to rendering the topic's own URL as the row's visible link text"
     end
+
+    # --- Fix round 1: turbo_stream responses render no flash at all, so a
+    # rejected save must be visible IN the replaced row itself or it is
+    # silent. Proves the error text actually lands in the 422 body, not just
+    # the status code. ---
+
+    test "an invalid update renders the validation error text into the replaced row" do
+      topic = Topic.create!(name: "valid name #{SecureRandom.hex(4)}", status: "approved", review_status: "approved")
+
+      patch admin_topic_path(topic), params: { topic: { name: "" } }, as: :turbo_stream
+
+      assert_response :unprocessable_entity
+      assert_match "Name can&#39;t be blank", response.body,
+        "the row replacement must surface the validation error, or a rejected save looks identical to a successful one"
+    end
   end
 end

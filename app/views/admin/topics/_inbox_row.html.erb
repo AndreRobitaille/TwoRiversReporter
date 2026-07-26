@@ -18,6 +18,9 @@
       <% if row.alias_names.any? %>
         <div class="table-desc"><%= row.alias_names.join(", ") %></div>
       <% end %>
+      <% local_assigns.fetch(:errors, []).each do |error| %>
+        <div class="text-xs text-danger"><%= error %></div>
+      <% end %>
     </td>
     <td>
       <% review_chip = case row.review_status
