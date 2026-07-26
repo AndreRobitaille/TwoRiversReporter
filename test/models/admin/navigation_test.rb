@@ -51,5 +51,13 @@ module Admin
       labels = Admin::Navigation.items.map(&:label)
       assert_equal labels.uniq, labels
     end
+
+    test "GROUPS and each group's items array are frozen" do
+      assert Admin::Navigation::GROUPS.frozen?, "GROUPS is not frozen"
+
+      Admin::Navigation::GROUPS.each do |group|
+        assert group.items.frozen?, "#{group.title} group's items array is not frozen"
+      end
+    end
   end
 end

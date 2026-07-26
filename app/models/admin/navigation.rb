@@ -22,7 +22,7 @@ module Admin
                    description: "Review, triage, and combine civic topics."),
           Item.new(label: "Blocklist", path_helper: :admin_topic_blocklists_path, controller: "topic_blocklists",
                    description: "Names that may never become topics.")
-        ]
+        ].freeze
       ),
       Group.new(
         title: "Meetings",
@@ -33,7 +33,7 @@ module Admin
                    description: "Import YouTube captions or upload an SRT file."),
           Item.new(label: "Summaries", path_helper: :admin_summaries_path, controller: "summaries",
                    description: "Summary coverage and bulk regeneration.")
-        ]
+        ].freeze
       ),
       Group.new(
         title: "The Record",
@@ -46,7 +46,7 @@ module Admin
                    description: "Background context retrieved during summarization."),
           Item.new(label: "Knowledge Search", path_helper: :admin_search_path, controller: "searches",
                    description: "Query the knowledge base and meeting documents.")
-        ]
+        ].freeze
       ),
       Group.new(
         title: "The Machine",
@@ -57,7 +57,7 @@ module Admin
                    description: "Worker status, pending work, and failed jobs."),
           Item.new(label: "Prompts", path_helper: :admin_prompt_templates_path, controller: "prompt_templates",
                    description: "The AI prompt text, with version history.")
-        ]
+        ].freeze
       ),
       Group.new(
         title: "Site",
@@ -70,7 +70,7 @@ module Admin
                    description: "Accounts, applications, sessions, and passkeys."),
           Item.new(label: "Audit Log", path_helper: :admin_audit_events_path, controller: "audit_events",
                    description: "Destructive and privilege-changing actions.")
-        ]
+        ].freeze
       )
     ].freeze
 
