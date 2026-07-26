@@ -143,10 +143,10 @@ Applied to:
 | Action | Context gate | Freshness gate | Why |
 |---|---|---|---|
 | Every `Admin::BaseController` descendant | Tolerant | — | Whole boundary; no allowlist to forget |
-| `Admin::UsersController#destroy` | Tolerant (inherited) | Yes | Irreversible; deletes an account and everything attached |
-| `Admin::MembershipApplicationsController#destroy` | Tolerant (inherited) | Yes | Irreversible |
-| `Admin::UsersController#create` | Tolerant (inherited) | Yes | Creates an admin account |
-| `Admin::UsersController#toggle_admin` | Tolerant (inherited) | Yes | Grants admin; durable privilege escalation |
+| `Admin::UsersController#destroy` | **Strict** | Yes | Irreversible; deletes an account and everything attached |
+| `Admin::MembershipApplicationsController#destroy` | **Strict** | Yes | Irreversible |
+| `Admin::UsersController#create` | **Strict** | Yes | Creates an admin account |
+| `Admin::UsersController#toggle_admin` | **Strict** | Yes | Grants admin; durable privilege escalation |
 | `PasskeysController#registration_options`, `#registration` | **Strict** | Yes | Adds a credential to the account |
 | `PasskeysController#destroy` | **Strict** | Yes | Removes a credential from the account |
 
@@ -189,6 +189,70 @@ persistence move: an attacker holding a stolen session cookie adds their own cre
 durable independent access that outlives the cookie, with no password to change to evict them.
 Removal is the mirror threat — strip an admin's only passkey and `require_admin_passkey` locks them
 out of their own site.
+
+## Known Contexts
+
+A raw IP change is the weakest signal in this design and the one most prone to firing on nothing.
+Comparing a request against *the last request* is not what mature identity providers do: Microsoft
+Entra's "unfamiliar sign-in properties", Okta's adaptive policies and Auth0's Adaptive MFA all score
+a request against a **learned baseline of that user's own history**, and treat a single changed
+address as weak input rather than a verdict. Impossible travel is a signal; a different address is
+not.
+
+`KnownContext` is a small version of that idea, built with no external data and no GeoIP database.
+
+### The model
+
+| Column | Notes |
+|---|---|
+| `user_id` | FK, not null |
+| `ip_prefix` | The `NetworkPrefix` value; nullable |
+| `device_fingerprint` | The `DeviceFingerprint` value; nullable |
+| `last_seen_at` | Not null; when this context was last used |
+
+Unique on `(user_id, ip_prefix, device_fingerprint)`, indexed on `last_seen_at` for the sweep.
+
+**A known context is the pair, not the prefix alone.** Remembering only networks would discard the
+device half, which is the stronger of the two — a new browser on a familiar network is a real
+signal and should still ask. Since `DeviceFingerprint` already drops the version, a browser update
+does not create a new pair.
+
+`KnownContext::MAX_PER_USER` is 10, evicted least-recently-seen. `KnownContext::RETENTION` is
+90 days, swept by `ExpiredAuthRecordsCleanupJob`.
+
+### How it composes with the gates
+
+Deliberately **additive**. The context gates gain one more way to pass; nothing existing changes
+meaning:
+
+- **tolerant** — the session's anchor matches, **or** the context is known for this user, **or** the
+  session was stepped up inside `REAUTH_FRESHNESS`
+- **strict** — the session's anchor matches, **or** the context is known for this user
+
+A context is remembered when a session is created and when a step-up succeeds — both are moments the
+user has just proved who they are. It is *not* remembered merely by being matched, or an attacker's
+network would enrol itself. Matching touches `last_seen_at` at most once a day, so an actively used
+context does not age out while a genuinely abandoned one does.
+
+A context whose prefix and fingerprint are both nil is never recorded. It carries no information and
+would match every other undetermined request.
+
+### What this costs and what it buys
+
+**Buys:** a member who moves between home, work and phone stops being challenged after the first
+visit from each. That is the churn that would otherwise make the feature feel broken, and it is
+removed without weakening the device signal or coarsening the prefix.
+
+**Costs, stated plainly:** a cookie replayed from a network the *user* has used before — the same
+café wifi, the same office — passes the context check. Per-session anchoring would have caught that
+and this does not. It is the same trade every provider in the paragraph above makes, because the
+alternative is a challenge on every legitimate move, and a gate people learn to click through
+protects nothing.
+
+**Privacy:** this retains a coarse location trail per member on a civic site whose members did not
+ask for it. A /24 is not an address, but it is not nothing. The 90-day sweep, the cap of 10, and
+listing the records back to the member on `/settings/security` are all part of the deal — a member
+can see exactly what is stored about them, which is the standard this project should hold itself to.
 
 ### Gate failure responses are format-aware
 
