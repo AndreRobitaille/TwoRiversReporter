@@ -39,9 +39,17 @@ class Session < ApplicationRecord
   # A step-up both proves the person is still there and accepts wherever they
   # now are. Keeping these one operation means there is a single rule to reason
   # about: either the recorded context matches the request or it does not.
+  #
+  # Also the one place every step-up passes through, so remembering the
+  # context here — rather than at each caller — covers every current and
+  # future call site automatically. A step-up is one of only two moments the
+  # user has just proved who they are (sign-in is the other, in
+  # start_new_session_for); it is never called for a mere context match, so
+  # this cannot be used to enrol an attacker's own network.
   def reauthenticate!(context)
     context.apply_to(self)
     self.reauthenticated_at = Time.current
     save!
+    KnownContext.remember!(user, context)
   end
 end

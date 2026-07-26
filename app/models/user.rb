@@ -14,6 +14,10 @@ class User < ApplicationRecord
   has_many :magic_links, dependent: :destroy
   has_many :passkey_credentials, dependent: :destroy
   has_many :membership_applications, dependent: :destroy
+  # A learned baseline of this user's own (network, device) pairs, worthless
+  # without the user they were learned from — unlike the :nullify group below,
+  # there is no meaning left in a KnownContext row once it is orphaned.
+  has_many :known_contexts, dependent: :destroy
 
   # Records that point at a user but must outlive them. Without these, deleting
   # a user raises ActiveRecord::InvalidForeignKey — every one of these columns

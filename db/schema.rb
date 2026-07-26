@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_26_030845) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_26_040000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -251,6 +251,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_26_030845) do
     t.index [ "meeting_id" ], name: "index_knowledge_sources_on_meeting_id"
     t.index [ "origin" ], name: "index_knowledge_sources_on_origin"
     t.index [ "status" ], name: "index_knowledge_sources_on_status"
+  end
+
+  create_table "known_contexts", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "device_fingerprint"
+    t.string "ip_prefix"
+    t.datetime "last_seen_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index [ "last_seen_at" ], name: "index_known_contexts_on_last_seen_at"
+    t.index [ "user_id", "ip_prefix", "device_fingerprint" ], name: "index_known_contexts_on_user_and_context", unique: true, nulls_not_distinct: true
+    t.index [ "user_id" ], name: "index_known_contexts_on_user_id"
   end
 
   create_table "magic_links", force: :cascade do |t|
@@ -803,6 +815,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_26_030845) do
   add_foreign_key "knowledge_source_topics", "knowledge_sources"
   add_foreign_key "knowledge_source_topics", "topics"
   add_foreign_key "knowledge_sources", "meetings"
+  add_foreign_key "known_contexts", "users"
   add_foreign_key "magic_links", "users"
   add_foreign_key "meeting_attendances", "meetings"
   add_foreign_key "meeting_attendances", "members"

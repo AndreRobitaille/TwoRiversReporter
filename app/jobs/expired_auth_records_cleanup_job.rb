@@ -1,6 +1,8 @@
 # Authentication records accumulate forever otherwise. Sessions were never
 # swept at all; magic links are dead the moment they are used; sign-in attempts
-# are only ever read inside a fifteen-minute window and are never read again.
+# are only ever read inside a fifteen-minute window and are never read again;
+# known contexts past KnownContext::RETENTION are a coarse location trail with
+# no further use once stale.
 #
 # Idempotent by construction: it only ever deletes rows that are already
 # unusable, so a second run in the same minute is a no-op.
@@ -11,6 +13,7 @@ class ExpiredAuthRecordsCleanupJob < ApplicationJob
     delete_expired_sessions
     delete_dead_magic_links
     delete_stale_sign_in_attempts
+    delete_stale_known_contexts
   end
 
   private
@@ -35,6 +38,13 @@ class ExpiredAuthRecordsCleanupJob < ApplicationJob
     def delete_stale_sign_in_attempts
       SignInAttempt
         .where(created_at: ...SignInAttempt::WINDOW.ago)
+        .in_batches
+        .delete_all
+    end
+
+    def delete_stale_known_contexts
+      KnownContext
+        .where(last_seen_at: ...KnownContext::RETENTION.ago)
         .in_batches
         .delete_all
     end

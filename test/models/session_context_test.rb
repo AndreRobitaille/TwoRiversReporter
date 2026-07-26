@@ -75,6 +75,15 @@ class SessionContextTest < ActiveSupport::TestCase
       "accepting a new network and proving you are still there are the same operation"
   end
 
+  test "reauthenticate! remembers the new context as known for this user" do
+    session = build_session(ip_prefix: "198.51.100.0/24", device_fingerprint: "safari|iphone", reauthenticated_at: 2.hours.ago)
+
+    session.reauthenticate!(context("203.0.113.0/24", "chrome|macintosh"))
+
+    assert KnownContext.known?(@user, context("203.0.113.0/24", "chrome|macintosh")),
+      "a successful step-up is a proof of identity and should enrol its new context, just like a fresh sign-in does"
+  end
+
   private
 
     def context(ip_prefix, device_fingerprint)

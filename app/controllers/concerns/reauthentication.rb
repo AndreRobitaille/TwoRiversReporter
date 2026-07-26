@@ -17,6 +17,12 @@
 # area, or a credential surface an attacker reaches on freshness alone. Which
 # one each caller needs is spelled out at its call site, and why is in the
 # comment beside it.
+#
+# Both gates additionally pass when KnownContext recognises the pair for this
+# user — a learned baseline of their own history, not just the last request.
+# That is deliberately additive: it only opens one more way through, and never
+# on its own account, because a KnownContext hit is never recorded by passing
+# the gate — see KnownContext.remember!'s callers.
 module Reauthentication
   extend ActiveSupport::Concern
 
@@ -26,7 +32,7 @@ module Reauthentication
     # once, so paying for a mid-action network change with one extra tap is
     # acceptable and no repeat-load loop can form.
     def require_matching_context
-      return if session_context_matches?
+      return if session_context_matches? || known_context?
 
       deny_until_reauthenticated
     end
@@ -38,7 +44,7 @@ module Reauthentication
     # unbounded loop. Honouring a recent step-up is what lets a step-up survive
     # that churn long enough to be useful.
     def require_matching_context_or_recent_step_up
-      return if session_context_matches? || Current.session&.recently_reauthenticated?
+      return if session_context_matches? || known_context? || Current.session&.recently_reauthenticated?
 
       deny_until_reauthenticated
     end
@@ -51,6 +57,12 @@ module Reauthentication
 
     def session_context_matches?
       SessionContext.from_request(request).matches?(Current.session)
+    end
+
+    def known_context?
+      return false unless Current.user
+
+      KnownContext.known?(Current.user, SessionContext.from_request(request))
     end
 
     def deny_until_reauthenticated

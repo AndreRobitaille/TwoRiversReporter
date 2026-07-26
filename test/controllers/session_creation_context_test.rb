@@ -48,4 +48,17 @@ class SessionCreationContextTest < ActionDispatch::IntegrationTest
 
     assert_equal "127.0.0.1", @user.sessions.sole.ip_address
   end
+
+  test "signing in remembers the context as known for this user" do
+    link = MagicLink.create_for!(@user, purpose: "sign_in")
+
+    post magic_link_public_session_url, params: { token: link.raw_token }
+
+    request_context = SessionContext.new(
+      ip_prefix: NetworkPrefix.for("127.0.0.1"),
+      device_fingerprint: DeviceFingerprint.for(nil)
+    )
+    assert KnownContext.known?(@user, request_context),
+      "a fresh sign-in is a proof of identity and should enrol its context, or a new member's next visit from the same place would be challenged"
+  end
 end

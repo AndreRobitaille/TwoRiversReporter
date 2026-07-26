@@ -48,6 +48,16 @@ class ExpiredAuthRecordsCleanupJobTest < ActiveJob::TestCase
     assert_not SignInAttempt.exists?(old.id)
   end
 
+  test "deletes known contexts past retention but keeps fresh ones" do
+    fresh = KnownContext.create!(user: @user, ip_prefix: "203.0.113.0/24", device_fingerprint: "chrome|macintosh", last_seen_at: 1.day.ago)
+    aged = KnownContext.create!(user: @user, ip_prefix: "198.51.100.0/24", device_fingerprint: "safari|iphone", last_seen_at: 91.days.ago)
+
+    ExpiredAuthRecordsCleanupJob.perform_now
+
+    assert KnownContext.exists?(fresh.id)
+    assert_not KnownContext.exists?(aged.id)
+  end
+
   test "is idempotent" do
     Session.create!(user: @user, last_seen_at: 61.days.ago)
 

@@ -82,6 +82,11 @@ module Authentication
         reauthenticated_at: Time.current,
         last_seen_at: Time.current
       ).tap do |session|
+        # A fresh sign-in is the other of the two moments (alongside a step-up,
+        # in Session#reauthenticate!) where the user has just proved who they
+        # are, so it is safe to enrol the context here.
+        KnownContext.remember!(user, context)
+
         Current.session = session
         cookies.signed.permanent[:session_id] = {
           value: session.id,
