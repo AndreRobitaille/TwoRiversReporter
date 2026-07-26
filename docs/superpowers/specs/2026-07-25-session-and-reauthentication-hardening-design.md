@@ -313,6 +313,23 @@ recording calls, `/admin/audit_events`, and `ExpiredAuthRecordsCleanupJob` with 
 **Email change.** `Settings::ProfileController` is show-only; there is no email-change feature in the
 app. Building one inside a hardening project would be scope creep in the wrong direction.
 
+**Cross-browser reauthentication by transferable code.** Deferred deliberately, and expected to be
+built later.
+
+This design resolves the wrong-browser problem by signing the user in wherever the link lands. That
+is correct and never strands anyone, but it is not what the user wanted when the *other* browser is
+mid-task: an admin halfway through a review on desktop, who taps the link on their phone, ends up
+signed in on the phone rather than unblocked on the desktop.
+
+The intended eventual shape is a short code. The browser awaiting reauthentication displays or
+accepts a code; the emailed link, opened anywhere, issues or confirms it; entering it on the
+original browser completes the step-up there. This is the standard device-pairing pattern and it is
+a meaningful amount of new surface — a code model with its own expiry and single-use semantics, a
+second entry form, and rate limiting on guessing — which is why it is not being folded into this
+project.
+
+Nothing in this design blocks it. `Session#reauthenticate!` is the seam it would attach to.
+
 **New-device email notification.** Genuinely useful, but requires a new Loops transactional template
 and its own environment variable, which is production configuration work beyond a deploy.
 
