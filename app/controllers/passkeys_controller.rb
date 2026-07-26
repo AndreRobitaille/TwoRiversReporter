@@ -1,9 +1,16 @@
 class PasskeysController < ApplicationController
   include Authentication
   include WebauthnVerification
+  include Reauthentication
 
   allow_unauthenticated_access only: %i[authentication_options authentication]
   rate_limit to: 10, within: 3.minutes, only: %i[registration_options registration authentication_options authentication], with: -> { head :too_many_requests }
+
+  # Adding a passkey is how a stolen session becomes durable independent
+  # access — there is no password to change to evict it afterwards. Removing
+  # one is the mirror threat: strip an admin's only credential and
+  # require_admin_passkey locks them out of their own site.
+  before_action :require_fresh_reauthentication, only: %i[registration_options registration destroy]
 
   before_action :load_current_user_credential, only: %i[update destroy]
   rescue_from ActiveRecord::RecordNotFound, with: :render_not_found

@@ -20,9 +20,16 @@
     data-passkey-authentication-options-url-value="<%= authentication_options_passkeys_path(format: :json) %>"
     data-passkey-authentication-url-value="<%= authentication_passkeys_path(format: :json) %>"
   >
-    <button type="button" class="btn btn--primary" data-action="passkey#register" data-passkey-target="trigger">
-      Add a passkey
-    </button>
+    <% if @reauthentication_fresh %>
+      <button type="button" class="btn btn--primary" data-action="passkey#register" data-passkey-target="trigger">
+        Add a passkey
+      </button>
+    <% else %>
+      <p class="auth-dek">
+        Confirm it's you before adding or removing a passkey.
+      </p>
+      <%= link_to "Confirm it's you", new_reauthentication_path, class: "btn btn--primary" %>
+    <% end %>
 
     <p class="auth-status" data-passkey-target="status" aria-live="polite" role="status"></p>
 
@@ -42,9 +49,11 @@
                 <%= submit_tag "Save", class: "btn btn--secondary btn--sm" %>
               <% end %>
 
-              <%= link_to "Remove", passkey_path(credential),
-                    class: "btn btn--danger btn--sm",
-                    data: { turbo_method: :delete, turbo_confirm: "Remove this passkey?" } %>
+              <% if @reauthentication_fresh %>
+                <%= link_to "Remove", passkey_path(credential),
+                      class: "btn btn--danger btn--sm",
+                      data: { turbo_method: :delete, turbo_confirm: "Remove this passkey?" } %>
+              <% end %>
             </div>
           </li>
         <% end %>

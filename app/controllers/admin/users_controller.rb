@@ -2,6 +2,7 @@ module Admin
   class UsersController < BaseController
     before_action :set_user, only: %i[show approve reject toggle_admin disable revoke_session revoke_all_sessions destroy]
     before_action :refuse_self_deletion, only: :destroy
+    before_action :require_fresh_reauthentication, only: %i[create destroy toggle_admin]
 
     def index
       @users = User.order(:email_address)
