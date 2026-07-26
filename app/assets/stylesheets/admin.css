@@ -715,6 +715,21 @@
   border-radius: var(--radius-md);
   background: var(--color-surface);
 }
+/* `border` above is a shorthand: it sets all four sides, including
+ * `border-left-color`, so at equal (0,2,0) specificity it fully replaces
+ * `.card--ai-answer`/`.card--highlighted`'s `border-left: 3px solid ...`
+ * accent (application.css, also (0,2,0)) rather than losing to it — Task 11
+ * fix-round-1 confirmed via computed style that the accent flattened to the
+ * plain 1px grey hairline. Reasserting `border-left` here, after the base
+ * rule, wins the tie. Deliberately not rewritten as longhands on the base
+ * rule instead (border-top/right/bottom only, omitting border-left): most
+ * `.card` instances carry neither modifier and need a left edge too, so
+ * dropping it from the base would leave every plain card open on one side.
+ * The minimal, lower-risk fix is reasserting the two modifiers that need a
+ * different left border, not weakening the base for everyone.
+ */
+.theme-silo .card--ai-answer { border-left: 3px solid var(--color-teal); }
+.theme-silo .card--highlighted { border-left: 3px solid var(--color-primary); }
 .theme-silo .adm-panel__label,
 .theme-silo .topic-panel-label {
   margin-bottom: var(--space-2);
@@ -779,16 +794,74 @@
 .theme-silo .btn--ghost:hover { border-color: var(--color-border); }
 .theme-silo .btn--sm        { padding: 1px var(--space-2); font-size: 0.5625rem; }
 .theme-silo .btn[disabled]  { opacity: 0.45; cursor: not-allowed; }
+/* --secondary had no reassertion here (unlike --primary/--danger/--success/
+ * --ghost above), so the base `.theme-silo .btn` rule's `color: var(--color-
+ * text)` beat `.btn--secondary`'s `color: var(--color-teal)` outright
+ * (0,2,0 > 0,1,0) — Task 11 fix-round-1, confirmed via computed style
+ * (rgb(0,74,89) before this fix existed at all, rgb(26,46,53) with only the
+ * base rule in place). `background`/`border-color` were never actually at
+ * risk: both `.theme-silo .btn` and `.btn--secondary` already agree on
+ * `var(--color-surface)` / `var(--color-border)`, so only `color` needed
+ * reasserting. "Clear All Finished" (job_runs), "Cancel" (committees/_form),
+ * and buttons across transcript_imports/knowledge_sources/users all use
+ * --secondary and were rendering with the wrong (default) text color.
+ */
+.theme-silo .btn--secondary { color: var(--color-teal); }
+/* Hover states found during the same review, not by the automated modifier
+ * test below (that test only checks flat `.foo--bar` selectors, not `:hover`
+ * variants) but by manually forcing `:hover` via CDP and reading computed
+ * `background-color` after transitions settle. `.theme-silo .btn:hover` is
+ * (0,3,0) — one specificity level above any single unscoped `.btn--x:hover`
+ * (0,2,0) — so without a same-or-higher-specificity reassertion it wins
+ * outright on every colored variant, not just secondary:
+ *   - --danger:hover and --success:hover measured as rgba(0,0,0,0.03), i.e.
+ *     the button goes nearly transparent on hover instead of darkening —
+ *     confirmed on both Block/Approve-style buttons.
+ *   - --secondary:hover measured the same neutral overlay instead of the
+ *     public `--color-surface-raised` + `--color-border-strong` treatment;
+ *     visually closer than the other two but still not what public gives.
+ * Fixes reuse existing tokens/idioms already present in application.css
+ * (the `color-mix(... 85%, black)` darkening idiom is copied verbatim from
+ * its own `.btn--success:hover`, not invented here) so nothing is hardcoded.
+ */
+.theme-silo .btn--secondary:hover { background: var(--color-surface-raised); border-color: var(--color-border-strong); }
+.theme-silo .btn--danger:hover  { background: color-mix(in srgb, var(--color-danger) 85%, black); border-color: color-mix(in srgb, var(--color-danger) 85%, black); }
+.theme-silo .btn--success:hover { background: color-mix(in srgb, var(--color-success) 85%, black); }
 
 /* --- Badges: keep the shared name, adopt chip proportions.
  * application.css already carries a `.theme-silo .badge { border: 1px solid
  * transparent; }` rule (its own pre-revamp Silo tweak) at the same (0,2,0)
  * specificity as this one; because admin.css loads after application.css,
  * this rule wins the tie and its explicit `border` replaces theirs, which
- * is the point — chip borders, not a transparent placeholder. The
- * `.badge--default/--primary/--success/--warning/--danger` modifier rules
- * in application.css are untouched (different selector, not overridden
- * here) and keep layering their background/color/border-color on top.
+ * is the point — chip borders, not a transparent placeholder.
+ *
+ * CORRECTION (Task 11 fix-round-1): the first pass of this comment claimed
+ * `.theme-silo .badge--default/--primary/--success/--warning/--danger`
+ * (application.css) were "(0,3,0) and win as before." That's wrong on the
+ * arithmetic (two classes each = (0,2,0), not three) and wrong on the
+ * outcome. They tie this rule's specificity exactly, and the tie is
+ * resolved by *file* load order, not selector order within one file — this
+ * whole file loads after application.css, so this rule's `border` shorthand
+ * wins, flattening every one of those tinted borders to plain
+ * `var(--color-border)` grey. Confirmed via computed style:
+ * `badge--primary`'s border measured `rgb(197,208,208)` (this rule's grey),
+ * not application.css's intended teal-tinted hex. Same mechanism, same fix pattern,
+ * as the `.theme-silo .badge` line above it — it's just that this time
+ * *this* rule is the one doing the flattening instead of being the fix.
+ * `--signal-warm`/`--signal-cool`/`--outline` aren't tie cases at all: they're
+ * unscoped (0,1,0) in application.css, so this rule's (0,2,0) `border` beats
+ * them outright, same as the card accent case above.
+ *
+ * Fix: reassert `border-color` per variant, below, after this rule so intra-
+ * file order settles it. `--primary/--success/--warning/--danger`'s public
+ * values are hardcoded hex (application.css:2179 etc.) that can't be copied
+ * into this file verbatim (no hardcoded colours here), so these use
+ * `color-mix()` against existing tokens instead — same direction and
+ * roughly the same weight as the originals, not a pixel-exact match, which
+ * isn't required for a 1px badge ring. `--default` already matched
+ * (`var(--color-border)` both places) but is reasserted anyway for
+ * consistency and so the fix-round-1 guard test (below) doesn't need to
+ * special-case "coincidentally equal."
  */
 .theme-silo .badge {
   display: inline-block;
@@ -801,6 +874,14 @@
   text-transform: uppercase;
   white-space: nowrap;
 }
+.theme-silo .badge--default { border-color: var(--color-border); }
+.theme-silo .badge--primary { border-color: color-mix(in srgb, var(--color-primary) 25%, var(--color-surface)); }
+.theme-silo .badge--success { border-color: color-mix(in srgb, var(--color-success) 25%, var(--color-surface)); }
+.theme-silo .badge--warning { border-color: color-mix(in srgb, var(--color-warning) 25%, var(--color-surface)); }
+.theme-silo .badge--danger  { border-color: color-mix(in srgb, var(--color-danger) 25%, var(--color-surface)); }
+.theme-silo .badge--signal-warm { border-color: var(--color-accent-warm); }
+.theme-silo .badge--signal-cool { border-color: var(--color-accent-cool); }
+.theme-silo .badge--outline { border-color: currentcolor; }
 
 /* --- Forms ---
  * Style .form-label ONLY. A bare `label` selector here would be specificity
@@ -835,10 +916,22 @@
   font-size: var(--adm-font-size);
   color: var(--color-text);
 }
+/* application.css's unscoped `.form-textarea--code` gives the prompt-editor
+ * code fields a subtly tinted background (a hardcoded off-white hex there,
+ * pre-existing) to read as distinct from a plain field. This file's base
+ * `.theme-silo textarea`/`.theme-silo .form-textarea` rule below sets
+ * `background: var(--color-surface)` at (0,2,0) — plain `.form-textarea--code`
+ * is (0,1,0) and never contested this property before Task 11 existed, so
+ * the tint always showed publicly; now the higher-specificity base rule
+ * wins outright and flattens it to the same white as every other field.
+ * Reasserted here with `var(--color-bg)` (Silo's own recessed page tint,
+ * not a copy of the public hex) rather than widening/weakening the base.
+ */
 .theme-silo .form-textarea--code {
   font-family: var(--font-data);
   font-size: var(--adm-font-size-sm);
   line-height: var(--line-height-normal);
+  background: var(--color-bg);
 }
 .theme-silo .form-group { margin-bottom: var(--space-3); }
 .theme-silo .form-hint {

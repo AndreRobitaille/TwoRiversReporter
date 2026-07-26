@@ -182,4 +182,140 @@ class AdminStylesheetTest < ActiveSupport::TestCase
         ".#{shared} must be overridden as `.theme-silo .#{shared}` so the public site is untouched")
     end
   end
+
+  # --- Task 11 fix-round-1: guard against the root cause, not just the three
+  # confirmed instances (.btn--secondary's colour, .card--ai-answer's
+  # border-left, every tinted .badge--* variant's border-color). Every one of
+  # those was the SAME mechanism: a scoped BASE component rule this file adds
+  # (e.g. `.theme-silo .badge`) touches a colour-carrying property that a
+  # component MODIFIER in application.css (e.g. `.badge--primary`, whether
+  # written bare or already `.theme-silo`-scoped there) also sets, and the
+  # base rule wins — by higher specificity when the modifier is bare and
+  # unscoped, or by admin.css loading after application.css when the
+  # modifier is already `.theme-silo`-scoped there (the exact badge case:
+  # both rules are (0,2,0), a tie, and file load order breaks it). Either
+  # way the modifier's distinguishing colour silently flattens to the base's
+  # neutral one. This test is data-driven from the stylesheets themselves so
+  # it catches instance nine without another manual audit.
+  #
+  # Deliberately scoped to COLOR_PROPERTIES, not "any overlapping property":
+  # padding/font-size/border-radius/letter-spacing/text-transform are
+  # INTENTIONALLY unified across every admin badge/button/card by the base
+  # rule — that uniform density retrofit is the whole point of this file,
+  # not a bug. Flagging those would demand reassertion rules that just
+  # restate the base's own values back to itself. What actually broke was
+  # distinguishing colour, not shared sizing/shape.
+  #
+  # BASES is hardcoded, matching this file's existing style (CHROME_COMPONENTS,
+  # SHELL, DATA_COMPONENTS, etc. above are all hardcoded too) — extend it
+  # when a future task scopes another shared name.
+  BASES = %w[btn card badge flash form-input form-select form-textarea modal].freeze
+
+  COLOR_PROPERTIES = %w[
+    color background background-color
+    border border-color
+    border-top border-top-color border-right border-right-color
+    border-bottom border-bottom-color border-left border-left-color
+    outline outline-color
+  ].to_set.freeze
+
+  # `border`/`background`/per-side border shorthands set their -color
+  # longhand as a side effect, which is exactly how `.theme-silo .card`'s
+  # `border: var(--adm-hairline)` ends up clobbering `.card--ai-answer`'s
+  # `border-left` — so a shorthand must be treated as also touching its
+  # implied longhands, or the overlap this test looks for would never be
+  # detected in the one property form that actually caused every confirmed
+  # instance.
+  SHORTHAND_EXPANSION = {
+    "border" => %w[border-color border-top-color border-right-color border-bottom-color border-left-color],
+    "background" => %w[background-color],
+    "border-top" => %w[border-top-color],
+    "border-right" => %w[border-right-color],
+    "border-bottom" => %w[border-bottom-color],
+    "border-left" => %w[border-left-color],
+    "outline" => %w[outline-color]
+  }.freeze
+
+  # Parses "selector-list { declarations }" blocks via the same non-nested-
+  # brace scan `defined_utility_classes` above already relies on. Applied to
+  # a whole stylesheet (not just one section) it still works for our
+  # purposes: an `@media (...) {` wrapper never itself resolves to a clean
+  # "selectors { decls }" match (its own body starts with another `{` before
+  # a matching `}` is reached), so the scan simply fails there and continues
+  # from the next position — which still finds the flat, one-level-nested
+  # rules inside the media block correctly. We only read flat modifier/base
+  # rules here, none of which happen to depend on which media query (if any)
+  # wraps them.
+  def parse_flat_rules(text)
+    text = text.gsub(%r{/\*.*?\*/}m, "")
+    text.scan(/([^{}]+)\{([^{}]*)\}/m).map do |selectors, body|
+      props = body.split(";").filter_map { |decl| decl.split(":", 2).first&.strip }.reject(&:empty?)
+      { selectors: selectors.split(",").map(&:strip), properties: props.to_set }
+    end
+  end
+
+  def expand_properties(props)
+    props.flat_map { |p| [ p ] + SHORTHAND_EXPANSION.fetch(p, []) }.to_set
+  end
+
+  # Collects every MODIFIER of `base` that application.css defines, whether
+  # written as a bare `.base--x` (the common case) or already `.theme-silo
+  # .base--x` (the pre-revamp badge case) — both forms describe what a
+  # resident, or an admin before this file existed, actually saw, and either
+  # one is what a new `.theme-silo .base` rule in admin.css can clobber.
+  # Properties from both forms are unioned per modifier name.
+  def application_css_modifiers_of(base, app_rules)
+    bare = /\A\.#{Regexp.escape(base)}--([a-zA-Z0-9_-]+)\z/
+    scoped = /\A\.theme-silo\s+\.#{Regexp.escape(base)}--([a-zA-Z0-9_-]+)\z/
+    found = Hash.new { |h, k| h[k] = Set.new }
+    app_rules.each do |rule|
+      rule[:selectors].each do |sel|
+        match = sel.match(bare) || sel.match(scoped)
+        next unless match
+        found[match[1]] |= expand_properties(rule[:properties])
+      end
+    end
+    found
+  end
+
+  test "scoped base components do not clobber a modifier's colour-carrying properties without a reassertion" do
+    admin_rules = parse_flat_rules(css)
+    app_rules = parse_flat_rules(Rails.root.join("app/assets/stylesheets/application.css").read)
+
+    # Exact selector-string membership, not a loose substring regex: a loose
+    # `/\.theme-silo\s+\.btn--secondary(?![a-zA-Z0-9_-])/` also matches
+    # `.theme-silo .btn--secondary:hover { ... }` (the char after
+    # `btn--secondary` is `:`, which isn't in the disallowed set either), so
+    # a hover-only reassertion would silently satisfy the check for the
+    # non-hover rest-state rule this test actually needs to exist. Proven by
+    # temporarily deleting just `.theme-silo .btn--secondary { color: ... }`
+    # while leaving `.theme-silo .btn--secondary:hover` in place — a loose
+    # regex kept passing; exact-selector membership correctly failed.
+    admin_selectors = admin_rules.flat_map { |r| r[:selectors] }.to_set
+
+    missing = []
+
+    BASES.each do |base|
+      base_rule = admin_rules.find { |r| r[:selectors].include?(".theme-silo .#{base}") }
+      next unless base_rule # this BASE isn't scoped (yet) here — nothing to guard
+
+      base_color_props = expand_properties(base_rule[:properties]) & COLOR_PROPERTIES
+      next if base_color_props.empty? # base doesn't touch anything colour-carrying at all
+
+      application_css_modifiers_of(base, app_rules).each do |modifier_name, modifier_props|
+        modifier_color_props = modifier_props & COLOR_PROPERTIES
+        next if (base_color_props & modifier_color_props).empty?
+
+        modifier_selector = ".#{base}--#{modifier_name}"
+        missing << ".theme-silo #{modifier_selector}" unless admin_selectors.include?(".theme-silo #{modifier_selector}")
+      end
+    end
+
+    assert_empty missing.uniq.sort,
+      "these modifiers share a colour-carrying property with their scoped base " \
+      "rule but admin.css has no `.theme-silo` reassertion for them, so the base " \
+      "rule's specificity (or, when application.css already scoped the modifier " \
+      "too, admin.css loading after application.css) silently flattens their " \
+      "colour to the base's: #{missing.uniq.sort.join(', ')}"
+  end
 end
