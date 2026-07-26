@@ -29,6 +29,69 @@
    3. Components
    ============================================ */
 
+/* --- Page containers whose BEM children were styled but whose parents were not --- */
+.theme-silo .topic-board-header { display: block; }
+/* NOTE: this element always carries `.admin-two-column` (display: grid) too —
+   a `.theme-silo .transcript-imports-page` selector has higher specificity
+   (0,2,0 vs 0,1,0) and would win the `display` property outright, so this
+   stays `grid` to match rather than silently collapsing the two-column
+   layout back to a single stacked column. */
+.theme-silo .transcript-imports-page { display: grid; }
+.theme-silo .transcript-imports-table-wrap { overflow-x: auto; }
+.theme-silo .transcript-imports-step-logs {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-4);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+.theme-silo .prompt-run-message {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+.theme-silo .generated-image-panel__block { margin-bottom: var(--space-3); }
+
+/* --- Small shared primitives the older pages assumed existed --- */
+.theme-silo .breadcrumb {
+  margin-bottom: var(--space-3);
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.theme-silo .page-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.theme-silo .form-help {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+.theme-silo .flash-messages { margin-bottom: var(--space-4); }
+.theme-silo .timestamp {
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+}
+.theme-silo .table-desc {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+.theme-silo .badge--muted {
+  color: var(--color-text-muted);
+  background: var(--color-surface-raised);
+  border-color: var(--color-border);
+}
+.theme-silo .prose--sm { font-size: var(--font-size-sm); }
+.theme-silo .table-responsive { overflow-x: auto; }
+
 /* ============================================
    4. Utilities (transitional — removed in Phase 2)
    ============================================ */

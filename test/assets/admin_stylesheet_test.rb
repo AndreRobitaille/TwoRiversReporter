@@ -69,4 +69,37 @@ class AdminStylesheetTest < ActiveSupport::TestCase
     assert_empty offenders,
       "admin.css must use design tokens, not literal colours: #{offenders.uniq.join(', ')}"
   end
+
+  MISTAKES = {
+    "atom-marker"          => 'render "shared/atom_marker", theme: "silo"',
+    "section-header-label" => "section-header__label",
+    "section-header-line"  => "section-header__line"
+  }.freeze
+
+  # `table` is deliberately absent: the data-table component (Task 10) owns the
+  # bare <table> element. Asserting it here would leave the suite red for three
+  # tasks. Do not add it.
+  PAGE_CONTAINERS = %w[
+    table-responsive table-desc timestamp breadcrumb form-help
+    flash-messages page-header-row badge--muted prose--sm
+    topic-board-header transcript-imports-page transcript-imports-table-wrap
+    transcript-imports-step-logs prompt-run-message generated-image-panel__block
+  ].freeze
+
+  test "the three motif and section-header mistakes are gone from every admin view" do
+    views = Dir[Rails.root.join("app/views/admin/**/*.erb")]
+
+    MISTAKES.each do |wrong, right|
+      offenders = views.select do |path|
+        File.read(path).match?(/\b#{Regexp.escape(wrong)}\b/)
+      end
+      assert_empty offenders.map { |p| p.sub("#{Rails.root}/", "") },
+        "`#{wrong}` is undefined — use #{right} instead"
+    end
+  end
+
+  test "defines every remaining page and component container" do
+    missing = PAGE_CONTAINERS.reject { |c| css.match?(/\.#{Regexp.escape(c)}(?![a-zA-Z0-9_-])/) }
+    assert_empty missing, "admin.css does not define: #{missing.join(', ')}"
+  end
 end
