@@ -32,3 +32,64 @@
 /* ============================================
    4. Utilities (transitional — removed in Phase 2)
    ============================================ */
+
+/* These exist because admin views were written with Tailwind idiom in a
+ * project that has no Tailwind, leaving 32 views referencing classes nothing
+ * defined. Rather than leave them broken while components are built, they are
+ * defined here against real tokens. Phase 2 deletes this section as pages move
+ * onto components. Do not add to it.
+ *
+ * Unscoped and last on purpose: a scoped component selector (.theme-silo .card,
+ * 0-2-0) outranks an unscoped utility (.p-6, 0-1-0). Where a utility must beat a
+ * component, write `.theme-silo .p-6` beside that component rather than raising
+ * every utility here.
+ */
+
+/* --- spacing --- */
+.m-0 { margin: 0; }
+.mt-1 { margin-top: var(--space-1); }
+.mt-3 { margin-top: var(--space-3); }
+.mb-1 { margin-bottom: var(--space-1); }
+.mb-3 { margin-bottom: var(--space-3); }
+.mx-2 { margin-left: var(--space-2); margin-right: var(--space-2); }
+.my-6 { margin-top: var(--space-6); margin-bottom: var(--space-6); }
+.p-3 { padding: var(--space-3); }
+.p-4 { padding: var(--space-4); }
+.p-6 { padding: var(--space-6); }
+.gap-3 { gap: var(--space-3); }
+.gap-6 { gap: var(--space-6); }
+.space-y-2 > * + * { margin-top: var(--space-2); }
+.space-y-3 > * + * { margin-top: var(--space-3); }
+.space-y-6 > * + * { margin-top: var(--space-6); }
+
+/* --- layout --- */
+.grid { display: grid; }
+.grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grow { flex-grow: 1; }
+.items-start { align-items: flex-start; }
+.justify-end { justify-content: flex-end; }
+.align-middle { vertical-align: middle; }
+.w-8 { width: 2rem; }
+.whitespace-nowrap { white-space: nowrap; }
+.cursor-pointer { cursor: pointer; }
+
+/* --- type --- */
+.text-left { text-align: left; }
+.text-lg { font-size: var(--font-size-lg); }
+.text-md { font-size: var(--font-size-base); }
+.font-semibold { font-weight: var(--font-weight-semibold); }
+.font-mono { font-family: var(--font-data); }
+.italic { font-style: italic; }
+
+/* --- borders and surfaces --- */
+.border-l { border-left: 1px solid var(--color-border); }
+.border-t { border-top: 1px solid var(--color-border); }
+.border-gray-200 { border-color: var(--color-border); }
+.border-yellow-200 { border-color: var(--color-warning); }
+.border-danger-light { border-color: var(--color-danger-light); }
+.bg-white { background-color: var(--color-surface); }
+.bg-slate-50 { background-color: var(--color-bg); }
+.bg-yellow-50 { background-color: var(--color-warning-light); }
+.text-yellow-600,
+.text-yellow-700,
+.text-yellow-800 { color: var(--color-warning); }
