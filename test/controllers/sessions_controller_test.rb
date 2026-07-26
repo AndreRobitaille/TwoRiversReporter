@@ -137,6 +137,30 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_predicate magic_link.reload, :used_at
   end
 
+  # A login wall (hitting an authenticated page while signed out) stores the
+  # original destination in session[:return_to_after_authenticating]. Signing
+  # in by magic link should land there instead of the home page, or the
+  # reauthentication challenge page's "takes you back to what you were doing"
+  # footnote is a lie for the ordinary sign-in path too.
+  test "post magic_link redirects to the stored destination when one is set" do
+    magic_link = MagicLink.create_for!(@active_user, purpose: "sign_in")
+
+    get settings_security_path
+    assert_redirected_to new_public_session_path
+
+    post "/session/magic_link", params: { token: magic_link.raw_token }
+
+    assert_redirected_to settings_security_path
+  end
+
+  test "post magic_link redirects root when no destination is stored" do
+    magic_link = MagicLink.create_for!(@active_user, purpose: "sign_in")
+
+    post "/session/magic_link", params: { token: magic_link.raw_token }
+
+    assert_redirected_to root_path
+  end
+
   test "post magic_link rejects invalid used and expired tokens gracefully" do
     used = MagicLink.create_for!(@active_user, purpose: "sign_in")
     used.update!(used_at: Time.current)

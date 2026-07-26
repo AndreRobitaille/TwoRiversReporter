@@ -1,4 +1,5 @@
 require "test_helper"
+require "ostruct"
 
 class ReauthenticationsControllerTest < ActionDispatch::IntegrationTest
   setup do
@@ -107,5 +108,35 @@ class ReauthenticationsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :unauthorized
     assert_not @user.sessions.sole.reload.recently_reauthenticated?
+  end
+
+  # Unlike the forged-assertion test above, this one exercises the real
+  # #passkey ownership scope directly: it stubs WebAuthn::Credential.from_get
+  # (the same idiom PasskeysControllerTest uses) to hand back a verified
+  # credential whose id genuinely belongs to another account's
+  # PasskeyCredential row, bypassing only the cryptographic ceremony a real
+  # authenticator would perform. verified_get_credential's own unscoped
+  # find_by legitimately locates that row (it exists — it just isn't the
+  # signed-in user's), calls the stubbed `verify`, and hands the credential
+  # back to #passkey, which must then reject it via Current.user scoping.
+  test "another user's real passkey is rejected by the ownership scope, not by verification" do
+    other = User.create!(email_address: "other-real-passkey@example.com", status: "active")
+    other_credential = other.passkey_credentials.create!(external_id: "cred-other-real", public_key: "public-key", sign_count: 0)
+    sign_in_as(@user)
+    @user.sessions.sole.update_columns(reauthenticated_at: 1.year.ago)
+
+    verified_credential = OpenStruct.new(id: other_credential.external_id, sign_count: 1)
+    verified_credential.define_singleton_method(:verify) do |challenge, public_key:, sign_count:, user_verification:|
+      true
+    end
+
+    WebAuthn::Credential.stub(:from_get, ->(*args, **kwargs) { verified_credential }) do
+      post passkey_reauthentication_url(format: :json), params: { credential: { raw: "value" } }, as: :json
+    end
+
+    assert_response :unauthorized
+    assert_not @user.sessions.sole.reload.recently_reauthenticated?
+    assert_equal 0, other_credential.reload.sign_count,
+      "the other account's credential must not be updated by a step-up it did not authorize"
   end
 end

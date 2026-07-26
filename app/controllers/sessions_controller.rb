@@ -70,7 +70,7 @@ class SessionsController < ApplicationController
     def consume_magic_link!
       magic_link = MagicLink.consume!(@token, purpose: "sign_in")
       start_new_session_for(magic_link.user)
-      redirect_to root_path, status: :see_other
+      redirect_to after_authentication_url, status: :see_other
     rescue MagicLink::InvalidToken, ActiveRecord::RecordNotFound
       redirect_to new_public_session_path, alert: friendly_invalid_token_message
     end
