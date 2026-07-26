@@ -234,6 +234,23 @@ module Admin
       assert_equal "A fresh description", topic.reload.description
     end
 
+    test "each row has an inline importance editor" do
+      topic = Topic.create!(name: "importance #{SecureRandom.hex(4)}", status: "approved", review_status: "approved", importance: 3)
+      get admin_topics_url
+
+      assert_select "tbody#topic_#{topic.id} form[action=?]", admin_topic_path(topic) do
+        assert_select "input[name='topic[importance]'][value='3']"
+      end
+    end
+
+    test "importance can be saved from the index" do
+      topic = Topic.create!(name: "imp save #{SecureRandom.hex(4)}", status: "approved", review_status: "approved", importance: 1)
+
+      patch admin_topic_path(topic), params: { topic: { importance: 7 } }, as: :turbo_stream
+
+      assert_equal 7, topic.reload.importance
+    end
+
     test "updating via turbo_stream with an invalid name returns unprocessable_entity and does not corrupt the row" do
       original_name = "valid name #{SecureRandom.hex(4)}"
       topic = Topic.create!(name: original_name, status: "approved", review_status: "approved")

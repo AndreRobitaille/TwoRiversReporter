@@ -17,7 +17,8 @@ module Admin
         :updated_at,
         :created_at,
         :last_seen_at,
-        :last_activity_at
+        :last_activity_at,
+        :importance
       )
 
       def initialize(scope: Topic.all, sort: "updated_at")
@@ -46,7 +47,8 @@ module Admin
           updated_at: topic.updated_at,
           created_at: topic.created_at,
           last_seen_at: topic.last_seen_at,
-          last_activity_at: topic.last_activity_at
+          last_activity_at: topic.last_activity_at,
+          importance: topic.importance
         )
       end
 

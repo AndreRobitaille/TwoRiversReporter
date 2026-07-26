@@ -38,6 +38,17 @@
     <td class="text-right"><%= row.mention_count %></td>
     <td class="data-cell"><%= row.last_seen_at&.to_date || "—" %></td>
     <td class="data-cell"><%= row.last_activity_at&.to_date || "—" %></td>
+    <td>
+      <%= form_with model: [:admin, Topic.new(id: row.topic_id)],
+            url: admin_topic_path(row.topic_id),
+            method: :patch,
+            class: "flex items-center gap-2",
+            data: { controller: "inline-save",
+                    action: "submit->inline-save#submit turbo:submit-end->inline-save#end" } do |f| %>
+        <%= f.number_field :importance, value: row.importance, min: 0, max: 10, class: "form-input w-8" %>
+        <%= f.submit "Save", class: "btn btn--sm" %>
+      <% end %>
+    </td>
     <td class="text-right">
       <div class="flex gap-2 justify-end">
         <% if row.review_status == "proposed" %>

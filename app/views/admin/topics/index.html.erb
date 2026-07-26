@@ -38,6 +38,7 @@
           <th class="text-right"><%= link_to "Mentions", admin_topics_path(request.query_parameters.merge(sort: "mention_count")), class: "admin-topics-table__sort-link" %></th>
           <th><%= link_to "Last Seen", admin_topics_path(request.query_parameters.merge(sort: "last_seen_at")), class: "admin-topics-table__sort-link" %></th>
           <th><%= link_to "Last Activity", admin_topics_path(request.query_parameters.merge(sort: "last_activity_at")), class: "admin-topics-table__sort-link" %></th>
+          <th>Importance</th>
           <th></th>
         </tr>
       </thead>
