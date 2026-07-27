@@ -1,8 +1,9 @@
-<div class="page-header">
-  <div class="flex justify-between items-center">
+<div class="adm-page-header">
+  <div class="adm-page-header__eyebrow">The Machine</div>
+  <div class="page-header-row">
     <div>
-      <h1 class="page-title">Job Queue</h1>
-      <p class="page-subtitle">Monitor background job processing</p>
+      <h1 class="adm-page-header__title">Queue &amp; Failures</h1>
+      <p class="adm-page-header__meta">Worker status, pending work, and failed jobs.</p>
     </div>
     <div class="flex gap-2">
       <%= button_to "Clear All Finished", clear_completed_admin_jobs_path, method: :post, class: "btn btn--secondary",

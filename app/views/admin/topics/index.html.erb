@@ -5,7 +5,7 @@
   <p class="page-subtitle">Review AI mistakes, ambiguous cases, and cleanup work.</p>
 </div>
 
-<div class="card" style="padding: var(--space-5);">
+<div class="card">
   <%= form_with url: admin_topics_path, method: :get, local: true, class: "admin-topics-filters" do |f| %>
     <%= f.text_field :q, value: params[:q], placeholder: "Search topics, aliases, description", class: "form-input" %>
     <%= f.select :status,
@@ -38,14 +38,24 @@
           <th class="text-right"><%= link_to "Mentions", admin_topics_path(request.query_parameters.merge(sort: "mention_count")), class: "admin-topics-table__sort-link" %></th>
           <th><%= link_to "Last Seen", admin_topics_path(request.query_parameters.merge(sort: "last_seen_at")), class: "admin-topics-table__sort-link" %></th>
           <th><%= link_to "Last Activity", admin_topics_path(request.query_parameters.merge(sort: "last_activity_at")), class: "admin-topics-table__sort-link" %></th>
+          <th>Importance</th>
           <th></th>
         </tr>
       </thead>
-      <tbody>
-        <% @inbox_rows.each do |row| %>
-          <%= render "inbox_row", row: row %>
-        <% end %>
-      </tbody>
+      <%# No Topic records are loaded here, and no preview is computed: each
+          row's mention preview is fetched on expansion by a lazy
+          <turbo-frame> pointing at Admin::TopicsController#mention_preview.
+          Rendering previews inline instead cost 23.6s / 733 queries on the
+          641-topic development database — topic_recent_mentions eager-loads
+          full document text and Extraction rows, and it ran for all ~182
+          rows that have mentions, not just the one somebody clicked. Do not
+          reintroduce a per-row Topic lookup or preview call here; the row
+          partial needs only its Row struct and the preview window. %>
+      <% @inbox_rows.each do |row| %>
+        <%= render "inbox_row",
+              row: row,
+              preview_window: preview_window_from_params(params) %>
+      <% end %>
     </table>
   </div>
 </div>

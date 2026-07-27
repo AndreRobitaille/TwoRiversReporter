@@ -490,10 +490,22 @@ Append inside `Admin::NavigationConsistencyTest`:
     end
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [ ] **Step 2: Prove the guard detects an inline handler**
 
-Run: `bin/rails test test/controllers/admin/navigation_consistency_test.rb -n /Stimulus/`
-Expected: PASS on the `data-controller` assertions (Task 2 already emitted them) but the test is still worth keeping — if it passes immediately, temporarily reintroduce `onclick="1"` into the layout, confirm the test fails, then remove it. That proves the `assert_no_match` guard actually detects inline handlers rather than passing vacuously.
+This test may pass the moment it is written, because Task 2 already emitted the `data-controller` and `data-action` attributes and removed the old header. A passing absence assertion proves nothing on its own, so mutate first:
+
+```bash
+sed -i 's|<main class="adm-main">|<main class="adm-main" onclick="void 0">|' app/views/layouts/admin.html.erb
+bin/rails test test/controllers/admin/navigation_consistency_test.rb -n /Stimulus/
+```
+
+Expected: **FAIL** on the `assert_no_match(/onclick=/)` assertion. Then revert:
+
+```bash
+git checkout app/views/layouts/admin.html.erb
+```
+
+If it passed with the `onclick` present, the guard is broken — fix it before continuing.
 
 - [ ] **Step 3: Write the controller**
 
@@ -831,8 +843,11 @@ Append to `AdminStylesheetTest`:
     "section-header-line"  => "section-header__line"
   }.freeze
 
+  # `table` is deliberately absent: the data-table component (Task 10) owns the
+  # bare <table> element. Asserting it here would leave the suite red for three
+  # tasks. Do not add it.
   PAGE_CONTAINERS = %w[
-    table table-responsive table-desc timestamp breadcrumb form-help
+    table-responsive table-desc timestamp breadcrumb form-help
     flash-messages page-header-row badge--muted prose--sm
     topic-board-header transcript-imports-page transcript-imports-table-wrap
     transcript-imports-step-logs prompt-run-message generated-image-panel__block
@@ -960,7 +975,7 @@ Append under section 3 of `admin.css`:
 - [ ] **Step 5: Run the test**
 
 Run: `bin/rails test test/assets/admin_stylesheet_test.rb`
-Expected: FAIL on `table` only, since Task 10 owns it. Temporarily remove `"table"` from `PAGE_CONTAINERS`, confirm all five tests pass, then restore it and leave that one failing until Task 10 — or reorder so Task 10 runs first. **Preferred:** move `"table"` out of `PAGE_CONTAINERS` now and assert it in Task 10 instead, so the suite is green at every commit.
+Expected: all five tests pass.
 
 - [ ] **Step 6: Verify the affected pages still render**
 
@@ -1671,15 +1686,19 @@ Expected: FAIL on both.
   white-space: nowrap;
 }
 
-/* --- Forms --- */
-.theme-silo .form-label,
-.theme-silo label {
+/* --- Forms ---
+ * Style .form-label ONLY. A bare `label` selector here would be specificity
+ * 0-1-1 and would beat .job-type-card (0-1-0, application.css:6083), whose
+ * markup is a <label> — it would wreck the Run a Job page. Several admin
+ * labels also wrap whole sentences (site_settings/show), which is why this
+ * stays sentence case rather than the uppercase micro-label treatment used
+ * by .adm-panel__label and table headers, where text is short by construction.
+ */
+.theme-silo .form-label {
   display: block;
   margin-bottom: var(--space-1);
-  font-family: var(--font-data);
-  font-size: 0.5625rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-size: var(--adm-font-size-sm);
+  font-weight: var(--font-weight-medium);
   color: var(--color-text-secondary);
 }
 .theme-silo .form-input,
@@ -1886,8 +1905,8 @@ In `app/services/admin/topics/inbox_query.rb`, add a class method and make `call
           alias_count: topic.topic_aliases.size,
           alias_names: topic.topic_aliases.map(&:name).sort,
           mention_count: topic.agenda_items.size,
-          reason_label: new.send(:reason_for, topic),
-          signals: new.send(:signals_for, topic),
+          reason_label: reason_for(topic),
+          signals: signals_for(topic),
           updated_at: topic.updated_at,
           created_at: topic.created_at,
           last_seen_at: topic.last_seen_at,
@@ -1895,12 +1914,35 @@ In `app/services/admin/topics/inbox_query.rb`, add a class method and make `call
         )
       end
 
+      def self.reason_for(topic)
+        return "Needs review" if topic.review_status == "proposed"
+        return "Blocked topic" if topic.status == "blocked"
+        return "Alias cleanup" if topic.topic_aliases.any?
+
+        "Recently changed"
+      end
+      private_class_method :reason_for
+
+      def self.signals_for(topic)
+        [].tap do |signals|
+          signals << "Pinned" if topic.pinned?
+          signals << "Needs review" if topic.review_status == "proposed"
+          signals << "Blocked" if topic.status == "blocked"
+          signals << topic.lifecycle_status.to_s.capitalize if topic.lifecycle_status.in?(%w[dormant resolved recurring])
+          signals << "No description" if topic.description.blank?
+          signals << "Zero mentions" if topic.agenda_items.empty?
+          signals << "Many aliases" if topic.topic_aliases.size >= 3
+          signals << "New" if topic.created_at >= 7.days.ago
+        end
+      end
+      private_class_method :signals_for
+
       def call
         sort_rows(flagged_scope.map { |topic| self.class.row_for(topic) })
       end
 ```
 
-`reason_for` and `signals_for` are instance methods that use no instance state, so `new.send(...)` is safe. Leave them private.
+`reason_for` and `signals_for` move from private instance methods to private class methods — they never used instance state. **Delete the old private instance versions** so there is exactly one implementation of each; leaving both would be duplicated logic that drifts.
 
 - [ ] **Step 4: Rewrite `_inbox_row` as a `tbody` with triage actions**
 

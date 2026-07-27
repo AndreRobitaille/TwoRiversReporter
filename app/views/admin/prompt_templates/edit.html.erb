@@ -8,10 +8,10 @@
 <div class="page-header">
   <div class="page-header-row">
     <div>
-      <h1 class="page-title" style="margin-bottom: var(--space-2);"><%= @template.name %></h1>
+      <h1 class="page-title mb-2"><%= @template.name %></h1>
       <p class="page-subtitle"><%= @template.description %></p>
       <% if @template.usage_context.present? %>
-        <p class="page-subtitle" style="margin-top: var(--space-1); color: var(--color-text-muted); font-size: var(--text-sm);"><%= @template.usage_context %></p>
+        <p class="page-subtitle mt-1 text-muted text-sm"><%= @template.usage_context %></p>
       <% end %>
     </div>
   </div>
@@ -41,8 +41,8 @@
 
         <div class="form-group">
           <div class="flex items-center gap-4">
-            <%= form.label :model_tier, "Model Tier", class: "form-label", style: "margin-bottom: 0;" %>
-            <%= form.select :model_tier, [["Default (GPT-5.2)", "default"], ["Lightweight (GPT-5-mini)", "lightweight"]], {}, class: "form-select", style: "width: auto;" %>
+            <%= form.label :model_tier, "Model Tier", class: "form-label mb-0" %>
+            <%= form.select :model_tier, [["Default (GPT-5.2)", "default"], ["Lightweight (GPT-5-mini)", "lightweight"]], {}, class: "form-select w-auto" %>
           </div>
         </div>
 
@@ -88,14 +88,14 @@
           <% end %>
         </div>
 
-        <div class="form-group" style="margin-bottom: 0;">
+        <div class="form-group mb-0">
           <label class="form-label">
-            Edit note <span style="font-weight: 400; color: var(--color-text-muted);">(optional)</span>
+            Edit note <span class="text-muted font-normal">(optional)</span>
           </label>
-          <input type="text" name="prompt_template[editor_note]" class="form-input" placeholder="What did you change?" style="max-width: 500px;">
+          <input type="text" name="prompt_template[editor_note]" class="form-input form-input--wide" placeholder="What did you change?">
         </div>
 
-        <div class="flex gap-2 items-center mt-6" style="padding-top: var(--space-4); border-top: 1px solid var(--color-border);">
+        <div class="flex gap-2 items-center mt-6 border-t pt-4">
           <%= form.submit "Save Changes", class: "btn btn--primary" %>
           <%= link_to "Cancel", admin_prompt_templates_path, class: "btn btn--ghost" %>
         </div>
@@ -134,7 +134,7 @@
               <% if version.editor_note.present? %>
                 <span><%= version.editor_note %></span>
               <% else %>
-                <span style="color: var(--color-text-muted); font-style: italic;">No note</span>
+                <span class="italic text-muted">No note</span>
               <% end %>
             </td>
             <td class="text-right">
@@ -156,7 +156,7 @@
             </td>
           </tr>
           <tr class="hidden" id="diff-row-<%= version.id %>">
-            <td colspan="4" style="padding: 0;">
+            <td colspan="4" class="p-0">
               <div id="diff-content-<%= version.id %>"></div>
             </td>
           </tr>

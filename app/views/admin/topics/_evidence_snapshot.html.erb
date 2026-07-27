@@ -1,10 +1,10 @@
-<div class="topic-decision-card" style="border-left: none;">
-  <div class="topic-decision-card__trigger" style="cursor: default; border-left: 3px solid var(--color-primary);">
+<div class="topic-decision-card topic-decision-card--evidence">
+  <div class="topic-decision-card__trigger">
     <h2 class="topic-decision-card__title">Evidence Snapshot</h2>
-    <span style="font-family: var(--font-data); font-size: var(--font-size-xs); color: var(--color-text-muted);"><%= workspace.recent_evidence.size %> recent</span>
+    <span class="timestamp"><%= workspace.recent_evidence.size %> recent</span>
   </div>
 
-  <div class="topic-decision-card__panel" style="display: block;">
+  <div class="topic-decision-card__panel">
     <% if workspace.recent_evidence.any? %>
       <div class="topic-evidence-list">
         <% workspace.recent_evidence.each do |agenda_item| %>

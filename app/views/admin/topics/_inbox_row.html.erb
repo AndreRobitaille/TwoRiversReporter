@@ -1,35 +1,119 @@
-<% row_class = case row.review_status
-   when "proposed" then "admin-topics-table__row--proposed"
-   when "blocked" then "admin-topics-table__row--blocked"
-   else "admin-topics-table__row--approved"
-end %>
-<% row_class += " admin-topics-table__row--warn" if row.signals.intersect?(["Needs review", "Blocked", "Many aliases", "No description"]) %>
-<tr class="<%= row_class %>">
-  <td>
-    <div class="font-semibold"><%= link_to row.name, admin_topic_path(row.topic_id), data: { turbo_frame: "_top" } %></div>
-    <% if row.alias_names.any? %>
-      <div class="text-sm text-secondary mt-1"><%= row.alias_names.join(", ") %></div>
-    <% end %>
-  </td>
-  <td>
-    <div class="admin-topics-table__badges">
-      <span class="badge <%= row.review_status == "proposed" ? "badge--warning" : row.review_status == "blocked" ? "badge--danger" : "badge--success" %>"><%= row.review_status %></span>
+<%# A tbody, not a tr, so turbo_stream.replace has a stable element to swap
+    and so a future preview row can live inside the same block. The id must
+    match helpers.dom_id(topic) — "topic_<id>" — which is what
+    Admin::TopicsController#render_turbo_update targets. %>
+<% row_state = if row.review_status == "proposed"
+                 "adm-table__row--warn"
+               elsif row.status == "blocked"
+                 "adm-table__row--danger"
+               else
+                 "adm-table__row--ok"
+               end %>
+<%# render_turbo_update and update's failure branch both re-render this
+    partial with only `row:` (and `errors:` on failure) — `preview_window:`
+    is not passed. Default it so those turbo paths don't raise; a nil window
+    simply drops the query param and lets the preview action apply its own
+    default. %>
+<% preview_window = local_assigns.fetch(:preview_window, nil) %>
+<tbody id="topic_<%= row.topic_id %>" data-controller="row-toggle">
+  <tr class="<%= row_state %>">
+    <td>
+      <div class="font-semibold">
+        <%= link_to row.name, admin_topic_path(row.topic_id), data: { turbo_frame: "_top" } %>
+      </div>
+      <% if row.alias_names.any? %>
+        <div class="table-desc"><%= row.alias_names.join(", ") %></div>
+      <% end %>
+      <% local_assigns.fetch(:errors, []).each do |error| %>
+        <div class="text-xs text-danger"><%= error %></div>
+      <% end %>
+    </td>
+    <td>
+      <% review_chip = case row.review_status
+         when "proposed" then "adm-chip--warn"
+         when "blocked" then "adm-chip--danger"
+         else "adm-chip--ok"
+      end %>
+      <span class="adm-chip <%= review_chip %>"><%= row.review_status %></span>
       <% if row.status != row.review_status %>
-        <span class="badge <%= row.status == "blocked" ? "badge--danger" : row.status == "approved" ? "badge--success" : "badge--default" %>"><%= row.status %></span>
+        <span class="adm-chip adm-chip--neutral"><%= row.status %></span>
       <% end %>
-    </div>
-  </td>
-  <td>
-    <div class="topic-list-item__signals">
+    </td>
+    <td>
       <% row.signals.each do |signal| %>
-        <span class="badge badge--signal <%= ["Needs review", "Blocked", "No description", "Many aliases", "Dormant", "Resolved"].include?(signal) ? "badge--signal-warm" : "badge--signal-cool" %>"><%= signal %></span>
+        <span class="adm-chip adm-chip--neutral"><%= signal %></span>
       <% end %>
-    </div>
-  </td>
-  <td class="text-right"><%= row.mention_count %></td>
-  <td><%= row.last_seen_at&.to_date || "-" %></td>
-  <td><%= row.last_activity_at&.to_date || "-" %></td>
-  <td class="text-right">
-    <%= link_to "Open", admin_topic_path(row.topic_id), class: "btn btn--secondary btn--sm" %>
-  </td>
-</tr>
+    </td>
+    <td class="text-right"><%= row.mention_count %></td>
+    <td class="data-cell"><%= row.last_seen_at&.to_date || "—" %></td>
+    <td class="data-cell"><%= row.last_activity_at&.to_date || "—" %></td>
+    <td>
+      <%= form_with model: [:admin, Topic.new(id: row.topic_id)],
+            url: admin_topic_path(row.topic_id),
+            method: :patch,
+            class: "flex items-center gap-2",
+            data: { controller: "inline-save",
+                    action: "submit->inline-save#submit turbo:submit-end->inline-save#end" } do |f| %>
+        <%= f.number_field :importance, value: row.importance, min: 0, max: 10, class: "form-input w-8" %>
+        <%= f.submit "Save", class: "btn btn--sm" %>
+      <% end %>
+    </td>
+    <td class="text-right">
+      <div class="flex gap-2 justify-end">
+        <% has_mentions = row.mention_count.positive? %>
+        <button type="button"
+                class="btn btn--sm"
+                <% if has_mentions %>
+                  data-action="row-toggle#toggle"
+                  data-row-toggle-target="button"
+                  aria-expanded="false"
+                  aria-controls="topic_<%= row.topic_id %>_preview"
+                <% else %>
+                  disabled
+                <% end %>>
+          Preview
+        </button>
+
+        <% if row.review_status == "proposed" %>
+          <%= button_to "Approve", approve_admin_topic_path(row.topic_id), method: :post, class: "btn btn--success btn--sm" %>
+          <%= button_to "Block", block_admin_topic_path(row.topic_id), method: :post, class: "btn btn--danger btn--sm" %>
+        <% elsif row.review_status == "blocked" || row.status == "blocked" %>
+          <%= button_to "Unblock", unblock_admin_topic_path(row.topic_id), method: :post, class: "btn btn--sm" %>
+        <% else %>
+          <%= button_to "Needs review", needs_review_admin_topic_path(row.topic_id), method: :post, class: "btn btn--sm" %>
+          <%= button_to "Block", block_admin_topic_path(row.topic_id), method: :post, class: "btn btn--danger btn--sm" %>
+        <% end %>
+
+        <% if row.pinned %>
+          <%= button_to "Unpin", unpin_admin_topic_path(row.topic_id), method: :post, class: "btn btn--primary btn--sm" %>
+        <% else %>
+          <%= button_to "Pin", pin_admin_topic_path(row.topic_id), method: :post, class: "btn btn--sm" %>
+        <% end %>
+      </div>
+    </td>
+  </tr>
+  <tr id="topic_<%= row.topic_id %>_preview" data-row-toggle-target="details" hidden>
+    <td colspan="8">
+      <%# Nothing about the preview is computed here. topic_recent_mentions
+          eager-loads each linked document's extracted_text and every
+          Extraction row behind it; doing that for up to 200 rows cost 23.6s
+          and 733 queries on the 641-topic development database, essentially
+          all of it to fill rows nobody expanded. `loading: "lazy"` makes
+          Turbo hold the request until the frame actually becomes visible —
+          which is precisely when row-toggle unhides this row — so the work
+          is paid for once, per expansion, by the person who asked for it.
+          Rows with no mentions get no frame at all: their Preview button is
+          already disabled, so the request could never be triggered. %>
+      <% if has_mentions %>
+        <%= turbo_frame_tag "topic_#{row.topic_id}_preview_frame",
+              src: mention_preview_admin_topic_path(row.topic_id, preview_window: preview_window),
+              loading: "lazy",
+              class: "admin-topics-table__preview-frame" do %>
+          <p class="table-desc m-0">Loading mentions…</p>
+        <% end %>
+      <% else %>
+        <p class="table-desc m-0">No recent mentions.</p>
+      <% end %>
+    </td>
+  </tr>
+</tbody>

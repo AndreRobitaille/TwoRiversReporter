@@ -17,7 +17,8 @@ module Admin
         :updated_at,
         :created_at,
         :last_seen_at,
-        :last_activity_at
+        :last_activity_at,
+        :importance
       )
 
       def initialize(scope: Topic.all, sort: "updated_at")
@@ -25,50 +26,42 @@ module Admin
         @sort = sort
       end
 
-      def call
-        rows = flagged_scope.map do |topic|
-          Row.new(
-            topic_id: topic.id,
-            name: topic.name,
-            description: topic.description,
-            status: topic.status,
-            review_status: topic.review_status,
-            lifecycle_status: topic.lifecycle_status,
-            pinned: topic.pinned?,
-            alias_count: topic.topic_aliases.size,
-            alias_names: topic.topic_aliases.map(&:name).sort,
-            mention_count: topic.agenda_items.size,
-            reason_label: reason_for(topic),
-            signals: signals_for(topic),
-            updated_at: topic.updated_at,
-            created_at: topic.created_at,
-            last_seen_at: topic.last_seen_at,
-            last_activity_at: topic.last_activity_at
-          )
-        end
-
-        sort_rows(rows)
+      # Building a Row from a Topic is needed in two places: the index query,
+      # and the controller's turbo_stream response after a triage action.
+      # Keeping one implementation means a replaced row can never disagree
+      # with the row the index originally rendered.
+      def self.row_for(topic)
+        Row.new(
+          topic_id: topic.id,
+          name: topic.name,
+          description: topic.description,
+          status: topic.status,
+          review_status: topic.review_status,
+          lifecycle_status: topic.lifecycle_status,
+          pinned: topic.pinned?,
+          alias_count: topic.topic_aliases.size,
+          alias_names: topic.topic_aliases.map(&:name).sort,
+          mention_count: topic.agenda_items.size,
+          reason_label: reason_for(topic),
+          signals: signals_for(topic),
+          updated_at: topic.updated_at,
+          created_at: topic.created_at,
+          last_seen_at: topic.last_seen_at,
+          last_activity_at: topic.last_activity_at,
+          importance: topic.importance
+        )
       end
 
-      private
-
-      attr_reader :scope, :sort
-
-      def flagged_scope
-        scope.includes(:topic_aliases, :agenda_items)
-             .reorder(updated_at: :desc)
-             .limit(200)
-      end
-
-      def reason_for(topic)
+      def self.reason_for(topic)
         return "Needs review" if topic.review_status == "proposed"
         return "Blocked topic" if topic.status == "blocked"
         return "Alias cleanup" if topic.topic_aliases.any?
 
         "Recently changed"
       end
+      private_class_method :reason_for
 
-      def signals_for(topic)
+      def self.signals_for(topic)
         [].tap do |signals|
           signals << "Pinned" if topic.pinned?
           signals << "Needs review" if topic.review_status == "proposed"
@@ -79,6 +72,21 @@ module Admin
           signals << "Many aliases" if topic.topic_aliases.size >= 3
           signals << "New" if topic.created_at >= 7.days.ago
         end
+      end
+      private_class_method :signals_for
+
+      def call
+        sort_rows(flagged_scope.map { |topic| self.class.row_for(topic) })
+      end
+
+      private
+
+      attr_reader :scope, :sort
+
+      def flagged_scope
+        scope.includes(:topic_aliases, :agenda_items)
+             .reorder(updated_at: :desc)
+             .limit(200)
       end
 
       def sort_rows(rows)

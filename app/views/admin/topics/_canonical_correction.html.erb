@@ -1,7 +1,7 @@
 <% if workspace.has_single_alias %>
-  <div class="topic-panel-section" style="margin-bottom: var(--space-4);">
+  <div class="topic-panel-section mb-4">
     <div class="topic-panel-label">Quick fix — swap with alias</div>
-    <p class="text-sm text-secondary" style="margin: 0 0 var(--space-2);">This topic has one alias. Swap which name is canonical without moving any data.</p>
+    <p class="text-sm text-secondary mb-2">This topic has one alias. Swap which name is canonical without moving any data.</p>
     <%= button_to "Swap names", flip_alias_admin_topic_path(workspace.topic), method: :post, class: "btn btn--secondary btn--sm", params: detail_workspace_context %>
   </div>
 <% end %>
@@ -26,7 +26,7 @@
       <div class="topic-panel-step__content">
         <div class="topic-panel-step__label">Review transfer</div>
         <div data-topic-repair-search-target="preview">
-          <p class="text-sm text-secondary" style="margin: 0;">Select a destination to see what moves.</p>
+          <p class="text-sm text-secondary m-0">Select a destination to see what moves.</p>
         </div>
       </div>
     </div>
@@ -35,7 +35,7 @@
       <div class="topic-panel-step__number">3</div>
       <div class="topic-panel-step__content">
         <div class="topic-panel-step__label">Add reason and confirm</div>
-        <p class="text-sm text-secondary" style="margin: 0 0 var(--space-2);"><strong><%= workspace.topic.name %></strong> becomes an alias of the destination. Existing aliases move with it.</p>
+        <p class="text-sm text-secondary mb-2"><strong><%= workspace.topic.name %></strong> becomes an alias of the destination. Existing aliases move with it.</p>
         <%= text_area_tag :reason, nil, id: "canonical_rehome_reason_#{workspace.topic.id}", rows: 2, class: "form-input w-full", required: true, placeholder: "Why is this the wrong topic?" %>
         <%= submit_tag "Make this an alias", class: "btn btn--secondary btn--sm", disabled: true, data: { topic_repair_search_target: "submit" } %>
       </div>

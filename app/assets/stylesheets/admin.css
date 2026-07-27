@@ -1,0 +1,1244 @@
+/* app/assets/stylesheets/admin.css
+ *
+ * The Silo admin visual system — "Instrument" density.
+ *
+ * Loaded ONLY by app/views/layouts/admin.html.erb, and always AFTER
+ * application.css, from which it inherits every design token and the
+ * .theme-silo palette. It defines no colours of its own.
+ *
+ * Order matters and is enforced by convention:
+ *   1. Density base       — type scale and rhythm for a worked-in surface
+ *   2. Shell & sidebar    — the admin chrome
+ *   3. Components         — the twelve, and only the twelve
+ *   4. Utilities          — transitional, unscoped, LAST so they win ties
+ *
+ * Rule: a page may not invent a class name. If a view needs something the
+ * components lack, grow the component here and update
+ * docs/superpowers/specs/2026-07-26-admin-ui-revamp-design.md.
+ */
+
+/* ============================================
+   1. Density base
+   ============================================ */
+
+/* Admin pages are worked in, not read. 13px base with tight rhythm fits
+ * roughly twice the rows of the public site's 16px. Metadata is monospace so
+ * IDs, timestamps and durations align into columns the eye can scan straight
+ * down; colour is reserved for state, so a failure is findable without reading.
+ */
+.theme-silo {
+  --adm-font-size: 0.8125rem;   /* 13px */
+  --adm-font-size-sm: 0.75rem;  /* 12px */
+  --adm-row-pad-y: var(--space-2);
+  --adm-row-pad-x: var(--space-3);
+  --adm-hairline: 1px solid var(--color-border);
+  --adm-sidebar-width: 186px;
+}
+
+.theme-silo {
+  font-size: var(--adm-font-size);
+}
+
+.theme-silo h1,
+.theme-silo h2,
+.theme-silo h3,
+.theme-silo h4 {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 var(--space-2);
+}
+
+.theme-silo h1 { font-size: 1.1875rem; font-weight: var(--font-weight-bold); }
+.theme-silo h2 { font-size: 0.9375rem; font-weight: var(--font-weight-semibold); }
+.theme-silo h3 { font-size: 0.8125rem; font-weight: var(--font-weight-semibold); }
+.theme-silo h4 { font-size: 0.75rem; font-weight: var(--font-weight-semibold); }
+
+.theme-silo p { margin: 0 0 var(--space-3); }
+
+/* Margin utilities reasserted against `<p>`/heading elements — found in
+ * Task 16 fix-round-1. `.theme-silo h1, h2, h3, h4` and `.theme-silo p`
+ * above are each one class plus one element (0,1,1). A bare margin utility
+ * like `.mb-1` (defined either in this file's own Utilities section or in
+ * application.css's shared "Missing utilities" — the specificity math is
+ * identical either way) is one class alone (0,1,0), which never wins that
+ * comparison: the classes column ties at zero only if the class count also
+ * ties, and 0,1,1 has one MORE column populated (the element), which is
+ * exactly what specificity compares next — so the bare utility is silently
+ * inert on every `<p>` and `<h1>`-`<h4>` in the admin, no matter what value
+ * it sets. This is why `_header_summary.html.erb`'s `<h1 class="page-title
+ * mb-1">` rendered with the shared `var(--space-2)` instead of the
+ * `var(--space-1)` the class name promises.
+ *
+ * Fixed by pairing each affected utility with a `.theme-silo`-scoped
+ * counterpart at (0,2,0), which safely outranks (0,1,1) on the classes
+ * column alone. This list is NOT every utility this file defines — only
+ * the ones actually found applied directly to a `<p>` or `<h1>`-`<h4>` in
+ * `app/views/admin` (grepped, not assumed); a margin utility that only ever
+ * appears on a `<div>` or `<span>` never meets the element-qualified rules
+ * above and doesn't need a counterpart. Deliberately NOT fixed by removing
+ * the margins from the `h1-h4`/`p` rules above — that would drop the
+ * default heading/paragraph rhythm everywhere else in the admin, the
+ * opposite of what those rules are for. Lives here, next to the rules that
+ * cause the clobber, rather than inside the Utilities section below: the
+ * set-equality test over that section's selectors reads only the first
+ * class token of each selector, so a compound `.theme-silo .mb-1` there
+ * would misparse as a stray "theme-silo" entry and fail that test.
+ */
+.theme-silo .m-0  { margin: 0; }
+.theme-silo .mb-0 { margin-bottom: 0; }
+.theme-silo .mb-1 { margin-bottom: var(--space-1); }
+.theme-silo .mb-2 { margin-bottom: var(--space-2); }
+.theme-silo .mb-3 { margin-bottom: var(--space-3); }
+.theme-silo .mb-4 { margin-bottom: var(--space-4); }
+.theme-silo .mt-1 { margin-top: var(--space-1); }
+.theme-silo .mt-2 { margin-top: var(--space-2); }
+.theme-silo .mt-4 { margin-top: var(--space-4); }
+
+/* ============================================
+   2. Shell & sidebar
+   ============================================ */
+
+.adm-shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+/* --- Sidebar --- */
+.adm-sidebar {
+  flex: none;
+  width: var(--adm-sidebar-width);
+  padding: var(--space-3) 0 var(--space-6);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  overflow-y: auto;
+}
+
+.adm-sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-4) var(--space-3);
+  font-family: var(--font-display);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-inverse);
+  text-decoration: none;
+}
+.adm-sidebar__brand:hover { color: var(--color-text-inverse); text-decoration: none; }
+
+.adm-sidebar__group {
+  padding: 0 var(--space-4);
+  margin: var(--space-4) 0 var(--space-1);
+  font-family: var(--font-data);
+  font-size: 0.5625rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.4);
+}
+
+.adm-sidebar__link {
+  display: block;
+  padding: var(--space-1) var(--space-4);
+  font-family: var(--font-display);
+  font-size: 0.71875rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.84);
+  text-decoration: none;
+}
+.adm-sidebar__link:hover {
+  background: rgb(255 255 255 / 0.08);
+  color: var(--color-text-inverse);
+  text-decoration: none;
+}
+.adm-sidebar__link--current {
+  background: rgb(255 255 255 / 0.13);
+  color: var(--color-text-inverse);
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+
+.adm-sidebar__foot {
+  margin-top: var(--space-6);
+  padding-top: var(--space-3);
+  border-top: 1px solid rgb(255 255 255 / 0.15);
+}
+
+/* --- Main --- */
+.adm-main { flex: 1; min-width: 0; }
+.adm-container {
+  max-width: 1200px;
+  padding: var(--space-5) var(--space-6) var(--space-12);
+}
+
+/* --- Page header --- */
+.adm-page-header { margin-bottom: var(--space-4); }
+.adm-page-header__eyebrow {
+  font-family: var(--font-data);
+  font-size: 0.5625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-1);
+}
+.theme-silo .adm-page-header__title {
+  font-family: var(--font-display);
+  font-size: 1.1875rem;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  margin: 0 0 var(--space-1);
+}
+.adm-page-header__meta {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+}
+
+/* --- Dashboard launcher --- */
+.adm-launcher {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-4);
+}
+.adm-launcher__group {
+  padding: var(--space-4);
+  border: var(--adm-hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+.theme-silo .adm-launcher__title {
+  margin: 0 0 var(--space-3);
+  font-size: 0.6875rem;
+  letter-spacing: 0.05em;
+  color: var(--color-primary);
+}
+.adm-launcher__list { list-style: none; margin: 0; padding: 0; }
+.adm-launcher__item { padding: var(--space-1) 0; }
+.adm-launcher__item + .adm-launcher__item { border-top: 1px solid var(--color-surface-raised); }
+.adm-launcher__link {
+  display: block;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+  text-decoration: none;
+}
+.adm-launcher__link:hover { color: var(--color-accent); }
+.adm-launcher__desc {
+  display: block;
+  font-size: var(--adm-font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* --- Drawer chrome: hidden above the breakpoint --- */
+.adm-drawer-toggle { display: none; }
+.adm-scrim { display: none; }
+
+@media (max-width: 900px) {
+  .adm-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 40;
+    transform: translateX(-100%);
+    transition: transform var(--transition-normal);
+  }
+  .adm-shell--drawer-open .adm-sidebar { transform: translateX(0); }
+
+  .adm-drawer-toggle {
+    display: inline-flex;
+    position: fixed;
+    top: var(--space-2);
+    left: var(--space-2);
+    z-index: 50;
+    padding: var(--space-2);
+    border: var(--adm-hairline);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text);
+  }
+
+  .adm-shell--drawer-open .adm-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    background: rgb(0 0 0 / 0.4);
+  }
+
+  .adm-container { padding: var(--space-12) var(--space-4) var(--space-8); }
+
+  .grid-cols-2 { grid-template-columns: 1fr; }
+}
+
+/* ============================================
+   3. Components
+   ============================================ */
+
+/* --- Moved verbatim from application.css (Task 9 step 5): styled the old
+   top-nav admin chrome's two-column layout and the topics inbox filter bar
+   and table. Not yet restyled — that's Tasks 10-11. --- */
+
+.admin-two-column {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 20rem;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.admin-two-column__main,
+.admin-two-column__aside {
+  min-width: 0;
+}
+
+.admin-sidebar {
+  position: sticky;
+  top: 1rem;
+}
+
+.admin-sidebar .card {
+  height: 100%;
+}
+
+.admin-sidebar ol {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--color-text-secondary);
+}
+
+.admin-sidebar li + li {
+  margin-top: var(--space-2);
+}
+
+.admin-sidebar h2 {
+  margin-bottom: var(--space-3);
+}
+
+/* --- Admin Topics: Filter Bar --- */
+
+.admin-topics-filters {
+  display: grid;
+  grid-template-columns: 1fr repeat(3, auto) auto auto auto;
+  gap: var(--space-3);
+  align-items: end;
+  margin-bottom: var(--space-5);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.admin-topics-filters .form-input {
+  font-size: var(--font-size-sm);
+}
+
+.admin-topics-filters select.form-input {
+  width: auto;
+  min-width: 9rem;
+}
+
+.admin-topics-filters__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+/* --- Admin Topics: Table --- */
+
+.admin-topics-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.admin-topics-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 2px solid var(--color-border-strong);
+  background: var(--color-surface);
+}
+
+.admin-topics-table__sort-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.admin-topics-table__sort-link:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.admin-topics-table tbody td {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.admin-topics-table tbody tr:hover {
+  background: var(--color-primary-light);
+}
+
+.admin-topics-table__row--warn {
+  border-left: 3px solid var(--color-warning);
+  background: color-mix(in srgb, var(--color-warning-light) 40%, var(--color-surface)) !important;
+}
+
+.admin-topics-table__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.admin-topics-table td.text-right,
+.admin-topics-table th.text-right {
+  text-align: right;
+}
+
+.admin-topics-table td:nth-child(4),
+.admin-topics-table td:nth-child(5),
+.admin-topics-table td:nth-child(6) {
+  font-family: var(--font-data);
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+  /* Mentions/Last Seen/Last Activity — the latter two are bare <td>s (see
+   * admin/topics/_inbox_row.html.erb) reached by neither `.data-cell` nor
+   * `td.text-right` above, so without an explicit nowrap here a plain date
+   * like "2026-07-26" line-breaks after a hyphen and defeats the
+   * straight-down scanning this column exists for. */
+  white-space: nowrap;
+}
+
+/* The lazily-loaded mention preview inside an expanded inbox row. A
+ * <turbo-frame> is an unknown element to the UA stylesheet and therefore
+ * `display: inline`, which would wrap the preview's block children (each
+ * mention's heading, title line and excerpt panel) in an inline box. It also
+ * matters for the lazy load itself: Turbo starts a `loading="lazy"` frame
+ * from an IntersectionObserver, and an inline wrapper's box is a less
+ * predictable thing to observe than a block one. */
+.admin-topics-table__preview-frame {
+  display: block;
+}
+
+/* Row status indicator — colored left border */
+.admin-topics-table__row--proposed {
+  border-left: 3px solid var(--color-warning);
+}
+
+.admin-topics-table__row--blocked {
+  border-left: 3px solid var(--color-danger);
+}
+
+.admin-topics-table__row--approved {
+  border-left: 3px solid var(--color-success);
+}
+
+@media (max-width: 900px) {
+  .admin-topics-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+  .admin-topics-filters .form-input:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .admin-two-column {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-sidebar {
+    position: static;
+  }
+}
+
+/* --- Page containers whose BEM children were styled but whose parents were not --- */
+.theme-silo .topic-board-header { display: block; }
+/* NOTE: this element always carries `.admin-two-column` (display: grid) too —
+   a `.theme-silo .transcript-imports-page` selector has higher specificity
+   (0,2,0 vs 0,1,0) and would win the `display` property outright, so this
+   stays `grid` to match rather than silently collapsing the two-column
+   layout back to a single stacked column. */
+.theme-silo .transcript-imports-page { display: grid; }
+.theme-silo .transcript-imports-table-wrap { overflow-x: auto; }
+.theme-silo .transcript-imports-step-logs {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-4);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+.theme-silo .prompt-run-message {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+.theme-silo .generated-image-panel__block { margin-bottom: var(--space-3); }
+
+/* --- Small shared primitives the older pages assumed existed --- */
+.theme-silo .breadcrumb {
+  margin-bottom: var(--space-3);
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.theme-silo .page-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.theme-silo .form-help {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+.theme-silo .flash-messages { margin-bottom: var(--space-4); }
+.theme-silo .timestamp {
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+}
+.theme-silo .table-desc {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+/* A second `.table-desc` line (e.g. prompt_templates/index's usage_context,
+ * under the template's own description) that should read as more secondary
+ * still. `.text-muted` alone can't win this: both rules are one class plus
+ * one `.theme-silo` ancestor (0,2,0), so file order — not the extra class —
+ * would settle it, and `.table-desc` already sits later in this same file.
+ * The compound selector reasserts colour at (0,3,0) so it wins outright. */
+.theme-silo .table-desc.text-muted { color: var(--color-text-muted); }
+/* Same mechanism, same fix, different component: a `.timestamp` that should
+ * read one step quieter than the default (the knowledge-search result rows,
+ * whose `stated_at` stamps were `--color-text-muted` before the inline-style
+ * sweep replaced them with `.timestamp` and its `--color-text-secondary`).
+ * `.theme-silo .timestamp` and a bare `.text-muted` are both (0,2,0)/(0,1,0)
+ * — the compound is what makes this win outright instead of by file order. */
+.theme-silo .timestamp.text-muted { color: var(--color-text-muted); }
+/* A plain list that just needs its marker indent back after losing the
+ * `padding-left` an inline style used to supply — e.g. the search page's
+ * numbered source list. Not a `<ol>`/`<ul>` element rule: most admin lists
+ * (`.adm-launcher__list`, `.topic-alias-repair-list`, etc.) intentionally
+ * strip list-style and padding entirely, so a bare `ol`/`ul` default would
+ * fight those. */
+.theme-silo .adm-list { padding-left: var(--space-4); }
+/* A horizontally-divided result row (knowledge search's KB/document result
+ * lists) — deliberately NOT `.adm-panel`: that component adds a border on
+ * every side, a background tint, and radius, which would turn each item in
+ * a repeated list into a separate boxed card rather than the plain
+ * bottom-divided rows this page actually wants. */
+.theme-silo .search-result-row {
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+/* The relevance percentage that opens each knowledge-search result row.
+ * `.data-cell` already supplies the mono/small/nowrap treatment the inline
+ * style it replaced had; this adds back the one property `.data-cell` has no
+ * reason to carry — a min-width that makes "7%" and "84%" occupy the same
+ * box, so the titles after them start at the same x and the list can be
+ * scanned straight down. That is the whole argument for this page's density,
+ * and dropping it in the inline-style sweep quietly cost it. (min-width does
+ * apply here despite the element being a <span>: its parent is a flex row,
+ * so the span is a blockified flex item — the same reason the original
+ * inline style worked.) Compounded with `.data-cell` at (0,3,0) so it wins
+ * regardless of which rule this file happens to define first — which is also
+ * what lets it restore the muted colour the inline style carried and
+ * `.theme-silo .data-cell` (0,2,0) overrode with `--color-text-secondary`,
+ * without needing a second `.text-muted` compound in the view. */
+.theme-silo .data-cell.search-result-row__score {
+  min-width: 3em;
+  color: var(--color-text-muted);
+}
+/* The primary link in a table cell's name column, e.g. prompt_templates/index —
+ * bold to read as the row's title, the same treatment `.font-semibold` gives
+ * the topic-name link in admin_topics/_inbox_row; `.table-desc` supplies the
+ * secondary line underneath. */
+.theme-silo .table-name { font-weight: var(--font-weight-semibold); }
+/* A link that should read as part of its surrounding (already-styled) text
+ * rather than as a normal accent-colored link — e.g. the meeting name inside
+ * topics/_evidence_snapshot's `.topic-evidence-item__meeting`, which sets its
+ * own font-weight and expects the link inside it to match, not stand out. */
+.theme-silo .text-inherit { color: inherit; }
+.theme-silo .badge--muted {
+  color: var(--color-text-muted);
+  background: var(--color-surface-raised);
+  border-color: var(--color-border);
+}
+.theme-silo .prose--sm { font-size: var(--font-size-sm); }
+.theme-silo .table-responsive { overflow-x: auto; }
+
+/* --- Data table ----------------------------------------------------------
+ * Ten admin views use a bare, unclassed <table>; app/views/admin/meetings
+ * uses the explicit `.table` class instead. Styling both the element and
+ * the class inside .theme-silo means every one of them inherits the
+ * component with no view edits; .adm-table is the explicit opt-in for new
+ * markup. Row state rides a 3px left edge so a failed or flagged row is
+ * findable without reading it.
+ *
+ * NOTE: this also reaches app/views/admin/topics — its <table
+ * class="admin-topics-table"> is still a bare <table> underneath. That
+ * table already carries hand-written rules (moved verbatim above, Task 9)
+ * on selectors like `.admin-topics-table thead th` and
+ * `.admin-topics-table tbody td`. Because those combine one class with
+ * fewer element steps, several are LOWER specificity than the generic
+ * `.theme-silo table thead th` / `.theme-silo table tbody td` rules below
+ * ((0,1,2) vs (0,1,3)), so this component wins the properties both set —
+ * that's how the topics table picks up Instrument density (tighter
+ * padding, the shared hover tint) without editing that view. Consequences
+ * worth knowing rather than rediscovering:
+ *
+ * - Header: the old 2px `--color-border-strong` bottom border and
+ *   `--color-text-secondary` are replaced by this component's 1px hairline
+ *   and `--color-text-muted` (sticky positioning is untouched — neither
+ *   rule sets it, so it survives).
+ *
+ * - Border-collapse mode changed, and that has a real, load-bearing effect:
+ *   `.theme-silo table { border-collapse: collapse; }` is (0,1,1), which
+ *   out-specifies the moved `.admin-topics-table { border-collapse:
+ *   separate; }` at (0,1,0) — confirmed via `getComputedStyle(table)
+ *   .borderCollapse` in headless Chromium, not inferred from source, and
+ *   it reads `"collapse"`. This matters because the row-state rules
+ *   `.admin-topics-table__row--proposed/--blocked/--approved` set
+ *   `border-left: 3px solid ...` directly on the `<tr>`. Under the
+ *   *separated* borders model a border authored on a table row never
+ *   paints — only under *collapsing* borders do row/row-group borders
+ *   participate in the border-conflict resolution and actually render.
+ *   Screenshotting `.admin-topics-table` confirms exactly that: sampling
+ *   the leftmost 3px of a proposed/approved row's pixels returns the
+ *   row's own border color precisely (e.g. `rgb(212,135,42)` for a
+ *   proposed/warning row), not the row background. So flipping this table
+ *   into collapse mode is what makes those three previously-decorative
+ *   rules start rendering — they are live and are this table's primary,
+ *   always-visible state signal, not a fallback to the warn background.
+ *
+ * - Row hover: this component paints `--color-surface-hover` (translucent
+ *   black, ~3%) on each <td>, which composites OVER whatever the row
+ *   itself painted (including the `!important` warn background) rather
+ *   than replacing it — also verified empirically (pixel value shifts by
+ *   exactly the ~3% the token specifies, with `:hover` state confirmed via
+ *   `matches(':hover')` immediately before each capture). The left-border
+ *   state signal above is unaffected by hover either way, since hover only
+ *   touches the `<td>` background. No override is needed or present here:
+ *   a flagged row keeps its border untouched and its background tint
+ *   barely darkens, both correct.
+ *
+ * Nothing here restyles or deletes the moved rules; Phase 2 owns that
+ * cleanup.
+ */
+.theme-silo table,
+.theme-silo .table,
+.theme-silo .adm-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-surface);
+  font-size: var(--adm-font-size);
+}
+
+.theme-silo table thead th,
+.theme-silo .table thead th,
+.theme-silo .adm-table thead th {
+  padding: var(--space-2) var(--adm-row-pad-x);
+  border-top: var(--adm-hairline);
+  border-bottom: var(--adm-hairline);
+  background: var(--color-bg);
+  font-family: var(--font-data);
+  font-size: 0.5625rem;
+  font-weight: var(--font-weight-normal);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  text-align: left;
+}
+
+.theme-silo table tbody td,
+.theme-silo .table tbody td,
+.theme-silo .adm-table tbody td {
+  padding: var(--adm-row-pad-y) var(--adm-row-pad-x);
+  border-bottom: 1px solid var(--color-surface-raised);
+  vertical-align: middle;
+}
+
+.theme-silo table tbody tr:hover td,
+.theme-silo .table tbody tr:hover td,
+.theme-silo .adm-table tbody tr:hover td {
+  background: var(--color-surface-hover);
+}
+
+/* A cell that hosts injected content that manages its own spacing (the
+ * version-diff row in prompt_templates/edit) and needs the table's own cell
+ * padding fully zeroed. `.theme-silo table tbody td` is one class plus three
+ * elements (0,1,3) — a bare `.p-0` (0,1,0) can't touch it. `.theme-silo
+ * td.p-0` is two classes plus one element (0,2,1), which outranks it on the
+ * classes column alone. */
+.theme-silo td.p-0 { padding: 0; }
+
+/* Right-alignment reasserted for the one element a bare `.text-right` can no
+ * longer reach. `.theme-silo table thead th` above is one class plus three
+ * elements (0,1,3); `.text-right` (application.css) is one class alone
+ * (0,1,0), and the classes column ties at 1 while the elements column does
+ * not — so since this file started setting `text-align: left` on every admin
+ * `<th>`, `<th class="text-right">` silently rendered left-aligned (found on
+ * jobs/show's "Count" column and prompt_templates/edit's "Actions"). Before
+ * this file existed the only competition was application.css's element-only
+ * `th, td { text-align: left; }` at (0,0,1), which the utility beat. Two
+ * classes plus one element (0,2,1) here wins outright.
+ *
+ * `td` deliberately has no counterpart: nothing in this file sets
+ * `text-align` on a `<td>`, so a `<td class="text-right">` still only faces
+ * that same (0,0,1) element rule and the bare utility still wins. Confirmed
+ * by computed style in headless Chromium against the real rendered admin
+ * markup, not inferred — see the final-fix report. The topics table's own
+ * `.admin-topics-table th.text-right` (0,2,1) is what kept that one page
+ * looking right while the other two broke; this rule generalises it. */
+.theme-silo th.text-right { text-align: right; }
+
+/* IDs, timestamps, counts — monospace so columns align for straight-down
+ * scanning, and non-wrapping so a date can't fold onto a second line and
+ * defeat the reason this density works (a wrapped "2026-07-26" breaks
+ * straight-down scanning as badly as no monospace at all). This is the
+ * whole reason the density choice works.
+ *
+ * Scoped to `.data-cell` / `td.text-right` only — never to the bare `td`
+ * above. The topic-name column legitimately wraps long names; nowrapping
+ * every cell would blow the table width out on that column instead.
+ */
+.theme-silo .data-cell,
+.theme-silo td.text-right {
+  font-family: var(--font-data);
+  font-size: var(--adm-font-size-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.theme-silo .adm-table__sort {
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+.theme-silo .adm-table__sort:hover { color: var(--color-accent); }
+
+.theme-silo .adm-table__row--ok     { box-shadow: inset 3px 0 0 var(--color-success); }
+.theme-silo .adm-table__row--warn   { box-shadow: inset 3px 0 0 var(--color-warning); }
+.theme-silo .adm-table__row--danger { box-shadow: inset 3px 0 0 var(--color-danger); }
+
+/* --- Status chips --- */
+.theme-silo .adm-chip {
+  display: inline-block;
+  padding: 1px var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-family: var(--font-data);
+  font-size: 0.5625rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+.theme-silo .adm-chip--ok      { color: var(--color-success); background: var(--color-success-light); border-color: var(--color-success); }
+.theme-silo .adm-chip--warn    { color: var(--color-warning); background: var(--color-warning-light); border-color: var(--color-warning); }
+.theme-silo .adm-chip--danger  { color: var(--color-danger);  background: var(--color-danger-light);  border-color: var(--color-danger); }
+.theme-silo .adm-chip--info    { color: var(--color-ai-text); background: var(--color-ai-bg);         border-color: var(--color-ai-border); }
+.theme-silo .adm-chip--neutral { color: var(--color-text-muted); background: var(--color-surface-raised); }
+
+/* --- Pagination --- */
+.theme-silo .adm-pagination {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  margin-top: var(--space-4);
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* --- Empty state --- */
+.theme-silo .adm-empty,
+.theme-silo .empty-state {
+  padding: var(--space-6);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  text-align: center;
+  font-family: var(--font-data);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* --- Toolbar and segmented control --- */
+.theme-silo .adm-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  margin-bottom: var(--space-3);
+}
+
+.theme-silo .adm-seg {
+  display: inline-flex;
+  border: var(--adm-hairline);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+.theme-silo .adm-seg__option {
+  padding: var(--space-1) var(--space-3);
+  border: 0;
+  border-right: var(--adm-hairline);
+  background: transparent;
+  font-family: var(--font-data);
+  font-size: 0.59375rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  cursor: pointer;
+}
+.theme-silo .adm-seg__option:last-child { border-right: 0; }
+.theme-silo .adm-seg__option:hover { background: var(--color-surface-hover); text-decoration: none; }
+.theme-silo .adm-seg__option--on {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+/* --- Panel ---
+ * `.theme-silo .card` is (0,2,0) and now reaches every `.card` already used
+ * in admin views (admin-sidebar's card, the merge/repair-confirm modals'
+ * `.card modal__panel`, `_ai_decisions`, `_history_snapshot`,
+ * meetings/topics index cards). None of those combine `.card` with another
+ * class-qualified rule at (0,2,0) or higher other than `.modal__panel`
+ * below (source order settles that one — see the Modal section) and
+ * `.admin-sidebar .card { height: 100%; }`, which sets an unrelated
+ * property, so this is a clean density retrofit, not a fight. One spot where
+ * `.card` sits beside the transitional `.p-6` utility
+ * (repair_confirm_modal's `modal__panel card p-6`) is already covered by
+ * this file's own utilities-section rule (scoped component beats unscoped
+ * utility). topics/index used to carry its own inline
+ * `style="padding: var(--space-5)"` (20px) on top of a `.card`; Task 16
+ * deleted that override rather than translate it to a utility, so that page
+ * now just gets this rule's plain var(--space-4) (16px) padding like every
+ * other `.card`.
+ */
+.theme-silo .adm-panel,
+.theme-silo .card {
+  padding: var(--space-4);
+  border: var(--adm-hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+/* `border` above is a shorthand: it sets all four sides, including
+ * `border-left-color`, so at equal (0,2,0) specificity it fully replaces
+ * `.card--ai-answer`/`.card--highlighted`'s `border-left: 3px solid ...`
+ * accent (application.css, also (0,2,0)) rather than losing to it — Task 11
+ * fix-round-1 confirmed via computed style that the accent flattened to the
+ * plain 1px grey hairline. Reasserting `border-left` here, after the base
+ * rule, wins the tie. Deliberately not rewritten as longhands on the base
+ * rule instead (border-top/right/bottom only, omitting border-left): most
+ * `.card` instances carry neither modifier and need a left edge too, so
+ * dropping it from the base would leave every plain card open on one side.
+ * The minimal, lower-risk fix is reasserting the two modifiers that need a
+ * different left border, not weakening the base for everyone.
+ */
+.theme-silo .card--ai-answer { border-left: 3px solid var(--color-teal); }
+.theme-silo .card--highlighted { border-left: 3px solid var(--color-primary); }
+.theme-silo .adm-panel__label,
+.theme-silo .topic-panel-label {
+  margin-bottom: var(--space-2);
+  font-family: var(--font-data);
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* --- Detail layout: main column plus a rail ---
+ * `.admin-two-column` picks up this rule at (0,2,0), which fully re-sets
+ * every property the old unscoped `.admin-two-column` block above (Task 9,
+ * moved verbatim, (0,1,0)) also sets — display, grid-template-columns, gap,
+ * align-items — so that older block is now dead weight for those four
+ * declarations rather than a live fallback. Left in place rather than
+ * deleted, matching this file's established convention (see the data-table
+ * comment below) of not editing moved legacy rules outside their own task;
+ * Phase 2 owns deleting it.
+ */
+.theme-silo .adm-detail,
+.theme-silo .admin-two-column,
+.theme-silo .topic-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: var(--space-5);
+  align-items: start;
+}
+.theme-silo .adm-detail__main,
+.theme-silo .adm-detail__rail { min-width: 0; }
+
+@media (max-width: 900px) {
+  .theme-silo .adm-detail,
+  .theme-silo .admin-two-column,
+  .theme-silo .topic-detail-layout { grid-template-columns: 1fr; }
+}
+
+/* --- Buttons --- */
+.theme-silo .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border: var(--adm-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-family: var(--font-display);
+  font-size: 0.625rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text);
+  text-decoration: none;
+  cursor: pointer;
+}
+.theme-silo .btn:hover { background: var(--color-surface-hover); text-decoration: none; }
+.theme-silo .btn--primary   { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-text-inverse); }
+.theme-silo .btn--primary:hover { background: var(--color-primary-hover); }
+.theme-silo .btn--danger    { background: var(--color-danger); border-color: var(--color-danger); color: var(--color-text-inverse); }
+.theme-silo .btn--success   { background: var(--color-success); border-color: var(--color-success); color: var(--color-text-inverse); }
+.theme-silo .btn--ghost     { background: transparent; border-color: transparent; color: var(--color-text-secondary); }
+.theme-silo .btn--ghost:hover { border-color: var(--color-border); }
+.theme-silo .btn--sm        { padding: 1px var(--space-2); font-size: 0.5625rem; }
+.theme-silo .btn[disabled]  { opacity: 0.45; cursor: not-allowed; }
+/* --secondary had no reassertion here (unlike --primary/--danger/--success/
+ * --ghost above), so the base `.theme-silo .btn` rule's `color: var(--color-
+ * text)` beat `.btn--secondary`'s `color: var(--color-teal)` outright
+ * (0,2,0 > 0,1,0) — Task 11 fix-round-1, confirmed via computed style
+ * (rgb(0,74,89) before this fix existed at all, rgb(26,46,53) with only the
+ * base rule in place). `background`/`border-color` were never actually at
+ * risk: both `.theme-silo .btn` and `.btn--secondary` already agree on
+ * `var(--color-surface)` / `var(--color-border)`, so only `color` needed
+ * reasserting. "Clear All Finished" (job_runs), "Cancel" (committees/_form),
+ * and buttons across transcript_imports/knowledge_sources/users all use
+ * --secondary and were rendering with the wrong (default) text color.
+ */
+.theme-silo .btn--secondary { color: var(--color-teal); }
+/* Hover states found during the same review, not by the automated modifier
+ * test below (that test only checks flat `.foo--bar` selectors, not `:hover`
+ * variants) but by manually forcing `:hover` via CDP and reading computed
+ * `background-color` after transitions settle. `.theme-silo .btn:hover` is
+ * (0,3,0) — one specificity level above any single unscoped `.btn--x:hover`
+ * (0,2,0) — so without a same-or-higher-specificity reassertion it wins
+ * outright on every colored variant, not just secondary:
+ *   - --danger:hover and --success:hover measured as rgba(0,0,0,0.03), i.e.
+ *     the button goes nearly transparent on hover instead of darkening —
+ *     confirmed on both Block/Approve-style buttons.
+ *   - --secondary:hover measured the same neutral overlay instead of the
+ *     public `--color-surface-raised` + `--color-border-strong` treatment;
+ *     visually closer than the other two but still not what public gives.
+ * Fixes reuse existing tokens/idioms already present in application.css
+ * (the `color-mix(... 85%, black)` darkening idiom is copied verbatim from
+ * its own `.btn--success:hover`, not invented here) so nothing is hardcoded.
+ */
+.theme-silo .btn--secondary:hover { background: var(--color-surface-raised); border-color: var(--color-border-strong); }
+.theme-silo .btn--danger:hover  { background: color-mix(in srgb, var(--color-danger) 85%, black); border-color: color-mix(in srgb, var(--color-danger) 85%, black); }
+.theme-silo .btn--success:hover { background: color-mix(in srgb, var(--color-success) 85%, black); }
+
+/* --- Badges: keep the shared name, adopt chip proportions.
+ * application.css already carries a `.theme-silo .badge { border: 1px solid
+ * transparent; }` rule (its own pre-revamp Silo tweak) at the same (0,2,0)
+ * specificity as this one; because admin.css loads after application.css,
+ * this rule wins the tie and its explicit `border` replaces theirs, which
+ * is the point — chip borders, not a transparent placeholder.
+ *
+ * CORRECTION (Task 11 fix-round-1): the first pass of this comment claimed
+ * `.theme-silo .badge--default/--primary/--success/--warning/--danger`
+ * (application.css) were "(0,3,0) and win as before." That's wrong on the
+ * arithmetic (two classes each = (0,2,0), not three) and wrong on the
+ * outcome. They tie this rule's specificity exactly, and the tie is
+ * resolved by *file* load order, not selector order within one file — this
+ * whole file loads after application.css, so this rule's `border` shorthand
+ * wins, flattening every one of those tinted borders to plain
+ * `var(--color-border)` grey. Confirmed via computed style:
+ * `badge--primary`'s border measured `rgb(197,208,208)` (this rule's grey),
+ * not application.css's intended teal-tinted hex. Same mechanism, same fix pattern,
+ * as the `.theme-silo .badge` line above it — it's just that this time
+ * *this* rule is the one doing the flattening instead of being the fix.
+ * `--signal-warm`/`--signal-cool`/`--outline` aren't tie cases at all: they're
+ * unscoped (0,1,0) in application.css, so this rule's (0,2,0) `border` beats
+ * them outright, same as the card accent case above.
+ *
+ * Fix: reassert `border-color` per variant, below, after this rule so intra-
+ * file order settles it. `--primary/--success/--warning/--danger`'s public
+ * values are hardcoded hex (application.css:2179 etc.) that can't be copied
+ * into this file verbatim (no hardcoded colours here), so these use
+ * `color-mix()` against existing tokens instead — same direction and
+ * roughly the same weight as the originals, not a pixel-exact match, which
+ * isn't required for a 1px badge ring. `--default` already matched
+ * (`var(--color-border)` both places) but is reasserted anyway for
+ * consistency and so the fix-round-1 guard test (below) doesn't need to
+ * special-case "coincidentally equal."
+ */
+.theme-silo .badge {
+  display: inline-block;
+  padding: 1px var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-data);
+  font-size: 0.5625rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.theme-silo .badge--default { border-color: var(--color-border); }
+.theme-silo .badge--primary { border-color: color-mix(in srgb, var(--color-primary) 25%, var(--color-surface)); }
+.theme-silo .badge--success { border-color: color-mix(in srgb, var(--color-success) 25%, var(--color-surface)); }
+.theme-silo .badge--warning { border-color: color-mix(in srgb, var(--color-warning) 25%, var(--color-surface)); }
+.theme-silo .badge--danger  { border-color: color-mix(in srgb, var(--color-danger) 25%, var(--color-surface)); }
+.theme-silo .badge--signal-warm { border-color: var(--color-accent-warm); }
+.theme-silo .badge--signal-cool { border-color: var(--color-accent-cool); }
+.theme-silo .badge--outline { border-color: currentcolor; }
+
+/* --- Forms ---
+ * Style .form-label ONLY. A bare `label` selector here would be specificity
+ * 0-1-1 and would beat .job-type-card (0-1-0, application.css:6083), whose
+ * markup is a <label> — it would wreck the Run a Job page. Several admin
+ * labels also wrap whole sentences (site_settings/show), which is why this
+ * stays sentence case rather than the uppercase micro-label treatment used
+ * by .adm-panel__label and table headers, where text is short by construction.
+ */
+.theme-silo .form-label {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-size: var(--adm-font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+}
+/* A label sitting inline beside its control (prompt_templates/edit's Model
+ * Tier row) that needs zero bottom margin. Same trap as `.form-group.mb-0`
+ * below: `.theme-silo .form-label` is one class plus the `.theme-silo`
+ * ancestor (0,2,0), so a bare `.mb-0` (0,1,0) never wins the comparison.
+ * Reasserted compound so it wins outright rather than depending on order. */
+.theme-silo .form-label.mb-0 { margin-bottom: 0; }
+.theme-silo .form-input,
+.theme-silo .form-select,
+.theme-silo .form-textarea,
+.theme-silo input[type="text"],
+.theme-silo input[type="search"],
+.theme-silo input[type="url"],
+.theme-silo input[type="date"],
+.theme-silo input[type="number"],
+.theme-silo select,
+.theme-silo textarea {
+  padding: var(--space-1) var(--space-2);
+  border: var(--adm-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-family: var(--font-body);
+  font-size: var(--adm-font-size);
+  color: var(--color-text);
+}
+/* application.css's `.form-input:focus-visible, .form-select:focus-visible,
+ * .form-textarea:focus-visible` sets `border-color: var(--color-teal)` (plus
+ * an unaffected box-shadow ring). The base rule above's `border` shorthand
+ * is (0,2,0); `.form-input:focus-visible` etc. are also (0,2,0) (one class +
+ * one pseudo-class each) — a tie admin.css wins by loading after
+ * application.css, same mechanism as the badge border-tint clobbers in
+ * fix-round-1, just on a pseudo-class this time instead of a `--modifier`.
+ * Every text input, select, and textarea in the admin never showed a teal
+ * focus border because of this — subtle since the box-shadow ring still
+ * rendered, but live on every admin form. Reasserted here, after the base
+ * rule, so intra-file order settles the tie in this file's favor.
+ */
+.theme-silo .form-input:focus-visible,
+.theme-silo .form-select:focus-visible,
+.theme-silo .form-textarea:focus-visible {
+  border-color: var(--color-teal);
+}
+/* application.css's unscoped `.form-textarea--code` gives the prompt-editor
+ * code fields a subtly tinted background (a hardcoded off-white hex there,
+ * pre-existing) to read as distinct from a plain field. This file's base
+ * `.theme-silo textarea`/`.theme-silo .form-textarea` rule below sets
+ * `background: var(--color-surface)` at (0,2,0) — plain `.form-textarea--code`
+ * is (0,1,0) and never contested this property before Task 11 existed, so
+ * the tint always showed publicly; now the higher-specificity base rule
+ * wins outright and flattens it to the same white as every other field.
+ * Reasserted here with `var(--color-bg)` (Silo's own recessed page tint,
+ * not a copy of the public hex) rather than widening/weakening the base.
+ */
+.theme-silo .form-textarea--code {
+  font-family: var(--font-data);
+  font-size: var(--adm-font-size-sm);
+  line-height: var(--line-height-normal);
+  background: var(--color-bg);
+}
+.theme-silo .form-group { margin-bottom: var(--space-3); }
+/* `.mb-0` alone can't zero out the last field in a form (prompt_templates/
+ * edit's editor-note group): both rules are one class plus the `.theme-silo`
+ * ancestor (0,2,0), so an unscoped `.mb-0` (0,1,0) never even enters the
+ * specificity comparison. Reasserted here, compound with the base
+ * selector, so it wins outright rather than depending on file order. */
+.theme-silo .form-group.mb-0 { margin-bottom: 0; }
+.theme-silo .form-hint {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+/* A text input that shouldn't stretch to its container's full width (e.g. a
+ * one-line "what did you change?" editor note) but also shouldn't be capped
+ * to the standard field width — prompt_templates/edit's editor-note field. */
+.theme-silo .form-input--wide { max-width: 500px; }
+/* The knowledge-search page's primary input should fill the available row,
+ * unlike every other `.search-form .form-input` (application.css caps that at
+ * 400px for the public/topics/meetings search boxes it's shared with). Scoped
+ * to admin only so those public boxes keep their cap. */
+.theme-silo .search-form .form-input { max-width: none; }
+
+/* --- Flash --- */
+.theme-silo .flash {
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--adm-font-size);
+}
+.theme-silo .flash--success { border-color: var(--color-success); background: var(--color-success-light); }
+.theme-silo .flash--danger  { border-color: var(--color-danger);  background: var(--color-danger-light); }
+
+/* --- Modal ---
+ * The brief's interface list calls for a scoped override of the shared
+ * `.modal` name itself, not just `.modal__panel` — the backdrop overlay
+ * gets breathing room at Instrument density so the panel isn't flush to
+ * the viewport edge on narrow admin screens; `.modal` is a flex container
+ * (application.css), so padding here simply shrinks its content box and the
+ * centered panel keeps centering. `.modal__panel`'s padding/border/
+ * border-radius/background duplicate `.adm-panel`/`.card` above at the same
+ * (0,2,0) specificity; this rule is later in the file so it wins the tie,
+ * layering in the larger padding and box-shadow a modal needs over a plain
+ * panel — both already agree on border/border-radius/background, so the
+ * combined `.card modal__panel` markup (repair_confirm_modal, merge_modal)
+ * renders identically either way on those three properties.
+ */
+.theme-silo .modal { padding: var(--space-4); }
+.theme-silo .modal__panel {
+  padding: var(--space-5);
+  border: var(--adm-hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ============================================
+   4. Utilities (transitional — removed in Phase 2)
+   ============================================ */
+
+/* These exist because admin views were written with Tailwind idiom in a
+ * project that has no Tailwind, leaving 32 views referencing classes nothing
+ * defined. Rather than leave them broken while components are built, they are
+ * defined here against real tokens. Phase 2 deletes this section as pages move
+ * onto components. Do not add to it.
+ *
+ * Unscoped and last on purpose: a scoped component selector (.theme-silo .card,
+ * 0-2-0) outranks an unscoped utility (.p-6, 0-1-0). Where a utility must beat a
+ * component, write `.theme-silo .p-6` beside that component rather than raising
+ * every utility here.
+ */
+
+/* --- spacing --- */
+.m-0 { margin: 0; }
+.mt-1 { margin-top: var(--space-1); }
+.mt-3 { margin-top: var(--space-3); }
+.pt-4 { padding-top: var(--space-4); }
+.mb-1 { margin-bottom: var(--space-1); }
+.mb-3 { margin-bottom: var(--space-3); }
+.mx-2 { margin-left: var(--space-2); margin-right: var(--space-2); }
+.my-6 { margin-top: var(--space-6); margin-bottom: var(--space-6); }
+.p-0 { padding: 0; }
+.p-3 { padding: var(--space-3); }
+.p-4 { padding: var(--space-4); }
+.p-6 { padding: var(--space-6); }
+.gap-3 { gap: var(--space-3); }
+.gap-6 { gap: var(--space-6); }
+.space-y-2 > * + * { margin-top: var(--space-2); }
+.space-y-3 > * + * { margin-top: var(--space-3); }
+.space-y-4 > * + * { margin-top: var(--space-4); }
+.space-y-6 > * + * { margin-top: var(--space-6); }
+
+/* --- layout --- */
+.grid { display: grid; }
+.grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grow { flex-grow: 1; }
+.inline { display: inline; }
+.items-start { align-items: flex-start; }
+.items-end { align-items: flex-end; }
+.justify-end { justify-content: flex-end; }
+.align-middle { vertical-align: middle; }
+.w-8 { width: 2rem; }
+/* `.form-select { width: 100%; }` (application.css) is a bare one-class
+ * selector (0,1,0) — exactly the same specificity as this. Since admin.css
+ * always loads after application.css, the tie goes to whichever one is
+ * applied here, so this reliably wins without needing a `.theme-silo`-scoped
+ * reassertion (same file-order mechanism the Panel section above documents
+ * for `.p-6` vs. a bare `.card`). */
+.w-auto { width: auto; }
+.whitespace-nowrap { white-space: nowrap; }
+.cursor-pointer { cursor: pointer; }
+
+/* --- type --- */
+.text-left { text-align: left; }
+
+/* WARNING, and deliberate: `.text-lg`, `.text-md` and `.font-bold`
+ * (the last defined in application.css, not here) do NOTHING on a heading in
+ * the admin. `.theme-silo h1`-`h4` above set font-size and font-weight at
+ * (0,1,1); each of these is one bare class at (0,1,0) and loses, so
+ * `<h2 class="text-lg font-bold">` computes byte-identical to a bare `<h2>` —
+ * measured, not reasoned about. That uniformity is the density retrofit
+ * working as intended: admin headings are sized by level, not by the class a
+ * page happens to carry over from before the revamp, and reasserting these
+ * as `.theme-silo .text-lg` (the fix the margin utilities above got) would
+ * re-introduce exactly the per-page size drift the retrofit removed. They
+ * stay defined because they are still live on non-heading elements (spans,
+ * divs, `<p>` for `.font-bold`).
+ *
+ * The note exists because the class names lie: a reader seeing `text-lg` on
+ * an `<h2>` will assume it does something. If you need a heading at a
+ * different size, change its level or give it a component class — do not
+ * scope these. */
+.text-lg { font-size: var(--font-size-lg); }
+.text-md { font-size: var(--font-size-base); }
+.font-semibold { font-weight: var(--font-weight-semibold); }
+/* Restores an inherited weight to the base one — e.g. the "(optional)" hint
+ * inside prompt_templates/edit's `<label class="form-label">`, which the
+ * label's own `--font-weight-medium` would otherwise pull the whole way up.
+ * Nothing scoped competes for `font-weight` on a `<span>`, so the bare
+ * utility is enough here; inherited values lose to any direct rule. */
+.font-normal { font-weight: var(--font-weight-normal); }
+.font-mono { font-family: var(--font-data); }
+.italic { font-style: italic; }
+/* The data typeface is uppercase by convention (see the type roles in
+ * CLAUDE.md), but `.timestamp` deliberately is not — most admin timestamps
+ * are already all-digits. This is for the ones that carry letters and were
+ * uppercased before the inline-style sweep. */
+.uppercase { text-transform: uppercase; }
+
+/* --- borders and surfaces --- */
+.border-l { border-left: 1px solid var(--color-border); }
+.border-t { border-top: 1px solid var(--color-border); }
+.border-gray-200 { border-color: var(--color-border); }
+.border-yellow-200 { border-color: var(--color-warning); }
+.border-danger-light { border-color: var(--color-danger-light); }
+.bg-white { background-color: var(--color-surface); }
+.bg-slate-50 { background-color: var(--color-bg); }
+.bg-yellow-50 { background-color: var(--color-warning-light); }
+.text-yellow-600,
+.text-yellow-700,
+.text-yellow-800 { color: var(--color-warning); }

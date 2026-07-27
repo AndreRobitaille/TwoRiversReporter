@@ -37,7 +37,7 @@
             <td class="text-right">
               <%= link_to "Edit", edit_admin_redirect_path(redirect), class: "btn btn--sm btn--ghost" %>
               <%= button_to "Delete", admin_redirect_path(redirect), method: :delete,
-                    class: "btn btn--sm btn--ghost", form: { style: "display:inline", data: { turbo_confirm: "Delete this redirect?" } } %>
+                    class: "btn btn--sm btn--ghost", form: { class: "inline", data: { turbo_confirm: "Delete this redirect?" } } %>
             </td>
           </tr>
         <% end %>

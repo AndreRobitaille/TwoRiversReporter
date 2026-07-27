@@ -64,7 +64,7 @@ module Admin
       get admin_root_url
 
       assert_response :success
-      assert_select ".card ul a[href=?]", admin_meetings_path, text: "Meetings"
+      assert_select ".adm-launcher a[href=?]", admin_meetings_path, text: "Meetings"
     end
 
     test "admin can view meeting image management page" do

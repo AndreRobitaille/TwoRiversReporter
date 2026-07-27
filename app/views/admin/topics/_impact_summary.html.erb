@@ -1,7 +1,7 @@
 <div class="topic-impact-inline" id="impact-summary" data-topic-detail-impact-target="summary">
   <div class="topic-impact-inline__header">Impact preview</div>
   <div class="topic-impact-inline__body">
-    <p class="text-sm text-secondary" style="margin: 0 0 var(--space-1);"><%= workspace.consequence %></p>
+    <p class="text-sm text-secondary mb-1"><%= workspace.consequence %></p>
     <dl>
       <div class="topic-impact-inline__row"><dt>Topics affected</dt><dd><%= workspace.source_topic.present? ? 2 : 1 %></dd></div>
       <div class="topic-impact-inline__row"><dt>Aliases</dt><dd><%= workspace.alias_count %></dd></div>

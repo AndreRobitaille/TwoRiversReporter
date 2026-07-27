@@ -1,0 +1,27 @@
+<%# app/views/admin/shared/_sidebar.html.erb %>
+<nav class="adm-sidebar" data-admin-sidebar-target="drawer" aria-label="Admin sections">
+  <%= link_to admin_root_path, class: "adm-sidebar__brand" do %>
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+      <polyline points="9 22 9 12 15 12 15 22"></polyline>
+    </svg>
+    Admin
+  <% end %>
+
+  <% Admin::Navigation::GROUPS.each do |group| %>
+    <div class="adm-sidebar__group"><%= group.title %></div>
+    <% group.items.each do |item| %>
+      <% current = controller_name == item.controller %>
+      <%= link_to item.label,
+            send(item.path_helper),
+            class: "adm-sidebar__link#{' adm-sidebar__link--current' if current}",
+            "aria-current": (current ? "page" : nil) %>
+    <% end %>
+  <% end %>
+
+  <div class="adm-sidebar__foot">
+    <%= link_to "Public Site", root_path, class: "adm-sidebar__link" %>
+    <%= link_to "Security", settings_security_path, class: "adm-sidebar__link" %>
+    <%= link_to "Sign Out", public_session_path, class: "adm-sidebar__link", data: { turbo_method: :delete } %>
+  </div>
+</nav>

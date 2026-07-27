@@ -1,46 +1,23 @@
-<div class="page-header">
-  <h1 class="page-title">Admin</h1>
-  <p class="page-subtitle">Content, operations, and security tools.</p>
+<% content_for(:title) { "Admin — Two Rivers Matters" } %>
+
+<div class="adm-page-header">
+  <div class="adm-page-header__eyebrow">Two Rivers Matters</div>
+  <h1 class="adm-page-header__title">Admin</h1>
+  <p class="adm-page-header__meta">Everything in the admin, grouped.</p>
 </div>
 
-<div class="card card--narrow mb-6">
-  <div class="card-header">
-    <h2 class="card-title">Content</h2>
-    <p class="card-subtitle">Manage civic knowledge and topic workflows.</p>
-  </div>
-  <ul>
-    <li><%= link_to "Knowledgebase Sources", admin_knowledge_sources_path %></li>
-    <li><%= link_to "Knowledge Search", admin_search_path %></li>
-    <li><%= link_to "Committees & Boards", admin_committees_path %></li>
-    <li><%= link_to "Members", admin_members_path %></li>
-    <li><%= link_to "Topics", admin_topics_path %></li>
-    <li><%= link_to "Meetings", admin_meetings_path %></li>
-    <li><%= link_to "Topic Blocklist", admin_topic_blocklists_path %></li>
-    <li><%= link_to "AI Summaries", admin_summaries_path %></li>
-  </ul>
-</div>
-
-<div class="card card--narrow mb-6">
-  <div class="card-header">
-    <h2 class="card-title">Operations</h2>
-    <p class="card-subtitle">Background jobs and system status.</p>
-  </div>
-  <ul>
-    <li><%= link_to "Transcript Imports", admin_transcript_imports_path %></li>
-    <li><%= link_to "Job Queue", admin_jobs_path %></li>
-  </ul>
-</div>
-
-<div class="card card--narrow">
-  <div class="card-header">
-    <h2 class="card-title">Security & Users</h2>
-    <p class="card-subtitle">Account access and recovery tools.</p>
-  </div>
-  <ul>
-    <li><%= link_to "Site access", admin_site_settings_path %></li>
-    <li><%= link_to "Admin users", users_path %></li>
-    <li><%= link_to "Audit log", admin_audit_events_path %></li>
-    <li><%= link_to "Security settings", settings_security_path %></li>
-    <li><%= link_to "Sign out", public_session_path, data: { turbo_method: :delete } %></li>
-  </ul>
+<div class="adm-launcher">
+  <% Admin::Navigation::GROUPS.each do |group| %>
+    <section class="adm-launcher__group">
+      <h2 class="adm-launcher__title"><%= group.title %></h2>
+      <ul class="adm-launcher__list">
+        <% group.items.each do |item| %>
+          <li class="adm-launcher__item">
+            <%= link_to item.label, send(item.path_helper), class: "adm-launcher__link" %>
+            <span class="adm-launcher__desc"><%= item.description %></span>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
 </div>

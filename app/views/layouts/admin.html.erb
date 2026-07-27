@@ -21,76 +21,39 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;900&family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
-    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%# application.css supplies design tokens, reset, and the .theme-silo
+        palette. admin.css layers the Instrument density and admin components
+        on top and must load second. %>
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "admin", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
 
   </head>
 
   <body class="theme-silo">
-    <div class="site-wrapper">
-      <header class="site-header">
-        <div class="container">
-          <%= link_to admin_root_path, class: "site-logo" do %>
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-              <polyline points="9 22 9 12 15 12 15 22"></polyline>
-            </svg>
-            Admin
-          <% end %>
+    <div class="adm-shell" data-controller="admin-sidebar" data-action="keydown@document->admin-sidebar#handleKeydown">
+      <button class="adm-drawer-toggle"
+              type="button"
+              aria-label="Toggle navigation"
+              aria-expanded="false"
+              data-admin-sidebar-target="toggle"
+              data-action="click->admin-sidebar#toggle">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
 
-          <button class="mobile-nav-toggle" aria-label="Toggle navigation" onclick="document.querySelector('.site-nav').classList.toggle('open')">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="3" y1="12" x2="21" y2="12"></line>
-              <line x1="3" y1="6" x2="21" y2="6"></line>
-              <line x1="3" y1="18" x2="21" y2="18"></line>
-            </svg>
-          </button>
+      <%= render "admin/shared/sidebar" %>
 
-          <nav class="site-nav">
-            <%= link_to "Dashboard", admin_root_path, class: ("active" if controller_name == "dashboard") %>
-            <%= link_to "Topics", admin_topics_path, class: ("active" if controller_name == "topics") %>
-            <%= link_to "Meetings", admin_meetings_path, class: ("active" if controller_name == "meetings") %>
-            <%= link_to "Committees", admin_committees_path, class: ("active" if controller_name == "committees") %>
-            <%= link_to "Members", admin_members_path, class: ("active" if controller_name == "members") %>
-            <%= link_to "Knowledge Sources", admin_knowledge_sources_path, class: ("active" if controller_name == "knowledge_sources") %>
-            <%= link_to "Prompts", admin_prompt_templates_path, class: ("active" if controller_name == "prompt_templates") %>
-            <%= link_to "Transcript Imports", admin_transcript_imports_path, class: ("active" if controller_name == "transcript_imports") %>
-            <%= link_to "Redirects", admin_redirects_path, class: ("active" if controller_name == "redirects") %>
-            <%= link_to "Job Runs", admin_job_runs_path, class: ("active" if controller_name == "job_runs") %>
-            <%= link_to "Jobs", admin_jobs_path, class: ("active" if controller_name == "jobs") %>
-          </nav>
-        </div>
-      </header>
+      <div class="adm-scrim" data-admin-sidebar-target="scrim" data-action="click->admin-sidebar#close" hidden></div>
 
-      <main class="main-content">
-        <div class="container">
+      <main class="adm-main">
+        <div class="adm-container">
           <%= yield %>
         </div>
       </main>
-
-      <footer class="site-footer">
-        <div class="container">
-          <div class="footer-brand">
-            <h3>Two Rivers Matters — Admin</h3>
-            <p>Administrative panel for managing meetings, topics, and civic data.</p>
-          </div>
-
-          <div class="footer-links">
-            <%= link_to "Dashboard", admin_root_path %>
-            <%= link_to "Topics", admin_topics_path %>
-            <%= link_to "Meetings", admin_meetings_path %>
-            <%= link_to "Committees", admin_committees_path %>
-            <%= link_to "Members", admin_members_path %>
-            <%= link_to "Public Site", root_path %>
-          </div>
-
-          <div class="footer-copyright">
-            <p>Two Rivers Matters admin panel. Handle data with care.</p>
-          </div>
-        </div>
-      </footer>
     </div>
-
   </body>
 </html>

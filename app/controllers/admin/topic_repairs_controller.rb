@@ -2,16 +2,6 @@ module Admin
   class TopicRepairsController < BaseController
     before_action :set_topic
 
-    def show
-      redirect_to admin_topic_url(@topic, detail_workspace_context)
-    end
-
-    def history
-      @history = @topic.topic_review_events.includes(:user).order(created_at: :desc).limit(10)
-
-      render :history
-    end
-
     def merge_candidates
       @candidates = Admin::Topics::MergeCandidatesQuery.new(topic: @topic, query: params[:q]).call
       @select_action = if %w[move_alias merge_away topic_to_alias].include?(params[:mode])

@@ -1,6 +1,6 @@
 module Admin
   class TopicsController < BaseController
-    before_action :set_topic, only: %i[show update approve block unblock needs_review pin unpin merge create_alias]
+    before_action :set_topic, only: %i[show mention_preview update approve block unblock needs_review pin unpin merge create_alias]
 
     def index
       scope = filtered_topics
@@ -12,6 +12,18 @@ module Admin
       @impact_preview = build_impact_preview
       @retire_preview = Admin::Topics::ImpactPreviewQuery.new(action: :retire, topic: @topic).call
       @detail_workspace_context = detail_workspace_context
+    end
+
+    # The mention preview an inbox row expands to reveal. It lives behind its
+    # own request on purpose: `topic_recent_mentions` eager-loads every linked
+    # document's `extracted_text` and every `Extraction` row behind it, and the
+    # inbox renders up to 200 rows, so computing previews at index-render time
+    # cost 23.6s / 733 queries against the 641-topic development database —
+    # almost all of it for hidden rows nobody expanded. The row now ships a
+    # lazy <turbo-frame> pointing here, so that work is done once per actual
+    # expansion. Layout skipped: the response is a frame, not a page.
+    def mention_preview
+      render :mention_preview, layout: false
     end
 
     def update
@@ -51,11 +63,19 @@ module Admin
             render :show, status: :unprocessable_entity
           end
           format.turbo_stream {
+            # The row partial has no way to surface field-level errors, so on
+            # failure it must fall back to the topic's last-known-good
+            # persisted state, not the poisoned in-memory @topic — otherwise
+            # e.g. an invalid `name: ""` normalizes to nil before validation
+            # runs (Topic#maintain_derived_fields), and row_for(@topic) builds
+            # a row whose link_to has a nil body, which link_to then renders
+            # as the raw URL. #reload discards the failed in-memory changes
+            # while leaving @topic.errors intact for anything else reading it.
             render turbo_stream: turbo_stream.replace(
               helpers.dom_id(@topic),
-              partial: "admin/topics/topic",
-              locals: { topic: @topic, preview_window: helpers.preview_window_from_params(params) }
-            )
+              partial: "admin/topics/inbox_row",
+              locals: { row: Admin::Topics::InboxQuery.row_for(@topic.reload), errors: @topic.errors.full_messages }
+            ), status: :unprocessable_entity
           }
           format.json { render json: { success: false, errors: @topic.errors.full_messages }, status: :unprocessable_entity }
         end
@@ -174,8 +194,8 @@ module Admin
         format.turbo_stream {
           render turbo_stream: turbo_stream.replace(
             helpers.dom_id(@topic),
-            partial: "admin/topics/topic",
-            locals: { topic: @topic, preview_window: helpers.preview_window_from_params(params) }
+            partial: "admin/topics/inbox_row",
+            locals: { row: Admin::Topics::InboxQuery.row_for(@topic) }
           )
         }
         format.html { redirect_back fallback_location: admin_topics_path, notice: message }
