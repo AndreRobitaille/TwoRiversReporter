@@ -42,9 +42,15 @@
           <th></th>
         </tr>
       </thead>
-      <% topics_by_id = Topic.where(id: @inbox_rows.map(&:topic_id))
-                             .includes(agenda_items: :meeting)
-                             .index_by(&:id) %>
+      <%# No .includes(agenda_items: :meeting) here on purpose: it was tried
+          and measured (see task-14-report.md, "Fix round 1") to cost 3 extra
+          queries with zero offsetting benefit. topic_recent_mentions (in
+          Admin::TopicsHelper) chains .includes/.order/.limit onto
+          topic.agenda_items itself, which always builds a fresh relation and
+          requeries regardless of whatever this parent scope preloaded — a
+          preload here can never be reused there. Preload only pays off if
+          that helper is changed to read the bare association instead. %>
+      <% topics_by_id = Topic.where(id: @inbox_rows.map(&:topic_id)).index_by(&:id) %>
       <% @inbox_rows.each do |row| %>
         <%= render "inbox_row",
               row: row,
