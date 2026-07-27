@@ -10,10 +10,10 @@
                  "adm-table__row--ok"
                end %>
 <%# render_turbo_update and update's failure branch both re-render this
-    partial with only `row:` (and `errors:` on failure) — neither `topic:`
-    nor `preview_window:` is passed. Default them so those turbo paths don't
-    raise; the preview block below already handles a nil topic. %>
-<% topic = local_assigns[:topic] %>
+    partial with only `row:` (and `errors:` on failure) — `preview_window:`
+    is not passed. Default it so those turbo paths don't raise; a nil window
+    simply drops the query param and lets the preview action apply its own
+    default. %>
 <% preview_window = local_assigns.fetch(:preview_window, nil) %>
 <tbody id="topic_<%= row.topic_id %>" data-controller="row-toggle">
   <tr class="<%= row_state %>">
@@ -94,36 +94,22 @@
   </tr>
   <tr id="topic_<%= row.topic_id %>_preview" data-row-toggle-target="details" hidden>
     <td colspan="8">
-      <%# Guarded by has_mentions (set above, same test the Preview button
-          uses): topic_recent_mentions issues its own query even for a topic
-          with zero agenda_items, so calling it unconditionally for every one
-          of up to 200 inbox rows would fire that query ~200 times over,
-          almost always to discover nothing. Skipping it for the rows whose
-          button is already disabled removes that cost entirely for the
-          common case without changing what a click ever reveals. %>
-      <% mentions = topic && has_mentions ? topic_recent_mentions(topic, limit: 3) : [] %>
-      <% if mentions.any? %>
-        <% mentions.each do |agenda_item| %>
-          <% preview = topic_mention_preview(agenda_item, topic, window: preview_window) %>
-          <div class="mb-3">
-            <div class="font-semibold">
-              <%= agenda_item.meeting.body_name %>
-              <% if agenda_item.meeting.starts_at.present? %>
-                <span class="timestamp"><%= agenda_item.meeting.starts_at.to_date %></span>
-              <% end %>
-            </div>
-            <div class="table-desc"><%= agenda_item.title %></div>
-            <% if preview %>
-              <div class="adm-panel mt-1">
-                <div class="italic"><%= highlight_preview_terms(preview[:text], preview[:terms]) %></div>
-                <% if preview[:document_type].present? %>
-                  <div class="timestamp">
-                    <%= preview[:document_type].to_s.humanize %><%= " · page #{preview[:page_number]}" if preview[:page_number].present? %>
-                  </div>
-                <% end %>
-              </div>
-            <% end %>
-          </div>
+      <%# Nothing about the preview is computed here. topic_recent_mentions
+          eager-loads each linked document's extracted_text and every
+          Extraction row behind it; doing that for up to 200 rows cost 23.6s
+          and 733 queries on the 641-topic development database, essentially
+          all of it to fill rows nobody expanded. `loading: "lazy"` makes
+          Turbo hold the request until the frame actually becomes visible —
+          which is precisely when row-toggle unhides this row — so the work
+          is paid for once, per expansion, by the person who asked for it.
+          Rows with no mentions get no frame at all: their Preview button is
+          already disabled, so the request could never be triggered. %>
+      <% if has_mentions %>
+        <%= turbo_frame_tag "topic_#{row.topic_id}_preview_frame",
+              src: mention_preview_admin_topic_path(row.topic_id, preview_window: preview_window),
+              loading: "lazy",
+              class: "admin-topics-table__preview-frame" do %>
+          <p class="table-desc m-0">Loading mentions…</p>
         <% end %>
       <% else %>
         <p class="table-desc m-0">No recent mentions.</p>

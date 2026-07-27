@@ -302,6 +302,109 @@ module Admin
       assert_select "tbody#topic_#{topic.id} button[disabled]"
     end
 
+    test "a row with mentions defers its preview to a lazy turbo-frame" do
+      topic = topic_with_mention_and_documents(0)
+
+      get admin_topics_url
+
+      assert_select "tbody#topic_#{topic.id} turbo-frame[loading=lazy]" \
+                    "[src=?]", mention_preview_admin_topic_path(topic, preview_window: 160)
+      assert_select "tbody#topic_#{topic.id} turbo-frame##{"topic_#{topic.id}_preview_frame"}"
+    end
+
+    test "the preview endpoint renders up to three mentions with highlighted terms and a citation" do
+      topic = Topic.create!(name: "sidewalk assessment #{SecureRandom.hex(4)}",
+                            status: "approved", review_status: "approved")
+      4.times do |i|
+        meeting = Meeting.create!(body_name: "City Council", meeting_type: "Regular",
+                                  starts_at: i.days.ago, status: "minutes_posted",
+                                  detail_page_url: "http://example.com/m/#{SecureRandom.hex(6)}")
+        item = AgendaItem.create!(meeting: meeting, number: 1, title: "Item #{i}", order_index: 1)
+        AgendaItemTopic.create!(topic: topic, agenda_item: item)
+        document = MeetingDocument.create!(meeting: meeting, document_type: "minutes_pdf",
+                                           source_url: "http://example.com/d/#{SecureRandom.hex(6)}")
+        Extraction.create!(meeting_document: document, page_number: 7,
+                           raw_text: "The council took up #{topic.name} at length.")
+      end
+
+      get mention_preview_admin_topic_path(topic)
+
+      assert_response :success
+      assert_select "turbo-frame#topic_#{topic.id}_preview_frame", count: 1
+      assert_select "turbo-frame .table-desc", { count: 3 },
+        "the expander shows the three most recent mentions, not every one"
+      assert_select "span.font-bold.italic", { text: topic.name },
+        "the matched term must still be highlighted inside the excerpt"
+      assert_select "turbo-frame .timestamp", { text: /Minutes pdf · page 7/ },
+        "the excerpt must still cite the document and page it came from"
+    end
+
+    test "the preview endpoint says so when a topic has no mentions" do
+      topic = Topic.create!(name: "quiet #{SecureRandom.hex(4)}", status: "approved", review_status: "approved")
+
+      get mention_preview_admin_topic_path(topic)
+
+      assert_response :success
+      assert_select "turbo-frame", text: /No recent mentions/
+    end
+
+    # --- Final review, M1: the expander must not cost anything until it is
+    # expanded. Task 14 called topic_recent_mentions once per row at index
+    # render time; that helper eager-loads each linked document's
+    # extracted_text and every Extraction row behind it, which measured 23.6s
+    # and 733 queries for a 200-row index on the 641-topic development
+    # database. The preview now lives behind a lazy <turbo-frame> pointing at
+    # #mention_preview, so the index's query count must not grow with the
+    # number of rows that have mentions. ---
+
+    def count_index_queries
+      count = 0
+      subscriber = ActiveSupport::Notifications.subscribe("sql.active_record") do |*, payload|
+        count += 1 unless payload[:name].to_s.in?(%w[SCHEMA TRANSACTION])
+      end
+      get admin_topics_url
+      count
+    ensure
+      ActiveSupport::Notifications.unsubscribe(subscriber)
+    end
+
+    def topic_with_mention_and_documents(index)
+      topic = Topic.create!(name: "preview cost #{index} #{SecureRandom.hex(4)}",
+                            status: "approved", review_status: "approved")
+      meeting = Meeting.create!(body_name: "City Council", meeting_type: "Regular", starts_at: Time.current,
+                                status: "minutes_posted", detail_page_url: "http://example.com/m/#{SecureRandom.hex(6)}")
+      item = AgendaItem.create!(meeting: meeting, number: 1, title: "preview cost item", order_index: 1)
+      AgendaItemTopic.create!(topic: topic, agenda_item: item)
+      document = MeetingDocument.create!(meeting: meeting, document_type: "minutes_pdf",
+                                         source_url: "http://example.com/d/#{SecureRandom.hex(6)}",
+                                         extracted_text: "preview cost #{index} discussed at length")
+      Extraction.create!(meeting_document: document, page_number: 1,
+                         raw_text: "preview cost #{index} discussed at length")
+      topic
+    end
+
+    test "the index issues no per-row mention-preview queries" do
+      2.times { |i| topic_with_mention_and_documents(i) }
+      baseline = count_index_queries
+
+      10.times { |i| topic_with_mention_and_documents(i + 2) }
+      with_ten_more = count_index_queries
+
+      assert_equal baseline, with_ten_more,
+        "ten more rows with mentions changed the index's query count from " \
+        "#{baseline} to #{with_ten_more} — something is loading preview data " \
+        "per row again instead of leaving it to the lazy turbo-frame"
+
+      # An absolute ceiling as well as a constant one: a rewrite that made the
+      # per-row work constant-but-huge (one giant join) would satisfy the
+      # equality above. Measured on the pre-fix code (Task 14's inline
+      # preview), this same setup issued 21 queries for 2 rows and 61 for 12 —
+      # so both assertions here fail against it. The fixed index issues 8,
+      # regardless of row count.
+      assert_operator with_ten_more, :<=, 40,
+        "the topic inbox should render from a handful of preloaded queries"
+    end
+
     # --- Task 14: the turbo replacement paths render this partial with only
     # `row:` (and `errors:` on failure) — neither `topic:` nor
     # `preview_window:` is passed. The partial must tolerate their absence. ---

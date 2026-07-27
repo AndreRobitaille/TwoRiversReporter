@@ -91,6 +91,7 @@ Rails.application.routes.draw do
         post :bulk_update
       end
       member do
+        get :mention_preview
         get :merge_candidates, to: "admin/topic_repairs#merge_candidates"
         get :impact_preview, to: "admin/topic_repairs#impact_preview"
         post :merge_from_repair, to: "admin/topic_repairs#merge"

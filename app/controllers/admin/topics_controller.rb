@@ -1,6 +1,6 @@
 module Admin
   class TopicsController < BaseController
-    before_action :set_topic, only: %i[show update approve block unblock needs_review pin unpin merge create_alias]
+    before_action :set_topic, only: %i[show mention_preview update approve block unblock needs_review pin unpin merge create_alias]
 
     def index
       scope = filtered_topics
@@ -12,6 +12,18 @@ module Admin
       @impact_preview = build_impact_preview
       @retire_preview = Admin::Topics::ImpactPreviewQuery.new(action: :retire, topic: @topic).call
       @detail_workspace_context = detail_workspace_context
+    end
+
+    # The mention preview an inbox row expands to reveal. It lives behind its
+    # own request on purpose: `topic_recent_mentions` eager-loads every linked
+    # document's `extracted_text` and every `Extraction` row behind it, and the
+    # inbox renders up to 200 rows, so computing previews at index-render time
+    # cost 23.6s / 733 queries against the 641-topic development database —
+    # almost all of it for hidden rows nobody expanded. The row now ships a
+    # lazy <turbo-frame> pointing here, so that work is done once per actual
+    # expansion. Layout skipped: the response is a frame, not a page.
+    def mention_preview
+      render :mention_preview, layout: false
     end
 
     def update

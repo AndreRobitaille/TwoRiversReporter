@@ -1,0 +1,33 @@
+<%# Rendered on demand by Admin::TopicsController#mention_preview, into the
+    lazy <turbo-frame> that admin/topics/_inbox_row.html.erb puts inside its
+    hidden details row. The frame id here MUST match the one that partial
+    builds — "topic_<id>_preview_frame" — or Turbo drops the response. %>
+<%= turbo_frame_tag "topic_#{@topic.id}_preview_frame" do %>
+  <% mentions = topic_recent_mentions(@topic, limit: 3) %>
+  <% if mentions.any? %>
+    <% mentions.each do |agenda_item| %>
+      <% preview = topic_mention_preview(agenda_item, @topic, window: preview_window_from_params(params)) %>
+      <div class="mb-3">
+        <div class="font-semibold">
+          <%= agenda_item.meeting.body_name %>
+          <% if agenda_item.meeting.starts_at.present? %>
+            <span class="timestamp"><%= agenda_item.meeting.starts_at.to_date %></span>
+          <% end %>
+        </div>
+        <div class="table-desc"><%= agenda_item.title %></div>
+        <% if preview %>
+          <div class="adm-panel mt-1">
+            <div class="italic"><%= highlight_preview_terms(preview[:text], preview[:terms]) %></div>
+            <% if preview[:document_type].present? %>
+              <div class="timestamp">
+                <%= preview[:document_type].to_s.humanize %><%= " · page #{preview[:page_number]}" if preview[:page_number].present? %>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  <% else %>
+    <p class="table-desc m-0">No recent mentions.</p>
+  <% end %>
+<% end %>

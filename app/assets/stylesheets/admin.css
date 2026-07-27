@@ -418,6 +418,17 @@
   white-space: nowrap;
 }
 
+/* The lazily-loaded mention preview inside an expanded inbox row. A
+ * <turbo-frame> is an unknown element to the UA stylesheet and therefore
+ * `display: inline`, which would wrap the preview's block children (each
+ * mention's heading, title line and excerpt panel) in an inline box. It also
+ * matters for the lazy load itself: Turbo starts a `loading="lazy"` frame
+ * from an IntersectionObserver, and an inline wrapper's box is a less
+ * predictable thing to observe than a block one. */
+.admin-topics-table__preview-frame {
+  display: block;
+}
+
 /* Row status indicator — colored left border */
 .admin-topics-table__row--proposed {
   border-left: 3px solid var(--color-warning);
