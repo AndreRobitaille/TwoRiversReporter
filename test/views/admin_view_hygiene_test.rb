@@ -50,4 +50,21 @@ class AdminViewHygieneTest < ActiveSupport::TestCase
       "these classes are used but defined nowhere:\n" +
       undefined.map { |k, v| "  .#{k} — #{v.join(', ')}" }.join("\n")
   end
+
+  test "no admin partial is orphaned" do
+    sources = Rails.root.glob("app/{views,controllers}/**/*.{erb,rb}")
+    orphans = []
+
+    Rails.root.glob("app/views/admin/**/_*.erb").each do |partial|
+      name = partial.basename.to_s.sub(/\A_/, "").sub(/\.html\.erb\z/, "")
+      dir  = partial.dirname.relative_path_from(Rails.root.join("app/views")).to_s
+      pattern = /render[( ][^\n]*["'](?:#{Regexp.escape(dir)}\/)?#{Regexp.escape(name)}["']|partial:\s*["'](?:#{Regexp.escape(dir)}\/)?#{Regexp.escape(name)}["']/
+
+      referenced = sources.any? { |s| s != partial && s.read.match?(pattern) }
+      orphans << partial.relative_path_from(Rails.root).to_s unless referenced
+    end
+
+    assert_empty orphans,
+      "these partials are rendered by nothing — delete them or wire them up:\n  #{orphans.join("\n  ")}"
+  end
 end

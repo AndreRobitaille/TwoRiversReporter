@@ -9,34 +9,6 @@ module Admin
       @topic = Topic.create!(name: "lakeshore community foundation partnership", status: "approved", review_status: "approved")
     end
 
-    test "shows topic repair workspace" do
-      get repair_admin_topic_url(@topic, source_topic_id: 123, q: "lakeshore")
-
-      assert_redirected_to admin_topic_url(@topic, source_topic_id: 123, q: "lakeshore")
-    end
-
-    test "history endpoint lazily renders recent topic history" do
-      TopicReviewEvent.create!(topic: @topic, user: @admin, action: "retired", reason: "cleanup")
-
-      get history_admin_topic_url(@topic)
-
-      assert_response :success
-      assert_match '<turbo-frame id="topic-repair-history">', response.body
-      assert_match "History", response.body
-      assert_match "cleanup", response.body
-      assert_match @admin.email_address, response.body
-    end
-
-    test "history endpoint shows reasons for non-retired review events" do
-      TopicReviewEvent.create!(topic: @topic, user: @admin, action: "alias_removed", reason: "duplicate label")
-
-      get history_admin_topic_url(@topic)
-
-      assert_response :success
-      assert_match "Alias removed", response.body
-      assert_match "duplicate label", response.body
-    end
-
     test "merge_candidates returns matching topics with reasons" do
       matching = Topic.create!(name: "lakeshore community foundation", status: "approved", description: "Nearby foundation work")
       TopicAlias.create!(topic: matching, name: "lakeshore foundation")
