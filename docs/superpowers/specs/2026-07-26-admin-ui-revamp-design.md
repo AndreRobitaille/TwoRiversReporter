@@ -193,7 +193,7 @@ Per `CLAUDE.md`, completion claims must state what was actually run.
 2. No admin view contains a `style="` attribute.
 3. No admin view references a class that no stylesheet defines.
 
-Guards 2 and 3 are written mutation-first, per established practice: prove each fails against today's ~50 inline styles and 60 undefined classes *before* fixing them, so neither can pass for the wrong reason.
+Guards 2 and 3 are written mutation-first, per established practice: prove each fails against today's ~50 inline styles and 70 undefined classes *before* fixing them, so neither can pass for the wrong reason. (This spec originally said 60; see "What Phase 1 Actually Shipped" for why that was wrong.)
 
 ---
 
@@ -202,3 +202,45 @@ Guards 2 and 3 are written mutation-first, per established practice: prove each 
 - **Phase 1 briefly makes the un-converted views look worse**, since everything around them will be on-system. Mitigated by the utility layer landing in Phase 1, which removes the visible breakage even where components have not yet arrived.
 - **Deleting the repair subtree loses functionality if the harvest is incomplete.** Mitigated by explicitly enumerating what to port (triage buttons, inline importance editor, mention-preview expander) before removal.
 - **Overriding shared class names under `.theme-silo` leaves one-directional coupling** — a future change to `.card` in `application.css` could surprise the admin. Accepted deliberately: renaming instead would force edits to all 53 conforming views for no user-visible gain.
+
+---
+
+## What Phase 1 Actually Shipped
+
+Recorded after implementation, because this spec is binding per `CLAUDE.md` and Phase 2 will be planned from it. Where reality diverged from the design above, **reality is authoritative** and the divergence is explained.
+
+### Corrections to this spec's own numbers
+
+- **The audit undercounted. It is 70 undefined classes, not 60.** The original detection regex matched only the HTML attribute form `class="…"` and missed Rails' helper form `class: "…"`, which 40 of 61 admin view files use. Ten classes were hidden behind that blind spot. The same blind spot recurred independently in the inline-style guard (`style="` vs `style: "`), hiding three more. Any future audit of attribute usage must cover both syntaxes.
+- **The utility layer is 49 entries, not 41.** It grew as real usage was discovered, shrank when Task 15's deletions orphaned six, and grew again for the scoped margin counterparts described below. `UTILITIES` in `test/assets/admin_stylesheet_test.rb` is the authoritative list; a set-equality test keeps it in lockstep with section 4 of `admin.css`.
+- **Twelve components was the plan; seventeen `adm-*` families shipped** (`adm-shell`, `adm-sidebar`, `adm-main`, `adm-container`, `adm-drawer-toggle`, `adm-scrim`, `adm-launcher`, `adm-page-header`, `adm-table`, `adm-chip`, `adm-pagination`, `adm-empty`, `adm-toolbar`, `adm-seg`, `adm-panel`, `adm-detail`, `adm-list`). Twelve of these are defined but not yet used by any view — Phase 2 adopts them as pages are converted.
+
+### The cascade-collision problem, and the guard that now contains it
+
+Roughly **a dozen specificity collisions** surfaced during implementation, all one root cause: a scoped rule silently out-specifying an unscoped one. Three shapes appeared:
+
+1. `.theme-silo .btn` (0,2,0) beating unscoped modifiers like `.btn--secondary` (0,1,0) — 15 instances found by sweep.
+2. Element-qualified rules like `.theme-silo h1` (0,1,1) or `.theme-silo table thead th` (0,1,3) beating bare utilities (0,1,0) — this made **every margin utility inert on headings and paragraphs**, and silently left-aligned every `th.text-right`.
+3. Shorthand stomping longhand — `border` erasing a modifier's `border-left`.
+
+`test/assets/admin_stylesheet_test.rb` now carries a data-driven guard for all three, proven non-tautological by injecting novel collisions. **Its coverage is narrower than the mechanism:** it checks colour, margin/padding and `text-align` across tags `p h1 h2 h3 h4 td th`. It does not cover `font-size`/`font-weight` (`.text-lg`, `.text-md`, `.font-bold` are consequently inert on headings — intended density unification, but the class names mislead), other element selectors, or whether a reassertion's *value* is correct.
+
+### Performance constraint discovered the hard way
+
+`Admin::TopicsHelper#topic_recent_mentions` eager-loads each linked document's `extracted_text` and every `Extraction` row behind it. Calling it once per row while rendering the topics index cost **23.6 seconds and 733 queries** on the 641-topic development database. Mention previews are therefore loaded on expansion via a lazy `turbo_frame_tag` against `mention_preview_admin_topic_path`, not at index-render time (0.24s, 4 queries). A query-count test guards it.
+
+**Do not call `topic_recent_mentions` in any list context.** It is safe only per-topic, on demand.
+
+### Regression guards actually in place
+
+Four, not three: navigation consistency, no-inline-style, no-undefined-class, and the cascade-collision guard. All were mutation-proven before being trusted.
+
+### Carried into Phase 2
+
+- **Reconcile the vocabulary**: five orphaned `.admin-topics-table__row--*` rules unused since the inbox rewrite; `.adm-table__sort` and `.admin-topics-table__sort-link` are two spellings of one concept; `.admin-sidebar` (a right-hand aside) sits one character from `.adm-sidebar` (the left nav).
+- **`.topic-decision-card--evidence` landed in `application.css`**, the shared stylesheet, rather than `admin.css`. Functionally inert publicly, but on the wrong side of the split this phase built.
+- **Guard blind spots**, all latent with zero live instances today: single-quoted `class='…'` / `style='…'`, and attribute values that mix a literal class with an interpolation (the whole value is currently skipped). Fix all shapes together rather than adding another regex.
+- **`bulk_update` is unreachable** — its checkbox and commit form lived only in the deleted `_topic.html.erb`. The action, route and tests were deliberately preserved for the multi-select work Phase 2 already plans. `TopicsController#merge` and `#create_alias` are similarly orphaned, superseded by the live `topic_repairs` equivalents.
+- **`topic_recent_mentions` remains inefficient**, now paid once per expansion rather than 182 times per page load. Batching it is the real fix.
+- **Index "Block" is one click with no confirmation** and writes a permanent `TopicBlocklist` entry. Faithful to the harvested original, but that control was unreachable before this phase and is reachable now.
+- **Turbo-stream responses render no flash anywhere in this app.** Inline edits surface validation errors inside the replaced row; every other turbo-stream action succeeds or fails silently.
