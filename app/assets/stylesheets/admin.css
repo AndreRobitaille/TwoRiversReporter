@@ -464,6 +464,29 @@
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
 }
+/* A second `.table-desc` line (e.g. prompt_templates/index's usage_context,
+ * under the template's own description) that should read as more secondary
+ * still. `.text-muted` alone can't win this: both rules are one class plus
+ * one `.theme-silo` ancestor (0,2,0), so file order — not the extra class —
+ * would settle it, and `.table-desc` already sits later in this same file.
+ * The compound selector reasserts colour at (0,3,0) so it wins outright. */
+.theme-silo .table-desc.text-muted { color: var(--color-text-muted); }
+/* A plain list that just needs its marker indent back after losing the
+ * `padding-left` an inline style used to supply — e.g. the search page's
+ * numbered source list. Not a `<ol>`/`<ul>` element rule: most admin lists
+ * (`.adm-launcher__list`, `.topic-alias-repair-list`, etc.) intentionally
+ * strip list-style and padding entirely, so a bare `ol`/`ul` default would
+ * fight those. */
+.theme-silo .adm-list { padding-left: var(--space-4); }
+/* A horizontally-divided result row (knowledge search's KB/document result
+ * lists) — deliberately NOT `.adm-panel`: that component adds a border on
+ * every side, a background tint, and radius, which would turn each item in
+ * a repeated list into a separate boxed card rather than the plain
+ * bottom-divided rows this page actually wants. */
+.theme-silo .search-result-row {
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
 /* The primary link in a table cell's name column, e.g. prompt_templates/index —
  * bold to read as the row's title, the same treatment `.font-semibold` gives
  * the topic-name link in admin_topics/_inbox_row; `.table-desc` supplies the
@@ -578,6 +601,14 @@
 .theme-silo .adm-table tbody tr:hover td {
   background: var(--color-surface-hover);
 }
+
+/* A cell that hosts injected content that manages its own spacing (the
+ * version-diff row in prompt_templates/edit) and needs the table's own cell
+ * padding fully zeroed. `.theme-silo table tbody td` is one class plus three
+ * elements (0,1,3) — a bare `.p-0` (0,1,0) can't touch it. `.theme-silo
+ * td.p-0` is two classes plus one element (0,2,1), which outranks it on the
+ * classes column alone. */
+.theme-silo td.p-0 { padding: 0; }
 
 /* IDs, timestamps, counts — monospace so columns align for straight-down
  * scanning, and non-wrapping so a date can't fold onto a second line and
@@ -697,13 +728,15 @@
  * class-qualified rule at (0,2,0) or higher other than `.modal__panel`
  * below (source order settles that one — see the Modal section) and
  * `.admin-sidebar .card { height: 100%; }`, which sets an unrelated
- * property, so this is a clean density retrofit, not a fight. Two spots
- * where `.card` sits beside the transitional `.p-6` utility
- * (repair_confirm_modal's `modal__panel card p-6`, topics/index's inline
- * `style="padding: var(--space-5)"`) are already covered by this file's own
- * utilities-section rule (scoped component beats unscoped utility) or by an
- * inline style outranking everything — pre-existing, not something this
- * task changes.
+ * property, so this is a clean density retrofit, not a fight. One spot where
+ * `.card` sits beside the transitional `.p-6` utility
+ * (repair_confirm_modal's `modal__panel card p-6`) is already covered by
+ * this file's own utilities-section rule (scoped component beats unscoped
+ * utility). topics/index used to carry its own inline
+ * `style="padding: var(--space-5)"` (20px) on top of a `.card`; Task 16
+ * deleted that override rather than translate it to a utility, so that page
+ * now just gets this rule's plain var(--space-4) (16px) padding like every
+ * other `.card`.
  */
 .theme-silo .adm-panel,
 .theme-silo .card {
@@ -948,11 +981,26 @@
   background: var(--color-bg);
 }
 .theme-silo .form-group { margin-bottom: var(--space-3); }
+/* `.mb-0` alone can't zero out the last field in a form (prompt_templates/
+ * edit's editor-note group): both rules are one class plus the `.theme-silo`
+ * ancestor (0,2,0), so an unscoped `.mb-0` (0,1,0) never even enters the
+ * specificity comparison. Reasserted here, compound with the base
+ * selector, so it wins outright rather than depending on file order. */
+.theme-silo .form-group.mb-0 { margin-bottom: 0; }
 .theme-silo .form-hint {
   margin: var(--space-1) 0 0;
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
 }
+/* A text input that shouldn't stretch to its container's full width (e.g. a
+ * one-line "what did you change?" editor note) but also shouldn't be capped
+ * to the standard field width — prompt_templates/edit's editor-note field. */
+.theme-silo .form-input--wide { max-width: 500px; }
+/* The knowledge-search page's primary input should fill the available row,
+ * unlike every other `.search-form .form-input` (application.css caps that at
+ * 400px for the public/topics/meetings search boxes it's shared with). Scoped
+ * to admin only so those public boxes keep their cap. */
+.theme-silo .search-form .form-input { max-width: none; }
 
 /* --- Flash --- */
 .theme-silo .flash {
@@ -1008,10 +1056,12 @@
 .m-0 { margin: 0; }
 .mt-1 { margin-top: var(--space-1); }
 .mt-3 { margin-top: var(--space-3); }
+.pt-4 { padding-top: var(--space-4); }
 .mb-1 { margin-bottom: var(--space-1); }
 .mb-3 { margin-bottom: var(--space-3); }
 .mx-2 { margin-left: var(--space-2); margin-right: var(--space-2); }
 .my-6 { margin-top: var(--space-6); margin-bottom: var(--space-6); }
+.p-0 { padding: 0; }
 .p-3 { padding: var(--space-3); }
 .p-4 { padding: var(--space-4); }
 .p-6 { padding: var(--space-6); }

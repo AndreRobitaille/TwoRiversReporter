@@ -6,7 +6,7 @@ class AdminStylesheetTest < ActiveSupport::TestCase
   STYLESHEET = Rails.root.join("app/assets/stylesheets/admin.css")
 
   UTILITIES = %w[
-    m-0 mt-1 mt-3 mb-1 mb-3 mx-2 my-6 p-3 p-4 p-6
+    m-0 mt-1 mt-3 pt-4 mb-1 mb-3 mx-2 my-6 p-0 p-3 p-4 p-6
     gap-3 gap-6 space-y-2 space-y-3 space-y-4 space-y-6
     grid grid-cols-2 grow items-start items-end justify-end align-middle
     w-8 whitespace-nowrap cursor-pointer

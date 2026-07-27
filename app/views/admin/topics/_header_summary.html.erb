@@ -1,9 +1,9 @@
 <div class="page-header topic-board-header">
   <div class="topic-board-header__top">
     <div>
-      <h1 class="page-title" style="margin-bottom: var(--space-1);"><%= workspace.topic.name %></h1>
+      <h1 class="page-title mb-1"><%= workspace.topic.name %></h1>
       <% if workspace.topic.description.present? %>
-        <p class="text-sm text-secondary" style="margin: 0;"><%= workspace.topic.description %></p>
+        <p class="text-sm text-secondary m-0"><%= workspace.topic.description %></p>
       <% end %>
     </div>
     <%= link_to "Back to Inbox", admin_topics_path, class: "btn btn--secondary btn--sm topic-board-header__back" %>

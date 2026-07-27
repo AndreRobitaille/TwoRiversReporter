@@ -51,6 +51,17 @@ class AdminViewHygieneTest < ActiveSupport::TestCase
       undefined.map { |k, v| "  .#{k} — #{v.join(', ')}" }.join("\n")
   end
 
+  test "no admin view uses an inline style attribute" do
+    offenders = VIEWS.filter_map do |path|
+      count = path.read.scan(/style="/).length
+      "#{path.relative_path_from(Rails.root)} (#{count})" if count.positive?
+    end
+
+    assert_empty offenders,
+      "inline styles mean a component is missing — grow the component instead:\n  " +
+      offenders.join("\n  ")
+  end
+
   test "no admin partial is orphaned" do
     sources = Rails.root.glob("app/{views,controllers}/**/*.{erb,rb}")
     orphans = []

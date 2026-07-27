@@ -5,7 +5,7 @@
 
 <div class="card mb-6">
   <%= form_with url: admin_search_path, method: :get, local: true, class: "search-form" do |f| %>
-    <input type="text" name="q" value="<%= @query %>" placeholder="Search knowledge base and meeting documents..." class="form-input" style="flex: 1; max-width: none;" autofocus>
+    <input type="text" name="q" value="<%= @query %>" placeholder="Search knowledge base and meeting documents..." class="form-input grow" autofocus>
     <button type="submit" class="btn btn--secondary">Search</button>
     <button type="submit" name="ask_ai" value="1" class="btn btn--primary">Ask AI</button>
   <% end %>
@@ -27,16 +27,16 @@
         <%= simple_format @ai_answer %>
       </div>
       <% if @kb_results.present? %>
-        <div class="mt-4" style="border-top: 1px solid var(--color-border); padding-top: var(--space-4);">
+        <div class="mt-4 border-t pt-4">
           <div class="text-sm font-medium text-secondary mb-2">Sources</div>
-          <ol class="text-sm" style="padding-left: var(--space-4); margin: 0;">
+          <ol class="text-sm adm-list m-0">
             <% @kb_results.each_with_index do |result, i| %>
               <% source = result[:chunk].knowledge_source %>
-              <li style="margin-bottom: var(--space-1);">
+              <li class="mb-1">
                 <%= link_to source.title, admin_knowledge_source_path(source) %>
-                <span class="badge badge--<%= source.origin == 'manual' ? 'default' : (source.origin == 'extracted' ? 'info' : 'warning') %>" style="font-size: 0.65rem;"><%= source.origin %></span>
+                <span class="badge badge--<%= source.origin == 'manual' ? 'default' : (source.origin == 'extracted' ? 'info' : 'warning') %>"><%= source.origin %></span>
                 <% if source.stated_at %>
-                  <span class="text-muted" style="font-family: var(--font-data); font-size: 0.7rem;"><%= source.stated_at %></span>
+                  <span class="timestamp"><%= source.stated_at %></span>
                 <% end %>
                 <% if source.meeting %>
                   &middot; from <%= link_to source.meeting.body_name, meeting_path(source.meeting) %>
@@ -64,16 +64,16 @@
         <% chunk = result[:chunk] %>
         <% source = chunk.knowledge_source %>
         <% score_pct = (result[:score] * 100).round %>
-        <div style="padding: var(--space-3) 0; border-bottom: 1px solid var(--color-border);">
+        <div class="search-result-row">
           <div class="flex items-center gap-2 mb-1">
-            <span style="font-family: var(--font-data); font-size: 0.75rem; color: var(--color-text-muted); letter-spacing: 0.05em; min-width: 3em;"><%= score_pct %>%</span>
+            <span class="data-cell"><%= score_pct %>%</span>
             <strong><%= link_to source.title, admin_knowledge_source_path(source) %></strong>
             <span class="badge badge--<%= source.origin == 'manual' ? 'default' : (source.origin == 'extracted' ? 'info' : 'warning') %>"><%= source.origin.humanize %></span>
             <% if source.stated_at %>
-              <span style="font-family: var(--font-data); font-size: 0.7rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em;"><%= source.stated_at %></span>
+              <span class="timestamp"><%= source.stated_at %></span>
             <% end %>
           </div>
-          <p class="text-sm text-secondary" style="margin: 0;"><%= chunk.content.truncate(200) %></p>
+          <p class="text-sm text-secondary m-0"><%= chunk.content.truncate(200) %></p>
         </div>
       <% end %>
     <% end %>
@@ -88,7 +88,7 @@
       <p class="section-empty">No matching meeting documents found.</p>
     <% else %>
       <% @document_results.each do |doc| %>
-        <div style="padding: var(--space-3) 0; border-bottom: 1px solid var(--color-border);">
+        <div class="search-result-row">
           <div class="flex items-center gap-2 mb-1">
             <span class="badge badge--default"><%= doc.document_type.humanize.upcase %></span>
             <% if doc.meeting %>
@@ -97,9 +97,9 @@
             <% end %>
           </div>
           <% if doc.respond_to?(:headline_excerpt) && doc.headline_excerpt.present? %>
-            <p class="text-sm text-secondary" style="margin: 0;"><%= raw doc.headline_excerpt %></p>
+            <p class="text-sm text-secondary m-0"><%= raw doc.headline_excerpt %></p>
           <% else %>
-            <p class="text-sm text-secondary" style="margin: 0;"><%= doc.extracted_text.to_s.truncate(200) %></p>
+            <p class="text-sm text-secondary m-0"><%= doc.extracted_text.to_s.truncate(200) %></p>
           <% end %>
         </div>
       <% end %>

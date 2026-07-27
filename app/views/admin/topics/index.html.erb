@@ -5,7 +5,7 @@
   <p class="page-subtitle">Review AI mistakes, ambiguous cases, and cleanup work.</p>
 </div>
 
-<div class="card" style="padding: var(--space-5);">
+<div class="card">
   <%= form_with url: admin_topics_path, method: :get, local: true, class: "admin-topics-filters" do |f| %>
     <%= f.text_field :q, value: params[:q], placeholder: "Search topics, aliases, description", class: "form-input" %>
     <%= f.select :status,

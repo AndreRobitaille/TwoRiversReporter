@@ -361,6 +361,23 @@ small {
   border-left: 3px solid var(--color-border-strong);
 }
 
+/* Evidence snapshot — reuses the decision-card chrome for a static, always-
+ * visible header rather than a real accordion entry (admin/topics/_evidence_
+ * snapshot: no `data-expanded` attribute, no Stimulus target, and the
+ * "trigger" is a plain div, not a button). It wants the same primary accent
+ * as the topic's own "This Topic Is Correct" card, without the interactive
+ * cursor and without the outer card repeating a second, thinner border-left
+ * next to the trigger's thicker one. The `:not(--primary):not(--danger)`
+ * chain on the left-hand side matches the neutral-card rule above so this
+ * selector ties or beats it (4 classes vs 4) rather than losing to it, which
+ * a plain `.topic-decision-card--evidence .topic-decision-card__trigger`
+ * (2 classes) would. */
+.topic-decision-card--evidence { border-left: none; }
+.topic-decision-card--evidence:not(.topic-decision-card--primary):not(.topic-decision-card--danger) .topic-decision-card__trigger {
+  cursor: default;
+  border-left: 3px solid var(--color-primary);
+}
+
 /* --- Panel interior --- */
 
 /* Remove nested .card chrome inside panels */

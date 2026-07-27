@@ -110,7 +110,7 @@
     <div class="card-body">
       <h2 class="card-title mb-4">2. Select Topics</h2>
       <div class="form-group">
-        <label class="flex items-center gap-2" style="cursor: pointer;">
+        <label class="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" name="all_topics" value="1" data-action="change->job-run#toggleAllTopics" data-job-run-target="allTopics">
           <span>All approved topics (<%= Topic.approved.count %>)</span>
         </label>

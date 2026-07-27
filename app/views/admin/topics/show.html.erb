@@ -51,7 +51,7 @@
         <div class="topic-decision-card__panel" data-topic-decision-board-target="panel" hidden>
           <div class="topic-decision-destructive">
             <div class="topic-panel-label">What happens</div>
-            <p class="text-sm" style="margin: 0 0 var(--space-2);"><%= @retire_preview.consequence %></p>
+            <p class="text-sm mb-2"><%= @retire_preview.consequence %></p>
 
             <dl class="topic-decision-destructive__stats">
               <div class="topic-decision-destructive__stat"><dt>Appearances</dt><dd><%= @retire_preview.appearance_count %></dd></div>
@@ -60,7 +60,7 @@
               <div class="topic-decision-destructive__stat"><dt>Summaries</dt><dd><%= @retire_preview.summary_count %></dd></div>
             </dl>
 
-            <p class="text-xs text-secondary" style="margin: var(--space-2) 0 0;"><%= @retire_preview.language %> A blocklist entry prevents future reuse.</p>
+            <p class="text-xs text-secondary mt-2"><%= @retire_preview.language %> A blocklist entry prevents future reuse.</p>
 
             <button type="button" class="btn btn--danger btn--sm" data-action="click->topic-detail-impact#openRetireConfirm" data-modal-id="retire-modal" data-topic-id="<%= @workspace.topic.id %>" data-topic-name="<%= @workspace.topic.name %>">Block this topic</button>
           </div>
@@ -184,7 +184,7 @@
               <%= f.text_area :source_notes, rows: 2, class: "form-input w-full" %>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2);">
+            <div class="grid grid-cols-2 gap-2">
               <div class="form-group">
                 <%= f.label :importance, "Importance" %>
                 <%= f.number_field :importance, min: 0, max: 10, class: "form-input w-full" %>
