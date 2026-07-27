@@ -85,4 +85,17 @@ class Admin::JobRunsControllerTest < ActionDispatch::IntegrationTest
     json = JSON.parse(response.body)
     assert_equal 1, json["count"]
   end
+
+  test "the enqueue console is titled for what it does" do
+    get admin_job_runs_url
+    assert_response :success
+    assert_match "Run a Job", response.body
+    assert_no_match "Job Re-Run Console", response.body
+  end
+
+  test "the queue monitor is titled for what it does" do
+    get admin_jobs_url
+    assert_response :success
+    assert_match "Queue &amp; Failures", response.body
+  end
 end
