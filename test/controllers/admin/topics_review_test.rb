@@ -161,6 +161,25 @@ module Admin
       assert_select "form[action=?]", block_admin_topic_path(topic)
     end
 
+    test "block warns that its blocklist side effect survives unblock" do
+      topic = proposed_topic
+      get admin_topics_url
+
+      assert_select "form[action=?][data-turbo-confirm*='permanent topic blocklist']" \
+                    "[data-turbo-confirm*='Unblocking']", block_admin_topic_path(topic)
+    end
+
+    test "row actions preserve the active inbox filters" do
+      topic = proposed_topic
+      context = { review_status: "proposed", lifecycle_status: "active", q: topic.name, sort: "name" }
+      get admin_topics_url(context)
+
+      assert_select "form[action=?]", approve_admin_topic_path(topic, context)
+      assert_select "form[action=?]", block_admin_topic_path(topic, context)
+      assert_select "form[action=?]", pin_admin_topic_path(topic, context)
+      assert_select "form[action=?]", admin_topic_path(topic, context)
+    end
+
     test "an approved topic offers needs-review and block" do
       topic = Topic.create!(name: "approved #{SecureRandom.hex(4)}", status: "approved", review_status: "approved")
       get admin_topics_url
@@ -196,6 +215,37 @@ module Admin
       assert_match "turbo-stream", response.media_type
       assert_match "topic_#{topic.id}", response.body,
         "the turbo stream must target the id the index actually rendered"
+    end
+
+    test "a turbo action removes a row that no longer matches the active filters" do
+      topic = proposed_topic
+
+      post approve_admin_topic_path(topic, review_status: "proposed"), as: :turbo_stream
+
+      assert_response :success
+      assert_select "turbo-stream[action='remove'][target='topic_#{topic.id}']", count: 1
+      assert_select "turbo-stream[action='replace']", count: 0
+    end
+
+    test "a turbo action replaces a row that still matches the active filters" do
+      topic = proposed_topic
+
+      post pin_admin_topic_path(topic, review_status: "proposed"), as: :turbo_stream
+
+      assert_response :success
+      assert_select "turbo-stream[action='replace'][target='topic_#{topic.id}']", count: 1
+      assert_select "form[action=?]", unpin_admin_topic_path(topic, review_status: "proposed")
+    end
+
+    test "an inline rename removes a row that no longer matches the search" do
+      topic = Topic.create!(name: "searchable #{SecureRandom.hex(4)}", status: "approved", review_status: "approved")
+
+      patch admin_topic_path(topic, q: topic.name),
+        params: { topic: { name: "renamed #{SecureRandom.hex(4)}" } },
+        as: :turbo_stream
+
+      assert_response :success
+      assert_select "turbo-stream[action='remove'][target='topic_#{topic.id}']", count: 1
     end
 
     test "blocking blocks the topic" do
@@ -333,7 +383,7 @@ module Admin
       assert_select "turbo-frame#topic_#{topic.id}_preview_frame", count: 1
       assert_select "turbo-frame .table-desc", { count: 3 },
         "the expander shows the three most recent mentions, not every one"
-      assert_select "span.font-bold.italic", { text: topic.name },
+      assert_select "span.topic-preview-highlight", { text: topic.name },
         "the matched term must still be highlighted inside the excerpt"
       assert_select "turbo-frame .timestamp", { text: /Minutes pdf · page 7/ },
         "the excerpt must still cite the document and page it came from"

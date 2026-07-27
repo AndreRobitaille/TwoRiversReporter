@@ -54,6 +54,7 @@
       <% @inbox_rows.each do |row| %>
         <%= render "inbox_row",
               row: row,
+              inbox_context: @inbox_context,
               preview_window: preview_window_from_params(params) %>
       <% end %>
     </table>

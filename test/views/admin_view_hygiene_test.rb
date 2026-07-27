@@ -2,8 +2,8 @@
 require "test_helper"
 
 # Guards against the two failure modes found in the July 2026 admin audit:
-# 32 of 60 views referencing class names no stylesheet defined, and ~50
-# inline style attributes standing in for components that did not exist.
+# admin markup referencing class names no stylesheet defined, and inline style
+# attributes standing in for components that did not exist.
 class AdminViewHygieneTest < ActiveSupport::TestCase
   # Mirrors the admin layout's stylesheet_link_tag calls
   # (app/views/layouts/admin.html.erb) — update this list if that layout's
@@ -13,15 +13,16 @@ class AdminViewHygieneTest < ActiveSupport::TestCase
   # the exact failure this guard exists to catch, through a different door.
   STYLESHEETS = %w[application admin].map { |name| Rails.root.join("app/assets/stylesheets/#{name}.css") }
   VIEWS = Rails.root.glob("app/views/admin/**/*.erb")
+  MARKUP_SOURCES = VIEWS + Rails.root.glob("app/helpers/admin/**/*.rb")
 
   # Class names built by ERB interpolation (`<%= %>`) or Ruby string
   # interpolation (`#{}`) can't be checked statically. Only literal,
-  # fully-formed class values are considered, in either the HTML attribute
-  # form (`class="..."`) or the Rails helper form (`class: "..."`, as in
-  # `link_to ..., class: "btn"`).
+  # fully-formed class values are considered: HTML attributes, Rails helper
+  # options, and escaped HTML inside Ruby helper strings.
   LITERAL_CLASS_PATTERNS = [
     /class="([^"]*)"/,
-    /class:\s*"([^"]*)"/
+    /class:\s*"([^"]*)"/,
+    /class=\\"([^"]*)\\"/
   ].freeze
 
   def defined_classes
@@ -37,10 +38,10 @@ class AdminViewHygieneTest < ActiveSupport::TestCase
       .grep(/\A[a-zA-Z][a-zA-Z0-9_-]*\z/)
   end
 
-  test "every class an admin view names is defined by some stylesheet" do
+  test "every class admin views and helpers name is defined by some stylesheet" do
     undefined = Hash.new { |h, k| h[k] = [] }
 
-    VIEWS.each do |path|
+    MARKUP_SOURCES.each do |path|
       (classes_used_in(path).uniq - defined_classes.to_a).each do |klass|
         undefined[klass] << path.relative_path_from(Rails.root).to_s
       end

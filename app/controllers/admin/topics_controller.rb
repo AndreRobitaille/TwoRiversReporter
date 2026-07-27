@@ -1,10 +1,13 @@
 module Admin
   class TopicsController < BaseController
+    INBOX_CONTEXT_KEYS = %i[q status review_status lifecycle_status pinned sort preview_window].freeze
+
     before_action :set_topic, only: %i[show mention_preview update approve block unblock needs_review pin unpin merge create_alias]
 
     def index
       scope = filtered_topics
       @inbox_rows = Admin::Topics::InboxQuery.new(scope: scope, sort: params[:sort]).call
+      @inbox_context = inbox_context
     end
 
     def show
@@ -74,7 +77,11 @@ module Admin
             render turbo_stream: turbo_stream.replace(
               helpers.dom_id(@topic),
               partial: "admin/topics/inbox_row",
-              locals: { row: Admin::Topics::InboxQuery.row_for(@topic.reload), errors: @topic.errors.full_messages }
+              locals: {
+                row: Admin::Topics::InboxQuery.row_for(@topic.reload),
+                errors: @topic.errors.full_messages,
+                inbox_context: inbox_context
+              }
             ), status: :unprocessable_entity
           }
           format.json { render json: { success: false, errors: @topic.errors.full_messages }, status: :unprocessable_entity }
@@ -192,11 +199,17 @@ module Admin
     def render_turbo_update(message)
       respond_to do |format|
         format.turbo_stream {
-          render turbo_stream: turbo_stream.replace(
-            helpers.dom_id(@topic),
-            partial: "admin/topics/inbox_row",
-            locals: { row: Admin::Topics::InboxQuery.row_for(@topic) }
-          )
+          stream = if filtered_topics.where(id: @topic.id).exists?
+            turbo_stream.replace(
+              helpers.dom_id(@topic),
+              partial: "admin/topics/inbox_row",
+              locals: { row: Admin::Topics::InboxQuery.row_for(@topic), inbox_context: inbox_context }
+            )
+          else
+            turbo_stream.remove(helpers.dom_id(@topic))
+          end
+
+          render turbo_stream: stream
         }
         format.html { redirect_back fallback_location: admin_topics_path, notice: message }
       end
@@ -258,6 +271,10 @@ module Admin
 
     def detail_workspace_context
       params.permit(:source_topic_id, :q).to_h.compact_blank.symbolize_keys
+    end
+
+    def inbox_context
+      params.permit(*INBOX_CONTEXT_KEYS).to_h.compact_blank
     end
   end
 end

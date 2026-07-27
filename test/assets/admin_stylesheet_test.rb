@@ -120,6 +120,21 @@ class AdminStylesheetTest < ActiveSupport::TestCase
     assert_match(/@media\s*\(max-width:\s*900px\)/, css)
   end
 
+  test "keeps the desktop sidebar in view while the main content scrolls" do
+    sidebar_rule = css[/\.adm-sidebar\s*\{([^}]*)\}/m, 1]
+
+    assert_includes sidebar_rule, "position: sticky"
+    assert_includes sidebar_rule, "top: 0"
+    assert_includes sidebar_rule, "height: 100vh"
+  end
+
+  test "moves the open-drawer toggle clear of the sidebar brand" do
+    assert_match(
+      /\.adm-shell--drawer-open\s+\.adm-drawer-toggle\s*\{[^}]*left:\s*calc\(var\(--adm-sidebar-width\)\s*-\s*var\(--space-12\)\)/m,
+      css
+    )
+  end
+
   # `.theme-silo h1, h2, h3, h4 { ... }` is a class+type selector — specificity
   # (0,1,1). Any admin component class rendered directly on a heading element
   # must be scoped as `.theme-silo .the-class` (0,2,0) to reliably win that

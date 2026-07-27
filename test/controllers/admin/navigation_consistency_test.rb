@@ -72,9 +72,18 @@ module Admin
       get admin_root_url
 
       assert_select "[data-controller='admin-sidebar']", count: 1
-      assert_select "[data-action='click->admin-sidebar#toggle']"
+      assert_select "button[data-action='click->admin-sidebar#toggle'][aria-controls='admin-sidebar']"
+      assert_select "nav#admin-sidebar[data-admin-sidebar-target='drawer']"
       assert_no_match(/onclick=/, response.body,
         "inline handlers break under CSP; use a Stimulus action")
+    end
+
+    test "the mobile drawer controller removes the closed navigation from focus order" do
+      controller = Rails.root.join("app/javascript/controllers/admin_sidebar_controller.js").read
+
+      assert_match(/drawerTarget\.inert\s*=\s*!available/, controller)
+      assert_match(/drawerTarget\.toggleAttribute\("aria-hidden",\s*!available\)/, controller)
+      assert_match(/querySelector\([^)]*\)\?\.focus\(\)/, controller)
     end
 
     test "admin loads its own stylesheet and not the public page stylesheets" do

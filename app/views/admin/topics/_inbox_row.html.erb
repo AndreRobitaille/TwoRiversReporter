@@ -9,12 +9,11 @@
                else
                  "adm-table__row--ok"
                end %>
-<%# render_turbo_update and update's failure branch both re-render this
-    partial with only `row:` (and `errors:` on failure) — `preview_window:`
-    is not passed. Default it so those turbo paths don't raise; a nil window
-    simply drops the query param and lets the preview action apply its own
-    default. %>
-<% preview_window = local_assigns.fetch(:preview_window, nil) %>
+<% inbox_context = local_assigns.fetch(:inbox_context, {}) %>
+<% preview_window = local_assigns.fetch(:preview_window) {
+     inbox_context[:preview_window] || inbox_context["preview_window"]
+   } %>
+<% block_confirmation = "Block this topic? Its name will also be added to the permanent topic blocklist. Unblocking the topic will not remove that entry." %>
 <tbody id="topic_<%= row.topic_id %>" data-controller="row-toggle">
   <tr class="<%= row_state %>">
     <td>
@@ -49,7 +48,7 @@
     <td class="data-cell"><%= row.last_activity_at&.to_date || "—" %></td>
     <td>
       <%= form_with model: [:admin, Topic.new(id: row.topic_id)],
-            url: admin_topic_path(row.topic_id),
+            url: admin_topic_path(row.topic_id, inbox_context),
             method: :patch,
             class: "flex items-center gap-2",
             data: { controller: "inline-save",
@@ -75,19 +74,19 @@
         </button>
 
         <% if row.review_status == "proposed" %>
-          <%= button_to "Approve", approve_admin_topic_path(row.topic_id), method: :post, class: "btn btn--success btn--sm" %>
-          <%= button_to "Block", block_admin_topic_path(row.topic_id), method: :post, class: "btn btn--danger btn--sm" %>
+          <%= button_to "Approve", approve_admin_topic_path(row.topic_id, inbox_context), method: :post, class: "btn btn--success btn--sm" %>
+          <%= button_to "Block", block_admin_topic_path(row.topic_id, inbox_context), method: :post, class: "btn btn--danger btn--sm", form: { data: { turbo_confirm: block_confirmation } } %>
         <% elsif row.review_status == "blocked" || row.status == "blocked" %>
-          <%= button_to "Unblock", unblock_admin_topic_path(row.topic_id), method: :post, class: "btn btn--sm" %>
+          <%= button_to "Unblock", unblock_admin_topic_path(row.topic_id, inbox_context), method: :post, class: "btn btn--sm" %>
         <% else %>
-          <%= button_to "Needs review", needs_review_admin_topic_path(row.topic_id), method: :post, class: "btn btn--sm" %>
-          <%= button_to "Block", block_admin_topic_path(row.topic_id), method: :post, class: "btn btn--danger btn--sm" %>
+          <%= button_to "Needs review", needs_review_admin_topic_path(row.topic_id, inbox_context), method: :post, class: "btn btn--sm" %>
+          <%= button_to "Block", block_admin_topic_path(row.topic_id, inbox_context), method: :post, class: "btn btn--danger btn--sm", form: { data: { turbo_confirm: block_confirmation } } %>
         <% end %>
 
         <% if row.pinned %>
-          <%= button_to "Unpin", unpin_admin_topic_path(row.topic_id), method: :post, class: "btn btn--primary btn--sm" %>
+          <%= button_to "Unpin", unpin_admin_topic_path(row.topic_id, inbox_context), method: :post, class: "btn btn--primary btn--sm" %>
         <% else %>
-          <%= button_to "Pin", pin_admin_topic_path(row.topic_id), method: :post, class: "btn btn--sm" %>
+          <%= button_to "Pin", pin_admin_topic_path(row.topic_id, inbox_context), method: :post, class: "btn btn--sm" %>
         <% end %>
       </div>
     </td>
@@ -106,7 +105,7 @@
           already disabled, so the request could never be triggered. %>
       <% if has_mentions %>
         <%= turbo_frame_tag "topic_#{row.topic_id}_preview_frame",
-              src: mention_preview_admin_topic_path(row.topic_id, preview_window: preview_window),
+              src: mention_preview_admin_topic_path(row.topic_id, inbox_context.merge(preview_window: preview_window)),
               loading: "lazy",
               class: "admin-topics-table__preview-frame" do %>
           <p class="table-desc m-0">Loading mentions…</p>

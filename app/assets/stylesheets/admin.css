@@ -107,8 +107,11 @@
 
 /* --- Sidebar --- */
 .adm-sidebar {
+  position: sticky;
+  top: 0;
   flex: none;
   width: var(--adm-sidebar-width);
+  height: 100vh;
   padding: var(--space-3) 0 var(--space-6);
   background: var(--color-primary);
   color: var(--color-text-inverse);
@@ -259,6 +262,9 @@
     border-radius: var(--radius-sm);
     background: var(--color-surface);
     color: var(--color-text);
+  }
+  .adm-shell--drawer-open .adm-drawer-toggle {
+    left: calc(var(--adm-sidebar-width) - var(--space-12));
   }
 
   .adm-shell--drawer-open .adm-scrim {
@@ -427,6 +433,14 @@
  * predictable thing to observe than a block one. */
 .admin-topics-table__preview-frame {
   display: block;
+}
+
+.topic-preview-highlight {
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--color-warning-light);
+  font-weight: var(--font-weight-bold);
+  font-style: italic;
 }
 
 /* Row status indicator — colored left border */

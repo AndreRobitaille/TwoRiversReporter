@@ -81,7 +81,7 @@ module Admin::TopicsHelper
   def highlight_preview_terms(text, terms)
     regex = Regexp.union(terms.map { |term| Regexp.new(Regexp.escape(term), Regexp::IGNORECASE) })
     highlighted = text.gsub(regex) do |match|
-      "<span class=\"font-bold italic bg-yellow-100 dark:bg-yellow-900 px-1 rounded-sm\">#{match}</span>"
+      "<span class=\"topic-preview-highlight\">#{match}</span>"
     end
     sanitize(highlighted, tags: %w[span], attributes: %w[class])
   end
