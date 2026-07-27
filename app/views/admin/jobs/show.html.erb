@@ -6,7 +6,7 @@
       <p class="adm-page-header__meta">Worker status, pending work, and failed jobs.</p>
     </div>
     <div class="flex gap-2">
-      <%= button_to "Clear All Finished", clear_completed_admin_jobs_path, method: :post, class: "btn",
+      <%= button_to "Clear All Finished", clear_completed_admin_jobs_path, method: :post, class: "btn btn--secondary",
             data: { confirm: "Clear all completed and failed jobs?" } %>
       <% if @failed_count > 0 %>
         <%= button_to "Retry All Failed", retry_all_failed_admin_jobs_path, method: :post, class: "btn btn--primary",

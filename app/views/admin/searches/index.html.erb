@@ -36,7 +36,7 @@
                 <%= link_to source.title, admin_knowledge_source_path(source) %>
                 <span class="badge badge--<%= source.origin == 'manual' ? 'default' : (source.origin == 'extracted' ? 'info' : 'warning') %>"><%= source.origin %></span>
                 <% if source.stated_at %>
-                  <span class="timestamp"><%= source.stated_at %></span>
+                  <span class="timestamp text-muted"><%= source.stated_at %></span>
                 <% end %>
                 <% if source.meeting %>
                   &middot; from <%= link_to source.meeting.body_name, meeting_path(source.meeting) %>
@@ -66,11 +66,11 @@
         <% score_pct = (result[:score] * 100).round %>
         <div class="search-result-row">
           <div class="flex items-center gap-2 mb-1">
-            <span class="data-cell"><%= score_pct %>%</span>
+            <span class="data-cell search-result-row__score"><%= score_pct %>%</span>
             <strong><%= link_to source.title, admin_knowledge_source_path(source) %></strong>
             <span class="badge badge--<%= source.origin == 'manual' ? 'default' : (source.origin == 'extracted' ? 'info' : 'warning') %>"><%= source.origin.humanize %></span>
             <% if source.stated_at %>
-              <span class="timestamp"><%= source.stated_at %></span>
+              <span class="timestamp text-muted uppercase"><%= source.stated_at %></span>
             <% end %>
           </div>
           <p class="text-sm text-secondary m-0"><%= chunk.content.truncate(200) %></p>

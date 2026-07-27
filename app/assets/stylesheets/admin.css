@@ -521,6 +521,13 @@
  * would settle it, and `.table-desc` already sits later in this same file.
  * The compound selector reasserts colour at (0,3,0) so it wins outright. */
 .theme-silo .table-desc.text-muted { color: var(--color-text-muted); }
+/* Same mechanism, same fix, different component: a `.timestamp` that should
+ * read one step quieter than the default (the knowledge-search result rows,
+ * whose `stated_at` stamps were `--color-text-muted` before the inline-style
+ * sweep replaced them with `.timestamp` and its `--color-text-secondary`).
+ * `.theme-silo .timestamp` and a bare `.text-muted` are both (0,2,0)/(0,1,0)
+ * — the compound is what makes this win outright instead of by file order. */
+.theme-silo .timestamp.text-muted { color: var(--color-text-muted); }
 /* A plain list that just needs its marker indent back after losing the
  * `padding-left` an inline style used to supply — e.g. the search page's
  * numbered source list. Not a `<ol>`/`<ul>` element rule: most admin lists
@@ -536,6 +543,24 @@
 .theme-silo .search-result-row {
   padding: var(--space-3) 0;
   border-bottom: 1px solid var(--color-border);
+}
+/* The relevance percentage that opens each knowledge-search result row.
+ * `.data-cell` already supplies the mono/small/nowrap treatment the inline
+ * style it replaced had; this adds back the one property `.data-cell` has no
+ * reason to carry — a min-width that makes "7%" and "84%" occupy the same
+ * box, so the titles after them start at the same x and the list can be
+ * scanned straight down. That is the whole argument for this page's density,
+ * and dropping it in the inline-style sweep quietly cost it. (min-width does
+ * apply here despite the element being a <span>: its parent is a flex row,
+ * so the span is a blockified flex item — the same reason the original
+ * inline style worked.) Compounded with `.data-cell` at (0,3,0) so it wins
+ * regardless of which rule this file happens to define first — which is also
+ * what lets it restore the muted colour the inline style carried and
+ * `.theme-silo .data-cell` (0,2,0) overrode with `--color-text-secondary`,
+ * without needing a second `.text-muted` compound in the view. */
+.theme-silo .data-cell.search-result-row__score {
+  min-width: 3em;
+  color: var(--color-text-muted);
 }
 /* The primary link in a table cell's name column, e.g. prompt_templates/index —
  * bold to read as the row's title, the same treatment `.font-semibold` gives
