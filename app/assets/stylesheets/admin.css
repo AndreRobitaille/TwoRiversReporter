@@ -56,6 +56,45 @@
 
 .theme-silo p { margin: 0 0 var(--space-3); }
 
+/* Margin utilities reasserted against `<p>`/heading elements — found in
+ * Task 16 fix-round-1. `.theme-silo h1, h2, h3, h4` and `.theme-silo p`
+ * above are each one class plus one element (0,1,1). A bare margin utility
+ * like `.mb-1` (defined either in this file's own Utilities section or in
+ * application.css's shared "Missing utilities" — the specificity math is
+ * identical either way) is one class alone (0,1,0), which never wins that
+ * comparison: the classes column ties at zero only if the class count also
+ * ties, and 0,1,1 has one MORE column populated (the element), which is
+ * exactly what specificity compares next — so the bare utility is silently
+ * inert on every `<p>` and `<h1>`-`<h4>` in the admin, no matter what value
+ * it sets. This is why `_header_summary.html.erb`'s `<h1 class="page-title
+ * mb-1">` rendered with the shared `var(--space-2)` instead of the
+ * `var(--space-1)` the class name promises.
+ *
+ * Fixed by pairing each affected utility with a `.theme-silo`-scoped
+ * counterpart at (0,2,0), which safely outranks (0,1,1) on the classes
+ * column alone. This list is NOT every utility this file defines — only
+ * the ones actually found applied directly to a `<p>` or `<h1>`-`<h4>` in
+ * `app/views/admin` (grepped, not assumed); a margin utility that only ever
+ * appears on a `<div>` or `<span>` never meets the element-qualified rules
+ * above and doesn't need a counterpart. Deliberately NOT fixed by removing
+ * the margins from the `h1-h4`/`p` rules above — that would drop the
+ * default heading/paragraph rhythm everywhere else in the admin, the
+ * opposite of what those rules are for. Lives here, next to the rules that
+ * cause the clobber, rather than inside the Utilities section below: the
+ * set-equality test over that section's selectors reads only the first
+ * class token of each selector, so a compound `.theme-silo .mb-1` there
+ * would misparse as a stray "theme-silo" entry and fail that test.
+ */
+.theme-silo .m-0  { margin: 0; }
+.theme-silo .mb-0 { margin-bottom: 0; }
+.theme-silo .mb-1 { margin-bottom: var(--space-1); }
+.theme-silo .mb-2 { margin-bottom: var(--space-2); }
+.theme-silo .mb-3 { margin-bottom: var(--space-3); }
+.theme-silo .mb-4 { margin-bottom: var(--space-4); }
+.theme-silo .mt-1 { margin-top: var(--space-1); }
+.theme-silo .mt-2 { margin-top: var(--space-2); }
+.theme-silo .mt-4 { margin-top: var(--space-4); }
+
 /* ============================================
    2. Shell & sidebar
    ============================================ */
@@ -928,6 +967,12 @@
   font-weight: var(--font-weight-medium);
   color: var(--color-text-secondary);
 }
+/* A label sitting inline beside its control (prompt_templates/edit's Model
+ * Tier row) that needs zero bottom margin. Same trap as `.form-group.mb-0`
+ * below: `.theme-silo .form-label` is one class plus the `.theme-silo`
+ * ancestor (0,2,0), so a bare `.mb-0` (0,1,0) never wins the comparison.
+ * Reasserted compound so it wins outright rather than depending on order. */
+.theme-silo .form-label.mb-0 { margin-bottom: 0; }
 .theme-silo .form-input,
 .theme-silo .form-select,
 .theme-silo .form-textarea,
@@ -1076,11 +1121,19 @@
 .grid { display: grid; }
 .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .grow { flex-grow: 1; }
+.inline { display: inline; }
 .items-start { align-items: flex-start; }
 .items-end { align-items: flex-end; }
 .justify-end { justify-content: flex-end; }
 .align-middle { vertical-align: middle; }
 .w-8 { width: 2rem; }
+/* `.form-select { width: 100%; }` (application.css) is a bare one-class
+ * selector (0,1,0) — exactly the same specificity as this. Since admin.css
+ * always loads after application.css, the tie goes to whichever one is
+ * applied here, so this reliably wins without needing a `.theme-silo`-scoped
+ * reassertion (same file-order mechanism the Panel section above documents
+ * for `.p-6` vs. a bare `.card`). */
+.w-auto { width: auto; }
 .whitespace-nowrap { white-space: nowrap; }
 .cursor-pointer { cursor: pointer; }
 

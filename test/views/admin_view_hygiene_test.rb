@@ -51,9 +51,30 @@ class AdminViewHygieneTest < ActiveSupport::TestCase
       undefined.map { |k, v| "  .#{k} — #{v.join(', ')}" }.join("\n")
   end
 
+  # Literal HTML attribute form (`style="..."`) and the Rails helper hash
+  # form (`style: "..."`, as in `form.label ..., style: "margin-bottom: 0;"`
+  # or `form: { style: "display:inline" }`) both render an inline `style="..."`
+  # attribute at runtime — this is the exact blind spot LITERAL_CLASS_PATTERNS
+  # already closed for `class` (Task 8: `class="..."` vs `class: "..."`), and
+  # Task 16 fix-round-1 found the same gap still open for `style`. Excludes
+  # anything containing `<%` or `#{` — an interpolated style value can't be
+  # checked statically, same rule `classes_used_in` already applies.
+  LITERAL_STYLE_PATTERNS = [
+    /style="([^"]*)"/,
+    /style:\s*"([^"]*)"/
+  ].freeze
+
+  def inline_style_count(path)
+    text = path.read
+    LITERAL_STYLE_PATTERNS
+      .flat_map { |pattern| text.scan(pattern).flatten }
+      .reject { |value| value.include?("<%") || value.include?('#{') }
+      .length
+  end
+
   test "no admin view uses an inline style attribute" do
     offenders = VIEWS.filter_map do |path|
-      count = path.read.scan(/style="/).length
+      count = inline_style_count(path)
       "#{path.relative_path_from(Rails.root)} (#{count})" if count.positive?
     end
 

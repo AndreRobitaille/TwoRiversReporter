@@ -8,8 +8,8 @@ class AdminStylesheetTest < ActiveSupport::TestCase
   UTILITIES = %w[
     m-0 mt-1 mt-3 pt-4 mb-1 mb-3 mx-2 my-6 p-0 p-3 p-4 p-6
     gap-3 gap-6 space-y-2 space-y-3 space-y-4 space-y-6
-    grid grid-cols-2 grow items-start items-end justify-end align-middle
-    w-8 whitespace-nowrap cursor-pointer
+    grid grid-cols-2 grow inline items-start items-end justify-end align-middle
+    w-8 w-auto whitespace-nowrap cursor-pointer
     text-left text-lg text-md font-semibold font-mono italic
     border-l border-t border-gray-200 border-yellow-200 border-danger-light
     bg-white bg-slate-50 bg-yellow-50
@@ -359,5 +359,96 @@ class AdminStylesheetTest < ActiveSupport::TestCase
       "base rule's specificity (or, when application.css already scoped the " \
       "variant too, admin.css loading after application.css) silently " \
       "flattens their colour to the base's: #{missing.uniq.sort.join(', ')}"
+  end
+
+  # --- Task 16 fix-round-1: the same clobbering mechanism as the colour test
+  # above, but the "base" is an ELEMENT selector (`.theme-silo p`, `.theme-
+  # silo h1`/`h2`/`h3`/`h4`) rather than a component class, and the
+  # "variant" is a bare margin/padding utility actually placed on that
+  # element somewhere in admin views — not a modifier we can enumerate from
+  # a BEM naming convention, since a utility class carries no structural
+  # link to "the element it's meant to override." So this test is grep-
+  # driven over the real views, exactly like the h1-h4 `adm-*` heading test
+  # above, rather than derived purely from the two stylesheets.
+  ELEMENT_QUALIFIED_TAGS = %w[p h1 h2 h3 h4].freeze
+
+  MARGIN_PADDING_PROPERTIES = %w[
+    margin margin-top margin-right margin-bottom margin-left
+    padding padding-top padding-right padding-bottom padding-left
+  ].to_set.freeze
+
+  # `margin`/`padding` shorthands set all four sides, which is exactly how
+  # `.theme-silo p { margin: 0 0 var(--space-3); }` clobbers a longhand
+  # utility like `.mt-2` even though neither selector nor property name
+  # literally matches — same reasoning as `SHORTHAND_EXPANSION` above, a
+  # second, margin/padding-specific table rather than folding into that one
+  # since these longhands don't overlap COLOR_PROPERTIES at all.
+  MARGIN_PADDING_SHORTHAND_EXPANSION = {
+    "margin"  => %w[margin-top margin-right margin-bottom margin-left],
+    "padding" => %w[padding-top padding-right padding-bottom padding-left]
+  }.freeze
+
+  def expand_margin_padding(props)
+    props.flat_map { |p| [ p ] + MARGIN_PADDING_SHORTHAND_EXPANSION.fetch(p, []) }.to_set
+  end
+
+  # Every literal class ever written on a `<#{tag}` in any admin view —
+  # deliberately simple (no ERB-interpolation filtering like
+  # `classes_used_in` in the hygiene test): a false positive here just adds
+  # a spacing class to the below that turns out to already be safe, which
+  # `next unless utility_rule` silently skips; a false negative would hide
+  # a real clobber, which is the failure mode worth avoiding.
+  def classes_used_on_tag(tag, views)
+    views.flat_map { |path| path.read.scan(/<#{tag}\s[^>]*class="([^"]*)"/).flatten }
+         .flat_map { |list| list.split(/\s+/) }
+         .uniq
+  end
+
+  test "element-qualified density rules do not clobber a bare margin/padding utility used on that element" do
+    views = Rails.root.glob("app/views/admin/**/*.erb")
+    admin_rules = parse_flat_rules(css)
+    app_rules = parse_flat_rules(Rails.root.join("app/assets/stylesheets/application.css").read)
+    admin_selectors = admin_rules.flat_map { |r| r[:selectors] }.to_set
+
+    spacing_props = MARGIN_PADDING_PROPERTIES + MARGIN_PADDING_SHORTHAND_EXPANSION.keys
+
+    # `.theme-silo p` and `.theme-silo h1`/`h2`/`h3`/`h4` are each exactly
+    # one class plus one bare element selector — nothing else in this file
+    # is shaped like that, so this pattern only ever matches the density-
+    # base rules it's meant to.
+    element_props = Hash.new { |h, k| h[k] = Set.new }
+    admin_rules.each do |rule|
+      rule[:selectors].each do |sel|
+        match = sel.match(/\A\.theme-silo\s+(#{ELEMENT_QUALIFIED_TAGS.join('|')})\z/)
+        next unless match
+        element_props[match[1]] |= expand_margin_padding(rule[:properties] & spacing_props)
+      end
+    end
+
+    missing = []
+
+    ELEMENT_QUALIFIED_TAGS.each do |tag|
+      base_props = element_props[tag]
+      next if base_props.empty? # this tag has no element-qualified rule (yet) — nothing to guard
+
+      classes_used_on_tag(tag, views).each do |klass|
+        next unless klass.match?(/\A[mp][a-z]?-/) # spacing-utility naming shape: m-0, mb-1, pt-4, ...
+
+        utility_rule = (admin_rules + app_rules).find { |r| r[:selectors] == [ ".#{klass}" ] }
+        next unless utility_rule # not a spacing utility at all (e.g. a BEM class starting with the same letter)
+
+        utility_props = expand_margin_padding(utility_rule[:properties] & spacing_props)
+        next if (base_props & utility_props).empty?
+
+        required_selector = ".theme-silo .#{klass}"
+        missing << "#{required_selector} (clobbered by \`.theme-silo #{tag}\`)" unless admin_selectors.include?(required_selector)
+      end
+    end
+
+    assert_empty missing.uniq.sort,
+      "these spacing utilities are used directly on a <p> or <h1>-<h4> but " \
+      "admin.css has no `.theme-silo` reassertion for them, so the element-" \
+      "qualified density rule's specificity silently flattens their " \
+      "margin/padding to the element's own default: #{missing.uniq.sort.join(', ')}"
   end
 end
