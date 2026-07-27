@@ -89,8 +89,6 @@
         <% else %>
           <%= button_to "Pin", pin_admin_topic_path(row.topic_id), method: :post, class: "btn btn--sm" %>
         <% end %>
-
-        <%= link_to "Open", admin_topic_path(row.topic_id), class: "btn btn--sm" %>
       </div>
     </td>
   </tr>
