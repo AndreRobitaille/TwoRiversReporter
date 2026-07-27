@@ -26,6 +26,7 @@ rather than duplicating them into another agent directory.
 - Session lifetime, persistent sessions, context matching, or step-up reauthentication → `docs/superpowers/specs/2026-07-25-session-and-reauthentication-hardening-design.md`
 - Anonymous/public access behavior → `docs/superpowers/specs/2026-07-24-tiered-public-access-design.md`
 - Deploy / production operations → `.claude/skills/deploying/SKILL.md`, `config/deploy.yml`
+- Admin navigation, admin styling, or any `/admin` page → `docs/superpowers/specs/2026-07-26-admin-ui-revamp-design.md`
 
 ## Core Commands
 - Setup: `bin/setup --skip-server`
