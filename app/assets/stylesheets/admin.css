@@ -660,6 +660,26 @@
  * classes column alone. */
 .theme-silo td.p-0 { padding: 0; }
 
+/* Right-alignment reasserted for the one element a bare `.text-right` can no
+ * longer reach. `.theme-silo table thead th` above is one class plus three
+ * elements (0,1,3); `.text-right` (application.css) is one class alone
+ * (0,1,0), and the classes column ties at 1 while the elements column does
+ * not — so since this file started setting `text-align: left` on every admin
+ * `<th>`, `<th class="text-right">` silently rendered left-aligned (found on
+ * jobs/show's "Count" column and prompt_templates/edit's "Actions"). Before
+ * this file existed the only competition was application.css's element-only
+ * `th, td { text-align: left; }` at (0,0,1), which the utility beat. Two
+ * classes plus one element (0,2,1) here wins outright.
+ *
+ * `td` deliberately has no counterpart: nothing in this file sets
+ * `text-align` on a `<td>`, so a `<td class="text-right">` still only faces
+ * that same (0,0,1) element rule and the bare utility still wins. Confirmed
+ * by computed style in headless Chromium against the real rendered admin
+ * markup, not inferred — see the final-fix report. The topics table's own
+ * `.admin-topics-table th.text-right` (0,2,1) is what kept that one page
+ * looking right while the other two broke; this rule generalises it. */
+.theme-silo th.text-right { text-align: right; }
+
 /* IDs, timestamps, counts — monospace so columns align for straight-down
  * scanning, and non-wrapping so a date can't fold onto a second line and
  * defeat the reason this density works (a wrapped "2026-07-26" breaks
@@ -1150,11 +1170,40 @@
 
 /* --- type --- */
 .text-left { text-align: left; }
+
+/* WARNING, and deliberate: `.text-lg`, `.text-md` and `.font-bold`
+ * (the last defined in application.css, not here) do NOTHING on a heading in
+ * the admin. `.theme-silo h1`-`h4` above set font-size and font-weight at
+ * (0,1,1); each of these is one bare class at (0,1,0) and loses, so
+ * `<h2 class="text-lg font-bold">` computes byte-identical to a bare `<h2>` —
+ * measured, not reasoned about. That uniformity is the density retrofit
+ * working as intended: admin headings are sized by level, not by the class a
+ * page happens to carry over from before the revamp, and reasserting these
+ * as `.theme-silo .text-lg` (the fix the margin utilities above got) would
+ * re-introduce exactly the per-page size drift the retrofit removed. They
+ * stay defined because they are still live on non-heading elements (spans,
+ * divs, `<p>` for `.font-bold`).
+ *
+ * The note exists because the class names lie: a reader seeing `text-lg` on
+ * an `<h2>` will assume it does something. If you need a heading at a
+ * different size, change its level or give it a component class — do not
+ * scope these. */
 .text-lg { font-size: var(--font-size-lg); }
 .text-md { font-size: var(--font-size-base); }
 .font-semibold { font-weight: var(--font-weight-semibold); }
+/* Restores an inherited weight to the base one — e.g. the "(optional)" hint
+ * inside prompt_templates/edit's `<label class="form-label">`, which the
+ * label's own `--font-weight-medium` would otherwise pull the whole way up.
+ * Nothing scoped competes for `font-weight` on a `<span>`, so the bare
+ * utility is enough here; inherited values lose to any direct rule. */
+.font-normal { font-weight: var(--font-weight-normal); }
 .font-mono { font-family: var(--font-data); }
 .italic { font-style: italic; }
+/* The data typeface is uppercase by convention (see the type roles in
+ * CLAUDE.md), but `.timestamp` deliberately is not — most admin timestamps
+ * are already all-digits. This is for the ones that carry letters and were
+ * uppercased before the inline-style sweep. */
+.uppercase { text-transform: uppercase; }
 
 /* --- borders and surfaces --- */
 .border-l { border-left: 1px solid var(--color-border); }

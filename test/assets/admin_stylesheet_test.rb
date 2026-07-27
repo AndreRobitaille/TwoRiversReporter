@@ -10,7 +10,7 @@ class AdminStylesheetTest < ActiveSupport::TestCase
     gap-3 gap-6 space-y-2 space-y-3 space-y-4 space-y-6
     grid grid-cols-2 grow inline items-start items-end justify-end align-middle
     w-8 w-auto whitespace-nowrap cursor-pointer
-    text-left text-lg text-md font-semibold font-mono italic
+    text-left text-lg text-md font-semibold font-normal font-mono italic uppercase
     border-l border-t border-gray-200 border-yellow-200 border-danger-light
     bg-white bg-slate-50 bg-yellow-50
     text-yellow-600 text-yellow-700 text-yellow-800
@@ -370,11 +370,23 @@ class AdminStylesheetTest < ActiveSupport::TestCase
   # link to "the element it's meant to override." So this test is grep-
   # driven over the real views, exactly like the h1-h4 `adm-*` heading test
   # above, rather than derived purely from the two stylesheets.
-  ELEMENT_QUALIFIED_TAGS = %w[p h1 h2 h3 h4].freeze
+  #
+  # Final review, M2: widened twice over. `td`/`th` joined the tags and
+  # `text-align` joined the properties, because the same mechanism ate
+  # `<th class="text-right">` on jobs/show and prompt_templates/edit —
+  # `.theme-silo table thead th` (0,1,3) beats a bare `.text-right` (0,1,0),
+  # where the pre-revamp `th, td { text-align: left; }` (0,0,1) had lost to
+  # it. That instance was invisible to this guard in its original shape for
+  # three separate reasons, each fixed below: the tag list, the property set,
+  # and the element-rule pattern, which only recognised a `.theme-silo <tag>`
+  # selector with exactly one element step and so never saw the three-step
+  # `.theme-silo table thead th`.
+  ELEMENT_QUALIFIED_TAGS = %w[p h1 h2 h3 h4 td th].freeze
 
   MARGIN_PADDING_PROPERTIES = %w[
     margin margin-top margin-right margin-bottom margin-left
     padding padding-top padding-right padding-bottom padding-left
+    text-align
   ].to_set.freeze
 
   # `margin`/`padding` shorthands set all four sides, which is exactly how
@@ -404,6 +416,16 @@ class AdminStylesheetTest < ActiveSupport::TestCase
          .uniq
   end
 
+  # Which bare class names are even candidates. Kept as an explicit shape
+  # list rather than "any class with a matching rule": `.page-title` also
+  # sets a margin and also lands on an `<h1>`, but it is a component, not a
+  # utility, and its `.theme-silo .page-title` counterpart is the component
+  # rule itself — sweeping components in here would report noise, not bugs.
+  UTILITY_NAME_SHAPES = [
+    /\A[mp][a-z]?-/,                                # m-0, mb-1, pt-4, mx-2, ...
+    /\Atext-(left|right|center|justify|start|end)\z/ # alignment utilities
+  ].freeze
+
   test "element-qualified density rules do not clobber a bare margin/padding utility used on that element" do
     views = Rails.root.glob("app/views/admin/**/*.erb")
     admin_rules = parse_flat_rules(css)
@@ -412,14 +434,19 @@ class AdminStylesheetTest < ActiveSupport::TestCase
 
     spacing_props = MARGIN_PADDING_PROPERTIES + MARGIN_PADDING_SHORTHAND_EXPANSION.keys
 
-    # `.theme-silo p` and `.theme-silo h1`/`h2`/`h3`/`h4` are each exactly
-    # one class plus one bare element selector — nothing else in this file
-    # is shaped like that, so this pattern only ever matches the density-
-    # base rules it's meant to.
+    # Any `.theme-silo …` selector ENDING in a bare tag — `.theme-silo p`,
+    # and also `.theme-silo table thead th` / `.theme-silo .adm-table tbody
+    # td`, which the original one-element-step pattern missed and which are
+    # exactly where M2 hid. Every such selector is at least (0,1,1), so every
+    # one of them beats a bare (0,1,0) utility; the intermediate steps only
+    # widen the gap. A selector whose last step carries a class or pseudo
+    # (`.theme-silo td.p-0`, `.theme-silo .btn:hover`) is deliberately NOT a
+    # match: that IS the reassertion shape, not the thing being reasserted
+    # against.
     element_props = Hash.new { |h, k| h[k] = Set.new }
     admin_rules.each do |rule|
       rule[:selectors].each do |sel|
-        match = sel.match(/\A\.theme-silo\s+(#{ELEMENT_QUALIFIED_TAGS.join('|')})\z/)
+        match = sel.match(/\A\.theme-silo(?:\s+[.\w-]+)*\s+(#{ELEMENT_QUALIFIED_TAGS.join('|')})\z/)
         next unless match
         element_props[match[1]] |= expand_margin_padding(rule[:properties] & spacing_props)
       end
@@ -432,23 +459,31 @@ class AdminStylesheetTest < ActiveSupport::TestCase
       next if base_props.empty? # this tag has no element-qualified rule (yet) — nothing to guard
 
       classes_used_on_tag(tag, views).each do |klass|
-        next unless klass.match?(/\A[mp][a-z]?-/) # spacing-utility naming shape: m-0, mb-1, pt-4, ...
+        next unless UTILITY_NAME_SHAPES.any? { |shape| klass.match?(shape) }
 
         utility_rule = (admin_rules + app_rules).find { |r| r[:selectors] == [ ".#{klass}" ] }
-        next unless utility_rule # not a spacing utility at all (e.g. a BEM class starting with the same letter)
+        next unless utility_rule # not a utility at all (e.g. a BEM class starting with the same letter)
 
         utility_props = expand_margin_padding(utility_rule[:properties] & spacing_props)
         next if (base_props & utility_props).empty?
 
-        required_selector = ".theme-silo .#{klass}"
-        missing << "#{required_selector} (clobbered by \`.theme-silo #{tag}\`)" unless admin_selectors.include?(required_selector)
+        # Two shapes reassert successfully and both are in use: the tag-
+        # agnostic `.theme-silo .p-0` (0,2,0) and the tag-qualified
+        # `.theme-silo td.text-right` (0,2,1). Both outrank any
+        # `.theme-silo …<tag>` rule on the classes column alone, so either
+        # satisfies this guard — requiring only the first would report the
+        # already-correct `.theme-silo td.p-0` as a defect.
+        accepted = [ ".theme-silo .#{klass}", ".theme-silo #{tag}.#{klass}" ]
+        next if accepted.any? { |sel| admin_selectors.include?(sel) }
+
+        missing << "#{accepted.first} or #{accepted.last} (clobbered by \`.theme-silo …#{tag}\`)"
       end
     end
 
     assert_empty missing.uniq.sort,
-      "these spacing utilities are used directly on a <p> or <h1>-<h4> but " \
-      "admin.css has no `.theme-silo` reassertion for them, so the element-" \
-      "qualified density rule's specificity silently flattens their " \
-      "margin/padding to the element's own default: #{missing.uniq.sort.join(', ')}"
+      "these utilities are used directly on a <p>, <h1>-<h4>, <td> or <th> " \
+      "but admin.css has no `.theme-silo` reassertion for them, so the " \
+      "element-qualified density rule's specificity silently flattens their " \
+      "margin/padding/alignment to the element's own default: #{missing.uniq.sort.join(', ')}"
   end
 end
