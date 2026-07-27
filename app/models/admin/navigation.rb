@@ -66,7 +66,13 @@ module Admin
                    description: "Whether anonymous visitors see everything or a teaser."),
           Item.new(label: "Redirects", path_helper: :admin_redirects_path, controller: "redirects",
                    description: "Permanent redirects for moved URLs."),
-          Item.new(label: "Admin Users", path_helper: :users_path, controller: "users",
+          # "User Accounts", not "Admin Users": this page lists every account,
+          # and its per-user controls (approve, reject, disable, revoke
+          # sessions, delete) apply to ordinary members as much as to admins.
+          # The old label read as admin-only and hid the ordinary-member
+          # administration that was there all along. "User" distinguishes it
+          # from The Record's "Members", which are city officials, not accounts.
+          Item.new(label: "User Accounts", path_helper: :users_path, controller: "users",
                    description: "Accounts, applications, sessions, and passkeys."),
           Item.new(label: "Audit Log", path_helper: :admin_audit_events_path, controller: "audit_events",
                    description: "Destructive and privilege-changing actions.")

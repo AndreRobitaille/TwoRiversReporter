@@ -86,11 +86,13 @@ The nav/dashboard mismatch is fixed **structurally**. A single frozen constant, 
 | **Meetings** | Meetings · Add Transcript · Summaries¹ |
 | **The Record** | Committees · Members · Knowledge Sources · Knowledge Search |
 | **The Machine** | Run a Job · Queue & Failures · Prompts |
-| **Site** | Access Mode · Redirects · Admin Users · Audit Log |
+| **Site** | Access Mode · Redirects · User Accounts² · Audit Log |
 
 Named for the act where the act is the point: **Add Transcript**, **Run a Job**, **Queue & Failures**.
 
 ¹ Summaries stays in the nav through Phase 1 so a working page is not orphaned, and is removed in Phase 2 when its one action folds into Run a Job.
+
+² Shipped as "Admin Users" and renamed after that label was read as admin-only, hiding the ordinary-member administration the page has always offered. The page lists every account and its controls apply to any of them; only account *creation* is admin-only, since ordinary members arrive through the application flow. "User" distinguishes it from The Record's "Members", who are city officials rather than accounts.
 
 Deliberately absent, because they are reached in context: topic repair (deleted — see Phase 1), generated images (from a topic or meeting), membership applications (from a user), security settings (a user menu at the sidebar foot).
 
