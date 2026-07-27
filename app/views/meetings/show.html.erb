@@ -119,7 +119,7 @@
   <% if @generated_image&.file&.attached? %>
     <figure class="meeting-feature-image">
       <% dimensions = generated_image_dimensions(size: :feature) %>
-      <%= image_tag generated_image_variant(@generated_image, size: :feature),
+      <%= image_tag generated_image_proxy_path(@generated_image, size: :feature),
         alt: "Illustration for #{meeting_name}",
         class: "meeting-feature-image__img",
         loading: "eager",

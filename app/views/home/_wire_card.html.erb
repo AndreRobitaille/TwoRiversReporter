@@ -5,7 +5,7 @@
   <% if has_image %>
     <div class="wire-media">
       <% dimensions = generated_image_dimensions(size: :compact) %>
-      <%= image_tag generated_image_variant(generated_image, size: :compact),
+      <%= image_tag generated_image_proxy_path(generated_image, size: :compact),
         alt: "Illustration for #{topic.name}",
         class: "wire-image",
         loading: "lazy",

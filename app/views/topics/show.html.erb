@@ -23,7 +23,7 @@
   <% if @generated_image&.file&.attached? %>
     <figure class="topic-feature-image">
       <% dimensions = generated_image_dimensions(size: :feature) %>
-      <%= image_tag generated_image_variant(@generated_image, size: :feature),
+      <%= image_tag generated_image_proxy_path(@generated_image, size: :feature),
         alt: "Illustration for #{@topic.name}",
         class: "topic-feature-image__img",
         loading: "eager",

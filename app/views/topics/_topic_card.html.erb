@@ -8,7 +8,7 @@
     <% if has_image %>
       <div class="topics-card-media">
         <% dimensions = generated_image_dimensions(size: :standard) %>
-        <%= image_tag generated_image_variant(generated_image, size: :standard),
+        <%= image_tag generated_image_proxy_path(generated_image, size: :standard),
           alt: "Illustration for #{topic.name}",
           class: "topics-card-image",
           loading: "lazy",
