@@ -16,7 +16,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
       end
     }) do
       assert_difference("MagicLink.where(purpose: 'sign_in').count", 1) do
-        with_admin_access { patch approve_user_path(applicant) }
+        with_admin_access { patch approve_user_path(applicant), params: { decision_reason: "Verified local resident." } }
       end
     end
 
@@ -25,6 +25,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_equal "active", applicant.reload.status
     assert_predicate applicant.disabled_at, :blank?
     assert_equal "approved", application.reload.status
+    assert_equal "Verified local resident.", application.decision_reason
   end
 
   test "admin approval remains retryable when approval email construction fails" do
@@ -37,7 +38,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
       raise TransactionalEmail::MissingTransactionalId, "missing id"
     }) do
       assert_raises(TransactionalEmail::MissingTransactionalId) do
-        with_admin_access { patch approve_user_path(applicant) }
+        with_admin_access { patch approve_user_path(applicant), params: { decision_reason: "Verified local resident." } }
       end
     end
 
@@ -56,6 +57,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     controller = Admin::UsersController.new
     controller.request = ActionDispatch::TestRequest.create
     controller.response = ActionDispatch::TestResponse.new
+    controller.params = ActionController::Parameters.new(decision_reason: "Verified local resident.")
     controller.instance_variable_set(:@user, applicant)
 
     assert_raises(ActiveRecord::RecordNotFound) { controller.send(:approve) }
@@ -78,7 +80,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
       end
     }) do
       assert_raises(RuntimeError) do
-        with_admin_access { patch approve_user_path(applicant) }
+        with_admin_access { patch approve_user_path(applicant), params: { decision_reason: "Verified local resident." } }
       end
     end
 
@@ -87,18 +89,121 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_equal 0, MagicLink.where(user: applicant, purpose: "sign_in").count
   end
 
-  test "admin rejects submitted application" do
+  test "admin denies submitted application and emails the stored reason" do
     admin = create_passkey_admin
     applicant = User.create!(email_address: "reject@example.com", status: "pending")
     application = applicant.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", street: "123 Main St", city: "Two Rivers", state: "WI")
     sign_in(admin)
 
-    with_admin_access { patch reject_user_path(applicant), params: { rejection_reason: "Not verified" } }
+    delivered = false
+    TransactionalEmail.stub(:application_denied, ->(user, decided_application) {
+      assert_equal applicant, user
+      assert_equal application, decided_application
+      assert_equal "Not verified", decided_application.decision_reason
+      Object.new.tap { |message| message.define_singleton_method(:deliver_now) { delivered = true } }
+    }) do
+      with_admin_access { patch reject_user_path(applicant), params: { decision_reason: "Not verified" } }
+    end
 
     assert_redirected_to user_path(applicant)
+    assert_predicate delivered, :itself
     assert_equal "rejected", applicant.reload.status
     assert_equal "rejected", application.reload.status
-    assert_equal "Not verified", application.rejection_reason
+    assert_equal "Not verified", application.decision_reason
+  end
+
+  test "admin can approve an application before the applicant submits the form" do
+    admin = create_passkey_admin
+    applicant = User.create!(email_address: "early-approve@example.com", status: "pending", disabled_at: Time.current)
+    application = applicant.membership_applications.create!(status: "email_pending")
+    sign_in(admin)
+
+    TransactionalEmail.stub(:application_approved, ->(_user, _application, _magic_link) {
+      Object.new.tap { |message| message.define_singleton_method(:deliver_now) { true } }
+    }) do
+      with_admin_access do
+        patch approve_user_path(applicant), params: { decision_reason: "Known resident; full form not needed." }
+      end
+    end
+
+    assert_redirected_to user_path(applicant)
+    assert_equal "active", applicant.reload.status
+    assert_predicate applicant.disabled_at, :blank?
+    assert_equal "approved", application.reload.status
+    assert_equal "Known resident; full form not needed.", application.decision_reason
+  end
+
+  test "admin can deny an application before the applicant submits the form" do
+    admin = create_passkey_admin
+    applicant = User.create!(email_address: "early-deny@example.com", status: "pending", disabled_at: Time.current)
+    application = applicant.membership_applications.create!(status: "email_pending")
+    sign_in(admin)
+    delivered = false
+
+    TransactionalEmail.stub(:application_denied, ->(_user, decided_application) {
+      assert_equal "Duplicate access request.", decided_application.decision_reason
+      Object.new.tap { |message| message.define_singleton_method(:deliver_now) { delivered = true } }
+    }) do
+      with_admin_access do
+        patch reject_user_path(applicant), params: { decision_reason: "Duplicate access request." }
+      end
+    end
+
+    assert_predicate delivered, :itself
+    assert_equal "rejected", applicant.reload.status
+    assert_equal "rejected", application.reload.status
+    assert_equal "Duplicate access request.", application.decision_reason
+  end
+
+  test "a decision reason is required before either outcome" do
+    admin = create_passkey_admin
+    applicant = User.create!(email_address: "reason-required@example.com", status: "pending", disabled_at: Time.current)
+    application = applicant.membership_applications.create!(status: "email_pending")
+    sign_in(admin)
+
+    assert_no_difference([ "MagicLink.count", "AuditEvent.count" ]) do
+      with_admin_access { patch approve_user_path(applicant), params: { decision_reason: "  " } }
+    end
+
+    assert_redirected_to user_path(applicant)
+    assert_equal "Enter a decision reason before approving or denying this application.", flash[:alert]
+    assert_equal "pending", applicant.reload.status
+    assert_equal "email_pending", application.reload.status
+
+    assert_no_difference("AuditEvent.count") do
+      with_admin_access { patch reject_user_path(applicant) }
+    end
+
+    assert_redirected_to user_path(applicant)
+    assert_equal "pending", applicant.reload.status
+    assert_equal "email_pending", application.reload.status
+  end
+
+  test "a denial remains retryable when its notification fails" do
+    admin = create_passkey_admin
+    applicant = User.create!(email_address: "deny-fail@example.com", status: "pending", disabled_at: Time.current)
+    application = applicant.membership_applications.create!(
+      status: "submitted", first_name: "Jane", last_name: "Member", street: "123 Main St", city: "Two Rivers", state: "WI"
+    )
+    original_disabled_at = applicant.disabled_at
+    sign_in(admin)
+
+    TransactionalEmail.stub(:application_denied, ->(_user, _application) {
+      Object.new.tap { |message| message.define_singleton_method(:deliver_now) { raise LoopsDelivery::DeliveryError, "delivery failed" } }
+    }) do
+      assert_raises(LoopsDelivery::DeliveryError) do
+        with_admin_access do
+          patch reject_user_path(applicant), params: { decision_reason: "Could not verify residency." }
+        end
+      end
+    end
+
+    assert_equal "pending", applicant.reload.status
+    assert_equal original_disabled_at.to_i, applicant.disabled_at.to_i
+    assert_equal "submitted", application.reload.status
+    assert_nil application.decision_reason
+    assert_nil application.reviewed_at
+    assert_nil application.reviewed_by_id
   end
 
   test "admin can toggle admin role disable user and revoke sessions" do
@@ -249,7 +354,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     TransactionalEmail.stub(:application_approved, ->(_user, _application, _magic_link) {
       Object.new.tap { |message| message.define_singleton_method(:deliver_now) { true } }
     }) do
-      with_admin_access { patch approve_user_path(applicant) }
+      with_admin_access { patch approve_user_path(applicant), params: { decision_reason: "Legacy application verified." } }
     end
 
     assert_redirected_to user_path(applicant)
@@ -271,11 +376,15 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     application.update_column(:street, nil)
     sign_in(admin)
 
-    with_admin_access { patch reject_user_path(applicant), params: { rejection_reason: "Not a resident." } }
+    TransactionalEmail.stub(:application_denied, ->(_user, _application) {
+      Object.new.tap { |message| message.define_singleton_method(:deliver_now) { true } }
+    }) do
+      with_admin_access { patch reject_user_path(applicant), params: { decision_reason: "Not a resident." } }
+    end
 
     assert_redirected_to user_path(applicant)
     assert_equal "rejected", application.reload.status
-    assert_equal "Not a resident.", application.rejection_reason
+    assert_equal "Not a resident.", application.decision_reason
   end
 
   test "index and show reflect account and application management details" do
@@ -291,10 +400,12 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
       get users_path
       assert_response :success
       assert_includes response.body, "Account management"
-      assert_includes response.body, "Status"
+      assert_includes response.body, "Account"
       assert_includes response.body, "Passkeys"
       assert_includes response.body, "Application"
-      assert_includes response.body, "Submitted"
+      assert_includes response.body, "Needs attention"
+      assert_includes response.body, "Approved and denied"
+      assert_includes response.body, "Ready for review"
 
       get user_path(user)
       assert_response :success
@@ -311,13 +422,49 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
       assert_includes response.body, "Signed in"
       assert_includes response.body, "Last seen"
       assert_includes response.body, "Status"
-      assert_includes response.body, "Rejection reason"
+      assert_includes response.body, "Decision reason"
+      assert_includes response.body, "this exact text will be emailed to the applicant"
       assert_includes response.body, "Disable account"
 
       get user_path(disabled_user)
       assert_response :success
       assert_includes response.body, "Re-enable account"
     end
+  end
+
+  test "index separates pending decisions from approved and denied accounts" do
+    admin = create_passkey_admin
+    ready = User.create!(email_address: "a-ready@example.com", status: "pending", disabled_at: Time.current)
+    ready.membership_applications.create!(
+      status: "submitted", first_name: "Ready", last_name: "Applicant", street: "1 Main St", city: "Two Rivers", state: "WI"
+    )
+    waiting = User.create!(email_address: "b-waiting@example.com", status: "pending", disabled_at: Time.current)
+    waiting.membership_applications.create!(status: "email_pending")
+    approved = User.create!(email_address: "c-approved@example.com", status: "active")
+    approved.membership_applications.create!(
+      status: "approved", first_name: "Approved", last_name: "Applicant", street: "2 Main St", city: "Two Rivers", state: "WI"
+    )
+    denied = User.create!(email_address: "d-denied@example.com", status: "rejected")
+    denied.membership_applications.create!(
+      status: "rejected", first_name: "Denied", last_name: "Applicant", street: "3 Main St", city: "Two Rivers", state: "WI",
+      decision_reason: "Could not verify residency."
+    )
+    sign_in(admin)
+
+    with_admin_access { get users_path }
+
+    assert_response :success
+    attention_start = response.body.index("Needs attention")
+    reviewed_start = response.body.index("Approved and denied")
+    assert_operator response.body.index(ready.email_address), :>, attention_start
+    assert_operator response.body.index(ready.email_address), :<, reviewed_start
+    assert_operator response.body.index(waiting.email_address), :<, reviewed_start
+    assert_operator response.body.index(ready.email_address), :<, response.body.index(waiting.email_address),
+      "submitted applications should sort before incomplete applications"
+    assert_operator response.body.index(approved.email_address), :>, reviewed_start
+    assert_operator response.body.index(denied.email_address), :>, reviewed_start
+    assert_includes response.body, "Ready for review"
+    assert_includes response.body, "Awaiting application"
   end
 
   # ---- hard deletion -------------------------------------------------------

@@ -46,7 +46,7 @@ class PasswordlessApplicationFlowTest < ActionDispatch::IntegrationTest
       admin.passkey_credentials.create!(external_id: SecureRandom.uuid, public_key: "public-key", sign_count: 0)
       sign_in_as_admin(admin)
 
-      patch approve_user_path(application.user)
+      patch approve_user_path(application.user), params: { decision_reason: "Verified local resident." }
 
       applicant = application.user
       assert_equal "active", applicant.reload.status

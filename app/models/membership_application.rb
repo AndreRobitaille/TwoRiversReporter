@@ -1,11 +1,12 @@
 class MembershipApplication < ApplicationRecord
   STATUSES = %w[email_pending submitted approved rejected].freeze
+  REVIEWABLE_STATUSES = %w[email_pending submitted].freeze
 
   belongs_to :user
   belongs_to :reviewed_by, class_name: "User", optional: true
 
   validates :status, inclusion: { in: STATUSES }
-  validates :first_name, :last_name, :city, :state, presence: true, unless: :email_pending?
+  validates :first_name, :last_name, :city, :state, presence: true, if: :submitted?
   validate :facebook_profile_url_is_secure_facebook_url, if: :facebook_profile_url_changed?
 
   # Street joined the required set in July 2026. Applications submitted before
@@ -18,8 +19,18 @@ class MembershipApplication < ApplicationRecord
   # without a street.
   validates :street, presence: true, if: :street_required?
 
+  scope :reviewable, -> { where(status: REVIEWABLE_STATUSES) }
+
   def email_pending?
     status == "email_pending"
+  end
+
+  def reviewable?
+    status.in?(REVIEWABLE_STATUSES)
+  end
+
+  def submitted?
+    status == "submitted"
   end
 
   private
@@ -37,7 +48,7 @@ class MembershipApplication < ApplicationRecord
     end
 
     def street_required?
-      return false if email_pending?
+      return false unless submitted?
 
       street_changed? || status_changed?(from: "email_pending")
     end

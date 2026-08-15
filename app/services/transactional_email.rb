@@ -9,6 +9,7 @@ class TransactionalEmail
     admin_application_notification_transactional_id
     no_account_transactional_id
     application_pending_transactional_id
+    application_denied_transactional_id
   ].freeze
 
   # Called from an initializer so a production container refuses to boot when a
@@ -89,6 +90,16 @@ class TransactionalEmail
     )
   end
 
+  def self.application_denied(user, membership_application)
+    Message.new(
+      email: user.email_address,
+      transactional_id: application_denied_transactional_id,
+      data_variables: {
+        denial_reason: membership_application.decision_reason
+      }
+    )
+  end
+
   def self.admin_application_notifications(applications)
     email = if Rails.env.production?
       ENV.fetch("ADMIN_NOTIFICATION_EMAIL") { raise MissingTransactionalId, "ADMIN_NOTIFICATION_EMAIL is required in production" }
@@ -160,6 +171,10 @@ class TransactionalEmail
     ENV["LOOPS_APPLICATION_PENDING_TRANSACTIONAL_ID"].presence || default_application_pending_transactional_id
   end
 
+  def self.application_denied_transactional_id
+    ENV["LOOPS_APPLICATION_DENIED_TRANSACTIONAL_ID"].presence || default_application_denied_transactional_id
+  end
+
   def self.default_no_account_transactional_id
     return "no_account" unless Rails.env.production?
 
@@ -170,6 +185,12 @@ class TransactionalEmail
     return "application_pending" unless Rails.env.production?
 
     raise MissingTransactionalId, "LOOPS_APPLICATION_PENDING_TRANSACTIONAL_ID is required in production"
+  end
+
+  def self.default_application_denied_transactional_id
+    return "application_denied" unless Rails.env.production?
+
+    raise MissingTransactionalId, "LOOPS_APPLICATION_DENIED_TRANSACTIONAL_ID is required in production"
   end
 
   def self.magic_link_transactional_id

@@ -15,13 +15,20 @@ module Admin
     before_action :require_matching_context, only: %i[create destroy toggle_admin disable]
 
     rescue_from User::LastAdminError, with: :redirect_after_last_admin_refusal
+    rescue_from Admin::MembershipApplicationDecision::ReasonRequired, with: :redirect_after_missing_decision_reason
 
     def index
-      @users = User.order(:email_address)
+      users = User.includes(:membership_applications, :passkey_credentials).order(:email_address).to_a
+      @latest_applications = users.index_with { |user| user.membership_applications.max_by(&:created_at) }
+      @users_needing_action, @reviewed_users = users.partition { |user| user.status == "pending" }
+      @users_needing_action.sort_by! do |user|
+        [ @latest_applications[user]&.status == "submitted" ? 0 : 1, user.email_address ]
+      end
     end
 
     def show
       @applications = @user.membership_applications.order(created_at: :desc)
+      @reviewable_application_id = @applications.find(&:reviewable?)&.id
       @sessions = @user.sessions.order(last_seen_at: :desc)
     end
 
@@ -41,55 +48,17 @@ module Admin
     end
 
     def approve
-      user = nil
-      application = nil
-      magic_link = nil
-
-      ApplicationRecord.transaction do
-        user = User.lock.find(@user.id)
-        application = user.membership_applications.lock.find_by!(status: "submitted")
-        magic_link = MagicLink.create_for!(user, purpose: "sign_in")
-
-        user.update!(status: "active", disabled_at: nil)
-        application.update!(status: "approved", reviewed_at: Time.current, reviewed_by: Current.session.user)
-      end
-
-      begin
-        TransactionalEmail.application_approved(user, application, magic_link).deliver_now
-      rescue StandardError => e
-        raise e unless user && application && magic_link
-
-        ApplicationRecord.transaction do
-          user = User.lock.find(user.id)
-          application = user.membership_applications.lock.find(application.id)
-          user.update!(status: "pending", disabled_at: Time.current)
-          application.update!(status: "submitted", reviewed_at: nil, reviewed_by: nil)
-          magic_link.destroy! if magic_link.persisted?
-        end
-
-        raise e
-      end
-      # Only reached once the transaction has committed and the email has
-      # actually gone out; the compensation path above re-raises before
-      # getting here, so a failed approval never leaves an audit row behind.
-      AuditEvent.record!(actor: Current.user, action: "membership_application.approve", subject: application, label: user.email_address, request: request)
+      application = decision.approve!
+      AuditEvent.record!(actor: Current.user, action: "membership_application.approve", subject: application,
+        label: @user.email_address, request: request, metadata: { reason: application.decision_reason })
       redirect_to user_path(@user), notice: "Application approved."
     end
 
     def reject
-      application = nil
-
-      ApplicationRecord.transaction do
-        user = User.lock.find(@user.id)
-        application = user.membership_applications.lock.find_by!(status: "submitted")
-
-        user.update!(status: "rejected")
-        application.update!(status: "rejected", reviewed_at: Time.current, reviewed_by: Current.session.user, rejection_reason: params[:rejection_reason].presence)
-      end
-
+      application = decision.deny!
       AuditEvent.record!(actor: Current.user, action: "membership_application.reject", subject: application,
-        label: @user.email_address, request: request, metadata: { reason: application.rejection_reason })
-      redirect_to user_path(@user), notice: "Application rejected."
+        label: @user.email_address, request: request, metadata: { reason: application.decision_reason })
+      redirect_to user_path(@user), notice: "Application denied and the applicant was notified."
     end
 
     def toggle_admin
@@ -181,6 +150,18 @@ module Admin
 
       def redirect_after_last_admin_refusal
         redirect_to user_path(@user), alert: "At least one active admin with a passkey must remain."
+      end
+
+      def redirect_after_missing_decision_reason(error)
+        redirect_to user_path(@user), alert: error.message
+      end
+
+      def decision
+        Admin::MembershipApplicationDecision.new(
+          user: @user,
+          reviewer: Current.user,
+          reason: params[:decision_reason]
+        )
       end
 
       def user_params

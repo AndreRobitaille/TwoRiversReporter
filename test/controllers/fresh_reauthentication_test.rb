@@ -79,7 +79,7 @@ class FreshReauthenticationTest < ActionDispatch::IntegrationTest
     session = sign_in_as(@admin)
     session.update_columns(reauthenticated_at: 16.minutes.ago)
 
-    patch approve_user_url(@member)
+    patch approve_user_url(@member), params: { decision_reason: "Verified local resident." }
 
     assert_equal "active", @member.reload.status,
       "routine membership review is covered by the admin context gate; putting it behind a passkey tap taxes the most common admin task"

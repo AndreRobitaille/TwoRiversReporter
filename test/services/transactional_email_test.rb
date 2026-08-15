@@ -42,6 +42,28 @@ class TransactionalEmailTest < ActiveSupport::TestCase
     assert_not_includes message.data_variables.keys, :application_url
   end
 
+  test "application_denied sends the stored reviewer reason to the applicant" do
+    user = User.create!(email_address: "denied@example.com", status: "rejected")
+    application = user.membership_applications.create!(
+      status: "rejected",
+      first_name: "Jane",
+      last_name: "Member",
+      street: "123 Main St",
+      city: "Two Rivers",
+      state: "WI",
+      decision_reason: "The address could not be verified."
+    )
+
+    ENV["LOOPS_APPLICATION_DENIED_TRANSACTIONAL_ID"] = "denial-template-test"
+    message = TransactionalEmail.application_denied(user, application)
+
+    assert_equal user.email_address, message.email
+    assert_equal "denial-template-test", message.transactional_id
+    assert_equal({ denial_reason: "The address could not be verified." }, message.data_variables)
+  ensure
+    ENV.delete("LOOPS_APPLICATION_DENIED_TRANSACTIONAL_ID")
+  end
+
   test "application_link carries an absolute edit url with the token intact" do
     user = User.create!(email_address: "applicant@example.com", status: "pending", disabled_at: Time.current)
     application = user.membership_applications.create!(status: "email_pending", first_name: "Jane", last_name: "Member", city: "Two Rivers", state: "WI")
@@ -161,6 +183,19 @@ class TransactionalEmailTest < ActiveSupport::TestCase
     end
   end
 
+  test "production missing application_denied transactional id raises instead of using a placeholder" do
+    user = User.create!(email_address: "denied@example.com", status: "rejected")
+    application = user.membership_applications.create!(status: "rejected", decision_reason: "Not verified.")
+
+    Rails.stub(:env, ActiveSupport::StringInquirer.new("production")) do
+      ENV.delete("LOOPS_APPLICATION_DENIED_TRANSACTIONAL_ID")
+
+      assert_raises(TransactionalEmail::MissingTransactionalId) do
+        TransactionalEmail.application_denied(user, application)
+      end
+    end
+  end
+
   test "verify_transactional_ids! is a no-op outside production" do
     TransactionalEmail::TRANSACTIONAL_ID_READERS.each { |reader| ENV.delete(env_var_for(reader)) }
 
@@ -179,7 +214,7 @@ class TransactionalEmailTest < ActiveSupport::TestCase
 
   test "verify_transactional_ids! raises in production for each missing id in turn" do
     readers = TransactionalEmail::TRANSACTIONAL_ID_READERS
-    assert_equal 5, readers.size, "every Loops template must be covered by the boot guard"
+    assert_equal 6, readers.size, "every Loops template must be covered by the boot guard"
 
     readers.each do |missing|
       readers.each { |reader| ENV[env_var_for(reader)] = "set-#{reader}" }
@@ -248,6 +283,7 @@ class TransactionalEmailTest < ActiveSupport::TestCase
         magic_link: -> { TransactionalEmail.magic_link(user, magic_link) },
         application_link: -> { TransactionalEmail.application_link(user, application, magic_link) },
         application_approved: -> { TransactionalEmail.application_approved(user, application, magic_link) },
+        application_denied: -> { TransactionalEmail.application_denied(user, application) },
         admin_application_notifications: -> { TransactionalEmail.admin_application_notifications([ application ]) },
         no_account: -> { TransactionalEmail.no_account("stranger@example.com") },
         application_pending: -> { TransactionalEmail.application_pending(user) }

@@ -112,7 +112,7 @@ documents where each value lives and what breaks if it is lost, not a list of
 things to do.
 
 Every transactional email is a template created in the Loops dashboard. The app
-reads each template's id from an env var, and the five ids plus the WebAuthn
+reads each template's id from an env var, and the six ids plus the WebAuthn
 settings, `ADMIN_NOTIFICATION_EMAIL` and `APP_HOST` are all in
 `config/deploy.yml` under `env: clear:` — they identify templates and hosts,
 they do not authorise anything. Read `config/deploy.yml` for the current
@@ -126,6 +126,7 @@ values; do not copy them here, or the two will drift.
 | `LOOPS_ADMIN_APPLICATION_NOTIFICATION_TRANSACTIONAL_ID` | `deploy.yml` `env: clear:` | Pending applications need review (`application_count`, `applicant_emails`) | Production refuses to boot |
 | `LOOPS_NO_ACCOUNT_TRANSACTIONAL_ID` | `deploy.yml` `env: clear:` | Sign-in requested for an address with no account (`apply_url`) | Production refuses to boot |
 | `LOOPS_APPLICATION_PENDING_TRANSACTIONAL_ID` | `deploy.yml` `env: clear:` | Sign-in requested by an applicant still under review (no variables) | Production refuses to boot |
+| `LOOPS_APPLICATION_DENIED_TRANSACTIONAL_ID` | `deploy.yml` `env: clear:` | Admin denies an application (`denial_reason`) | Production refuses to boot |
 | `ADMIN_NOTIFICATION_EMAIL` | `deploy.yml` `env: clear:` | Recipient of the admin application digest | Boots clean; the admin digest raises at send time |
 | `APP_HOST` | `deploy.yml` `env: clear:` | `config.action_mailer.default_url_options` in `config/environments/production.rb` | Boots clean; emailed URLs point at the wrong host or become unclickable |
 | `WEBAUTHN_ORIGIN` | `deploy.yml` `env: clear:` | Passkey registration and authentication | Boots clean; every passkey is silently rejected |
@@ -137,7 +138,7 @@ Outside production the transactional ids fall back to literal defaults
 `TransactionalEmail::Message#deliver_now` is a no-op, so local and test runs
 never hit Loops.
 
-**The five ids are enforced at boot, and that is deliberate.**
+**The six ids are enforced at boot, and that is deliberate.**
 `config/initializers/verify_transactional_email_ids.rb` calls
 `TransactionalEmail.verify_transactional_ids!`, which reads all five ids when
 `Rails.env.production?`. A missing one raises
@@ -158,7 +159,7 @@ The guard is skipped when `SECRET_KEY_BASE_DUMMY` is set. `docker build` runs
 without that skip the guard would break every image build.
 
 **What the boot guard does *not* cover.** `TRANSACTIONAL_ID_READERS` lists the
-five transactional ids and nothing else:
+six transactional ids and nothing else:
 
 - `LOOPS_API_KEY` is checked only at send time, in `LoopsDelivery.deliver_now`.
   A deploy with all five ids but no key boots healthy and then raises

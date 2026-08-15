@@ -90,7 +90,7 @@ module Admin
         Object.new.tap { |message| message.define_singleton_method(:deliver_now) { true } }
       }) do
         assert_difference -> { AuditEvent.where(action: "membership_application.approve").count }, 1 do
-          patch approve_user_url(@member)
+          patch approve_user_url(@member), params: { decision_reason: "Verified local resident." }
         end
       end
 
@@ -102,8 +102,13 @@ module Admin
       @member.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", street: "123 Main St", city: "Two Rivers", state: "WI")
       sign_in_as(@admin)
 
-      assert_difference -> { AuditEvent.where(action: "membership_application.reject").count }, 1 do
-        patch reject_user_url(@member), params: { rejection_reason: "Not verified" }
+      TransactionalEmail.stub(:application_denied, ->(_user, application) {
+        assert_equal "Not verified", application.decision_reason
+        Object.new.tap { |message| message.define_singleton_method(:deliver_now) { true } }
+      }) do
+        assert_difference -> { AuditEvent.where(action: "membership_application.reject").count }, 1 do
+          patch reject_user_url(@member), params: { decision_reason: "Not verified" }
+        end
       end
 
       event = AuditEvent.where(action: "membership_application.reject").last

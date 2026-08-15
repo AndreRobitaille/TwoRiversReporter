@@ -36,9 +36,9 @@ Public application is a two-step verified flow:
 5. The account stays pending/disabled after submission.
 6. Admins receive batched transactional email notifications for completed applications, no more than once per hour.
 7. Admins review applications under `/admin/users` or a dedicated pending applications view.
-8. Approval activates the user and automatically sends an approval/sign-in email with a time-limited magic link.
+8. Approval activates the user, stores the reviewing admin's decision reason, and automatically sends an approval/sign-in email with a time-limited magic link.
 9. If that approval/sign-in magic link expires, the expired-link page offers a `send me a fresh link` action for that account/email. The user should not have to restart from the normal sign-in page.
-10. Rejection keeps or marks the account as rejected/disabled so the email cannot silently reapply without admin awareness.
+10. Rejection keeps or marks the account as rejected/disabled so the email cannot silently reapply without admin awareness. It stores the reviewing admin's decision reason and sends a denial notice containing that exact reason. Admins may decide an application before the applicant completes the full form.
 
 Application data should live in a separate `membership_applications` table rather than directly on `users`. This keeps authentication state focused on accounts while preserving application details, status, and review history.
 
@@ -59,6 +59,7 @@ Passkey management is user-owned. Admins can see whether another user has passke
 
 - Review pending applications.
 - Approve or reject applications.
+- Record a decision reason for either outcome; denial reasons are disclosed to the applicant by email.
 - View user details and application data.
 - Toggle the admin role.
 - Disable or re-enable users.
@@ -116,6 +117,7 @@ Loops sends transactional emails for:
 - Approval/sign-in links.
 - Fresh approval links requested from an expired approval-link page.
 - Batched admin notifications for completed applications.
+- Denial notices containing the reviewing admin's reason.
 
 Use a small `TransactionalEmail`/`LoopsDelivery` service boundary during implementation and testing. In production, this boundary must be hard-wired to real Loops delivery through credentials and environment configuration. No admin or user-facing setting may change the delivery backend, recipients, template IDs, or verification behavior.
 
@@ -147,6 +149,8 @@ Add or update tests for:
 - Admin notification batching sends no more than one notification batch per hour.
 - Admin approval activates the user and sends an approval/sign-in link.
 - Admin rejection prevents silent reapplication.
+- Admins can approve or reject an application that is still awaiting submission.
+- Approval and rejection store the reviewer reason, and rejection sends that reason in a denial notice.
 - Passkey registration and authentication enforce WebAuthn challenges and user verification.
 - Admin users without passkeys cannot access `/admin` and are redirected to security setup.
 - Members can manage only their own passkeys.

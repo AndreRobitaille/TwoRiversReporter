@@ -45,9 +45,9 @@
 
 <% if @applications.any? %>
   <% @applications.each do |application| %>
-    <div class="attention-card review-card <%= "review-card--pending" if application.status == "submitted" %>">
-      <span class="badge badge--<%= application.status == "submitted" ? "warning" : "default" %>">
-        <%= application.status&.humanize || "Unknown" %>
+    <div class="attention-card review-card <%= "review-card--pending" if application.reviewable? %>">
+      <span class="badge badge--<%= membership_application_status_variant(application) %>">
+        <%= membership_application_status_label(application) %>
       </span>
 
       <dl class="detail-list mt-4">
@@ -89,24 +89,29 @@
           <dd class="detail-value"><%= l(application.reviewed_at, format: :long) %></dd>
         <% end %>
 
-        <% if application.rejection_reason.present? %>
-          <dt class="detail-term">Rejection reason</dt>
-          <dd class="detail-value"><%= application.rejection_reason %></dd>
+        <% if application.reviewed_by.present? %>
+          <dt class="detail-term">Reviewed by</dt>
+          <dd class="detail-value"><%= application.reviewed_by.email_address %></dd>
+        <% end %>
+
+        <% if application.decision_reason.present? %>
+          <dt class="detail-term">Decision reason</dt>
+          <dd class="detail-value detail-value--preserve"><%= application.decision_reason %></dd>
         <% end %>
       </dl>
 
-      <% if application.status == "submitted" %>
-        <div class="review-card__actions">
-          <%= form_with url: reject_user_path(@user), method: :patch, class: "flex flex-wrap gap-2 items-center" do |form| %>
-            <div class="form-group review-card__reason">
-              <%= form.label :rejection_reason, "Rejection reason", class: "form-label" %>
-              <%= form.text_field :rejection_reason, class: "form-input" %>
-            </div>
-            <%= form.submit "Reject", class: "btn btn--danger" %>
-          <% end %>
-
-          <%= button_to "Approve application", approve_user_path(@user), method: :patch, class: "btn btn--primary" %>
-        </div>
+      <% if application.id == @reviewable_application_id %>
+        <%= form_with url: approve_user_path(@user), method: :patch do |form| %>
+          <div class="form-group">
+            <%= form.label :decision_reason, "Decision reason", class: "form-label" %>
+            <%= form.text_area :decision_reason, rows: 4, maxlength: 2_000, required: true, class: "form-textarea" %>
+            <p class="form-hint">Required for either decision and stored in the admin record. If you deny access, this exact text will be emailed to the applicant.</p>
+          </div>
+          <div class="review-card__actions">
+            <%= form.submit "Approve application", class: "btn btn--primary" %>
+            <%= form.submit "Deny and notify applicant", formaction: reject_user_path(@user), class: "btn btn--danger" %>
+          </div>
+        <% end %>
       <% end %>
 
       <%# Deleting the application leaves the account alone — approve/reject stay

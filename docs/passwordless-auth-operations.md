@@ -15,6 +15,7 @@ the deploy rather than reaching a user.
 
 ## Safety notes
 - Production mail delivery fails closed when required Loops IDs or admin notification email are missing.
+- Denial notices use `LOOPS_APPLICATION_DENIED_TRANSACTIONAL_ID` and require the admin's decision reason as the `denial_reason` data variable. The published template directs denied applicants to the City of Two Rivers' official meeting PDFs at `https://two-rivers.org/meetings`; it must not imply the site's limited What's New page is a substitute for the official record.
 - Raw magic-link tokens are only embedded in ephemeral email URLs; they are not persisted as raw values in the database or queued job args.
 - Admin access to `/admin` remains gated by both active admin status and a passkey credential.
 - No password, TOTP, recovery-code, or MFA sign-in route remains in the app.
