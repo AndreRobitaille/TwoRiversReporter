@@ -404,7 +404,8 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
       assert_includes response.body, "Passkeys"
       assert_includes response.body, "Application"
       assert_includes response.body, "Needs attention"
-      assert_includes response.body, "Approved and denied"
+      assert_includes response.body, "Denied"
+      assert_includes response.body, "Approved"
       assert_includes response.body, "Ready for review"
 
       get user_path(user)
@@ -432,7 +433,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "index separates pending decisions from approved and denied accounts" do
+  test "index separates pending, denied, and approved accounts" do
     admin = create_passkey_admin
     ready = User.create!(email_address: "a-ready@example.com", status: "pending", disabled_at: Time.current)
     ready.membership_applications.create!(
@@ -455,14 +456,16 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     attention_start = response.body.index("Needs attention")
-    reviewed_start = response.body.index("Approved and denied")
+    denied_start = response.body.index("Denied")
+    approved_start = response.body.index("Approved")
     assert_operator response.body.index(ready.email_address), :>, attention_start
-    assert_operator response.body.index(ready.email_address), :<, reviewed_start
-    assert_operator response.body.index(waiting.email_address), :<, reviewed_start
+    assert_operator response.body.index(ready.email_address), :<, denied_start
+    assert_operator response.body.index(waiting.email_address), :<, denied_start
     assert_operator response.body.index(ready.email_address), :<, response.body.index(waiting.email_address),
       "submitted applications should sort before incomplete applications"
-    assert_operator response.body.index(approved.email_address), :>, reviewed_start
-    assert_operator response.body.index(denied.email_address), :>, reviewed_start
+    assert_operator response.body.index(denied.email_address), :>, denied_start
+    assert_operator response.body.index(denied.email_address), :<, approved_start
+    assert_operator response.body.index(approved.email_address), :>, approved_start
     assert_includes response.body, "Ready for review"
     assert_includes response.body, "Awaiting application"
   end

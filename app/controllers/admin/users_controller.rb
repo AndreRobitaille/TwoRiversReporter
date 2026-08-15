@@ -20,7 +20,8 @@ module Admin
     def index
       users = User.includes(:membership_applications, :passkey_credentials).order(:email_address).to_a
       @latest_applications = users.index_with { |user| user.membership_applications.max_by(&:created_at) }
-      @users_needing_action, @reviewed_users = users.partition { |user| user.status == "pending" }
+      @users_needing_action, decided_users = users.partition { |user| user.status == "pending" }
+      @denied_users, @approved_users = decided_users.partition { |user| user.status == "rejected" }
       @users_needing_action.sort_by! do |user|
         [ @latest_applications[user]&.status == "submitted" ? 0 : 1, user.email_address ]
       end

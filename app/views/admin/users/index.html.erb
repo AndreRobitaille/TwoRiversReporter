@@ -48,12 +48,43 @@
 
 <div class="section-header">
   <%= render "shared/atom_marker", theme: "silo" %>
-  <span class="section-header__label">Approved and denied</span>
-  <span class="badge badge--default"><%= @reviewed_users.size %></span>
+  <span class="section-header__label">Denied</span>
+  <span class="badge badge--danger"><%= @denied_users.size %></span>
   <div class="section-header__line"></div>
 </div>
 
-<% if @reviewed_users.any? %>
+<% if @denied_users.any? %>
+  <div class="table-wrapper mb-6">
+    <table class="adm-table">
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Account</th>
+          <th>State</th>
+          <th>Passkeys</th>
+          <th>Application</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @denied_users.each do |user| %>
+          <%= render "account_row", user: user, application: @latest_applications[user] %>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <div class="empty-state mb-6">No accounts have been denied.</div>
+<% end %>
+
+<div class="section-header">
+  <%= render "shared/atom_marker", theme: "silo" %>
+  <span class="section-header__label">Approved</span>
+  <span class="badge badge--success"><%= @approved_users.size %></span>
+  <div class="section-header__line"></div>
+</div>
+
+<% if @approved_users.any? %>
   <div class="table-wrapper">
     <table class="adm-table">
       <thead>
@@ -67,12 +98,12 @@
         </tr>
       </thead>
       <tbody>
-        <% @reviewed_users.each do |user| %>
+        <% @approved_users.each do |user| %>
           <%= render "account_row", user: user, application: @latest_applications[user] %>
         <% end %>
       </tbody>
     </table>
   </div>
 <% else %>
-  <div class="empty-state">No applications have been decided yet.</div>
+  <div class="empty-state">No accounts have been approved.</div>
 <% end %>
