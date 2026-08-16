@@ -65,8 +65,12 @@ COPY . .
 # -j 1 disable parallel compilation to avoid a QEMU bug: https://github.com/rails/bootsnap/issues/495
 RUN bundle exec bootsnap precompile -j 1 app/ lib/
 
-# Precompiling assets for production without requiring secret RAILS_MASTER_KEY
-RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
+# Precompile assets for production without requiring secret RAILS_MASTER_KEY.
+# Propshaft preserves restrictive modes on copied binary assets. Kamal's asset
+# bridge later owns those files as root, so they must remain readable by the
+# unprivileged Rails process that serves them.
+RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile && \
+    chmod -R a+rX public/assets
 
 
 
