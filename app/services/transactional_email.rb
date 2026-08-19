@@ -112,7 +112,7 @@ class TransactionalEmail
       transactional_id: admin_application_notification_transactional_id,
       data_variables: {
         application_count: applications.size,
-        applicant_emails: applications.map { |application| application.user.email_address }
+        applicant_emails: applications.map { |application| application.user.email_address }.join(", ")
       }
     )
   end

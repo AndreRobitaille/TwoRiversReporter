@@ -26,7 +26,7 @@ class LoopsDelivery
 
     Net::HTTP.start(ENDPOINT.host, ENDPOINT.port, use_ssl: true) do |http|
       response = http.request(request)
-      raise DeliveryError, "Loops delivery failed with #{response.code}" unless response.is_a?(Net::HTTPSuccess)
+      raise DeliveryError, failure_message(response) unless response.is_a?(Net::HTTPSuccess)
 
       response
     end
@@ -35,6 +35,16 @@ class LoopsDelivery
 
     raise DeliveryError, "Unable to deliver transactional email via Loops: #{e.message}"
   end
+
+  def self.failure_message(response)
+    summary = "Loops delivery failed with #{response.code}"
+    detail = JSON.parse(response.body)["message"].presence
+
+    detail ? "#{summary}: #{detail}" : summary
+  rescue JSON::ParserError, TypeError
+    summary
+  end
+  private_class_method :failure_message
 
   # Credentials first, ENV as the escape hatch — the same order the OpenAI and
   # Gemini keys use. Production reads it from config/credentials.yml.enc, which

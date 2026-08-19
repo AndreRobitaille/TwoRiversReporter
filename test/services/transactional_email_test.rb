@@ -128,6 +128,18 @@ class TransactionalEmailTest < ActiveSupport::TestCase
     end
   end
 
+  test "admin notification sends Loops scalar data variables" do
+    first_user = User.create!(email_address: "first-applicant@example.com", status: "pending")
+    second_user = User.create!(email_address: "second-applicant@example.com", status: "pending")
+    first_application = first_user.membership_applications.create!(status: "submitted", first_name: "First", last_name: "Applicant", street: "123 Main St", city: "Two Rivers", state: "WI")
+    second_application = second_user.membership_applications.create!(status: "submitted", first_name: "Second", last_name: "Applicant", street: "456 Main St", city: "Two Rivers", state: "WI")
+
+    message = TransactionalEmail.admin_application_notifications([ first_application, second_application ])
+
+    assert_equal 2, message.data_variables[:application_count]
+    assert_equal "first-applicant@example.com, second-applicant@example.com", message.data_variables[:applicant_emails]
+  end
+
   test "production missing admin notification transactional id raises instead of using a placeholder" do
     user = User.create!(email_address: "applicant@example.com", status: "active")
     application = user.membership_applications.create!(status: "submitted", first_name: "Jane", last_name: "Member", street: "123 Main St", city: "Two Rivers", state: "WI")
