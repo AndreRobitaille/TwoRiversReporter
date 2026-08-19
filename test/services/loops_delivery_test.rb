@@ -37,20 +37,25 @@ class LoopsDeliveryTest < ActiveSupport::TestCase
     ENV.delete("LOOPS_API_KEY")
   end
 
-  test "raises on non-2xx responses" do
+  test "raises with the Loops error detail on non-2xx responses" do
     ENV["LOOPS_API_KEY"] = "test-key"
 
     Net::HTTP.stub(:start, ->(*args, &block) {
       http = Minitest::Mock.new
-      response = Net::HTTPServerError.new("1.1", "500", "Internal Server Error")
+      response = Struct.new(:code, :body).new(
+        "400",
+        { success: false, message: "applicant_emails must be a string" }.to_json
+      )
       http.expect(:request, response) { true }
       result = block.call(http)
       http.verify
       result
     }) do
-      assert_raises(LoopsDelivery::DeliveryError) do
+      error = assert_raises(LoopsDelivery::DeliveryError) do
         LoopsDelivery.deliver_now(email: "a@example.com", transactional_id: "id", data_variables: {})
       end
+
+      assert_match "Loops delivery failed with 400: applicant_emails must be a string", error.message
     end
   ensure
     ENV.delete("LOOPS_API_KEY")
