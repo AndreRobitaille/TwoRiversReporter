@@ -21,6 +21,14 @@ class PromptTemplateTest < ActiveSupport::TestCase
     assert_equal "default", template.model_tier
   end
 
+  test "model_tier accepts heavy and rejects unknown tiers" do
+    template = PromptTemplate.new(key: "heavy_test", name: "Test", instructions: "Do it", model_tier: "heavy")
+    assert template.valid?
+
+    template.model_tier = "gpt-5.6-sol"
+    assert_not template.valid?
+  end
+
   test "interpolate replaces placeholders" do
     template = PromptTemplate.new(instructions: "Analyze {{items}} using {{context}}")
     result = template.interpolate(items: "agenda item 1", context: "committee info")
