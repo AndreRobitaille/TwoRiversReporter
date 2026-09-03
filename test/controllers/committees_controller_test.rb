@@ -129,6 +129,22 @@ class CommitteesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Alice Vice", names.second
   end
 
+  test "show gives a current city office precedence over a generic member role" do
+    @plan_member.committee_memberships.find_by!(committee: @plan_commission).update!(role: "member")
+    MemberPosition.create!(
+      member: @plan_member,
+      kind: "city_council",
+      title: "City Council Member",
+      source: "official_website",
+      source_url: "https://example.com/council",
+      verified_at: Time.current
+    )
+
+    get committee_url(@plan_commission.slug)
+
+    assert_select ".committee-member", text: /Bob Jones.*City Council Member/m
+  end
+
   test "show excludes ended memberships" do
     former = Member.create!(name: "Former Member")
     CommitteeMembership.create!(

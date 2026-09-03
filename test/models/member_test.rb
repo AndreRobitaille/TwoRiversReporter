@@ -207,6 +207,23 @@ class MemberTest < ActiveSupport::TestCase
     assert_equal committee, target.committee_memberships.first.committee
   end
 
+  test "merge_into! moves civic positions to target" do
+    source = Member.create!(name: "Merge Source #{SecureRandom.hex(4)}")
+    target = Member.create!(name: "Merge Target #{SecureRandom.hex(4)}")
+    MemberPosition.create!(
+      member: source,
+      kind: "city_manager",
+      title: "City Manager",
+      source: "official_website",
+      source_url: "https://example.com/manager",
+      verified_at: Time.current
+    )
+
+    source.merge_into!(target)
+
+    assert_equal "City Manager", target.reload.current_position_title
+  end
+
   test "merge_into! moves meeting_attendances to target" do
     source = Member.create!(name: "Merge Source #{SecureRandom.hex(4)}")
     target = Member.create!(name: "Merge Target #{SecureRandom.hex(4)}")

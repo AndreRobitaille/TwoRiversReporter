@@ -360,15 +360,20 @@ module PromptTemplateData
         Meeting minutes use various formats for roll call. Common patterns:
         - "Present: Name1, Name2" / "Absent: Name3"
         - "Councilmembers: Name1, Name2" / "Absent and Excused: Name3"
-        - "Also Present: Title, Name" (non-voting staff)
+        - "Also Present: Title, Name" (people outside the main roll call)
         - "Guests: Name" (visitors, not committee members)
         - Sometimes just a list of names with no labels (assume all present)
 
         Rules:
         - Committee/board members listed in the main roll call are voting members.
-        - People listed under "Also Present", with government titles (Director, Manager,
-          Chief, Clerk, Attorney, Secretary, Supervisor), or explicitly labeled as staff
-          are non_voting_staff. Include their title/capacity.
+        - "Also Present" is only a section heading. Do not infer that everyone in that
+          section is staff.
+        - People explicitly identified with a staff title (Director, Manager, Chief,
+          Clerk, Attorney, Secretary, Supervisor) or explicitly labeled as staff are
+          non_voting_staff. Include their stated title/capacity.
+        - Untitled people under "Also Present" are guests.
+        - Elected officials attending outside the committee's main roll call are guests,
+          not staff, unless the minutes explicitly identify them as committee members.
         - People listed under "Guests" or "Visitors" are guests.
         - If someone has a title like "Recording Secretary" they are non_voting_staff.
         - Return full names as written. Do not abbreviate or alter names.
