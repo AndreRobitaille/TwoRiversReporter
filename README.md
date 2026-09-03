@@ -7,7 +7,9 @@ Civic transparency site for Two Rivers, WI. Ingests official city meeting docume
 ## What It Does
 
 - Scrapes and archives official city meeting documents (agendas, packets, minutes)
-- Extracts topics, motions, votes, and committee membership from meeting records
+- Extracts topics, motions, votes, and attendance from meeting records, then
+  reconciles current committee membership against stronger official and
+  organization-published rosters where available
 - Generates AI summaries with citations back to source documents
 - Presents everything in a resident-friendly interface organized around civic topics
 
@@ -55,6 +57,7 @@ Full spec with SVG motif path data, component patterns, spacing scale, and CSS a
 |----------|---------|
 | [`CLAUDE.md`](CLAUDE.md) | AI coding agent instructions — architecture, conventions, commands |
 | [`docs/DEVELOPMENT_PLAN.md`](docs/DEVELOPMENT_PLAN.md) | Authoritative product spec and architectural constraints |
+| [`docs/superpowers/specs/2026-09-03-canonical-committee-rosters-design.md`](docs/superpowers/specs/2026-09-03-canonical-committee-rosters-design.md) | Committee roster authority, source precedence, and repair operations |
 | [`docs/plans/2026-03-28-atomic-design-system-spec.md`](docs/plans/2026-03-28-atomic-design-system-spec.md) | Visual design system — colors, typography, motifs, components |
 | [`docs/topics/TOPIC_GOVERNANCE.md`](docs/topics/TOPIC_GOVERNANCE.md) | Topic extraction, classification, and lifecycle rules |
 

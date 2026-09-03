@@ -160,13 +160,21 @@ Related models:
   (e.g., "Splash Pad and Ice Rink Planning Committee" → "Central Park West
   365 Planning Committee"). Used by the scraper to resolve `body_name`.
 - **CommitteeMembership** — Tracks which officials sit on which committees,
-  with role, start/end dates, and source (ai_extracted, admin_manual, seeded).
-  AI-driven extraction from meeting minutes via `ExtractCommitteeMembersJob`.
+  with role, board-specific title, start/end dates, source, source URL, and
+  verification time. Manual, official-city, and organization-published roster
+  data take precedence over attendance-derived membership.
 - **MeetingAttendance** — Per-meeting roll call record. Tracks who was
   present, absent, or excused at each meeting, with attendee type
   (voting_member, non_voting_staff, guest) and optional capacity title.
-  Created by `ExtractCommitteeMembersJob` from meeting minutes.
-  Drives automatic `CommitteeMembership` creation and departure detection.
+  Created by `ExtractCommitteeMembersJob` from meeting minutes. It is evidence
+  about attendance at one meeting; it is not the highest authority for a
+  person's current office or a canonical roster.
+- **MemberPosition** — Durable current-office record for City Council and City
+  Manager titles. Official city pages supply these positions so elected and
+  City Manager labels take precedence over generic Member/Staff labels.
+
+Roster authority and maintenance are specified in
+`docs/superpowers/specs/2026-09-03-canonical-committee-rosters-design.md`.
 
 ### MemberAlias
 
@@ -496,10 +504,11 @@ field is a fallback for meetings without `generation_data`.
   and topics index) for consistent navigation
 - Only shows approved topics; skips section entirely if none exist
 
-### City Officials Page
+### Committees and Members Pages
 
-Directory of current voting members grouped by committee. Navigation
-label: "City Officials" (header + footer).
+`/committees` is the directory of governing bodies, and each committee page
+shows its current public roster. Member pages show the person's current
+public memberships, attendance, and voting record.
 
 **Layout:**
 
@@ -509,28 +518,43 @@ label: "City Officials" (header + footer).
   what that type means (elected vs appointed vs independent).
 - Each committee shows its full description and up to 5 recent topic
   pills (linked to topic pages) under "Recently working on:".
-- Members listed alphabetically by last name within each committee.
-- "View [First Name]'s votes" button links to member show page (only
-  shown if the member has recorded votes).
+- Committee pages sort chair, vice chair, current council members, then other
+  members alphabetically by last name.
+- Public rosters omit staff and non-voting memberships.
+- A member name links to the member show page.
 
-**Badges (all dynamically derived, no static data):**
+**Badges and titles:**
 
 - **"Elected by voters"** — shown on the City Council committee header.
-- **"Elected — Council Member"** — shown on members who currently sit on
-  City Council when they appear on other committees. Derived from current
-  City Council memberships on each page load.
-- **"City Manager"** — identified from `MeetingAttendance` records where
-  `capacity = "City Manager"`.
-- **"Chair" / "Vice Chair"** — from `CommitteeMembership.role`.
+- **City Council President / Vice President / Member** — derived from the
+  official City Council roster and stored as a current `MemberPosition`.
+- **City Manager** — derived from the official City Manager page and stored as
+  a current `MemberPosition`, never inferred from attendance capacity.
+- **Board officer titles** — derived from canonical roster
+  `CommitteeMembership.position_title` where available.
+- **Chair / Vice Chair / Secretary** — falls back to
+  `CommitteeMembership.role` when no source-specific title exists.
+
+Display priority is board-specific title, then durable current office, then a
+generic Member label. Current council and City Manager titles therefore take
+precedence over generic Member/Staff classifications.
 
 **Key files:**
 
-- `app/controllers/members_controller.rb` — queries committees with
-  current voting members, builds council member ID set, loads recent
-  topics per committee.
-- `app/views/members/index.html.erb` — grouped roster layout.
+- `app/controllers/committees_controller.rb` — loads current public rosters and
+  current council-member context.
+- `app/services/canonical_rosters/` — official and organization roster sources,
+  validation, synchronization, and known evidence-backed corrections.
+- `app/services/committees/membership_reconciler.rb` — attendance-derived
+  fallback for bodies without canonical coverage.
+- `app/models/member_position.rb` — durable official-title model.
+- `app/views/committees/index.html.erb` and `show.html.erb` — directory and
+  current committee roster.
 - `app/views/members/show.html.erb` — individual member voting record.
-- CSS: `.officials-*` classes in `app/assets/stylesheets/application.css`.
+
+Canonical sources currently cover City Council, City Manager, Explore Two
+Rivers, and Main Street. Other boards still depend on minutes; an empty roster
+is not evidence that a board has no members.
 
 ### Navigation: Topic Click-Through Behavior
 
