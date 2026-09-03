@@ -31,6 +31,22 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", committee_path(@public_works.slug), text: /Public Works/
   end
 
+  test "show identifies the current city manager even on member-role committees" do
+    MemberPosition.create!(
+      member: @member,
+      kind: "city_manager",
+      title: "City Manager",
+      source: "official_website",
+      source_url: "https://example.com/manager",
+      verified_at: Time.current
+    )
+
+    get member_url(@member)
+
+    assert_select ".member-article-header .badge", text: "City Manager"
+    assert_select ".member-committee .badge", text: "City Manager", minimum: 1
+  end
+
   test "show lists City Council first in committees" do
     get member_url(@member)
     assert_response :success

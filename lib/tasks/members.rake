@@ -26,6 +26,25 @@ namespace :members do
     puts "\nDone. Processed #{committees_processed} committees, skipped #{committees_skipped}."
   end
 
+  desc "Reconcile current memberships from stored attendance (set APPLY=1 to persist)"
+  task reconcile_from_attendance: :environment do
+    dry_run = ENV["APPLY"] != "1"
+    totals = { created: 0, roles_updated: 0, ended: 0 }
+
+    puts(dry_run ? "DRY RUN — no changes will be made" : "Applying membership reconciliation...")
+
+    Committee.order(:name).each do |committee|
+      result = Committees::MembershipReconciler.call(committee, dry_run: dry_run)
+      next unless result.changed?
+
+      totals.each_key { |key| totals[key] += result.public_send(key) }
+      puts "#{committee.name}: #{result.created} created, #{result.roles_updated} roles updated, #{result.ended} ended"
+    end
+
+    puts "\nTotal: #{totals[:created]} created, #{totals[:roles_updated]} roles updated, #{totals[:ended]} ended"
+    puts "Run with APPLY=1 to persist these changes." if dry_run
+  end
+
   desc "Merge one member into another (reassigns all records)"
   task :merge, [ :source_name, :target_name ] => :environment do |_t, args|
     source_name = args[:source_name]

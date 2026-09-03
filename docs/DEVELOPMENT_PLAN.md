@@ -363,13 +363,13 @@ All resident-facing summaries use a neighborhood-reporter voice:
 `TopicBriefing`) use a **two-pass** architecture:
 
 **Pass 1 — Structured Analysis** (`analyze_topic_briefing` /
-`analyze_topic_summary`): gpt-5.2 with `response_format: json_object`.
+`analyze_topic_summary`): the default model tier with `response_format: json_object`.
 Produces structured JSON with editorial analysis, factual record, civic
 sentiment, continuity signals, and resident impact scoring (1–5 scale).
 Knowledgebase context is included here to inform analysis.
 
 **Pass 2 — Markdown Rendering** (`render_topic_briefing` /
-`render_topic_summary`): gpt-5.2 takes the Pass 1 JSON and renders
+`render_topic_summary`): the default model tier takes the Pass 1 JSON and renders
 resident-facing markdown. Produces two distinct sections:
 
 - **Editorial** ("What's Going On"): 100–200 word prose. Analytical,
@@ -409,7 +409,7 @@ full design. Summary:
 |------|---------|---------|--------|
 | `headline_only` | Future meeting scheduled | None | Derived `upcoming_headline` |
 | `interim` | Agenda/packet added | 1× gpt-5-mini | Updated `upcoming_headline` + upcoming note |
-| `full` | Minutes published | 2× gpt-5.2 | Full editorial + record + `headline` + `upcoming_headline` |
+| `full` | Minutes published | 2× configured analysis tier | Full editorial + record + `headline` + `upcoming_headline` |
 
 ------------------------------------------------------------------------
 

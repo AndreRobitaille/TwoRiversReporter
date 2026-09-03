@@ -4,7 +4,7 @@ class PromptTemplate < ApplicationRecord
   validates :key, presence: true, uniqueness: true
   validates :name, presence: true
   validates :instructions, presence: true
-  validates :model_tier, inclusion: { in: %w[default lightweight] }
+  validates :model_tier, inclusion: { in: Ai::OpenAiService::MODEL_TIERS }
 
   attr_accessor :editor_note
 

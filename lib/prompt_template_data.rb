@@ -269,10 +269,12 @@ module PromptTemplateData
         - For named or specific local places/facilities, avoid full invented exteriors; use cropped, non-identifying details.
         - Avoid readable text, fake officials, fake meetings, fake landmarks, and collage layouts.
 
-        Required JSON keys:
-        - civic_issue
-        - composition
-        - avoid
+        Return exactly these string fields, with no extra fields:
+        {
+          "civic_issue": "The documented civic issue",
+          "composition": "One grounded visual composition",
+          "avoid": "A concise semicolon-separated list of unsupported elements"
+        }
 
         Inputs:
         imageable_type: {{imageable_type}}
@@ -358,15 +360,20 @@ module PromptTemplateData
         Meeting minutes use various formats for roll call. Common patterns:
         - "Present: Name1, Name2" / "Absent: Name3"
         - "Councilmembers: Name1, Name2" / "Absent and Excused: Name3"
-        - "Also Present: Title, Name" (non-voting staff)
+        - "Also Present: Title, Name" (people outside the main roll call)
         - "Guests: Name" (visitors, not committee members)
         - Sometimes just a list of names with no labels (assume all present)
 
         Rules:
         - Committee/board members listed in the main roll call are voting members.
-        - People listed under "Also Present", with government titles (Director, Manager,
-          Chief, Clerk, Attorney, Secretary, Supervisor), or explicitly labeled as staff
-          are non_voting_staff. Include their title/capacity.
+        - "Also Present" is only a section heading. Do not infer that everyone in that
+          section is staff.
+        - People explicitly identified with a staff title (Director, Manager, Chief,
+          Clerk, Attorney, Secretary, Supervisor) or explicitly labeled as staff are
+          non_voting_staff. Include their stated title/capacity.
+        - Untitled people under "Also Present" are guests.
+        - Elected officials attending outside the committee's main roll call are guests,
+          not staff, unless the minutes explicitly identify them as committee members.
         - People listed under "Guests" or "Visitors" are guests.
         - If someone has a title like "Recording Secretary" they are non_voting_staff.
         - Return full names as written. Do not abbreviate or alter names.
@@ -666,134 +673,48 @@ module PromptTemplateData
         </headline_rules>
 
         <resident_impact_rules>
-        Score resident impact 1-5 based on what actually matters to Two Rivers
-        residents per AUDIENCE.md — not based on dollar amounts, not based on
-        infrastructure categories, not based on whether a committee "sounds
-        important." The question is: would a scanning, skeptical resident on
-        a phone want to know or act on this?
+        Score what the documented event means to Two Rivers residents, not how
+        large its dollar amount or official category sounds.
 
-        SCALE:
-        - 1: Routine procedural item, no direct resident impact.
-        - 2: Routine institutional business — borrowing for planned
-          infrastructure, vendor contract at standard terms, routine fee
-          matching a state default, routine grant acceptance, routine
-          capital spend within the multi-year plan.
-        - 3: Affects a specific neighborhood, street, or demographic group;
-          or a household-proximate routine service (sidewalks, garbage, snow
-          removal) in its ordinary form.
-        - 4: Significant impact — household-budget hits residents will feel;
-          physical or character change to a neighborhood / downtown /
-          lakefront; governance or accountability changes on bodies that
-          make land-use or spending decisions; divided or contested votes
-          on items that would otherwise score 3.
-        - 5: Major community-wide impact — rate changes, large rezonings,
-          character-defining development, or a governance/conflict-of-
-          interest question that residents will want to see regardless of
-          dollar amount.
+        1 — Procedural only, with no direct resident impact.
+        2 — Routine institutional business: planned capital work or borrowing,
+            standard procurement, routine grant action, or ordinary fee alignment.
+        3 — Localized or household-proximate effect: a street, neighborhood,
+            demographic group, sidewalk, garbage, snow, or similar routine service.
+        4 — Substantial resident-facing effect: household tax/rate/fee change;
+            meaningful neighborhood, downtown, lakefront, land-use, or character
+            change; a documented governance/accountability issue; or a genuinely
+            contested score-3 issue.
+        5 — Exceptional community-wide effect or governance/conflict issue: a
+            character-defining development, major community-wide rate or land-use
+            change, or a documented conflict-of-interest question.
 
-        WHAT RAISES THE SCORE:
+        Boundaries:
+        - Dollar amount, infrastructure category, a named vendor, committee
+          appearance, or normal committee-to-council progression never raises the
+          score by itself. Routine capital procurement and financing generally
+          remain 2; household-visible routine service changes may be 3.
+        - A capital item rises above 2 only when the source explicitly establishes
+          an emergency, unbudgeted or unplanned obligation, accelerated timeline,
+          equipment failure, regulatory mandate, or cost overrun. Never infer that
+          it was unplanned because historical context is missing.
+        - Governance/accountability can matter independently of cost, especially
+          appointments or removals on bodies with land-use, spending, or policy
+          authority; leadership changes; conduct rules; or documented transparency
+          concerns. Do not infer family, business, political, or employment ties.
+        - Actual public controversy or a divided vote may raise a score-3 item by
+          one point. Silence is neither consent nor evidence that an item was hidden.
+        - Conditional use permits and variances are legally distinct. Describe the
+          actual land-use action without substituting one term for the other.
+        - With no substantive item details, do not score above 2 unless the title
+          itself explicitly identifies a rate/tax change, land-use action,
+          governance trigger, or household-budget effect.
 
-        - Household-budget hits residents will actually feel: property tax
-          or reassessment changes; utility rate changes that show up on a
-          bill; new fees on services residents use. → 4
-        - Physical neighborhood or community character change: rezonings,
-          conditional use permits (CUPs), lakefront/harbor/beach decisions,
-          downtown Main Street / Washington Street changes, demolition or
-          preservation of landmarks, school district decisions affecting
-          local families. → 4
-        - Who-benefits questions: development subsidies, TIF disbursements,
-          facade grants to named beneficiaries, contracts or grants to
-          firms with family, social, or political ties to decision-makers.
-          → 3-4 depending on how contested the beneficiary question is.
-        - Governance and accountability: appointments, removals, or
-          personnel moves on boards with land-use, spending, or policy
-          authority (Plan Commission, Library Board, CDA, BIDC, Housing
-          Authority, Personnel and Finance); departures/hiring of key
-          city leadership; code-of-conduct changes; open-meetings-law or
-          transparency decisions. → 4
-        - Family, marriage, business, or employment ties between a person
-          appointed/elected and another officeholder, former officeholder,
-          honoree, or beneficiary of a city decision. The
-          conflict-of-interest question itself is the story, regardless
-          of the underlying dollar amount. → 5
-        - Volume of public comment: 3 or more residents speaking on a
-          single item bumps the score +1.
-        - Divided vote: any non-unanimous council or commission vote on
-          an item at score 3 or above bumps the score +1. Residents pay
-          attention to splits.
-        - AUDIENCE.md explicit high-salience items: lead lateral
-          replacement, shoreline restoration, harbor maintenance,
-          forestry, historic preservation or demolition, Hamilton/Eggers
-          site decisions.
-
-        UNPLANNED OR SHORT-HORIZON CAPITAL SPEND (carve-out):
-
-        A large capital purchase or borrowing that would normally score 2
-        becomes a 3 or 4 IF the source text indicates it was NOT routine:
-        - Not included in the prior year's budget or capital plan
-        - Budgeted at a short planning horizon (e.g. one-year-out) for an
-          asset or project that should have been known years earlier
-        - Driven by an emergency, equipment failure, unexpected obligation,
-          regulatory mandate, or cost overrun
-        Do not infer this from absence — require explicit signals in the
-        source (words like "emergency", "unbudgeted", "unplanned", "not
-        previously identified", "cost overrun", "timeline accelerated").
-        Without such signals, routine capital stays at 2.
-
-        WHAT DOES NOT RAISE THE SCORE:
-
-        - Dollar amount alone. A $496,676 0% WPPI loan for routine
-          water-plant generators is a 2, not a 4. A $349,985 Lincoln
-          Avenue water main contract is a 2.
-        - Infrastructure category alone. "Water", "sewer", "electric",
-          "stormwater" are not automatic 4s. The question is whether
-          residents will feel a change.
-        - Routine vendor contract renewals at standard terms.
-        - Routine facade grants or TID disbursements at established terms
-          from well-funded districts.
-        - Fee adjustments that only match a state default (court fees,
-          etc.).
-        - CDA and BIDC appearances without concrete action. Per
-          AUDIENCE.md, these bodies have been "largely ineffective for
-          years" — do not overweight their agenda appearances.
-        - Committee on Aging items that do not involve binding votes.
-        - Cross-body movement (committee recommends, council approves) is
-          normal workflow, not a signal.
-
-        EXAMPLES:
-
-        - "Council approved a $496,676 0% WPPI loan for water plant
-          backup power" → 2 (routine borrowing, routine infrastructure,
-          no resident rate change)
-        - "Council awarded $349,985 Lincoln Ave water main contract to
-          Vinton" → 2 (routine procurement, scheduled replacement)
-        - "Council adopted revised code of conduct for elected officials"
-          → 4 (governance accountability)
-        - "Tracey Koach appointed to the Plan Commission seat formerly
-          held by her mother Kay Koach" → 5 (family handoff on a
-          land-use body is a conflict-of-interest question)
-        - "Council approves 9% electric rate hike" → 4 (direct household
-          hit)
-        - "Plan Commission grants CUP for new drive-through on Washington
-          Street" → 4 (physical neighborhood change with named
-          beneficiary)
-        - "Emergency $1.2M borrowing for unplanned water main replacement
-          after cascade failure" → 4 (unplanned-capital carve-out
-          applies)
-        - "Sidewalk Safe Step pilot, $40,000, grinds trip hazards across
-          95 miles of sidewalks" → 3 (household-proximate, routine
-          approach)
-        - "Council split 5-4 on selling city land to developer near
-          downtown" → 5 (divided vote + beneficiary + physical character)
-
-        DEFAULT FOR THIN CONTEXT:
-
-        If no substantive content is available for any agenda item (all
-        item_details_* fields are nil), do not rate above 2 unless the
-        agenda item title itself explicitly names a governance trigger,
-        family-tie trigger, rate change, rezoning, or household-budget
-        trigger from the lists above. "Thin context plus big-sounding
-        title" is not a reason to rate high.
+        Boundary examples:
+        - $349,985 scheduled water-main contract at standard terms -> 2.
+        - Routine sidewalk trip-hazard pilot affecting residents' walks -> 3.
+        - 9% electric-rate increase appearing on household bills -> 4.
+        - 5-4 vote selling city land near downtown to a named developer -> 5.
         </resident_impact_rules>
 
         <extraction_spec>
@@ -879,14 +800,12 @@ module PromptTemplateData
         <voice>
         - Write like a sharp neighbor who reads the agendas, not a policy analyst.
         - Be skeptical of process and decisions, not of people.
-        - Translate jargon: "general obligation promissory notes" -> "borrowing",
-          "land disposition" -> "selling city land", "parameters" -> "limits",
-          "revenue bond" -> "rate-backed loan", "enterprise fund" -> "utility fund",
-          "TID" / "T.I.D." -> "TIF district" (always spell out),
-          "saw-cut" / "saw-cutting" -> "shave down" or "grind down the raised edges",
-          "conditional use permit" -> "zoning variance",
-          "certified survey map" -> "lot subdivision",
-          "CIPP" / "cured in place pipe" -> "pipe-lining" (sewer rehab technique).
+        - Translate government jargon into ordinary language without changing its
+          legal, financial, procedural, or technical meaning. If no concise
+          substitute is precise, briefly explain the official term instead.
+          Safe examples: "general obligation promissory notes" -> "borrowing",
+          "land disposition" -> "selling city land", "TID" / "T.I.D." ->
+          "TIF district", and "CIPP" -> "sewer pipe lining."
         - NEVER reference your own source limitations. Don't say "the record
           provided does not show" or "in the materials provided." If you don't
           know the outcome, just write the quieter honest version.
@@ -964,21 +883,6 @@ module PromptTemplateData
 
         TOPIC CONTEXT (JSON):
         {{context}}
-
-        <voice_scope>
-        The following three fields are the ONLY place the audience voice applies:
-        - `headline`
-        - `upcoming_headline`
-        - `editorial_analysis.current_state`
-
-        Every other field in the schema is neutral and observational. In particular:
-        - `factual_record` is dry, chronological reporting. No framing, no editorial voice.
-        - `civic_sentiment` is observational only — what residents said or did, not interpretive.
-        - `editorial_analysis.pattern_observations` is evidence-bound pattern noting; empty array is the default.
-        - `editorial_analysis.process_concerns` is null by default. ONLY populate it if the source data explicitly establishes a specific, concrete process issue. DO NOT retrofit a process_concern to justify a more interesting headline — the headline and the process_concerns field must be independently supported by the data.
-        - `continuity_signals` are evidence-bound signals only.
-        - `resident_impact.rationale` is a plain one-sentence explanation; no dramatization.
-        </voice_scope>
 
         <headline_criteria>
         The `headline`, `upcoming_headline`, and `editorial_analysis.current_state` fields have specific rules:

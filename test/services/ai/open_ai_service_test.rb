@@ -120,7 +120,7 @@ class Ai::OpenAiServiceGeneratedImageBriefTest < ActiveSupport::TestCase
     mock_response = {
       "choices" => [ {
         "message" => {
-          "content" => '{"civic_issue":"Traffic","composition":"Street scene","avoid":["logos"]}'
+          "content" => '{"civic_issue":"Traffic","composition":"Street scene","avoid":"logos"}'
         }
       } ]
     }
@@ -144,7 +144,7 @@ class Ai::OpenAiServiceGeneratedImageBriefTest < ActiveSupport::TestCase
     end
     end
 
-    assert_equal({ "civic_issue" => "Traffic", "composition" => "Street scene", "avoid" => [ "logos" ] }, result)
+    assert_equal({ "civic_issue" => "Traffic", "composition" => "Street scene", "avoid" => "logos" }, result)
     assert_equal "Meeting", PromptRun.last.placeholder_values["imageable_type"]
     assert_operator PromptRun.last.placeholder_values["source_text"].length, :<, long_text.length
   end
@@ -189,6 +189,25 @@ class Ai::OpenAiServiceGeneratedImageBriefTest < ActiveSupport::TestCase
     end
     assert_equal before_count + 1, PromptRun.where(prompt_template_key: "generated_image_brief").count
     assert_equal '{"civic_issue":"Traffic"}', PromptRun.where(prompt_template_key: "generated_image_brief").last.response_body
+  end
+
+  test "build_generated_image_brief rejects non-string fields" do
+    PromptTemplate.find_or_create_by!(key: "generated_image_brief") do |template|
+      template.name = "Generated Image Brief"
+      template.model_tier = "lightweight"
+      template.system_role = "Return JSON."
+      template.instructions = "Inputs: {{imageable_type}} {{composite}} {{source_text}}"
+    end
+    service = Ai::OpenAiService.new
+    response = '{"civic_issue":"Traffic","composition":"Street scene","avoid":["logos"]}'
+
+    service.instance_variable_get(:@client).stub :chat, ->(**) { { "choices" => [ { "message" => { "content" => response } } ] } } do
+      error = assert_raises(RuntimeError) do
+        service.build_generated_image_brief(imageable_type: "Meeting", source_text: "Text", composite: {})
+      end
+
+      assert_match(/non-string fields avoid/, error.message)
+    end
   end
 end
 

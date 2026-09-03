@@ -18,6 +18,25 @@ module CommitteesHelper
     end
   end
 
+  def membership_badges(membership, council_member_ids: Set.new, include_default: false)
+    badges = []
+    if membership.position_title.present?
+      badges << { label: membership.position_title, variant: "primary" }
+    elsif membership.role.in?(%w[chair vice_chair secretary])
+      badges << { label: membership.role.titleize.tr("_", " "), variant: "primary" }
+    end
+
+    current_title = membership.member.current_position_title
+    if current_title.present?
+      badges << { label: current_title, variant: "info" }
+    elsif council_member_ids.include?(membership.member_id)
+      badges << { label: "City Council Member", variant: "info" }
+    end
+
+    badges << { label: "Member", variant: "default" } if include_default && badges.empty?
+    badges.uniq { |badge| badge[:label] }
+  end
+
   # Render committee description with safe markdown link support.
   # Converts markdown-style links [text](url) to HTML <a> tags.
   # Only allows http/https URLs. All other content is HTML-escaped.
