@@ -47,7 +47,7 @@ bin/rails runner "Topics::TriageTool.call(apply: true, dry_run: false, min_confi
 
 ## AI provider configuration
 OpenAI (default):
-- Uses `OPENAI_REASONING_MODEL` (defaults to `gpt-5.2`).
+- Uses `OPENAI_REASONING_MODEL` (defaults to `gpt-5.6-terra`).
 - Uses `openai_access_token` (Rails credentials) or `OPENAI_ACCESS_TOKEN`.
 
 Gemini (opt-in):

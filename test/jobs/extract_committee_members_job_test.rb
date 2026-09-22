@@ -206,6 +206,52 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
     mock_service.verify
   end
 
+  test "does not create a membership omitted from a canonical roster" do
+    canonical_member = Member.create!(name: "Official Member")
+    CommitteeMembership.create!(
+      committee: @committee, member: canonical_member,
+      role: "member", source: "official_roster"
+    )
+
+    mock_service = stub_ai_response({
+      "voting_members_present" => [ "Minutes Only Person" ],
+      "voting_members_absent" => [],
+      "non_voting_staff" => [],
+      "guests" => []
+    })
+
+    Ai::OpenAiService.stub :new, mock_service do
+      ExtractCommitteeMembersJob.perform_now(@meeting.id)
+    end
+
+    minutes_only = Member.find_by!(name: "Minutes Only Person")
+    assert_not CommitteeMembership.exists?(committee: @committee, member: minutes_only)
+    mock_service.verify
+  end
+
+  test "does not overwrite an official roster role" do
+    member = Member.create!(name: "Official Member")
+    membership = CommitteeMembership.create!(
+      committee: @committee, member: member,
+      role: "member", source: "official_roster"
+    )
+
+    mock_service = stub_ai_response({
+      "voting_members_present" => [],
+      "voting_members_absent" => [],
+      "non_voting_staff" => [ { "name" => member.name, "capacity" => "Staff" } ],
+      "guests" => []
+    })
+
+    Ai::OpenAiService.stub :new, mock_service do
+      ExtractCommitteeMembersJob.perform_now(@meeting.id)
+    end
+
+    assert_equal "member", membership.reload.role
+    assert_equal "official_roster", membership.source
+    mock_service.verify
+  end
+
   test "does not duplicate existing ai_extracted membership" do
     member = Member.create!(name: "Smith")
     CommitteeMembership.create!(
@@ -226,6 +272,114 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
         ExtractCommitteeMembersJob.perform_now(@meeting.id)
       end
     end
+    mock_service.verify
+  end
+
+  test "updates an ai-extracted staff membership when the latest roll call lists a voting member" do
+    member = Member.create!(name: "Smith")
+    membership = CommitteeMembership.create!(
+      committee: @committee, member: member,
+      role: "staff", source: "ai_extracted"
+    )
+
+    mock_service = stub_ai_response({
+      "voting_members_present" => [ "Smith" ],
+      "voting_members_absent" => [],
+      "non_voting_staff" => [],
+      "guests" => []
+    })
+
+    Ai::OpenAiService.stub :new, mock_service do
+      ExtractCommitteeMembersJob.perform_now(@meeting.id)
+    end
+
+    assert_equal "member", membership.reload.role
+    mock_service.verify
+  end
+
+  test "updates an ai-extracted member when the latest roll call lists staff" do
+    member = Member.create!(name: "Kyle Kordell")
+    membership = CommitteeMembership.create!(
+      committee: @committee, member: member,
+      role: "member", source: "ai_extracted"
+    )
+
+    mock_service = stub_ai_response({
+      "voting_members_present" => [],
+      "voting_members_absent" => [],
+      "non_voting_staff" => [ { "name" => "Kyle Kordell", "capacity" => "City Manager" } ],
+      "guests" => []
+    })
+
+    Ai::OpenAiService.stub :new, mock_service do
+      ExtractCommitteeMembersJob.perform_now(@meeting.id)
+    end
+
+    assert_equal "staff", membership.reload.role
+    mock_service.verify
+  end
+
+  test "historical extraction cannot override a newer attendance role" do
+    member = Member.create!(name: "Smith")
+    membership = CommitteeMembership.create!(
+      committee: @committee, member: member,
+      role: "staff", source: "ai_extracted"
+    )
+
+    newer_meeting = Meeting.create!(
+      body_name: "City Council", committee: @committee,
+      starts_at: Time.zone.parse("2026-03-01 18:00"),
+      detail_page_url: "http://example.com/newer-meeting-ecmj"
+    )
+    MeetingAttendance.create!(
+      meeting: newer_meeting, member: member,
+      status: "present", attendee_type: "voting_member"
+    )
+
+    mock_service = stub_ai_response({
+      "voting_members_present" => [],
+      "voting_members_absent" => [],
+      "non_voting_staff" => [ { "name" => "Smith", "capacity" => "Staff" } ],
+      "guests" => []
+    })
+
+    Ai::OpenAiService.stub :new, mock_service do
+      ExtractCommitteeMembersJob.perform_now(@meeting.id)
+    end
+
+    assert_equal "member", membership.reload.role
+    mock_service.verify
+  end
+
+  test "historical extraction cannot recreate a departed membership" do
+    former_member = Member.create!(name: "Former Member")
+    current_member = Member.create!(name: "Current Member")
+
+    2.times do |month|
+      newer_meeting = Meeting.create!(
+        body_name: "City Council", committee: @committee,
+        starts_at: Time.zone.parse("2026-0#{month + 3}-01 18:00"),
+        detail_page_url: "http://example.com/newer-meeting-#{month}-ecmj"
+      )
+      MeetingAttendance.create!(
+        meeting: newer_meeting, member: current_member,
+        status: "present", attendee_type: "voting_member"
+      )
+    end
+
+    mock_service = stub_ai_response({
+      "voting_members_present" => [ former_member.name ],
+      "voting_members_absent" => [],
+      "non_voting_staff" => [],
+      "guests" => []
+    })
+
+    Ai::OpenAiService.stub :new, mock_service do
+      ExtractCommitteeMembersJob.perform_now(@meeting.id)
+    end
+
+    assert_not CommitteeMembership.current.exists?(committee: @committee, member: former_member)
+    assert CommitteeMembership.current.exists?(committee: @committee, member: current_member)
     mock_service.verify
   end
 

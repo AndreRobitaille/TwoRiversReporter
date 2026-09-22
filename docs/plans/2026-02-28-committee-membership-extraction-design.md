@@ -2,6 +2,13 @@
 
 ## Design Document — 2026-02-28
 
+> **Historical design:** `MeetingAttendance` remains the per-meeting factual
+> record, but meeting attendance is no longer the sole authority for current
+> rosters or offices. The implemented source-precedence model, canonical City
+> Council/City Manager/Explore Two Rivers/Main Street sources, and current
+> reconciliation rules are documented in
+> `docs/superpowers/specs/2026-09-03-canonical-committee-rosters-design.md`.
+
 GitHub Issue: #72
 
 ------------------------------------------------------------------------

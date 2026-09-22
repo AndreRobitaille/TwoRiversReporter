@@ -66,6 +66,8 @@ export default class extends Controller {
     // Grab current form values (possibly edited, unsaved)
     const systemRole = document.querySelector("textarea[name='prompt_template[system_role]']")?.value || ""
     const instructions = document.querySelector("textarea[name='prompt_template[instructions]']")?.value || ""
+    const evaluationModel = document.querySelector("select[name='evaluation_model']")?.value || "gpt-5.6-terra"
+    const reasoningEffort = document.querySelector("select[name='reasoning_effort']")?.value || "none"
 
     // Show loading state
     const originalText = button.textContent
@@ -83,7 +85,9 @@ export default class extends Controller {
         body: new URLSearchParams({
           prompt_run_id: runId,
           system_role: systemRole,
-          instructions: instructions
+          instructions: instructions,
+          evaluation_model: evaluationModel,
+          reasoning_effort: reasoningEffort
         })
       })
 

@@ -1,10 +1,13 @@
-<% content_for(:title) { "#{@member.name} — Two Rivers, WI City Official" } %>
-<% content_for(:description) { "#{@member.name} — committee memberships, meeting attendance, and voting record in Two Rivers, WI city government." } %>
+<% content_for(:title) { @current_position ? "#{@member.name} — #{@current_position.title}" : "#{@member.name} — Two Rivers Committee Member" } %>
+<% content_for(:description) { [@member.name, @current_position&.title, "committee memberships, meeting attendance, and voting record in Two Rivers, WI"].compact.join(" — ") } %>
 <% content_for(:og_type) { "article" } %>
 
 <article class="member-article">
   <header class="member-article-header">
     <h1 class="member-article-title"><%= @member.name %></h1>
+    <% if @current_position %>
+      <span class="badge badge--info"><%= @current_position.title %></span>
+    <% end %>
   </header>
 
   <section class="member-article-section">
@@ -18,12 +21,8 @@
       <% @memberships.each do |cm| %>
         <%= link_to committee_path(cm.committee.slug), class: "member-committee #{"member-committee--council" if cm.committee.name == "City Council"}" do %>
           <span class="member-committee-name"><%= cm.committee.name %></span>
-          <% if cm.role.present? && cm.role.in?(%w[chair vice_chair]) %>
-            <span class="badge badge--primary"><%= cm.role.titleize.tr("_", " ") %></span>
-          <% elsif cm.committee.name == "City Council" %>
-            <span class="badge badge--info">Elected</span>
-          <% else %>
-            <span class="badge badge--default">Member</span>
+          <% membership_badges(cm, include_default: true).each do |badge| %>
+            <span class="badge badge--<%= badge[:variant] %>"><%= badge[:label] %></span>
           <% end %>
         <% end %>
       <% end %>

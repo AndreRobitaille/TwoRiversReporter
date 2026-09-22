@@ -2,11 +2,16 @@ require "base64"
 
 module Ai
   class OpenAiService
-    # Updated to GPT-5.2 as requested
-    DEFAULT_MODEL = ENV.fetch("OPENAI_REASONING_MODEL", "gpt-5.2")
+    MODEL_TIERS = %w[heavy default lightweight].freeze
+    REASONING_EFFORTS = %w[none low].freeze
+
+    HEAVY_MODEL = ENV.fetch("OPENAI_HEAVY_MODEL", "gpt-5.6-sol")
+    DEFAULT_MODEL = ENV.fetch("OPENAI_REASONING_MODEL", "gpt-5.6-terra")
     DEFAULT_GEMINI_MODEL = ENV.fetch("GEMINI_MODEL", "gemini-3-pro-preview")
-    LIGHTWEIGHT_MODEL = ENV.fetch("OPENAI_LIGHTWEIGHT_MODEL", "gpt-5.4-mini")
+    LIGHTWEIGHT_MODEL = ENV.fetch("OPENAI_LIGHTWEIGHT_MODEL", "gpt-5.6-luna")
     IMAGE_MODEL = ENV.fetch("OPENAI_IMAGE_MODEL", "gpt-image-1")
+    EVALUATION_MODELS = %w[gpt-5.6-luna gpt-5.6-terra gpt-5.6-sol].freeze
+    LEGACY_TEMPERATURE_UNSUPPORTED_MODELS = %w[gpt-5-mini gpt-5.4-mini].freeze
     REQUIRED_PROMPT_KEYS = %w[
       extract_votes
       extract_committee_members
@@ -32,6 +37,60 @@ module Ai
 
     def initialize
       @client = OpenAI::Client.new(access_token: Rails.application.credentials.openai_access_token || ENV["OPENAI_ACCESS_TOKEN"])
+    end
+
+    class << self
+      def model_for_tier(tier)
+        case tier.to_s
+        when "heavy" then HEAVY_MODEL
+        when "lightweight" then LIGHTWEIGHT_MODEL
+        else DEFAULT_MODEL
+        end
+      end
+
+      def build_chat_parameters(model:, messages:, temperature: nil, response_format: nil, reasoning_effort: nil)
+        reasoning_effort ||= default_reasoning_effort(model)
+        params = { model: model, messages: messages }
+        params[:reasoning_effort] = reasoning_effort if reasoning_effort.present?
+        if temperature.present? && temperature_supported?(model:, reasoning_effort:)
+          params[:temperature] = temperature
+        end
+        params[:response_format] = response_format if response_format.present?
+        params
+      end
+
+      def default_reasoning_effort(model)
+        "none" if model.to_s.start_with?("gpt-5.6")
+      end
+
+      def temperature_supported?(model:, reasoning_effort: nil)
+        return false if LEGACY_TEMPERATURE_UNSUPPORTED_MODELS.include?(model.to_s)
+        return reasoning_effort == "none" if model.to_s.start_with?("gpt-5.6")
+        return false if model.to_s.start_with?("gpt-5") && reasoning_effort.present? && reasoning_effort != "none"
+
+        true
+      end
+
+      def usage_from(response)
+        usage = response["usage"] || {}
+        prompt_details = usage["prompt_tokens_details"] || {}
+        completion_details = usage["completion_tokens_details"] || {}
+
+        {
+          input_tokens: usage["prompt_tokens"],
+          cached_input_tokens: prompt_details["cached_tokens"],
+          cache_write_tokens: prompt_details["cache_write_tokens"],
+          output_tokens: usage["completion_tokens"],
+          reasoning_tokens: completion_details["reasoning_tokens"],
+          total_tokens: usage["total_tokens"]
+        }
+      end
+    end
+
+    # Experimental calls use the same parameter construction as production but
+    # deliberately do not create PromptRun records.
+    def evaluate_chat(model:, messages:, temperature: nil, response_format: nil, reasoning_effort: "none")
+      perform_chat(model:, messages:, temperature:, response_format:, reasoning_effort:)
     end
 
     # Two-pass summary for packets
@@ -63,7 +122,7 @@ module Ai
       system_role = template.system_role
       placeholders = { text: text.truncate(50_000), agenda_items: agenda_items_text }
       prompt = template.interpolate(**placeholders)
-      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
+      model = self.class.model_for_tier(template.model_tier)
 
       messages = [
         (system_role.present? ? { role: "system", content: system_role } : nil),
@@ -92,7 +151,7 @@ module Ai
       system_role = template.system_role
       placeholders = { text: text.truncate(50_000) }
       prompt = template.interpolate(**placeholders)
-      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
+      model = self.class.model_for_tier(template.model_tier)
 
       messages = [
         (system_role.present? ? { role: "system", content: system_role } : nil),
@@ -128,7 +187,7 @@ module Ai
         meeting_context: meeting_context.to_s
       }
       prompt = template.interpolate(**placeholders)
-      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
+      model = self.class.model_for_tier(template.model_tier)
 
       messages = [
         (system_role.present? ? { role: "system", content: system_role } : nil),
@@ -163,7 +222,7 @@ module Ai
         existing_topics: existing_topics.join(", ")
       }
       prompt = template.interpolate(**placeholders)
-      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
+      model = self.class.model_for_tier(template.model_tier)
 
       messages = [
         (system_role.present? ? { role: "system", content: system_role } : nil),
@@ -198,7 +257,7 @@ module Ai
         existing_topics: existing_topics.join(", ")
       }
       prompt = template.interpolate(**placeholders)
-      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
+      model = self.class.model_for_tier(template.model_tier)
 
       messages = [
         (system_role.present? ? { role: "system", content: system_role } : nil),
@@ -281,7 +340,7 @@ module Ai
         system_role = template.system_role
         placeholders = { context_json: context_json.to_json }
         prompt = template.interpolate(**placeholders)
-        model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
+        model = self.class.model_for_tier(template.model_tier)
 
         messages = [
           (system_role.present? ? { role: "system", content: system_role } : nil),
@@ -312,7 +371,7 @@ module Ai
       system_role = template.interpolate_system_role(committee_context: committee_ctx)
       placeholders = { committee_context: committee_ctx, context_json: context_json.to_json }
       prompt = template.interpolate(**placeholders)
-      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
+      model = self.class.model_for_tier(template.model_tier)
 
       messages = [
         { role: "system", content: system_role },
@@ -345,7 +404,7 @@ module Ai
         source_text: source_text.to_s.truncate(12_000, separator: " ")
       }
       prompt = template.interpolate(**placeholders)
-      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
+      model = self.class.model_for_tier(template.model_tier)
 
       content, _duration_ms = call_api(
         model: model,
@@ -373,6 +432,8 @@ module Ai
       required_keys = %w[civic_issue composition avoid]
       missing_keys = required_keys.reject { |key| brief[key].present? }
       raise "generated image brief invalid JSON: missing required keys #{missing_keys.join(', ')}" if missing_keys.any?
+      invalid_types = required_keys.reject { |key| brief[key].is_a?(String) }
+      raise "generated image brief invalid JSON: non-string fields #{invalid_types.join(', ')}" if invalid_types.any?
 
       brief
     rescue JSON::ParserError => e
@@ -413,7 +474,7 @@ module Ai
       system_role = template.interpolate_system_role
       placeholders = { plan_json: plan_json.to_s }
       prompt = template.interpolate(**placeholders)
-      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
+      model = self.class.model_for_tier(template.model_tier)
 
       messages = [
         { role: "system", content: system_role },
@@ -442,7 +503,7 @@ module Ai
       system_role = template.interpolate_system_role(committee_context: committee_ctx)
       placeholders = { committee_context: committee_ctx, context: context.to_json }
       prompt = template.interpolate(**placeholders)
-      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
+      model = self.class.model_for_tier(template.model_tier)
 
       messages = [
         { role: "system", content: system_role },
@@ -471,7 +532,7 @@ module Ai
       system_role = template.interpolate_system_role
       placeholders = { analysis_json: analysis_json.to_s }
       prompt = template.interpolate(**placeholders)
-      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
+      model = self.class.model_for_tier(template.model_tier)
 
       messages = [
         { role: "system", content: system_role },
@@ -508,7 +569,7 @@ module Ai
         agenda_items: context[:agenda_items].to_json
       }
       prompt = template.interpolate(**placeholders)
-      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
+      model = self.class.model_for_tier(template.model_tier)
 
       messages = [
         (system_role.present? ? { role: "system", content: system_role } : nil),
@@ -546,7 +607,7 @@ module Ai
       system_role = template.system_role
       placeholders = { topic_name: topic_name, activity_text: activity_text, headlines_text: headlines_text }
       user_prompt = template.interpolate(**placeholders)
-      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
+      model = self.class.model_for_tier(template.model_tier)
 
       messages = [
         (system_role.present? ? { role: "system", content: system_role } : nil),
@@ -600,7 +661,7 @@ module Ai
         doc_text: doc_text.truncate(100_000)
       }
       prompt = template.interpolate(**placeholders)
-      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
+      model = self.class.model_for_tier(template.model_tier)
 
       messages = [
         { role: "system", content: system_role },
@@ -635,7 +696,7 @@ module Ai
       system_role = template.system_role
       placeholders = { summary_json: summary_json.to_s, raw_text: raw_text.to_s.truncate(25_000), existing_kb: existing_kb.to_s }
       prompt = template.interpolate(**placeholders)
-      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
+      model = self.class.model_for_tier(template.model_tier)
 
       messages = [
         (system_role.present? ? { role: "system", content: system_role } : nil),
@@ -664,7 +725,7 @@ module Ai
       system_role = template.system_role
       placeholders = { entries_json: entries_json.to_s, existing_kb: existing_kb.to_s }
       prompt = template.interpolate(**placeholders)
-      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
+      model = self.class.model_for_tier(template.model_tier)
 
       messages = [
         (system_role.present? ? { role: "system", content: system_role } : nil),
@@ -720,7 +781,7 @@ module Ai
       system_role = template.system_role
       placeholders = { knowledge_entries: knowledge_entries.to_s, recent_summaries: recent_summaries.to_s.truncate(50_000), topic_metadata: topic_metadata.to_s }
       prompt = template.interpolate(**placeholders)
-      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
+      model = self.class.model_for_tier(template.model_tier)
 
       messages = [
         (system_role.present? ? { role: "system", content: system_role } : nil),
@@ -768,13 +829,17 @@ module Ai
 
     private
 
-    # Central API call wrapper — handles error logging, nil content guard,
-    # and temperature suppression for lightweight models.
-    def call_api(model:, messages:, temperature: nil, response_format: nil)
-      params = { model: model, messages: messages }
-      params[:temperature] = temperature if temperature && model != LIGHTWEIGHT_MODEL
-      params[:response_format] = response_format if response_format
+    # Production and evaluator calls share the same effective parameter rules,
+    # including suppression of unsupported temperature values.
+    def call_api(model:, messages:, temperature: nil, response_format: nil, reasoning_effort: nil)
+      result = perform_chat(model:, messages:, temperature:, response_format:, reasoning_effort:)
+      [ result.fetch(:content), result.fetch(:duration_ms) ]
+    end
 
+    def perform_chat(model:, messages:, temperature: nil, response_format: nil, reasoning_effort: nil)
+      params = self.class.build_chat_parameters(
+        model:, messages:, temperature:, response_format:, reasoning_effort:
+      )
       start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       response = @client.chat(parameters: params)
       duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
@@ -785,7 +850,14 @@ module Ai
         raise EmptyResponseError, "OpenAI returned empty content (finish_reason: #{finish_reason})"
       end
 
-      [ content, duration_ms ]
+      {
+        content: content,
+        duration_ms: duration_ms,
+        model: response["model"] || model,
+        finish_reason: response.dig("choices", 0, "finish_reason"),
+        usage: self.class.usage_from(response),
+        request_parameters: params.except(:messages)
+      }
     rescue Faraday::Error => e
       Rails.logger.error("OpenAI API error: #{e.class} — #{e.message}")
       raise
@@ -868,7 +940,7 @@ module Ai
       system_role = template.interpolate_system_role
       placeholders = { plan_json: plan_json.to_s, doc_text: doc_text.truncate(50_000) }
       prompt = template.interpolate(**placeholders)
-      model = template.model_tier == "lightweight" ? LIGHTWEIGHT_MODEL : DEFAULT_MODEL
+      model = self.class.model_for_tier(template.model_tier)
 
       messages = [
         { role: "system", content: system_role },

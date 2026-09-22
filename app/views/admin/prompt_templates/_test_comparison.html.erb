@@ -4,9 +4,20 @@
   <% if error %>
     <div class="test-comparison-error"><%= error %></div>
   <% else %>
-    <% if duration_ms %>
-      <p class="timestamp">Completed in <%= (duration_ms / 1000.0).round(1) %>s</p>
-    <% end %>
+    <p class="timestamp">
+      <%= result[:model] %> · reasoning <%= result[:requested_reasoning_effort] %> ·
+      <%= (result[:duration_ms] / 1000.0).round(1) %>s · JSON <%= result[:json_status] %>
+    </p>
+    <p class="timestamp">
+      Input <%= number_with_delimiter(result.dig(:usage, :input_tokens) || 0) %>
+      (<%= number_with_delimiter(result.dig(:usage, :cached_input_tokens) || 0) %> cached) ·
+      output <%= number_with_delimiter(result.dig(:usage, :output_tokens) || 0) %> ·
+      reasoning <%= number_with_delimiter(result.dig(:usage, :reasoning_tokens) || 0) %> ·
+      total <%= number_with_delimiter(result.dig(:usage, :total_tokens) || 0) %>
+      <% if result[:estimated_cost_usd] %>
+        · estimated $<%= format("%.4f", result[:estimated_cost_usd]) %>
+      <% end %>
+    </p>
 
     <div class="test-comparison-grid">
       <div class="test-comparison-panel">
@@ -15,7 +26,7 @@
       </div>
       <div class="test-comparison-panel">
         <h4>Test Output</h4>
-        <pre><% if run.response_format == "json_object" %><%= JSON.pretty_generate(JSON.parse(result)).truncate(8000) rescue result.truncate(8000) %><% else %><%= result.truncate(8000) %><% end %></pre>
+        <pre><% if run.response_format == "json_object" %><%= JSON.pretty_generate(JSON.parse(result[:content])).truncate(8000) rescue result[:content].truncate(8000) %><% else %><%= result[:content].truncate(8000) %><% end %></pre>
       </div>
     </div>
   <% end %>

@@ -23,6 +23,7 @@ class MembersController < ApplicationController
       .where("role IS NULL OR role NOT IN (?)", %w[staff non_voting])
       .includes(:committee)
       .sort_by { |cm| [ cm.committee.name == "City Council" ? 0 : 1, cm.committee.name ] }
+    @current_position = @member.primary_current_position
 
     @attendance = load_attendance
 

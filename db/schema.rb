@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_15_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_03_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -108,11 +108,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_15_000000) do
     t.datetime "created_at", null: false
     t.date "ended_on"
     t.bigint "member_id", null: false
+    t.string "position_title"
     t.string "role"
     t.string "source", default: "admin_manual", null: false
+    t.string "source_url"
     t.date "started_on"
     t.datetime "updated_at", null: false
-    t.index [ "committee_id", "member_id", "ended_on" ], name: "idx_committee_memberships_unique_active", unique: true, where: "(ended_on IS NULL)"
+    t.datetime "verified_at"
+    t.index [ "committee_id", "member_id" ], name: "idx_committee_memberships_unique_active", unique: true, where: "(ended_on IS NULL)"
     t.index [ "committee_id" ], name: "index_committee_memberships_on_committee_id"
     t.index [ "member_id" ], name: "index_committee_memberships_on_member_id"
   end
@@ -346,6 +349,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_15_000000) do
     t.datetime "updated_at", null: false
     t.index [ "member_id" ], name: "index_member_aliases_on_member_id"
     t.index [ "name" ], name: "index_member_aliases_on_name", unique: true
+  end
+
+  create_table "member_positions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.date "ended_on"
+    t.string "kind", null: false
+    t.bigint "member_id", null: false
+    t.string "source", null: false
+    t.string "source_url", null: false
+    t.date "started_on"
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "verified_at", null: false
+    t.index [ "member_id", "kind" ], name: "idx_member_positions_unique_active", unique: true, where: "(ended_on IS NULL)"
+    t.index [ "member_id" ], name: "index_member_positions_on_member_id"
   end
 
   create_table "members", force: :cascade do |t|
@@ -823,6 +841,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_15_000000) do
   add_foreign_key "meeting_summaries", "meetings"
   add_foreign_key "meetings", "committees"
   add_foreign_key "member_aliases", "members"
+  add_foreign_key "member_positions", "members"
   add_foreign_key "membership_applications", "users"
   add_foreign_key "membership_applications", "users", column: "reviewed_by_id"
   add_foreign_key "motions", "agenda_items"

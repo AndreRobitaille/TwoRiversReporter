@@ -47,7 +47,7 @@
         </div>
       <% end %>
       <div class="mt-4 text-sm text-muted">
-        Based on <%= @kb_results.size %> knowledge sources &middot; gpt-5.2
+        Based on <%= @kb_results.size %> knowledge sources &middot; <%= Ai::OpenAiService::DEFAULT_MODEL %>
       </div>
     </div>
   <% end %>

@@ -228,9 +228,11 @@ Height and area exceptions are significant because the city uses them
 to bypass fixing actual ordinances. These are worth tracking as a
 pattern. Conditional use permits (CUPs) should always be surfaced.
 Wisconsin state law requires notice and public comment for CUPs. They
-are zoning variances and residents should be aware of them. Certified
-survey maps, routine plat approvals, and standard subdivision items
-are generally procedural unless tied to a controversial development.
+allow uses that the zoning code lists as conditional; they are legally
+distinct from variances, which relax zoning requirements because of a
+demonstrated hardship. Certified survey maps, routine plat approvals,
+and standard subdivision items are generally procedural unless tied to
+a controversial development.
 
 **Licensing:**
 Alcohol licenses (Class B, operator licenses, temporary beer licenses)

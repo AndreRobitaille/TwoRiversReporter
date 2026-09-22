@@ -27,8 +27,7 @@ class ExtractCommitteeMembersJob < ApplicationJob
       meeting.meeting_attendances.destroy_all
       created_any = create_attendance_records(meeting, data)
 
-      reconcile_memberships(meeting) if meeting.committee_id.present?
-      detect_departures(meeting) if meeting.committee_id.present?
+      Committees::MembershipReconciler.call(meeting.committee) if meeting.committee_id.present?
     end
 
     Rails.logger.info "Extracted #{meeting.meeting_attendances.count} attendees for Meeting #{meeting_id}"
@@ -95,61 +94,6 @@ class ExtractCommitteeMembersJob < ApplicationJob
     end
 
     created
-  end
-
-  def reconcile_memberships(meeting)
-    committee = meeting.committee
-
-    meeting.meeting_attendances.where(attendee_type: %w[voting_member non_voting_staff]).find_each do |attendance|
-      next if CommitteeMembership.current.exists?(committee: committee, member_id: attendance.member_id)
-
-      role = attendance.attendee_type == "voting_member" ? "member" : "staff"
-
-      CommitteeMembership.create!(
-        committee: committee,
-        member_id: attendance.member_id,
-        role: role,
-        source: "ai_extracted",
-        started_on: meeting.starts_at.to_date
-      )
-    end
-  end
-
-  def detect_departures(meeting)
-    committee = meeting.committee
-
-    meetings_with_attendance = Meeting
-      .where(committee: committee)
-      .where("meetings.starts_at <= ?", meeting.starts_at)
-      .where(id: MeetingAttendance.select(:meeting_id))
-      .order(starts_at: :desc)
-      .limit(2)
-
-    recent_meeting_ids = meetings_with_attendance.pluck(:id)
-
-    return if recent_meeting_ids.size < 2
-
-    active_memberships = CommitteeMembership
-      .current
-      .where(committee: committee, source: "ai_extracted")
-
-    active_memberships.find_each do |membership|
-      appears_in_recent = MeetingAttendance
-        .where(meeting_id: recent_meeting_ids, member_id: membership.member_id)
-        .exists?
-
-      next if appears_in_recent
-
-      last_attendance = MeetingAttendance
-        .joins(:meeting)
-        .where(member_id: membership.member_id)
-        .where(meetings: { committee_id: committee.id })
-        .order("meetings.starts_at DESC")
-        .first
-
-      ended_date = last_attendance&.meeting&.starts_at&.to_date || meeting.starts_at.to_date
-      membership.update!(ended_on: ended_date)
-    end
   end
 
   def stamp_processing_state(meeting, status)

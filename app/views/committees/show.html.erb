@@ -31,11 +31,8 @@
             <%= link_to member_path(cm.member), class: "committee-member" do %>
               <span class="committee-member-name"><%= cm.member.name %></span>
               <span class="committee-member-badges">
-                <% if cm.role.present? && cm.role.in?(%w[chair vice_chair]) %>
-                  <span class="badge badge--primary"><%= cm.role.titleize.tr("_", " ") %></span>
-                <% end %>
-                <% if @council_member_ids.include?(cm.member_id) %>
-                  <span class="badge badge--info">Council Member</span>
+                <% membership_badges(cm, council_member_ids: @council_member_ids).each do |badge| %>
+                  <span class="badge badge--<%= badge[:variant] %>"><%= badge[:label] %></span>
                 <% end %>
               </span>
             <% end %>

@@ -4,10 +4,20 @@ class Member < ApplicationRecord
 
   has_many :votes, dependent: :destroy
   has_many :committee_memberships, dependent: :destroy
+  has_many :member_positions, dependent: :destroy
+  has_many :current_member_positions, -> { current }, class_name: "MemberPosition"
   has_many :meeting_attendances, dependent: :destroy
   has_many :member_aliases, dependent: :destroy
   has_many :committees, through: :committee_memberships
   validates :name, presence: true, uniqueness: true
+
+  def primary_current_position
+    current_member_positions.min_by(&:display_priority)
+  end
+
+  def current_position_title
+    primary_current_position&.title
+  end
 
   def self.normalize_name(raw_name)
     raw_name.to_s
@@ -79,6 +89,20 @@ class Member < ApplicationRecord
           membership.destroy!
         else
           membership.update!(member_id: target.id)
+        end
+      end
+
+      # Move current and historical civic positions, avoiding duplicate terms.
+      member_positions.each do |position|
+        duplicate = MemberPosition.find_by(
+          member_id: target.id,
+          kind: position.kind,
+          ended_on: position.ended_on
+        )
+        if duplicate
+          position.destroy!
+        else
+          position.update!(member_id: target.id)
         end
       end
 

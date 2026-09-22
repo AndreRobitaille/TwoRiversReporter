@@ -1,4 +1,24 @@
 <% if examples.any? %>
+  <div class="card mb-4">
+    <div class="card-body flex items-center gap-4">
+      <div class="form-group">
+        <label class="form-label" for="evaluation-model">Evaluation model</label>
+        <select class="form-select w-auto" id="evaluation-model" name="evaluation_model">
+          <% @evaluation_models.each do |value, label| %>
+            <option value="<%= value %>" <%= "selected" if value == "gpt-5.6-terra" %>><%= label %></option>
+          <% end %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="evaluation-reasoning-effort">Reasoning effort</label>
+        <select class="form-select w-auto" id="evaluation-reasoning-effort" name="reasoning_effort">
+          <option value="none" selected>None</option>
+          <option value="low">Low</option>
+        </select>
+      </div>
+      <p class="timestamp">Experimental calls are not saved to prompt history.</p>
+    </div>
+  </div>
   <div class="prompt-examples">
     <% examples.each do |run| %>
       <%= render "prompt_run_card", run: run, template: template %>

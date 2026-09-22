@@ -81,6 +81,8 @@ For multi-pass AI/data pipelines, verify upstream → downstream preservation ex
 ```
 City Website → Scraper Jobs (discover/parse meetings)
   → Document Download → PDF Text Extraction (+ OCR if image scan)
+  → Attendance Extraction (AI, per-meeting factual record)
+  → Attendance-Derived Membership Reconciliation (fallback where no canonical roster exists)
   → Topic Detection & Association (AI) ← runs on agenda parse AND minutes arrival
   → Topic Continuity Analysis (lifecycle derivation)
   → Summarization (topic-aware, with citations)
@@ -94,13 +96,18 @@ City Website → Scraper Jobs (discover/parse meetings)
 YouTube Channel → DiscoverTranscriptsJob (match videos to recent council meetings)
   → DownloadTranscriptJob (fetch auto-captions via yt-dlp)
   → SummarizeMeetingJob (preliminary summary if no minutes; supplementary context when minutes arrive)
+
+Canonical Roster Websites → `rosters:sync` / `rosters:repair`
+  → Source-Backed CommitteeMembership + MemberPosition
 ```
 
 ### Core Domain Models
 
 - **`Topic`** — Central organizing model. Has `status` (approved/proposed/blocked), `review_status`, `lifecycle_status` (active/dormant/resolved/recurring). Linked to meetings via `AgendaItemTopic`. Has aliases, blocklist entries, appearances, status events, summaries.
 - **`Committee`** — Governing body (city board, tax-funded nonprofit, or external). Has `committee_type`, `status` (active/dormant/dissolved), `description` (injected into AI prompts). Linked to meetings via FK, members via `CommitteeMembership`, and historical names via `CommitteeAlias`. Normalizes the free-form `body_name` string.
-- **`MeetingAttendance`** — Per-meeting roll call record. Tracks present/absent/excused with attendee type (voting_member/non_voting_staff/guest). Created by `ExtractCommitteeMembersJob`. Drives automatic CommitteeMembership creation and departure detection (2 consecutive absences from roll call).
+- **`CommitteeMembership`** — Current and historical membership in a body, with role, source, source URL, source-specific title, verification time, and start/end dates. Official/organization/manual rows take precedence over AI-derived attendance fallback.
+- **`MeetingAttendance`** — Per-meeting roll call record. Tracks present/absent/excused with attendee type (voting_member/non_voting_staff/guest). Created by `ExtractCommitteeMembersJob`; it is evidence about one meeting, not the highest authority for a person's current office or a covered canonical roster.
+- **`MemberPosition`** — Durable current-office record for City Council and City Manager titles, sourced from official city pages. Drives display precedence over generic Member/Staff labels independently of a person's role on any one body.
 - **`Meeting`** — Single official meeting. Has documents, agenda items, motions, summaries. `belongs_to :committee` (optional); keeps `body_name` as historical display text.
 - **`MeetingDocument`** — PDF/HTML/transcript artifact. Has `extracted_text`, `text_quality`, `ocr_status`. Page-level text stored in `Extraction` rows. Document types: `agenda_pdf`, `agenda_html`, `packet_pdf`, `packet_html`, `minutes_pdf`, `minutes_html`, `transcript`. Transcript documents store YouTube auto-captions with `text_quality: "auto_transcribed"`.
 - **`Member`** — Public official or committee member. Has canonical `name`, linked via `MemberAlias` for name variants (titles stripped, suffixes removed, last-name-only entries auto-aliased). `Member.resolve(raw_name)` centralizes normalization + alias lookup + auto-aliasing. Merge duplicates via `Member#merge_into!(target)`.
@@ -114,7 +121,13 @@ YouTube Channel → DiscoverTranscriptsJob (match videos to recent council meeti
 ### Key Services
 
 - **`Ai::OpenAiService`** — All OpenAI calls centralized here. Two model constants: `DEFAULT_MODEL` (gpt-5.2, reasoning) and `LIGHTWEIGHT_MODEL` (gpt-5.4-mini, for cheap tasks like description generation). Note: the `-mini` models do **not** support the `temperature` parameter — the API returns 400 if you set it. Key summary methods use a two-pass architecture: `analyze_topic_briefing` / `render_topic_briefing` (rolling briefings) and `analyze_topic_summary` / `render_topic_summary` (per-meeting snapshots). Prompts loaded from `PromptTemplate` (database); no hardcoded fallback — missing templates raise `RecordNotFound`. When using `response_format: { type: "json_object" }`, messages MUST contain the word "json" or OpenAI returns 400.
+- **`CanonicalRosters::*`** — Fetches fail-closed snapshots from the official City Council and City Manager pages and the published Explore Two Rivers and Main Street rosters. `Synchronizer` applies stronger source data transactionally and preserves manual overrides.
+- **`Committees::MembershipReconciler`** — Uses the two most recent attendance-bearing meetings as fallback and cleanup. It mutates only `ai_extracted` rows, creates them only when the body lacks a current canonical roster, and never displaces manual or source-backed rosters.
 - Other services (`RetrievalService`, `VectorService`, `Topics::*`, `GeneratedImages::*`) are discoverable under `app/services/`. All OpenAI usage routes through `Ai::OpenAiService` regardless of caller.
+
+Committee roster authority, parser safeguards, source precedence, repair
+commands, and current coverage gaps are documented in
+`docs/superpowers/specs/2026-09-03-canonical-committee-rosters-design.md`.
 
 ### Authentication & Membership
 
@@ -211,4 +224,3 @@ Live at `https://tworiversmatters.com` (Hetzner VPS, Kamal 2, Docker + pgvector)
 - **Four admin regression guards, all mutation-proven** — do not weaken one to make a change pass. `test/models/admin/navigation_test.rb` and `test/controllers/admin/navigation_consistency_test.rb` (nav routes resolve; sidebar and dashboard agree), `test/views/admin_view_hygiene_test.rb` (no admin view *or helper* names an undefined class; no inline `style=`), and `test/assets/admin_stylesheet_test.rb` (no hex in admin.css; utility list matches section 4; scoped rules do not silently clobber). The class/style guards scan both HTML attribute form (`class="…"`) and Rails helper form (`class: "…"`), plus escaped markup inside helper strings — earlier versions matched only the first and hid ten undefined classes.
 - **SVG motifs** — Reusable partials in `app/views/shared/` (`_atom_marker`, `_diamond_divider`, `_starburst`, `_boomerang`, `_radar_sweep`). Atom marker and diamond divider used in both themes; starburst/boomerang are Living Room only; radar sweep is Silo only.
 - **Typography roles** — Outfit (display: headings, stats, nav labels, always uppercase), Space Grotesk (body: paragraphs, buttons, forms), DM Mono (data: metadata, timestamps, status chips, always uppercase with wide tracking).
-

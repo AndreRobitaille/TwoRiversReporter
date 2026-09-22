@@ -42,7 +42,11 @@
         <div class="form-group">
           <div class="flex items-center gap-4">
             <%= form.label :model_tier, "Model Tier", class: "form-label mb-0" %>
-            <%= form.select :model_tier, [["Default (GPT-5.2)", "default"], ["Lightweight (GPT-5-mini)", "lightweight"]], {}, class: "form-select w-auto" %>
+            <%= form.select :model_tier, [
+              ["Heavy (#{Ai::OpenAiService::HEAVY_MODEL})", "heavy"],
+              ["Default (#{Ai::OpenAiService::DEFAULT_MODEL})", "default"],
+              ["Lightweight (#{Ai::OpenAiService::LIGHTWEIGHT_MODEL})", "lightweight"]
+            ], {}, class: "form-select w-auto" %>
           </div>
         </div>
 

@@ -70,6 +70,8 @@ class Admin::PromptTemplatesControllerTest < ActionDispatch::IntegrationTest
     get edit_admin_prompt_template_url(@template)
     assert_response :success
     assert_select "[data-tab='examples']"
+    assert_select "select[name='evaluation_model'] option[value='gpt-5.6-terra']"
+    assert_select "select[name='reasoning_effort'] option[value='none']"
   end
 
   test "edit shows empty state when no examples exist" do
@@ -94,7 +96,9 @@ class Admin::PromptTemplatesControllerTest < ActionDispatch::IntegrationTest
 
     # Stub OpenAI client to avoid real API calls
     mock_response = {
-      "choices" => [ { "message" => { "content" => '{"test": true}' } } ]
+      "model" => "gpt-5.6-terra",
+      "choices" => [ { "message" => { "content" => '{"test": true}' }, "finish_reason" => "stop" } ],
+      "usage" => { "prompt_tokens" => 10, "completion_tokens" => 5, "total_tokens" => 15 }
     }
     mock_client = Minitest::Mock.new
     mock_client.expect :chat, mock_response do |parameters:|
@@ -105,10 +109,13 @@ class Admin::PromptTemplatesControllerTest < ActionDispatch::IntegrationTest
       post test_run_admin_prompt_template_url(@template), params: {
         prompt_run_id: run.id,
         system_role: "You are an updated assistant",
-        instructions: "Do {{thing}} with {{stuff}} differently"
+        instructions: "Do {{thing}} with {{stuff}} differently",
+        evaluation_model: "gpt-5.6-terra",
+        reasoning_effort: "none"
       }, headers: { "Accept" => "text/html" }
 
       assert_response :success
+      assert_select ".test-comparison", text: /gpt-5.6-terra/
     end
 
     mock_client.verify

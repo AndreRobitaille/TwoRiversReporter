@@ -95,7 +95,7 @@ class CommitteesController < ApplicationController
     @memberships = @committee.committee_memberships
       .where(ended_on: nil)
       .where.not(role: %w[staff non_voting])
-      .includes(:member)
+      .includes(member: :current_member_positions)
 
     city_council = Committee.find_by(name: "City Council")
     @council_member_ids = if city_council && city_council.id != @committee.id
