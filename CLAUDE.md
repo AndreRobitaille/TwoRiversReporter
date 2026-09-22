@@ -36,6 +36,17 @@ If guidance overlaps, follow this order:
 - Session lifetime, step-up reauthentication, IP or device matching → `docs/superpowers/specs/2026-07-25-session-and-reauthentication-hardening-design.md`
 - Admin navigation, admin styling, or any `/admin` page → `docs/superpowers/specs/2026-07-26-admin-ui-revamp-design.md`
 
+## Production SSH prerequisite
+
+Before any production SSH command, including read-only checks, follow the
+**Mandatory persistent SSH tunnel** procedure in
+`.claude/skills/deploying/SKILL.md`. Establish and verify one tunnel first;
+route SSH, Kamal/Net::SSH, Docker/buildx, and post-deploy verification through
+it. Never try direct connections first or treat the tunnel as an optional
+workaround. If it fails, stop remote work instead of retrying fresh SSH
+connections. Keep it alive until verification finishes, then clean it up.
+Older memory instructions that make this optional are superseded.
+
 ## Commands
 
 Standard Rails and Omakase invocations (`bin/setup`, `bin/dev`, `bin/jobs`, `bin/rails test`, `bin/rubocop`, `bin/rails console`, `bin/rails db:migrate`) work as expected. Project-specific tasks:
@@ -195,7 +206,7 @@ Layout, helper, and data-flow detail for the homepage, topic show page, meeting 
 
 ## Production Deployment
 
-Live at `https://tworiversmatters.com` (Hetzner VPS, Kamal 2, Docker + pgvector). Deploy commands, infrastructure, secrets, recurring jobs, and the mandatory **deploy-before-`prompt_templates:populate`** ordering live in the **`deploying` skill** (`.claude/skills/deploying/SKILL.md`). Invoke it before any production operation.
+Live at `https://tworiversmatters.com` (Hetzner VPS, Kamal 2, Docker + pgvector). Deploy commands, infrastructure, secrets, recurring jobs, and the mandatory **deploy-before-`prompt_templates:populate`** ordering live in the **`deploying` skill** (`.claude/skills/deploying/SKILL.md`). Read it before any production operation. Its persistent tunnel prerequisite applies to read-only inspection as well as deployment.
 
 ## Conventions
 
@@ -206,7 +217,7 @@ Live at `https://tworiversmatters.com` (Hetzner VPS, Kamal 2, Docker + pgvector)
 - **AI calls go through `Ai::OpenAiService`** — Don't scatter OpenAI API calls elsewhere. Committee context injected via `prepare_committee_context` (database-driven, not hardcoded).
 - **Generated civic images** — Topic generation is limited to the homepage top-six pool; meeting generation requires substantive structured content. Generated images are `GeneratedImage` records with ActiveStorage attachments, provenance, prompt/model/size metadata, superseding behavior, and admin repair controls: regenerate, custom prompt, upload, and disable.
 - **Visual direction** — Generated civic images should resemble restrained local newspaper/editorial photos, not cartoons, vector art, AI explainer graphics, or symbolic collages. Use one dominant resident-visible physical anchor; do not try to show every meeting item. Prefer streets, curbs, sidewalks, utility infrastructure, homes, parks, lakefront/beach access, and public facilities. For named/specific local places or landmarks, use cropped non-identifying details rather than a full invented stand-in. Admin upload override is expected for hard local-facility cases. Rendering: homepage top-six cards use a small fixed side thumbnail (≈200×134 top stories, ≈104×78 wire cards) with no overlay label and no topic description; topic/meeting detail pages show an edge-to-edge feature image with a drop shadow and an "AI image" cutline. The `/topics` and `/meetings` index cards show a fixed 3:2 thumbnail (≈132px, matches the source aspect so it isn't over-cropped) when an image exists — floated-right inside the card body with the text wrapping around it on both topic and meeting cards (description dropped on topic cards). The float pattern keeps text readable at mobile widths instead of crushing it into a narrow column beside a fixed image; a `::after` clearfix on the body reserves the thumbnail height on short cards. Index/home image data is batch-loaded via the `LoadsGeneratedImages` controller concern (`generated_images_for(records, surface:)`). Image-less cards/pages omit the image with no reserved space (image-present layouts gated by a `--with-image` modifier class).
-- **Generated image operations** — Image generation uses `Ai::OpenAiService#generate_civic_image` and defaults to `gpt-image-1` at `1536x1024`. After editing `lib/prompt_template_data.rb`, run `bin/rails prompt_templates:populate` locally before manual regeneration so the database prompt reflects code. For production, deploy first, then run `bin/kamal app exec "bin/rails prompt_templates:populate"` before regenerating images.
+- **Generated image operations** — Image generation uses `Ai::OpenAiService#generate_civic_image` and defaults to `gpt-image-1` at `1536x1024`. After editing `lib/prompt_template_data.rb`, run `bin/rails prompt_templates:populate` locally before manual regeneration so the database prompt reflects code. For production, deploy first, then run `trr_kamal app exec "bin/rails prompt_templates:populate"` (the tunnel-bound function from that playbook) before regenerating images.
 - **Summaries require citations** — All factual claims must trace to document artifacts (e.g., `[Packet Page 12]`).
 - **Separate fact from inference** — Topic summaries distinguish factual record, institutional framing, and civic sentiment.
 - **Credentials** — Encrypted in `config/credentials.yml.enc`, decrypted via `config/master.key` (gitignored). Access via `Rails.application.credentials.<key>`.

@@ -1,26 +1,143 @@
 ---
 name: deploying
-description: Use when deploying TwoRiversReporter to production, running commands against the live server, or shipping prompt-template changes. Covers Kamal 2 deploy commands, the Hetzner/Docker/pgvector infrastructure, secrets sourcing, recurring jobs, and the mandatory deploy-before-populate ordering for prompt templates.
+description: Use when deploying TwoRiversReporter to production, running commands against the live server, or shipping prompt-template changes. Requires one verified persistent SSH tunnel for all production SSH operations, including read-only checks. Covers Kamal 2 deploy commands, the Hetzner/Docker/pgvector infrastructure, secrets sourcing, recurring jobs, and the mandatory deploy-before-populate ordering for prompt templates.
 ---
 
 # Production Deployment
 
 **Live at:** `https://tworiversmatters.com`
 
+## Mandatory persistent SSH tunnel
+
+**Establish and verify one persistent tunnel before the first production SSH
+operation, including read-only inspection.** Reuse it for the entire operation:
+SSH, Kamal/Net::SSH, Docker/buildx, and post-deploy checks. Do not start with
+direct SSH, create parallel outer connections, or use the tunnel only after
+failures. This rule supersedes older optional-tunnel memory recipes.
+
+OpenSSH multiplexing alone is insufficient: Kamal uses Net::SSH and Docker
+can select a different SSH transport or builder. Explicitly route both through
+the local forward. Public HTTPS probes can run without the tunnel.
+
+### Establish once, then verify
+
+Run the following in one persistent Bash shell from the repository root. Keep
+that shell and its environment for all subsequent commands. Do not run setup
+in a short-lived tool call whose exit trap would immediately close the tunnel.
+Required local commands: `ssh`, `socat`, `ruby`, `docker`, and `bin/kamal`.
+If port `22222` is already occupied, identify its owner and reuse a verified
+session or stop; do not kill an unknown listener.
+
+```bash
+set -e
+TRR_DEPLOY_DIR=$(mktemp -d /tmp/trr-deploy.XXXXXX)
+export TRR_DEPLOY_DIR
+TRR_SSH_SOCKET="$TRR_DEPLOY_DIR/control"
+trr_cleanup() {
+  if [ -S "$TRR_SSH_SOCKET" ]; then
+    /usr/bin/ssh -F /dev/null -S "$TRR_SSH_SOCKET" -O exit root@178.156.250.235
+  fi
+  rm -rf -- "$TRR_DEPLOY_DIR"
+}
+trap trr_cleanup EXIT
+
+/usr/bin/ssh -F /dev/null -i /home/andre/.ssh/andreg7-id_ed25519 \
+  -o IdentityAgent=none -o IdentitiesOnly=yes -o BatchMode=yes \
+  -o ConnectTimeout=15 -o ExitOnForwardFailure=yes \
+  -o ServerAliveInterval=30 -o ServerAliveCountMax=6 \
+  -M -S "$TRR_SSH_SOCKET" -fN \
+  -L 127.0.0.1:22222:127.0.0.1:22 root@178.156.250.235
+/usr/bin/ssh -F /dev/null -S "$TRR_SSH_SOCKET" -O check root@178.156.250.235
+
+mkdir "$TRR_DEPLOY_DIR/bin"
+cat > "$TRR_DEPLOY_DIR/bin/ssh" <<'SSH'
+#!/bin/sh
+exec /usr/bin/ssh -F /dev/null -o BatchMode=yes -o ConnectTimeout=15 \
+  -o IdentityAgent=none -o IdentitiesOnly=yes \
+  -o 'ProxyCommand=socat - TCP:127.0.0.1:22222' \
+  -i /home/andre/.ssh/andreg7-id_ed25519 "$@"
+SSH
+chmod 700 "$TRR_DEPLOY_DIR/bin/ssh"
+export PATH="$TRR_DEPLOY_DIR/bin:$PATH"
+ssh root@178.156.250.235 true
+```
+
+The last command must succeed through the forward before continuing. The SSH
+wrapper has no direct-connection fallback if the tunnel disappears.
+
+### Route Kamal and Docker through the same tunnel
+
+Create a temporary config from the tracked deployment config. Keep the real
+server address for host identity; the proxy supplies the transport. Do not
+commit machine-specific transport settings or replace the shared config.
+
+```bash
+ruby -ryaml <<'RUBY'
+config = YAML.load_file("config/deploy.yml")
+config["ssh"] = {
+  "config" => false,
+  "keys" => ["/home/andre/.ssh/andreg7-id_ed25519"],
+  "keys_only" => true,
+  "proxy_command" => "socat - TCP:127.0.0.1:22222"
+}
+config["builder"]["local"] = false
+config["builder"]["remote"] = "ssh://root@178.156.250.235"
+File.write(File.join(ENV.fetch("TRR_DEPLOY_DIR"), "deploy.yml"), YAML.dump(config))
+RUBY
+export DOCKER_HOST=ssh://root@178.156.250.235
+unset DOCKER_CONTEXT BUILDX_BUILDER
+source .env
+export TWO_RIVERS_REPORTER_DATABASE_PASSWORD
+trr_kamal() {
+  /usr/bin/ssh -F /dev/null -S "$TRR_SSH_SOCKET" -O check root@178.156.250.235 || return
+  bin/kamal "$@" -c "$TRR_DEPLOY_DIR/deploy.yml"
+}
+docker version
+```
+
+Use `trr_kamal` for **every** command below; bare `bin/kamal` bypasses this
+configuration. Docker's SSH subprocesses must use the wrapper on `PATH`.
+Confirm the selected buildx builder uses the remote SSH endpoint. Merely setting
+`DOCKER_HOST` does not override a builder pinned to `/var/run/docker.sock`.
+If a command selects a local builder or direct transport, stop and correct its
+configuration before running it again.
+
+### Failure, verification, and cleanup
+
+- If tunnel establishment or verification fails, stop remote operations. Report
+  the exact failure and whether production was changed. Do not retry in a loop,
+  run parallel connection probes, or fall back to direct SSH. A timeout alone
+  does not establish whether the cause is throttling, firewall, or availability.
+- If a previously working tunnel dies, stop dependent processes and clean up
+  that session. After a cooldown, make at most one replacement attempt; if it
+  fails, leave production work blocked and report it.
+- Through the verified tunnel, identify the running image revision before
+  deployment. Preserve that code when reconciling branches; a merged PR alone
+  is not proof that the new commit is deployed.
+- Keep the tunnel open through exact-revision/container verification and recent
+  log inspection. Check `/up`, `/`, and `/session/new` for 200 and anonymous
+  `/admin` for a redirect to `/session/new` over HTTPS.
+- Exit the persistent shell to run its cleanup trap on success or failure.
+  Verify the control socket and temporary directory are gone and port `22222`
+  is closed. Preserve unrelated worktree files. Never report deployment complete
+  without verifying the intended revision is running.
+
 ## Deploy Commands
+
+All commands below require the verified tunnel and `trr_kamal` function above.
 
 | Task | Command |
 |------|---------|
-| Full deploy | `source .env && export TWO_RIVERS_REPORTER_DATABASE_PASSWORD && bin/kamal deploy` |
-| First-time setup | `source .env && export TWO_RIVERS_REPORTER_DATABASE_PASSWORD && bin/kamal setup` |
-| Rails console (prod) | `bin/kamal console` |
-| Tail logs | `bin/kamal logs` |
-| Shell into container | `bin/kamal shell` |
-| DB console | `bin/kamal dbc` |
-| Reboot app | `bin/kamal app boot` |
-| Run a job | `bin/kamal app exec "bin/rails runner 'JobClass.perform_now(id)'"` |
+| Full deploy | `trr_kamal deploy` |
+| First-time setup | `trr_kamal setup` |
+| Rails console (prod) | `trr_kamal console` |
+| Tail logs | `trr_kamal logs` |
+| Shell into container | `trr_kamal shell` |
+| DB console | `trr_kamal dbc` |
+| Reboot app | `trr_kamal app boot` |
+| Run a job | `trr_kamal app exec "bin/rails runner 'JobClass.perform_now(id)'"` |
 
-**Gotcha:** all `bin/kamal` commands require the env vars exported first (`source .env && export TWO_RIVERS_REPORTER_DATABASE_PASSWORD`). `.env` keys are not auto-exported to Kamal; prefer `env: clear:` in `deploy.yml` for non-secrets.
+**Gotcha:** all `trr_kamal` commands require the env vars exported first (`source .env && export TWO_RIVERS_REPORTER_DATABASE_PASSWORD`). `.env` keys are not auto-exported to Kamal; prefer `env: clear:` in `deploy.yml` for non-secrets.
 
 ## Automated Runtime Maintenance
 
@@ -60,8 +177,8 @@ After editing `lib/prompt_template_data.rb`, production ordering matters:
 1. Validate locally with `bin/rubocop` and `bin/rails prompt_templates:validate`
 2. Update the local DB with `bin/rails prompt_templates:populate` if needed
 3. Commit and push
-4. Run `bin/kamal deploy`
-5. Then run `bin/kamal app exec "bin/rails prompt_templates:populate"`
+4. Run `trr_kamal deploy`
+5. Then run `trr_kamal app exec "bin/rails prompt_templates:populate"`
 
 `prompt_templates:populate` on prod reads from the running image, not your local filesystem. If you skip deploy, you can repopulate the database from stale code.
 
@@ -166,7 +283,7 @@ six transactional ids and nothing else:
   `LoopsDelivery::MissingApiKey` on every sign-in attempt. It is uniform across
   all three branches, so it is not an enumeration oracle — but it is the whole
   front door, and sign-in is the only way in. Verify it separately:
-  `bin/kamal app exec 'bin/rails runner "puts LoopsDelivery.configured?"'`
+  `trr_kamal app exec 'bin/rails runner "puts LoopsDelivery.configured?"'`
   must print `true`.
 - `ADMIN_NOTIFICATION_EMAIL` is also send-time only, raised from
   `TransactionalEmail.admin_application_notifications`. Its absence breaks the
@@ -200,7 +317,7 @@ including a `-preauth-` dump taken before the migration that dropped the
 password, TOTP and recovery-code columns.
 
 ```bash
-ssh root@178.156.250.235 \
+"$TRR_DEPLOY_DIR/bin/ssh" root@178.156.250.235 \
   "docker exec two_rivers_reporter-db pg_dump -U two_rivers_reporter two_rivers_reporter_production" \
   | gzip > ~/backups/tworivers/two_rivers_reporter_production-$(date -u +%Y%m%dT%H%M%SZ).sql.gz
 ```
@@ -246,7 +363,7 @@ first and confirm the owner's is not among them. Run this **against the old imag
 180 days in the container you are about to replace:
 
 ```bash
-bin/kamal app exec "bin/rails runner 'doomed = Session.where(\"last_seen_at IS NULL OR last_seen_at < ?\", 60.days.ago); owner = User.find_by(email_address: \"andre@xyzmodem.com\"); puts \"sessions total: \" + Session.count.to_s; puts \"invalidated by the 60-day rule: \" + doomed.count.to_s; puts \"owner sessions invalidated: \" + doomed.where(user_id: owner.id).count.to_s'"
+trr_kamal app exec "bin/rails runner 'doomed = Session.where(\"last_seen_at IS NULL OR last_seen_at < ?\", 60.days.ago); owner = User.find_by(email_address: \"andre@xyzmodem.com\"); puts \"sessions total: \" + Session.count.to_s; puts \"invalidated by the 60-day rule: \" + doomed.count.to_s; puts \"owner sessions invalidated: \" + doomed.where(user_id: owner.id).count.to_s'"
 ```
 
 If the owner's count is anything but `0`, sign in again from the browser you intend to deploy from
@@ -261,7 +378,7 @@ Confirm the backfill first. Both counts must be `0`; a session missing `ip_prefi
 `ip_address` means the backfill did not run, and every live member would be challenged at once:
 
 ```bash
-bin/kamal app exec "bin/rails runner 'puts \"sessions: \" + Session.count.to_s; puts \"missing ip_prefix: \" + Session.where(ip_prefix: nil).where.not(ip_address: nil).count.to_s; puts \"missing reauthenticated_at: \" + Session.where(reauthenticated_at: nil).count.to_s'"
+trr_kamal app exec "bin/rails runner 'puts \"sessions: \" + Session.count.to_s; puts \"missing ip_prefix: \" + Session.where(ip_prefix: nil).where.not(ip_address: nil).count.to_s; puts \"missing reauthenticated_at: \" + Session.where(reauthenticated_at: nil).count.to_s'"
 ```
 
 Then walk it in a browser, on `https://tworiversmatters.com`:
@@ -296,7 +413,7 @@ on — the recipes below target the most recently seen session, which is the wro
 several:
 
 ```bash
-bin/kamal app exec "bin/rails runner 'User.find_by(email_address: \"andre@xyzmodem.com\").sessions.order(:last_seen_at).each { |s| puts s.slice(:id, :ip_address, :ip_prefix, :device_fingerprint, :reauthenticated_at, :last_seen_at).inspect }'"
+trr_kamal app exec "bin/rails runner 'User.find_by(email_address: \"andre@xyzmodem.com\").sessions.order(:last_seen_at).each { |s| puts s.slice(:id, :ip_address, :ip_prefix, :device_fingerprint, :reauthenticated_at, :last_seen_at).inspect }'"
 ```
 
 **Re-anchor** a session to the network and browser the next request will actually come from. This is
@@ -309,7 +426,7 @@ curl -s https://api.ipify.org; echo
 ```
 
 ```bash
-bin/kamal app exec "bin/rails runner 'ip = \"203.0.113.45\"; s = User.find_by(email_address: \"andre@xyzmodem.com\").sessions.order(:last_seen_at).last; s.update_columns(ip_prefix: NetworkPrefix.for(ip), device_fingerprint: DeviceFingerprint.for(s.user_agent), reauthenticated_at: Time.current); puts s.slice(:id, :ip_prefix, :device_fingerprint, :reauthenticated_at).inspect'"
+trr_kamal app exec "bin/rails runner 'ip = \"203.0.113.45\"; s = User.find_by(email_address: \"andre@xyzmodem.com\").sessions.order(:last_seen_at).last; s.update_columns(ip_prefix: NetworkPrefix.for(ip), device_fingerprint: DeviceFingerprint.for(s.user_agent), reauthenticated_at: Time.current); puts s.slice(:id, :ip_prefix, :device_fingerprint, :reauthenticated_at).inspect'"
 ```
 
 Substitute the real address for `203.0.113.45`. That command keeps the browser half of the anchor,
@@ -318,7 +435,7 @@ changed. If you are moving the session to a **different browser**, paste that br
 string in as well:
 
 ```bash
-bin/kamal app exec "bin/rails runner 'ip = \"203.0.113.45\"; ua = \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36\"; s = User.find_by(email_address: \"andre@xyzmodem.com\").sessions.order(:last_seen_at).last; s.update_columns(ip_prefix: NetworkPrefix.for(ip), device_fingerprint: DeviceFingerprint.for(ua), reauthenticated_at: Time.current); puts s.slice(:id, :ip_prefix, :device_fingerprint, :reauthenticated_at).inspect'"
+trr_kamal app exec "bin/rails runner 'ip = \"203.0.113.45\"; ua = \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36\"; s = User.find_by(email_address: \"andre@xyzmodem.com\").sessions.order(:last_seen_at).last; s.update_columns(ip_prefix: NetworkPrefix.for(ip), device_fingerprint: DeviceFingerprint.for(ua), reauthenticated_at: Time.current); puts s.slice(:id, :ip_prefix, :device_fingerprint, :reauthenticated_at).inspect'"
 ```
 
 The User-Agent goes inside the Ruby script, which is itself inside single quotes inside the shell's
@@ -334,7 +451,7 @@ admin gate honours a recent step-up as well as a matching context, which is what
 but it expires, and it does **not** open passkey add or remove, which require the context to match:
 
 ```bash
-bin/kamal app exec "bin/rails runner 's = User.find_by(email_address: \"andre@xyzmodem.com\").sessions.order(:last_seen_at).last; s.update_columns(reauthenticated_at: Time.current); puts s.slice(:id, :ip_prefix, :device_fingerprint, :reauthenticated_at).inspect'"
+trr_kamal app exec "bin/rails runner 's = User.find_by(email_address: \"andre@xyzmodem.com\").sessions.order(:last_seen_at).last; s.update_columns(reauthenticated_at: Time.current); puts s.slice(:id, :ip_prefix, :device_fingerprint, :reauthenticated_at).inspect'"
 ```
 
 **Last resort**, if a session is beyond saving: destroy it and sign in again. A new session records
@@ -342,5 +459,5 @@ the correct context on arrival, and `start_new_session_for` stamps `reauthentica
 passkey setup works immediately:
 
 ```bash
-bin/kamal app exec "bin/rails runner 'User.find_by(email_address: \"andre@xyzmodem.com\").sessions.destroy_all; puts \"sessions destroyed; sign in again\"'"
+trr_kamal app exec "bin/rails runner 'User.find_by(email_address: \"andre@xyzmodem.com\").sessions.destroy_all; puts \"sessions destroyed; sign in again\"'"
 ```
