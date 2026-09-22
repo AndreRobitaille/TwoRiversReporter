@@ -15,6 +15,8 @@ module MeetingsHelper
   end
 
   def meeting_status_badge(meeting)
+    return tag.span(meeting.cancellation_notice, class: "badge badge--warning") if meeting.cancelled?
+
     return [] unless meeting.starts_at
 
     upcoming = meeting.starts_at > Time.current - MEETING_BUFFER
@@ -77,10 +79,14 @@ module MeetingsHelper
   PRODUCTION_HOST = "tworiversmatters.com".freeze
 
   def share_text(meeting, summary)
+    return meeting.cancellation_notice if meeting.cancelled?
+
     share_text_body(meeting, summary, include_headline: true)
   end
 
   def facebook_share_text(meeting, summary)
+    return meeting.cancellation_notice if meeting.cancelled?
+
     prepend = facebook_share_prepend(meeting, summary)
     return share_text(meeting, summary) if prepend.blank?
 
@@ -92,6 +98,8 @@ module MeetingsHelper
   SUMMARY_TYPE_PRIORITY = %w[minutes_recap transcript_recap packet_analysis agenda_preview].freeze
 
   def meeting_share_description(meeting)
+    return meeting.cancellation_notice if meeting.cancelled?
+
     summary = preferred_meeting_summary(meeting)
     headline = summary&.generation_data&.dig("headline")
     # The headline is the lede, and a gated visitor only sees the first
@@ -129,6 +137,8 @@ module MeetingsHelper
   end
 
   def best_headline(meeting)
+    return meeting.cancellation_notice if meeting.cancelled?
+
     summary = preferred_meeting_summary(meeting)
     return nil unless summary
     meeting_headline(summary.generation_data)

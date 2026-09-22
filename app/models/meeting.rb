@@ -19,14 +19,42 @@ class Meeting < ApplicationRecord
   def self.normalized_body_name(name)
     name.to_s
       .downcase
-      .gsub(/\b(cancelled|canceled)\b/, " ")
+      .sub(/\b(cancelled|canceled|no quorum)\b.*\z/, " ")
       .gsub(/\bmeeting\b/, " ")
       .gsub(/[^a-z0-9]+/, " ")
       .squish
   end
 
   def duplicate_identity_key
-    [ starts_at, self.class.normalized_body_name(body_name) ]
+    return [ :undated, id ] unless starts_at
+
+    [ starts_at, committee_id ? [ :committee, committee_id ] : [ :body, self.class.normalized_body_name(body_name) ] ]
+  end
+
+  def cancelled?
+    status == "cancelled" || body_name.to_s.match?(/\b(cancelled|canceled|no quorum)\b/i)
+  end
+
+  def cancellation_notice
+    return unless cancelled?
+
+    body_name.to_s.match?(/\bno quorum\b/i) ? "Meeting canceled — no quorum." : "Meeting canceled."
+  end
+
+  def identity_matches
+    return self.class.where(id: id) if starts_at.nil?
+
+    candidates = self.class.where(starts_at: starts_at)
+    return candidates.where(committee_id: committee_id) if committee_id
+
+    candidates.where(committee_id: nil).select { |meeting| meeting.duplicate_identity_key == duplicate_identity_key }
+  end
+
+  def self.preferred_duplicate(meetings)
+    meetings.max_by do |meeting|
+      has_content = meeting.meeting_documents.any? || meeting.meeting_summaries.any?
+      [ meeting.cancelled? ? 1 : 0, has_content ? 1 : 0, -meeting.id ]
+    end
   end
 
   def latest_document(document_type)

@@ -90,6 +90,10 @@
     </div>
   </header>
 
+  <% if @meeting.cancelled? %>
+    <div class="transcript-banner"><%= @meeting.cancellation_notice %> Posted agenda items describe planned business, not actions taken.</div>
+  <% end %>
+
   <% if @summary&.generation_data&.dig("source_type") == "transcript" %>
     <div class="transcript-banner">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -316,7 +320,7 @@
       </section>
     <% end %>
 
-  <% else %>
+  <% elsif !@meeting.cancelled? %>
     <p class="section-empty">No summary available for this meeting yet.</p>
   <% end %>
 

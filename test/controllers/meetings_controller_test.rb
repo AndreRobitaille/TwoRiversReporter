@@ -126,8 +126,8 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     listed = assigns(:upcoming_enriched) + assigns(:upcoming_thin)
-    assert_includes listed, original
-    refute_includes listed, duplicate
+    assert_includes listed, duplicate
+    refute_includes listed, original
   end
 
   test "index collapses duplicate recent meetings with same date and normalized name" do
@@ -718,5 +718,40 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     get meeting_url(@meeting)
     assert_response :success
     refute_match(/Preview based on the posted agenda/, response.body)
+  end
+  test "same committee event with cancellation appears once in index and search and redirects old links" do
+    committee = Committee.create!(name: "Environmental Advisory Board")
+    starts_at = 2.days.ago.change(usec: 0)
+    original = Meeting.create!(committee: committee, starts_at: starts_at,
+      body_name: "EAB Original Name", detail_page_url: "https://example.com/eab")
+    cancelled = Meeting.create!(committee: committee, starts_at: starts_at,
+      body_name: "Environmental Advisory Board - CANCELED - No quorum", detail_page_url: "https://example.com/eab-cancelled")
+    [ original, cancelled ].each do |meeting|
+      meeting.meeting_summaries.create!(summary_type: "agenda_preview", generation_data: { "headline" => "STALE planned business canary" })
+      meeting.meeting_documents.create!(document_type: "agenda_pdf", source_url: "https://example.com/eab.pdf")
+    end
+    cancelled.update!(body_name: "Environmental Advisory Board", status: "held")
+    get meeting_url(original)
+    assert_response :success
+    assert_includes response.body, "STALE planned business canary"
+    cancelled.update!(body_name: "Environmental Advisory Board - CANCELED - No quorum")
+
+    get meetings_url
+    listed = assigns(:recent_enriched) + assigns(:recent_thin)
+    assert_includes listed, cancelled
+    refute_includes listed, original
+    assert_select ".meetings-card", text: /Meeting canceled — no quorum/
+
+    get meetings_url, params: { q: "EAB Original Name" }
+    assert_equal [ cancelled.id ], assigns(:search_results).map(&:id)
+    get meeting_url(original)
+    assert_redirected_to meeting_url(cancelled)
+    get meeting_url(cancelled)
+    assert_response :success
+    assert_nil assigns(:summary)
+    refute_includes response.body, "STALE planned business canary"
+    assert_select ".transcript-banner", text: /Meeting canceled — no quorum/
+    assert Meeting.exists?(original.id)
+    assert_equal 2, MeetingDocument.where(meeting_id: [ original.id, cancelled.id ]).count
   end
 end

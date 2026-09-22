@@ -88,27 +88,35 @@ module Scrapers
         end
       end
 
-      # Upsert Meeting
-      meeting = find_existing_meeting(starts_at, title_text, detail_url)
-      preserve_existing_details = preserve_existing_details?(meeting, title_text)
+      Meeting.transaction do
+        # Serialize discovery of the same event, including concurrent scraper runs.
+        group = Committee.resolve(title_text)&.id || Meeting.normalized_body_name(title_text)
+        identity = "meeting:#{group}:#{starts_at.utc.iso8601(6)}"
+        connection = Meeting.connection
+        connection.execute("SELECT pg_advisory_xact_lock(hashtext(#{connection.quote(identity)}))")
 
-      # Update attributes
-      meeting.detail_page_url = detail_url unless preserve_existing_details
-      meeting.starts_at = starts_at
-      meeting.body_name = title_text unless preserve_existing_details
-      meeting.committee = Committee.resolve(title_text) unless preserve_existing_details
-      meeting.meeting_type = "regular" # Default, can be refined later
-      meeting.status = determine_status(starts_at)
+        # Upsert Meeting
+        meeting = find_existing_meeting(starts_at, title_text, detail_url)
+        preserve_existing_details = preserve_existing_details?(meeting, title_text)
 
-      if meeting.committee_id.blank? && meeting.body_name.present?
-        Rails.logger.warn "DiscoverMeetingsJob: No committee match for body_name='#{meeting.body_name}'"
-      end
+        # Update attributes
+        meeting.detail_page_url = detail_url unless preserve_existing_details
+        meeting.starts_at = starts_at
+        meeting.body_name = title_text unless preserve_existing_details
+        meeting.committee = Committee.resolve(title_text) unless preserve_existing_details
+        meeting.meeting_type = "regular" # Default, can be refined later
+        meeting.status = meeting.cancelled? ? "cancelled" : determine_status(starts_at)
 
-      if meeting.save
-        Scrapers::ParseMeetingPageJob.perform_later(meeting.id) if enqueue_parse_jobs
-        meeting.id
-      else
-        Rails.logger.error("DiscoverMeetingsJob: Failed to save meeting (#{detail_url}): #{meeting.errors.full_messages.join(', ')}")
+        if meeting.committee_id.blank? && meeting.body_name.present?
+          Rails.logger.warn "DiscoverMeetingsJob: No committee match for body_name='#{meeting.body_name}'"
+        end
+
+        if meeting.save
+          Scrapers::ParseMeetingPageJob.perform_later(meeting.id) if enqueue_parse_jobs
+          meeting.id
+        else
+          Rails.logger.error("DiscoverMeetingsJob: Failed to save meeting (#{detail_url}): #{meeting.errors.full_messages.join(', ')}")
+        end
       end
     end
 
@@ -118,27 +126,29 @@ module Scrapers
     end
 
     def find_existing_meeting(starts_at, title_text, detail_url)
-      normalized_title = Meeting.normalized_body_name(title_text)
+      committee = Committee.resolve(title_text)
+      candidates = Meeting.where(starts_at: starts_at).includes(:meeting_documents, :meeting_summaries).order(:id).to_a
+      matches = if committee
+        candidates.select { |meeting| meeting.committee_id == committee.id }
+      else
+        []
+      end
+      if matches.empty?
+        normalized_title = Meeting.normalized_body_name(title_text)
+        matches = candidates.select do |meeting|
+          meeting.committee_id.nil? && Meeting.normalized_body_name(meeting.body_name) == normalized_title
+        end
+      end
 
-      Meeting.where(starts_at: starts_at).find do |meeting|
-        Meeting.normalized_body_name(meeting.body_name) == normalized_title
-      end ||
-        Meeting.where(starts_at: starts_at.beginning_of_day..starts_at.end_of_day).find do |meeting|
-          Meeting.normalized_body_name(meeting.body_name) == normalized_title
-        end ||
-        Meeting.where(detail_page_url: detail_url).find do |meeting|
-          meeting.starts_at&.to_date == starts_at.to_date &&
-            Meeting.normalized_body_name(meeting.body_name) == normalized_title
-        end ||
-        Meeting.new(detail_page_url: detail_url)
+      Meeting.preferred_duplicate(matches) || Meeting.new(detail_page_url: detail_url)
     end
 
     def preserve_existing_details?(meeting, title_text)
-      meeting.persisted? && cancelled_title?(title_text) && !cancelled_title?(meeting.body_name)
+      meeting.persisted? && meeting.cancelled? && !cancelled_title?(title_text)
     end
 
     def cancelled_title?(title_text)
-      title_text.to_s.match?(/\b(cancelled|canceled)\b/i)
+      title_text.to_s.match?(/\b(cancelled|canceled|no quorum)\b/i)
     end
   end
 end

@@ -20,6 +20,24 @@ citation-backed summaries for residents.
 
 AI-generated content must never replace or obscure official documents.
 
+## Meeting Identity and Cancellation
+
+A resolved committee/group plus the exact scheduled timestamp identifies one
+meeting. Title changes, cancellation reasons, and replacement source-page URLs
+do not create another event. Different committees or timestamps remain distinct;
+unknown groups fall back to a normalized body name at that exact timestamp.
+
+Discovery serializes writes for an event and preserves an observed cancellation
+when an older non-cancellation listing is encountered again. Cancellation is an
+explicit `cancelled` status, not an inference that a past meeting was held.
+For existing duplicates, public listings, search, and detail links select the
+same canonical record, giving cancellation evidence precedence. Original records
+and associations remain stored; cleanup must not discard cancellation evidence
+or records with generated images. Cancellation notices override stale summaries
+in cards, detail pages, metadata, and sharing. Source documents remain available
+under the existing access rules. Historical data consolidation is a separate,
+reviewed operation; this change does not delete or reparent existing records.
+
 ## Generated Civic Images
 
 - High-priority homepage topics and substantive meetings may get AI-generated illustrative images.

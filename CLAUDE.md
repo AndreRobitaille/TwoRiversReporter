@@ -112,6 +112,15 @@ Canonical Roster Websites → `rosters:sync` / `rosters:repair`
   → Source-Backed CommitteeMembership + MemberPosition
 ```
 
+### Meeting identity
+
+Discovery and public deduplication identify a meeting by committee ID and exact
+start timestamp, with normalized body name as the fallback for unresolved groups.
+Cancellation titles update the existing event and persist `cancelled` status;
+older ordinary listings must not undo it. Existing duplicate URLs resolve to one
+canonical record, favoring cancellation, without deleting their source data.
+See `docs/DEVELOPMENT_PLAN.md` for the identity and cancellation contract.
+
 ### Core Domain Models
 
 - **`Topic`** — Central organizing model. Has `status` (approved/proposed/blocked), `review_status`, `lifecycle_status` (active/dormant/resolved/recurring). Linked to meetings via `AgendaItemTopic`. Has aliases, blocklist entries, appearances, status events, summaries.

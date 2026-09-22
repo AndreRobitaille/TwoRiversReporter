@@ -24,7 +24,9 @@ class MeetingsController < ApplicationController
     @recent_enriched, @recent_thin = deduplicate_meetings(recent_all, :recent).partition { |m| meeting_has_content?(m, :recent) }
 
     if params[:q].present?
-      @pagy, @search_results = pagy(:offset, Meeting.search_multi(params[:q]), limit: 15)
+      matches = Meeting.search_multi(params[:q])
+      canonical_ids = matches.map { |meeting| Meeting.preferred_duplicate(meeting.identity_matches).id }.uniq
+      @pagy, @search_results = pagy(:offset, Meeting.where(id: canonical_ids).order(starts_at: :desc), limit: 15)
     end
 
     # Cards only render for enriched lists + search results (thin meetings use compact rows).
@@ -34,6 +36,9 @@ class MeetingsController < ApplicationController
 
   def show
     @meeting = Meeting.find(params[:id])
+    canonical = Meeting.preferred_duplicate(@meeting.identity_matches)
+    return redirect_to meeting_path(canonical) if canonical.id != @meeting.id
+
     @meeting_display_name = helpers.clean_meeting_display(@meeting.body_name).presence || "Meeting"
     @generated_image = @meeting.current_generated_image(:feature)
     assign_generated_image_meta(@generated_image, alt: "Illustration for #{@meeting_display_name}")
@@ -53,7 +58,7 @@ class MeetingsController < ApplicationController
     @has_substantive_topic_content = approved_topics.any?
 
     # Supersede chain: minutes > transcript > packet > agenda preview.
-    @summary = preferred_meeting_summary(@meeting)
+    @summary = preferred_meeting_summary(@meeting) unless @meeting.cancelled?
   end
 
   private
@@ -65,21 +70,12 @@ class MeetingsController < ApplicationController
   end
 
   def preferred_duplicate(duplicates, zone)
-    duplicates.max_by do |meeting|
-      [
-        cancelled_meeting?(meeting) ? 0 : 1,
-        meeting_has_content?(meeting, zone) ? 1 : 0,
-        meeting.updated_at.to_i,
-        -meeting.id
-      ]
-    end
-  end
-
-  def cancelled_meeting?(meeting)
-    meeting.body_name.to_s.match?(/\b(cancelled|canceled)\b/i)
+    Meeting.preferred_duplicate(duplicates)
   end
 
   def meeting_has_content?(meeting, zone)
+    return true if meeting.cancelled?
+
     case zone
     when :upcoming
       topics = meeting.agenda_items.select(&:substantive?).flat_map(&:topics).uniq.select(&:approved?)

@@ -10,6 +10,7 @@ module Meetings
       motions
       meeting_attendances
       knowledge_sources
+      generated_images
     ].freeze
 
     def self.call(dry_run: true)
@@ -41,6 +42,7 @@ module Meetings
     def clean_group(meetings)
       keeper = useful_record_keeper(meetings) || cancelled_empty_keeper(meetings)
       return skip_group(meetings) unless keeper
+      return skip_group(meetings) if meetings.any?(&:cancelled?) && !keeper.cancelled?
 
       deletion_candidates = meetings - [ keeper ]
       return skip_group(meetings) unless deletion_candidates.all? { |meeting| empty_duplicate?(meeting) }

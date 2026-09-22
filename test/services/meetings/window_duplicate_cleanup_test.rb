@@ -26,7 +26,7 @@ module Meetings
       refute Meeting.exists?(duplicate.id)
     end
 
-    test "dry run reports empty future duplicate without deleting it" do
+    test "cleanup preserves cancellation evidence even when only the original has documents" do
       starts_at = 6.days.from_now.change(usec: 0)
       keeper = Meeting.create!(
         body_name: "Plan Commission Meeting",
@@ -41,9 +41,9 @@ module Meetings
       )
 
       assert_no_difference -> { Meeting.count } do
-        report = WindowDuplicateCleanup.call(dry_run: true)
-        assert_equal [ duplicate.id ], report[:deleted_ids]
-        assert_equal [ keeper.id ], report[:kept_ids]
+        report = WindowDuplicateCleanup.call(dry_run: false)
+        assert_empty report[:deleted_ids]
+        assert_includes report[:skipped_groups], [ keeper.id, duplicate.id ].sort
       end
 
       assert Meeting.exists?(keeper.id)
