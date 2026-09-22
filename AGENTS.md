@@ -48,7 +48,7 @@ the tunnel as optional. Public HTTPS health checks do not require SSH.
 - Lint: `bin/rubocop`
 - Local CI: `bin/ci`
 
-CI note: `bin/ci` currently runs setup, RuboCop, bundler-audit, importmap audit, and Brakeman; it does **not** run tests.
+CI note: `bin/ci` runs setup, application tests, RuboCop, bundler-audit, importmap audit, and Brakeman. GitHub CI also runs application tests against PostgreSQL.
 
 ## Verification Rules
 - Ruby/model/job/service changes: run targeted Minitest files and `bin/rubocop`.

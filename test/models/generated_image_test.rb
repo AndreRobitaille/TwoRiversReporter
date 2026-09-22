@@ -1,6 +1,19 @@
 require "test_helper"
 
 class GeneratedImageTest < ActiveSupport::TestCase
+  test "attached images produce resized WebP variants with the configured backend" do
+    topic = Topic.create!(name: "Image variant check", status: "approved")
+    image = topic.generated_images.create!(status: "ready", purpose: "feature_and_og")
+    pixels = Vips::Image.black(40, 30, bands: 3).pngsave_buffer
+    image.file.attach(io: StringIO.new(pixels), filename: "source.png", content_type: "image/png")
+
+    variant = image.file.variant(resize_to_fill: [ 20, 15 ], format: :webp).processed
+    result = Vips::Image.new_from_buffer(variant.download, "")
+
+    assert_equal [ 20, 15 ], [ result.width, result.height ]
+    assert_equal "image/webp", variant.content_type
+  end
+
   test "validates status and purpose" do
     topic = Topic.create!(name: "Test Topic", status: "approved")
     image = GeneratedImage.new(imageable: topic, status: "ready", purpose: "feature_and_og")

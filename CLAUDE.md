@@ -53,7 +53,7 @@ Standard Rails and Omakase invocations (`bin/setup`, `bin/dev`, `bin/jobs`, `bin
 
 | Task | Command |
 |------|---------|
-| Full local CI (lint + security, no tests) | `bin/ci` |
+| Full local CI (tests + lint + security) | `bin/ci` |
 | Run job inline | `bin/rails runner "JobClass.perform_now(id)"` |
 | Backfill topic descriptions | `bin/rails topics:generate_descriptions` |
 | Seed category blocklist | `bin/rails topics:seed_category_blocklist` |
@@ -70,7 +70,7 @@ Standard Rails and Omakase invocations (`bin/setup`, `bin/dev`, `bin/jobs`, `bin
 | Backfill agenda-only preview summaries | `bin/rails agenda_previews:backfill` |
 | Import local SRT files | `bin/rails "transcripts:import[/path/to/srt/files]"` |
 
-CI (`bin/ci` / `config/ci.rb`) runs: setup, rubocop, bundler-audit, importmap audit, brakeman. Note: CI does **not** run tests currently.
+CI (`bin/ci` / `config/ci.rb`) runs setup, application tests, RuboCop, bundler-audit, importmap audit, and Brakeman. GitHub CI runs the application tests against PostgreSQL and installs libvips for real image-variant coverage.
 
 When host binding matters for local development, prefer `0.0.0.0` over `localhost`; the dev machine is accessed remotely.
 
