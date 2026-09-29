@@ -2,6 +2,46 @@ require "test_helper"
 require "minitest/mock"
 
 class ExtractTopicsJobTest < ActiveJob::TestCase
+  test "continues extracting other tags when an exact topic is blocked" do
+    meeting = Meeting.create!(
+      body_name: "City Council Work Session", meeting_type: "Regular",
+      starts_at: 1.day.ago, status: "agenda_posted",
+      detail_page_url: "http://example.com/m/blocked-topic"
+    )
+    item = AgendaItem.create!(meeting: meeting, number: "1", title: "Ambulance Coverage", order_index: 1)
+    blocked = Topic.create!(name: "mishicot area ambulance coverage plan", status: "blocked")
+    approved = Topic.create!(name: "fire department staffing", status: "approved")
+    ai_response = {
+      "items" => [ {
+        "id" => item.id,
+        "category" => "Public Safety",
+        "tags" => [ "Mishicot Area Ambulance Coverage Plan", "fire department staffing" ],
+        "topic_worthy" => true
+      } ]
+    }.to_json
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_topics, ai_response do |text, **kwargs|
+      text.is_a?(String)
+    end
+    retrieval_stub = Object.new
+    def retrieval_stub.retrieve_context(*args, **kwargs); []; end
+    def retrieval_stub.format_context(*args); ""; end
+
+    assert_no_difference "Topic.count" do
+      RetrievalService.stub :new, retrieval_stub do
+        Ai::OpenAiService.stub :new, mock_ai do
+          ExtractTopicsJob.perform_now(meeting.id)
+        end
+      end
+    end
+
+    assert_equal [ approved.id ], item.topics.pluck(:id)
+    assert_equal "blocked", blocked.reload.status
+    assert_equal "processed", meeting.reload.processing_state["topics_extraction_status"]
+    mock_ai.verify
+  end
+
   test "skips items marked topic_worthy false" do
     meeting = Meeting.create!(
       body_name: "City Council", meeting_type: "Regular",

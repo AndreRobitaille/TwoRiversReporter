@@ -48,6 +48,28 @@ module Topics
       assert_equal existing, topic
     end
 
+    test "skips an exact topic after it is blocked without a blocklist entry" do
+      existing = Topic.create!(name: "mishicot area ambulance coverage plan", status: "approved")
+      assert_equal existing, Topics::FindOrCreateService.call("Mishicot Area Ambulance Coverage Plan")
+
+      existing.update!(status: "blocked")
+
+      assert_no_difference [ "Topic.count", "TopicAlias.count" ] do
+        assert_nil Topics::FindOrCreateService.call("Mishicot Area Ambulance Coverage Plan")
+      end
+      assert_equal "blocked", existing.reload.status
+    end
+
+    test "returns an existing proposed topic without approving or duplicating it" do
+      existing = Topics::FindOrCreateService.call("New Ambulance Coverage Plan")
+
+      assert_no_difference [ "Topic.count", "TopicAlias.count" ] do
+        assert_equal existing, Topics::FindOrCreateService.call("NEW AMBULANCE COVERAGE PLAN")
+      end
+      assert_equal "proposed", existing.reload.status
+      assert_equal "proposed", existing.review_status
+    end
+
     test "exact reusable topic match wins before contextual routing" do
       reusable = Topic.create!(name: "downtown redevelopment", status: "approved")
       former_hamilton = Topic.create!(name: "former hamilton site redevelopment", status: "approved")
