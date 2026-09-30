@@ -211,6 +211,13 @@ Two properties are load-bearing and easy to break without noticing:
 
 ### Page & Pipeline Details
 
+Meeting analysis preserves complete source text and supplementary transcripts.
+`analyze_meeting_content` receives meeting-scoped agenda IDs and exact titles;
+`Topics::ItemDetailsMatcher` carries item decisions into topic summaries and
+briefings, with unambiguous title fallback for older summaries. Missing item
+analysis cannot justify pruning a substantive topic appearance. Recording
+outcomes retain transcript provenance and the actual meeting body.
+
 Layout, helper, and data-flow detail for the homepage, topic show page, meeting show page, and YouTube transcript pipeline lives in the **`page-architecture` skill** (`.claude/skills/page-architecture/SKILL.md`). Invoke it before changing any of those surfaces.
 
 ## Production Deployment

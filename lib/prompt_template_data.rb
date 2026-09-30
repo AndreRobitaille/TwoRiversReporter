@@ -188,7 +188,8 @@ module PromptTemplateData
         { "name" => "temporal_framing", "description" => "preview, recap, or stale_preview" },
         { "name" => "participant_context", "description" => "Authoritative participant spellings and meeting roll-call names" },
         { "name" => "motion_context", "description" => "Structured motions and vote outcomes extracted from the same meeting" },
-        { "name" => "doc_text", "description" => "Meeting document text (truncated to 100k)" }
+        { "name" => "agenda_items", "description" => "Meeting-scoped agenda item IDs and exact contextual titles" },
+        { "name" => "doc_text", "description" => "Complete meeting document text" }
       ]
     },
     {
@@ -647,6 +648,27 @@ module PromptTemplateData
         - `decision`: a vote or formal action happened. Lead with the outcome.
         - `discussion`: substantive discussion, no vote. Lead with the content of the discussion.
         - `status_update`: routine update, usually skippable unless the update names a concrete development.
+        `meeting_metadata` supplies the actual meeting body, date, and source_type.
+        When source_type is "transcript", attribute outcomes to the recording;
+        do not describe them as approved minutes. Preserve the work-session
+        setting when reporting a substantive decision made there.
+        Cite `item_details_citations` for recorded discussion and outcomes when
+        supplied, falling back to `item_details_citation` for older contexts.
+        This array contains one citation per source document: one for a single
+        source, two for minutes supplemented with a transcript, or none if no
+        source document is known. When source_type is "minutes_with_transcript",
+        cite both documents for facts drawn from the combined item details;
+        details beyond the minutes may come from the recording. The agenda
+        citation supports scheduled business, not proof that a vote occurred.
+        `item_details_motion` preserves verified mover, seconder, no_votes,
+        and absent_members. Include these known identities in the factual
+        decision record. Do not infer why someone voted no from general debate.
+        Interpret decision and vote together with the action described in
+        item_details_summary. Legacy "Failed" can mean the agenda request
+        was denied, while its motion to deny passed. A request denied 9-0 is
+        a unanimous denial; do not call that a failed motion. State whether
+        the request was approved or denied and avoid assigning a motion
+        outcome unless the record explicitly establishes it.
         </data_sources>
 
         {{committee_context}}
@@ -863,6 +885,16 @@ module PromptTemplateData
         The TOPIC CONTEXT below contains several data sources. Use them in this order of priority when writing `factual_record` entries, detecting patterns, and framing `editorial_analysis.current_state`:
 
         1. `recent_item_details` — The SUBSTANTIVE CONTENT of agenda items linked to this topic from the most recent meetings. Each entry has the actual summary of what was discussed, any activity_level classification, and any vote/decision/public_hearing fields. THIS IS THE PRIMARY SOURCE FOR SPECIFIC FACTS. When a recent_item_details entry contains a concrete incident (e.g., "resident complained about sticker purchase requirement", "Manitowoc Disposal reported fake stickers"), write a factual_record entry that names the specific incident. Do not default to "appeared on the agenda" phrasing when recent_item_details has real content.
+        Preserve each entry's meeting_body when reporting where action occurred.
+        If source_type is "transcript", the outcome is recording-based and
+        preliminary; do not claim that approved minutes establish it.
+        Preserve known motion identities and named no votes from `motion` in
+        the factual decision entry, including recorded absences. Do not infer
+        a dissenter's reasons from the surrounding discussion.
+        Interpret decision and vote with the summary's stated action.
+        Legacy "Failed" may describe a denied agenda request rather than
+        a failed motion: a motion to deny can pass 9-0. Report the request's
+        disposition without contradicting the recorded action.
 
         2. `prior_meeting_analyses` — Structured analyses from prior per-meeting TopicSummary rows. These are derivative; prefer recent_item_details when both describe the same meeting.
 
@@ -875,6 +907,12 @@ module PromptTemplateData
         6. `upcoming_context` — Scheduled future meetings. Drives `upcoming_headline`.
 
         When recent_item_details contradicts older prior_meeting_analyses (e.g., an older summary says "appeared on agenda" but recent_item_details says "committee discussed X"), trust recent_item_details. Older summaries may have been generated before this content was available.
+
+        Check each pattern_observation against the factual_record before
+        returning. Keep the entity, meeting date, event date, and vote tied
+        to the same recorded event. A topic spanning multiple businesses
+        does not make their approvals interchangeable. Do not attribute
+        one venue's dated approval or vote to another venue.
 
         If recent_item_details is empty or contains no substantive content across multiple meetings, write a quiet, honest current_state that names what's on the agenda without manufacturing pattern framing.
         </data_sources>
@@ -1207,6 +1245,15 @@ module PromptTemplateData
         - Do not invent alternate spellings from noisy transcript text when authoritative spellings are provided.
         </participant_context>
 
+        <agenda_items>
+        {{agenda_items}}
+
+        For each item_details entry, copy agenda_item_id and agenda_item_title
+        from the matching item in this list. Do not paraphrase the title.
+        Use null for agenda_item_id only when no listed item matches the
+        recorded business. Never invent an ID or use an ID from another meeting.
+        </agenda_items>
+
         <motion_context>
         {{motion_context}}
 
@@ -1241,6 +1288,9 @@ module PromptTemplateData
 
         If {{type}} is "minutes" or "transcript": you have the record of what
         occurred. Follow the temporal_context "recap" guidance above.
+        Transcripts are preliminary recording evidence, not approved minutes.
+        Report recorded motions and announced outcomes, but leave the vote
+        tally null when captions do not clearly establish every vote.
         </source_context>
 
         <guidelines>
@@ -1258,10 +1308,15 @@ module PromptTemplateData
           Item-specific public hearings go in item_details, NOT here.
           Redact residential addresses: "[Address redacted]".
         - Item details: Cover substantive agenda items only. Each gets 2-4
-          sentences of editorial summary explaining what happened and why it
-          matters. Include public_hearing note for items with formal public
+          factual sentences explaining what happened and its documented
+          implications. Attribute stated arguments to speakers or staff;
+          do not assign a rationale to a person's vote from discussion.
+          Editorial interpretation belongs in headline and highlights.
+          Include public_hearing note for items with formal public
           input (Wisconsin law three-calls). Include decision and vote tally
           where applicable. Anchor citations to page numbers.
+          When substantive action occurs at a work session, identify that
+          setting in its highlight and item summary.
         - Each item_details entry must include an activity_level field with
           one of three values:
           - "decision" — a motion, vote, formal action, approval, adoption,
@@ -1282,11 +1337,45 @@ module PromptTemplateData
         </guidelines>
 
         <motion_sequence_rules>
+        - Follow each substantive item through the end of the source, including closing motions, seconds, votes, and announced outcomes. A work-session title does not mean no action was taken. Report a recorded decision as occurring at the named work session; do not infer its legal validity from the meeting label.
+        - If the source ends during a motion or roll call, leave its outcome and tally null unless another supplied source establishes them. State that a motion was proposed or a vote began and the outcome is unknown; do not write that the body voted to approve the action.
+        - Put verified mover, seconder, named no votes, and absent members in the structured motion field. Each identity array includes every explicitly identified person in that category, once; use null when unknown and [] only for a known empty category. Do not infer reasons for a person's vote from general discussion.
         - A motion with "no second", "not seconded", or "died for lack of second" is unseconded and not operative. Do not treat it as the item decision, and do not attach a later roll-call vote to it.
         - If an unseconded motion is followed by a seconded motion and a roll-call vote, the item_details decision and vote must reflect the later operative motion.
         - Subsidiary motions such as table, refer, postpone, or amend only become the item outcome if they were seconded and adopted. Failed or unseconded subsidiary motions may be mentioned only as context if important.
         - For grant items, distinguish "authorize applying for a grant" from "approve final project funding", "award a contract", or "approve proceeding with the project". If the record says final project funding comes later, say the council approved only the application step.
         </motion_sequence_rules>
+
+        <motion_identity_grounding>
+        Establish the outcome and tally separately from the identities.
+        For each identity, require a matching structured motion record or
+        source language explicitly identifying that person's role in this
+        operative motion. Participant context supplies spelling, not roles.
+        A named acknowledgment immediately after a motion or second can
+        identify its speaker; an earlier discussion turn cannot.
+
+        If the source says "I'll make the motion" without naming the speaker,
+        mover must be null, even if the previous speaker was named.
+        If a roll call contains eight named ayes and an unlabeled "No", the
+        tally may be 8-1 but no_votes must be null. Do not identify that voter
+        by eliminating the other roster members, presumed roll-call order,
+        or their earlier criticism. Do not reconstruct garbled captions.
+        Absence must reflect the vote being described: a member initially
+        absent who later participates is not absent from that later vote.
+
+        Before assigning a name or numeric tally, supply its exact supporting
+        excerpt in motion_evidence or vote_evidence. Copy contiguous source
+        text from doc_text or motion_context, with no ellipses or paraphrase;
+        whitespace may be collapsed. For a tally counted from individual
+        responses, include the roll-call introduction and every response.
+        A collective voice vote supports an outcome, not a numeric tally.
+        Each named-person excerpt must include that person's name or named
+        acknowledgment and identify their role. Earlier discussion, roster
+        order, and the last speaker before an anonymous motion are insufficient.
+        Null evidence requires a null corresponding name or tally. Keep
+        motion names and vote counts out of narrative fields unless supported
+        by those same excerpts. No excerpt is needed for a known empty array.
+        </motion_identity_grounding>
 
         <procedural_filter>
         EXCLUDE these procedural items from item_details entirely:
@@ -1337,6 +1426,12 @@ module PromptTemplateData
         about motive or intent — state the connection plainly
         ("[X] is taking the Plan Commission seat previously held by [Y]")
         and let residents interpret.
+
+        Reconcile appointments in agenda_items with the source before
+        returning. Each appointee is a distinct item_details entry even
+        when multiple appointments share a consent-agenda approval.
+        Copy the matching agenda ID, appointee spelling, board, and term;
+        do not collapse separately discussed appointees into one entry.
         </procedural_filter>
 
         <tone_calibration>
@@ -1389,11 +1484,25 @@ module PromptTemplateData
           ],
           "item_details": [
             {
+              "agenda_item_id": "Integer copied from agenda_items, or null if unmatched",
               "agenda_item_title": "Title as it appears on the agenda",
-              "summary": "2-4 sentences: what happened, why it matters, editorial context.",
+              "summary": "2-4 factual sentences: what happened, attributed arguments, and documented implications; no inferred vote motives.",
               "public_hearing": "Description of public hearing input, or null",
               "decision": "Passed|Failed|Tabled|Referred|null",
               "vote": "7-0 or null",
+              "vote_evidence": "Exact source excerpt announcing the tally or containing the complete individual roll call, or null",
+              "motion": {
+                "mover": "Verified name or null",
+                "seconder": "Verified name or null",
+                "no_votes": ["Every explicitly identified no voter, or null if unknown"],
+                "absent_members": ["Every explicitly identified absent member, or null if unknown"]
+              },
+              "motion_evidence": {
+                "mover": "Exact source excerpt identifying the mover, or null",
+                "seconder": "Exact source excerpt identifying the seconder, or null",
+                "no_votes": ["One exact source excerpt per named no voter, in the same order, or null if unknown"],
+                "absent_members": ["One exact source excerpt per named absent member, in the same order, or null if unknown"]
+              },
               "activity_level": "decision|discussion|status_update",
               "citations": ["Page X"]
             }
@@ -1402,7 +1511,14 @@ module PromptTemplateData
 
         highlights: max 3 items. Order by resident impact (highest first).
         public_input: include all speakers. Empty array if none.
-        item_details: substantive items only (see procedural_filter above).
+        item_details: exactly one entry per distinct substantive item covered
+        by the source (see procedural_filter above). Do not collapse distinct
+        items or omit a recorded final action because earlier discussion was lengthy.
+        motion: null when no motion occurred. Identity arrays have one entry
+        per explicitly identified person, with no guessed or duplicated names.
+        motion_evidence: null when motion is null. Each evidence array has
+        exactly one excerpt for each corresponding named person, in order;
+        use null for an unknown category and [] for a known empty category.
         All text fields: plain language, no jargon.
         </output_schema>
       PROMPT

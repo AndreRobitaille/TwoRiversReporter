@@ -35,8 +35,8 @@ class PruneHollowAppearancesJob < ApplicationJob
     new_format = item_details.any? { |e| e.is_a?(Hash) && e.key?("activity_level") }
     return unless new_format
 
-    agenda_items = meeting.agenda_items.to_a
-    entry_map = build_entry_map(agenda_items, item_details)
+    agenda_items = meeting.agenda_items.includes(:parent).to_a
+    entry_map = Topics::ItemDetailsMatcher.new(agenda_items, item_details).build
 
     affected_topic_ids = Set.new
 
@@ -77,39 +77,12 @@ class PruneHollowAppearancesJob < ApplicationJob
 
   private
 
-  # Returns a hash mapping agenda_item_id => item_details entry (or nil).
-  # Match by normalized title — drop leading numbering, trailing
-  # "AS NEEDED" / "IF APPLICABLE", downcase, squish.
-  def build_entry_map(agenda_items, item_details)
-    normalized_entries = item_details.filter_map do |entry|
-      next nil unless entry.is_a?(Hash)
-      title = entry["agenda_item_title"]
-      next nil unless title.is_a?(String)
-      [ normalize_title(title), entry ]
-    end
-
-    agenda_items.each_with_object({}) do |ai, map|
-      target = normalize_title(ai.title.to_s)
-      # If two agenda items normalize to the same title (e.g., scraper
-      # artifacts duplicating section headers), both map to the first
-      # matching entry. The safe failure direction: neither gets
-      # spuriously pruned. A real duplicate with real activity would
-      # still be rescued by the Motion.exists? check in `hollow?`.
-      match = normalized_entries.find { |norm, _e| norm == target }
-      map[ai.id] = match&.last
-    end
-  end
-
-  def normalize_title(title)
-    Topics::TitleNormalizer.normalize(title)
-  end
-
   def hollow?(agenda_item, entry)
     return false if Motion.where(agenda_item_id: agenda_item.id).exists?
 
-    # Procedural filter: missing entry on a new-format summary means the
-    # AI filtered this item as procedural — eligible for pruning.
-    return true if entry.nil?
+    # Missing analysis can mean omitted evidence or a rewritten title. It
+    # cannot establish that a substantive item was merely procedural.
+    return Topics::TitleNormalizer.normalize(agenda_item.title) == "adjournment" if entry.nil?
 
     entry["activity_level"] == "status_update" &&
       entry["vote"].nil? &&

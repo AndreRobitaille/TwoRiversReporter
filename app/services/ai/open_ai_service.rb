@@ -658,7 +658,8 @@ module Ai
         temporal_framing: temporal_framing,
         participant_context: participant_context.to_s,
         motion_context: motion_context.to_s,
-        doc_text: doc_text.truncate(100_000)
+        agenda_items: meeting_agenda_context(source),
+        doc_text: doc_text.to_s
       }
       prompt = template.interpolate(**placeholders)
       model = self.class.model_for_tier(template.model_tier)
@@ -682,7 +683,8 @@ module Ai
         placeholder_values: placeholders.transform_keys(&:to_s)
       )
 
-      content
+      MeetingAnalysisEvidenceValidator.new(document_text: doc_text, motion_context: motion_context,
+        participant_context: participant_context).validate(content)
     end
 
     def prepare_doc_context(extractions)
@@ -828,6 +830,14 @@ module Ai
     class EmptyResponseError < StandardError; end
 
     private
+
+    def meeting_agenda_context(source)
+      return "[]" unless source.is_a?(Meeting)
+
+      source.agenda_items.substantive.includes(:parent).order(:order_index).map do |item|
+        { agenda_item_id: item.id, number: item.number, agenda_item_title: item.display_context_title }
+      end.to_json
+    end
 
     # Production and evaluator calls share the same effective parameter rules,
     # including suppression of unsupported temperature values.

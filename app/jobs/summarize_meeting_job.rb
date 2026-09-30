@@ -186,7 +186,7 @@ class SummarizeMeetingJob < ApplicationJob
 
       if transcript_doc&.extracted_text.present?
         input_text += "\n\n--- Additional context from meeting recording transcript ---\n\n" +
-          transcript_doc.extracted_text.truncate(15_000)
+          transcript_doc.extracted_text
         source_type = "minutes_with_transcript"
       end
 

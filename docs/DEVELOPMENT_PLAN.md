@@ -352,6 +352,39 @@ Status derivation must: - Prefer agenda anchors - Treat disappearance
 without resolution as meaningful - Avoid assuming resolution without
 evidence
 
+
+## Meeting Evidence Preservation
+
+Meeting analysis receives the complete source text, including the full
+supplementary transcript when minutes are available. It must not silently
+discard the end of a recording to meet a character budget. An input that
+exceeds the model's context must fail rather than publish a partial recap
+as though it covered the whole meeting.
+
+Meeting analysis receives the meeting's substantive agenda IDs and exact
+contextual titles. Each item detail carries its matching `agenda_item_id`.
+Structured `motion` details preserve verified mover, seconder, named no
+votes, and recorded absences through the topic pipeline.
+Motion identities and numeric tallies carry supporting source excerpts;
+validate those excerpts before passing the fields downstream. Participant
+rosters provide spelling, not an unnamed speaker's role. A collective
+voice vote does not establish a numeric tally. Item summaries remain
+factual, with attributed arguments rather than inferred vote motives.
+Topic summaries, rolling briefings, and hollow-appearance pruning resolve
+these IDs only within that meeting. Older summaries fall back to
+unambiguous normalized titles. Invalid IDs and conflicting entries do not
+establish a match. Missing analysis is not evidence that a substantive
+agenda item was routine and must not erase its topic appearance.
+
+Recording-based outcomes remain preliminary. Preserve the actual meeting
+body, including a work session where action occurred; do not infer whether
+action occurred or was legally valid from the meeting label. Report final
+motions and announced outcomes, and omit a vote tally when captions cannot
+establish it. Approved minutes retain their source authority.
+When analysis combines minutes and a recording, topic context includes
+both document citations. Per-meeting continuity excludes later status
+events; rolling briefings retain subsequent meeting history.
+
 ------------------------------------------------------------------------
 
 ## Summarization Rules

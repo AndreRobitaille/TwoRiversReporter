@@ -498,10 +498,10 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
       source_url: "http://example.com/minutes.pdf",
       extracted_text: "Page 1: The council approved the budget 5-2."
     )
-    @meeting.meeting_documents.create!(
+    transcript = @meeting.meeting_documents.create!(
       document_type: "transcript",
       source_url: "http://example.com/transcript.txt",
-      extracted_text: "Transcript of meeting: The council discussed the budget."
+      extracted_text: ("Budget discussion.\n" * 6000) + "Closing motion approved the contract extension."
     )
 
     generation_data = {
@@ -515,7 +515,9 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
 
     mock_ai = Minitest::Mock.new
     mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
+    captured_text = nil
     mock_ai.expect :analyze_meeting_content, generation_data.to_json do |text, kb, type, **kwargs|
+      captured_text = text
       type == "minutes" && kwargs.key?(:participant_context)
     end
     # Topic-level mocks
@@ -538,6 +540,9 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     assert summary, "Should create minutes_recap"
     assert_equal "minutes_with_transcript", summary.generation_data["source_type"]
     assert_nil @meeting.meeting_summaries.find_by(summary_type: "transcript_recap"), "Should NOT create transcript_recap"
+    assert_includes captured_text, "Page 1: The council approved the budget 5-2."
+    assert captured_text.end_with?(transcript.extracted_text), "The complete supplementary transcript must reach analysis"
+    mock_ai.verify
   end
 
   test "stores preview framing in generation_data for future meeting with packet" do

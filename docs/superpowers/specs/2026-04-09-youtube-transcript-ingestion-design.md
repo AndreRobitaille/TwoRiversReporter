@@ -3,6 +3,12 @@
 **Date:** 2026-04-09
 **Status:** Approved
 
+**Evidence-preservation update (September 30, 2026):** Full primary and
+supplementary transcripts now reach meeting analysis without character
+truncation. This supersedes the original 15K supplementary limit below.
+Meeting-scoped agenda IDs preserve downstream topic evidence; see
+`docs/DEVELOPMENT_PLAN.md`, Meeting Evidence Preservation.
+
 ## Problem
 
 Council meetings and work sessions are recorded and posted to YouTube within hours, but the site currently waits weeks for official minutes before publishing summaries. Residents get nothing in the gap.

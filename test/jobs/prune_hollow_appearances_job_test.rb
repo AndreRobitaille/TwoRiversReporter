@@ -117,6 +117,27 @@ class PruneHollowAppearancesJobTest < ActiveJob::TestCase
     assert_equal 1, topic.reload.agenda_item_topics.count
   end
 
+  test "preserves substantive business when analysis omits it or rewrites its title" do
+    meeting, item = create_meeting_with_item(title: "26-141 WPPI contract extension to 2073")
+    create_summary(meeting, item_details: [ { "agenda_item_title" => "Power contract",
+      "activity_level" => "decision", "decision" => "Passed" } ])
+    topic = link_topic(item, topic_name: "WPPI power supply")
+
+    PruneHollowAppearancesJob.perform_now(meeting.id)
+    assert_equal 1, topic.reload.agenda_item_topics.count
+    assert_equal 1, topic.topic_appearances.count
+  end
+
+  test "matches routine updates by ID before pruning" do
+    meeting, item = create_meeting_with_item(title: "10. SOLID WASTE UTILITY UPDATE")
+    create_summary(meeting, item_details: [ { "agenda_item_id" => item.id, "agenda_item_title" => "Rewritten title",
+      "activity_level" => "status_update", "vote" => nil, "decision" => nil, "public_hearing" => nil } ])
+    topic = link_topic(item, topic_name: "routine waste updates")
+
+    PruneHollowAppearancesJob.perform_now(meeting.id)
+    assert_equal 0, topic.reload.agenda_item_topics.count
+  end
+
   test "prunes when agenda item has no matching item_details entry (procedural) on new-format summary" do
     meeting, item = create_meeting_with_item(title: "12. ADJOURNMENT")
     # New-format summary: has at least one entry with activity_level.

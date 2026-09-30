@@ -90,7 +90,9 @@ Council meetings and work sessions are recorded and posted to YouTube (`@Two_Riv
 
 **`Documents::DownloadTranscriptJob`** — Takes `(meeting_id, video_url)`. Validates URL against `YOUTUBE_URL_PATTERN`, fetches SRT via `yt-dlp` in a temp directory, parses SRT to plain text (strips timestamps/sequence numbers), creates `MeetingDocument` with `document_type: "transcript"`, attaches raw SRT file. Enqueues `SummarizeMeetingJob` if no `minutes_recap` summary exists.
 
-**Transcript is a supplement, not a replacement** — it never overrides official sources. Used as the primary source only when no minutes exist (produces `transcript_recap`). When minutes arrive, transcript text (truncated to 15K chars) is appended as supplementary context and `source_type` becomes `"minutes_with_transcript"`. Old `transcript_recap` summaries are cleaned up when minutes arrive.
+**Transcript is a supplement, not a replacement** — it never overrides official sources. Used as the primary source only when no minutes exist (produces `transcript_recap`). When minutes arrive, the complete transcript is appended as supplementary context and `source_type` becomes `"minutes_with_transcript"`. Meeting analysis never silently truncates source text; context overflow must fail rather than omit closing actions. Old `transcript_recap` summaries are cleaned up when minutes arrive.
+
+**Agenda identity and downstream evidence:** `analyze_meeting_content` receives substantive agenda IDs and exact contextual titles. `item_details.agenda_item_id` connects the analysis to agenda evidence through `Topics::ItemDetailsMatcher`, shared by topic summary context, recent briefing details, and hollow-appearance pruning. Legacy entries fall back to unambiguous normalized titles. Missing analysis cannot establish that substantive business was routine. Topic context retains the meeting body and transcript provenance.
 
 **Transcript banner:** Meeting show page displays a cool-toned `.transcript-banner` when `generation_data["source_type"] == "transcript"`. Automatically removed when a minutes-based summary replaces it.
 

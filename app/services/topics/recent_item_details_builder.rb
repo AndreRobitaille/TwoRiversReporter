@@ -8,10 +8,8 @@ module Topics
   # MeetingSummary.generation_data["item_details"] and is shown on the
   # meeting page but never flowed into the topic-level briefing prompt.
   #
-  # Matching is fuzzy on normalized titles via Topics::TitleNormalizer:
-  # an item_details entry is included only if its agenda_item_title,
-  # normalized, equals the normalized title of an AgendaItem on the
-  # meeting that is linked to the target topic via AgendaItemTopic.
+  # Matching uses meeting-scoped agenda IDs, with unambiguous normalized
+  # titles as a fallback for summaries generated before IDs were included.
   #
   # Output shape per entry (Symbol keys — these flow into a Hash passed
   # to OpenAI, which serializes them as JSON):
@@ -44,47 +42,31 @@ module Topics
       details = summary.generation_data["item_details"]
       return [] unless details.is_a?(Array)
 
-      linked_normalized_titles = linked_title_set(meeting)
-      return [] if linked_normalized_titles.empty?
+      matches = Topics::ItemDetailsMatcher.new(meeting.agenda_items.substantive.includes(:parent).to_a, details).build
+      items = meeting.agenda_items.substantive
+        .joins(:agenda_item_topics)
+        .where(agenda_item_topics: { topic_id: @topic.id })
+        .distinct
+        .order(:order_index)
 
-      details.filter_map do |entry|
-        next nil unless entry.is_a?(Hash)
-        title = entry["agenda_item_title"]
-        next nil unless title.is_a?(String)
-        next nil unless linked_normalized_titles.include?(Topics::TitleNormalizer.normalize(title))
+      items.filter_map do |item|
+        entry = matches[item.id]
+        next unless entry
 
         {
           meeting_date: meeting.starts_at&.to_date&.to_s,
           meeting_body: meeting.body_name,
-          agenda_item_title: title,
+          source_type: summary.generation_data["source_type"],
+          agenda_item_id: item.id,
+          agenda_item_title: item.display_context_title,
           summary: entry["summary"],
           activity_level: entry["activity_level"],
           vote: entry["vote"],
+          motion: entry["motion"],
           decision: entry["decision"],
           public_hearing: entry["public_hearing"]
         }
       end
-    end
-
-    def linked_title_set(meeting)
-      items = meeting.agenda_items.substantive
-        .joins(:agenda_item_topics)
-        .where(agenda_item_topics: { topic_id: @topic.id })
-
-      title_counts = meeting.agenda_items.substantive.each_with_object(Hash.new(0)) do |item, counts|
-        normalized = Topics::TitleNormalizer.normalize(item.title.to_s)
-        counts[normalized] += 1 if normalized.present?
-      end
-
-      bare_titles = items.pluck(:title)
-        .map { |t| Topics::TitleNormalizer.normalize(t) }
-        .select { |normalized| title_counts[normalized] == 1 }
-
-      contextual_titles = items.includes(:parent).map do |item|
-        Topics::TitleNormalizer.normalize(item.display_context_title.to_s)
-      end
-
-      (bare_titles + contextual_titles).to_set
     end
   end
 end
