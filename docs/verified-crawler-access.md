@@ -19,6 +19,7 @@ have no full-content exception.
 | Provider | Allowed HTTP identities | Verification feed |
 | --- | --- | --- |
 | Google Search, including its AI search features | `Googlebot`, `Google-InspectionTool` | [Google common crawler ranges](https://developers.google.com/static/crawling/ipranges/common-crawlers.json) |
+| Bing and Copilot experiences powered by Bing | `bingbot` | [Bingbot ranges](https://www.bing.com/toolbox/bingbot.json) |
 
 Google News uses ordinary Googlebot HTTP identities; `Googlebot-News` is a
 robots.txt policy token. Image, video, ads, and generic research crawlers do
@@ -26,6 +27,12 @@ not receive a reporting exception. `Crawlers::Providers` holds the identities
 and official feeds. Both an exact token and a matching source IP are required.
 Similar names, several allowed identities in one request, query parameters,
 and claimed verification headers cannot grant access.
+
+Bingbot receives full reporting for indexing. This supports Copilot experiences
+powered by Bing's index; it is not a universal exception for every Microsoft
+browser or fetcher. `BingPreview` and arbitrary Azure addresses do not qualify.
+No `data-nosnippet` restriction is added because the owner permits reporting
+to inform AI answers.
 
 ## Rendering and caching
 
@@ -93,6 +100,8 @@ fails verification.
 - [Google verification](https://developers.google.com/crawling/docs/crawlers-fetchers/verify-google-requests)
 - [Google identities](https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers)
 - [Google paywall/registration markup](https://developers.google.com/search/docs/appearance/structured-data/paywalled-content)
+- [Bing crawler verification](https://www.bing.com/webmasters/help/Verify-Bingbot-2195837f)
+- [Bing indexing and Copilot preview controls](https://blogs.bing.com/webmaster/2025/10/Bing-Introduces-Support-for-the-data-nosnippet-HTML-Attribute/)
 
 Request tests first prove full reporting reaches verified crawlers, then prove
 the same content is absent for spoofed requests. They cover forwarding-header

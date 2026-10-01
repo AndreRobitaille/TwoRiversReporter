@@ -683,8 +683,8 @@ sign-in prompt partial. They never branch on authentication state or
 ### Verified crawler access
 
 In gated mode, selected verified crawlers can read full reporting on public
-HTML pages without a member account. Initially this includes Googlebot and
-Google's inspection tool; supported identities and official verification
+HTML pages without a member account. This includes Googlebot, Google's
+inspection tool, and Bingbot; supported identities and official verification
 sources are documented in `docs/verified-crawler-access.md`. Both bot identity
 and source IP must match. Missing or expired verification data keeps requests
 gated. Forwarded addresses are accepted only through configured trusted proxy

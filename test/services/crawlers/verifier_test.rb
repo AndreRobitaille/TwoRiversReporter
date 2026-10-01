@@ -30,6 +30,15 @@ class Crawlers::VerifierTest < ActiveSupport::TestCase
     end
   end
 
+  test "Bing and Google require their own feeds, even when both are available" do
+    @cache.write(@ranges.cache_key(:bing), { prefixes: [ "198.51.100.0/24" ], fetched_at: Time.current.to_i })
+
+    assert_equal "bingbot", @verifier.call(request_for("bingbot/2.0", address: "198.51.100.2"))
+    assert_nil @verifier.call(request_for("bingbot/2.0"))
+    assert_nil @verifier.call(request_for("Googlebot/2.1", address: "198.51.100.2"))
+    assert_nil @verifier.call(request_for("BingPreview/1.0", address: "198.51.100.2"))
+  end
+
   private
 
     def request_for(agent, address: "192.0.2.4", method: "GET")

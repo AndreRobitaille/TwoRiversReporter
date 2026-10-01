@@ -2,6 +2,7 @@
 # Allow discovery; full reporting still requires server-side verification.
 User-agent: Googlebot
 User-agent: Google-InspectionTool
+User-agent: bingbot
 Disallow: /admin
 Disallow: /admin/
 
