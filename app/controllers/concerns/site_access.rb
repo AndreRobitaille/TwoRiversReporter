@@ -12,7 +12,8 @@ module SiteAccess
     "meetings" => %w[index show],
     "committees" => %w[show],
     "members" => %w[show],
-    "crawler_probes" => %w[show]
+    "crawler_probes" => %w[show],
+    "sitemaps" => %w[show]
   }.freeze
 
   private
@@ -33,7 +34,9 @@ module SiteAccess
     end
 
     def verified_crawler?
-      return false unless crawler_readable_page? && request.format == Mime[:html]
+      return false unless crawler_readable_page?
+      readable_format = controller_path == "sitemaps" ? Mime[:xml] : Mime[:html]
+      return false unless request.format == readable_format
       return @verified_crawler if defined?(@verified_crawler)
 
       @verified_crawler = Crawlers::Verifier.new.call(request).present?

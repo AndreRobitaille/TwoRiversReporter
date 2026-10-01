@@ -9,7 +9,7 @@ Rails.application.routes.draw do
   unless Rails.env.production?
     get "og/default", to: "og#default"
   end
-  # NOTE: when adding a new public resource, update SitemapsController so the
+  # NOTE: when adding a new public resource, update Sitemaps::Catalog so the
   # new pages appear in /sitemap.xml. Internal nav links handle most crawler
   # discovery, but the sitemap is the explicit signal.
   resources :meetings, only: %i[index show]

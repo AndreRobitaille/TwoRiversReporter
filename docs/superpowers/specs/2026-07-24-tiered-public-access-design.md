@@ -46,6 +46,14 @@ account/admin access. Public reporting responses cannot be cached, and gated
 pages identify their registration requirement with paywall JSON-LD. See
 `docs/verified-crawler-access.md` for scope, providers, upkeep, and verification.
 
+The XML sitemap uses the same verified audience exception for discovery.
+Approved members and verified crawlers receive canonical reporting URLs;
+anonymous gated visitors receive only the homepage and About URLs. This is
+the sole crawler-readable non-HTML representation. Every sitemap response is
+`private, no-store`, including open mode, so a full catalog cannot survive an
+audience or access-mode change in a cache. Public `/llms.txt` contains only a
+site overview, source/access guidance, and stable navigation links.
+
 ### Two primitives
 
 Every gated surface uses these and nothing else. No scattered `if authenticated?` conditionals.

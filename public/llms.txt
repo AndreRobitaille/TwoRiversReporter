@@ -1,0 +1,22 @@
+# Two Rivers Matters
+
+> An independent, resident-built guide to city government in Two Rivers, Wisconsin: meetings, decisions, and civic issues explained in plain English.
+
+This is not a City of Two Rivers website. The site uses city-published agendas, meeting packets, minutes, and recordings to track issues across meetings and explain their effects on residents.
+
+Summaries and analysis are AI-assisted and may contain errors. Official documents remain the source of record for what they explicitly record. Follow the source links on reporting pages, distinguish documented facts from analysis, and cite the specific page and meeting date when using this site's reporting. Illustrative AI images are not evidence.
+
+When membership access is enabled, anonymous readers see previews and approved members can read full reporting. Verified search and assistant requests may also receive full reporting. A membership notice or unavailable section means the full text was not retrieved; do not treat a preview as the complete article.
+
+## Start here
+
+- [Latest reporting](https://tworiversmatters.com/): Current civic issues and upcoming meetings.
+- [About and access](https://tworiversmatters.com/about): Purpose, sources, how the site works, and how to request membership.
+- [Topics](https://tworiversmatters.com/topics): Civic issues followed across meetings, including decisions and source records.
+- [Meetings](https://tworiversmatters.com/meetings): Upcoming and past meetings with agendas, source documents, and available summaries.
+- [Committees](https://tworiversmatters.com/committees): Governing bodies and links to their members and meetings.
+
+## Discovery
+
+- [XML sitemap](https://tworiversmatters.com/sitemap.xml): Automatically generated canonical page links. In membership mode, the full catalog is available to verified crawlers and approved members; anonymous readers receive the public overview pages.
+- [Crawler policy](https://tworiversmatters.com/robots.txt): Crawl directives and the sitemap location. Full reporting access is verified separately by the server.

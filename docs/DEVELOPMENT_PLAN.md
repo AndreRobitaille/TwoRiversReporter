@@ -702,6 +702,18 @@ For live retrieval checks, explicitly generated 48-hour diagnostic URLs expose
 synthetic public/gated codes and record request identity and access decisions.
 They contain no reporting and use the same crawler gate as public reporting.
 
+Discovery follows the same audience boundary. Rails generates `/sitemap.xml`
+from approved topics, canonical meetings, active/dormant committees, and civic
+member pages for approved members, verified crawlers, or open mode. Anonymous
+gated requests receive only the homepage and About links. Sitemaps never
+contain reporting text and always disable caching. Topic and meeting `lastmod`
+dates include related briefing/summary/record updates; composite member and
+committee pages omit dates rather than use misleading parent timestamps.
+Public `/llms.txt` provides a small site guide with stable navigation, source
+and access guidance, and a sitemap link. HTML links to it with `describedby`.
+It is discovery metadata and grants no access. `robots.txt` advertises the
+sitemap and permits the supported reporting identities while excluding admin.
+
 ### Sign-in and access requests
 
 Access mode changes what an anonymous visitor is shown; it never changes
