@@ -1,6 +1,8 @@
 Rails.application.routes.draw do
   root "home#index"
   get "about", to: "pages#about"
+  # Short-lived synthetic diagnostics, created explicitly through crawlers:probes.
+  get "crawler-probes/:token", to: "crawler_probes#show", as: :crawler_probe
   # OG image source — dev/test only. The rake task (og:generate) renders
   # this ERB directly via ApplicationController.renderer, so the HTTP route
   # is only needed for visual preview in development.

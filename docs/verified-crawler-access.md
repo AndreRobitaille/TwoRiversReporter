@@ -134,6 +134,28 @@ and Thruster ports private, exposing only the Kamal edge. The edge must append
 or replace its observed client address. A chain outside configured ranges
 fails verification.
 
+## Live retrieval diagnostics
+
+Run `bin/rails crawlers:probes` in the released application to create a public
+probe and a gated probe. Each has an independent random URL and synthetic
+verification code in Solid Cache and expires after 48 hours. They contain no
+reporting, have no navigation or sitemap links, reject non-HTML formats, and
+send `noindex, nofollow` and `private, no-store` headers. Unknown or expired
+tokens return 404. Generating probes does not change the site access mode.
+
+Give the assistant only the public URL and ask it to open the page and quote
+its verification code. Repeat in a fresh chat with only the gated URL. In
+gated mode, the gated code is available to approved members and the same
+verified crawler identities as reporting. Unverified requests see
+`Verification code withheld. Sign in to keep reading.`
+
+Each valid HTML request writes a JSON `crawler_probe` log event with the token,
+request ID, access decision, socket peer, forwarding chain, derived client IP,
+and user-agent. Codes, cookies, and credentials are not logged. Correlate a
+correct code with the matching request before concluding that direct retrieval
+worked. A code alone may have come from a preview or intermediary. Observing
+an address or user-agent does not make it a trusted provider identity.
+
 ## Sources and validation
 
 - [Google verification](https://developers.google.com/crawling/docs/crawlers-fetchers/verify-google-requests)

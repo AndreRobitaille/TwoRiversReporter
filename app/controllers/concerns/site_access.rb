@@ -11,7 +11,8 @@ module SiteAccess
     "topics" => %w[index show],
     "meetings" => %w[index show],
     "committees" => %w[show],
-    "members" => %w[show]
+    "members" => %w[show],
+    "crawler_probes" => %w[show]
   }.freeze
 
   private

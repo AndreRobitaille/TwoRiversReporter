@@ -698,6 +698,9 @@ with no withheld reporting in the markup. Scheduled jobs refresh official IP
 ranges; page requests make no verification network calls. Grok remains at the
 anonymous tier until an operator verification source or an authenticated
 publisher arrangement is confirmed; a claimed Grok identity is insufficient.
+For live retrieval checks, explicitly generated 48-hour diagnostic URLs expose
+synthetic public/gated codes and record request identity and access decisions.
+They contain no reporting and use the same crawler gate as public reporting.
 
 ### Sign-in and access requests
 
