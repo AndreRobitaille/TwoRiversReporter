@@ -5,6 +5,8 @@ User-agent: Google-InspectionTool
 User-agent: bingbot
 User-agent: OAI-SearchBot
 User-agent: ChatGPT-User
+User-agent: Claude-SearchBot
+User-agent: Claude-User
 Disallow: /admin
 Disallow: /admin/
 

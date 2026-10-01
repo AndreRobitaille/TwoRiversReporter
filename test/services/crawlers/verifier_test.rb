@@ -51,6 +51,16 @@ class Crawlers::VerifierTest < ActiveSupport::TestCase
     assert_nil @verifier.call(request_for("FakeChatGPT-User/1.0", address: "198.51.100.130"))
   end
 
+  test "Anthropic's published feed permits search and user retrieval without granting training access" do
+    @cache.write(@ranges.cache_key(:anthropic), { prefixes: [ "198.51.100.0/24" ], fetched_at: Time.current.to_i })
+
+    assert_equal "Claude-SearchBot", @verifier.call(request_for("Claude-SearchBot/1.0", address: "198.51.100.2"))
+    assert_equal "Claude-User", @verifier.call(request_for("Claude-User/1.0", address: "198.51.100.2"))
+    assert_nil @verifier.call(request_for("ClaudeBot/1.0", address: "198.51.100.2"))
+    assert_nil @verifier.call(request_for("Claude-User/1.0"))
+    assert_nil @verifier.call(request_for("FakeClaude-User/1.0", address: "198.51.100.2"))
+  end
+
   private
 
     def request_for(agent, address: "192.0.2.4", method: "GET")

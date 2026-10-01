@@ -5,7 +5,8 @@ module Crawlers
       google: "https://developers.google.com/static/crawling/ipranges/common-crawlers.json",
       bing: "https://www.bing.com/toolbox/bingbot.json",
       openai_search: "https://openai.com/searchbot.json",
-      openai_user: "https://openai.com/chatgpt-user.json"
+      openai_user: "https://openai.com/chatgpt-user.json",
+      anthropic: "https://claude.com/crawling/bots.json"
     }.freeze
 
     BOTS = {
@@ -13,7 +14,9 @@ module Crawlers
       "Google-InspectionTool" => :google,
       "bingbot" => :bing,
       "OAI-SearchBot" => :openai_search,
-      "ChatGPT-User" => :openai_user
+      "ChatGPT-User" => :openai_user,
+      "Claude-SearchBot" => :anthropic,
+      "Claude-User" => :anthropic
     }.freeze
   end
 end

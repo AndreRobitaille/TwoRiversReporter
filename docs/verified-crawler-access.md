@@ -22,6 +22,7 @@ have no full-content exception.
 | Bing and Copilot experiences powered by Bing | `bingbot` | [Bingbot ranges](https://www.bing.com/toolbox/bingbot.json) |
 | ChatGPT search | `OAI-SearchBot` | [OpenAI search ranges](https://openai.com/searchbot.json) |
 | ChatGPT user-directed retrieval | `ChatGPT-User` | [OpenAI user retrieval ranges](https://openai.com/chatgpt-user.json) |
+| Claude search and user-directed retrieval | `Claude-SearchBot`, `Claude-User` | [Anthropic crawler ranges](https://claude.com/crawling/bots.json) |
 
 Google News uses ordinary Googlebot HTTP identities; `Googlebot-News` is a
 robots.txt policy token. Image, video, ads, and generic research crawlers do
@@ -41,6 +42,11 @@ allows ChatGPT to index reporting and fetch it for a human's question. `GPTBot`
 is a separate training crawler and receives no full-content exception.
 ChatGPT agents, Codex, and arbitrary OpenAI-operated networks do not qualify
 unless the request meets one of these documented identity/feed pairs.
+
+Anthropic publishes one crawler range feed shared by its bots. Only
+`Claude-SearchBot` and `Claude-User` receive the reporting exception;
+`ClaudeBot` is a training crawler and remains at the anonymous tier. API and
+MCP egress ranges are not substituted for the documented crawler feed.
 
 ## Rendering and caching
 
@@ -111,6 +117,7 @@ fails verification.
 - [Bing crawler verification](https://www.bing.com/webmasters/help/Verify-Bingbot-2195837f)
 - [Bing indexing and Copilot preview controls](https://blogs.bing.com/webmaster/2025/10/Bing-Introduces-Support-for-the-data-nosnippet-HTML-Attribute/)
 - [Official OpenAI crawler documentation](https://developers.openai.com/api/docs/bots)
+- [Official Anthropic crawler policy and verification source](https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler)
 
 Request tests first prove full reporting reaches verified crawlers, then prove
 the same content is absent for spoofed requests. They cover forwarding-header
