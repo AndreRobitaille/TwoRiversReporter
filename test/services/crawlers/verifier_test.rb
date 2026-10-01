@@ -39,6 +39,18 @@ class Crawlers::VerifierTest < ActiveSupport::TestCase
     assert_nil @verifier.call(request_for("BingPreview/1.0", address: "198.51.100.2"))
   end
 
+  test "OpenAI search and user retrieval use separate official feeds and do not grant training access" do
+    @cache.write(@ranges.cache_key(:openai_search), { prefixes: [ "198.51.100.0/25" ], fetched_at: Time.current.to_i })
+    @cache.write(@ranges.cache_key(:openai_user), { prefixes: [ "198.51.100.128/25" ], fetched_at: Time.current.to_i })
+
+    assert_equal "OAI-SearchBot", @verifier.call(request_for("OAI-SearchBot/1.4", address: "198.51.100.2"))
+    assert_equal "ChatGPT-User", @verifier.call(request_for("ChatGPT-User/1.0", address: "198.51.100.130"))
+    assert_nil @verifier.call(request_for("ChatGPT-User/1.0", address: "198.51.100.2"))
+    assert_nil @verifier.call(request_for("OAI-SearchBot/1.4", address: "198.51.100.130"))
+    assert_nil @verifier.call(request_for("GPTBot/1.4", address: "198.51.100.2"))
+    assert_nil @verifier.call(request_for("FakeChatGPT-User/1.0", address: "198.51.100.130"))
+  end
+
   private
 
     def request_for(agent, address: "192.0.2.4", method: "GET")

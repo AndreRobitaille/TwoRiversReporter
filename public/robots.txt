@@ -3,6 +3,8 @@
 User-agent: Googlebot
 User-agent: Google-InspectionTool
 User-agent: bingbot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
 Disallow: /admin
 Disallow: /admin/
 
