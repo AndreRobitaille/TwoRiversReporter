@@ -14,7 +14,7 @@ Crawler access never creates an account/session or satisfies authentication,
 membership approval, admin permissions, or reauthentication. Training crawlers
 have no full-content exception.
 
-## Supported providers
+## Supported and pending providers
 
 | Provider | Allowed HTTP identities | Verification feed |
 | --- | --- | --- |
@@ -23,6 +23,7 @@ have no full-content exception.
 | ChatGPT search | `OAI-SearchBot` | [OpenAI search ranges](https://openai.com/searchbot.json) |
 | ChatGPT user-directed retrieval | `ChatGPT-User` | [OpenAI user retrieval ranges](https://openai.com/chatgpt-user.json) |
 | Claude search and user-directed retrieval | `Claude-SearchBot`, `Claude-User` | [Anthropic crawler ranges](https://claude.com/crawling/bots.json) |
+| Grok | No full-content exemption yet | No operator verification source confirmed |
 
 Google News uses ordinary Googlebot HTTP identities; `Googlebot-News` is a
 robots.txt policy token. Image, video, ads, and generic research crawlers do
@@ -47,6 +48,30 @@ Anthropic publishes one crawler range feed shared by its bots. Only
 `Claude-SearchBot` and `Claude-User` receive the reporting exception;
 `ClaudeBot` is a training crawler and remains at the anonymous tier. API and
 MCP egress ranges are not substituted for the documented crawler feed.
+
+### Grok verification prerequisite
+
+As of 2026-09-30, review of xAI's official Web Search documentation and
+documentation index did not establish a crawler identity with an operator
+IP feed or a reverse/forward DNS verification procedure. Those sources
+describe web search and browsing, not a publisher-facing authorization scheme.
+This does not establish that Grok has no crawler; it means we cannot yet
+authenticate such a request independently of its claimed name.
+
+Grok therefore receives existing public teasers unless it authenticates as an
+approved member through the ordinary account flow. No guessed bot name, broad
+cloud network, or client-supplied verification header gets a full-content
+exception. `GrokCrawlerAccessTest` pins that behavior even on a known crawler
+network. Its sample Grok labels are simulated claims, not asserted official
+user-agent strings. Direct Grok access remains unimplemented pending
+verification.
+
+To enable direct Grok access later, first obtain an xAI-published identity and
+verification source or an explicitly authenticated publisher arrangement.
+Then add its verified pair to `Crawlers::Providers`, extend the refresh job if
+its source format differs, and run the same full-content/impersonation, proxy,
+cache, and account/admin tests used by the other providers. A robots.txt rule
+alone cannot authenticate a request or unlock the server-side gate.
 
 ## Rendering and caching
 
@@ -118,6 +143,8 @@ fails verification.
 - [Bing indexing and Copilot preview controls](https://blogs.bing.com/webmaster/2025/10/Bing-Introduces-Support-for-the-data-nosnippet-HTML-Attribute/)
 - [Official OpenAI crawler documentation](https://developers.openai.com/api/docs/bots)
 - [Official Anthropic crawler policy and verification source](https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler)
+- [xAI Web Search](https://docs.x.ai/developers/tools/web-search)
+- [xAI documentation index](https://docs.x.ai/llms.txt)
 
 Request tests first prove full reporting reaches verified crawlers, then prove
 the same content is absent for spoofed requests. They cover forwarding-header
@@ -125,3 +152,18 @@ spoofing, missing ranges, formats, cache isolation, and account/admin denial.
 The existing anonymous canary sweep and quantity/identity caps protect human
 readers. Feed tests use controlled responses. A live feed refresh checks the
 current endpoint; it does not prove a real crawler visit or a deployment.
+
+Validation on 2026-09-30:
+
+- `CI=1 PARALLEL_WORKERS=1 RUBOCOP_CACHE_ROOT=/tmp/trr-crawler-rubocop bin/ci`
+  passed: 1,842 tests, 7,728 assertions, no failures/errors, one existing skip;
+  RuboCop, dependency audits, and Brakeman passed.
+- Live official feeds passed the actual fetch, validation, cache, and identity
+  verification path locally: Google 317 ranges, Bing 28, OpenAI search 39,
+  OpenAI user retrieval 230, and Anthropic 26. All seven supported identities
+  verified against their corresponding feed.
+- After positive content assertions passed, temporarily removing source-IP
+  verification caused the Google impersonation test to fail as expected.
+  The original verification was restored before final CI.
+- These checks do not verify the production proxy chain, deploy the feature,
+  or prove that a real provider crawler has visited the site.

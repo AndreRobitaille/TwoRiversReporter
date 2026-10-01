@@ -685,7 +685,8 @@ sign-in prompt partial. They never branch on authentication state or
 In gated mode, selected verified crawlers can read full reporting on public
 HTML pages without a member account. This includes Googlebot, Google's
 inspection tool, Bingbot, ChatGPT search/user retrieval, and Claude search/user
-retrieval; supported identities and official verification sources are documented in `docs/verified-crawler-access.md`. Both bot identity
+retrieval; supported identities and official verification sources are documented
+in `docs/verified-crawler-access.md`. Both bot identity
 and source IP must match. Missing or expired verification data keeps requests
 gated. Forwarded addresses are accepted only through configured trusted proxy
 hops, and reporting responses cannot enter a shared or browser cache.
@@ -694,7 +695,9 @@ The owner accepts indirect human access through authorized AI services.
 Crawler permission does not authenticate a user or grant account/admin access.
 Gated pages declare their registration requirement through paywall JSON-LD,
 with no withheld reporting in the markup. Scheduled jobs refresh official IP
-ranges; page requests make no verification network calls.
+ranges; page requests make no verification network calls. Grok remains at the
+anonymous tier until an operator verification source or an authenticated
+publisher arrangement is confirmed; a claimed Grok identity is insufficient.
 
 ### Sign-in and access requests
 
