@@ -16,17 +16,13 @@ The `.claude/skills/` files are shared repository playbooks despite their
 tool-specific directory name. Non-Claude agents should read them directly
 rather than duplicating them into another agent directory.
 
-## Mandatory Production SSH Rule
-Before **any** production SSH operation, including read-only inspection, establish
-and verify one persistent SSH tunnel using `.claude/skills/deploying/SKILL.md`.
-Reuse it for every SSH, Kamal/Net::SSH, Docker/buildx, and verification command.
-This is a prerequisite, not a fallback after connection failures. A control
-socket alone does not route Kamal or Docker through it; configure both clients
-as the playbook specifies. If the tunnel fails, stop remote work and report the
-blocker; do not loop on fresh connections or bypass it with direct SSH.
-Keep the tunnel through verification, then close it and remove temporary config.
-Repository instructions take precedence over older memory recipes that describe
-the tunnel as optional. Public HTTPS health checks do not require SSH.
+## Production and deploys
+Deploy only when Andre explicitly asks. A merge to master is not a deploy; production updates only when Kamal runs.
+Follow `.claude/skills/deploying/SKILL.md` exactly: one verified tunnel on port 22222, and every Kamal command through `trr_kamal` only.
+Keep one persistent connection for the whole operation, including read-only checks. No direct or parallel ssh to the server, and no retry loops.
+If something fails, close the tunnel, stop, and report. Wait at least 5 minutes before any single further attempt.
+A timeout does not show whether SSH failed from throttling, a firewall, or availability.
+Do not copy production data anywhere unless Andre explicitly says yes. On a deploy he asked for, still take the playbook's database dump before a destructive migration.
 
 ## Before Changing X, Read Y
 - Topic extraction / triage / summaries / lifecycle → `docs/topics/TOPIC_GOVERNANCE.md`
