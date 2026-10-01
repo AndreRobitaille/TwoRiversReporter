@@ -29,11 +29,22 @@ Non-disclosure on the sign-in page is retained. In a small city, the ability to 
 
 ### The invariant
 
-**Withheld text is never rendered.** Not `display: none`, not CSS-blurred, not `aria-hidden` — never placed in the response body at all.
+**Withheld text is never rendered to an unverified anonymous visitor.** Not `display: none`, not CSS-blurred, not `aria-hidden` — never placed in the response body at all.
 
 CSS blur is not access control. If the server emits the full summary and blurs it, `curl`, View Source, or one disabled style rule reads all of it. That would be worse than the current hard gate, because the page would look protected while being open.
 
 The fade applies only to text we chose to show. It disguises the truncation point; it does not conceal content.
+
+### Owner-approved crawler exception (2026-09-30)
+
+Verified reporting crawlers may receive full public reporting HTML in gated
+mode without a member account. The owner accepts indirect human access through
+AI services. Ordinary anonymous and unverified requests still receive teasers.
+The exception requires both an exact allowed identity and a matching current
+operator-published IP range, through a trusted proxy chain. It never grants
+account/admin access. Public reporting responses cannot be cached, and gated
+pages identify their registration requirement with paywall JSON-LD. See
+`docs/verified-crawler-access.md` for scope, providers, upkeep, and verification.
 
 ### Two primitives
 
@@ -103,7 +114,7 @@ This is the only mechanism that answers "I applied — did it work?", which in a
 
 ## Security Invariants
 
-1. No withheld text appears in any anonymous response body — by any route.
+1. No withheld text appears in any unverified anonymous response body — by any route.
 
    Implementation found three leaks that rendered-text inspection would never catch, so this invariant explicitly covers: `data-` attributes, `<meta>` tags including og: and twitter:, turbo-stream payloads, and alternate `?page=N` or `format:` variants of the same URL. A helper that builds share text or a meta description must consult `gated_for_visitor?` itself; gating the view alone is insufficient.
 
@@ -116,7 +127,7 @@ This is the only mechanism that answers "I applied — did it work?", which in a
    The lesson worth carrying: leaks 1, 2, 4, 6 and 7 were all the same shape — a helper deriving text from content the page displayed, whose justification expired silently when the page was edited. **After changing what any gated surface renders, re-audit every helper that derives text from it.**
 2. `og_controller` and `sitemaps#show` are public in both modes.
 3. Admin surfaces are gated in both modes, unaffected by `access_mode`.
-4. A page cached while `open` must not be served after a flip to `gated`. **No code is required for this** — verified empirically on 2026-07-24: `Rack::ETag` and `Rack::ConditionalGet` are in the middleware stack, Rails sends `Cache-Control: max-age=0, private, must-revalidate`, and the ETag is derived from the response body. Every request therefore revalidates against the origin, the server re-renders under the current mode, and a page whose content differs between modes already gets a distinct ETag. A page whose content is identical in both modes is correct to serve from cache.
+4. A page cached while `open` must not be served after a flip to `gated`. **Gated reporting now uses `Cache-Control: private, no-store` for the crawler exception.** The original mode-switch ETag analysis below still applies to open-mode responses — verified empirically on 2026-07-24: `Rack::ETag` and `Rack::ConditionalGet` are in the middleware stack, Rails sends `Cache-Control: max-age=0, private, must-revalidate`, and the ETag is derived from the response body. Every request therefore revalidates against the origin, the server re-renders under the current mode, and a page whose content differs between modes already gets a distinct ETag. A page whose content is identical in both modes is correct to serve from cache.
 
    Do not add an `etag { ... }` block for the access mode. Registered etaggers only apply inside `fresh_when`/`stale?`, which this app never calls, so such a block is inert; forcing it to apply activates `stale_when_importmap_changes` site-wide as a side effect.
 
@@ -149,7 +160,7 @@ Leak assertions are written as part of stages 2 through 4, alongside the surface
 ## Out of Scope
 
 - **About page fork** — the current copy assumes an open site. Deferred by the owner.
-- **SEO / `noindex` policy** — gated mode changes what crawlers see. Acknowledged as a separate problem.
+- **Broader SEO / `noindex` policy** — the verified crawler exception and registration markup are specified in `docs/verified-crawler-access.md`; other SEO policy remains separate.
 - **Open-source repo exposure** — acknowledged, separate.
 - **ActiveStorage blob URLs** — document links sit below the gate so they are not rendered, but blobs stay fetchable by anyone holding a URL. These are city PDFs; whether that matters is an open decision, not a blocker.
 

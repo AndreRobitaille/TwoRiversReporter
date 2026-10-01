@@ -660,12 +660,12 @@ Admin surfaces are unaffected by `access_mode` in both modes.
 
 ### The invariant
 
-**Withheld content is never rendered.** Not hidden with CSS, not
-blurred, not `aria-hidden`, and not smuggled into `data-` attributes,
+**Withheld content is never rendered to an unverified anonymous visitor.**
+Not hidden with CSS, not blurred, not `aria-hidden`, and not smuggled into `data-` attributes,
 `title=`/`alt=`, `<meta>` tags (including `og:`/`twitter:`), inline
 JSON, turbo-stream payloads, or `?page=N` / format-variant responses of
-the same URL. If an anonymous visitor may not read something, it must
-not appear in the response body, by any route. A helper that builds
+the same URL. If an unverified anonymous visitor may not read something,
+it must not appear in the response body, by any route. A helper that builds
 share text, a meta description, or any other out-of-band content must
 consult the gating predicate itself — gating the primary view template
 is not sufficient. This is a hard architectural constraint, not a
@@ -679,6 +679,22 @@ Views and helpers gate on one predicate, `gated_for_visitor?`, and two
 shared primitives — a `teaser` truncation helper and a `shared/_gate`
 sign-in prompt partial. They never branch on authentication state or
 `SiteSetting` directly; the predicate is the only seam.
+
+### Verified crawler access
+
+In gated mode, selected verified crawlers can read full reporting on public
+HTML pages without a member account. Initially this includes Googlebot and
+Google's inspection tool; supported identities and official verification
+sources are documented in `docs/verified-crawler-access.md`. Both bot identity
+and source IP must match. Missing or expired verification data keeps requests
+gated. Forwarded addresses are accepted only through configured trusted proxy
+hops, and reporting responses cannot enter a shared or browser cache.
+
+The owner accepts indirect human access through authorized AI services.
+Crawler permission does not authenticate a user or grant account/admin access.
+Gated pages declare their registration requirement through paywall JSON-LD,
+with no withheld reporting in the markup. Scheduled jobs refresh official IP
+ranges; page requests make no verification network calls.
 
 ### Sign-in and access requests
 

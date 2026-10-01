@@ -1,4 +1,15 @@
 module AccessHelper
+  def paywall_structured_data
+    return unless site_gated? && crawler_readable_page?
+
+    {
+      "@context" => "https://schema.org",
+      "@type" => "WebPage",
+      "url" => request.original_url,
+      "isAccessibleForFree" => false
+    }
+  end
+
   # Renders as much of `text` as an anonymous visitor is allowed to see.
   #
   # The withheld remainder is never placed in the response — the fade is a

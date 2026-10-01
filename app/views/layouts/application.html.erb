@@ -14,6 +14,9 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="description" content="<%= page_description %>">
     <link rel="canonical" href="<%= page_url %>">
+    <% if (paywall_data = paywall_structured_data) %>
+      <script type="application/ld+json"><%= raw json_escape(paywall_data.to_json) %></script>
+    <% end %>
 
     <%# Open Graph %>
     <meta property="og:site_name" content="Two Rivers Matters">
