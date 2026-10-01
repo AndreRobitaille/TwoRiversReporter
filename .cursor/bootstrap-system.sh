@@ -42,6 +42,7 @@ apt-get install -y --no-install-recommends \
   curl \
   git \
   libffi-dev \
+  libgmp10 \
   libreadline-dev \
   libssl-dev \
   libvips42t64 \
@@ -85,6 +86,10 @@ if [[ ! -x "${RUBY_PREFIX}/bin/ruby" ]] || ! "${RUBY_PREFIX}/bin/ruby" -e "abort
   tar -xzf "${tmp}" -C "${RUBY_PREFIX}" --strip-components=1
   rm -f "${tmp}"
 fi
+
+# ruby-builder binstubs keep the GitHub Actions toolcache shebang.
+mkdir -p "/opt/hostedtoolcache/Ruby/${RUBY_VERSION}"
+ln -sfn "${RUBY_PREFIX}" "/opt/hostedtoolcache/Ruby/${RUBY_VERSION}/x64"
 
 echo "${RUBY_PREFIX}/lib" >/etc/ld.so.conf.d/ruby.conf
 ldconfig
