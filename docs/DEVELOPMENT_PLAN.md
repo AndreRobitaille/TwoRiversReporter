@@ -713,6 +713,8 @@ Public `/llms.txt` provides a small site guide with stable navigation, source
 and access guidance, and a sitemap link. HTML links to it with `describedby`.
 It is discovery metadata and grants no access. `robots.txt` advertises the
 sitemap and permits the supported reporting identities while excluding admin.
+Both public text files refresh after an hour with conditional revalidation;
+the production asset cache lifetime does not apply to these stable URLs.
 
 ### Sign-in and access requests
 

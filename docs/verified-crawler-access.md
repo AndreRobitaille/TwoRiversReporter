@@ -122,6 +122,11 @@ no reporting copy or resource catalog. HTML advertises it with a `describedby`
 link. It neither authenticates a requester nor requires Grok support. No article
 markdown endpoints or `llms-full.txt` reporting dump are added.
 
+Both public text files use `public, max-age=3600, must-revalidate` with static
+Last-Modified handling, instead of the one-year production asset cache lifetime.
+This also applies to HEAD and 304 responses. Fingerprinted asset caching and
+reporting/sitemap privacy headers are preserved.
+
 Google and Bing can discover the sitemap through robots.txt. Search Console or
 Bing Webmaster Tools can also submit the same URL and show processing results;
 deployment alone does not establish submission, indexing, or a crawler visit.
@@ -244,3 +249,8 @@ Discovery validation on 2026-09-30:
 - The robots policy matches the supported identity registry. llms.txt links
   only stable public entry points, with no diagnostic/account URLs or reporting
   catalog. Live deployment checks are separate from these local results.
+- Follow-up discovery cache checks passed: 12 targeted tests, 138 assertions;
+  full CI passed with 1,856 tests, 7,892 assertions, no failures/errors, the same
+  existing skip, all 535 Ruby files clean, dependency audits passing, and no
+  Brakeman warnings. GET/HEAD/304 text-file revalidation and preservation of
+  asset/reporting cache headers are covered.
