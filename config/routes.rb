@@ -1,5 +1,24 @@
 Rails.application.routes.draw do
   root "home#index"
+  get "api", to: "api/handbooks#show", defaults: { format: :json }
+  namespace :api, defaults: { format: :json } do
+    namespace :v1 do
+      get "home", to: "home#show"
+      resources :topics, only: %i[index show] do
+        get :appearances, on: :member
+        get :decisions, on: :member
+      end
+      resources :meetings, only: %i[index show] do
+        get :agenda_items, on: :member
+        get :documents, on: :member
+        get :transcript, on: :member
+      end
+      resources :committees, only: %i[index show], param: :slug
+      resources :officials, only: %i[index show] do
+        get :votes, on: :member
+      end
+    end
+  end
   get "about", to: "pages#about"
   # Short-lived synthetic diagnostics, created explicitly through crawlers:probes.
   get "crawler-probes/:token", to: "crawler_probes#show", as: :crawler_probe
@@ -23,6 +42,9 @@ Rails.application.routes.draw do
   end
 
   namespace :settings do
+    resources :api_keys, only: %i[index new create destroy] do
+      delete :revoke_all, on: :collection
+    end
     resource :profile, only: %i[show], controller: "profile"
     resource :security, only: %i[show], controller: "security"
     resource :passkey_prompt, only: %i[destroy], controller: "passkey_prompts"

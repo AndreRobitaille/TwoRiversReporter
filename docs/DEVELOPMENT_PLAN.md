@@ -157,6 +157,38 @@ Resident-Facing Pages
 
 ------------------------------------------------------------------------
 
+## Read-only Resident API
+
+Active users can provision named, expiring API keys from Account → API keys.
+The authenticated `/api` handbook describes the versioned `/api/v1` endpoints
+for all resident content: topic briefings/history/decisions, canonical meetings,
+summaries, agenda analysis, official document links, stored transcript text,
+committee rosters, public officials, attendance and votes.
+
+API access uses bearer credentials with the same resident-content scope in both
+public-access modes. Keys cannot write content or authenticate browser settings
+or `/admin/`, including keys owned by administrators. Owner eligibility and key
+revocation are checked on every request. Responses exclude internal generation
+and account data, use private no-store caching, and bound collection/transcript
+reads. Official records remain authoritative.
+
+The two primary bot workflows are update discovery and research. Meeting/topic
+lists support inclusive `updated_since` filters and `sort=updated`, with separate
+source/analysis timestamps so old meetings with newly available evidence surface.
+Search includes resident-visible narrative and agenda analysis alongside official
+source text, public topic names and existing body/date filters. Internal generated
+fields never influence searches. The authenticated handbook documents both flows.
+
+Users name keys, choose an expiry, see the secret once, and can revoke them.
+Admin User Accounts shows provisioned/active counts and key lifecycle metadata
+without secrets. Issuance requires fresh browser authentication and matching
+session context; lifecycle actions are audited.
+
+See [the client and operator contract](read-only-api.md) and
+[the implementation design](superpowers/specs/2026-10-02-read-only-user-api-design.md).
+
+------------------------------------------------------------------------
+
 ## Core Domain Model
 
 ### Committee

@@ -5,4 +5,7 @@
   <%= link_to "Security", settings_security_path,
         class: "tab #{'active' if current == :security}",
         aria: { current: ("page" if current == :security) } %>
+  <%= link_to "API keys", settings_api_keys_path,
+        class: "tab #{'active' if current == :api_keys}",
+        aria: { current: ("page" if current == :api_keys) } %>
 </nav>

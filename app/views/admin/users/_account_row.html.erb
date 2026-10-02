@@ -8,6 +8,14 @@
     <% if user.disabled_at.present? %><span class="badge badge--danger">Disabled</span><% end %>
   </td>
   <td class="data-cell"><%= user.passkey_credentials.size %></td>
+  <td class="data-cell">
+    <% key_count = @api_key_counts.fetch(user.id, 0) %>
+    <% if key_count.zero? %>
+      <span class="detail-term">No keys</span>
+    <% else %>
+      <%= key_count %> provisioned · <%= @active_api_key_counts.fetch(user.id, 0) %> active
+    <% end %>
+  </td>
   <td>
     <% if application.present? %>
       <span class="badge badge--<%= membership_application_status_variant(application) %>">

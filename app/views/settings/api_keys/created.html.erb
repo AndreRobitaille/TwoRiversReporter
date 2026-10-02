@@ -1,0 +1,22 @@
+<% content_for(:title) { "Account — API key created" } %>
+<% content_for(:head) { tag.meta(name: "turbo-cache-control", content: "no-cache") } %>
+<%= render "settings/header" %>
+<%= render "settings/tabs", current: :api_keys %>
+
+<section class="card api-key-form api-key-reveal" data-controller="api-key-copy">
+  <span class="badge badge--success">Key created</span>
+  <h2 class="card-title api-key-reveal-title"><%= @api_key.name %></h2>
+  <p>Copy your key now. This is the only time its full value will be shown.</p>
+  <div class="form-group">
+    <label for="api-key-secret" class="form-label">Your API key</label>
+    <textarea id="api-key-secret" class="form-input api-key-secret" readonly spellcheck="false"
+      autocomplete="off" data-api-key-copy-target="key"><%= @plaintext_key %></textarea>
+  </div>
+  <button type="button" class="btn btn--primary" data-action="api-key-copy#copy">Copy API key</button>
+  <p class="api-key-help" data-api-key-copy-target="status" role="status" aria-live="polite"></p>
+  <div class="api-key-scope">
+    <p>Save this in your tool’s secret settings. Anyone with this key can read reporting through your account until you revoke it or it expires.</p>
+    <p>Expires <strong><%= api_key_date(@api_key.expires_at) %></strong>.</p>
+  </div>
+  <%= link_to "Done — back to API keys", settings_api_keys_path, class: "btn btn--secondary" %>
+</section>
