@@ -9,6 +9,7 @@ module Api
         @base_url = base_url
         @canonical_meetings = {}
         @illustrations = {}
+        @citation_resolvers = {}
         @helpers = ApplicationController.helpers
       end
 
@@ -120,10 +121,11 @@ module Api
           source_type: string(data["source_type"]), generated_at: timestamp(summary.updated_at),
           headline: string(data["headline"]),
           highlights: hashes(data["highlights"]).map { |entry| {
-            text: string(entry["text"]), vote: string(entry["vote"]), citations: citations(entry["citations"] || entry["citation"]) } },
+            text: string(entry["text"]), vote: string(entry["vote"]), citations: citations(entry["citations"] || entry["citation"], summary: summary) } },
           public_input: hashes(data["public_input"]).map { |entry| {
             type: string(entry["type"]), speaker: string(entry["speaker"]),
-            summary: string(entry["summary"])&.gsub(/\s*\[Address redacted\.?\]\s*/i, " ")&.strip } },
+            summary: string(entry["summary"])&.gsub(/\s*\[Address redacted\.?\]\s*/i, " ")&.strip,
+            citations: citations(entry["citations"] || entry["citation"], summary: summary) } },
           legacy_markdown: data.empty? ? summary.content : nil,
           agenda_items_url: url("/api/v1/meetings/#{meeting.id}/agenda_items") }
       end
@@ -137,18 +139,18 @@ module Api
           match = Topics::ItemDetailsMatcher.new(items, [ entry ]).build.keys.first
           item = items.find { |candidate| candidate.id == match }
           matched_ids << item.id if item
-          item_payload(meeting, item, entry)
+          item_payload(meeting, item, entry, summary: summary)
         end
-        analyses + items.reject { |item| matched_ids.include?(item.id) }.map { |item| item_payload(meeting, item, {}) }
+        analyses + items.reject { |item| matched_ids.include?(item.id) }.map { |item| item_payload(meeting, item, {}, summary: summary) }
       end
 
-      def item_payload(meeting, item, analysis)
+      def item_payload(meeting, item, analysis, summary: nil)
         { agenda_item_id: item&.id, number: item&.number,
           title: string(analysis["agenda_item_title"]) || item&.display_context_title,
           planned_summary: item&.summary, recommended_action: item&.recommended_action,
           analysis: { summary: string(analysis["summary"]), decision: string(analysis["decision"]),
             vote: string(analysis["vote"]), public_hearing: string(analysis["public_hearing"]),
-            citations: citations(analysis["citations"]), ai_generated: analysis.present? },
+            citations: citations(analysis["citations"] || analysis["citation"], summary: summary), ai_generated: analysis.present? },
           topics: item ? item.topics.select(&:approved?).map { |record| topic(record) } : [],
           motions: item && !meeting.cancelled? ? item.motions.map { |motion| motion_payload(motion) } : [] }
       end
@@ -240,13 +242,11 @@ module Api
             alt: "Illustration for #{record.respond_to?(:name) ? record.name : record.body_name}", illustrative: true }
         end
 
-        def citations(value)
-          Array(value).filter_map do |entry|
-            label = entry.is_a?(Hash) ? string(entry["label"]) : string(entry)
-            next if label.blank?
+        def citations(value, summary:)
+          return [] unless summary
 
-            { label: label, document_id: nil, source_url: nil, page_number: nil }
-          end
+          resolver = @citation_resolvers[summary.id] ||= Citations::Resolver.for_summary(summary)
+          resolver.resolve_all(value)
         end
 
         def string(value)

@@ -51,10 +51,14 @@ module Topics
       @meeting.update!(body_name: "City Council Work Session")
       transcript = @meeting.meeting_documents.create!(document_type: "transcript",
         source_url: "https://example.com/recording", extracted_text: "Closing motion passed.")
+      catalog = Citations::SourceCatalog.new(meeting: @meeting, documents: [ transcript ])
+      reference = Citations::Resolver.new(meeting: @meeting, catalog: catalog.sources).canonical_reference(
+        { "source_id" => "doc-#{transcript.id}", "location" => { "kind" => "whole_source" } })
       @meeting.meeting_summaries.create!(summary_type: "transcript_recap", generation_data: {
+        "source_catalog" => catalog.sources,
         "source_type" => "transcript",
         "item_details" => [ { "agenda_item_id" => @agenda_item.id, "agenda_item_title" => "Rewritten title",
-          "summary" => "Closing motion passed.", "activity_level" => "decision", "decision" => "Passed",
+          "citations" => [ reference ], "summary" => "Closing motion passed.", "activity_level" => "decision", "decision" => "Passed",
           "motion" => { "mover" => "Mark Bittner", "seconder" => "Doug Brandt",
             "no_votes" => [ "Katherine Dahlke", "Adam Wachowski" ], "absent_members" => [ "Scott Stechmesser" ] } } ]
       })
@@ -64,8 +68,8 @@ module Topics
       assert_equal "Passed", context[:agenda_items].first[:item_details_decision]
       assert_equal "City Council Work Session", context[:meeting_metadata][:body_name]
       assert_equal "transcript", context[:meeting_metadata][:source_type]
-      assert_equal "doc-#{transcript.id}", context[:agenda_items].first.dig(:item_details_citation, :citation_id)
-      assert_includes context[:citation_ids], "doc-#{transcript.id}"
+      assert_equal reference["citation_id"], context[:agenda_items].first.dig(:item_details_citation, :citation_id)
+      assert_includes context[:citation_ids], reference["citation_id"]
       assert_equal [ "Katherine Dahlke", "Adam Wachowski" ], context[:agenda_items].first.dig(:item_details_motion, "no_votes")
       assert_equal [ "Scott Stechmesser" ], context[:agenda_items].first.dig(:item_details_motion, "absent_members")
     end
@@ -84,17 +88,21 @@ module Topics
         source_url: "https://example.com/minutes", extracted_text: "Council discussed repair costs.")
       transcript = @meeting.meeting_documents.create!(document_type: "transcript",
         source_url: "https://example.com/recording", extracted_text: "The repairs cost $12,000.")
+      catalog = Citations::SourceCatalog.new(meeting: @meeting, documents: [ minutes, transcript ])
+      resolver = Citations::Resolver.new(meeting: @meeting, catalog: catalog.sources)
+      references = catalog.sources.map { |source| resolver.canonical_reference(
+        { "source_id" => source["source_id"], "location" => { "kind" => "whole_source" } }) }
       @meeting.meeting_summaries.create!(summary_type: "minutes_recap", generation_data: {
+        "source_catalog" => catalog.sources,
         "source_type" => "minutes_with_transcript", "item_details" => [ {
-          "agenda_item_id" => @agenda_item.id, "summary" => "Council discussed the $12,000 repair cost."
+          "agenda_item_id" => @agenda_item.id, "summary" => "Council discussed the $12,000 repair cost.", "citations" => references
         } ]
       })
 
       context = @builder.build_context_json
-      assert_equal [ "doc-#{minutes.id}", "doc-#{transcript.id}" ],
+      assert_equal references.map { |reference| reference["citation_id"] },
         context[:agenda_items].first[:item_details_citations].map { |citation| citation[:citation_id] }
-      assert_includes context[:citation_ids], "doc-#{minutes.id}"
-      assert_includes context[:citation_ids], "doc-#{transcript.id}"
+      references.each { |reference| assert_includes context[:citation_ids], reference["citation_id"] }
     end
 
     test "excludes structural agenda rows from agenda_items" do

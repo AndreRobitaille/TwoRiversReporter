@@ -27,7 +27,7 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     generation_data = {
       "headline" => "Council approved the budget",
       "highlights" => [
-        { "text" => "Budget approved", "citation" => "Page 1", "vote" => "5-2", "impact" => "high" }
+        { "text" => "Budget approved", "citations" => [ { "source_id" => "doc-#{@meeting.latest_document("minutes_pdf").id}", "location" => { "kind" => "whole_source" } } ], "vote" => "5-2", "impact" => "high" }
       ],
       "public_input" => [],
       "item_details" => []
@@ -202,7 +202,7 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     summary = @meeting.topic_summaries.first
     assert_equal @topic, summary.topic
     assert_equal "## Topic Summary", summary.content
-    assert_equal({ "factual_record" => [] }, summary.generation_data)
+    assert_equal({ "factual_record" => [], "source_catalog" => [] }, summary.generation_data)
 
     # Verify mocks
     mock_ai.verify
@@ -356,7 +356,7 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     generation_data = {
       "headline" => "Council discussed the budget",
       "highlights" => [
-        { "text" => "Budget discussed", "citation" => "Transcript", "impact" => "medium" }
+        { "text" => "Budget discussed", "citations" => [ { "source_id" => "doc-#{@meeting.latest_document("transcript").id}", "location" => { "kind" => "whole_source" } } ], "impact" => "medium" }
       ],
       "public_input" => [],
       "item_details" => [],
@@ -507,7 +507,7 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     generation_data = {
       "headline" => "Council approved the budget",
       "highlights" => [
-        { "text" => "Budget approved", "citation" => "Page 1", "vote" => "5-2", "impact" => "high" }
+        { "text" => "Budget approved", "citations" => [ { "source_id" => "doc-#{@meeting.latest_document("minutes_pdf").id}", "location" => { "kind" => "whole_source" } } ], "vote" => "5-2", "impact" => "high" }
       ],
       "public_input" => [],
       "item_details" => []
@@ -857,7 +857,8 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
       "highlights" => [],
       "public_input" => [],
       "item_details" => [
-        { "title" => "Playground repairs", "summary" => "The board will discuss playground repairs.", "activity_level" => "discussion" }
+        { "title" => "Playground repairs", "summary" => "The board will discuss playground repairs.", "activity_level" => "discussion",
+          "citations" => [ { "source_id" => "doc-#{@meeting.latest_document('agenda_pdf').id}", "location" => { "kind" => "whole_source" } } ] }
       ]
     }
 

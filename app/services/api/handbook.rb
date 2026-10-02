@@ -53,7 +53,7 @@ module Api
           consistency: "A replaced or changed transcript returns 409 on pinned continuation requests." },
         sources: { summaries: "AI-generated analysis; follow the evidence links.",
           transcripts: "Supplemental recording text, not official minutes.",
-          citations: "Unresolved document/page mappings remain null; original labels are preserved." },
+          citations: "Validated citations provide document IDs, source URLs, versions and whole_source/pdf_page locations. Recording references never invent pages or timestamps. Legacy or changed-source references have status=unresolved and null document/link/page fields; their original labels remain visible. Citation repairs appear in updated_since results." },
         rate_limit: { requests: 120, per: "minute per account, shared across all keys", retry_header: "Retry-After" },
         errors: { "401" => "Missing, invalid, expired, revoked, or ineligible key", "404" => "Content not found",
           "409" => "Transcript revision changed", "422" => "Invalid filters or pagination", "429" => "Request limit reached" },

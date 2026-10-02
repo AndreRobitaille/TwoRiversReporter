@@ -631,7 +631,7 @@ module Ai
 
     # Structured meeting analysis — produces JSON for direct rendering.
     # Called by SummarizeMeetingJob to store structured JSON in generation_data.
-    def analyze_meeting_content(doc_text, kb_context, type, source: nil, participant_context: nil, motion_context: nil)
+    def analyze_meeting_content(doc_text, kb_context, type, source: nil, participant_context: nil, motion_context: nil, source_catalog: [])
       template = PromptTemplate.find_by!(key: "analyze_meeting_content")
       committee_ctx = prepare_committee_context
       system_role = template.interpolate_system_role(committee_context: committee_ctx)
@@ -659,6 +659,7 @@ module Ai
         participant_context: participant_context.to_s,
         motion_context: motion_context.to_s,
         agenda_items: meeting_agenda_context(source),
+        source_catalog: source_catalog.to_json,
         doc_text: doc_text.to_s
       }
       prompt = template.interpolate(**placeholders)

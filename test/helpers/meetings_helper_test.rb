@@ -10,6 +10,19 @@ class MeetingsHelperTest < ActionView::TestCase
     false
   end
 
+  test "citation helper proves allowed references before withholding them for a gated visitor" do
+    meeting = Meeting.create!(body_name: "City Council", detail_page_url: "https://example.test/citation-helper")
+    document = meeting.meeting_documents.create!(document_type: "transcript", extracted_text: "Recording evidence.",
+      source_url: "https://www.youtube.com/watch?v=synthetic")
+    catalog = Citations::SourceCatalog.new(meeting: meeting, documents: [ document ])
+    summary = meeting.meeting_summaries.create!(summary_type: "transcript_recap", generation_data: { "source_catalog" => catalog.sources })
+    entry = { "citations" => [ { "source_id" => "doc-#{document.id}", "location" => { "kind" => "whole_source" } } ] }
+    visible = meeting_citations(summary, entry)
+    assert_equal 1, visible.size
+    assert_equal document.source_url, visible.first[:source_url]
+    stub(:gated_for_visitor?, true) { assert_empty meeting_citations(summary, entry) }
+  end
+
   test "meeting_status_badge returns nil for upcoming meeting with no documents" do
     meeting = OpenStruct.new(document_status: :none, starts_at: 2.days.from_now, meeting_summaries: [])
     assert_nil meeting_status_badge(meeting)

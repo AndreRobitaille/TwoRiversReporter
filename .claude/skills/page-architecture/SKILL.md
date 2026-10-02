@@ -68,6 +68,17 @@ The meeting show page (`meetings/show.html.erb`) uses a **fixed inverted-pyramid
 
 **Structured JSON rendering:** Meeting summary content renders from `MeetingSummary.generation_data` (single-pass structured JSON from `analyze_meeting_content`) instead of two-pass markdown. Helper methods in `MeetingsHelper` extract fields: `meeting_headline`, `meeting_highlights`, `meeting_public_input`, `meeting_item_details`, `decision_badge_class`. The `content` (markdown) field is a fallback for meetings without `generation_data`, rendered in `.meeting-legacy-recap`.
 
+**Citation provenance:** `generation_data.source_catalog` retains the actual
+supplied document versions. Highlights, public input, and item details store
+structured references. `Citations::Resolver` supplies canonical labels and URLs
+for both the meeting citation partial and the resident API. PDF locations need
+actual page extractions; transcripts support whole-source recording links without
+pages or timestamps. Legacy references remain explicitly unresolved. Never fall
+back to today's minutes/packet PDF or infer a source by summary type.
+Topic summary and briefing contexts retain these validated references. The
+bounded citation-only repair/release procedure is in
+`docs/operations/citation-provenance-repair.md`.
+
 **Single-pass pipeline:** `SummarizeMeetingJob` calls `analyze_meeting_content` directly and stores the structured JSON in `generation_data`. The old two-pass flow (analyze → render markdown) is bypassed. The `render_meeting_summary` method remains for backward compatibility but is not called by the job.
 
 **Procedural filtering:** the AI prompt excludes adjournment, minutes approval, consent agenda, remote participation, treasurer's report, and reconvene. Closed session motions are NOT filtered (Wis. Stats 19.85 transparency).

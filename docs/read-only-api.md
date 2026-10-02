@@ -172,9 +172,18 @@ offset zero instead of mixing revisions. A missing transcript returns 404.
 Official documents remain authoritative. Generated summaries, agenda-item
 analysis and topic timelines are labelled `ai_generated`; recording transcripts
 are supplemental text and are not official minutes. Document responses preserve
-the original source URL and quality metadata. Citations retain their original
-labels. Unresolved document/page mappings are null rather than inferred from an
-ambiguous label such as “Page 4.” Illustrations are labelled as illustrative.
+the original source URL and quality metadata. Citation objects preserve `label`,
+`document_id`, `source_url`, and `page_number`. Validated references add `status:
+"resolved"`, `source_id`, `source_type` (document type), `source_version`,
+`citation_id`, and `location` (`whole_source` or `pdf_page`, with a page number).
+PDF URLs include `#page=N`; transcript references link to the recording, with no
+invented page or timestamp. Whole-source labels identify their scope explicitly.
+Legacy or changed-source references return `status: "unresolved"`, a `reason`,
+and null document/link/page fields while retaining the legacy label. The API
+never infers a source from an ambiguous label such as “Page 4,” and does not
+return raw source catalogs or internal citation metadata. Citation-only repairs
+advance the recap timestamp and are discoverable through `updated_since`.
+Illustrations are labelled as illustrative.
 
 ## Errors and limits
 

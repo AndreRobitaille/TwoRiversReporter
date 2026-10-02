@@ -1,4 +1,12 @@
 module MeetingsHelper
+  def meeting_citations(summary, entry)
+    return [] if gated_for_visitor? || summary.nil?
+
+    @citation_resolvers ||= {}
+    resolver = @citation_resolvers[summary.id] ||= Citations::Resolver.for_summary(summary)
+    resolver.resolve_all(entry["citations"] || entry["citation"])
+  end
+
   MEETING_BUFFER = 3.hours
 
   # Clean a meeting name for display. Strips trailing " Meeting", parenthetical

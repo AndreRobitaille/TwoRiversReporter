@@ -66,20 +66,8 @@ class SummarizeMeetingJob < ApplicationJob
     topic_context = agenda_topic_context(agenda_doc.extracted_text)
     combined_context = [ topic_context, kb_context ].reject(&:blank?).join("\n\n")
 
-    json_str = ai_service.analyze_meeting_content(
-      agenda_doc.extracted_text,
-      combined_context,
-      "agenda",
-      source: meeting,
-      participant_context: participant_context_for(meeting)
-    )
-    save_summary(
-      meeting,
-      "agenda_preview",
-      json_str,
-      source_type: "agenda",
-      framing: compute_framing(meeting, "agenda")
-    )
+    analyze_and_save_summary(meeting, [ agenda_doc ], ai_service, combined_context,
+      type: "agenda", summary_type: "agenda_preview", source_type: "agenda")
   end
 
   AGENDA_TOPIC_MIN_TOKEN_OVERLAP = 3
@@ -179,74 +167,32 @@ class SummarizeMeetingJob < ApplicationJob
     minutes_doc = minutes_document_for(meeting)
     transcript_doc = meeting.latest_document("transcript")
 
-    # Priority 1: Minutes (authoritative), optionally supplemented by transcript
+    # Minutes retain authority; the transcript stays a separate cited source.
     if minutes_doc&.extracted_text.present?
-      input_text = minutes_doc.extracted_text
-      source_type = "minutes"
-
-      if transcript_doc&.extracted_text.present?
-        input_text += "\n\n--- Additional context from meeting recording transcript ---\n\n" +
-          transcript_doc.extracted_text
-        source_type = "minutes_with_transcript"
-      end
-
-      json_str = ai_service.analyze_meeting_content(
-        input_text,
-        kb_context,
-        "minutes",
-        source: meeting,
-        participant_context: participant_context_for(meeting),
-        motion_context: motion_context_for(meeting)
-      )
-      summary = save_summary(meeting, "minutes_recap", json_str, source_type: source_type, framing: compute_framing(meeting, "minutes"))
-
-      # Clean up superseded summaries now that minutes exist
+      documents = [ minutes_doc ]
+      documents << transcript_doc if transcript_doc&.extracted_text.present?
+      source_type = documents.size == 2 ? "minutes_with_transcript" : "minutes"
+      analyze_and_save_summary(meeting, documents, ai_service, kb_context,
+        type: "minutes", summary_type: "minutes_recap", source_type: source_type)
       meeting.meeting_summaries.where(summary_type: %w[transcript_recap packet_analysis agenda_preview]).destroy_all
-      return
-    end
-
-    # Priority 2: Transcript (when no minutes available)
-    if transcript_doc&.extracted_text.present?
-      json_str = ai_service.analyze_meeting_content(
-        transcript_doc.extracted_text,
-        kb_context,
-        "transcript",
-        source: meeting,
-        participant_context: participant_context_for(meeting),
-        motion_context: motion_context_for(meeting)
-      )
-      save_summary(meeting, "transcript_recap", json_str, source_type: "transcript", framing: compute_framing(meeting, "transcript"))
-
-      # Clean up superseded packet preview / agenda preview
+    elsif transcript_doc&.extracted_text.present?
+      analyze_and_save_summary(meeting, [ transcript_doc ], ai_service, kb_context,
+        type: "transcript", summary_type: "transcript_recap", source_type: "transcript")
       meeting.meeting_summaries.where(summary_type: %w[packet_analysis agenda_preview]).destroy_all
-      return
+    elsif (packet_doc = packet_document_for(meeting)) && packet_doc.extracted_text.present?
+      analyze_and_save_summary(meeting, [ packet_doc ], ai_service, kb_context,
+        type: "packet", summary_type: "packet_analysis", source_type: "packet")
+      meeting.meeting_summaries.where(summary_type: "agenda_preview").destroy_all
     end
+  end
 
-    # Priority 3: Fall back to packet
-    packet_doc = packet_document_for(meeting)
-    if packet_doc
-      doc_text = if packet_doc.extractions.any?
-        ai_service.prepare_doc_context(packet_doc.extractions)
-      elsif packet_doc.extracted_text.present?
-        packet_doc.extracted_text
-      end
-
-      if doc_text
-        json_str = ai_service.analyze_meeting_content(
-          doc_text,
-          kb_context,
-          "packet",
-          source: meeting,
-          participant_context: participant_context_for(meeting),
-          motion_context: motion_context_for(meeting)
-        )
-        save_summary(meeting, "packet_analysis", json_str, framing: compute_framing(meeting, "packet"))
-        # Clean up superseded agenda preview
-        meeting.meeting_summaries.where(summary_type: "agenda_preview").destroy_all
-      else
-        Rails.logger.warn("No extractable text for packet document on Meeting #{meeting.id}")
-      end
-    end
+  def analyze_and_save_summary(meeting, documents, ai_service, kb_context, type:, summary_type:, source_type:)
+    catalog = Citations::SourceCatalog.new(meeting: meeting, documents: documents)
+    json_str = ai_service.analyze_meeting_content(catalog.text, kb_context, type,
+      source: meeting, source_catalog: catalog.sources,
+      participant_context: participant_context_for(meeting), motion_context: motion_context_for(meeting))
+    save_summary(meeting, summary_type, json_str, source_catalog: catalog.sources,
+      source_type: source_type, framing: compute_framing(meeting, type))
   end
 
   def generate_topic_summaries(meeting, ai_service, retrieval_service)
@@ -284,8 +230,9 @@ class SummarizeMeetingJob < ApplicationJob
       end
 
       # Validate citations
-      analysis_json = validate_analysis_json(analysis_json, context_json[:citation_ids])
+      analysis_json = validate_analysis_json(analysis_json, context_json[:citation_ids], context_json[:citation_references])
 
+      analysis_json["source_catalog"] = context_json[:source_catalog].deep_dup
       markdown_content = ai_service.render_topic_summary(analysis_json.to_json, source: topic)
 
       save_topic_summary(meeting, topic, markdown_content, analysis_json)
@@ -304,44 +251,10 @@ class SummarizeMeetingJob < ApplicationJob
     end
   end
 
-  def validate_analysis_json(json, allowed_citation_ids)
-    allowed_ids = Array(allowed_citation_ids).compact
-
-    # Ensure factual_record entries have citations and are in allowed list
-    if json["factual_record"].is_a?(Array)
-      json["factual_record"].select! do |entry|
-        citations = entry["citations"]
-        valid = citations.is_a?(Array) && citations.any? do |citation|
-          next false unless citation.is_a?(Hash)
-          allowed_ids.include?(citation["citation_id"])
-        end
-
-        unless valid
-          Rails.logger.warn("Dropping uncited or invalid factual claim: #{entry['statement']}")
-        end
-
-        valid
-      end
-    end
-
-    # Ensure institutional_framing entries have citations and are in allowed list
-    if json["institutional_framing"].is_a?(Array)
-      json["institutional_framing"].select! do |entry|
-        citations = entry["citations"]
-        valid = citations.is_a?(Array) && citations.any? do |citation|
-          next false unless citation.is_a?(Hash)
-          allowed_ids.include?(citation["citation_id"])
-        end
-
-        unless valid
-          Rails.logger.warn("Dropping uncited or invalid framing claim: #{entry['statement']}")
-        end
-
-        valid
-      end
-    end
-
-    json
+  def validate_analysis_json(json, allowed_citation_ids, citation_references = {})
+    references = citation_references.slice(*Array(allowed_citation_ids).compact)
+    Citations::TopicAnalysis.copy_references!(json, references: references,
+      require_citations: %w[factual_record institutional_framing])
   end
 
 
@@ -374,14 +287,14 @@ class SummarizeMeetingJob < ApplicationJob
     parts.join("\n")
   end
 
-  def save_summary(meeting, type, json_str, source_type: nil, framing: nil)
+  def save_summary(meeting, type, json_str, source_catalog:, source_type: nil, framing: nil)
     generation_data = begin
       JSON.parse(json_str)
     rescue JSON::ParserError => e
-      Rails.logger.error "Failed to parse meeting summary JSON: #{e.message}"
-      {}
+      raise Citations::SourceCatalog::InvalidSource, "Invalid meeting summary JSON: #{e.message}"
     end
 
+    Citations::MeetingAnalysis.validate!(generation_data, meeting: meeting, catalog: source_catalog)
     generation_data["source_type"] = source_type if source_type
     generation_data["framing"] = framing if framing
 

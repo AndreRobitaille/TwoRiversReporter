@@ -1,0 +1,12 @@
+<% citations = meeting_citations(summary, entry) %>
+<% if citations.any? %>
+  <div class="meeting-item-card-citations">
+    <% citations.each do |citation| %>
+      <% if citation[:status] == "resolved" && citation[:source_url].present? %>
+        <%= link_to citation[:label], citation[:source_url], target: "_blank", rel: "noopener", class: "meeting-citation-link" %>
+      <% else %>
+        <span><%= citation[:label] %><%= " — source unresolved" if citation[:status] == "unresolved" %></span>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

@@ -20,7 +20,9 @@ module Topics
         agenda_items: agenda_items,
         continuity_context: continuity,
         resident_reported_context: resident_reported_context,
+        source_catalog: source_catalog,
         citation_ids: collect_citation_ids(agenda_items, continuity),
+        citation_references: collect_citation_references(agenda_items, continuity),
         knowledgebase_context: kb_context_chunks
       }
     end
@@ -60,26 +62,15 @@ module Topics
       items.map do |item|
         # Agenda Item Document Attachments
         doc_attachments = item.meeting_documents.flat_map do |doc|
-          # Use extractions if available for granular page citations
-          if doc.extractions.any?
-            doc.extractions.map do |ex|
-              {
-                id: doc.id,
-                type: doc.document_type,
-                citation_id: "doc-#{doc.id}-p#{ex.page_number}",
-                label: "#{doc.document_type.humanize} (Page #{ex.page_number})",
-                text_preview: ex.cleaned_text&.truncate(1000, separator: " ")
-              }
-            end
-          else
-            # Fallback to whole document
-            [ {
-              id: doc.id,
-              type: doc.document_type,
-              citation_id: "doc-#{doc.id}",
-              label: "#{doc.document_type.humanize}",
-              text_preview: doc.extracted_text&.truncate(2000, separator: " ")
-            } ]
+          snapshot = Citations::SourceCatalog.snapshot(doc)
+          resolver = Citations::Resolver.new(meeting: @meeting, catalog: [ snapshot ])
+          pages = Citations::SourceCatalog.pages_for(doc)
+          locations = pages.any? ? pages.map { |page| [ { "kind" => "pdf_page", "page_number" => page.page_number }, page.cleaned_text ] } :
+            [ [ { "kind" => "whole_source" }, doc.extracted_text ] ]
+          locations.map do |location, text|
+            reference = resolver.canonical_reference({ "source_id" => snapshot["source_id"], "location" => location })
+            reference.deep_symbolize_keys.merge(id: doc.id, type: doc.document_type,
+              text_preview: text&.truncate(2000, separator: " "))
           end
         end
 
@@ -91,6 +82,7 @@ module Topics
         }
 
         matched_details = item_details_by_id[item.id]
+        references = analysis_source_citations(matched_details)
 
         {
           id: item.id,
@@ -104,8 +96,9 @@ module Topics
           item_details_decision: matched_details&.dig("decision"),
           item_details_public_hearing: matched_details&.dig("public_hearing"),
           item_details_motion: matched_details&.dig("motion"),
-          item_details_citation: matched_details.present? ? analysis_source_citation : nil,
-          item_details_citations: matched_details.present? ? analysis_source_citations : [],
+          item_details_citation: references.first,
+          item_details_citations: references,
+          item_details_unresolved_citations: unresolved_analysis_citations(matched_details),
           citation: item_citation,
           attachments: doc_attachments
         }
@@ -123,27 +116,30 @@ module Topics
     end
 
     def latest_summary
-      @latest_summary ||= @meeting.meeting_summaries.order(created_at: :desc).first
+      @latest_summary ||= ResidentContent::MeetingSelection.preferred_summary(@meeting)
     end
 
-    def analysis_source_citation
-      analysis_source_citations.first
+    def analysis_source_citations(details)
+      return [] unless details && latest_summary
+
+      values = details["citations"] || details["citation"]
+      references = values.is_a?(Array) ? values : [ values ].compact
+      resolver = analysis_citation_resolver
+      references.filter_map do |reference|
+        next unless resolver.resolve(reference)[:status] == "resolved"
+        resolver.canonical_reference(reference).deep_symbolize_keys
+      end
     end
 
-    def analysis_source_citations
-      document_types = case analysis_source_type
-      when "transcript" then [ "transcript" ]
-      when "minutes" then [ "minutes_pdf" ]
-      when "minutes_with_transcript" then [ "minutes_pdf", "transcript" ]
-      when "packet" then [ "packet_pdf" ]
-      when "agenda" then [ "agenda_pdf" ]
-      else []
-      end
+    def unresolved_analysis_citations(details)
+      return [] unless details && latest_summary
 
-      document_types.filter_map do |document_type|
-        document = @meeting.latest_document(document_type)
-        { citation_id: "doc-#{document.id}", label: document.document_type.humanize } if document
-      end
+      analysis_citation_resolver.resolve_all(details["citations"] || details["citation"])
+        .select { |reference| reference[:status] == "unresolved" }
+    end
+
+    def analysis_citation_resolver
+      @analysis_citation_resolver ||= Citations::Resolver.for_summary(latest_summary)
     end
 
     def analysis_source_type
@@ -212,27 +208,26 @@ module Topics
       }
     end
 
+    def source_catalog
+      summary_sources = latest_summary&.generation_data&.dig("source_catalog") || []
+      attachments = @meeting.agenda_items.substantive.joins(:agenda_item_topics)
+        .where(agenda_item_topics: { topic_id: @topic.id }).flat_map(&:meeting_documents)
+      (summary_sources + attachments.map { |document| Citations::SourceCatalog.snapshot(document) }).uniq
+    end
+
+    def collect_citation_references(agenda_items, continuity)
+      references = agenda_items.flat_map do |item|
+        [ item[:citation], *item[:item_details_citations], *item[:attachments] ]
+      end
+      references.concat(continuity[:recent_status_events].filter_map { |event| event[:citation] })
+      references.concat(continuity[:prior_appearances])
+      references.compact.to_h do |reference|
+        [ reference[:citation_id], reference.except(:text_preview, :notes, :date, :meeting_body, :evidence) ]
+      end
+    end
+
     def collect_citation_ids(agenda_items, continuity)
-      ids = []
-
-      agenda_items.each do |item|
-        ids << item.dig(:citation, :citation_id)
-        ids << item.dig(:item_details_citation, :citation_id)
-        ids.concat(item[:item_details_citations].map { |citation| citation[:citation_id] })
-        item[:attachments].each do |attachment|
-          ids << attachment[:citation_id]
-        end
-      end
-
-      continuity[:recent_status_events].each do |event|
-        ids << event.dig(:citation, :citation_id)
-      end
-
-      continuity[:prior_appearances].each do |appearance|
-        ids << appearance[:citation_id]
-      end
-
-      ids.compact.uniq
+      collect_citation_references(agenda_items, continuity).keys.compact
     end
   end
 end

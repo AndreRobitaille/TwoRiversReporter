@@ -36,7 +36,7 @@ module Topics
     private
 
     def entries_for(meeting)
-      summary = meeting.meeting_summaries.order(created_at: :desc).first
+      summary = ResidentContent::MeetingSelection.preferred_summary(meeting)
       return [] unless summary&.generation_data.is_a?(Hash)
 
       details = summary.generation_data["item_details"]
@@ -57,12 +57,16 @@ module Topics
           meeting_date: meeting.starts_at&.to_date&.to_s,
           meeting_body: meeting.body_name,
           source_type: summary.generation_data["source_type"],
+          source_catalog: summary.generation_data["source_catalog"] || [],
+          citations: Citations::Resolver.for_summary(summary).resolve_all(entry["citations"] || entry["citation"]),
           agenda_item_id: item.id,
           agenda_item_title: item.display_context_title,
           summary: entry["summary"],
           activity_level: entry["activity_level"],
           vote: entry["vote"],
           motion: entry["motion"],
+          motion_evidence: entry["motion_evidence"],
+          vote_evidence: entry["vote_evidence"],
           decision: entry["decision"],
           public_hearing: entry["public_hearing"]
         }

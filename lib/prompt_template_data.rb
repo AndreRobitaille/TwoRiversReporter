@@ -189,6 +189,7 @@ module PromptTemplateData
         { "name" => "participant_context", "description" => "Authoritative participant spellings and meeting roll-call names" },
         { "name" => "motion_context", "description" => "Structured motions and vote outcomes extracted from the same meeting" },
         { "name" => "agenda_items", "description" => "Meeting-scoped agenda item IDs and exact contextual titles" },
+        { "name" => "source_catalog", "description" => "Supplied source identities, versions and supported PDF pages" },
         { "name" => "doc_text", "description" => "Complete meeting document text" }
       ]
     },
@@ -654,11 +655,12 @@ module PromptTemplateData
         setting when reporting a substantive decision made there.
         Cite `item_details_citations` for recorded discussion and outcomes when
         supplied, falling back to `item_details_citation` for older contexts.
-        This array contains one citation per source document: one for a single
-        source, two for minutes supplemented with a transcript, or none if no
-        source document is known. When source_type is "minutes_with_transcript",
-        cite both documents for facts drawn from the combined item details;
-        details beyond the minutes may come from the recording. The agenda
+        These are validated references to the documents and versions actually
+        used for this item, with honest whole-source or PDF-page locations.
+        Copy their citation_id and label exactly. Unresolved legacy references
+        are not evidence. When source_type is "minutes_with_transcript", keep
+        recording evidence attributed to the recording; a minutes citation
+        does not support details recorded only in the transcript. The agenda
         citation supports scheduled business, not proof that a vote occurred.
         `item_details_motion` preserves verified mover, seconder, no_votes,
         and absent_members. Include these known identities in the factual
@@ -677,8 +679,10 @@ module PromptTemplateData
 
         <citation_rules>
         - You must include citations for all claims in "factual_record" and "institutional_framing".
-        - Use the "citation_id" provided in the input context (e.g. "doc-123").
-        - The "citations" array in the output should contain objects: { "citation_id": "doc-123", "label": "Packet Page 12" }.
+        - Copy citation_id and label from citation_references in the input context.
+        - Each citations array has one object per distinct supporting source/location.
+        - Never invent labels, page numbers, timestamps, source IDs or URLs.
+        - The server preserves the source version and location for each selected ID.
         - If no citation is available for a claim, do not include it in the factual record.
         </citation_rules>
 
@@ -886,6 +890,13 @@ module PromptTemplateData
 
         1. `recent_item_details` — The SUBSTANTIVE CONTENT of agenda items linked to this topic from the most recent meetings. Each entry has the actual summary of what was discussed, any activity_level classification, and any vote/decision/public_hearing fields. THIS IS THE PRIMARY SOURCE FOR SPECIFIC FACTS. When a recent_item_details entry contains a concrete incident (e.g., "resident complained about sticker purchase requirement", "Manitowoc Disposal reported fake stickers"), write a factual_record entry that names the specific incident. Do not default to "appeared on the agenda" phrasing when recent_item_details has real content.
         Preserve each entry's meeting_body when reporting where action occurred.
+        Copy supporting citation_id values from citation_references into each
+        factual_record entry's citations array, one per distinct supporting
+        source/location. The server preserves their validated source versions.
+        When no validated reference is available, use an empty citations array;
+        never invent a page, timestamp, identifier or source attribution.
+        In combined-source recaps, details from the recording remain recording
+        evidence; a minutes citation cannot establish transcript-only details.
         If source_type is "transcript", the outcome is recording-based and
         preliminary; do not claim that approved minutes establish it.
         Preserve known motion identities and named no votes from `motion` in
@@ -1038,7 +1049,7 @@ module PromptTemplateData
             "what_to_watch": "NEUTRAL. One sentence about what's next, or null."
           },
           "factual_record": [
-            {"event": "NEUTRAL. What happened — plain language, no framing, no editorial voice. IMPORTANT: The factual_record is a chronological timeline, not a curated list. Write one entry per distinct substantive event from recent_item_details AND prior_meeting_analyses. If a meeting had multiple substantive events (e.g., staff report plus committee discussion plus public comment), write multiple entries for that meeting. Do NOT drop events because a more recent event is more headline-worthy. Do NOT collapse multiple events into a single summary entry. An entry is required for each substantive event in the source data — missing events is a correctness bug. Only skip events that are purely procedural (adjournment, minutes approval) or have no information beyond agenda structure.", "date": "YYYY-MM-DD", "meeting": "City Council or committee name"}
+            {"event": "NEUTRAL. What happened — plain language, no framing, no editorial voice. IMPORTANT: The factual_record is a chronological timeline, not a curated list. Write one entry per distinct substantive event from recent_item_details AND prior_meeting_analyses. If a meeting had multiple substantive events (e.g., staff report plus committee discussion plus public comment), write multiple entries for that meeting. Do NOT drop events because a more recent event is more headline-worthy. Do NOT collapse multiple events into a single summary entry. An entry is required for each substantive event in the source data — missing events is a correctness bug. Only skip events that are purely procedural (adjournment, minutes approval) or have no information beyond agenda structure.", "date": "YYYY-MM-DD", "meeting": "City Council or committee name", "citations": [{"citation_id":"ID from citation_references"}]}
           ],
           "civic_sentiment": [
             {"observation": "NEUTRAL. What residents said or did — observational only.", "evidence": "Source", "meeting": "meeting name"}
@@ -1293,6 +1304,27 @@ module PromptTemplateData
         tally null when captions do not clearly establish every vote.
         </source_context>
 
+        <citation_provenance>
+        SOURCE CATALOG (JSON):
+        {{source_catalog}}
+
+        Cite only sources in this catalog that support the claim. Every highlight,
+        public_input and item_details entry has a citations array with one reference
+        per distinct supporting source/location; never collapse distinct sources.
+        Each reference is {"source_id":"doc-ID","location":{"kind":"whole_source"}}
+        or {"source_id":"doc-ID","location":{"kind":"pdf_page","page_number":2}}.
+        Copy source_id exactly. PDF page numbers are physical document pages and
+        must appear in that source's pages catalog AND the supplied page extracts.
+        Unpaginated text does not establish a page. If a precise location is
+        unavailable, use whole_source honestly. Transcripts have no supported
+        pages or timestamps: never invent either. Do not supply URLs or labels.
+        The server derives presentation from validated references.
+        Minutes and supplementary transcripts are separate sources. Cite recording
+        details to the transcript, without claiming approved minutes record them.
+        Background knowledge, agenda titles and rosters do not establish evidence
+        that a motion or vote occurred.
+        </citation_provenance>
+
         <guidelines>
         - Write in plain language a resident would use at a neighborhood
           gathering. No government jargon ("motion to waive reading and
@@ -1300,8 +1332,8 @@ module PromptTemplateData
         - Headline: 1-2 sentences, max ~40 words. Follow the temporal_context
           framing for tense and posture.
         - Highlights: max 3 items, highest resident impact first. Include
-          vote tallies where votes occurred. Each highlight gets a page
-          citation.
+          vote tallies where votes occurred. Each highlight gets a source
+          citation from the source catalog.
         - Public input: Distinguish general public comment (resident spoke
           at open comment period, unrelated to specific agenda items) from
           communication (council/committee member relayed resident contact).
@@ -1314,7 +1346,7 @@ module PromptTemplateData
           Editorial interpretation belongs in headline and highlights.
           Include public_hearing note for items with formal public
           input (Wisconsin law three-calls). Include decision and vote tally
-          where applicable. Anchor citations to page numbers.
+          where applicable. Ground citations in the supplied source catalog.
           When substantive action occurs at a work session, identify that
           setting in its highlight and item summary.
         - Each item_details entry must include an activity_level field with
@@ -1470,7 +1502,7 @@ module PromptTemplateData
           "highlights": [
             {
               "text": "What happened and why it matters to residents.",
-              "citation": "Page X",
+              "citations": [{"source_id":"doc-ID","location":{"kind":"whole_source"}}],
               "vote": "6-3 or null if no vote",
               "impact": "high|medium|low"
             }
@@ -1479,7 +1511,8 @@ module PromptTemplateData
             {
               "speaker": "Speaker Name",
               "type": "public_comment|communication",
-              "summary": "What they said or relayed, in plain language."
+              "summary": "What they said or relayed, in plain language.",
+              "citations": [{"source_id":"doc-ID","location":{"kind":"whole_source"}}]
             }
           ],
           "item_details": [
@@ -1504,7 +1537,7 @@ module PromptTemplateData
                 "absent_members": ["One exact source excerpt per named absent member, in the same order, or null if unknown"]
               },
               "activity_level": "decision|discussion|status_update",
-              "citations": ["Page X"]
+              "citations": [{"source_id":"doc-ID","location":{"kind":"whole_source"}}]
             }
           ]
         }

@@ -413,8 +413,9 @@ body, including a work session where action occurred; do not infer whether
 action occurred or was legally valid from the meeting label. Report final
 motions and announced outcomes, and omit a vote tally when captions cannot
 establish it. Approved minutes retain their source authority.
-When analysis combines minutes and a recording, topic context includes
-both document citations. Per-meeting continuity excludes later status
+When analysis combines minutes and a recording, topic context retains
+both source identities and the item's actual validated citations. Recording
+observations must not be attributed to minutes that do not record them. Per-meeting continuity excludes later status
 events; rolling briefings retain subsequent meeting history.
 
 ------------------------------------------------------------------------
@@ -486,10 +487,21 @@ for backward compatibility but `SummarizeMeetingJob` no longer calls
 
 ### Citation Rules
 
-- Per-meeting summaries cite packet pages: `[Packet Page 12]`
-- Rolling briefing record bullets cite meeting names: `(Council, Feb 18)`
-- Internal IDs (e.g., `[agenda-309]`) are never shown to residents
-- Citation translation happens at the prompt level, not post-processing
+- Each meeting analysis records a catalog of the actual supplied documents,
+  their versions, and supported locations. References are validated before saving.
+- PDF pages require real page extractions supplied to the analysis; transcripts
+  never acquire invented pages or timestamps. Whole-source references are allowed
+  and identified explicitly when precise locations are unavailable.
+- Minutes and supplementary recordings retain separate attribution.
+- The shared citation resolver derives trustworthy labels/URLs for HTML and API;
+  ambiguous legacy labels stay unresolved and never select an automatic PDF fallback.
+- Topic contexts, per-meeting topic summaries, and rolling briefings preserve
+  structured references and source versions. Model labels and URLs do not override them.
+- Rolling briefing record prose cites meeting names: `(Council, Feb 18)`.
+- Internal IDs (e.g., `[agenda-309]`) are never shown in resident prose.
+- Existing reporting may receive a bounded, idempotent citation-only repair only
+  when retained input proves source identity, without AI regeneration or official
+  motion/vote writes. See `docs/operations/citation-provenance-repair.md`.
 
 ### Three-Tier Briefing Pipeline
 
