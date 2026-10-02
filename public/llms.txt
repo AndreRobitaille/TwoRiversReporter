@@ -16,6 +16,18 @@ When membership access is enabled, anonymous readers see previews and approved m
 - [Meetings](https://tworiversmatters.com/meetings): Upcoming and past meetings with agendas, source documents, and available summaries.
 - [Committees](https://tworiversmatters.com/committees): Governing bodies and links to their members and meetings.
 
+## API for bots and scripts
+
+If you have an API key, start with the [API handbook](https://tworiversmatters.com/api). It returns authenticated JSON documentation with endpoint URLs, filters, pagination, rate limits, source labels, and workflows for finding recently updated content and researching meetings or topics.
+
+Fetch the handbook with your key in the Authorization header:
+
+```sh
+curl -H "Authorization: Bearer $TRR_API_KEY" https://tworiversmatters.com/api
+```
+
+API keys provide read-only access to resident-facing content and cannot access admin tools. Keep keys in your tool's secret settings; never put them in URLs. Browser cookies and verified crawler identity do not authenticate the API.
+
 ## Discovery
 
 - [XML sitemap](https://tworiversmatters.com/sitemap.xml): Automatically generated canonical page links. In membership mode, the full catalog is available to verified crawlers and approved members; anonymous readers receive the public overview pages.
