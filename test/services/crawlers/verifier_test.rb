@@ -30,6 +30,26 @@ class Crawlers::VerifierTest < ActiveSupport::TestCase
     end
   end
 
+  test "the Fetch as Bingbot Chrome user agent matches only bingbot" do
+    @cache.write(@ranges.cache_key(:bing), { prefixes: [ "40.77.167.0/24" ], fetched_at: Time.current.to_i })
+    agent = "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm) Chrome/116.0.1938.76 Safari/537.36"
+
+    assert_equal "bingbot", @verifier.call(request_for(agent, address: "40.77.167.27"))
+    outcome = @verifier.outcome(request_for(agent, address: "198.51.100.9"))
+    assert_nil outcome.bot
+    assert_equal "ranges_miss", outcome.reason
+    assert_equal "198.51.100.9", outcome.ip
+  end
+
+  test "a cache read error names the rejection without authorizing the bot" do
+    @cache.stub(:read, ->(*) { raise ActiveRecord::ConnectionNotEstablished }) do
+      outcome = @verifier.outcome(request_for("bingbot/2.0", address: "40.77.167.27"))
+      assert_nil outcome.bot
+      assert_equal "ranges_unreadable", outcome.reason
+      assert_equal "40.77.167.27", outcome.ip
+    end
+  end
+
   test "Bing and Google require their own feeds, even when both are available" do
     @cache.write(@ranges.cache_key(:bing), { prefixes: [ "198.51.100.0/24" ], fetched_at: Time.current.to_i })
 

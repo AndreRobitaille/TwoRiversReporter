@@ -478,6 +478,17 @@ class MeetingsHelperTest < ActionView::TestCase
     OpenStruct.new(title: title)
   end
 
+  test "meeting_share_description uses the bare sentence when a gated headline would be cut" do
+    headline = "Council will consider replacing its citywide sex-offender residency ban with a 1,000-foot buffer around schools"
+    summary = build_summary(type: "minutes_recap", headline: headline)
+    meeting = build_meeting(summaries: [ summary ])
+    assert_operator headline.length, :>, MeetingsHelper::GATED_LEDE_CHARS
+
+    stub(:gated_for_visitor?, true) do
+      assert_equal "Two Rivers City Council — April 14, 2026.", meeting_share_description(meeting)
+    end
+  end
+
   test "meeting_share_description returns AI headline when minutes_recap summary exists" do
     summary = build_summary(type: "minutes_recap", headline: "Council approved the lakefront rezone 5-2.")
     meeting = build_meeting(summaries: [ summary ])

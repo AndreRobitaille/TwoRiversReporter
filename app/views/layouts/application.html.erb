@@ -2,8 +2,8 @@
 <html lang="en">
   <head>
     <% page_title = content_for(:title).presence || "Two Rivers, WI City Government — In Plain English" %>
-    <% page_description = content_for(:description).presence || "A plain-language guide to the Two Rivers, WI city government — what's being decided, what keeps coming back, and what the documents actually say." %>
-    <% page_url = content_for(:canonical_url).presence || request.original_url %>
+    <% page_description = content_for(:description).presence || default_site_description %>
+    <% page_url = content_for(:canonical_url).presence || canonical_page_url %>
     <% page_og_type = content_for(:og_type).presence || "website" %>
     <% page_og_image = @page_og_image.presence || "https://tworiversmatters.com/og-image.png" %>
     <% page_og_image_alt = @page_og_image_alt.presence || "Two Rivers Matters — Your City Hall. In Plain English." %>
@@ -18,6 +18,7 @@
     <% if (paywall_data = paywall_structured_data) %>
       <script type="application/ld+json"><%= raw json_escape(paywall_data.to_json) %></script>
     <% end %>
+    <script type="application/ld+json"><%= raw json_escape(organization_structured_data.to_json) %></script>
 
     <%# Open Graph %>
     <meta property="og:site_name" content="Two Rivers Matters">

@@ -16,9 +16,22 @@ class RedirectTest < ActiveSupport::TestCase
     assert_equal "/topics/176", r.destination
   end
 
-  test "leaves an absolute URL destination untouched" do
-    r = Redirect.create!(source_path: "/old", destination: "https://example.com/x")
-    assert_equal "https://example.com/x", r.destination
+  test "rejects absolute protocol-relative header and backslash destinations" do
+    [ "https://example.com/x", "//evil.example/path", "/ok\r\nX-Injected: 1", "/ok\nSet-Cookie: x", "/foo\\bar", "\\\\evil.example" ].each do |destination|
+      record = Redirect.new(source_path: "/old", destination: destination)
+      assert_not record.valid?, destination
+      assert_includes record.errors[:destination], "must be a relative path"
+    end
+  end
+
+  test "seeded wordpress destinations are single-slash relative paths" do
+    require Rails.root.join("db/migrate/20261003180000_add_legacy_wordpress_redirects")
+
+    AddLegacyWordpressRedirects::PATHS.each_with_index do |(source, destination), index|
+      record = Redirect.new(source_path: "/seed-check-#{index}", destination: destination)
+      assert record.valid?, destination
+      assert_equal destination, record.destination
+    end
   end
 
   test "requires source_path and destination" do

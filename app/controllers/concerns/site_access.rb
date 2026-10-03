@@ -35,11 +35,29 @@ module SiteAccess
 
     def verified_crawler?
       return false unless crawler_readable_page?
-      readable_format = controller_path == "sitemaps" ? Mime[:xml] : Mime[:html]
-      return false unless request.format == readable_format
       return @verified_crawler if defined?(@verified_crawler)
 
-      @verified_crawler = Crawlers::Verifier.new.call(request).present?
+      outcome = Crawlers::Verifier.new.outcome(request)
+      readable = crawler_readable_format?
+      @verified_crawler = outcome.bot.present? && readable
+      log_crawler_rejection(outcome) unless @verified_crawler
+      @verified_crawler
+    end
+
+    # Rails treats a bare `Accept: */*` as format `*/*`, not HTML. The HTML
+    # template still renders, so that request is the ordinary page. An
+    # explicit format such as turbo_stream stays closed.
+    def crawler_readable_format?
+      expected = controller_path == "sitemaps" ? Mime[:xml] : Mime[:html]
+      request.format == expected || request.format == Mime::ALL
+    end
+
+    def log_crawler_rejection(outcome)
+      reason = outcome.reason
+      reason = "format" if reason.nil? && outcome.bot.present?
+      return if reason.blank?
+
+      Rails.logger.info("Crawler verification rejected ip=#{outcome.ip.presence || "-"} reason=#{reason}")
     end
 
     def prevent_gated_response_caching

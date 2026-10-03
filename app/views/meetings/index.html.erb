@@ -87,9 +87,9 @@
         <div class="meetings-more-list">
           <% @upcoming_thin.each do |meeting| %>
             <%= link_to meeting_path(meeting), class: "meetings-compact-row" do %>
-              <span class="meetings-compact-date"><%= meeting.starts_at.strftime("%b %-d") %></span>
+              <time class="meetings-compact-date" datetime="<%= meeting.starts_at.iso8601 %>"><%= meeting.starts_at.strftime("%b %-d") %></time>
               <span class="meetings-compact-name"><%= meeting.body_name.sub(/ Meeting$/, "") %></span>
-              <span class="meetings-compact-time"><%= meeting.starts_at.strftime("%-l:%M %p") %></span>
+              <time class="meetings-compact-time" datetime="<%= meeting.starts_at.iso8601 %>"><%= meeting.starts_at.strftime("%-l:%M %p") %></time>
             <% end %>
           <% end %>
         </div>
@@ -129,7 +129,7 @@
         <div class="meetings-more-list">
           <% @recent_thin.each do |meeting| %>
             <%= link_to meeting_path(meeting), class: "meetings-compact-row" do %>
-              <span class="meetings-compact-date"><%= meeting.starts_at.strftime("%b %-d") %></span>
+              <time class="meetings-compact-date" datetime="<%= meeting.starts_at.iso8601 %>"><%= meeting.starts_at.strftime("%b %-d") %></time>
               <span class="meetings-compact-name"><%= meeting.body_name.sub(/ Meeting$/, "") %></span>
             <% end %>
           <% end %>

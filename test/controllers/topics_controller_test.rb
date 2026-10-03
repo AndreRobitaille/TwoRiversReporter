@@ -320,15 +320,23 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".topic-upcoming-committee", text: "Meeting"
   end
 
-  test "show redirects to topics index for non-existent topic" do
+  test "show returns not found for a non-existent topic" do
     get topic_url(id: 999999)
-    assert_redirected_to topics_path
+    assert_response :not_found
+    assert_match(/doesn't exist/, response.body)
   end
 
-  test "show does not display proposed topics" do
+  test "show returns not found for a proposed topic" do
     proposed = Topic.create!(name: "Proposed Topic", status: "proposed")
     get topic_url(proposed)
-    assert_redirected_to topics_path
+    assert_response :not_found
+  end
+
+  test "show keeps a merged-topic redirect" do
+    Redirect.create!(source_path: "/topics/766", destination: "/topics/#{@active_topic.id}", status_code: 301)
+    get "/topics/766"
+    assert_response :moved_permanently
+    assert_equal "/topics/#{@active_topic.id}", response.headers["Location"]
   end
 
   test "show hides sections with no data instead of showing empty state" do

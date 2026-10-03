@@ -4233,6 +4233,12 @@ th.sortable-header:hover {
   white-space: nowrap;
 }
 
+/* Section labels are h2s. Reset the heading box so they keep the eyebrow look. */
+.home-section-header h2.section-label {
+  margin: 0;
+  line-height: inherit;
+}
+
 .home-section-header .section-line {
   flex: 1;
   height: 1.5px;

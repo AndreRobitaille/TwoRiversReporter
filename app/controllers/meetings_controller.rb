@@ -37,7 +37,7 @@ class MeetingsController < ApplicationController
   def show
     @meeting = Meeting.find(params[:id])
     canonical = Meeting.preferred_duplicate(@meeting.identity_matches)
-    return redirect_to meeting_path(canonical) if canonical.id != @meeting.id
+    return redirect_to meeting_path(canonical), status: :moved_permanently if canonical.id != @meeting.id
 
     @meeting_display_name = helpers.clean_meeting_display(@meeting.body_name).presence || "Meeting"
     @generated_image = @meeting.current_generated_image(:feature)
