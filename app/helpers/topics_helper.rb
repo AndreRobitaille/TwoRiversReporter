@@ -120,6 +120,19 @@ module TopicsHelper
     { event: event_text, meeting_name: display_name, meeting: meeting }
   end
 
+  # Topic names are stored lowercase, and nothing in the app restores
+  # acronyms. The show-page H1 (.topic-article-title) and the topic cards
+  # (.topics-card-name, homepage story/wire labels) render that stored
+  # string with CSS text-transform: uppercase, so a reader sees
+  # "WPPI POWER CONTRACT". The document title uses the same casing.
+  def topic_display_name(topic)
+    topic.name.to_s.upcase
+  end
+
+  def topic_page_title(topic)
+    "#{topic_display_name(topic)} in Two Rivers, WI"
+  end
+
   # Gated anonymous visitors never see the topic briefing headline anywhere
   # on the show page itself (What to Watch renders a different field), so
   # the meta description can't echo it either — teasing a truncated slice

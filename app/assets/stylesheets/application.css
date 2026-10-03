@@ -4239,11 +4239,6 @@ th.sortable-header:hover {
   line-height: inherit;
 }
 
-/* Paywall selector target. contents keeps the wrapper out of layout. */
-.gated-content {
-  display: contents;
-}
-
 .home-section-header .section-line {
   flex: 1;
   height: 1.5px;

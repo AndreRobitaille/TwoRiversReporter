@@ -32,15 +32,17 @@ class SeoMarkupTest < ActionDispatch::IntegrationTest
     assert_select "h1", text: /Your City Hall/
   end
 
-  test "topic titles sentence-case the first letter only" do
+  test "topic titles use the same uppercase rendering as the H1" do
     get topic_path(@topic)
-    assert_select "title", text: "Wppi energy contract in Two Rivers, WI"
     assert_equal "wppi energy contract", @topic.name
+    assert_select "h1.topic-article-title", text: "wppi energy contract"
+    assert_select "title", text: "WPPI ENERGY CONTRACT in Two Rivers, WI"
 
     acronym = Topic.create!(name: "WPPI power contract", status: "approved")
     get topic_path(acronym)
-    # Names are stored normalized to lowercase, so only the first letter is raised.
-    assert_select "title", text: "Wppi power contract in Two Rivers, WI"
+    assert_equal "wppi power contract", acronym.name
+    assert_select "h1.topic-article-title", text: "wppi power contract"
+    assert_select "title", text: "WPPI POWER CONTRACT in Two Rivers, WI"
   end
 
   test "canonical and open graph urls drop the query string" do

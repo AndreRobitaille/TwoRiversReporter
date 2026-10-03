@@ -1,4 +1,4 @@
-<% content_for(:title) { "#{@topic.name.upcase_first} in Two Rivers, WI" } %>
+<% content_for(:title) { topic_page_title(@topic) } %>
 <% content_for(:description) { topic_share_description(@topic) } %>
 <% content_for(:og_type) { "article" } %>
 
