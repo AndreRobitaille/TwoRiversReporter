@@ -48,7 +48,7 @@ class SeoMarkupTest < ActionDispatch::IntegrationTest
   test "canonical and open graph urls drop the query string" do
     get meeting_path(@meeting), params: { fbclid: "abc", utm_source: "x", page: "2" }
 
-    canonical = "http://www.example.com#{meeting_path(@meeting)}"
+    canonical = "https://#{WwwRedirect::APEX_HOST}#{meeting_path(@meeting)}"
     assert_select "link[rel='canonical'][href='#{canonical}']"
     assert_select "meta[property='og:url'][content='#{canonical}']"
     assert_no_match(/fbclid|utm_source/, response.body[/<link rel="canonical"[^>]*>/])
@@ -89,6 +89,25 @@ class SeoMarkupTest < ActionDispatch::IntegrationTest
     assert_equal "That record could not be found.", flash[:alert]
   end
 
+  test "a non apex host still publishes apex canonical open graph and json ld urls" do
+    set_access_mode("gated")
+    host! "178.156.250.235"
+    get meeting_path(@meeting), params: { fbclid: "abc", utm_source: "x" }
+
+    apex = "https://#{WwwRedirect::APEX_HOST}#{meeting_path(@meeting)}"
+    assert_select "link[rel='canonical'][href='#{apex}']"
+    assert_select "meta[property='og:url'][content='#{apex}']"
+    assert_no_match(/178\.156\.250\.235|fbclid|utm_source/, response.body[/<link rel="canonical"[^>]*>/])
+
+    nodes = css_select('script[type="application/ld+json"]').map { |node| JSON.parse(node.text) }
+    assert_equal apex, nodes.find { |node| node["@type"] == "WebPage" }["url"]
+    assert_equal apex, nodes.find { |node| node["@type"] == "Event" }["url"]
+    assert_equal "https://#{WwwRedirect::APEX_HOST}/", nodes.find { |node| node["@type"] == "Organization" }["url"]
+    assert_equal "https://#{WwwRedirect::APEX_HOST}/icon.png", nodes.find { |node| node["@type"] == "Organization" }["logo"]
+  ensure
+    host! "www.example.com"
+  end
+
   test "www redirects to the apex and keeps the path and query" do
     host! "www.tworiversmatters.com"
     get "/meetings/#{@meeting.id}?utm_source=newsletter&fbclid=1"
@@ -110,15 +129,15 @@ class SeoMarkupTest < ActionDispatch::IntegrationTest
 
     assert_equal [ "@context", "@type", "description", "logo", "name", "url" ].sort, organization.keys.sort
     assert_equal "Two Rivers Matters", organization["name"]
-    assert_equal "http://www.example.com/", organization["url"]
-    assert_equal "http://www.example.com/icon.png", organization["logo"]
+    assert_equal "https://#{WwwRedirect::APEX_HOST}/", organization["url"]
+    assert_equal "https://#{WwwRedirect::APEX_HOST}/icon.png", organization["logo"]
     assert_equal AccessHelper::DEFAULT_SITE_DESCRIPTION, organization["description"]
 
     assert_equal [ "@context", "@type", "eventStatus", "name", "startDate", "url" ].sort, event.keys.sort
     assert_equal "City Council", event["name"]
     assert_equal "https://schema.org/EventScheduled", event["eventStatus"]
     assert_equal @starts_at.iso8601, event["startDate"]
-    assert_equal "http://www.example.com#{meeting_path(@meeting)}", event["url"]
+    assert_equal "https://#{WwwRedirect::APEX_HOST}#{meeting_path(@meeting)}", event["url"]
     assert_not_includes event.to_json, "two-rivers.org"
     assert_not_includes event.to_json, "Council Chambers"
 

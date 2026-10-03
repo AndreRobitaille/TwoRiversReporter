@@ -7,13 +7,19 @@ module AccessHelper
     DEFAULT_SITE_DESCRIPTION
   end
 
+  # Public origin for canonicals, Open Graph, and JSON-LD. A request that
+  # reaches Puma on a subdomain or the raw IP must not publish that host.
+  def public_site_origin
+    "https://#{WwwRedirect::APEX_HOST}"
+  end
+
   # Canonical URL for the current path. Query strings (fbclid, utm_*, page)
   # are not part of request.path, and a trailing slash is stripped except on /.
   def canonical_page_url
     path = request.path.to_s
     path = "/" if path.blank? || path == "/"
     path = path.chomp("/") unless path == "/"
-    "#{request.base_url}#{path}"
+    "#{public_site_origin}#{path}"
   end
 
   def paywall_structured_data
@@ -40,8 +46,8 @@ module AccessHelper
       "@context" => "https://schema.org",
       "@type" => "Organization",
       "name" => "Two Rivers Matters",
-      "url" => "#{request.base_url}/",
-      "logo" => "#{request.base_url}/icon.png",
+      "url" => "#{public_site_origin}/",
+      "logo" => "#{public_site_origin}/icon.png",
       "description" => default_site_description
     }
   end
