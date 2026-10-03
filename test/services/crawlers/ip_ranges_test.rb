@@ -18,6 +18,27 @@ class Crawlers::IpRangesTest < ActiveSupport::TestCase
     assert_not @ranges.include?(:google, IPAddr.new("2001:db9::12"))
   end
 
+  test "refresh stores string prefixes under symbol keys and the cache coder keeps them" do
+    @ranges.stub(:fetch, { prefixes: [ { ipv4Prefix: "40.77.167.0/24" } ] }.to_json) { @ranges.refresh(:bing) }
+    snapshot = @cache.read(@ranges.cache_key(:bing))
+
+    assert_equal [ "40.77.167.0/24" ], snapshot[:prefixes]
+    assert snapshot.fetch(:prefixes).all?(String)
+    assert_instance_of Integer, snapshot.fetch(:fetched_at)
+    assert @ranges.include?(:bing, IPAddr.new("40.77.167.27"))
+
+    loaded = Marshal.load(Marshal.dump(snapshot))
+    assert_equal [ :prefixes, :fetched_at ], loaded.keys
+    @cache.write(@ranges.cache_key(:bing), loaded)
+    assert @ranges.include?(:bing, "40.77.167.27")
+
+    @cache.write(@ranges.cache_key(:bing), { "prefixes" => [ "40.77.167.0/24" ], "fetched_at" => Time.current.to_i })
+    assert_not @ranges.include?(:bing, IPAddr.new("40.77.167.27"))
+
+    @cache.write(@ranges.cache_key(:bing), { prefixes: [ IPAddr.new("40.77.167.0/24") ], fetched_at: Time.current.to_i })
+    assert_not @ranges.include?(:bing, IPAddr.new("40.77.167.27"))
+  end
+
   test "missing expired and corrupt snapshots never authorize access" do
     assert_not @ranges.include?(:google, @address)
     refresh_with(prefixes: [ { ipv4Prefix: "192.0.2.0/24" } ])

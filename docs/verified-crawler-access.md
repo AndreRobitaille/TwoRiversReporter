@@ -90,8 +90,11 @@ alone cannot authenticate a request or unlock the server-side gate.
 `SiteAccess#gated_for_visitor?` remains the only rendering predicate. The
 exception covers GET/HEAD requests for ordinary HTML on the homepage, topic
 and meeting indexes/searches/details, and committee/member detail pages.
-The XML sitemap has a scoped discovery exception described below; Turbo
-streams and other reporting formats retain anonymous behavior. Account, sign-in,
+A bare `Accept: */*` is that same HTML page: Rails negotiates it as format
+`*/*`, and the gate treats `*/*` as the ordinary representation. Explicit
+non-HTML formats stay anonymous. The XML sitemap has a scoped discovery
+exception described below; Turbo streams and other reporting formats retain
+anonymous behavior. Account, sign-in,
 application, and admin permissions are unchanged. About retains the human
 membership-policy copy.
 
