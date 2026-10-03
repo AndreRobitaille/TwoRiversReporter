@@ -155,6 +155,8 @@ Triage restoration is in Phase 1 because it is a broken workflow, not polish.
 
 ### Phase 2 — The sweep
 
+Tracked in GitHub Issues: #152 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/152).
+
 - Replace utility classes with components across the 32 affected views; remove the utility layer as each page is converted.
 - Convert the remaining ad-hoc partials (prompt-diff, prompt-run cards).
 - Multi-select **Combine** on the topics index — tick two rows spotted by eye, hit Combine — reusing the existing merge action.
