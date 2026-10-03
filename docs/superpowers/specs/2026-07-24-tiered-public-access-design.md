@@ -170,7 +170,7 @@ Leak assertions are written as part of stages 2 through 4, alongside the surface
 - **About page fork** — the current copy assumes an open site. Deferred by the owner.
 - **Broader SEO / `noindex` policy** — the verified crawler exception and registration markup are specified in `docs/verified-crawler-access.md`; other SEO policy remains separate.
 - **Open-source repo exposure** — acknowledged, separate.
-- **ActiveStorage blob URLs** — document links sit below the gate so they are not rendered, but blobs stay fetchable by anyone holding a URL. These are city PDFs; whether that matters is an open decision, not a blocker.
+- **ActiveStorage blob URLs** — document links sit below the gate so they are not rendered, but blobs stay fetchable by anyone holding a URL. These are city PDFs; whether that matters is an open decision, not a blocker. Tracked in GitHub Issues: #154 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/154).
 
 ## Open Questions
 

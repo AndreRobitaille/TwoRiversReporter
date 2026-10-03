@@ -64,7 +64,7 @@ cloud network, or client-supplied verification header gets a full-content
 exception. `GrokCrawlerAccessTest` pins that behavior even on a known crawler
 network. Its sample Grok labels are simulated claims, not asserted official
 user-agent strings. Direct Grok access remains unimplemented pending
-verification.
+verification. Tracked in GitHub Issues: #141 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/141).
 
 To enable direct Grok access later, first obtain an xAI-published identity and
 verification source or an explicitly authenticated publisher arrangement.
@@ -230,7 +230,7 @@ Validation on 2026-09-30:
   verification caused the Google impersonation test to fail as expected.
   The original verification was restored before final CI.
 - These checks do not verify the production proxy chain, deploy the feature,
-  or prove that a real provider crawler has visited the site.
+  or prove that a real provider crawler has visited the site. Tracked in GitHub Issues: #143 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/143).
 
 Discovery validation on 2026-09-30:
 
@@ -248,7 +248,7 @@ Discovery validation on 2026-09-30:
   passed RuboCop, both dependency audits passed, and Brakeman found no warnings.
 - The robots policy matches the supported identity registry. llms.txt links
   only stable public entry points, with no diagnostic/account URLs or reporting
-  catalog. Live deployment checks are separate from these local results.
+  catalog. Live deployment checks are separate from these local results. Tracked in GitHub Issues: #143 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/143).
 - Follow-up discovery cache checks passed: 12 targeted tests, 138 assertions;
   full CI passed with 1,856 tests, 7,892 assertions, no failures/errors, the same
   existing skip, all 535 Ruby files clean, dependency audits passing, and no
