@@ -40,8 +40,13 @@ module CrawlerAccessAssertions
             assert_not @controller.send(:authenticated?)
             assert_not_includes response.body, "Sign in to keep reading"
             assert_includes response.headers["Cache-Control"], "no-store"
-            data = JSON.parse(css_select('script[type="application/ld+json"]').first.text)
+            data = json_ld_nodes.find { |node| node["@type"] == "WebPage" }
             assert_equal false, data.fetch("isAccessibleForFree")
+            part = data.fetch("hasPart")
+            assert_equal "WebPageElement", part.fetch("@type")
+            assert_equal false, part.fetch("isAccessibleForFree")
+            assert_equal ".gated-content", part.fetch("cssSelector")
+            assert_select ".gated-content"
             assert_not_includes data.to_json, WITHHELD
           end
         end
@@ -55,6 +60,7 @@ module CrawlerAccessAssertions
           assert_response :success
           assert_not_includes response.body, WITHHELD
           assert_includes response.body, "Sign in to keep reading"
+          assert_select ".gated-content", count: 0
         end
       end
     end
@@ -119,7 +125,7 @@ module CrawlerAccessAssertions
       get about_path, headers: crawler_headers(crawler_cases.first)
       assert_response :success
       assert @controller.send(:gated_for_visitor?)
-      assert_empty css_select('script[type="application/ld+json"]')
+      assert_nil json_ld_nodes.find { |node| node["@type"] == "WebPage" }
     end
 
     test "open mode omits registration markup and preserves full anonymous access" do
@@ -128,7 +134,9 @@ module CrawlerAccessAssertions
       get topic_path(@topic)
       assert_response :success
       assert_includes response.body, WITHHELD
-      assert_empty css_select('script[type="application/ld+json"]')
+      assert_select ".gated-content", count: 0
+      assert_nil json_ld_nodes.find { |node| node["@type"] == "WebPage" }
+      assert json_ld_nodes.any? { |node| node["@type"] == "Organization" }
     end
 
     test "crawler access never grants admin or account access" do
@@ -158,5 +166,9 @@ module CrawlerAccessAssertions
 
     def crawler_headers(crawler, address: crawler.fetch(:ip))
       { "User-Agent" => crawler.fetch(:agent), "REMOTE_ADDR" => address }
+    end
+
+    def json_ld_nodes
+      css_select('script[type="application/ld+json"]').map { |node| JSON.parse(node.text) }
     end
 end

@@ -7,11 +7,11 @@
 <% generated_image = @meeting_generated_images&.[](meeting.id) %>
 <% has_image = generated_image&.file&.attached? %>
 <%= link_to meeting_path(meeting), class: (has_image ? "meetings-card meetings-card--with-image" : "meetings-card") do %>
-  <div class="meetings-date-slab <%= 'meetings-date-slab--council' if is_council %>">
+  <time class="meetings-date-slab <%= 'meetings-date-slab--council' if is_council %>" datetime="<%= meeting.starts_at.iso8601 %>">
     <span class="meetings-date-month"><%= meeting.starts_at.strftime("%b") %></span>
     <span class="meetings-date-day"><%= meeting.starts_at.strftime("%-d") %></span>
     <span class="meetings-date-dow"><%= meeting.starts_at.strftime("%a") %></span>
-  </div>
+  </time>
   <div class="meetings-card-body">
     <% if has_image %>
       <div class="meetings-card-media">

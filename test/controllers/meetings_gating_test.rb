@@ -42,6 +42,9 @@ class MeetingsGatingTest < ActionDispatch::IntegrationTest
 
     assert_match(/Washington Street reconstruction/, response.body)
     assert_match(/Sign in to keep reading/, response.body)
+    assert_select ".gated-content", count: 0
+    assert_select "h2.section-label", text: "Key Decisions"
+    assert_select "time.meeting-article-date[datetime]"
   end
 
   test "signed-in member receives the full page" do
@@ -52,6 +55,8 @@ class MeetingsGatingTest < ActionDispatch::IntegrationTest
 
     assert_match(/#{Regexp.escape(WITHHELD)}/, response.body)
     assert_no_match(/Sign in to keep reading/, response.body)
+    assert_select ".gated-content"
+    assert_select "h2.section-label", text: "Key Decisions"
   end
 
   test "open mode shows everything to anonymous visitors" do
@@ -61,6 +66,7 @@ class MeetingsGatingTest < ActionDispatch::IntegrationTest
 
     assert_match(/#{Regexp.escape(WITHHELD)}/, response.body)
     assert_no_match(/Sign in to keep reading/, response.body)
+    assert_select ".gated-content", count: 0
   end
 
   test "legacy recap is gated for anonymous visitors, shown to members" do

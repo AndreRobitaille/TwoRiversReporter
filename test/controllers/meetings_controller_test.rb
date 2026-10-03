@@ -757,6 +757,7 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     get meetings_url, params: { q: "EAB Original Name" }
     assert_equal [ cancelled.id ], assigns(:search_results).map(&:id)
     get meeting_url(original)
+    assert_response :moved_permanently
     assert_redirected_to meeting_url(cancelled)
     get meeting_url(cancelled)
     assert_response :success

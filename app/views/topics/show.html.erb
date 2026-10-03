@@ -1,4 +1,4 @@
-<% content_for(:title) { "#{@topic.name} — Two Rivers, WI" } %>
+<% content_for(:title) { "#{@topic.name.upcase_first} in Two Rivers, WI" } %>
 <% content_for(:description) { topic_share_description(@topic) } %>
 <% content_for(:og_type) { "article" } %>
 
@@ -41,7 +41,7 @@
     <section class="topic-article-section topic-article-section--watch">
       <div class="home-section-header">
         <%= render "shared/atom_marker" %>
-        <span class="section-label">What to Watch</span>
+        <h2 class="section-label">What to Watch</h2>
         <span class="section-line"></span>
       </div>
       <blockquote class="topic-watch-quote">
@@ -53,13 +53,14 @@
   <% if gated_for_visitor? %>
     <%= render "shared/gate" %>
   <% else %>
+  <%= gated_content do %>
 
   <%# === Coming Up === %>
   <% if @upcoming.any? %>
     <section class="topic-article-section topic-article-section--upcoming">
       <div class="home-section-header">
         <%= render "shared/atom_marker" %>
-        <span class="section-label">Coming Up</span>
+        <h2 class="section-label">Coming Up</h2>
         <span class="section-line"></span>
       </div>
       <ul class="topic-upcoming-list">
@@ -68,7 +69,7 @@
           <% is_council = meeting_name.include?("Council") && !meeting_name.include?("Work Session") %>
           <li class="topic-upcoming-entry">
             <%= link_to meeting_path(appearance.meeting), class: "topic-upcoming-link" do %>
-              <time class="topic-upcoming-date <%= 'council' if is_council %>">
+              <time class="topic-upcoming-date <%= 'council' if is_council %>" datetime="<%= appearance.meeting.starts_at.iso8601 %>">
                 <span class="topic-upcoming-month"><%= appearance.meeting.starts_at.strftime("%b") %></span>
                 <span class="topic-upcoming-day"><%= appearance.meeting.starts_at.strftime("%-d") %></span>
               </time>
@@ -97,7 +98,7 @@
     <section class="topic-article-section topic-article-section--upcoming">
       <div class="home-section-header">
         <%= render "shared/atom_marker" %>
-        <span class="section-label">Coming Up</span>
+        <h2 class="section-label">Coming Up</h2>
         <span class="section-line"></span>
       </div>
       <p class="topic-upcoming-fallback">
@@ -112,7 +113,7 @@
     <section class="topic-article-section topic-article-section--story">
       <div class="home-section-header">
         <%= render "shared/atom_marker" %>
-        <span class="section-label">The Story</span>
+        <h2 class="section-label">The Story</h2>
         <span class="section-line"></span>
       </div>
       <div class="topic-story-body">
@@ -137,7 +138,7 @@
     <section class="topic-article-section topic-article-section--decisions">
       <div class="home-section-header">
         <%= render "shared/atom_marker" %>
-        <span class="section-label">Key Decisions</span>
+        <h2 class="section-label">Key Decisions</h2>
         <span class="section-line"></span>
       </div>
       <ol class="topic-decisions-list">
@@ -177,7 +178,7 @@
   <section class="topic-article-section topic-article-section--record">
     <div class="home-section-header">
       <%= render "shared/atom_marker" %>
-      <span class="section-label">Record</span>
+      <h2 class="section-label">Record</h2>
       <span class="section-line"></span>
     </div>
     <% record_entries = briefing_factual_record(@briefing) %>
@@ -204,6 +205,7 @@
     <% end %>
   </section>
 
+  <% end %>
   <% end %>
 
 </article>

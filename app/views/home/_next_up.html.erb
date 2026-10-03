@@ -3,10 +3,10 @@
 <% display_name = clean_meeting_display(meeting_name).presence || "Meeting" %>
 <% is_council = meeting_name.include?("Council") && !meeting_name.include?("Work Session") %>
 <%= link_to meeting_path(meeting), class: "nextup-card" do %>
-  <div class="date-slab <%= 'council' if is_council %>">
+  <time class="date-slab <%= 'council' if is_council %>" datetime="<%= meeting.starts_at.iso8601 %>">
     <span class="date-month"><%= meeting.starts_at.strftime("%b") %></span>
     <span class="date-day"><%= meeting.starts_at.strftime("%-d") %></span>
-  </div>
+  </time>
   <div class="meeting-info">
     <span class="meeting-name"><%= display_name.sub(/^City Council /, "") %></span>
     <% topic_count = approved_substantive_topics(meeting).size %>

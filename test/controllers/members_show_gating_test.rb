@@ -23,6 +23,8 @@ class MembersShowGatingTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_match(/Voting Record/, response.body)
+    assert_select ".gated-content", count: 0
+    assert_select "h2.section-label", text: "Voting Record"
     assert_no_match(/#{Regexp.escape(WITHHELD_TOPIC)}/i, response.body)
     assert_match(/Sign in to keep reading/, response.body)
   end
@@ -34,6 +36,7 @@ class MembersShowGatingTest < ActionDispatch::IntegrationTest
     get member_path(@member)
 
     assert_match(/#{Regexp.escape(WITHHELD_TOPIC)}/i, response.body)
+    assert_select ".gated-content"
   end
 
   private

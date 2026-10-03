@@ -17,41 +17,47 @@
     </div>
   <% end %>
 
-  <section class="committee-article-section">
-    <div class="home-section-header">
-      <%= render "shared/atom_marker" %>
-      <span class="section-label">Current Members</span>
-      <span class="section-line"></span>
-    </div>
-
-    <% unless gated_for_visitor? %>
-      <% if @memberships.any? %>
-        <div class="committee-roster">
-          <% sort_memberships(@memberships, @council_member_ids).each do |cm| %>
-            <%= link_to member_path(cm.member), class: "committee-member" do %>
-              <span class="committee-member-name"><%= cm.member.name %></span>
-              <span class="committee-member-badges">
-                <% membership_badges(cm, council_member_ids: @council_member_ids).each do |badge| %>
-                  <span class="badge badge--<%= badge[:variant] %>"><%= badge[:label] %></span>
-                <% end %>
-              </span>
-            <% end %>
-          <% end %>
+  <%# The roster is withheld from anonymous visitors. Rendering the heading
+      with nothing under it looked like a broken empty section, so the whole
+      block stays in the full-content branch. %>
+  <% unless gated_for_visitor? %>
+    <%= gated_content do %>
+      <section class="committee-article-section">
+        <div class="home-section-header">
+          <%= render "shared/atom_marker" %>
+          <h2 class="section-label">Current Members</h2>
+          <span class="section-line"></span>
         </div>
-      <% else %>
-        <p class="section-empty">No current members on record.</p>
-      <% end %>
+
+        <% if @memberships.any? %>
+          <div class="committee-roster">
+            <% sort_memberships(@memberships, @council_member_ids).each do |cm| %>
+              <%= link_to member_path(cm.member), class: "committee-member" do %>
+                <span class="committee-member-name"><%= cm.member.name %></span>
+                <span class="committee-member-badges">
+                  <% membership_badges(cm, council_member_ids: @council_member_ids).each do |badge| %>
+                    <span class="badge badge--<%= badge[:variant] %>"><%= badge[:label] %></span>
+                  <% end %>
+                </span>
+              <% end %>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="section-empty">No current members on record.</p>
+        <% end %>
+      </section>
     <% end %>
-  </section>
+  <% end %>
 
   <section class="committee-article-section">
     <div class="home-section-header">
       <%= render "shared/atom_marker" %>
-      <span class="section-label">What They've Been Working On</span>
+      <h2 class="section-label">What They've Been Working On</h2>
       <span class="section-line"></span>
     </div>
 
     <% unless gated_for_visitor? %>
+      <%= gated_content do %>
       <% if @recent_topics.any? %>
         <div class="committee-activity">
           <% @recent_topics.each do |topic| %>
@@ -77,6 +83,7 @@
         </div>
       <% else %>
         <p class="section-empty">No recent activity tracked for this committee.</p>
+      <% end %>
       <% end %>
     <% end %>
   </section>

@@ -6,7 +6,9 @@ class SitemapsControllerTest < ActionDispatch::IntegrationTest
     bing: [ "bingbot" ],
     openai_search: [ "OAI-SearchBot" ],
     openai_user: [ "ChatGPT-User" ],
-    anthropic: [ "Claude-SearchBot", "Claude-User" ]
+    anthropic: [ "Claude-SearchBot", "Claude-User" ],
+    perplexity_bot: [ "PerplexityBot" ],
+    perplexity_user: [ "Perplexity-User" ]
   }.freeze
 
   setup do
@@ -40,7 +42,7 @@ class SitemapsControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.headers["Cache-Control"], "no-store"
   end
 
-  test "all seven verified crawler identities receive a full canonical catalog without reporting text" do
+  test "every verified crawler identity receives a full canonical catalog without reporting text" do
     CRAWLERS.values.flatten.each do |agent|
       get sitemap_path, headers: crawler_headers(agent)
       assert_full_catalog

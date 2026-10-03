@@ -7,7 +7,12 @@ servers:
 
 proxy:
   ssl: true
-  host: tworiversmatters.com
+  # www is a CNAME to this host. Listing it lets kamal-proxy issue a
+  # certificate; WwwRedirect then 301s www to the apex. Takes effect on the
+  # next Kamal deploy, not when this file is merged.
+  hosts:
+    - tworiversmatters.com
+    - www.tworiversmatters.com
 
 registry:
   server: ghcr.io
