@@ -36,7 +36,7 @@ and associations remain stored; cleanup must not discard cancellation evidence
 or records with generated images. Cancellation notices override stale summaries
 in cards, detail pages, metadata, and sharing. Source documents remain available
 under the existing access rules. Historical data consolidation is a separate,
-reviewed operation; this change does not delete or reparent existing records.
+reviewed operation; this change does not delete or reparent existing records. Tracked in GitHub Issues: #139 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/139).
 
 ## Generated Civic Images
 
@@ -501,7 +501,7 @@ for backward compatibility but `SummarizeMeetingJob` no longer calls
 - Internal IDs (e.g., `[agenda-309]`) are never shown in resident prose.
 - Existing reporting may receive a bounded, idempotent citation-only repair only
   when retained input proves source identity, without AI regeneration or official
-  motion/vote writes. See `docs/operations/citation-provenance-repair.md`.
+  motion/vote writes. See `docs/operations/citation-provenance-repair.md`. Tracked in GitHub Issues: #142 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/142).
 
 ### Three-Tier Briefing Pipeline
 
@@ -511,7 +511,7 @@ full design. Summary:
 | Tier | Trigger | AI Cost | Output |
 |------|---------|---------|--------|
 | `headline_only` | Future meeting scheduled | None | Derived `upcoming_headline` |
-| `interim` | Agenda/packet added | 1× gpt-5-mini | Updated `upcoming_headline` + upcoming note |
+| `interim` | Agenda/packet added | 1× gpt-5-mini | Updated `upcoming_headline` + upcoming note<br>Tracked in GitHub Issues: #66 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/66). |
 | `full` | Minutes published | 2× configured analysis tier | Full editorial + record + `headline` + `upcoming_headline` |
 
 ------------------------------------------------------------------------
@@ -741,7 +741,7 @@ Gated pages declare their registration requirement through paywall JSON-LD,
 with no withheld reporting in the markup. Scheduled jobs refresh official IP
 ranges; page requests make no verification network calls. Grok remains at the
 anonymous tier until an operator verification source or an authenticated
-publisher arrangement is confirmed; a claimed Grok identity is insufficient.
+publisher arrangement is confirmed; a claimed Grok identity is insufficient. Tracked in GitHub Issues: #141 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/141).
 For live retrieval checks, explicitly generated 48-hour diagnostic URLs expose
 synthetic public/gated codes and record request identity and access decisions.
 They contain no reporting and use the same crawler gate as public reporting.
@@ -903,7 +903,7 @@ GitHub issues now affect the live production server. Priority areas:
    trigger.
 
 3. **Monitoring** — Job failures on production should be visible.
-   The admin dashboard at `/admin/job_runs` shows job history.
+   The admin dashboard at `/admin/job_runs` shows job history. Tracked in GitHub Issues: #61 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/61).
 
 4. **Data safety** — Production database backups are still not
    automated. The Postgres data lives in a Docker volume
@@ -911,14 +911,14 @@ GitHub issues now affect the live production server. Priority areas:
    set up. Backups taken so far have been manual; the command and
    the location of the existing dumps are in the `deploying` skill.
    A destructive migration (dropping the password, TOTP and
-   recovery-code columns) has already shipped against this.
+   recovery-code columns) has already shipped against this. Tracked in GitHub Issues: #140 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/140).
 
 ### Jobs That Need Recurring Schedules
 
 | Job | Suggested Schedule | Why |
 |-----|--------------------|-----|
 | `Scrapers::DiscoverMeetingsJob` | Every 6 hours | Discover new meetings from city website |
-| Database backup (`pg_dump`) | Daily at 2am | Disaster recovery |
+| Database backup (`pg_dump`) | Daily at 2am | Disaster recovery<br>Tracked in GitHub Issues: #140 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/140). |
 
 ------------------------------------------------------------------------
 

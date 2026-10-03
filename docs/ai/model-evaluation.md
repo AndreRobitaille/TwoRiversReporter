@@ -102,7 +102,7 @@ is retained in `PromptVersion` history.
 
 Keep Chat Completions for this model/prompt baseline. Evaluate a Responses API
 migration separately, along with strict JSON Schema structured outputs, so endpoint
-and schema changes are not confounded with this model decision.
+and schema changes are not confounded with this model decision. Tracked in GitHub Issues: #150 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/150).
 
 Official references:
 

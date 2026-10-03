@@ -161,7 +161,7 @@ does not repeat that misattribution.
 Both variants still omit Sari Saubert's Zoning Board of Appeals appointment,
 agenda item 3753, despite its presence in the canonical agenda and recording.
 This is a remaining coverage issue, rather than an increase in filtered content
-introduced by the WPPI repair. The closed-session summary's opening wording
+introduced by the WPPI repair. Tracked in GitHub Issues: #151 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/151). The closed-session summary's opening wording
 ("voted to enter") remains imprecise even though its final sentence and
 structured fields correctly report an unknown completed outcome. These controls
 support the observed decision-preservation and scoring behavior; they do not

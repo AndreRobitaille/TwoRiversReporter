@@ -2,7 +2,7 @@
 
 Implemented locally on October 2, 2026, from clean baseline
 `330c4ffcb1d722f015b19535b2818d38e106b4e3`. No production inspection,
-deployment, prompt synchronization, or record repair was performed.
+deployment, prompt synchronization, or record repair was performed. Tracked in GitHub Issues: #142 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/142).
 
 ## Stored contract
 
