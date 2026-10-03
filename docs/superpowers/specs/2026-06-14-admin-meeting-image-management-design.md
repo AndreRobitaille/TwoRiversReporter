@@ -104,6 +104,8 @@ No new tests are needed for public meeting image rendering unless implementation
 
 ## Deferred: Existing Image Selection
 
+Tracked in GitHub Issues: #153 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/153).
+
 Pointing a meeting to an already-uploaded image should be deferred. It likely requires a media-library concept: browsing existing Active Storage blobs or `GeneratedImage` records, preserving provenance, preventing accidental reuse, and clarifying whether reused images should create a new admin override record or attach the same blob to multiple records.
 
 The initial workflow should stay simple: regenerate or upload a replacement directly on the meeting.
