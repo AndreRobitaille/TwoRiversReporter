@@ -32,17 +32,33 @@ class SeoMarkupTest < ActionDispatch::IntegrationTest
     assert_select "h1", text: /Your City Hall/
   end
 
-  test "topic titles use the same uppercase rendering as the H1" do
+  test "topic titles use title case while the H1 keeps the stored name" do
     get topic_path(@topic)
     assert_equal "wppi energy contract", @topic.name
     assert_select "h1.topic-article-title", text: "wppi energy contract"
-    assert_select "title", text: "WPPI ENERGY CONTRACT in Two Rivers, WI"
+    assert_select "title", text: "WPPI Energy Contract in Two Rivers, WI"
 
     acronym = Topic.create!(name: "WPPI power contract", status: "approved")
     get topic_path(acronym)
     assert_equal "wppi power contract", acronym.name
     assert_select "h1.topic-article-title", text: "wppi power contract"
-    assert_select "title", text: "WPPI POWER CONTRACT in Two Rivers, WI"
+    assert_select "title", text: "WPPI Power Contract in Two Rivers, WI"
+    assert_select "meta[property='og:title'][content='WPPI Power Contract in Two Rivers, WI']"
+    assert_select "meta[name='twitter:title'][content='WPPI Power Contract in Two Rivers, WI']"
+  end
+
+  test "a topic name containing a script tag is escaped in the title" do
+    topic = Topic.create!(name: "lead pipes script", status: "approved")
+    topic.update_column(:name, "lead pipes <script>")
+
+    get topic_path(topic)
+
+    assert_response :success
+    assert_select "h1.topic-article-title", text: "lead pipes <script>"
+    assert_select "title", text: "Lead Pipes <Script> in Two Rivers, WI"
+    assert_includes response.body, "<title>Lead Pipes &lt;Script&gt; in Two Rivers, WI</title>"
+    assert_includes response.body, 'property="og:title" content="Lead Pipes &lt;Script&gt; in Two Rivers, WI"'
+    assert_includes response.body, 'name="twitter:title" content="Lead Pipes &lt;Script&gt; in Two Rivers, WI"'
   end
 
   test "canonical and open graph urls drop the query string" do

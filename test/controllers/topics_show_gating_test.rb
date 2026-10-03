@@ -31,7 +31,7 @@ class TopicsShowGatingTest < ActionDispatch::IntegrationTest
     assert_no_match(/#{Regexp.escape(WITHHELD)}/, response.body)
     assert_match(/Sign in to keep reading/, response.body)
     assert_select ".gated-content", count: 0
-    assert_select "title", text: "STORMWATER DESIGN PHASE in Two Rivers, WI"
+    assert_select "title", text: "Stormwater Design Phase in Two Rivers, WI"
   end
 
   test "signed-in member sees the whole page" do
