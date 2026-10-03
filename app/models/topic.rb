@@ -117,9 +117,23 @@ class Topic < ApplicationRecord
   end
 
   def update_resident_impact_from_ai(score)
-    return if resident_impact_admin_locked?
+    with_lock do
+      return if resident_impact_admin_locked?
 
-    update(resident_impact_score: score)
+      minimum = Topics::ResidentImpactPolicy.new(self).minimum_score
+      update(resident_impact_score: minimum ? [ score, minimum ].max : score)
+    end
+  end
+
+  def refresh_resident_impact_priority
+    with_lock do
+      return if resident_impact_admin_locked?
+
+      minimum = Topics::ResidentImpactPolicy.new(self).minimum_score
+      return unless minimum && resident_impact_score.to_i < minimum
+
+      update(resident_impact_score: minimum)
+    end
   end
 
   def current_generated_image(surface = :feature)

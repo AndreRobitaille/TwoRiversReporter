@@ -282,6 +282,18 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".topic-feature-image .generated-image-cutline", text: /AI image/
   end
 
+  test "show identifies uploaded source images without claiming AI generation" do
+    image = @active_topic.generated_images.create!(status: "ready", purpose: "feature_and_og", source_generation_tier: "admin_upload", admin_override: true, generated_at: Time.current)
+    image.file.attach(io: StringIO.new(IMAGE_BYTES), filename: "official-map.png", content_type: "image/png")
+
+    get topic_url(@active_topic)
+
+    assert_response :success
+    assert_select ".topic-feature-image .generated-image-cutline", text: "Uploaded image"
+    assert_select ".topic-feature-image img.generated-image-upload", count: 1
+    assert_select ".topic-feature-image .generated-image-cutline", text: /AI image/, count: 0
+  end
+
   test "show falls back to default og image when no generated image exists" do
     get topic_url(@active_topic)
     assert_response :success

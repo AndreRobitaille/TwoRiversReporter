@@ -68,6 +68,32 @@ class PruneHollowAppearancesJobTest < ActiveJob::TestCase
     assert_equal 1, topic.reload.agenda_item_topics.count
   end
 
+  test "a low-activity label cannot erase sex-offender policy or individual-appeal evidence" do
+    meeting, law = create_meeting_with_item(title: "An Ordinance Amending Sex Offender Residency Restrictions")
+    appeal = meeting.agenda_items.create!(title: "Consider Appeal of Section 9-9-6", order_index: 2)
+    routine = meeting.agenda_items.create!(title: "Monthly Operations Update", order_index: 3)
+    policy = link_topic(law, topic_name: "residency rules")
+    appeal_topic = link_topic(appeal, topic_name: "sex offender residency appeals")
+    routine_topic = link_topic(routine, topic_name: "routine operations")
+    assert_equal 1, policy.topic_appearances.count
+    assert_equal 1, appeal_topic.topic_appearances.count
+    assert_equal 1, routine_topic.topic_appearances.count
+    create_summary(meeting, item_details: [ law, appeal, routine ].map do |item|
+      { "agenda_item_id" => item.id, "agenda_item_title" => item.title,
+        "activity_level" => "status_update", "vote" => nil, "decision" => nil, "public_hearing" => nil }
+    end)
+
+    PruneHollowAppearancesJob.perform_now(meeting.id)
+
+    [ policy, appeal_topic ].each do |topic|
+      assert_equal 1, topic.reload.agenda_item_topics.count
+      assert_equal 1, topic.topic_appearances.count
+      assert_equal "approved", topic.status
+    end
+    assert_equal 0, routine_topic.reload.topic_appearances.count
+    assert_equal "blocked", routine_topic.status
+  end
+
   test "preserves appearance when a motion is linked even if activity_level is status_update" do
     meeting, item = create_meeting_with_item(title: "10. SOLID WASTE UTILITY: UPDATES AND ACTION, AS NEEDED")
     create_summary(meeting, item_details: [

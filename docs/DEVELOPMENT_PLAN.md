@@ -48,6 +48,8 @@ reviewed operation; this change does not delete or reparent existing records. Tr
 - For named/specific local places, facilities, businesses, beaches, parks, or landmarks, avoid full invented stand-ins. Use cropped, non-identifying details and surrounding atmosphere instead. Admin upload override is expected for hard cases where a generated image would look like a fake version of a known local place.
 - Topic images are limited to the actual homepage top-six pool and are reused for topic social previews.
 - Meeting images are generated only when the structured summary or agenda has enough substantive content; they support the meeting page and social previews.
+- When structured highlights exist, the meeting image brief uses only the highest-impact highlight (source order breaks ties). Unrelated items and a mixed meeting headline do not enter that brief. Visual convenience must not displace resident importance. Sex-offender residency-law coverage uses restrained civic-policy context, without implying that a depicted house is an offender's home or presenting the change as pleasant landscaping.
+- Admin-uploaded replacements are labeled "Uploaded image". Their variants preserve the complete source with padding, and detail-page images use containment so source maps and legends are not cropped. Generated images retain the "AI image" label.
 - Homepage cards render the topic image as a small, fixed side thumbnail beside the text (≈200×134 on the two top stories, ≈104×78 on the wire cards) so the text stays primary; topic descriptions are omitted from these top-six cards, and the thumbnails carry no overlay label. Topic and meeting detail pages show a larger edge-to-edge feature image lifted off the page with a soft drop shadow and a short "AI image" cutline beneath it. Images never dominate — they cue the reader, not lead.
 - The `/topics` and `/meetings` index cards also show a thumbnail when one exists. Thumbnails use a fixed **3:2 box** (matching the source aspect, ≈132px wide) so almost nothing is cropped — never long top/side strips. On topic cards the image floats right and the title/headline/footer wrap around it (reclaiming the space above and below); the static topic description is omitted from these cards, matching the homepage. On meeting cards the thumbnail is top-aligned beside the date slab and text. Index image data is batch-loaded via the `LoadsGeneratedImages` controller concern.
 - When no image exists, cards and detail pages omit the image entirely with no reserved space. The photo-and-text layouts are gated behind an image-present modifier class, so image-less cards fall back to the plain text layout.
@@ -79,6 +81,26 @@ All topic-related modeling, extraction, inference, and presentation must
 conform to:
 
 **`docs/topics/TOPIC_GOVERNANCE.md`**
+
+Sex-offender residency restrictions and individual appeals remain trackable
+resident concerns. Automated triage cannot block them as routine or low
+salience. Citywide changes to the law must be distinguished from individual
+relief requests, and receive the resident-impact priority specified by Topic
+Governance. Existing editorial blocks require a reviewed data repair; the
+automatic guard does not remove historical blocks or blacklist entries.
+
+The homepage uses `resident_impact_score` (1-5), with top stories requiring
+at least 4 and wire entries at least 2, ordered by impact and then recency.
+The separate admin `importance` field (0-10) does not control homepage ranking.
+All AI impact writers apply the sex-offender minimum through
+`Topic#update_resident_impact_from_ai`: 3 for individual cases, 4 for a
+documented law rewrite, and 5 for explicit replacement of a citywide residency
+prohibition. Recent/upcoming substantive agenda evidence determines the
+law-change minimum; old legislation and cancelled meetings cannot keep that
+minimum elevated forever. Source titles are interpreted conservatively, and
+admin overrides retain their 180-day protection. Headline/interim updates also
+raise a missing or too-low rating to the supported minimum. Low-activity
+pruning cannot erase these policy or individual-appeal appearances.
 
 If implementation conflicts with Topic Governance, implementation must
 change.

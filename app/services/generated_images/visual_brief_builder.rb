@@ -38,6 +38,15 @@ module GeneratedImages
 
     def meeting_summary_source_text
       gd = @source.generation_data || {}
+      highlight = primary_highlight(gd)
+      if highlight
+        return [
+          "Primary civic issue (highest resident impact): #{highlight["text"]}",
+          "Illustrate only this issue. Do not combine it with other meeting business.",
+          visual_guidance
+        ].join("\n\n")
+      end
+
       approved_topics = Array(gd["item_details"]).flat_map { |item| Array(item["topics"]) }.map do |topic|
         [ topic["name"], topic["description"] ].compact.join(" — ")
       end
@@ -47,7 +56,7 @@ module GeneratedImages
         [ "Highlights:", *Array(gd["highlights"]).map { |item| item["text"] } ].join("\n"),
         [ "Item details:", *Array(gd["item_details"]).map { |item| [ item["agenda_item_title"], item["summary"] ].compact.join(" — ") } ].join("\n"),
         [ "Approved topics:", *approved_topics ].join("\n"),
-        "Visual guidance: choose one dominant resident-visible physical anchor. Prefer neighborhood physical change and household cost impacts. Do not collage multiple agenda items. For named local places/facilities, use cropped, non-identifying details rather than inventing a full replacement exterior.",
+        visual_guidance,
         @source.content
       ]
 
@@ -64,10 +73,20 @@ module GeneratedImages
         @source.upcoming_headline,
         @source.editorial_content,
         @source.record_content,
-        "Visual guidance: choose one dominant resident-visible physical anchor. Prefer neighborhood physical change and household cost impacts. Do not collage multiple agenda items. For named local places/facilities, use cropped, non-identifying details rather than inventing a full replacement exterior."
+        visual_guidance
       ]
 
       sections.compact.map(&:to_s).map(&:strip).reject(&:blank?).join("\n\n")
+    end
+
+    def primary_highlight(generation_data)
+      Array(generation_data["highlights"])
+        .select { |highlight| highlight["text"].present? }
+        .min_by { |highlight| %w[high medium low].index(highlight["impact"]) || 3 }
+    end
+
+    def visual_guidance
+      "Visual guidance: choose one dominant resident-visible physical anchor that explains the primary issue. Do not choose unrelated scenery because it is easier to illustrate. Do not collage multiple agenda items. For named local places/facilities, use cropped, non-identifying details rather than inventing a full replacement exterior. For sex-offender residency policy, use restrained civic-policy context; do not imply that any depicted home houses an offender, depict children or offenders, or use a pleasant neighborhood scene that obscures the legal change."
     end
   end
 end

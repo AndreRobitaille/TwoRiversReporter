@@ -84,10 +84,15 @@ class PruneHollowAppearancesJob < ApplicationJob
     # cannot establish that a substantive item was merely procedural.
     return Topics::TitleNormalizer.normalize(agenda_item.title) == "adjournment" if entry.nil?
 
-    entry["activity_level"] == "status_update" &&
+    empty_update = entry["activity_level"] == "status_update" &&
       entry["vote"].nil? &&
       entry["decision"].nil? &&
       entry["public_hearing"].nil?
+    return false unless empty_update
+    return false if Topics::ResidentImpactPolicy.sex_offender_text?(agenda_item.title)
+    return false if agenda_item.topics.any? { |topic| Topics::ResidentImpactPolicy.sex_offender_text?(topic.name) }
+
+    true
   end
 
   def demote_topic(topic, meeting_id)

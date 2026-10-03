@@ -265,6 +265,8 @@ module PromptTemplateData
         - Do not quote or reconstruct document text.
         - Use only what is supported by the inputs.
         - Pick one primary visual subject / anchor, not three agenda items.
+        - The primary civic issue is selected by resident impact, not by ease of illustration. Never blend a sex-offender residency ordinance with unrelated forestry, parks, or other agenda business.
+        - For sex-offender residency laws or appeals, use restrained civic-policy context. Do not depict offenders, children, or suggest that an illustrated home houses an offender. Do not turn a consequential legal change into a pleasant neighborhood or landscaping scene.
         - Prefer resident-visible physical anchors: streets, sidewalks, utility infrastructure, homes, parks, beach/lakefront, public facilities.
         - For outdoor scenes, describe ordinary fair-weather daylight when it fits: clear, lightly cloudy, or partly sunny conditions with natural color. Keep a grounded civic-news tone, not a cheerful tourism-promo mood.
         - Represent household cost and policy issues through physical civic context, not fake bills, charts, symbols, or documents.
@@ -428,6 +430,12 @@ module PromptTemplateData
         - Standard approvals with no controversy or recurring significance
         - Items that happen once and are done
 
+        Sex-offender residency restrictions, law changes, enforcement, and individual
+        residency appeals are substantive resident concerns, not routine approvals.
+        Tag them with the specific concern "sex offender residency restrictions".
+        Distinguish a citywide ordinance rewrite from relief requested by one person;
+        an individual appeal must not make the broader policy unworthy of tracking.
+
         Ask yourself: "Would a resident follow this topic across multiple meetings?"
         If the answer only makes sense for a SPECIFIC concern within the category,
         name that concern. If the item is routine, mark it not topic-worthy.
@@ -557,6 +565,7 @@ module PromptTemplateData
         - Prefer resident-facing canonical topics over granular variations (e.g., "Alcohol licensing" over "Beer"/"Wine").
         - Do NOT merge if scope is ambiguous or evidence conflicts.
         - Procedural/admin items should be blocked (Roberts Rules, roll call, adjournment, agenda approval, minutes).
+        - Never block sex-offender residency restrictions, ordinance changes, enforcement, or individual residency appeals as routine or low salience. They are substantive resident concerns. Keep the citywide policy scope distinct from an individual case in descriptions and factual records.
         </governance_constraints>
 
         <input>
@@ -732,9 +741,15 @@ module PromptTemplateData
           one point. Silence is neither consent nor evidence that an item was hidden.
         - Conditional use permits and variances are legally distinct. Describe the
           actual land-use action without substituting one term for the other.
+        - Sex-offender residency policy is substantive public-safety policy.
+          A citywide rewrite of residency restrictions scores at least 4;
+          a documented replacement of a citywide prohibition changes the rules
+          across the community and scores 5. An individual residency appeal
+          scores at least 3. Distinguish those scopes and do not infer danger,
+          illegality, controversy, or an outcome from the subject alone.
         - With no substantive item details, do not score above 2 unless the title
           itself explicitly identifies a rate/tax change, land-use action,
-          governance trigger, or household-budget effect.
+          governance trigger, public-safety law change, or household-budget effect.
 
         Boundary examples:
         - $349,985 scheduled water-main contract at standard terms -> 2.
@@ -822,6 +837,15 @@ module PromptTemplateData
       ROLE
       instructions: <<~PROMPT.strip
         Analyze this topic's history across meetings. Return a JSON analysis.
+
+        <public_safety_priority>
+        Sex-offender residency restrictions, enforcement, and individual appeals
+        are substantive resident concerns. A citywide residency-law rewrite has
+        resident_impact.score at least 4; replacing a citywide prohibition scores 5.
+        An individual residency appeal scores at least 3. Keep citywide policy
+        changes distinct from individual relief requests in the headline and
+        factual record. Do not infer danger, illegality, controversy, or outcomes.
+        </public_safety_priority>
 
         <voice>
         - Write like a sharp neighbor who reads the agendas, not a policy analyst.
@@ -1330,7 +1354,12 @@ module PromptTemplateData
           gathering. No government jargon ("motion to waive reading and
           adopt the ordinance to amend..." -> "voted to change the rule").
         - Headline: 1-2 sentences, max ~40 words. Follow the temporal_context
-          framing for tense and posture.
+          framing for tense and posture. Lead with the highest resident-impact
+          issue, rather than agenda order or the easiest item to illustrate.
+          A citywide sex-offender residency-law rewrite takes precedence over
+          a routine grant application. Distinguish changes to the overall rules
+          from an individual residency appeal; both are substantive. Describe
+          proposed changes as proposed until the source establishes adoption.
         - Highlights: max 3 items, highest resident impact first. Include
           vote tallies where votes occurred. Each highlight gets a source
           citation from the source catalog.
