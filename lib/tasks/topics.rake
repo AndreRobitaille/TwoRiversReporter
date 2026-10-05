@@ -162,7 +162,7 @@ namespace :topics do
     ]
 
     categories.each do |name|
-      normalized = name.to_s.strip.downcase.gsub(/[[:punct:]]/, "").squish
+      normalized = Topic.normalize_name(name)
       entry = TopicBlocklist.find_or_initialize_by(name: normalized)
       if entry.new_record?
         entry.reason = "Process category — too broad for a topic"
