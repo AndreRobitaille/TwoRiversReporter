@@ -18,10 +18,7 @@ module Documents
         # Download stream with conditional headers
         downloaded_io = URI.open(document.source_url, headers)
 
-        # Extract remote metadata
-        remote_etag = downloaded_io.meta["etag"]
-        remote_last_modified = downloaded_io.meta["last-modified"] ? DateTime.parse(downloaded_io.meta["last-modified"]) : nil
-        remote_content_length = downloaded_io.meta["content-length"]&.to_i
+        metadata = fetch_metadata(downloaded_io)
 
         # Compute SHA256
         sha = if downloaded_io.is_a?(Tempfile)
@@ -33,10 +30,11 @@ module Documents
         # Rewind for subsequent use
         downloaded_io.rewind
 
-        # Matching bytes are not a content change. Leave the row alone, including
-        # fetched_at and updated_at, so a nightly re-fetch does not look new.
+        # Matching bytes are not a content change. Record last-checked time and
+        # any cache headers without moving updated_at.
         if document.sha256 == sha
           Rails.logger.info "Document #{document_id} unchanged (SHA match)"
+          record_unchanged_check!(document, **metadata)
           return
         end
 
@@ -55,9 +53,9 @@ module Documents
 
         document.update!(
           sha256: sha,
-          etag: remote_etag,
-          last_modified: remote_last_modified,
-          content_length: remote_content_length,
+          etag: metadata[:etag],
+          last_modified: metadata[:last_modified],
+          content_length: metadata[:content_length],
           fetched_at: Time.current
         )
 
@@ -70,14 +68,40 @@ module Documents
 
       rescue OpenURI::HTTPError => e
         if e.io&.status&.first == "304"
-          # 304 means the stored bytes are still current. Do not touch timestamps.
+          # 304 means the stored bytes are still current. Refresh last-checked
+          # time and whatever cache headers the response includes, without
+          # moving updated_at.
           Rails.logger.info "Document #{document_id} unchanged (304 Not Modified)"
+          record_unchanged_check!(document, **fetch_metadata(e.io))
         else
           Rails.logger.error "Failed to download document #{document_id}: #{e.message} (status: #{e.io&.status.inspect})"
         end
       rescue StandardError => e
         Rails.logger.error "Error processing document #{document_id}: #{e.message}"
       end
+    end
+
+    private
+
+    def fetch_metadata(io)
+      meta = io.respond_to?(:meta) ? io.meta : nil
+      meta = {} unless meta.respond_to?(:[])
+      last_modified = meta["last-modified"]
+
+      {
+        etag: meta["etag"],
+        last_modified: last_modified.present? ? DateTime.parse(last_modified.to_s) : nil,
+        content_length: meta["content-length"]&.to_i
+      }
+    end
+
+    # update_columns skips updated_at. Only write headers the response actually sent.
+    def record_unchanged_check!(document, etag:, last_modified:, content_length:)
+      attributes = { fetched_at: Time.current }
+      attributes[:etag] = etag if etag.present?
+      attributes[:last_modified] = last_modified if last_modified.present?
+      attributes[:content_length] = content_length unless content_length.nil?
+      document.update_columns(attributes)
     end
   end
 end
