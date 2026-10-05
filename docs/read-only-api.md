@@ -69,7 +69,7 @@ for every page, preserve the returned timestamp precision, overlap polls, and
 deduplicate by resource ID and `updated_at`. Pages are live and offset-based;
 concurrent changes can shift results. This is discovery of current available
 content, not an event stream, deletion log, or exact replication protocol.
-Resource-row maintenance can also advance its update timestamp.
+Resource-row maintenance can also advance its update timestamp. Unchanged document re-fetches (matching SHA or HTTP 304) and repeat scrapes or parses that find no meeting or document changes do not.
 
 ### Research a question across meetings and topics
 

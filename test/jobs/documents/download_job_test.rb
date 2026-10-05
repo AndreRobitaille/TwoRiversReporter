@@ -30,8 +30,11 @@ module Documents
       URI.define_singleton_method(:open, original_open)
     end
 
-    test "handles 304 Not Modified" do
+    test "handles 304 Not Modified without touching timestamps" do
       headers_checked = false
+      fetched_at = @document.fetched_at
+      updated_at = @document.updated_at
+      meeting_updated_at = @meeting.updated_at
 
       stub = proc do |url, headers|
         if headers["If-None-Match"] == "old_etag"
@@ -44,64 +47,89 @@ module Documents
         raise OpenURI::HTTPError.new("304 Not Modified", io_mock)
       end
 
-      with_uri_open_stub(stub) do
-        assert_no_performed_jobs do
-          DownloadJob.perform_now(@document.id)
+      travel 5.minutes do
+        with_uri_open_stub(stub) do
+          assert_no_performed_jobs do
+            DownloadJob.perform_now(@document.id)
+          end
         end
       end
 
       assert headers_checked, "Headers were not passed correctly"
 
       @document.reload
-      assert_operator @document.fetched_at, :>, 1.minute.ago
-      # SHA should remain unchanged
+      assert_equal fetched_at, @document.fetched_at
+      assert_equal updated_at, @document.updated_at
       assert_equal Digest::SHA256.hexdigest("old content"), @document.sha256
+      assert_equal "old_etag", @document.etag
+      assert_equal meeting_updated_at, @meeting.reload.updated_at
     end
 
-    test "handles unchanged content by SHA" do
+    test "handles unchanged content by SHA without touching timestamps" do
+      fetched_at = @document.fetched_at
+      updated_at = @document.updated_at
+      last_modified = @document.last_modified
+      meeting_updated_at = @meeting.updated_at
+
       stub = proc do |url, headers|
         content = "old content"
         response = StringIO.new(content)
         def response.meta
-          { "etag" => "new_etag", "last-modified" => Time.current.httpdate }
+          { "etag" => "new_etag", "last-modified" => Time.current.httpdate, "content-length" => "11" }
         end
         response
       end
 
-      with_uri_open_stub(stub) do
-        assert_no_performed_jobs do
-          DownloadJob.perform_now(@document.id)
+      travel 5.minutes do
+        with_uri_open_stub(stub) do
+          assert_no_performed_jobs do
+            DownloadJob.perform_now(@document.id)
+          end
         end
       end
 
       @document.reload
-      # Metadata updated
-      assert_equal "new_etag", @document.etag
-      # But content still same
+      assert_equal "old_etag", @document.etag
+      assert_equal last_modified, @document.last_modified
+      assert_nil @document.content_length
+      assert_equal fetched_at, @document.fetched_at
+      assert_equal updated_at, @document.updated_at
       assert_equal Digest::SHA256.hexdigest("old content"), @document.sha256
+      assert_not @document.file.attached?
+      assert_equal meeting_updated_at, @meeting.reload.updated_at
     end
 
     test "handles changed content" do
+      fetched_at = @document.fetched_at
+      updated_at = @document.updated_at
+      meeting_updated_at = @meeting.updated_at
+
       stub = proc do |url, headers|
         content = "new content"
         response = StringIO.new(content)
         def response.meta
-          { "etag" => "newer_etag", "last-modified" => Time.current.httpdate }
+          { "etag" => "newer_etag", "last-modified" => Time.current.httpdate, "content-length" => "11" }
         end
         response
       end
 
-      with_uri_open_stub(stub) do
-        assert_enqueued_with(job: Documents::AnalyzePdfJob) do
-          DownloadJob.perform_now(@document.id)
+      travel 5.minutes do
+        with_uri_open_stub(stub) do
+          assert_enqueued_with(job: Documents::AnalyzePdfJob) do
+            DownloadJob.perform_now(@document.id)
+          end
         end
       end
 
       @document.reload
       assert_equal Digest::SHA256.hexdigest("new content"), @document.sha256
       assert_equal "newer_etag", @document.etag
+      assert_equal 11, @document.content_length
+      assert_operator @document.fetched_at, :>, fetched_at
+      assert_operator @document.updated_at, :>, updated_at
       assert @document.file.attached?
       assert_equal "new content", @document.file.download
+      assert_equal meeting_updated_at, @meeting.reload.updated_at
     end
   end
 end

@@ -33,17 +33,10 @@ module Documents
         # Rewind for subsequent use
         downloaded_io.rewind
 
-        # Check if content changed (by SHA)
+        # Matching bytes are not a content change. Leave the row alone, including
+        # fetched_at and updated_at, so a nightly re-fetch does not look new.
         if document.sha256 == sha
           Rails.logger.info "Document #{document_id} unchanged (SHA match)"
-
-          # Update metadata even if content is same (e.g. headers changed or just to mark checked)
-          document.update!(
-            etag: remote_etag,
-            last_modified: remote_last_modified,
-            content_length: remote_content_length,
-            fetched_at: Time.current
-          )
           return
         end
 
@@ -77,8 +70,8 @@ module Documents
 
       rescue OpenURI::HTTPError => e
         if e.io&.status&.first == "304"
+          # 304 means the stored bytes are still current. Do not touch timestamps.
           Rails.logger.info "Document #{document_id} unchanged (304 Not Modified)"
-          document.touch(:fetched_at)
         else
           Rails.logger.error "Failed to download document #{document_id}: #{e.message} (status: #{e.io&.status.inspect})"
         end

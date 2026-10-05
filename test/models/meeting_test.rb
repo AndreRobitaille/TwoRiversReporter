@@ -119,6 +119,15 @@ class MeetingTest < ActiveSupport::TestCase
     assert_not_nil meeting.meeting_page_parsed_at
     assert_equal true, meeting.processing_state["meeting_page_parsed_at"]
 
+    parsed_at = meeting.meeting_page_parsed_at
+    updated_at = meeting.updated_at
+    travel 2.minutes do
+      meeting.mark_processing!(:meeting_page_parsed_at)
+    end
+    meeting.reload
+    assert_equal parsed_at, meeting.meeting_page_parsed_at
+    assert_equal updated_at, meeting.updated_at
+
     meeting.clear_processing!(:meeting_page_parsed_at)
     assert_not meeting.meeting_page_parsed?
     assert_nil meeting.meeting_page_parsed_at
@@ -129,6 +138,13 @@ class MeetingTest < ActiveSupport::TestCase
     meeting = Meeting.create!(detail_page_url: "http://example.com/processing-2", starts_at: Time.current)
 
     meeting.mark_processing!(:agenda_parsed)
+    assert_equal true, meeting.processing_state["agenda_parsed"]
+    updated_at = meeting.reload.updated_at
+
+    travel 2.minutes do
+      meeting.mark_processing!(:agenda_parsed)
+    end
+    assert_equal updated_at, meeting.reload.updated_at
     assert_equal true, meeting.processing_state["agenda_parsed"]
 
     meeting.clear_processing!(:agenda_parsed)

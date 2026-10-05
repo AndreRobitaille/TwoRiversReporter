@@ -101,6 +101,11 @@ class Meeting < ApplicationRecord
 
   def set_processing_marker!(marker, timestamp = Time.current)
     with_lock do
+      # A repeat scrape/parse stamps this again. Rewriting an already recorded
+      # marker would refresh updated_at even when the meeting and its documents
+      # did not change.
+      next if processing_stamp_current?(marker)
+
       state = processing_state.deep_dup
       state[marker.to_s] = true
       updates = { processing_state: state }
@@ -192,6 +197,13 @@ class Meeting < ApplicationRecord
   end
 
   private_class_method :parse_date_filter
+
+  private def processing_stamp_current?(marker)
+    return false unless processing_marker_set?(marker)
+    return meeting_page_parsed_at.present? if marker.to_s == "meeting_page_parsed_at"
+
+    true
+  end
 
   def document_status
     # Avoid N+1 queries if loaded, otherwise load
