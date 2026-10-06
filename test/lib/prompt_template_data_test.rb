@@ -8,6 +8,9 @@ class PromptTemplateDataTest < ActiveSupport::TestCase
     assert_includes prompt, '"kind":"pdf_page"'
     assert_includes prompt, "Transcripts have no supported"
     assert_includes prompt, "Minutes and supplementary transcripts are separate sources"
+    assert_includes prompt, "A transcript upload does not supersede these official document sources"
+    assert_includes prompt, "Do not turn noisy captions into direct quotations"
+    assert_includes prompt, '"agenda_item_id": "Integer shared with the corresponding item_details entry, or null if none"'
     refute_includes prompt, '"citation": "Page X"'
     refute_includes prompt, '"citations": ["Page X"]'
   end
