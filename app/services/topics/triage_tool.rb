@@ -164,6 +164,10 @@ module Topics
       apply_blocks(Array(results["blocks"]), user)
     end
 
+    def find_topic_by_name(name)
+      Topic.find_by_name_or_alias(name)
+    end
+
     def apply_merges(merges, user)
       merges.each do |merge|
         confidence = merge["confidence"].to_f
@@ -173,11 +177,11 @@ module Topics
         aliases = Array(merge["aliases"])
         next if canonical.blank? || aliases.empty?
 
-        target_topic = Topic.find_by(name: Topic.normalize_name(canonical))
+        target_topic = find_topic_by_name(canonical)
         next unless target_topic
 
         aliases.each do |alias_name|
-          source_topic = Topic.find_by(name: Topic.normalize_name(alias_name))
+          source_topic = find_topic_by_name(alias_name)
           next unless source_topic
           next if source_topic.id == target_topic.id
 
@@ -196,7 +200,7 @@ module Topics
         topic_name = approval["topic"].to_s
         next if topic_name.blank?
 
-        topic = Topic.find_by(name: Topic.normalize_name(topic_name))
+        topic = find_topic_by_name(topic_name)
         next unless topic
         next if topic.status == "approved"
 
@@ -215,7 +219,7 @@ module Topics
         topic_name = block["topic"].to_s
         next if topic_name.blank?
 
-        topic = Topic.find_by(name: Topic.normalize_name(topic_name))
+        topic = find_topic_by_name(topic_name)
         next unless topic
         next if topic.status == "blocked"
         next if Topics::ResidentImpactPolicy.new(topic).sex_offender_topic?

@@ -1,6 +1,49 @@
 require "test_helper"
 
 class Topics::TriageToolTest < ActiveSupport::TestCase
+  test "approvals and merges resolve folded names and glued aliases" do
+    topic = Topic.create!(name: "right of way", status: "proposed", review_status: "proposed")
+    TopicAlias.create!(topic: topic, name: "rightofway")
+    source = Topic.create!(name: "alley vacation", status: "proposed", review_status: "proposed")
+
+    tool = Topics::TriageTool.new(
+      apply: true, dry_run: false,
+      min_confidence: Topics::TriageTool::DEFAULT_MIN_CONFIDENCE,
+      max_topics: 10,
+      similarity_threshold: 0.75, agenda_item_limit: 5,
+      user_id: nil, user_email: nil
+    )
+
+    tool.send(:apply_results, {
+      "approvals" => [ { "topic" => "right-of-way", "approve" => true, "confidence" => 0.99, "rationale" => "folded name" } ],
+      "blocks" => [],
+      "merge_map" => []
+    }, nil)
+    assert_equal "approved", topic.reload.status
+
+    topic.update!(status: "proposed", review_status: "proposed")
+    tool.send(:apply_results, {
+      "approvals" => [ { "topic" => "rightofway", "approve" => true, "confidence" => 0.99, "rationale" => "glued alias" } ],
+      "blocks" => [],
+      "merge_map" => []
+    }, nil)
+    assert_equal "approved", topic.reload.status
+
+    tool.send(:apply_results, {
+      "approvals" => [],
+      "blocks" => [],
+      "merge_map" => [ {
+        "canonical" => "right/of/way",
+        "aliases" => [ "alley vacation" ],
+        "confidence" => 0.99,
+        "rationale" => "same concern"
+      } ]
+    }, nil)
+
+    assert_not Topic.exists?(source.id)
+    assert_includes topic.reload.topic_aliases.pluck(:name), "alley vacation"
+  end
+
   test "record_review_event creates event without user for automated triage" do
     topic = Topic.create!(name: "test automated audit", status: "proposed")
 

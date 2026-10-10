@@ -4,6 +4,6 @@ class TopicBlocklist < ApplicationRecord
   before_validation :normalize_name
 
   def normalize_name
-    self.name = self.name.to_s.strip.downcase.gsub(/[[:punct:]]/, "").squish
+    self.name = Topic.normalize_name(name)
   end
 end
