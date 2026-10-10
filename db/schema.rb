@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_03_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_02_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -76,6 +76,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_03_000000) do
     t.index [ "kind" ], name: "index_agenda_items_on_kind"
     t.index [ "meeting_id" ], name: "index_agenda_items_on_meeting_id"
     t.index [ "parent_id" ], name: "index_agenda_items_on_parent_id"
+  end
+
+  create_table "api_access_tokens", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "display_hint", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "last_used_at"
+    t.string "name", null: false
+    t.string "public_id", null: false
+    t.datetime "revoked_at"
+    t.string "secret_digest", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index [ "expires_at" ], name: "index_api_access_tokens_on_expires_at"
+    t.index [ "public_id" ], name: "index_api_access_tokens_on_public_id", unique: true
+    t.index [ "user_id" ], name: "index_api_access_tokens_on_user_id"
   end
 
   create_table "audit_events", force: :cascade do |t|
@@ -817,6 +833,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_03_000000) do
   add_foreign_key "agenda_item_topics", "topics"
   add_foreign_key "agenda_items", "agenda_items", column: "parent_id"
   add_foreign_key "agenda_items", "meetings"
+  add_foreign_key "api_access_tokens", "users"
   add_foreign_key "audit_events", "users", column: "actor_id"
   add_foreign_key "committee_aliases", "committees"
   add_foreign_key "committee_memberships", "committees"

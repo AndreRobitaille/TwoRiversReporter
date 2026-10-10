@@ -386,6 +386,18 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
     assert_select "meta[property='og:image:height'][content='1024']", count: 1
   end
 
+  test "show identifies uploaded source images without claiming AI generation" do
+    image = @meeting.generated_images.create!(status: "ready", purpose: "feature", source_generation_tier: "admin_upload", admin_override: true, generated_at: Time.current)
+    image.file.attach(io: StringIO.new(IMAGE_BYTES), filename: "official-map.png", content_type: "image/png")
+
+    get meeting_url(@meeting)
+
+    assert_response :success
+    assert_select ".meeting-feature-image .generated-image-cutline", text: "Uploaded image"
+    assert_select ".meeting-feature-image img.generated-image-upload", count: 1
+    assert_select ".meeting-feature-image .generated-image-cutline", text: /AI image/, count: 0
+  end
+
   test "show handles blank body_name with generated image" do
     meeting = Meeting.create!(
       body_name: nil,

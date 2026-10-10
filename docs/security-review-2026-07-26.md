@@ -29,6 +29,8 @@ specialized governance and authentication specifications remain authoritative.
 
 ### P1 — Constrain remote document retrieval and native parsing
 
+Tracked in GitHub Issues: #144 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/144).
+
 Scraped city pages can introduce attachment URLs that `Documents::DownloadJob`
 fetches without an origin allowlist, private-address rejection, redirect
 revalidation, explicit byte limits, or explicit network timeouts. Downloaded
@@ -49,6 +51,8 @@ Future work should:
 
 ### P1 — Reduce autonomous AI authority over civic records
 
+Tracked in GitHub Issues: #145 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/145).
+
 Scraped agenda and attachment text is untrusted model input. Topic triage
 currently applies model-provided names and confidence values automatically, and
 merges destroy the source topic after moving its records.
@@ -64,12 +68,16 @@ Future work should:
 
 ### P2 — Add a restrictive Content Security Policy
 
+Tracked in GitHub Issues: #146 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/146).
+
 The Rails CSP initializer is disabled. Introduce a report-only policy first,
 remove or nonce inline scripts and event handlers, account for importmap and the
 configured font/analytics origins, then enforce the policy. This is defense in
 depth for any future HTML or URL sanitization failure.
 
 ### P2 — Remove the latent SQL interpolation sink
+
+Tracked in GitHub Issues: #147 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/147).
 
 `Topic.similar_to` binds the `WHERE` values but interpolates its `ORDER BY`
 expression. Current callers pass normalized topic names, so the reviewed paths
@@ -78,6 +86,8 @@ so a future caller cannot turn it into an injection vulnerability.
 
 ### P2 — Bound outbound email calls and public-field abuse
 
+Tracked in GitHub Issues: #148 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/148).
+
 `LoopsDelivery` has no explicit open, read, or write timeouts. Public
 application fields also lack server-side length limits, and distributed
 requests can bypass a throttle keyed only by source IP. Add short provider
@@ -85,6 +95,8 @@ timeouts, appropriate field lengths, and per-recipient throttling that preserves
 email-enumeration resistance.
 
 ### P2 — Define retention for membership application data
+
+Tracked in GitHub Issues: #149 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/149).
 
 Membership applications retain residential address, phone, Facebook profile,
 notes, and submitted IP address. Establish and document a retention/deletion

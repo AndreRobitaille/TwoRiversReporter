@@ -218,6 +218,7 @@ module Topics
         topic = Topic.find_by(name: Topic.normalize_name(topic_name))
         next unless topic
         next if topic.status == "blocked"
+        next if Topics::ResidentImpactPolicy.new(topic).sex_offender_topic?
 
         topic.update!(status: "blocked", review_status: "blocked")
         record_review_event(user, topic, "blocked", block_reason(block), confidence: confidence)

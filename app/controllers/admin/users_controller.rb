@@ -19,6 +19,9 @@ module Admin
 
     def index
       users = User.includes(:membership_applications, :passkey_credentials).order(:email_address).to_a
+      @api_key_counts = ApiAccessToken.group(:user_id).count
+      @active_api_key_counts = ApiAccessToken.unexpired_and_unrevoked
+        .where(user_id: User.where(status: "active", disabled_at: nil)).group(:user_id).count
       @latest_applications = users.index_with { |user| user.membership_applications.max_by(&:created_at) }
       @users_needing_action, decided_users = users.partition { |user| user.status == "pending" }
       @denied_users, @approved_users = decided_users.partition { |user| user.status == "rejected" }
@@ -31,6 +34,7 @@ module Admin
       @applications = @user.membership_applications.order(created_at: :desc)
       @reviewable_application_id = @applications.find(&:reviewable?)&.id
       @sessions = @user.sessions.order(last_seen_at: :desc)
+      @api_keys = @user.api_access_tokens.metadata_only.newest_first
     end
 
     def new

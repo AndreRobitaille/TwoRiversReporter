@@ -47,6 +47,33 @@ module Topics
       assert_equal @topic.id, meta[:id]
     end
 
+    test "preserves a transcript decision despite a rewritten title" do
+      @meeting.update!(body_name: "City Council Work Session")
+      transcript = @meeting.meeting_documents.create!(document_type: "transcript",
+        source_url: "https://example.com/recording", extracted_text: "Closing motion passed.")
+      catalog = Citations::SourceCatalog.new(meeting: @meeting, documents: [ transcript ])
+      reference = Citations::Resolver.new(meeting: @meeting, catalog: catalog.sources).canonical_reference(
+        { "source_id" => "doc-#{transcript.id}", "location" => { "kind" => "whole_source" } })
+      @meeting.meeting_summaries.create!(summary_type: "transcript_recap", generation_data: {
+        "source_catalog" => catalog.sources,
+        "source_type" => "transcript",
+        "item_details" => [ { "agenda_item_id" => @agenda_item.id, "agenda_item_title" => "Rewritten title",
+          "citations" => [ reference ], "summary" => "Closing motion passed.", "activity_level" => "decision", "decision" => "Passed",
+          "motion" => { "mover" => "Mark Bittner", "seconder" => "Doug Brandt",
+            "no_votes" => [ "Katherine Dahlke", "Adam Wachowski" ], "absent_members" => [ "Scott Stechmesser" ] } } ]
+      })
+
+      context = @builder.build_context_json
+      assert_equal "Closing motion passed.", context[:agenda_items].first[:item_details_summary]
+      assert_equal "Passed", context[:agenda_items].first[:item_details_decision]
+      assert_equal "City Council Work Session", context[:meeting_metadata][:body_name]
+      assert_equal "transcript", context[:meeting_metadata][:source_type]
+      assert_equal reference["citation_id"], context[:agenda_items].first.dig(:item_details_citation, :citation_id)
+      assert_includes context[:citation_ids], reference["citation_id"]
+      assert_equal [ "Katherine Dahlke", "Adam Wachowski" ], context[:agenda_items].first.dig(:item_details_motion, "no_votes")
+      assert_equal [ "Scott Stechmesser" ], context[:agenda_items].first.dig(:item_details_motion, "absent_members")
+    end
+
     test "includes linked agenda items" do
       context = @builder.build_context_json
       items = context[:agenda_items]
@@ -54,6 +81,28 @@ module Topics
       assert_equal 1, items.size
       assert_equal "Repair Main St", items.first[:title]
       assert_equal "Proposal to repair.", items.first[:summary]
+    end
+
+    test "preserves both source citations for minutes supplemented by a recording" do
+      minutes = @meeting.meeting_documents.create!(document_type: "minutes_pdf",
+        source_url: "https://example.com/minutes", extracted_text: "Council discussed repair costs.")
+      transcript = @meeting.meeting_documents.create!(document_type: "transcript",
+        source_url: "https://example.com/recording", extracted_text: "The repairs cost $12,000.")
+      catalog = Citations::SourceCatalog.new(meeting: @meeting, documents: [ minutes, transcript ])
+      resolver = Citations::Resolver.new(meeting: @meeting, catalog: catalog.sources)
+      references = catalog.sources.map { |source| resolver.canonical_reference(
+        { "source_id" => source["source_id"], "location" => { "kind" => "whole_source" } }) }
+      @meeting.meeting_summaries.create!(summary_type: "minutes_recap", generation_data: {
+        "source_catalog" => catalog.sources,
+        "source_type" => "minutes_with_transcript", "item_details" => [ {
+          "agenda_item_id" => @agenda_item.id, "summary" => "Council discussed the $12,000 repair cost.", "citations" => references
+        } ]
+      })
+
+      context = @builder.build_context_json
+      assert_equal references.map { |reference| reference["citation_id"] },
+        context[:agenda_items].first[:item_details_citations].map { |citation| citation[:citation_id] }
+      references.each { |reference| assert_includes context[:citation_ids], reference["citation_id"] }
     end
 
     test "excludes structural agenda rows from agenda_items" do
@@ -73,6 +122,30 @@ module Topics
       priors = continuity[:prior_appearances]
       assert_equal 1, priors.size
       assert_equal @prior_meeting.starts_at.to_date, priors.first[:date]
+    end
+
+    test "limits continuity events to the meeting being summarized" do
+      @topic.topic_status_events.delete_all
+      events = [ -1.day, 0, 1.day ].map do |offset|
+        @topic.topic_status_events.create!(
+          lifecycle_status: "active", evidence_type: "discussion",
+          occurred_at: @meeting.starts_at + offset,
+          source_ref: { "meeting_id" => @meeting.id }, notes: "Event #{offset}"
+        )
+      end
+      later_meeting = Meeting.create!(body_name: "City Council", starts_at: @meeting.starts_at + 2.days,
+        detail_page_url: "https://example.com/later-meeting")
+      later_context = SummaryContextBuilder.new(@topic, later_meeting).build_context_json
+      assert_equal 3, later_context[:continuity_context][:recent_status_events].size
+      assert_includes later_context[:citation_ids], "continuity-#{events.last.id}"
+
+      context = @builder.build_context_json
+      assert_equal 2, context[:continuity_context][:recent_status_events].size
+      assert_equal events.first(2).map(&:notes).reverse,
+        context[:continuity_context][:recent_status_events].map { |event| event[:notes] }
+      assert_includes context[:citation_ids], "continuity-#{events.first.id}"
+      assert_includes context[:citation_ids], "continuity-#{events.second.id}"
+      refute_includes context[:citation_ids], "continuity-#{events.last.id}"
     end
 
     test "handles document attachments if present" do

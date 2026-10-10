@@ -132,7 +132,7 @@ class Meeting < ApplicationRecord
   alias_method :mark_processing_state!, :set_processing_marker!
   alias_method :clear_processing_state!, :clear_processing_marker!
 
-  def self.search_multi(query)
+  def self.search_multi(query, public_topics_only: false)
     return none if query.blank?
 
     terms = query.strip.downcase
@@ -147,6 +147,7 @@ class Meeting < ApplicationRecord
     topic_matches = joins(agenda_items: :topics)
       .where("LOWER(topics.name) LIKE ?", "%#{sanitize_sql_like(terms)}%")
       .distinct
+    topic_matches = topic_matches.merge(Topic.publicly_visible) if public_topics_only
 
     # 4. Document full-text match
     doc_ids = MeetingDocument.search(query).pluck(:meeting_id)

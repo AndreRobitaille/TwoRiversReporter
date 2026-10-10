@@ -9,7 +9,7 @@ class GeneratedImages::GeneratorTest < ActiveSupport::TestCase
     ai_service.expect(:build_generated_image_brief, { "civic_issue" => "Street repairs", "composition" => "A street repair scene", "avoid" => [ "logos" ] }) do |args|
       assert_equal "Meeting", args[:imageable_type]
       assert_equal false, args[:composite]
-      assert_includes args[:source_text], "Council moved on street repairs"
+      assert_includes args[:source_text], "Approved a repair plan"
     end
     ai_service.expect(:generate_civic_image, { bytes: "image-bytes", revised_prompt: "revised", model: "gpt-image-1", size: "1536x1024", format: "jpeg" }) do |args|
       assert_match(/realistic local newspaper editorial photograph/i, args[:prompt])

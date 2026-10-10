@@ -1,16 +1,10 @@
 class SitemapsController < ApplicationController
   allow_unauthenticated_access only: :show
 
-  # Renders /sitemap.xml for search engines. Cached for an hour so crawlers
-  # don't hammer the database. New public resources must be added here by hand
-  # — see the note in config/routes.rb.
+  # Rebuild the catalog so new records and access-mode changes take effect immediately.
   def show
-    expires_in 1.hour, public: true
-
-    @topics     = []
-    @meetings   = []
-    @members    = []
-    @committees = []
+    response.headers["Cache-Control"] = "private, no-store"
+    @entries = gated_for_visitor? ? [] : Sitemaps::Catalog.new.call
 
     respond_to do |format|
       format.xml

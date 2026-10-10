@@ -21,6 +21,27 @@ class Topics::RecentItemDetailsBuilderTest < ActiveSupport::TestCase
     AgendaItemTopic.create!(agenda_item: @section, topic: @topic)
   end
 
+  test "carries a transcript decision into briefing context by agenda ID" do
+    @meeting.update!(body_name: "City Council Work Session")
+    @meeting.meeting_summaries.create!(summary_type: "transcript_recap", generation_data: {
+      "source_type" => "transcript",
+      "item_details" => [ { "agenda_item_id" => @linked_item.id, "agenda_item_title" => "Rewritten title",
+        "summary" => "Closing motion passed.", "activity_level" => "decision", "decision" => "Passed",
+        "motion" => { "mover" => "Mark Bittner", "seconder" => "Doug Brandt",
+          "no_votes" => [ "Katherine Dahlke", "Adam Wachowski" ], "absent_members" => [ "Scott Stechmesser" ] } } ]
+    })
+
+    entries = Topics::RecentItemDetailsBuilder.new(@topic, [ @meeting ]).build
+    assert_equal 1, entries.size
+    assert_equal @linked_item.id, entries.first[:agenda_item_id]
+    assert_equal "Closing motion passed.", entries.first[:summary]
+    assert_equal "Passed", entries.first[:decision]
+    assert_equal "City Council Work Session", entries.first[:meeting_body]
+    assert_equal "transcript", entries.first[:source_type]
+    assert_equal [ "Katherine Dahlke", "Adam Wachowski" ], entries.first.dig(:motion, "no_votes")
+    assert_equal [ "Scott Stechmesser" ], entries.first.dig(:motion, "absent_members")
+  end
+
   test "returns item_details entries for agenda items linked to the topic" do
     @meeting.meeting_summaries.create!(
       summary_type: "minutes_recap",

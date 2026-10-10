@@ -125,13 +125,13 @@
       <% dimensions = generated_image_dimensions(size: :feature) %>
       <%= image_tag generated_image_proxy_path(@generated_image, size: :feature),
         alt: "Illustration for #{meeting_name}",
-        class: "meeting-feature-image__img",
+        class: [ "meeting-feature-image__img", ("generated-image-upload" if generated_image_uploaded?(@generated_image)) ],
         loading: "eager",
         fetchpriority: "high",
         decoding: "async",
         width: dimensions[:width],
         height: dimensions[:height] %>
-      <figcaption class="generated-image-cutline">AI image</figcaption>
+      <figcaption class="generated-image-cutline"><%= generated_image_cutline(@generated_image) %></figcaption>
     </figure>
   <% end %>
 
@@ -158,6 +158,7 @@
 
     <%# === Key Decisions === %>
     <% highlights = meeting_highlights(gd) %>
+    <% items = meeting_item_details(gd) %>
     <% if highlights.any? %>
       <section class="meeting-article-section">
         <div class="home-section-header">
@@ -169,11 +170,17 @@
           <% highlights.each do |h| %>
             <div class="meeting-decision">
               <p class="meeting-decision-text"><%= h["text"] %></p>
-              <% if h["vote"].present? %>
+              <% detail_anchor = meeting_highlight_detail_anchor(@meeting, h, items) %>
+              <% if h["vote"].present? || detail_anchor %>
                 <div class="meeting-decision-footer">
-                  <span class="decision-badge <%= h["vote"] =~ /^[0-9]+-[0-9]+$/ && h["vote"].split("-").first.to_i > h["vote"].split("-").last.to_i ? 'decision-badge--passed' : 'decision-badge--default' %>">
-                    Vote: <%= h["vote"] %>
-                  </span>
+                  <% if h["vote"].present? %>
+                    <span class="decision-badge <%= h["vote"] =~ /^[0-9]+-[0-9]+$/ && h["vote"].split("-").first.to_i > h["vote"].split("-").last.to_i ? 'decision-badge--passed' : 'decision-badge--default' %>">
+                      Vote: <%= h["vote"] %>
+                    </span>
+                  <% end %>
+                  <% if detail_anchor %>
+                    <%= link_to "Read agenda item →", "##{detail_anchor}", class: "meeting-decision-detail-link" %>
+                  <% end %>
                 </div>
               <% end %>
             </div>
@@ -203,6 +210,7 @@
                 <% end %>
               </div>
               <p class="public-input-summary"><%= pi["summary"]&.gsub(/\s*\[Address redacted\.?\]\s*/i, " ")&.strip %></p>
+              <%= render "meetings/citations", summary: @summary, entry: pi %>
             </div>
           <% end %>
         </div>
@@ -212,7 +220,6 @@
     </section>
 
     <%# === Agenda Items === %>
-    <% items = meeting_item_details(gd) %>
     <%# Build a lookup of motions by agenda_item_id for vote breakdowns %>
     <% motions_by_item = @meeting.motions.includes(votes: :member).group_by(&:agenda_item_id) %>
     <% if items.any? %>
@@ -244,20 +251,7 @@
               </div>
             <% end %>
 
-            <% if item["citations"].present? %>
-              <% citations = Array(item["citations"]) %>
-              <div class="meeting-item-card-citations">
-                <% pdf_doc = @meeting.meeting_documents.detect { |d| d.document_type == "minutes_pdf" && d.source_url.present? } ||
-                             @meeting.meeting_documents.detect { |d| d.document_type == "packet_pdf" && d.source_url.present? } %>
-                <% if pdf_doc %>
-                  <%= link_to safe_external_url(pdf_doc.source_url), target: "_blank", rel: "noopener", class: "meeting-citation-link" do %>
-                    📄 See in official document: <%= citations.join(", ") %>
-                  <% end %>
-                <% else %>
-                  Reference: <%= citations.join(", ") %>
-                <% end %>
-              </div>
-            <% end %>
+            <%= render "meetings/citations", summary: @summary, entry: item %>
 
             <%# Roll call votes — expandable %>
             <% if item_motions.any? { |mot| mot.votes.any? } %>

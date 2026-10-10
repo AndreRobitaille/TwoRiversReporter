@@ -129,6 +129,30 @@
 
 <div class="section-header mt-4">
   <%= render "shared/atom_marker", theme: "silo" %>
+  <span class="section-header__label">API keys</span>
+  <div class="section-header__line"></div>
+</div>
+
+<section class="card api-key-admin-panel">
+  <% if @api_keys.any? %>
+    <div class="api-key-list">
+      <% @api_keys.each do |key| %>
+        <article class="api-key-entry">
+          <div class="api-key-heading">
+            <h3 class="api-key-name"><%= key.name %></h3>
+            <span class="badge badge--<%= api_key_state_variant(key) %>"><%= api_key_state_label(key) %></span>
+          </div>
+          <%= render "settings/api_keys/metadata", key: key %>
+        </article>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="empty-state">No API keys have been provisioned for this account.</p>
+  <% end %>
+</section>
+
+<div class="section-header mt-4">
+  <%= render "shared/atom_marker", theme: "silo" %>
   <span class="section-header__label">Session history</span>
   <div class="section-header__line"></div>
 </div>

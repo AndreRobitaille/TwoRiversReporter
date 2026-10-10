@@ -41,12 +41,13 @@ module Topics
         return nil # Treat as false positive/blocked
       end
 
-      # 2. Check Exact Match (Topic) - Case insensitive
-      existing_topic = Topic.reusable.where("LOWER(name) = ?", @normalized_name).first
-      return existing_topic if existing_topic
+      # Exact names remain reserved even when the topic is not approved.
+      existing_topic = Topic.where("LOWER(name) = ?", @normalized_name).first
+      if existing_topic
+        return nil if existing_topic.status == "blocked" || existing_topic.reuse_strategy == "unsafe_for_auto_reuse"
 
-      exact_unsafe_topic = Topic.where("LOWER(name) = ?", @normalized_name).where(reuse_strategy: "unsafe_for_auto_reuse").first
-      return nil if exact_unsafe_topic
+        return existing_topic
+      end
 
       # 4. Check Exact Match (TopicAlias) - Case insensitive
       existing_alias = TopicAlias.where("LOWER(name) = ?", @normalized_name).first

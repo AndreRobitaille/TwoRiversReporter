@@ -1,4 +1,5 @@
 require "test_helper"
+require "minitest/mock"
 
 # One canary, every gated surface. This is the net that catches a future edit
 # that renders withheld text behind a CSS class instead of omitting it.
@@ -403,6 +404,27 @@ class AnonymousLeakSweepTest < ActionDispatch::IntegrationTest
         "#{label} (#{path}) should render anonymously, got #{response.status}"
       assert_no_match(/#{Regexp.escape(SECRET)}/i, response.body,
         "#{label} (#{path}) leaked withheld content to an anonymous visitor")
+    end
+  end
+
+  test "verified Googlebot sees restricted content across public HTML surfaces while an impersonator cannot" do
+    set_access_mode("gated")
+    cache = ActiveSupport::Cache::MemoryStore.new
+    ranges = Crawlers::IpRanges.new(cache: cache)
+    cache.write(ranges.cache_key(:google), { prefixes: [ "66.249.66.0/27" ], fetched_at: Time.current.to_i })
+
+    Rails.stub(:cache, cache) do
+      sweep_paths.each do |label, path|
+        next if PRESENCE_EXEMPT.key?(label) || label.include?("turbo_stream")
+
+        get path, headers: { "User-Agent" => "Googlebot/2.1", "REMOTE_ADDR" => "66.249.66.1" }
+        assert_response :success
+        assert_includes response.body, SECRET, "#{label} must show real reporting to verified Googlebot"
+
+        get path, headers: { "User-Agent" => "Googlebot/2.1", "REMOTE_ADDR" => "198.51.100.42" }
+        assert_response :success
+        assert_no_match(/#{Regexp.escape(SECRET)}/i, response.body, "#{label} must withhold reporting from an impersonator")
+      end
     end
   end
 

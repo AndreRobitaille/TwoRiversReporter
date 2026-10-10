@@ -3,58 +3,24 @@ class HomeController < ApplicationController
 
   allow_unauthenticated_access only: :index
 
-  ACTIVITY_WINDOW = 30.days
-  TOP_STORY_LIMIT = 2
-  WIRE_MIN_IMPACT = 2
-  WIRE_CARD_COUNT = 4
-  WIRE_ROW_LIMIT = 6
-  NEXT_UP_LIMIT = 2
-
-  COUNCIL_PATTERNS = [
-    "City Council Meeting",
-    "City Council Work Session",
-    "City Council Special Meeting"
-  ].freeze
+  # Retained for the reanalysis service, which uses the same homepage bounds.
+  ACTIVITY_WINDOW = ResidentContent::HomeSelection::ACTIVITY_WINDOW
+  WIRE_MIN_IMPACT = ResidentContent::HomeSelection::WIRE_MIN_IMPACT
+  WIRE_CARD_COUNT = ResidentContent::HomeSelection::WIRE_CARD_COUNT
+  WIRE_ROW_LIMIT = ResidentContent::HomeSelection::WIRE_ROW_LIMIT
 
   def index
-    @top_stories = build_top_stories
-    wire_all = build_wire(@top_stories.map(&:id))
-    @wire_cards = wire_all.first(WIRE_CARD_COUNT)
-    @wire_rows = wire_all.drop(WIRE_CARD_COUNT).first(WIRE_ROW_LIMIT)
-    @next_up = build_next_up
+    selection = ResidentContent::HomeSelection.new.call
+    @top_stories = selection[:top_stories]
+    @wire_cards = selection[:wire_cards]
+    @wire_rows = selection[:wire_rows]
+    @next_up = selection[:next_up]
     load_headlines(@top_stories + @wire_cards + @wire_rows)
     load_meeting_refs(@top_stories + @wire_cards + @wire_rows)
     @topic_generated_images = generated_images_for(@top_stories + @wire_cards, surface: :og)
   end
 
   private
-
-  # `id: :desc` tiebreaker is load-bearing — topic last_activity_at values
-  # cluster on meeting-start hours (multiple topics share the exact same
-  # timestamp). Without a stable tiebreaker, the same topic can appear in
-  # both @top_stories and @wire_cards across the same request's queries.
-
-  def build_top_stories
-    GeneratedImages::HomepageTopicSelector.new.call.first(TOP_STORY_LIMIT)
-  end
-
-  def build_wire(exclude_ids)
-    scope = Topic.reusable
-      .where("resident_impact_score >= ?", WIRE_MIN_IMPACT)
-      .where("last_activity_at > ?", ACTIVITY_WINDOW.ago)
-      .order(resident_impact_score: :desc, last_activity_at: :desc, id: :desc)
-
-    scope = scope.where.not(id: exclude_ids) if exclude_ids.any?
-    scope.limit(WIRE_CARD_COUNT + WIRE_ROW_LIMIT).to_a
-  end
-
-  def build_next_up
-    Meeting
-      .where("starts_at > ?", Time.current)
-      .where(body_name: COUNCIL_PATTERNS)
-      .order(starts_at: :asc)
-      .limit(NEXT_UP_LIMIT)
-  end
 
   def load_headlines(topics)
     return if topics.empty?

@@ -1,0 +1,64 @@
+<% content_for(:title) { "Account — API keys" } %>
+<% content_for(:description) { "Manage named keys for reading civic reporting." } %>
+<% content_for(:head) { tag.meta(name: "turbo-cache-control", content: "no-cache") } %>
+
+<%= render "settings/header" %>
+<%= render "settings/tabs", current: :api_keys %>
+<% if flash[:notice] %><div class="flash flash--success" role="status"><%= flash[:notice] %></div><% end %>
+<% if flash[:alert] %><div class="flash flash--error" role="alert"><%= flash[:alert] %></div><% end %>
+
+<div class="api-keys">
+  <section class="card">
+    <div class="api-key-heading">
+      <div>
+        <h2 class="card-title">Your API keys</h2>
+        <p class="card-subtitle">Give your scripts and tools access to the civic reporting you can read.</p>
+      </div>
+      <%= link_to "Create API key", new_settings_api_key_path, class: "btn btn--primary" %>
+    </div>
+
+    <% if @api_keys.any? %>
+      <div class="api-key-list">
+        <% @api_keys.each do |key| %>
+          <article class="api-key-entry">
+            <div class="api-key-heading">
+              <h3 class="api-key-name"><%= key.name %></h3>
+              <span class="badge badge--<%= api_key_state_variant(key) %>"><%= api_key_state_label(key) %></span>
+            </div>
+            <%= render "settings/api_keys/metadata", key: key %>
+            <% unless key.revoked_at? %>
+              <%= button_to "Revoke key", settings_api_key_path(key), method: :delete,
+                    class: "btn btn--secondary btn--sm",
+                    form: { data: { turbo_confirm: "Revoke #{key.name}? Tools using this key will lose access immediately." } } %>
+            <% end %>
+          </article>
+        <% end %>
+      </div>
+      <% if @api_keys.any? { |key| key.revoked_at.blank? } %>
+        <div class="api-key-footer">
+          <p>Replacing a key? Create its replacement, update your tool, then revoke the old one.</p>
+          <%= button_to "Revoke all keys", revoke_all_settings_api_keys_path, method: :delete,
+                class: "btn btn--danger btn--sm",
+                form: { data: { turbo_confirm: "Revoke every API key? All tools using your keys will lose access immediately." } } %>
+        </div>
+      <% end %>
+    <% else %>
+      <div class="api-key-empty">
+        <%= render "shared/atom_marker" %>
+        <h3>A key for each purpose</h3>
+        <p>Name a key for the tool that will use it, like “Home dashboard” or “Research notebook”. You can revoke it whenever you need to.</p>
+      </div>
+    <% end %>
+  </section>
+
+  <section class="card api-key-guide">
+    <h2 class="card-title">What your keys can do</h2>
+    <p>Read topics, meeting summaries, transcripts, official source links, public officials, attendance, and votes. Keys cannot change site content or open admin tools.</p>
+    <details>
+      <summary>Connect a script or agent</summary>
+      <p>Keep your key in your tool’s secret settings. Send it as a Bearer credential in the Authorization header. Start with the API guide:</p>
+      <pre><code>curl -H "Authorization: Bearer $TRR_API_KEY" <%= request.base_url %>/api</code></pre>
+      <p>The guide lists the available endpoints and explains pagination and source labels. Each key expires on its chosen date and stops working if your account is disabled.</p>
+    </details>
+  </section>
+</div>

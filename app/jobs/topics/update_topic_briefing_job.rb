@@ -16,7 +16,10 @@ module Topics
         update_interim(topic, meeting)
       else
         Rails.logger.error("Unknown tier '#{tier}' for UpdateTopicBriefingJob")
+        return
       end
+
+      topic.refresh_resident_impact_priority
     end
 
     private

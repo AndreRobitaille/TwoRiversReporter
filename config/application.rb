@@ -39,6 +39,14 @@ module TwoRiversReporter
     # Don't generate system test files.
     config.generators.system_tests = nil
 
+    # Stable discovery URLs need prompt refreshes; fingerprinted assets keep
+    # the production static-file cache policy. Wrap the static responder.
+    require_relative "../lib/middleware/discovery_file_caching"
+    config.middleware.insert_before Rack::Sendfile, DiscoveryFileCaching
+
+    require_relative "../lib/middleware/api_response_caching"
+    config.middleware.insert_after Rack::ConditionalGet, ApiResponseCaching
+
     # Serve admin-managed redirects (e.g. merged-away topic URLs) ahead of
     # routing. Lives in lib/middleware (excluded from the autoloader), so
     # require it explicitly before referencing the constant.

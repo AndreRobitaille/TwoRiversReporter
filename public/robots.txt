@@ -1,4 +1,15 @@
 # See https://www.robotstxt.org/robotstxt.html for documentation on how to use the robots.txt file
+# Allow discovery; full reporting still requires server-side verification.
+User-agent: Googlebot
+User-agent: Google-InspectionTool
+User-agent: bingbot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+Disallow: /admin
+Disallow: /admin/
+
 User-agent: *
 Disallow: /admin
 Disallow: /admin/

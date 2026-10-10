@@ -1,0 +1,6 @@
+<dl class="api-key-metadata">
+  <div><dt>Key ending</dt><dd><code>…<%= key.display_hint %></code></dd></div>
+  <div><dt>Created</dt><dd><%= api_key_date(key.created_at) %></dd></div>
+  <div><dt>Expires</dt><dd><%= api_key_date(key.expires_at) %></dd></div>
+  <div><dt>Last used</dt><dd><%= api_key_date(key.last_used_at) %></dd></div>
+</dl>

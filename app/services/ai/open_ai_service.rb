@@ -631,7 +631,7 @@ module Ai
 
     # Structured meeting analysis — produces JSON for direct rendering.
     # Called by SummarizeMeetingJob to store structured JSON in generation_data.
-    def analyze_meeting_content(doc_text, kb_context, type, source: nil, participant_context: nil, motion_context: nil)
+    def analyze_meeting_content(doc_text, kb_context, type, source: nil, participant_context: nil, motion_context: nil, source_catalog: [], meeting_record_text: nil)
       template = PromptTemplate.find_by!(key: "analyze_meeting_content")
       committee_ctx = prepare_committee_context
       system_role = template.interpolate_system_role(committee_context: committee_ctx)
@@ -658,7 +658,9 @@ module Ai
         temporal_framing: temporal_framing,
         participant_context: participant_context.to_s,
         motion_context: motion_context.to_s,
-        doc_text: doc_text.truncate(100_000)
+        agenda_items: meeting_agenda_context(source),
+        source_catalog: source_catalog.to_json,
+        doc_text: doc_text.to_s
       }
       prompt = template.interpolate(**placeholders)
       model = self.class.model_for_tier(template.model_tier)
@@ -682,7 +684,8 @@ module Ai
         placeholder_values: placeholders.transform_keys(&:to_s)
       )
 
-      content
+      MeetingAnalysisEvidenceValidator.new(document_text: meeting_record_text || doc_text, motion_context: motion_context,
+        participant_context: participant_context).validate(content)
     end
 
     def prepare_doc_context(extractions)
@@ -828,6 +831,14 @@ module Ai
     class EmptyResponseError < StandardError; end
 
     private
+
+    def meeting_agenda_context(source)
+      return "[]" unless source.is_a?(Meeting)
+
+      source.agenda_items.substantive.includes(:parent).order(:order_index).map do |item|
+        { agenda_item_id: item.id, number: item.number, agenda_item_title: item.display_context_title }
+      end.to_json
+    end
 
     # Production and evaluator calls share the same effective parameter rules,
     # including suppression of unsupported temperature values.

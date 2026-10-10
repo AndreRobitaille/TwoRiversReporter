@@ -1,4 +1,27 @@
 module MeetingsHelper
+  def meeting_citations(summary, entry)
+    return [] if gated_for_visitor? || summary.nil?
+
+    @citation_resolvers ||= {}
+    resolver = @citation_resolvers[summary.id] ||= Citations::Resolver.for_summary(summary)
+    transcript_ids = Array(summary.generation_data&.dig("source_catalog"))
+      .filter_map { |source| source["source_id"] if source.is_a?(Hash) && source["document_type"] == "transcript" }
+    values = entry["citations"] || entry["citation"]
+    references = values.is_a?(Array) ? values : [ values ].compact
+    references = references.reject { |reference| reference.is_a?(Hash) && transcript_ids.include?(reference["source_id"]) }
+    resolver.resolve_all(references)
+  end
+
+  def meeting_highlight_detail_anchor(meeting, highlight, items)
+    return if gated_for_visitor?
+
+    id = highlight["agenda_item_id"]
+    return unless id.is_a?(Integer) && meeting.agenda_items.any? { |item| item.id == id }
+
+    indices = items.each_index.select { |index| items[index]["agenda_item_id"] == id }
+    "agenda-item-#{indices.first}" if indices.one?
+  end
+
   MEETING_BUFFER = 3.hours
 
   # Clean a meeting name for display. Strips trailing " Meeting", parenthetical

@@ -27,7 +27,7 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     generation_data = {
       "headline" => "Council approved the budget",
       "highlights" => [
-        { "text" => "Budget approved", "citation" => "Page 1", "vote" => "5-2", "impact" => "high" }
+        { "text" => "Budget approved", "citations" => [ { "source_id" => "doc-#{@meeting.latest_document("minutes_pdf").id}", "location" => { "kind" => "whole_source" } } ], "vote" => "5-2", "impact" => "high" }
       ],
       "public_input" => [],
       "item_details" => []
@@ -202,7 +202,7 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     summary = @meeting.topic_summaries.first
     assert_equal @topic, summary.topic
     assert_equal "## Topic Summary", summary.content
-    assert_equal({ "factual_record" => [] }, summary.generation_data)
+    assert_equal({ "factual_record" => [], "source_catalog" => [] }, summary.generation_data)
 
     # Verify mocks
     mock_ai.verify
@@ -356,7 +356,7 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     generation_data = {
       "headline" => "Council discussed the budget",
       "highlights" => [
-        { "text" => "Budget discussed", "citation" => "Transcript", "impact" => "medium" }
+        { "text" => "Budget discussed", "citations" => [ { "source_id" => "doc-#{@meeting.latest_document("transcript").id}", "location" => { "kind" => "whole_source" } } ], "impact" => "medium" }
       ],
       "public_input" => [],
       "item_details" => [],
@@ -498,16 +498,16 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
       source_url: "http://example.com/minutes.pdf",
       extracted_text: "Page 1: The council approved the budget 5-2."
     )
-    @meeting.meeting_documents.create!(
+    transcript = @meeting.meeting_documents.create!(
       document_type: "transcript",
       source_url: "http://example.com/transcript.txt",
-      extracted_text: "Transcript of meeting: The council discussed the budget."
+      extracted_text: ("Budget discussion.\n" * 6000) + "Closing motion approved the contract extension."
     )
 
     generation_data = {
       "headline" => "Council approved the budget",
       "highlights" => [
-        { "text" => "Budget approved", "citation" => "Page 1", "vote" => "5-2", "impact" => "high" }
+        { "text" => "Budget approved", "citations" => [ { "source_id" => "doc-#{@meeting.latest_document("minutes_pdf").id}", "location" => { "kind" => "whole_source" } } ], "vote" => "5-2", "impact" => "high" }
       ],
       "public_input" => [],
       "item_details" => []
@@ -515,7 +515,9 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
 
     mock_ai = Minitest::Mock.new
     mock_ai.expect :prepare_kb_context, "" do |arg| arg.is_a?(Array) end
+    captured_text = nil
     mock_ai.expect :analyze_meeting_content, generation_data.to_json do |text, kb, type, **kwargs|
+      captured_text = text
       type == "minutes" && kwargs.key?(:participant_context)
     end
     # Topic-level mocks
@@ -538,6 +540,9 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     assert summary, "Should create minutes_recap"
     assert_equal "minutes_with_transcript", summary.generation_data["source_type"]
     assert_nil @meeting.meeting_summaries.find_by(summary_type: "transcript_recap"), "Should NOT create transcript_recap"
+    assert_includes captured_text, "Page 1: The council approved the budget 5-2."
+    assert captured_text.end_with?(transcript.extracted_text), "The complete supplementary transcript must reach analysis"
+    mock_ai.verify
   end
 
   test "stores preview framing in generation_data for future meeting with packet" do
@@ -852,7 +857,8 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
       "highlights" => [],
       "public_input" => [],
       "item_details" => [
-        { "title" => "Playground repairs", "summary" => "The board will discuss playground repairs.", "activity_level" => "discussion" }
+        { "title" => "Playground repairs", "summary" => "The board will discuss playground repairs.", "activity_level" => "discussion",
+          "citations" => [ { "source_id" => "doc-#{@meeting.latest_document('agenda_pdf').id}", "location" => { "kind" => "whole_source" } } ] }
       ]
     }
 

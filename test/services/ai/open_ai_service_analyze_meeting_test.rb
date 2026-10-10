@@ -12,6 +12,30 @@ class OpenAiServiceAnalyzeMeetingTest < ActiveSupport::TestCase
     )
   end
 
+  test "preserves the complete long transcript and stable agenda identity in the recorded prompt" do
+    meeting = Meeting.create!(body_name: "City Council Work Session", starts_at: 1.day.ago,
+      detail_page_url: "https://example.com/long-work-session")
+    item = meeting.agenda_items.create!(title: "26-141 WPPI contract extension to 2073", order_index: 1)
+    text = "Opening discussion.\n" + ("Power supply discussion.\n" * 5000) +
+      "Mark moved to sign the contract. Doug seconded. Motion carries."
+    assert_operator text.index("Mark moved"), :>, 100_000
+
+    mock_chat = lambda do |parameters:|
+      { "choices" => [ { "message" => { "content" => { "item_details" => [] }.to_json } } ] }
+    end
+    @service.instance_variable_get(:@client).stub :chat, mock_chat do
+      @service.analyze_meeting_content(text, "", "transcript", source: meeting)
+    end
+
+    run = PromptRun.for_template("analyze_meeting_content").where(source: meeting).recent.first
+    assert_equal text, run.placeholder_values["doc_text"]
+    assert_includes run.messages.last["content"], "Motion carries."
+    agenda = JSON.parse(run.placeholder_values["agenda_items"])
+    assert_equal item.id, agenda.first["agenda_item_id"]
+    assert_equal item.display_context_title, agenda.first["agenda_item_title"]
+    assert_includes run.messages.last["content"], item.display_context_title
+  end
+
   test "analyze_meeting_content prompt includes json keyword for response_format" do
     captured_params = nil
 

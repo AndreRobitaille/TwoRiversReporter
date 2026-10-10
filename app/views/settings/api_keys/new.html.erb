@@ -1,0 +1,39 @@
+<% content_for(:title) { "Account — Create API key" } %>
+<% content_for(:head) { tag.meta(name: "turbo-cache-control", content: "no-cache") } %>
+<%= render "settings/header" %>
+<%= render "settings/tabs", current: :api_keys %>
+
+<section class="card api-key-form">
+  <div class="card-header">
+    <h2 class="card-title">Create API key</h2>
+    <p class="card-subtitle">Give it a name you’ll recognize when you return.</p>
+  </div>
+  <% if @api_key.errors.any? %>
+    <div class="flash flash--error" role="alert">
+      <p>Please check these details:</p>
+      <ul><% @api_key.errors.full_messages.each do |message| %><li><%= message %></li><% end %></ul>
+    </div>
+  <% end %>
+  <%= form_with model: @api_key, url: settings_api_keys_path, data: { turbo: false } do |form| %>
+    <div class="form-group">
+      <%= form.label :name, "Name", class: "form-label" %>
+      <%= form.text_field :name, required: true, maxlength: 80, autofocus: true,
+            class: "form-input", aria: { describedby: "api-key-name-help" } %>
+      <p id="api-key-name-help" class="api-key-help">What will you use this key for? For example, “Home dashboard” or “Research notebook”.</p>
+    </div>
+    <div class="form-group">
+      <%= form.label :expires_in_days, "Expires after", class: "form-label" %>
+      <%= form.select :expires_in_days, [["30 days", "30"], ["90 days", "90"], ["180 days", "180"]],
+            { selected: @expiry_days }, class: "form-input" %>
+      <p class="api-key-help">Create a replacement before this date to keep your tool connected.</p>
+    </div>
+    <div class="api-key-scope">
+      <span class="badge badge--info">Read-only access</span>
+      <p>This key can read civic reporting. It cannot change content or access admin tools.</p>
+    </div>
+    <div class="api-key-actions">
+      <%= form.submit "Create API key", class: "btn btn--primary" %>
+      <%= link_to "Cancel", settings_api_keys_path, class: "btn btn--ghost" %>
+    </div>
+  <% end %>
+</section>

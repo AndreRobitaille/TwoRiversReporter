@@ -1,0 +1,17 @@
+<% citations = meeting_citations(summary, entry) %>
+<% if citations.any? %>
+  <div class="meeting-item-card-citations">
+    <% citations.each do |citation| %>
+      <% if citation[:status] == "resolved" && citation[:source_url].present? %>
+        <span>
+          <% if citation[:source_type].in?(%w[packet_pdf packet_html agenda_pdf agenda_html]) %>
+            Proposal/background:
+          <% end %>
+          <%= link_to citation[:label], citation[:source_url], target: "_blank", rel: "noopener", class: "meeting-citation-link" %>
+        </span>
+      <% else %>
+        <span><%= citation[:label] %><%= " — source unresolved" if citation[:status] == "unresolved" %></span>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

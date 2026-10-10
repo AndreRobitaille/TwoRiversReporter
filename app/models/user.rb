@@ -11,6 +11,7 @@ class User < ApplicationRecord
   EMAIL_FORMAT = URI::MailTo::EMAIL_REGEXP
 
   has_many :sessions, dependent: :destroy
+  has_many :api_access_tokens, dependent: :destroy, inverse_of: :user
   has_many :magic_links, dependent: :destroy
   has_many :passkey_credentials, dependent: :destroy
   has_many :membership_applications, dependent: :destroy

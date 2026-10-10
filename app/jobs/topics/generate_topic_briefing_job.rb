@@ -20,6 +20,8 @@ module Topics
       analysis_json = parse_json_safely(analysis_json_str, topic)
       return if analysis_json.empty?
 
+      Citations::TopicAnalysis.copy_references!(analysis_json, references: context[:citation_references])
+      analysis_json["source_catalog"] = context[:source_catalog].deep_dup
       rendered = ai_service.render_topic_briefing(analysis_json.to_json, source: topic)
 
       save_briefing(topic, effective_meeting, analysis_json, rendered)
@@ -33,7 +35,7 @@ module Topics
         .joins(:meeting)
         .where(meetings: { id: TopicAppearance.joins(:agenda_item).merge(AgendaItem.substantive).where(topic_id: topic.id).select(:meeting_id) })
         .order("meetings.starts_at ASC")
-        .pluck(:generation_data)
+        .includes(:meeting).to_a
 
       recent_meeting_ids = topic.topic_appearances
         .joins(agenda_item: :meeting)
@@ -46,10 +48,16 @@ module Topics
         .map(&:first)
 
       recent_meetings = Meeting.where(id: recent_meeting_ids).order(starts_at: :desc)
-      recent_raw_context = recent_meetings.flat_map do |m|
-        builder = Topics::SummaryContextBuilder.new(topic, m)
-        builder.build_context_json[:agenda_items]
+      recent_contexts = recent_meetings.map do |m|
+        Topics::SummaryContextBuilder.new(topic, m).build_context_json
       end
+      recent_raw_context = recent_contexts.flat_map { |context| context[:agenda_items] }
+      citation_references = prior_summaries.each_with_object({}) do |summary, references|
+        references.merge!(Citations::TopicAnalysis.retained_references(summary))
+      end
+      recent_contexts.each { |context| citation_references.merge!(context[:citation_references]) }
+      source_catalog = (recent_contexts.flat_map { |context| context[:source_catalog] } +
+        prior_summaries.flat_map { |summary| summary.generation_data["source_catalog"] || [] }).uniq
 
       # Pull per-item substantive content from each recent meeting's
       # MeetingSummary. Without this, the briefing AI sees only agenda
@@ -76,7 +84,9 @@ module Topics
           last_seen_at: topic.last_seen_at&.iso8601,
           aliases: topic.topic_aliases.pluck(:name)
         },
-        prior_meeting_analyses: prior_summaries,
+        prior_meeting_analyses: prior_summaries.map(&:generation_data),
+        citation_references: citation_references,
+        source_catalog: source_catalog,
         recent_raw_context: recent_raw_context,
         recent_item_details: recent_item_details,
         knowledgebase_context: formatted_kb,

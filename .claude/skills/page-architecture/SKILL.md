@@ -68,6 +68,22 @@ The meeting show page (`meetings/show.html.erb`) uses a **fixed inverted-pyramid
 
 **Structured JSON rendering:** Meeting summary content renders from `MeetingSummary.generation_data` (single-pass structured JSON from `analyze_meeting_content`) instead of two-pass markdown. Helper methods in `MeetingsHelper` extract fields: `meeting_headline`, `meeting_highlights`, `meeting_public_input`, `meeting_item_details`, `decision_badge_class`. The `content` (markdown) field is a fallback for meetings without `generation_data`, rendered in `.meeting-legacy-recap`.
 
+**Citation provenance:** `generation_data.source_catalog` retains the actual
+supplied document versions. Highlights, public input, and item details store
+structured references. `Citations::Resolver` supplies canonical labels and URLs
+for both the meeting citation partial and the resident API. PDF locations need
+actual page extractions; transcripts retain whole-source recording provenance
+without pages or timestamps. The page keeps recording attribution in its
+banner/header and omits whole-recording references from inline citation lists.
+Key Decisions cards have no source citations; highlights with an explicit
+`agenda_item_id` can link to the one corresponding rendered agenda detail.
+IDs must belong to this meeting; missing/ambiguous relationships get no link.
+Legacy references remain explicitly unresolved. Never fall
+back to today's minutes/packet PDF or infer a source by summary type.
+Topic summary and briefing contexts retain these validated references. The
+bounded citation-only repair/release procedure is in
+`docs/operations/citation-provenance-repair.md`.
+
 **Single-pass pipeline:** `SummarizeMeetingJob` calls `analyze_meeting_content` directly and stores the structured JSON in `generation_data`. The old two-pass flow (analyze → render markdown) is bypassed. The `render_meeting_summary` method remains for backward compatibility but is not called by the job.
 
 **Procedural filtering:** the AI prompt excludes adjournment, minutes approval, consent agenda, remote participation, treasurer's report, and reconvene. Closed session motions are NOT filtered (Wis. Stats 19.85 transparency).
@@ -90,7 +106,9 @@ Council meetings and work sessions are recorded and posted to YouTube (`@Two_Riv
 
 **`Documents::DownloadTranscriptJob`** — Takes `(meeting_id, video_url)`. Validates URL against `YOUTUBE_URL_PATTERN`, fetches SRT via `yt-dlp` in a temp directory, parses SRT to plain text (strips timestamps/sequence numbers), creates `MeetingDocument` with `document_type: "transcript"`, attaches raw SRT file. Enqueues `SummarizeMeetingJob` if no `minutes_recap` summary exists.
 
-**Transcript is a supplement, not a replacement** — it never overrides official sources. Used as the primary source only when no minutes exist (produces `transcript_recap`). When minutes arrive, transcript text (truncated to 15K chars) is appended as supplementary context and `source_type` becomes `"minutes_with_transcript"`. Old `transcript_recap` summaries are cleaned up when minutes arrive.
+**Transcript is a supplement, not a replacement** — it never overrides official sources. Used as the primary source only when no minutes exist (produces `transcript_recap`). When minutes arrive, the complete transcript is appended as supplementary context and `source_type` becomes `"minutes_with_transcript"`. Recaps also retain the available packet (PDF preferred) or agenda as official proposal/background evidence. The current meeting record alone validates motion/vote excerpts; old minutes inside a packet cannot establish the current outcome. Published recording remarks are attributed paraphrases, not caption quotations. Meeting analysis never silently truncates source text; context overflow must fail rather than omit closing actions. Old `transcript_recap` summaries are cleaned up when minutes arrive.
+
+**Agenda identity and downstream evidence:** `analyze_meeting_content` receives substantive agenda IDs and exact contextual titles. `item_details.agenda_item_id` connects the analysis to agenda evidence through `Topics::ItemDetailsMatcher`, shared by topic summary context, recent briefing details, and hollow-appearance pruning. Legacy entries fall back to unambiguous normalized titles. Missing analysis cannot establish that substantive business was routine. Topic context retains the meeting body and transcript provenance.
 
 **Transcript banner:** Meeting show page displays a cool-toned `.transcript-banner` when `generation_data["source_type"] == "transcript"`. Automatically removed when a minutes-based summary replaces it.
 

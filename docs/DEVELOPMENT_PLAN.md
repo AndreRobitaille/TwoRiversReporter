@@ -36,7 +36,7 @@ and associations remain stored; cleanup must not discard cancellation evidence
 or records with generated images. Cancellation notices override stale summaries
 in cards, detail pages, metadata, and sharing. Source documents remain available
 under the existing access rules. Historical data consolidation is a separate,
-reviewed operation; this change does not delete or reparent existing records.
+reviewed operation; this change does not delete or reparent existing records. Tracked in GitHub Issues: #139 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/139).
 
 ## Generated Civic Images
 
@@ -48,6 +48,8 @@ reviewed operation; this change does not delete or reparent existing records.
 - For named/specific local places, facilities, businesses, beaches, parks, or landmarks, avoid full invented stand-ins. Use cropped, non-identifying details and surrounding atmosphere instead. Admin upload override is expected for hard cases where a generated image would look like a fake version of a known local place.
 - Topic images are limited to the actual homepage top-six pool and are reused for topic social previews.
 - Meeting images are generated only when the structured summary or agenda has enough substantive content; they support the meeting page and social previews.
+- When structured highlights exist, the meeting image brief uses only the highest-impact highlight (source order breaks ties). Unrelated items and a mixed meeting headline do not enter that brief. Visual convenience must not displace resident importance. Sex-offender residency-law coverage uses restrained civic-policy context, without implying that a depicted house is an offender's home or presenting the change as pleasant landscaping.
+- Admin-uploaded replacements are labeled "Uploaded image". Their variants preserve the complete source with padding, and detail-page images use containment so source maps and legends are not cropped. Generated images retain the "AI image" label.
 - Homepage cards render the topic image as a small, fixed side thumbnail beside the text (≈200×134 on the two top stories, ≈104×78 on the wire cards) so the text stays primary; topic descriptions are omitted from these top-six cards, and the thumbnails carry no overlay label. Topic and meeting detail pages show a larger edge-to-edge feature image lifted off the page with a soft drop shadow and a short "AI image" cutline beneath it. Images never dominate — they cue the reader, not lead.
 - The `/topics` and `/meetings` index cards also show a thumbnail when one exists. Thumbnails use a fixed **3:2 box** (matching the source aspect, ≈132px wide) so almost nothing is cropped — never long top/side strips. On topic cards the image floats right and the title/headline/footer wrap around it (reclaiming the space above and below); the static topic description is omitted from these cards, matching the homepage. On meeting cards the thumbnail is top-aligned beside the date slab and text. Index image data is batch-loaded via the `LoadsGeneratedImages` controller concern.
 - When no image exists, cards and detail pages omit the image entirely with no reserved space. The photo-and-text layouts are gated behind an image-present modifier class, so image-less cards fall back to the plain text layout.
@@ -79,6 +81,26 @@ All topic-related modeling, extraction, inference, and presentation must
 conform to:
 
 **`docs/topics/TOPIC_GOVERNANCE.md`**
+
+Sex-offender residency restrictions and individual appeals remain trackable
+resident concerns. Automated triage cannot block them as routine or low
+salience. Citywide changes to the law must be distinguished from individual
+relief requests, and receive the resident-impact priority specified by Topic
+Governance. Existing editorial blocks require a reviewed data repair; the
+automatic guard does not remove historical blocks or blacklist entries.
+
+The homepage uses `resident_impact_score` (1-5), with top stories requiring
+at least 4 and wire entries at least 2, ordered by impact and then recency.
+The separate admin `importance` field (0-10) does not control homepage ranking.
+All AI impact writers apply the sex-offender minimum through
+`Topic#update_resident_impact_from_ai`: 3 for individual cases, 4 for a
+documented law rewrite, and 5 for explicit replacement of a citywide residency
+prohibition. Recent/upcoming substantive agenda evidence determines the
+law-change minimum; old legislation and cancelled meetings cannot keep that
+minimum elevated forever. Source titles are interpreted conservatively, and
+admin overrides retain their 180-day protection. Headline/interim updates also
+raise a missing or too-low rating to the supported minimum. Low-activity
+pruning cannot erase these policy or individual-appeal appearances.
 
 If implementation conflicts with Topic Governance, implementation must
 change.
@@ -154,6 +176,38 @@ Topic Detection & Association\
 Summarization (Topic-aware)\
 ↓\
 Resident-Facing Pages
+
+------------------------------------------------------------------------
+
+## Read-only Resident API
+
+Active users can provision named, expiring API keys from Account → API keys.
+The authenticated `/api` handbook describes the versioned `/api/v1` endpoints
+for all resident content: topic briefings/history/decisions, canonical meetings,
+summaries, agenda analysis, official document links, stored transcript text,
+committee rosters, public officials, attendance and votes.
+
+API access uses bearer credentials with the same resident-content scope in both
+public-access modes. Keys cannot write content or authenticate browser settings
+or `/admin/`, including keys owned by administrators. Owner eligibility and key
+revocation are checked on every request. Responses exclude internal generation
+and account data, use private no-store caching, and bound collection/transcript
+reads. Official records remain authoritative.
+
+The two primary bot workflows are update discovery and research. Meeting/topic
+lists support inclusive `updated_since` filters and `sort=updated`, with separate
+source/analysis timestamps so old meetings with newly available evidence surface.
+Search includes resident-visible narrative and agenda analysis alongside official
+source text, public topic names and existing body/date filters. Internal generated
+fields never influence searches. The authenticated handbook documents both flows.
+
+Users name keys, choose an expiry, see the secret once, and can revoke them.
+Admin User Accounts shows provisioned/active counts and key lifecycle metadata
+without secrets. Issuance requires fresh browser authentication and matching
+session context; lifecycle actions are audited.
+
+See [the client and operator contract](read-only-api.md) and
+[the implementation design](superpowers/specs/2026-10-02-read-only-user-api-design.md).
 
 ------------------------------------------------------------------------
 
@@ -352,6 +406,60 @@ Status derivation must: - Prefer agenda anchors - Treat disappearance
 without resolution as meaningful - Avoid assuming resolution without
 evidence
 
+
+## Meeting Evidence Preservation
+
+Recap generation retains the available official packet, or the agenda when
+no usable packet is available, alongside minutes and recording context.
+A transcript upload must not remove official proposal evidence or its
+supported PDF-page citations. Prefer the packet PDF over a duplicate HTML
+wrapper with no extracted text. Packets establish proposed business and
+background; only the current meeting's minutes, recording, or verified
+motion context can validate current motions and vote tallies. Earlier
+minutes included inside a packet cannot validate the current meeting's vote.
+
+Recording captions support preliminary, attributed paraphrases, not direct
+quotations in published reporting. Retain recording provenance in structured
+data and the page's recording attribution; do not repeat whole-recording
+links as inline citations for individual entries. Keep verified official
+document citations beside detailed reporting, labeling packet/agenda links
+as proposal/background material. Key Decisions cards omit
+source citations and may link to their detailed agenda entry using an
+explicit shared `agenda_item_id`. Show that link only when the ID belongs
+to this meeting and identifies exactly one rendered detail. Older summaries
+without this relationship have no inferred navigation link.
+
+Meeting analysis receives the complete source text, including the full
+supplementary transcript when minutes are available. It must not silently
+discard the end of a recording to meet a character budget. An input that
+exceeds the model's context must fail rather than publish a partial recap
+as though it covered the whole meeting.
+
+Meeting analysis receives the meeting's substantive agenda IDs and exact
+contextual titles. Each item detail carries its matching `agenda_item_id`.
+Structured `motion` details preserve verified mover, seconder, named no
+votes, and recorded absences through the topic pipeline.
+Motion identities and numeric tallies carry supporting source excerpts;
+validate those excerpts before passing the fields downstream. Participant
+rosters provide spelling, not an unnamed speaker's role. A collective
+voice vote does not establish a numeric tally. Item summaries remain
+factual, with attributed arguments rather than inferred vote motives.
+Topic summaries, rolling briefings, and hollow-appearance pruning resolve
+these IDs only within that meeting. Older summaries fall back to
+unambiguous normalized titles. Invalid IDs and conflicting entries do not
+establish a match. Missing analysis is not evidence that a substantive
+agenda item was routine and must not erase its topic appearance.
+
+Recording-based outcomes remain preliminary. Preserve the actual meeting
+body, including a work session where action occurred; do not infer whether
+action occurred or was legally valid from the meeting label. Report final
+motions and announced outcomes, and omit a vote tally when captions cannot
+establish it. Approved minutes retain their source authority.
+When analysis combines minutes and a recording, topic context retains
+both source identities and the item's actual validated citations. Recording
+observations must not be attributed to minutes that do not record them. Per-meeting continuity excludes later status
+events; rolling briefings retain subsequent meeting history.
+
 ------------------------------------------------------------------------
 
 ## Summarization Rules
@@ -421,10 +529,21 @@ for backward compatibility but `SummarizeMeetingJob` no longer calls
 
 ### Citation Rules
 
-- Per-meeting summaries cite packet pages: `[Packet Page 12]`
-- Rolling briefing record bullets cite meeting names: `(Council, Feb 18)`
-- Internal IDs (e.g., `[agenda-309]`) are never shown to residents
-- Citation translation happens at the prompt level, not post-processing
+- Each meeting analysis records a catalog of the actual supplied documents,
+  their versions, and supported locations. References are validated before saving.
+- PDF pages require real page extractions supplied to the analysis; transcripts
+  never acquire invented pages or timestamps. Whole-source references are allowed
+  and identified explicitly when precise locations are unavailable.
+- Minutes and supplementary recordings retain separate attribution.
+- The shared citation resolver derives trustworthy labels/URLs for HTML and API;
+  ambiguous legacy labels stay unresolved and never select an automatic PDF fallback.
+- Topic contexts, per-meeting topic summaries, and rolling briefings preserve
+  structured references and source versions. Model labels and URLs do not override them.
+- Rolling briefing record prose cites meeting names: `(Council, Feb 18)`.
+- Internal IDs (e.g., `[agenda-309]`) are never shown in resident prose.
+- Existing reporting may receive a bounded, idempotent citation-only repair only
+  when retained input proves source identity, without AI regeneration or official
+  motion/vote writes. See `docs/operations/citation-provenance-repair.md`. Tracked in GitHub Issues: #142 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/142).
 
 ### Three-Tier Briefing Pipeline
 
@@ -434,7 +553,7 @@ full design. Summary:
 | Tier | Trigger | AI Cost | Output |
 |------|---------|---------|--------|
 | `headline_only` | Future meeting scheduled | None | Derived `upcoming_headline` |
-| `interim` | Agenda/packet added | 1× gpt-5-mini | Updated `upcoming_headline` + upcoming note |
+| `interim` | Agenda/packet added | 1× gpt-5-mini | Updated `upcoming_headline` + upcoming note<br>Tracked in GitHub Issues: #66 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/66). |
 | `full` | Minutes published | 2× configured analysis tier | Full editorial + record + `headline` + `upcoming_headline` |
 
 ------------------------------------------------------------------------
@@ -627,12 +746,12 @@ Admin surfaces are unaffected by `access_mode` in both modes.
 
 ### The invariant
 
-**Withheld content is never rendered.** Not hidden with CSS, not
-blurred, not `aria-hidden`, and not smuggled into `data-` attributes,
+**Withheld content is never rendered to an unverified anonymous visitor.**
+Not hidden with CSS, not blurred, not `aria-hidden`, and not smuggled into `data-` attributes,
 `title=`/`alt=`, `<meta>` tags (including `og:`/`twitter:`), inline
 JSON, turbo-stream payloads, or `?page=N` / format-variant responses of
-the same URL. If an anonymous visitor may not read something, it must
-not appear in the response body, by any route. A helper that builds
+the same URL. If an unverified anonymous visitor may not read something,
+it must not appear in the response body, by any route. A helper that builds
 share text, a meta description, or any other out-of-band content must
 consult the gating predicate itself — gating the primary view template
 is not sufficient. This is a hard architectural constraint, not a
@@ -646,6 +765,42 @@ Views and helpers gate on one predicate, `gated_for_visitor?`, and two
 shared primitives — a `teaser` truncation helper and a `shared/_gate`
 sign-in prompt partial. They never branch on authentication state or
 `SiteSetting` directly; the predicate is the only seam.
+
+### Verified crawler access
+
+In gated mode, selected verified crawlers can read full reporting on public
+HTML pages without a member account. This includes Googlebot, Google's
+inspection tool, Bingbot, ChatGPT search/user retrieval, and Claude search/user
+retrieval; supported identities and official verification sources are documented
+in `docs/verified-crawler-access.md`. Both bot identity
+and source IP must match. Missing or expired verification data keeps requests
+gated. Forwarded addresses are accepted only through configured trusted proxy
+hops, and reporting responses cannot enter a shared or browser cache.
+
+The owner accepts indirect human access through authorized AI services.
+Crawler permission does not authenticate a user or grant account/admin access.
+Gated pages declare their registration requirement through paywall JSON-LD,
+with no withheld reporting in the markup. Scheduled jobs refresh official IP
+ranges; page requests make no verification network calls. Grok remains at the
+anonymous tier until an operator verification source or an authenticated
+publisher arrangement is confirmed; a claimed Grok identity is insufficient. Tracked in GitHub Issues: #141 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/141).
+For live retrieval checks, explicitly generated 48-hour diagnostic URLs expose
+synthetic public/gated codes and record request identity and access decisions.
+They contain no reporting and use the same crawler gate as public reporting.
+
+Discovery follows the same audience boundary. Rails generates `/sitemap.xml`
+from approved topics, canonical meetings, active/dormant committees, and civic
+member pages for approved members, verified crawlers, or open mode. Anonymous
+gated requests receive only the homepage and About links. Sitemaps never
+contain reporting text and always disable caching. Topic and meeting `lastmod`
+dates include related briefing/summary/record updates; composite member and
+committee pages omit dates rather than use misleading parent timestamps.
+Public `/llms.txt` provides a small site guide with stable navigation, source
+and access guidance, and a sitemap link. HTML links to it with `describedby`.
+It is discovery metadata and grants no access. `robots.txt` advertises the
+sitemap and permits the supported reporting identities while excluding admin.
+Both public text files refresh after an hour with conditional revalidation;
+the production asset cache lifetime does not apply to these stable URLs.
 
 ### Sign-in and access requests
 
@@ -790,7 +945,7 @@ GitHub issues now affect the live production server. Priority areas:
    trigger.
 
 3. **Monitoring** — Job failures on production should be visible.
-   The admin dashboard at `/admin/job_runs` shows job history.
+   The admin dashboard at `/admin/job_runs` shows job history. Tracked in GitHub Issues: #61 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/61).
 
 4. **Data safety** — Production database backups are still not
    automated. The Postgres data lives in a Docker volume
@@ -798,14 +953,14 @@ GitHub issues now affect the live production server. Priority areas:
    set up. Backups taken so far have been manual; the command and
    the location of the existing dumps are in the `deploying` skill.
    A destructive migration (dropping the password, TOTP and
-   recovery-code columns) has already shipped against this.
+   recovery-code columns) has already shipped against this. Tracked in GitHub Issues: #140 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/140).
 
 ### Jobs That Need Recurring Schedules
 
 | Job | Suggested Schedule | Why |
 |-----|--------------------|-----|
 | `Scrapers::DiscoverMeetingsJob` | Every 6 hours | Discover new meetings from city website |
-| Database backup (`pg_dump`) | Daily at 2am | Disaster recovery |
+| Database backup (`pg_dump`) | Daily at 2am | Disaster recovery<br>Tracked in GitHub Issues: #140 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/140). |
 
 ------------------------------------------------------------------------
 

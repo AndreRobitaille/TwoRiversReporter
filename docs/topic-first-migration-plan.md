@@ -108,7 +108,7 @@ This is a living note for future actions, not an implementation log.
 4) [x] #49 Topic-aware summarization (governance-compliant)
 5) [x] #50 Topic-aware retrieval context + caps
 6) [x] #39 Topic detail page: continuity timeline with motions/votes
-7) UI reorientation and polish: #30–36, #33–34, #41–43 (include "Recently Updated" row for Topics index)
+7) UI reorientation and polish: #30–36, #33–34, #41–43 (include "Recently Updated" row for Topics index) Tracked in GitHub Issues: #30 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/30), #31 (https://github.com/AndreRobitaille/TwoRiversReporter/issues/31).
    - [x] #29 Topics index: lifecycle grouping + recently updated row
    - [x] #32 Topics list: highlight newly active/resurfaced topics
    - [x] #25 Home: Topic-first homepage with Worth Watching, Recent Signals, and time-windowed meeting lists

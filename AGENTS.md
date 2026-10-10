@@ -28,6 +28,13 @@ Keep the tunnel through verification, then close it and remove temporary config.
 Repository instructions take precedence over older memory recipes that describe
 the tunnel as optional. Public HTTPS health checks do not require SSH.
 
+### Deploys
+Deploy only when Andre explicitly asks. A merge to master is not a deploy.
+Run every Kamal command through `trr_kamal`.
+After a failure, wait at least 5 minutes before any single further attempt.
+Don't copy production data without Andre's yes. On a deploy he asked for, still
+take the playbook's database dump before a destructive migration.
+
 ## Before Changing X, Read Y
 - Topic extraction / triage / summaries / lifecycle → `docs/topics/TOPIC_GOVERNANCE.md`
 - UI, CSS, components, themes → `docs/plans/2026-03-28-atomic-design-system-spec.md`

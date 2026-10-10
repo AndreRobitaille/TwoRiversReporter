@@ -86,10 +86,7 @@ class MeetingsController < ApplicationController
   end
 
   def preferred_meeting_summary(meeting)
-    meeting.meeting_summaries
-      .to_a
-      .select { |summary| summary_usable?(summary) }
-      .min_by { |summary| [ summary_priority(summary), -(summary.updated_at || summary.created_at || Time.at(0)).to_i ] }
+    ResidentContent::MeetingSelection.preferred_summary(meeting)
   end
 
   def assign_generated_image_meta(image, alt:)
@@ -107,13 +104,5 @@ class MeetingsController < ApplicationController
     else
       rails_blob_url(attachment, host: request.host_with_port, protocol: request.protocol.delete_suffix("://"))
     end
-  end
-
-  def summary_usable?(summary)
-    summary.content.present? || summary.generation_data.present?
-  end
-
-  def summary_priority(summary)
-    MeetingsHelper::SUMMARY_TYPE_PRIORITY.index(summary.summary_type) || 99
   end
 end
