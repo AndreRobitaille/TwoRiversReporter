@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1@sha256:34b128e419449565adc5ed7f487a6f503a73f1077012cfed86354c731338c44f
+# syntax=docker/dockerfile:1@sha256:7b32114e84ca21aeb2d6f871a0b62b3a0762193f75d9afd048ee4cbe889f3148
 # check=error=true
 
 # This Dockerfile is designed for production, not development. Use with Kamal or build'n'run by hand:
@@ -9,7 +9,7 @@
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version
 ARG RUBY_VERSION=4.0.7
-ARG RUBY_IMAGE_DIGEST=sha256:a807e3cf7b1a832e7fa3117fb6dd128a6e96bdeeeaa0682c3cf541b7e06a14ea
+ARG RUBY_IMAGE_DIGEST=sha256:38b0057cd4d0cf282ebd9628fbffe7704317a6da0c8d157b414a83488b5c0859
 FROM docker.io/library/ruby:$RUBY_VERSION-slim@$RUBY_IMAGE_DIGEST AS base
 
 ARG DENO_VERSION=2.9.7

@@ -72,8 +72,9 @@ jobs:
             echo "This pull request does not deploy or merge itself."
           } > "$body_file"
 
-          if gh pr view "$UPDATE_BRANCH" --json number >/dev/null 2>&1; then
-            gh pr edit "$UPDATE_BRANCH" \
+          existing_pr=$(gh pr list --state open --head "$UPDATE_BRANCH" --json number --jq '.[0].number // empty')
+          if [ -n "$existing_pr" ]; then
+            gh pr edit "$existing_pr" \
               --title "build: update pinned runtimes" \
               --body-file "$body_file"
           else
