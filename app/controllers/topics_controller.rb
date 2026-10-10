@@ -126,7 +126,7 @@ class TopicsController < ApplicationController
                                .limit(1)
                                .pick("meetings.body_name")
   rescue ActiveRecord::RecordNotFound
-    redirect_to topics_path, alert: "Topic not found."
+    render_missing_record
   end
 
   private

@@ -23,6 +23,7 @@ have no full-content exception.
 | ChatGPT search | `OAI-SearchBot` | [OpenAI search ranges](https://openai.com/searchbot.json) |
 | ChatGPT user-directed retrieval | `ChatGPT-User` | [OpenAI user retrieval ranges](https://openai.com/chatgpt-user.json) |
 | Claude search and user-directed retrieval | `Claude-SearchBot`, `Claude-User` | [Anthropic crawler ranges](https://claude.com/crawling/bots.json) |
+| Perplexity search and user-directed retrieval | `PerplexityBot`, `Perplexity-User` | [PerplexityBot ranges](https://www.perplexity.ai/perplexitybot.json), [Perplexity-User ranges](https://www.perplexity.ai/perplexity-user.json) |
 | Grok | No full-content exemption yet | No operator verification source confirmed |
 
 Google News uses ordinary Googlebot HTTP identities; `Googlebot-News` is a
@@ -48,6 +49,17 @@ Anthropic publishes one crawler range feed shared by its bots. Only
 `Claude-SearchBot` and `Claude-User` receive the reporting exception;
 `ClaudeBot` is a training crawler and remains at the anonymous tier. API and
 MCP egress ranges are not substituted for the documented crawler feed.
+
+Perplexity publishes separate feeds for `PerplexityBot` (search indexing) and
+`Perplexity-User` (user-requested fetches). The docs at
+https://docs.perplexity.ai/docs/resources/perplexity-crawlers list
+`https://www.perplexity.com/perplexitybot.json` and
+`https://www.perplexity.com/perplexity-user.json`. Those URLs 302 to
+`https://www.perplexity.ai/perplexitybot.json` and
+`https://www.perplexity.ai/perplexity-user.json`. The range fetcher rejects
+redirects, so the stored feed URLs are the `perplexity.ai` responses that
+return 200 with a `prefixes` array. Both use the same validation and the
+hourly refresh as Google and Bing.
 
 ### Grok verification prerequisite
 
@@ -78,8 +90,11 @@ alone cannot authenticate a request or unlock the server-side gate.
 `SiteAccess#gated_for_visitor?` remains the only rendering predicate. The
 exception covers GET/HEAD requests for ordinary HTML on the homepage, topic
 and meeting indexes/searches/details, and committee/member detail pages.
-The XML sitemap has a scoped discovery exception described below; Turbo
-streams and other reporting formats retain anonymous behavior. Account, sign-in,
+A bare `Accept: */*` is that same HTML page: Rails negotiates it as format
+`*/*`, and the gate treats `*/*` as the ordinary representation. Explicit
+non-HTML formats stay anonymous. The XML sitemap has a scoped discovery
+exception described below; Turbo streams and other reporting formats retain
+anonymous behavior. Account, sign-in,
 application, and admin permissions are unchanged. About retains the human
 membership-policy copy.
 
@@ -88,11 +103,13 @@ full crawler responses cannot be reused for anonymous humans. Verification is
 memoized for the request, never persisted as a cookie or user privilege.
 
 Gated reporting pages include `WebPage` JSON-LD with
-`isAccessibleForFree: false` for every audience. Google supports this for
-subscription or registration access. The JSON contains no reporting text.
-Optional `hasPart` selectors are omitted because the surfaces have different
-teaser/restricted sections; the page-level flag is the required property.
-Open mode omits the paywall markup.
+`isAccessibleForFree: false`. Meeting, topic, committee, and member detail
+pages also declare a `hasPart` `WebPageElement` whose `cssSelector` is
+`.gated-content`. That class wraps their full-content branch; index pages
+retain only the page-level declaration. Anonymous teasers do not
+include the element. The JSON contains no reporting text. Open mode omits
+the paywall markup. A separate `Organization` node and, on meeting pages, an
+`Event` node describe only fields the app already has.
 
 ## Discovery files
 
@@ -114,7 +131,7 @@ without updating the parent record. All sitemap responses use `private,
 no-store`, including open mode, to prevent catalog reuse across audiences or a
 mode switch. No sitemap rebuild task or scheduled job is needed.
 
-`robots.txt` already allows all seven supported identities, excludes admin, and
+`robots.txt` names the supported reporting identities, excludes admin, and
 advertises the sitemap. The server still verifies each full-content request.
 Public `/llms.txt` contains an independent-site overview, source and access
 guidance, stable navigation links, and the sitemap/robots locations. It contains

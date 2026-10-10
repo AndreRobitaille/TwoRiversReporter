@@ -50,7 +50,9 @@ module TwoRiversReporter
     # Serve admin-managed redirects (e.g. merged-away topic URLs) ahead of
     # routing. Lives in lib/middleware (excluded from the autoloader), so
     # require it explicitly before referencing the constant.
+    require_relative "../lib/middleware/www_redirect"
     require_relative "../lib/middleware/redirect_middleware"
+    config.middleware.use WwwRedirect
     config.middleware.use RedirectMiddleware
   end
 end

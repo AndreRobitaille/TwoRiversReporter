@@ -9,6 +9,7 @@ class Redirect < ApplicationRecord
 
   before_validation :normalize_source_path
   before_validation :normalize_destination
+  validate :destination_is_relative_path
 
   after_commit :clear_lookup_cache
 
@@ -56,14 +57,23 @@ class Redirect < ApplicationRecord
     self.source_path = self.class.normalize_path(source_path)
   end
 
+  # A Location value. Only a same-site path is accepted: one leading slash,
+  # no protocol-relative host, no absolute URL, no CR/LF, no backslash.
   def normalize_destination
     value = destination.to_s.strip
     return if value.blank?
 
-    unless value.match?(%r{\A[a-z][a-z0-9+.-]*://}i) || value.start_with?("/")
-      value = "/#{value}"
+    unless value.match?(%r{\A[a-z][a-z0-9+.-]*://}i) || value.start_with?("//") || value.match?(/[\r\n\\]/)
+      value = "/#{value}" unless value.start_with?("/")
     end
     self.destination = value
+  end
+
+  def destination_is_relative_path
+    return if destination.blank?
+    return if destination.match?(%r{\A/(?!/)[^\r\n\\]*\z})
+
+    errors.add(:destination, "must be a relative path")
   end
 
   def destination_differs_from_source

@@ -769,10 +769,11 @@ sign-in prompt partial. They never branch on authentication state or
 ### Verified crawler access
 
 In gated mode, selected verified crawlers can read full reporting on public
-HTML pages without a member account. This includes Googlebot, Google's
-inspection tool, Bingbot, ChatGPT search/user retrieval, and Claude search/user
-retrieval; supported identities and official verification sources are documented
-in `docs/verified-crawler-access.md`. Both bot identity
+HTML pages without a member account. A request whose `Accept` is `*/*` is
+still that HTML page. This includes Googlebot, Google's
+inspection tool, Bingbot, ChatGPT search/user retrieval, Claude search/user
+retrieval, and Perplexity search/user retrieval. Supported identities and
+official verification sources are documented in `docs/verified-crawler-access.md`. Both bot identity
 and source IP must match. Missing or expired verification data keeps requests
 gated. Forwarded addresses are accepted only through configured trusted proxy
 hops, and reporting responses cannot enter a shared or browser cache.
