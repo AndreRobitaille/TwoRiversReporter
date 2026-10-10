@@ -166,20 +166,23 @@ class SummarizeMeetingJob < ApplicationJob
 
     minutes_doc = minutes_document_for(meeting)
     transcript_doc = meeting.latest_document("transcript")
+    packet_doc = packet_document_for(meeting)
+    background_doc = packet_doc || meeting.latest_documents("agenda_pdf", "agenda_html")
+      .find { |document| document.extracted_text.present? }
 
-    # Minutes retain authority; the transcript stays a separate cited source.
+    # Recaps retain official proposal evidence alongside the meeting record.
     if minutes_doc&.extracted_text.present?
-      documents = [ minutes_doc ]
+      documents = [ minutes_doc, background_doc ].compact
       documents << transcript_doc if transcript_doc&.extracted_text.present?
-      source_type = documents.size == 2 ? "minutes_with_transcript" : "minutes"
+      source_type = transcript_doc&.extracted_text.present? ? "minutes_with_transcript" : "minutes"
       analyze_and_save_summary(meeting, documents, ai_service, kb_context,
         type: "minutes", summary_type: "minutes_recap", source_type: source_type)
       meeting.meeting_summaries.where(summary_type: %w[transcript_recap packet_analysis agenda_preview]).destroy_all
     elsif transcript_doc&.extracted_text.present?
-      analyze_and_save_summary(meeting, [ transcript_doc ], ai_service, kb_context,
+      analyze_and_save_summary(meeting, [ background_doc, transcript_doc ].compact, ai_service, kb_context,
         type: "transcript", summary_type: "transcript_recap", source_type: "transcript")
       meeting.meeting_summaries.where(summary_type: %w[packet_analysis agenda_preview]).destroy_all
-    elsif (packet_doc = packet_document_for(meeting)) && packet_doc.extracted_text.present?
+    elsif packet_doc
       analyze_and_save_summary(meeting, [ packet_doc ], ai_service, kb_context,
         type: "packet", summary_type: "packet_analysis", source_type: "packet")
       meeting.meeting_summaries.where(summary_type: "agenda_preview").destroy_all
@@ -188,8 +191,11 @@ class SummarizeMeetingJob < ApplicationJob
 
   def analyze_and_save_summary(meeting, documents, ai_service, kb_context, type:, summary_type:, source_type:)
     catalog = Citations::SourceCatalog.new(meeting: meeting, documents: documents)
+    meeting_record_text = documents.select { |document| document.document_type.in?(%w[minutes_pdf minutes_html transcript]) }
+      .map(&:extracted_text).join("\n\n")
     json_str = ai_service.analyze_meeting_content(catalog.text, kb_context, type,
       source: meeting, source_catalog: catalog.sources,
+      meeting_record_text: meeting_record_text,
       participant_context: participant_context_for(meeting), motion_context: motion_context_for(meeting))
     save_summary(meeting, summary_type, json_str, source_catalog: catalog.sources,
       source_type: source_type, framing: compute_framing(meeting, type))
@@ -370,10 +376,8 @@ class SummarizeMeetingJob < ApplicationJob
   end
 
   def packet_document_for(meeting)
-    meeting.meeting_documents
-      .where("document_type LIKE ?", "%packet%")
-      .order(created_at: :desc, id: :desc)
-      .first
+    meeting.latest_documents("packet_pdf", "packet_html")
+      .find { |document| document.extracted_text.present? }
   end
 
   def enqueue_generated_image_job_for_meeting(summary)
