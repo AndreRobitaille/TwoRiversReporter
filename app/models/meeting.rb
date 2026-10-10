@@ -99,11 +99,12 @@ class Meeting < ApplicationRecord
     processing_marker_set?(:meeting_page_parsed_at) || meeting_page_parsed_at.present?
   end
 
+  EXTRACTION_PROCESSING_MARKERS = %w[topics_extracted_at votes_extracted_at committee_members_extracted_at].freeze
+
   def set_processing_marker!(marker, timestamp = Time.current)
     with_lock do
-      # A repeat scrape/parse stamps this again. Rewriting an already recorded
-      # marker would refresh updated_at even when the meeting and its documents
-      # did not change.
+      # Repeated page checks must not look like content changes. Extractions
+      # can replace child records even when their completion flag stays true.
       next if processing_stamp_current?(marker)
 
       state = processing_state.deep_dup
@@ -113,6 +114,7 @@ class Meeting < ApplicationRecord
       if marker.to_s == "meeting_page_parsed_at"
         updates[:meeting_page_parsed_at] = timestamp
       end
+      updates[:updated_at] = timestamp if EXTRACTION_PROCESSING_MARKERS.include?(marker.to_s)
 
       update!(updates)
     end
@@ -199,10 +201,7 @@ class Meeting < ApplicationRecord
   private_class_method :parse_date_filter
 
   private def processing_stamp_current?(marker)
-    return false unless processing_marker_set?(marker)
-    return meeting_page_parsed_at.present? if marker.to_s == "meeting_page_parsed_at"
-
-    true
+    marker.to_s == "meeting_page_parsed_at" && processing_marker_set?(marker) && meeting_page_parsed_at.present?
   end
 
   def document_status

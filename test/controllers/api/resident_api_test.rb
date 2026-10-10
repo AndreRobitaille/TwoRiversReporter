@@ -292,6 +292,22 @@ class Api::ResidentApiTest < ActionDispatch::IntegrationTest
     assert_equal [ analysis_meeting.id, @meeting.id ], data.map { |record| record["id"] }
   end
 
+  test "meeting update polls include completed extraction reruns" do
+    cutoff = Time.current.change(usec: 0)
+    @meeting.mark_processing!(:votes_extracted_at)
+    backdate_meeting(@meeting, cutoff - 1.day)
+
+    travel_to cutoff + 1.hour do
+      @meeting.mark_processing!(:votes_extracted_at)
+    end
+
+    get "/api/v1/meetings", params: { updated_since: cutoff.iso8601(6) }, headers: bearer
+
+    assert_response :success
+    assert_includes data.map { |record| record["id"] }, @meeting.id
+    assert_equal cutoff + 1.hour, Time.iso8601(data.find { |record| record["id"] == @meeting.id }["updated_at"])
+  end
+
   test "topic updates follow regenerated briefings and preserve approved visibility" do
     cutoff = Time.utc(2026, 9, 25, 12)
     @topic.update_columns(updated_at: cutoff - 1.day, last_activity_at: cutoff - 1.year)

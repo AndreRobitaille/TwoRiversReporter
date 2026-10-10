@@ -151,6 +151,20 @@ class MeetingTest < ActiveSupport::TestCase
     assert_equal false, meeting.processing_state["agenda_parsed"]
   end
 
+  test "completed extraction reruns advance the meeting content timestamp" do
+    meeting = Meeting.create!(detail_page_url: "http://example.com/extraction-reruns", starts_at: Time.current)
+
+    %w[topics_extracted_at votes_extracted_at committee_members_extracted_at].each do |marker|
+      meeting.mark_processing!(marker)
+      previous_updated_at = meeting.reload.updated_at
+
+      travel 2.minutes do
+        meeting.mark_processing!(marker)
+        assert_operator meeting.reload.updated_at, :>, previous_updated_at
+      end
+    end
+  end
+
   test "processing marker helpers expose explicit generic API" do
     meeting = Meeting.create!(detail_page_url: "http://example.com/processing-3", starts_at: Time.current)
 

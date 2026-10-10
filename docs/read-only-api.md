@@ -69,7 +69,7 @@ for every page, preserve the returned timestamp precision, overlap polls, and
 deduplicate by resource ID and `updated_at`. Pages are live and offset-based;
 concurrent changes can shift results. This is discovery of current available
 content, not an event stream, deletion log, or exact replication protocol.
-Resource-row maintenance can also advance its update timestamp. An unchanged document re-fetch (matching SHA or HTTP 304) refreshes last-checked time and cache headers without advancing `updated_at`; `updated_at` moves when the document content changes. Repeat scrapes or parses that find no meeting or document changes do not advance the meeting timestamp.
+Resource-row maintenance can also advance its update timestamp. An unchanged document re-fetch (matching SHA or HTTP 304) refreshes last-checked time and cache headers without advancing `updated_at`; `updated_at` moves when the document content changes. Repeat scrapes or parses that find no meeting or document changes do not advance the meeting timestamp. Completed topic, vote, and committee-member extractions advance the meeting timestamp even on reruns, so polls can discover replaced child records.
 
 ### Research a question across meetings and topics
 
