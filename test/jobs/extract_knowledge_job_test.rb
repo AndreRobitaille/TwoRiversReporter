@@ -143,6 +143,40 @@ class ExtractKnowledgeJobTest < ActiveJob::TestCase
     mock_ai.verify
   end
 
+  test "links folded names and glued aliases on approved topics" do
+    topic = Topic.create!(name: "right of way", status: "approved")
+    TopicAlias.create!(topic: topic, name: "rightofway")
+    Topic.create!(name: "self storage development", status: "proposed").tap do |proposed|
+      TopicAlias.create!(topic: proposed, name: "selfstoragedevelopment")
+    end
+
+    ai_response = [
+      {
+        "title" => "Right of way permit rules",
+        "body" => "Permits are required to use the right of way.",
+        "reasoning" => "Permit rules outlive one meeting.",
+        "confidence" => 0.9,
+        "topic_names" => [ "right-of-way", "rightofway", "self-storage development" ]
+      }
+    ].to_json
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_knowledge, ai_response do |kwargs|
+      true
+    end
+
+    RetrievalService.stub :new, @retrieval_stub do
+      Ai::OpenAiService.stub :new, mock_ai do
+        assert_difference "KnowledgeSourceTopic.count", 1 do
+          ExtractKnowledgeJob.perform_now(@meeting.id)
+        end
+      end
+    end
+
+    assert_equal [ topic ], KnowledgeSource.last.topics.to_a
+    mock_ai.verify
+  end
+
   test "enqueues AutoTriageKnowledgeJob when entries are created" do
     ai_response = [
       {

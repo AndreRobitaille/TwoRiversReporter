@@ -40,6 +40,28 @@ module Topics
       assert_equal existing, topic
     end
 
+    test "glued aliases match when trigram similarity is under the cutoff" do
+      right_of_way = Topic.create!(name: "right of way", status: "approved")
+      TopicAlias.create!(topic: right_of_way, name: "rightofway")
+      use_permits = Topic.create!(name: "right of way use permits", status: "approved")
+      TopicAlias.create!(topic: use_permits, name: "rightofway use permits")
+
+      assert_operator trigram_similarity("rightofway", "right of way"), :<, Topics::FindOrCreateService::SIMILARITY_THRESHOLD
+      assert_operator trigram_similarity("rightofway use permits", "right of way use permits"), :<, Topics::FindOrCreateService::SIMILARITY_THRESHOLD
+
+      assert_no_difference [ "Topic.count", "TopicAlias.count" ] do
+        assert_equal right_of_way, Topics::FindOrCreateService.call("rightofway")
+        assert_equal use_permits, Topics::FindOrCreateService.call("rightofway use permits")
+      end
+    end
+
+    test "folds a new hyphenated name into the spaced form" do
+      topic = Topics::FindOrCreateService.call("right-of-way")
+
+      assert_equal "right of way", topic.name
+      assert_equal "right of way", topic.canonical_name
+    end
+
     test "returns existing topic via alias (exact match)" do
       existing = Topic.create!(name: "main topic", status: "approved")
       TopicAlias.create!(name: "aliased topic", topic: existing)
@@ -172,6 +194,14 @@ module Topics
       TopicBlocklist.create!(name: "blocked topic")
       topic = Topics::FindOrCreateService.call("BLOCKED TOPIC")
       assert_nil topic
+    end
+
+    private
+
+    def trigram_similarity(left, right)
+      Topic.connection.select_value(
+        Topic.sanitize_sql_array([ "SELECT similarity(?, ?)", left, right ])
+      ).to_f
     end
   end
 end

@@ -6,6 +6,47 @@ class ExtractKnowledgePatternsJobTest < ActiveJob::TestCase
     @topic = Topic.create!(name: "City Budget", status: "approved", resident_impact_score: 3)
   end
 
+  test "links a glued alias through the shared normalizer" do
+    topic = Topic.create!(name: "internal leaks meter technology", status: "approved")
+    TopicAlias.create!(topic: topic, name: "internalleaksmetertechnology")
+    KnowledgeSource.create!(
+      title: "Meter technology note",
+      body: "Internal leaks were discussed.",
+      source_type: "note",
+      origin: "extracted",
+      status: "approved",
+      reasoning: "Utility practice.",
+      confidence: 0.9,
+      active: true
+    )
+
+    ai_response = [
+      {
+        "title" => "Leak detection keeps coming back",
+        "body" => "Meter technology remains on the agenda.",
+        "reasoning" => "Pattern across meetings.",
+        "confidence" => 0.85,
+        "topic_names" => [ "internalleaksmetertechnology" ]
+      }
+    ].to_json
+
+    mock_ai = Minitest::Mock.new
+    mock_ai.expect :extract_knowledge_patterns, ai_response do |kwargs|
+      true
+    end
+
+    Ai::OpenAiService.stub :new, mock_ai do
+      assert_difference "KnowledgeSourceTopic.count", 1 do
+        ExtractKnowledgePatternsJob.perform_now
+      end
+    end
+
+    pattern = KnowledgeSource.order(:id).last
+    assert_equal "pattern", pattern.origin
+    assert_includes pattern.topics, topic
+    mock_ai.verify
+  end
+
   test "creates proposed pattern entries from AI response" do
     extracted = KnowledgeSource.create!(
       title: "Budget approved 5-2",
