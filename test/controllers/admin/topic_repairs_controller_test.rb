@@ -136,6 +136,32 @@ module Admin
       assert_includes destination.topic_aliases.pluck(:name), "lakeshore project"
     end
 
+    test "flip alias refuses a glued legacy alias" do
+      topic = Topic.create!(name: "right of way", status: "approved", review_status: "approved")
+      TopicAlias.create!(topic: topic, name: "rightofway")
+
+      post flip_alias_admin_topic_url(topic)
+
+      assert_redirected_to admin_topic_url(topic)
+      assert_match "glued legacy alias", flash[:alert]
+      assert_equal "right of way", topic.reload.name
+      assert_equal [ "rightofway" ], topic.topic_aliases.pluck(:name)
+    end
+
+    test "promote alias refuses a glued legacy alias" do
+      alias_record = TopicAlias.create!(topic: @topic, name: "rightofwayusepermits")
+      @topic.update!(name: "right of way use permits")
+
+      assert_no_difference "Topic.count" do
+        post promote_alias_admin_topic_url(@topic), params: { alias_id: alias_record.id }
+      end
+
+      assert_redirected_to admin_topic_url(@topic)
+      assert_match "glued legacy alias", flash[:alert]
+      assert TopicAlias.exists?(alias_record.id)
+      assert_not Topic.exists?(name: "rightofwayusepermits")
+    end
+
     test "flip alias swaps the topic name with its only alias" do
       topic = Topic.create!(name: "harbor dredging", status: "approved", review_status: "approved")
       TopicAlias.create!(topic: topic, name: "harbor project")

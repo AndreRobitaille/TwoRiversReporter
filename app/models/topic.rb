@@ -102,9 +102,48 @@ class Topic < ApplicationRecord
 
   RESIDENT_IMPACT_OVERRIDE_WINDOW = 180.days
 
+  # Hyphens, Unicode dashes, the minus sign, and slashes become spaces
+  # before other punctuation is stripped. `&` and `/` are not rewritten
+  # to the word "and" — a slash is only a word break.
+  SPACE_FOLDED_SEPARATORS = /[\p{Pd}\u2212\/]/
+
   def self.normalize_name(name)
     return nil if name.blank?
-    name.strip.downcase.gsub(/[[:punct:]]/, "").squish
+
+    name.to_s
+      .strip
+      .gsub(SPACE_FOLDED_SEPARATORS, " ")
+      .downcase
+      .gsub(/[[:punct:]]/, "")
+      .squish
+  end
+
+  # A legacy alias produced by stripping separators entirely, so
+  # "right-of-way" was stored as "rightofway" beside "right of way".
+  # Exact-name lookup prefers that glued string over the alias, which
+  # is why it must not become the canonical name again.
+  def self.glued_legacy_alias?(alias_name, canonical_name)
+    folded_alias = normalize_name(alias_name).to_s
+    folded_canonical = normalize_name(canonical_name).to_s
+    return false if folded_alias.blank? || folded_canonical.blank?
+    return false if folded_alias == folded_canonical
+    return false unless folded_alias.delete(" ") == folded_canonical.delete(" ")
+
+    folded_alias.count(" ") < folded_canonical.count(" ")
+  end
+
+  def glued_legacy_alias?(alias_name)
+    self.class.glued_legacy_alias?(alias_name, name)
+  end
+
+  # Exact topic name wins, then an alias. `relation` limits which topics
+  # qualify (for example `Topic.approved`).
+  def self.find_by_name_or_alias(name, relation = all)
+    normalized = normalize_name(name)
+    return if normalized.blank?
+
+    relation.where("LOWER(topics.name) = ?", normalized).first ||
+      relation.where(id: TopicAlias.where("LOWER(name) = ?", normalized).select(:topic_id)).first
   end
 
   def approved?

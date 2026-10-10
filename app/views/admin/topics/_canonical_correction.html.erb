@@ -1,8 +1,13 @@
 <% if workspace.has_single_alias %>
   <div class="topic-panel-section mb-4">
-    <div class="topic-panel-label">Quick fix — swap with alias</div>
-    <p class="text-sm text-secondary mb-2">This topic has one alias. Swap which name is canonical without moving any data.</p>
-    <%= button_to "Swap names", flip_alias_admin_topic_path(workspace.topic), method: :post, class: "btn btn--secondary btn--sm", params: detail_workspace_context %>
+    <% if workspace.topic.glued_legacy_alias?(workspace.aliases.first.name) %>
+      <div class="topic-panel-label">Legacy glued alias</div>
+      <p class="text-sm text-secondary m-0">This alias is the old punctuation-stripped name. It stays an alias so it cannot become the canonical name.</p>
+    <% else %>
+      <div class="topic-panel-label">Quick fix — swap with alias</div>
+      <p class="text-sm text-secondary mb-2">This topic has one alias. Swap which name is canonical without moving any data.</p>
+      <%= button_to "Swap names", flip_alias_admin_topic_path(workspace.topic), method: :post, class: "btn btn--secondary btn--sm", params: detail_workspace_context %>
+    <% end %>
   </div>
 <% end %>
 

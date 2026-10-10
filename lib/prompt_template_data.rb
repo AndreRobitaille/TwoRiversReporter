@@ -1347,6 +1347,17 @@ module PromptTemplateData
         details to the transcript, without claiming approved minutes record them.
         Background knowledge, agenda titles and rosters do not establish evidence
         that a motion or vote occurred.
+        Official packet or agenda text may accompany a recording or minutes.
+        Retain that evidence: cite its supported PDF pages for proposal language,
+        amounts, project scope and background, wherever they support the entry.
+        A transcript upload does not supersede these official document sources.
+        A packet describes proposed business; it cannot establish the subsequent
+        vote, discussion or public comments. Cite those to the actual meeting
+        record, retaining recording references as preliminary provenance.
+        Do not turn noisy captions into direct quotations in resident-facing
+        text. Paraphrase and attribute recorded remarks, preserving uncertainty;
+        exact motion_evidence and vote_evidence excerpts are internal validation
+        fields, not quotations for publication.
         </citation_provenance>
 
         <guidelines>
@@ -1531,6 +1542,7 @@ module PromptTemplateData
           "highlights": [
             {
               "text": "What happened and why it matters to residents.",
+              "agenda_item_id": "Integer shared with the corresponding item_details entry, or null if none",
               "citations": [{"source_id":"doc-ID","location":{"kind":"whole_source"}}],
               "vote": "6-3 or null if no vote",
               "impact": "high|medium|low"
@@ -1572,6 +1584,12 @@ module PromptTemplateData
         }
 
         highlights: max 3 items. Order by resident impact (highest first).
+        For each highlight about one agenda item, copy that item's integer
+        agenda_item_id from agenda_items into both the highlight and its
+        item_details entry, even if their wording differs. Use null for a
+        highlight spanning multiple items or public input without a matching
+        item_details entry. Never invent an ID. This relationship provides
+        navigation to the detailed account; citation metadata remains separate.
         public_input: include all speakers. Empty array if none.
         item_details: exactly one entry per distinct substantive item covered
         by the source (see procedural_filter above). Do not collapse distinct

@@ -6,6 +6,10 @@ module Topics
     end
 
     def call
+      if Topic.glued_legacy_alias?(topic_alias.name, topic_alias.topic.name)
+        raise ArgumentError, "A glued legacy alias cannot be promoted into a topic that outranks the alias"
+      end
+
       promoted_topic = nil
 
       ActiveRecord::Base.transaction do

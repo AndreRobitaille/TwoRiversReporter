@@ -17,12 +17,24 @@ module Ai
         item["vote"] = nil unless supported_vote?(item["vote"], item["vote_evidence"])
         validate_motion(item)
       end
+      validate_highlight_votes(data)
       data.to_json
     rescue JSON::ParserError
       content
     end
 
     private
+
+    def validate_highlight_votes(data)
+      validated_items = data["item_details"].select { |item| item.is_a?(Hash) && item["agenda_item_id"].is_a?(Integer) }
+        .group_by { |item| item["agenda_item_id"] }
+      Array(data["highlights"]).each do |highlight|
+        next unless highlight.is_a?(Hash) && highlight["agenda_item_id"].is_a?(Integer)
+
+        matches = validated_items[highlight["agenda_item_id"]]
+        highlight["vote"] = matches.first["vote"] if matches&.one?
+      end
+    end
 
     def validate_motion(item)
       motion = item["motion"]
