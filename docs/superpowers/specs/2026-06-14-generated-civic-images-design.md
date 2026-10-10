@@ -98,6 +98,16 @@ Examples:
 
 The visual brief is generated through the existing AI service layer, not scattered direct API calls.
 
+When structured meeting highlights are available, the brief receives only the
+highest-impact highlight, with source order breaking ties. A mixed headline,
+unrelated item details, and legacy recap text are omitted from that input.
+This prevents an easier visual subject, such as a forestry grant, from being
+combined with a more consequential residency-law change. Legacy summaries
+without usable highlights retain the broader structured/fallback context.
+Sex-offender residency coverage uses restrained civic-policy context without
+depicting offenders or children, implicating an illustrated home, or obscuring
+the legal change with a pleasant neighborhood scene.
+
 ### 2. Image Generation
 
 The image prompt is generated from the structured brief and sent to OpenAI image generation. The design assumes current OpenAI image generation supports text prompts, optional reference images, landscape outputs near social-card dimensions, and standard image formats such as PNG/JPEG/WebP. Implementation should use the current documented model and size constraints at the time of build.
@@ -128,6 +138,11 @@ The surrounding page and social metadata provide title, description, and brandin
 V1 should not automatically search the web for image references. Web-searched reference images raise accuracy and permission concerns, and can cause generated outputs to inherit false local details.
 
 V1 should support admin-uploaded replacement images. Later versions may add curated local reference images supplied or approved by admins, including photos taken locally for recurring civic subjects.
+
+Uploaded replacements use an "Uploaded image" cutline rather than claiming AI
+generation. Variants preserve the full source by padding to the requested
+dimensions. Detail-page containment preserves source maps and legends even
+when the feature-image display box has a different aspect ratio.
 
 ## Data Model
 

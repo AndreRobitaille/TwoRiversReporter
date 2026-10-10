@@ -25,13 +25,13 @@
       <% dimensions = generated_image_dimensions(size: :feature) %>
       <%= image_tag generated_image_proxy_path(@generated_image, size: :feature),
         alt: "Illustration for #{@topic.name}",
-        class: "topic-feature-image__img",
+        class: [ "topic-feature-image__img", ("generated-image-upload" if generated_image_uploaded?(@generated_image)) ],
         loading: "eager",
         fetchpriority: "high",
         decoding: "async",
         width: dimensions[:width],
         height: dimensions[:height] %>
-      <figcaption class="generated-image-cutline">AI image</figcaption>
+      <figcaption class="generated-image-cutline"><%= generated_image_cutline(@generated_image) %></figcaption>
     </figure>
   <% end %>
 

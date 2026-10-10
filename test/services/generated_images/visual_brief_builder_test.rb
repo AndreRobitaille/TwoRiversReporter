@@ -1,7 +1,7 @@
 require "test_helper"
 
 class GeneratedImages::VisualBriefBuilderTest < ActiveSupport::TestCase
-  test "meeting source text includes headline highlights and item details" do
+  test "meeting source without highlights includes headline item details and legacy content" do
     meeting = Meeting.create!(detail_page_url: "http://example.com/meeting-brief", starts_at: Time.current)
     summary = MeetingSummary.create!(
       meeting: meeting,
@@ -9,7 +9,7 @@ class GeneratedImages::VisualBriefBuilderTest < ActiveSupport::TestCase
       content: "Legacy fallback content",
       generation_data: {
         "headline" => "Headline text",
-        "highlights" => [ { "text" => "Highlight one" }, { "text" => "Highlight two" } ],
+        "highlights" => [],
         "item_details" => [ { "summary" => "Item detail one" }, { "summary" => "Item detail two" } ]
       }
     )
@@ -18,13 +18,65 @@ class GeneratedImages::VisualBriefBuilderTest < ActiveSupport::TestCase
     service.expect(:build_generated_image_brief, { "civic_issue" => "x", "composition" => "y", "avoid" => [] }) do |args|
       assert_equal "Meeting", args[:imageable_type]
       assert_includes args[:source_text], "Headline text"
-      assert_includes args[:source_text], "Highlight one"
-      assert_includes args[:source_text], "Highlight two"
       assert_includes args[:source_text], "Item detail one"
       assert_includes args[:source_text], "Item detail two"
+      assert_includes args[:source_text], "Legacy fallback content"
       assert_includes args[:source_text], "one dominant resident-visible physical anchor"
       assert_includes args[:source_text], "cropped, non-identifying details"
       assert_equal false, args[:composite]
+    end
+
+    GeneratedImages::VisualBriefBuilder.new(meeting, source: summary, ai_service: service).call
+    service.verify
+  end
+
+  test "meeting image uses the highest impact issue without blending unrelated agenda business" do
+    meeting = Meeting.create!(detail_page_url: "http://example.com/residency-brief", starts_at: Time.current)
+    primary_issue = "Council will consider replacing the citywide sex-offender residency ban with a 1,000-foot protected-location rule."
+    summary = MeetingSummary.create!(
+      meeting: meeting,
+      summary_type: "agenda_preview",
+      content: "Urban forestry grant and sex-offender residency ordinance",
+      generation_data: {
+        "headline" => "Council considers a tree-care grant and residency rules",
+        "highlights" => [
+          { "text" => "Apply for an urban forestry grant for tree planting", "impact" => "medium" },
+          { "text" => primary_issue, "impact" => "high" }
+        ],
+        "item_details" => [ { "summary" => "Tree planting and nursery improvements" } ]
+      }
+    )
+    service = Minitest::Mock.new
+    service.expect(:build_generated_image_brief, {}) do |args|
+      assert_includes args[:source_text], primary_issue
+      assert_includes args[:source_text], "Illustrate only this issue"
+      assert_includes args[:source_text], "do not imply that any depicted home houses an offender"
+      refute_match(/forestry|tree-care|tree planting|nursery/i, args[:source_text])
+      true
+    end
+
+    GeneratedImages::VisualBriefBuilder.new(meeting, source: summary, ai_service: service).call
+    service.verify
+  end
+
+  test "legacy highlights without impact retain source order and ignore blank highlights" do
+    meeting = Meeting.create!(detail_page_url: "http://example.com/legacy-brief", starts_at: Time.current)
+    summary = MeetingSummary.create!(
+      meeting: meeting,
+      summary_type: "minutes_recap",
+      generation_data: {
+        "highlights" => [
+          { "text" => "", "impact" => "high" },
+          { "text" => "First substantive issue" },
+          { "text" => "Second issue" }
+        ]
+      }
+    )
+    service = Minitest::Mock.new
+    service.expect(:build_generated_image_brief, {}) do |args|
+      assert_includes args[:source_text], "First substantive issue"
+      refute_includes args[:source_text], "Second issue"
+      true
     end
 
     GeneratedImages::VisualBriefBuilder.new(meeting, source: summary, ai_service: service).call

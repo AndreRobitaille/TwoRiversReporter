@@ -58,4 +58,36 @@ class Topics::TriageToolTest < ActiveSupport::TestCase
     context = tool.send(:build_context)
     assert context.key?(:community_context), "Context should include community_context key"
   end
+
+  test "automated low-salience blocks preserve sex-offender policies and individual appeals" do
+    policy = Topic.create!(name: "sex offender residency restrictions", status: "approved", review_status: "approved")
+    appeal = Topic.create!(name: "residency appeals", status: "approved", review_status: "approved")
+    routine = Topic.create!(name: "routine announcements", status: "proposed", review_status: "proposed")
+    meeting = Meeting.create!(detail_page_url: "http://example.com/residency-appeal", starts_at: Time.current)
+    item = AgendaItem.create!(meeting: meeting, title: "Consider an individual sex-offender residency appeal")
+    AgendaItemTopic.create!(agenda_item: item, topic: appeal)
+    assert policy.approved?
+    assert appeal.approved?
+
+    tool = Topics::TriageTool.new(
+      apply: true, dry_run: false,
+      min_confidence: Topics::TriageTool::DEFAULT_MIN_CONFIDENCE,
+      max_topics: 10, similarity_threshold: 0.75, agenda_item_limit: 5,
+      user_id: nil, user_email: nil
+    )
+    blocks = [ policy, appeal, routine ].map do |topic|
+      { "topic" => topic.name, "block" => true, "confidence" => 0.99, "rationale" => "routine/low salience" }
+    end
+
+    tool.send(:apply_results, { "blocks" => blocks }, nil)
+
+    assert_equal "approved", policy.reload.status
+    assert_equal "approved", appeal.reload.status
+    assert_equal "approved", policy.review_status
+    assert_equal "approved", appeal.review_status
+    assert_empty policy.topic_review_events
+    assert_empty appeal.topic_review_events
+    assert_equal "blocked", routine.reload.status
+    assert_equal "blocked", routine.topic_review_events.last.action
+  end
 end
