@@ -103,9 +103,10 @@ full crawler responses cannot be reused for anonymous humans. Verification is
 memoized for the request, never persisted as a cookie or user privilege.
 
 Gated reporting pages include `WebPage` JSON-LD with
-`isAccessibleForFree: false` and a `hasPart` `WebPageElement` whose
-`cssSelector` is `.gated-content`. That class wraps the full-content branch
-on meeting, topic, committee, and member pages. Anonymous teasers do not
+`isAccessibleForFree: false`. Meeting, topic, committee, and member detail
+pages also declare a `hasPart` `WebPageElement` whose `cssSelector` is
+`.gated-content`. That class wraps their full-content branch; index pages
+retain only the page-level declaration. Anonymous teasers do not
 include the element. The JSON contains no reporting text. Open mode omits
 the paywall markup. A separate `Organization` node and, on meeting pages, an
 `Event` node describe only fields the app already has.
