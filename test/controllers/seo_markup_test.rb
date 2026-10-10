@@ -170,6 +170,21 @@ class SeoMarkupTest < ActionDispatch::IntegrationTest
     assert_equal "https://schema.org/EventCancelled", event["eventStatus"]
   end
 
+  test "index paywall markup does not name a section that the page never renders" do
+    set_access_mode("gated")
+    sign_in_as(User.create!(email_address: "seo-index-member@example.com", status: "active"))
+
+    [ root_path, topics_path, meetings_path ].each do |path|
+      get path
+      assert_response :success
+      assert_select ".gated-content", count: 0
+      paywall = css_select('script[type="application/ld+json"]').map { |node| JSON.parse(node.text) }
+        .find { |node| node["@type"] == "WebPage" }
+      assert_equal false, paywall.fetch("isAccessibleForFree")
+      assert_not paywall.key?("hasPart"), "#{path} advertises a selector with no matching section"
+    end
+  end
+
   test "legacy wordpress paths redirect once and do not overwrite an edited row" do
     migration = AddLegacyWordpressRedirects.new
     migration.up

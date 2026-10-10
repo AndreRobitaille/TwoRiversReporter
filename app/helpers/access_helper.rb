@@ -25,17 +25,22 @@ module AccessHelper
   def paywall_structured_data
     return unless site_gated? && crawler_readable_page?
 
-    {
+    data = {
       "@context" => "https://schema.org",
       "@type" => "WebPage",
       "url" => canonical_page_url,
-      "isAccessibleForFree" => false,
-      "hasPart" => {
+      "isAccessibleForFree" => false
+    }
+    # Only these detail templates render a full reporting section with this
+    # selector. Index pages keep their page-level paywall declaration.
+    if controller.action_name == "show" && %w[topics meetings committees members].include?(controller.controller_path)
+      data["hasPart"] = {
         "@type" => "WebPageElement",
         "isAccessibleForFree" => false,
         "cssSelector" => ".gated-content"
       }
-    }
+    end
+    data
   end
 
   # Publisher facts the app already publishes: the site name, this request's
