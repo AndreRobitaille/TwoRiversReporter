@@ -30,6 +30,33 @@ class Topics::UpdateTopicBriefingJobTest < ActiveJob::TestCase
     assert_equal "headline_only", briefing.generation_tier
   end
 
+  test "upcoming citywide residency law reaches the homepage before a full AI briefing" do
+    @topic.update!(name: "sex offender residency restrictions")
+    @item.update!(title: "An Ordinance Regarding Sex Offender Residency Restrictions to Replace the Citywide Residency Prohibition")
+    assert_nil @topic.resident_impact_score
+    Topics::UpdateContinuityJob.perform_now(topic_id: @topic.id)
+
+    Topics::UpdateTopicBriefingJob.perform_now(topic_id: @topic.id, meeting_id: @future_meeting.id, tier: "headline_only")
+
+    assert_equal 5, @topic.reload.resident_impact_score
+    assert_equal "headline_only", @topic.topic_briefing.generation_tier
+    selection = ResidentContent::HomeSelection.new.call
+    assert_includes selection[:top_stories].map(&:id), @topic.id
+  end
+
+  test "an upcoming individual residency appeal remains visible without becoming a citywide top story" do
+    @topic.update!(name: "sex offender residency restrictions")
+    @item.update!(title: "Consider an Appeal from Sex Offender Residency Restrictions")
+    Topics::UpdateContinuityJob.perform_now(topic_id: @topic.id)
+
+    Topics::UpdateTopicBriefingJob.perform_now(topic_id: @topic.id, meeting_id: @future_meeting.id, tier: "headline_only")
+
+    assert_equal 3, @topic.reload.resident_impact_score
+    selection = ResidentContent::HomeSelection.new.call
+    refute_includes selection[:top_stories].map(&:id), @topic.id
+    assert_includes selection[:wire_cards].map(&:id), @topic.id
+  end
+
   test "tier headline_only updates upcoming_headline without overwriting full briefing" do
     TopicBriefing.create!(
       topic: @topic,

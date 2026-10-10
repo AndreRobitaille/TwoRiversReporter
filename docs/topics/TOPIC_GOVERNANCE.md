@@ -132,6 +132,11 @@ When analyzing documents, the LLM must:
 7.  Mark routine one-off items as not topic-worthy rather than forcing
     them into a topic. A single plat review or standard license
     renewal is not a topic.
+8.  Sex-offender residency restrictions, enforcement, and individual
+    residency appeals are substantive resident concerns. Keep them
+    trackable. Distinguish a change to citywide law from an individual
+    request for relief; a prior individual case must not cause the
+    broader policy to be classified as routine or low salience.
 
 If confidence in topic classification is low:
 
@@ -157,6 +162,25 @@ Signals that may increase topic significance include:
 
 The LLM must not determine importance based on emotional tone or
 rhetorical strength.
+
+Sex-offender residency-law changes have substantial resident impact even
+without public controversy or a large cost. On the 1-5 resident-impact
+scale, citywide rewrites score at least 4, replacement of a citywide
+prohibition scores 5, and individual residency appeals score at least 3.
+These priorities do not establish that a proposal passed, that a person
+poses a particular danger, or that a legal conclusion is correct.
+
+These are enforced minimum ratings on AI updates, not just prompt guidance.
+An older individual-appeal analysis must not lower a topic below the minimum
+established by substantive, non-cancelled agenda evidence from the past 30
+days or an upcoming meeting. A law-rewrite minimum requires the item's own
+title to identify the sex-offender subject and a change to citywide rules or
+an ordinance; an appeal asking for relief is not that change. Older
+legislation does not permanently force the topic into the top-story tier.
+Admin impact overrides retain their existing 180-day protection. Upcoming
+headline/interim briefings can establish the minimum without waiting for a
+full AI analysis. A low-activity AI label must not prune these substantive
+agenda appearances or block the topic.
 
 ------------------------------------------------------------------------
 

@@ -2964,6 +2964,12 @@ details[open] summary {
   height: clamp(200px, 38vw, 300px);
 }
 
+.meeting-feature-image__img.generated-image-upload,
+.topic-feature-image__img.generated-image-upload {
+  object-fit: contain;
+  background: var(--color-surface);
+}
+
 /* Cutline / credit beneath a feature image — newspaper-style, always legible
    because it sits on the page surface rather than over a bright image. */
 .generated-image-cutline {
@@ -3196,7 +3202,18 @@ details[open] summary {
 }
 
 .meeting-decision-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
   margin-top: var(--space-3);
+}
+
+.meeting-decision-detail-link {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-teal);
+  text-underline-offset: 0.2em;
 }
 
 /* --- Public Input --- */

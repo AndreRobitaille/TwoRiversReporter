@@ -8,8 +8,13 @@ module GeneratedImagesHelper
   def generated_image_variant(generated_image, size: :standard)
     dimensions = CARD_IMAGE_VARIANTS.fetch(size)
 
-    generated_image.file.variant(
-      resize_to_fill: [ dimensions[:width], dimensions[:height] ],
+    resize = if generated_image_uploaded?(generated_image)
+      { resize_and_pad: [ dimensions[:width], dimensions[:height], { background: [ 255, 255, 255 ] } ] }
+    else
+      { resize_to_fill: [ dimensions[:width], dimensions[:height] ] }
+    end
+
+    generated_image.file.variant(**resize,
       format: :webp,
       saver: { quality: 82 }
     )
@@ -23,5 +28,13 @@ module GeneratedImagesHelper
 
   def generated_image_dimensions(size: :standard)
     CARD_IMAGE_VARIANTS.fetch(size)
+  end
+
+  def generated_image_uploaded?(generated_image)
+    generated_image.source_generation_tier == "admin_upload"
+  end
+
+  def generated_image_cutline(generated_image)
+    generated_image_uploaded?(generated_image) ? "Uploaded image" : "AI image"
   end
 end
