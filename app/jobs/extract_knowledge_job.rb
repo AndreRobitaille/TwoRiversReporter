@@ -96,7 +96,7 @@ class ExtractKnowledgeJob < ApplicationJob
     return if topic_names.blank?
 
     Array(topic_names).each do |name|
-      topic = Topic.approved.find_by("LOWER(name) = ?", name.to_s.downcase.strip)
+      topic = Topic.find_by_name_or_alias(name, Topic.approved)
       next unless topic
 
       source.knowledge_source_topics.find_or_create_by!(topic: topic)

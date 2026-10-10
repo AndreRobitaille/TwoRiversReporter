@@ -14,6 +14,20 @@ module Topics
       assert_equal 0, topic.reload.topic_aliases.count
     end
 
+    test "refuses to promote a glued legacy alias into a twin topic" do
+      topic = Topic.create!(name: "right of way use permits")
+      alias_record = TopicAlias.create!(topic: topic, name: "rightofwayusepermits")
+
+      error = assert_raises(ArgumentError) do
+        PromoteAliasService.new(topic_alias: alias_record).call
+      end
+
+      assert_equal "A glued legacy alias cannot be promoted into a topic that outranks the alias", error.message
+      assert Topic.exists?(topic.id)
+      assert TopicAlias.exists?(alias_record.id)
+      assert_not Topic.exists?(name: "rightofwayusepermits")
+    end
+
     test "records a review event when a user is present" do
       user = User.create!(email_address: "admin@example.com", admin: true)
       Current.session = Struct.new(:user).new(user)

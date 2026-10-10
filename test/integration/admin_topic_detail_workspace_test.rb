@@ -141,6 +141,19 @@ class AdminTopicDetailWorkspaceTest < ActionDispatch::IntegrationTest
     assert_match 'data-action="input->topic-repair-search#search"', response.body
   end
 
+  test "hides swap and promote when the only alias is a glued legacy name" do
+    topic = Topic.create!(name: "right of way", status: "approved", review_status: "approved")
+    TopicAlias.create!(topic: topic, name: "rightofway")
+
+    get admin_topic_url(topic)
+
+    assert_response :success
+    assert_no_match "Swap names", response.body
+    assert_match "Legacy glued alias", response.body
+    assert_no_match "promote_alias", response.body
+    assert_match "cannot become its own topic", response.body
+  end
+
   test "shows flip alias action only when the topic has exactly one alias" do
     topic = Topic.create!(name: "harbor dredging", status: "approved", review_status: "approved")
     TopicAlias.create!(topic: topic, name: "harbor project")

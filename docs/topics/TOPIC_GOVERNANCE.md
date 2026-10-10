@@ -259,7 +259,62 @@ must explicitly recommend review rather than auto-resolution.
 
 ------------------------------------------------------------------------
 
-## 10. Final Constraint
+## 10. Canonical Name Normalization
+
+Topic, alias, and blocklist names share one normalizer,
+`Topic.normalize_name`.
+
+-   ASCII hyphens and dashes, Unicode dash punctuation (`\p{Pd}`),
+    ASCII `/`, and the Unicode minus sign (U+2212) fold into spaces
+    first.
+-   Remaining punctuation, including apostrophes and ampersands, is
+    then stripped. `&` and `/` are not rewritten to the word "and".
+-   Whitespace is squished and the name is downcased, as before.
+
+`right-of-way`, `right/of/way`, and the same words joined by Unicode
+dashes all normalize to `right of way`. The slash forms
+`internal leaks/meter technology` and
+`traffic signals/assessment inspection` normalize to
+`internal leaks meter technology` and
+`traffic signals assessment inspection`.
+
+Triage and knowledge linking resolve a suggested name through this
+normalizer, then an exact topic name, then an alias. A short glued
+string such as `rightofway` can fall under the 0.7 similarity cutoff
+and still match, because the alias is an exact lookup rather than a
+trigram guess.
+
+The migration renames these eleven topics from punctuation-stripped names to
+spaced forms when the old name exists. Each retains the old glued string as an
+alias so legacy lookups still resolve:
+
+-   door to door solicitation permits (`doortodoorsolicitationpermits`)
+-   electric utility long term power supply contract wppi (`electricutilitylongtermpowersupplycontractwppi`)
+-   full time building inspector funding (`fulltimebuildinginspectorfunding`)
+-   out of state mutual aid agreement (`outofstatemutualaidagreement`)
+-   right of way (`rightofway`)
+-   right of way use for small redevelopment construction staging (`rightofwayuseforsmallredevelopmentconstructionstaging`)
+-   right of way use permits (`rightofwayusepermits`)
+-   self imposed municipal debt cap (`selfimposedmunicipaldebtcap`)
+-   self storage development (`selfstoragedevelopment`)
+-   internal leaks meter technology (`internalleaksmetertechnology`)
+-   traffic signals assessment inspection (`trafficsignalsassessmentinspection`)
+
+A glued legacy alias must not be swapped or promoted back into the
+canonical name. Exact-name lookup would then prefer that glued twin
+over the alias.
+
+Drain workers still running the previous normalizer before the
+migration deploys, and check afterwards for glued twin topics.
+
+The data migration deliberately refuses automatic rollback because spaced
+names and legacy aliases can predate it or receive later administrator edits.
+Code rollback leaves those names and aliases intact; undoing data requires
+reviewing the affected rows explicitly.
+
+------------------------------------------------------------------------
+
+## 11. Final Constraint
 
 The Topic system exists to preserve civic memory and rebalance
 information asymmetry.

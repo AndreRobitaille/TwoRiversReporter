@@ -32,14 +32,18 @@
           </div>
 
           <div class="topic-alias-repair-action">
-            <%= button_to promote_alias_admin_topic_path(workspace.topic), method: :post, class: "btn btn--secondary btn--sm", form: { data: { turbo_confirm: "Promote #{topic_alias.name}? Creates a new standalone topic." } } do %>
-              <%= hidden_field_tag :alias_id, topic_alias.id %>
-              <%= hidden_field_tag :reason, "Alias should be standalone" %>
-              <%= hidden_field_tag :q, detail_workspace_context&.dig(:q), data: { topic_detail_impact_target: "aliasContextQ" } %>
-              <%= hidden_field_tag :source_topic_id, detail_workspace_context&.dig(:source_topic_id), data: { topic_detail_impact_target: "aliasContextSource" } %>
-              Promote
+            <% if workspace.topic.glued_legacy_alias?(topic_alias.name) %>
+              <span class="text-sm text-secondary">Legacy glued name. It stays an alias so it cannot become its own topic.</span>
+            <% else %>
+              <%= button_to promote_alias_admin_topic_path(workspace.topic), method: :post, class: "btn btn--secondary btn--sm", form: { data: { turbo_confirm: "Promote #{topic_alias.name}? Creates a new standalone topic." } } do %>
+                <%= hidden_field_tag :alias_id, topic_alias.id %>
+                <%= hidden_field_tag :reason, "Alias should be standalone" %>
+                <%= hidden_field_tag :q, detail_workspace_context&.dig(:q), data: { topic_detail_impact_target: "aliasContextQ" } %>
+                <%= hidden_field_tag :source_topic_id, detail_workspace_context&.dig(:source_topic_id), data: { topic_detail_impact_target: "aliasContextSource" } %>
+                Promote
+              <% end %>
+              <span class="text-sm text-secondary">Becomes its own topic.</span>
             <% end %>
-            <span class="text-sm text-secondary">Becomes its own topic.</span>
           </div>
 
           <div class="topic-alias-repair-action">
