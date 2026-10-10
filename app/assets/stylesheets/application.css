@@ -3202,7 +3202,18 @@ details[open] summary {
 }
 
 .meeting-decision-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
   margin-top: var(--space-3);
+}
+
+.meeting-decision-detail-link {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-teal);
+  text-underline-offset: 0.2em;
 }
 
 /* --- Public Input --- */

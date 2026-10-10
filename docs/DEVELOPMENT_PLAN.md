@@ -409,6 +409,26 @@ evidence
 
 ## Meeting Evidence Preservation
 
+Recap generation retains the available official packet, or the agenda when
+no usable packet is available, alongside minutes and recording context.
+A transcript upload must not remove official proposal evidence or its
+supported PDF-page citations. Prefer the packet PDF over a duplicate HTML
+wrapper with no extracted text. Packets establish proposed business and
+background; only the current meeting's minutes, recording, or verified
+motion context can validate current motions and vote tallies. Earlier
+minutes included inside a packet cannot validate the current meeting's vote.
+
+Recording captions support preliminary, attributed paraphrases, not direct
+quotations in published reporting. Retain recording provenance in structured
+data and the page's recording attribution; do not repeat whole-recording
+links as inline citations for individual entries. Keep verified official
+document citations beside detailed reporting, labeling packet/agenda links
+as proposal/background material. Key Decisions cards omit
+source citations and may link to their detailed agenda entry using an
+explicit shared `agenda_item_id`. Show that link only when the ID belongs
+to this meeting and identifies exactly one rendered detail. Older summaries
+without this relationship have no inferred navigation link.
+
 Meeting analysis receives the complete source text, including the full
 supplementary transcript when minutes are available. It must not silently
 discard the end of a recording to meet a character budget. An input that

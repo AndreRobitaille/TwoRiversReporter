@@ -12,15 +12,33 @@ class MeetingsHelperTest < ActionView::TestCase
 
   test "citation helper proves allowed references before withholding them for a gated visitor" do
     meeting = Meeting.create!(body_name: "City Council", detail_page_url: "https://example.test/citation-helper")
-    document = meeting.meeting_documents.create!(document_type: "transcript", extracted_text: "Recording evidence.",
-      source_url: "https://www.youtube.com/watch?v=synthetic")
+    document = meeting.meeting_documents.create!(document_type: "packet_pdf", extracted_text: "Official proposal.",
+      source_url: "https://city.example.test/packet.pdf", page_count: 2)
+    document.extractions.create!(page_number: 2, cleaned_text: document.extracted_text)
     catalog = Citations::SourceCatalog.new(meeting: meeting, documents: [ document ])
     summary = meeting.meeting_summaries.create!(summary_type: "transcript_recap", generation_data: { "source_catalog" => catalog.sources })
-    entry = { "citations" => [ { "source_id" => "doc-#{document.id}", "location" => { "kind" => "whole_source" } } ] }
+    entry = { "citations" => [ { "source_id" => "doc-#{document.id}", "location" => { "kind" => "pdf_page", "page_number" => 2 } } ] }
     visible = meeting_citations(summary, entry)
     assert_equal 1, visible.size
-    assert_equal document.source_url, visible.first[:source_url]
+    assert_equal "#{document.source_url}#page=2", visible.first[:source_url]
     stub(:gated_for_visitor?, true) { assert_empty meeting_citations(summary, entry) }
+  end
+
+  test "highlight navigation uses an explicit meeting item ID despite rewritten wording and order" do
+    meeting = Meeting.create!(body_name: "City Council", detail_page_url: "https://example.test/navigation-helper")
+    item = meeting.agenda_items.create!(title: "Original resolution title")
+    detail = { "agenda_item_id" => item.id, "agenda_item_title" => "Rewritten detail title" }
+    other = { "agenda_item_id" => nil, "agenda_item_title" => "Different detail" }
+    highlight = { "agenda_item_id" => item.id, "text" => "Different headline wording" }
+    assert_equal "agenda-item-1", meeting_highlight_detail_anchor(meeting, highlight, [ other, detail ])
+    assert_equal "agenda-item-0", meeting_highlight_detail_anchor(meeting, highlight, [ detail, other ])
+    assert_nil meeting_highlight_detail_anchor(meeting, highlight, [ other ])
+    assert_nil meeting_highlight_detail_anchor(meeting, highlight, [ detail, detail ])
+    assert_nil meeting_highlight_detail_anchor(meeting, highlight.except("agenda_item_id"), [ detail ])
+    assert_nil meeting_highlight_detail_anchor(meeting, highlight.merge("agenda_item_id" => item.id.to_s), [ detail ])
+    foreign_id = item.id + 100_000
+    assert_nil meeting_highlight_detail_anchor(meeting, { "agenda_item_id" => foreign_id }, [ { "agenda_item_id" => foreign_id } ])
+    stub(:gated_for_visitor?, true) { assert_nil meeting_highlight_detail_anchor(meeting, highlight, [ detail ]) }
   end
 
   test "meeting_status_badge returns nil for upcoming meeting with no documents" do

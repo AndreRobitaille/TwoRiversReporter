@@ -1,6 +1,41 @@
 require "test_helper"
 
 class MeetingAnalysisEvidenceValidatorTest < ActiveSupport::TestCase
+  test "highlight tallies use the validated detail for the same unambiguous agenda item" do
+    source = "Roll call vote. Mark Bittner. Aye. Doug Brandt. Aye. No. Motion carries."
+    content = {
+      "item_details" => [
+        { "agenda_item_id" => 1, "vote" => "9-0", "vote_evidence" => "All in favor? Aye." },
+        { "agenda_item_id" => 2, "vote" => "2-1", "vote_evidence" => source }
+      ],
+      "highlights" => [
+        { "agenda_item_id" => 1, "vote" => "9-0" },
+        { "agenda_item_id" => 2, "vote" => "9-0" },
+        { "agenda_item_id" => nil, "vote" => nil }
+      ]
+    }
+
+    result = Ai::MeetingAnalysisEvidenceValidator.new(document_text: source, motion_context: nil).validate(content.to_json)
+    highlights = JSON.parse(result)["highlights"]
+    assert_nil highlights[0]["vote"]
+    assert_equal "2-1", highlights[1]["vote"]
+    assert_nil highlights[2]["vote"]
+  end
+
+  test "does not borrow a tally through a string ID or duplicate item details" do
+    source = "The motion passed 2-1."
+    content = {
+      "item_details" => [
+        { "agenda_item_id" => 1, "vote" => "2-1", "vote_evidence" => source },
+        { "agenda_item_id" => 1, "vote" => "2-1", "vote_evidence" => source }
+      ],
+      "highlights" => [ { "agenda_item_id" => 1, "vote" => nil }, { "agenda_item_id" => "1", "vote" => nil } ]
+    }
+
+    result = Ai::MeetingAnalysisEvidenceValidator.new(document_text: source, motion_context: nil).validate(content.to_json)
+    assert JSON.parse(result)["highlights"].all? { |highlight| highlight["vote"].nil? }
+  end
+
   test "preserves an announced decision while rejecting an invented voice-vote tally and unnamed mover" do
     source = "I'll make the motion. Second. Thank you, Bill. All in favor? Aye. Anyone opposed? Motion carried."
     item = {

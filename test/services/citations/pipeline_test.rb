@@ -17,12 +17,73 @@ class Citations::PipelineTest < ActiveSupport::TestCase
   end
 
   test "transcript with a packet keeps recording provenance across every boundary" do
-    @meeting.meeting_documents.create!(document_type: "packet_pdf", extracted_text: "Scheduled contract.",
+    packet = @meeting.meeting_documents.create!(document_type: "packet_pdf", extracted_text: "Scheduled contract.",
       source_url: "https://city.example.test/packet.pdf")
     transcript = document("transcript", "FIRST_RECORDING_EVIDENCE. MIDDLE_RECORDING_EVIDENCE. FINAL_RECORDING_EVIDENCE.")
     summary = generate_summary(transcript)
     verify_pipeline(summary, transcript, "whole_source")
-    assert_equal [ transcript.id ], summary.generation_data["source_catalog"].map { |source| source["document_id"] }
+    assert_equal [ packet.id, transcript.id ], summary.generation_data["source_catalog"].map { |source| source["document_id"] }
+    assert_includes PromptRun.where(source: @meeting).recent.first.placeholder_values["doc_text"], packet.extracted_text
+  end
+
+  test "uploading a transcript preserves packet page evidence through recap topic and API boundaries" do
+    packet = document("packet_pdf", "DISTINCTIVE_OFFICIAL_PROPOSAL. The repair budget is $12,000.", page_count: 2)
+    packet.extractions.create!(page_number: 2, cleaned_text: packet.extracted_text)
+    document("packet_html", "")
+    transcript = document("transcript", "FIRST_RECORDING_EVIDENCE. Discussion continued. FINAL_RECORDING_EVIDENCE.")
+    recording_reference = { "source_id" => "doc-#{transcript.id}", "location" => { "kind" => "whole_source" } }
+    summary = generate_summary(packet, location: { "kind" => "pdf_page", "page_number" => 2 },
+      additional_references: [ recording_reference ])
+    assert_equal "transcript_recap", summary.summary_type
+    verify_pipeline(summary, packet, "pdf_page")
+    run = PromptRun.where(source: @meeting).for_template("analyze_meeting_content").recent.first
+    %w[DISTINCTIVE_OFFICIAL_PROPOSAL FIRST_RECORDING_EVIDENCE FINAL_RECORDING_EVIDENCE].each do |marker|
+      assert_includes run.messages.last["content"], marker
+    end
+    assert_equal [ packet.id, transcript.id ], summary.generation_data["source_catalog"].map { |source| source["document_id"] }
+    references = summary.generation_data["item_details"].first["citations"]
+    assert_equal [ packet.id, transcript.id ], references.map { |reference| reference["document_id"] }
+    context = Topics::SummaryContextBuilder.new(@topic, @meeting).build_context_json
+    assert_equal references, context[:agenda_items].first[:item_details_citations].map(&:deep_stringify_keys)
+    recent_references = Topics::RecentItemDetailsBuilder.new(@topic, [ @meeting ]).build.first[:citations]
+    assert_equal references, recent_references.map { |reference| reference.deep_stringify_keys.slice(*references.first.keys) }
+  end
+
+  test "recap retains agenda pages when a packet has no usable text" do
+    document("packet_pdf", "")
+    agenda = document("agenda_pdf", "DISTINCTIVE_AGENDA_PROPOSAL.", page_count: 1)
+    agenda.extractions.create!(page_number: 1, cleaned_text: agenda.extracted_text)
+    transcript = document("transcript", "Distinctive recorded discussion.")
+    summary = generate_summary(agenda, location: { "kind" => "pdf_page", "page_number" => 1 })
+    verify_pipeline(summary, agenda, "pdf_page")
+    assert_equal [ agenda.id, transcript.id ], summary.generation_data["source_catalog"].map { |source| source["document_id"] }
+  end
+
+  test "earlier votes included in a packet cannot validate a current meeting outcome" do
+    packet = document("packet_pdf", "Previous meeting minutes: The motion passed 6-2.")
+    document("transcript", "All in favor? Aye. Motion carries.")
+    summary = generate_summary(packet, item_attributes: {
+      "decision" => "Passed", "vote" => "6-2", "vote_evidence" => "The motion passed 6-2." })
+    assert_includes PromptRun.where(source: @meeting).recent.first.placeholder_values["doc_text"], packet.extracted_text
+    assert_equal "Passed", summary.generation_data["item_details"].first["decision"]
+    assert_nil summary.generation_data["item_details"].first["vote"]
+  end
+
+  test "official minutes retain packet pages and supplementary recording without losing source type" do
+    minutes = document("minutes_pdf", "Distinctive approved minutes.")
+    packet = document("packet_pdf", "Distinctive official proposal.", page_count: 1)
+    packet.extractions.create!(page_number: 1, cleaned_text: packet.extracted_text)
+    transcript = document("transcript", "Distinctive supplemental discussion.")
+    summary = generate_summary(packet, location: { "kind" => "pdf_page", "page_number" => 1 })
+    assert_equal "minutes_with_transcript", summary.generation_data["source_type"]
+    assert_equal [ minutes.id, packet.id, transcript.id ], summary.generation_data["source_catalog"].map { |source| source["document_id"] }
+    verify_pipeline(summary, packet, "pdf_page")
+
+    transcript.destroy!
+    @meeting.reload
+    summary = generate_summary(packet, location: { "kind" => "pdf_page", "page_number" => 1 })
+    assert_equal "minutes", summary.generation_data["source_type"]
+    assert_equal [ minutes.id, packet.id ], summary.generation_data["source_catalog"].map { |source| source["document_id"] }
   end
 
   test "PDF-only recap preserves the actual page identity across every boundary" do
@@ -108,12 +169,14 @@ class Citations::PipelineTest < ActiveSupport::TestCase
       source_url: "https://sources.example.test/#{type}", **attributes)
   end
 
-  def generate_summary(cited_document, location: { "kind" => "whole_source" })
+  def generate_summary(cited_document, location: { "kind" => "whole_source" }, additional_references: [], item_attributes: {})
     reference = { "source_id" => "doc-#{cited_document.id}", "location" => location }
+    references = [ reference, *additional_references ]
     data = { "headline" => "Synthetic work-session reporting.", "highlights" => [ {
-      "text" => "Distinctive reported highlight.", "citations" => [ reference ] } ], "public_input" => [],
+      "text" => "Distinctive reported highlight.", "citations" => references } ], "public_input" => [],
       "item_details" => [ { "agenda_item_id" => @item.id, "agenda_item_title" => @item.title,
-        "summary" => "Distinctive reported detail.", "citations" => [ reference ] } ] }
+        "summary" => "Distinctive reported detail.", "citations" => references } ] }
+    data["item_details"].first.merge!(item_attributes)
     response = lambda do |parameters:|
       yield if block_given?
       { "choices" => [ { "message" => { "content" => data.to_json } } ] }
