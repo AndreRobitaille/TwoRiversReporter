@@ -2,13 +2,16 @@
 <% content_for(:title) { "#{meeting_name}, #{@meeting.starts_at&.strftime('%b %-d, %Y')} — Two Rivers, WI" } %>
 <% content_for(:description) { meeting_share_description(@meeting) } %>
 <% content_for(:og_type) { "article" } %>
+<% content_for(:head) do %>
+  <script type="application/ld+json"><%= raw json_escape(meeting_event_structured_data(@meeting).to_json) %></script>
+<% end %>
 
 <article class="meeting-article">
 
   <%# === Header === %>
   <header class="meeting-article-header">
     <div class="meeting-article-topline">
-      <span class="meeting-article-date"><%= @meeting.starts_at&.strftime("%B %-d, %Y") %> · <%= @meeting.starts_at&.strftime("%-l:%M %p") %></span>
+      <time class="meeting-article-date"<% if @meeting.starts_at %> datetime="<%= @meeting.starts_at.iso8601 %>"<% end %>><%= @meeting.starts_at&.strftime("%B %-d, %Y") %> · <%= @meeting.starts_at&.strftime("%-l:%M %p") %></time>
     </div>
 
     <h1 class="meeting-article-title"><%= meeting_name %></h1>
@@ -29,9 +32,11 @@
             <%= label %>
           </span>
         <% else %>
-          <%= link_to safe_external_url(doc.source_url), target: "_blank", rel: "noopener", class: "meeting-doc-link" do %>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            <%= label %>
+          <%= gated_content do %>
+            <%= link_to safe_external_url(doc.source_url), target: "_blank", rel: "noopener", class: "meeting-doc-link" do %>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <%= label %>
+            <% end %>
           <% end %>
         <% end %>
       <% end %>
@@ -43,9 +48,11 @@
             Watch Recording
           </span>
         <% else %>
-          <%= link_to safe_external_url(transcript.source_url), target: "_blank", rel: "noopener", class: "meeting-doc-link" do %>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            Watch Recording
+          <%= gated_content do %>
+            <%= link_to safe_external_url(transcript.source_url), target: "_blank", rel: "noopener", class: "meeting-doc-link" do %>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Watch Recording
+            <% end %>
           <% end %>
         <% end %>
       <% end %>
@@ -54,8 +61,10 @@
           City Website ↗
         </span>
       <% else %>
-        <%= link_to safe_external_url(@meeting.detail_page_url), target: "_blank", rel: "noopener", class: "meeting-doc-link meeting-doc-link--muted" do %>
-          City Website ↗
+        <%= gated_content do %>
+          <%= link_to safe_external_url(@meeting.detail_page_url), target: "_blank", rel: "noopener", class: "meeting-doc-link meeting-doc-link--muted" do %>
+            City Website ↗
+          <% end %>
         <% end %>
       <% end %>
       <span class="meeting-docs-separator"></span>
@@ -72,6 +81,7 @@
           Share
         </button>
       <% else %>
+        <%= gated_content do %>
         <div class="share-wrapper" data-controller="share"
              data-share-copy-text-value="<%= share_text(@meeting, @summary) %>"
              data-share-facebook-text-value="<%= facebook_share_text(@meeting, @summary) %>"
@@ -86,6 +96,7 @@
             <button type="button" class="share-dropdown-item" data-action="share#facebook">Share on Facebook</button>
           </div>
         </div>
+        <% end %>
       <% end %>
     </div>
   </header>
@@ -155,6 +166,7 @@
       <%= render "shared/gate" %>
       <%= render "meetings/gated_items", gd: gd %>
     <% else %>
+    <%= gated_content do %>
 
     <%# === Key Decisions === %>
     <% highlights = meeting_highlights(gd) %>
@@ -163,7 +175,7 @@
       <section class="meeting-article-section">
         <div class="home-section-header">
           <%= render "shared/atom_marker" %>
-          <span class="section-label">Key Decisions</span>
+          <h2 class="section-label">Key Decisions</h2>
           <span class="section-line"></span>
         </div>
         <div class="meeting-decisions">
@@ -194,7 +206,7 @@
     <section class="meeting-article-section">
       <div class="home-section-header">
         <%= render "shared/atom_marker" %>
-        <span class="section-label">Public Input<% if public_inputs.any? %> · <%= public_inputs.size %> <%= "speaker".pluralize(public_inputs.size) %><% end %></span>
+        <h2 class="section-label">Public Input<% if public_inputs.any? %> · <%= public_inputs.size %> <%= "speaker".pluralize(public_inputs.size) %><% end %></h2>
         <span class="section-line"></span>
       </div>
       <% if public_inputs.any? %>
@@ -226,7 +238,7 @@
       <section class="meeting-article-section">
         <div class="home-section-header">
           <%= render "shared/atom_marker" %>
-          <span class="section-label">Agenda Items</span>
+          <h2 class="section-label">Agenda Items</h2>
           <span class="section-line"></span>
         </div>
         <% items.each_with_index do |item, item_idx| %>
@@ -297,21 +309,24 @@
       </section>
     <% end %>
     <% end %>
+    <% end %>
 
   <% elsif @summary&.content.present? %>
     <% if gated_for_visitor? %>
       <%= render "shared/gate" %>
     <% else %>
+      <%= gated_content do %>
       <section class="meeting-article-section">
         <div class="home-section-header">
           <%= render "shared/atom_marker" %>
-          <span class="section-label"><%= @summary.summary_type == "minutes_recap" ? "Meeting Recap" : "Packet Analysis" %></span>
+          <h2 class="section-label"><%= @summary.summary_type == "minutes_recap" ? "Meeting Recap" : "Packet Analysis" %></h2>
           <span class="section-line"></span>
         </div>
         <div class="prose meeting-legacy-recap">
           <%= markdown @summary.content %>
         </div>
       </section>
+      <% end %>
     <% end %>
 
   <% elsif !@meeting.cancelled? %>

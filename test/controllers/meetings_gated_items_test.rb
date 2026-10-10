@@ -201,6 +201,8 @@ class MeetingsGatedItemsTest < ActionDispatch::IntegrationTest
     description = response.body[/<meta name="description" content="([^"]*)">/, 1]
     assert_not_nil description
     assert_not_includes description, LEDE_TAIL
+    assert_match(/\ATwo Rivers City Council — /, description)
+    assert_no_match(/harbor dredging/, description)
 
     # The Share control emits no payload at all for a gated visitor (see
     # MeetingDocumentChipGatingTest) — there is no data-share-*-value

@@ -120,16 +120,38 @@ module MeetingsHelper
 
   SUMMARY_TYPE_PRIORITY = %w[minutes_recap transcript_recap packet_analysis agenda_preview].freeze
 
+  # Event fields are only values the meeting record actually has. Location,
+  # attendance mode, and the city's detail-page URL are omitted: location is
+  # not shown on this page, and the detail URL is withheld from anonymous
+  # visitors.
+  def meeting_event_structured_data(meeting)
+    data = {
+      "@context" => "https://schema.org",
+      "@type" => "Event",
+      "name" => clean_meeting_display(meeting.body_name).presence || "Meeting",
+      "url" => canonical_page_url,
+      "eventStatus" => meeting.cancelled? ? "https://schema.org/EventCancelled" : "https://schema.org/EventScheduled"
+    }
+    data["startDate"] = meeting.starts_at.iso8601 if meeting.starts_at
+    data
+  end
+
   def meeting_share_description(meeting)
     return meeting.cancellation_notice if meeting.cancelled?
 
     summary = preferred_meeting_summary(meeting)
     headline = summary&.generation_data&.dig("headline")
-    # The headline is the lede, and a gated visitor only sees the first
-    # GATED_LEDE_CHARS of it (the rest fades out because it was never
-    # rendered). Echo exactly that much and no more — a full headline here
-    # would hand the withheld tail to the visitor the gate just turned away.
-    return gated_lede_text(headline) if headline.present?
+    if headline.present?
+      # A headline that fits the teaser window is already on the page, so the
+      # meta description can repeat it. A longer one is cut mid-phrase in the
+      # body; publishing that fragment in the meta description is a bad snippet
+      # and still withholds the tail. Use the body-name and date instead.
+      if gated_for_visitor? && headline.to_s.length > GATED_LEDE_CHARS
+        return bare_meeting_description(meeting)
+      end
+
+      return gated_lede_text(headline)
+    end
 
     # These are DB `AgendaItem` titles, not the `item_details` titles the gated
     # page renders in full — a different field, scraped rather than

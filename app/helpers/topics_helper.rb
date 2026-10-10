@@ -120,6 +120,32 @@ module TopicsHelper
     { event: event_text, meeting_name: display_name, meeting: meeting }
   end
 
+  # Stored names are lowercase. The show-page H1 and topic cards print that
+  # string and CSS uppercases it. Document titles (and the og/twitter titles
+  # copied from them) use topic_title_case instead.
+  #
+  # Exact spellings win over ordinary capitalization, matched
+  # case-insensitively on the whole word with surrounding punctuation ignored.
+  # Add a spelling here when a stored name should keep it.
+  TOPIC_TITLE_EXACT_SPELLINGS = %w[
+    WPPI DNR EMS PFAS TIDs WisDOT ALS CMOM DARE DOT PUD IT USA
+  ].freeze
+
+  TOPIC_TITLE_SMALL_WORDS = %w[a an and as at by for in of on or the to vs].freeze
+
+  def topic_page_title(topic)
+    "#{topic_title_case(topic.name)} in Two Rivers, WI"
+  end
+
+  # Returns a plain String. Callers must let the template escape it.
+  def topic_title_case(name)
+    words = String.new(name.to_s).split(/\s+/)
+    cased = words.each_with_index.map { |word, index|
+      topic_title_word(word, first: index.zero?)
+    }.join(" ")
+    String.new(cased)
+  end
+
   # Gated anonymous visitors never see the topic briefing headline anywhere
   # on the show page itself (What to Watch renders a different field), so
   # the meta description can't echo it either — teasing a truncated slice
@@ -135,6 +161,38 @@ module TopicsHelper
   end
 
   private
+
+  def topic_title_word(word, first:)
+    prefix, core, suffix = topic_title_word_parts(word)
+    exact = TOPIC_TITLE_EXACT_SPELLINGS.find { |spelling| spelling.casecmp?(core) }
+    cased_core = if exact
+      exact
+    elsif !first && TOPIC_TITLE_SMALL_WORDS.include?(core.downcase)
+      core.downcase
+    else
+      topic_title_capitalize(core)
+    end
+    "#{prefix}#{cased_core}#{suffix}"
+  end
+
+  def topic_title_word_parts(word)
+    match = word.match(/\A([[:punct:]]*)([^[:punct:]]+(?:[[:punct:]]+[^[:punct:]]+)*)([[:punct:]]*)\z/)
+    return [ "", word, "" ] unless match
+
+    [ match[1], match[2], match[3] ]
+  end
+
+  def topic_title_capitalize(core)
+    return core if core.empty?
+
+    first = core[0]
+    rest = core[1..] || ""
+    if first.match?(/[[:alpha:]]/)
+      "#{first.upcase}#{rest.downcase}"
+    else
+      "#{first}#{rest.downcase}"
+    end
+  end
 
   # Normalize meeting name strings for MATCHING between AI-generated
   # factual_record "meeting" labels and real Meeting body_name values.

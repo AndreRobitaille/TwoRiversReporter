@@ -27,7 +27,7 @@
   <section class="meeting-article-section">
     <div class="home-section-header">
       <%= render "shared/atom_marker" %>
-      <span class="section-label">Key Decisions</span>
+      <h2 class="section-label">Key Decisions</h2>
       <span class="section-line"></span>
     </div>
     <div class="meeting-decisions">
@@ -50,7 +50,7 @@
 <section class="meeting-article-section">
   <div class="home-section-header">
     <%= render "shared/atom_marker" %>
-    <span class="section-label">Public Input<% if speakers.any? %> · <%= speakers.size %> <%= "speaker".pluralize(speakers.size) %><% end %></span>
+    <h2 class="section-label">Public Input<% if speakers.any? %> · <%= speakers.size %> <%= "speaker".pluralize(speakers.size) %><% end %></h2>
     <span class="section-line"></span>
   </div>
   <% if speakers.any? %>
@@ -82,7 +82,7 @@
   <section class="meeting-article-section">
     <div class="home-section-header">
       <%= render "shared/atom_marker" %>
-      <span class="section-label">Agenda Items</span>
+      <h2 class="section-label">Agenda Items</h2>
       <span class="section-line"></span>
     </div>
     <%# Every item, not a subset: the count is the information. %>

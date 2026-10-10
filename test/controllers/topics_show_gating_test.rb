@@ -30,6 +30,8 @@ class TopicsShowGatingTest < ActionDispatch::IntegrationTest
     assert_match(/#{Regexp.escape(WATCH)}/, response.body)
     assert_no_match(/#{Regexp.escape(WITHHELD)}/, response.body)
     assert_match(/Sign in to keep reading/, response.body)
+    assert_select ".gated-content", count: 0
+    assert_select "title", text: "Stormwater Design Phase in Two Rivers, WI"
   end
 
   test "signed-in member sees the whole page" do
@@ -40,6 +42,8 @@ class TopicsShowGatingTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_match(/#{Regexp.escape(WITHHELD)}/, response.body)
+    assert_select ".gated-content"
+    assert_select "h2.section-label", text: "The Story"
   end
 
   test "anonymous gated visitor's meta tags never contain the untruncated AI headline" do

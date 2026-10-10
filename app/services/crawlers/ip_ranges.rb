@@ -13,15 +13,26 @@ module Crawlers
     end
 
     def include?(feed, address)
+      authorization_status(feed, address) == :match
+    end
+
+    # :match, :missing, :not_current, :miss, :invalid, or :unreadable.
+    # A snapshot written by refresh uses symbol keys and string prefixes.
+    # String keys and IPAddr prefixes stay closed.
+    def authorization_status(feed, address)
       snapshot = @cache.read(cache_key(feed))
-      return false unless snapshot.is_a?(Hash)
+      return :missing unless snapshot.is_a?(Hash)
 
       fetched_at = snapshot[:fetched_at]
-      return false unless fetched_at.is_a?(Integer) && fetched_at.between?(MAX_AGE.ago.to_i + 1, Time.current.to_i)
+      return :not_current unless fetched_at.is_a?(Integer) && fetched_at.between?(MAX_AGE.ago.to_i + 1, Time.current.to_i)
 
-      validated_ranges(snapshot[:prefixes]).any? { |range| range.include?(address) }
-    rescue Error, ActiveRecord::ActiveRecordError
-      false
+      return :match if validated_ranges(snapshot[:prefixes]).any? { |range| range.include?(address) }
+
+      :miss
+    rescue Error
+      :invalid
+    rescue ActiveRecord::ActiveRecordError
+      :unreadable
     end
 
     def refresh(feed)

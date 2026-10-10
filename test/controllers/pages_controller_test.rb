@@ -24,7 +24,11 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
 
   test "about page has correct title" do
     get about_path
-    assert_select "title", /Plain English/
+    title = "About Two Rivers Matters: Two Rivers, WI City Hall in Plain English"
+    assert_select "title", text: title
+    assert_select "meta[property='og:title'][content='#{title}']"
+    assert_select "meta[name='twitter:title'][content='#{title}']"
+    assert_select "h1", text: /Your City Hall/
   end
 
   test "about page contains anchor links" do

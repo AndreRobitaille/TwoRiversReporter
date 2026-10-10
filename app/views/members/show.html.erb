@@ -13,7 +13,7 @@
   <section class="member-article-section">
     <div class="home-section-header">
       <%= render "shared/atom_marker" %>
-      <span class="section-label">Committees</span>
+      <h2 class="section-label">Committees</h2>
       <span class="section-line"></span>
     </div>
 
@@ -33,7 +33,7 @@
     <section class="member-article-section">
       <div class="home-section-header">
         <%= render "shared/atom_marker" %>
-        <span class="section-label">Attendance</span>
+        <h2 class="section-label">Attendance</h2>
         <span class="section-line"></span>
       </div>
 
@@ -51,13 +51,14 @@
   <section class="member-article-section">
     <div class="home-section-header">
       <%= render "shared/atom_marker" %>
-      <span class="section-label">Voting Record</span>
+      <h2 class="section-label">Voting Record</h2>
       <span class="section-line"></span>
     </div>
 
     <% if gated_for_visitor? %>
       <%= render "shared/gate" %>
     <% else %>
+      <%= gated_content do %>
       <% if @topic_groups.any? %>
         <% @topic_groups.each do |group| %>
           <div class="member-topic-group">
@@ -106,6 +107,7 @@
 
       <% if @topic_groups.empty? && @other_votes.empty? %>
         <p class="section-empty">No voting record found for this official.</p>
+      <% end %>
       <% end %>
     <% end %>
   </section>

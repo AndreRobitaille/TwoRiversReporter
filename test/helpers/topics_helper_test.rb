@@ -302,6 +302,51 @@ class TopicsHelperTest < ActionView::TestCase
     assert_nil result[:meeting], "should not link when committee name doesn't match"
   end
 
+  # --- topic titles ---
+
+  test "topic_title_case keeps a small word lowercase in the middle" do
+    assert_equal "Native Plantings in City Parks", topic_title_case("native plantings in city parks")
+    assert_equal "Fire and EMS Budget", topic_title_case("fire and ems budget")
+  end
+
+  test "topic_title_case capitalizes a small word at the start" do
+    assert_equal "The Budget Hearing", topic_title_case("the budget hearing")
+    assert_equal "And the Budget", topic_title_case("and the budget")
+  end
+
+  test "topic_title_case applies exact spellings over ordinary capitalization" do
+    assert_equal "WPPI Power Contract", topic_title_case("wppi power contract")
+    assert_equal "Tax Increment Districts TIDs", topic_title_case("tax increment districts tids")
+    assert_equal "WisDOT", topic_title_case("wisdot")
+    assert_equal "Hybrid IT Service Model", topic_title_case("hybrid it service model")
+    assert_equal "ALS Lift Assist Billing", topic_title_case("als lift assist billing")
+    assert_equal "Memorial Drive DOT Project", topic_title_case("memorial drive dot project")
+    assert_equal "Bird City USA", topic_title_case("bird city usa")
+    assert_equal "(WPPI)", topic_title_case("(wppi)")
+    assert_equal "Former Hamilton Site", topic_title_case("former hamilton site")
+  end
+
+  test "topic_title_case returns a plain string and does not escape it" do
+    result = topic_title_case("lead pipes <script>")
+
+    assert_instance_of String, result
+    refute result.html_safe?
+    assert_equal "Lead Pipes <Script>", result
+  end
+
+  test "topic_page_title keeps the place suffix" do
+    titles = {
+      "wppi power contract" => "WPPI Power Contract in Two Rivers, WI",
+      "fire and ems budget" => "Fire and EMS Budget in Two Rivers, WI",
+      "former hamilton site" => "Former Hamilton Site in Two Rivers, WI",
+      "tax increment districts tids" => "Tax Increment Districts TIDs in Two Rivers, WI"
+    }
+
+    titles.each do |name, title|
+      assert_equal title, topic_page_title(OpenStruct.new(name: name)), name
+    end
+  end
+
   # --- topic_share_description ---
 
   test "topic_share_description returns briefing headline when present" do
