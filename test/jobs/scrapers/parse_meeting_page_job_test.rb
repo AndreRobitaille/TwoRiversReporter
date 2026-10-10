@@ -99,6 +99,55 @@ class Scrapers::ParseMeetingPageJobTest < ActiveJob::TestCase
     assert_equal [ "minutes_pdf" ], meeting.reload.meeting_documents.pluck(:document_type)
   end
 
+  test "repeat parse of unchanged documents does not bump meeting or document timestamps" do
+    meeting = Meeting.create!(detail_page_url: "http://example.com/meetings/stable", starts_at: Time.current)
+
+    page = Object.new
+    page.define_singleton_method(:at) do |selector|
+      if selector == ".related_info.meeting_info"
+        container = Object.new
+        container.define_singleton_method(:at) do |inner_selector|
+          if inner_selector == ".agendas"
+            section = Object.new
+            section.define_singleton_method(:search) do |_|
+              [ Object.new.tap { |link| link.define_singleton_method(:[]) { |key| key == "href" ? "/docs/agenda.pdf" : nil } } ]
+            end
+            section
+          end
+        end
+        container
+      end
+    end
+
+    agent = Object.new
+    agent.define_singleton_method(:user_agent_alias=) { |_alias_name| }
+    agent.define_singleton_method(:get) { |_url| page }
+
+    Mechanize.stub :new, agent do
+      Scrapers::ParseMeetingPageJob.perform_now(meeting.id)
+    end
+
+    meeting.reload
+    document = meeting.meeting_documents.sole
+    meeting_updated_at = meeting.updated_at
+    parsed_at = meeting.meeting_page_parsed_at
+    document_updated_at = document.updated_at
+
+    travel 2.minutes do
+      Mechanize.stub :new, agent do
+        Scrapers::ParseMeetingPageJob.perform_now(meeting.id)
+      end
+    end
+
+    meeting.reload
+    document.reload
+    assert_equal meeting_updated_at, meeting.updated_at
+    assert_equal parsed_at, meeting.meeting_page_parsed_at
+    assert_equal true, meeting.processing_state["meeting_page_parsed_at"]
+    assert_equal document_updated_at, document.updated_at
+    assert_equal "http://example.com/docs/agenda.pdf", document.source_url
+  end
+
   test "does not stamp completion on fetch failure" do
     meeting = Meeting.create!(detail_page_url: "http://example.com/fetch-failure", starts_at: Time.current)
 

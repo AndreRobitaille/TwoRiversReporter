@@ -101,6 +101,43 @@ class Scrapers::DiscoverMeetingsCommitteeTest < ActiveSupport::TestCase
     assert_equal "https://www.two-rivers.org/cancelled-eab", original.detail_page_url
   end
 
+  test "rediscovering an unchanged meeting does not bump updated_at" do
+    starts_at = 4.days.ago.change(usec: 0)
+    meeting = Meeting.create!(
+      body_name: "Plan Commission Meeting",
+      meeting_type: "regular",
+      starts_at: starts_at,
+      status: "held",
+      detail_page_url: "https://www.two-rivers.org/bc-pc/page/plan-commission-meeting-112"
+    )
+    document = meeting.meeting_documents.create!(
+      document_type: "agenda_pdf",
+      source_url: "https://example.com/agenda.pdf",
+      fetched_at: 3.days.ago
+    )
+    stale = 2.days.ago.change(usec: 0)
+    meeting.update_columns(updated_at: stale)
+    document.update_columns(updated_at: stale)
+
+    row = Nokogiri::HTML.fragment(<<~HTML).at("tr")
+      <tr>
+        <td class="views-field-field-calendar-date"><span content="#{starts_at.iso8601}"></span></td>
+        <td class="views-field-title">Plan Commission Meeting</td>
+        <td class="views-field-view-node"><a href="/bc-pc/page/plan-commission-meeting-112">View Details</a></td>
+      </tr>
+    HTML
+
+    travel 5.minutes do
+      result = Scrapers::DiscoverMeetingsJob.new.send(:process_row, row, 10.days.ago, enqueue_parse_jobs: false)
+      assert_equal meeting.id, result
+    end
+
+    assert_equal stale, meeting.reload.updated_at
+    assert_equal stale, document.reload.updated_at
+    assert_equal "held", meeting.status
+    assert_equal "https://www.two-rivers.org/bc-pc/page/plan-commission-meeting-112", meeting.detail_page_url
+  end
+
   test "different start times or committees remain separate even on the same day" do
     committee = Committee.create!(name: "Environmental Advisory Board")
     other = Committee.create!(name: "Other Board")

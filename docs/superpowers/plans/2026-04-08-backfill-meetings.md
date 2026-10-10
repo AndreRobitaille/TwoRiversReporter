@@ -241,7 +241,7 @@ bin/rails runner 'SolidQueue::FailedExecution.last(10).each { |f| puts "#{f.job.
 1. `backfill:run` enqueues `DiscoverMeetingsJob(since: 2025-01-01)`
 2. DiscoverMeetingsJob paginates through two-rivers.org, upserts ~200+ meetings, enqueues `ParseMeetingPageJob` for each
 3. Each `ParseMeetingPageJob` finds documents on the detail page, enqueues `DownloadJob` for each
-4. `DownloadJob` uses conditional GET (etag/SHA256) — skips unchanged files, downloads new/updated ones
+4. `DownloadJob` uses conditional GET (etag/SHA256) — skips replacing unchanged files, downloads new/updated ones. An unchanged SHA or HTTP 304 still records `fetched_at` and any etag, last-modified, and content-length the response provides, without advancing `updated_at`. Only a new SHA replaces the file and advances `updated_at`. Repeat meeting-page and agenda parses that find no meeting or document changes also leave the meeting row alone.
 5. For PDFs: `AnalyzePdfJob` extracts text, then for minutes: enqueues `ExtractTopicsJob`, `ExtractVotesJob`, `ExtractCommitteeMembersJob`, `SummarizeMeetingJob`
 6. `SummarizeMeetingJob` regenerates meeting + topic summaries (uses `find_or_initialize_by` — overwrites existing)
 7. Topic briefings generated downstream via `GenerateTopicBriefingJob`
