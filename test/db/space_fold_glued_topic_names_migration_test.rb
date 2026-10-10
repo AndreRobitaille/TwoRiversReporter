@@ -86,21 +86,32 @@ class SpaceFoldGluedTopicNamesMigrationTest < ActiveSupport::TestCase
     assert_equal "trafficsignalsassessmentinspection", twin_a.reload.name
   end
 
-  test "down restores a migrated topic and removes the glued alias" do
+  test "rollback does not rename a pre-existing spaced topic or remove its alias" do
+    topic = Topic.create!(name: "right of way", status: "approved")
+    legacy_alias = topic.topic_aliases.create!(name: "rightofway")
+    @migration.up
+
+    assert_raises(ActiveRecord::IrreversibleMigration) { @migration.down }
+
+    assert_equal "right of way", topic.reload.name
+    assert TopicAlias.exists?(legacy_alias.id)
+  end
+
+  test "rollback preserves migrated names and legacy aliases" do
     topic = Topic.create!(name: "internalleaksmetertechnology", status: "approved")
 
     @migration.up
-    @migration.down
+    assert_raises(ActiveRecord::IrreversibleMigration) { @migration.down }
 
-    assert_equal "internalleaksmetertechnology", topic.reload.name
-    assert_equal "internalleaksmetertechnology", topic.canonical_name
-    assert_empty topic.topic_aliases
+    assert_equal "internal leaks meter technology", topic.reload.name
+    assert_equal "internal leaks meter technology", topic.canonical_name
+    assert_equal [ "internalleaksmetertechnology" ], topic.topic_aliases.pluck(:name)
   end
 
   test "down leaves a spaced topic alone when it has no glued alias" do
     topic = Topic.create!(name: "right of way", status: "approved")
 
-    @migration.down
+    assert_raises(ActiveRecord::IrreversibleMigration) { @migration.down }
 
     assert_equal "right of way", topic.reload.name
     assert_empty topic.topic_aliases

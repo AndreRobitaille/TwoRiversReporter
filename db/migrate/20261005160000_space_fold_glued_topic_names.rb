@@ -29,9 +29,8 @@ class SpaceFoldGluedTopicNames < ActiveRecord::Migration[8.1]
   end
 
   def down
-    RENAMES.each do |glued, spaced|
-      restore_topic!(glued, spaced)
-    end
+    raise ActiveRecord::IrreversibleMigration,
+      "Topic names and aliases may predate this migration or have administrator edits; undo reviewed rows explicitly instead"
   end
 
   def collision_errors
@@ -117,16 +116,5 @@ class SpaceFoldGluedTopicNames < ActiveRecord::Migration[8.1]
       topic.topic_aliases.create!(name: glued)
     end
     say "Renamed topic #{topic.id} from #{glued.inspect} to #{spaced_name.inspect} and kept the glued name as an alias"
-  end
-
-  def restore_topic!(glued, spaced)
-    topic = topics_named(Topic.normalize_name(spaced)).first
-    return unless topic
-
-    legacy_alias = topic.topic_aliases.find_by("LOWER(name) = ?", glued)
-    return unless legacy_alias
-
-    legacy_alias.destroy!
-    topic.update!(name: glued)
   end
 end

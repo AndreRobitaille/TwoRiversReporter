@@ -284,9 +284,9 @@ string such as `rightofway` can fall under the 0.7 similarity cutoff
 and still match, because the alias is an exact lookup rather than a
 trigram guess.
 
-These eleven topics were migrated from punctuation-stripped names to
-spaced forms. Each kept the old glued string as an alias so legacy
-lookups still resolve:
+The migration renames these eleven topics from punctuation-stripped names to
+spaced forms when the old name exists. Each retains the old glued string as an
+alias so legacy lookups still resolve:
 
 -   door to door solicitation permits (`doortodoorsolicitationpermits`)
 -   electric utility long term power supply contract wppi (`electricutilitylongtermpowersupplycontractwppi`)
@@ -306,6 +306,11 @@ over the alias.
 
 Drain workers still running the previous normalizer before the
 migration deploys, and check afterwards for glued twin topics.
+
+The data migration deliberately refuses automatic rollback because spaced
+names and legacy aliases can predate it or receive later administrator edits.
+Code rollback leaves those names and aliases intact; undoing data requires
+reviewing the affected rows explicitly.
 
 ------------------------------------------------------------------------
 
