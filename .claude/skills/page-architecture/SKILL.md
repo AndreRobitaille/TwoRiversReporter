@@ -72,8 +72,13 @@ The meeting show page (`meetings/show.html.erb`) uses a **fixed inverted-pyramid
 supplied document versions. Highlights, public input, and item details store
 structured references. `Citations::Resolver` supplies canonical labels and URLs
 for both the meeting citation partial and the resident API. PDF locations need
-actual page extractions; transcripts support whole-source recording links without
-pages or timestamps. Legacy references remain explicitly unresolved. Never fall
+actual page extractions; transcripts retain whole-source recording provenance
+without pages or timestamps. The page keeps recording attribution in its
+banner/header and omits whole-recording references from inline citation lists.
+Key Decisions cards have no source citations; highlights with an explicit
+`agenda_item_id` can link to the one corresponding rendered agenda detail.
+IDs must belong to this meeting; missing/ambiguous relationships get no link.
+Legacy references remain explicitly unresolved. Never fall
 back to today's minutes/packet PDF or infer a source by summary type.
 Topic summary and briefing contexts retain these validated references. The
 bounded citation-only repair/release procedure is in
@@ -101,7 +106,7 @@ Council meetings and work sessions are recorded and posted to YouTube (`@Two_Riv
 
 **`Documents::DownloadTranscriptJob`** — Takes `(meeting_id, video_url)`. Validates URL against `YOUTUBE_URL_PATTERN`, fetches SRT via `yt-dlp` in a temp directory, parses SRT to plain text (strips timestamps/sequence numbers), creates `MeetingDocument` with `document_type: "transcript"`, attaches raw SRT file. Enqueues `SummarizeMeetingJob` if no `minutes_recap` summary exists.
 
-**Transcript is a supplement, not a replacement** — it never overrides official sources. Used as the primary source only when no minutes exist (produces `transcript_recap`). When minutes arrive, the complete transcript is appended as supplementary context and `source_type` becomes `"minutes_with_transcript"`. Meeting analysis never silently truncates source text; context overflow must fail rather than omit closing actions. Old `transcript_recap` summaries are cleaned up when minutes arrive.
+**Transcript is a supplement, not a replacement** — it never overrides official sources. Used as the primary source only when no minutes exist (produces `transcript_recap`). When minutes arrive, the complete transcript is appended as supplementary context and `source_type` becomes `"minutes_with_transcript"`. Recaps also retain the available packet (PDF preferred) or agenda as official proposal/background evidence. The current meeting record alone validates motion/vote excerpts; old minutes inside a packet cannot establish the current outcome. Published recording remarks are attributed paraphrases, not caption quotations. Meeting analysis never silently truncates source text; context overflow must fail rather than omit closing actions. Old `transcript_recap` summaries are cleaned up when minutes arrive.
 
 **Agenda identity and downstream evidence:** `analyze_meeting_content` receives substantive agenda IDs and exact contextual titles. `item_details.agenda_item_id` connects the analysis to agenda evidence through `Topics::ItemDetailsMatcher`, shared by topic summary context, recent briefing details, and hollow-appearance pruning. Legacy entries fall back to unambiguous normalized titles. Missing analysis cannot establish that substantive business was routine. Topic context retains the meeting body and transcript provenance.
 
