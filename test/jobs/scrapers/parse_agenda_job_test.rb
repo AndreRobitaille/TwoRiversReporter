@@ -289,6 +289,36 @@ class Scrapers::ParseAgendaJobTest < ActiveJob::TestCase
     assert_equal original_items_snapshot, meeting.agenda_items.order(:id).pluck(:id, :number, :title, :kind, :parent_id, :order_index)
   end
 
+  test "repeat unchanged agenda parse leaves the meeting row alone" do
+    meeting = Meeting.create!(
+      body_name: "Committee On Aging",
+      meeting_type: "Regular",
+      starts_at: Time.current,
+      status: "parsed",
+      detail_page_url: "http://example.com/digest-rerun-timestamps",
+      agenda_structure_digest: "existing-digest"
+    )
+    meeting.agenda_items.create!(number: "1.", title: "CALL TO ORDER", kind: "section", order_index: 1)
+    document = meeting.meeting_documents.create!(document_type: "agenda_pdf", extracted_text: "1. CALL TO ORDER")
+
+    Agendas::ReconcileItems.stub :digest_for_candidates, "existing-digest" do
+      Scrapers::ParseAgendaJob.perform_now(meeting.id)
+      meeting.reload
+      updated_at = meeting.updated_at
+      document_updated_at = document.reload.updated_at
+
+      travel 2.minutes do
+        Scrapers::ParseAgendaJob.perform_now(meeting.id)
+      end
+
+      meeting.reload
+      assert_equal updated_at, meeting.updated_at
+      assert_equal document_updated_at, document.reload.updated_at
+      assert_equal "existing-digest", meeting.agenda_structure_digest
+      assert_equal true, meeting.processing_state["agenda_checked_at"]
+    end
+  end
+
   test "marks agenda checked when no parseable agenda exists" do
     meeting = Meeting.create!(
       body_name: "Committee On Aging",
