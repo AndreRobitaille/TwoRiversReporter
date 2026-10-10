@@ -4226,6 +4226,12 @@ th.sortable-header:hover {
   padding-top: var(--space-6);
 }
 
+/* The paywall wrapper preserves the spacing after the visible watch section. */
+.topic-article-section + .gated-content > .topic-article-section:first-child {
+  margin-top: var(--space-10);
+  padding-top: var(--space-6);
+}
+
 /* Shared section headers (atom marker pattern) */
 .home-section-header {
   display: flex;

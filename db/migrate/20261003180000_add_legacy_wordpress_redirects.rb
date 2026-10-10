@@ -22,6 +22,7 @@ class AddLegacyWordpressRedirects < ActiveRecord::Migration[8.1]
   end
 
   def down
-    Redirect.where(source_path: PATHS.keys).delete_all
+    raise ActiveRecord::IrreversibleMigration,
+      "Redirects may predate this migration or have administrator edits; remove reviewed rows explicitly instead"
   end
 end
