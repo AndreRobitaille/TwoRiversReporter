@@ -34,28 +34,41 @@ class PasskeysControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "registration stores verified credential and clears challenge" do
-    credential = OpenStruct.new(id: "credential-123", public_key: "public-key", sign_count: 0)
-    headers = signed_session_headers(@user)
+    sign_in_with_session(@user.sessions.create!(ip_address: "127.0.0.1", ip_prefix: NetworkPrefix.for("127.0.0.1"),
+      device_fingerprint: DeviceFingerprint.for(nil), reauthenticated_at: Time.current, last_seen_at: Time.current))
     options = Struct.new(:challenge) do
       def as_json(*) = { challenge: }
     end.new("registration-challenge")
-    WebAuthn::Credential.stub(:options_for_create, ->(*args, **kwargs) { options }) do
-      WebAuthn::Credential.stub(:from_create, ->(*args, **kwargs) { credential }) do
+    credentials = %w[credential-123 credential-456].map do |id|
+      credential = OpenStruct.new(id: id, public_key: "public-key", sign_count: 0)
       credential.define_singleton_method(:verify) do |challenge, user_verification:|
         @verified_args = [ challenge, user_verification ]
+        raise WebAuthn::Error, "Missing challenge" unless challenge == options.challenge
+
         true
       end
-      post registration_options_passkeys_url, headers: headers
-      post registration_passkeys_url, params: { credential: { raw: "value" } }, headers: headers
-      assert_equal [ nil, true ], credential.instance_variable_get(:@verified_args)
+      credential
+    end
+    first, second = credentials
+    WebAuthn::Credential.stub(:options_for_create, ->(*args, **kwargs) { options }) do
+      WebAuthn::Credential.stub(:from_create, ->(*args, **kwargs) { credentials.shift }) do
+        post registration_options_passkeys_url
+        post registration_passkeys_url, params: { credential: { raw: "first" } }
+        assert_response :success
+        assert_equal [ "registration-challenge", true ], first.instance_variable_get(:@verified_args)
+        stored = PasskeyCredential.find_by!(external_id: "credential-123")
+        assert_equal @user, stored.user
+        assert_equal "public-key", stored.public_key
+        assert_equal settings_security_url, response.parsed_body["redirect_to"]
+        before = stored.attributes
+
+        post registration_passkeys_url, params: { credential: { raw: "second" } }
+        assert_response :unprocessable_entity
+        assert_equal [ nil, true ], second.instance_variable_get(:@verified_args)
+        assert_equal before, stored.reload.attributes
+        assert_equal [ "credential-123" ], @user.passkey_credentials.pluck(:external_id)
       end
     end
-
-    assert_response :success
-    stored = PasskeyCredential.find_by!(external_id: "credential-123")
-    assert_equal @user, stored.user
-    assert_equal "public-key", stored.public_key
-    assert_equal settings_security_url, response.parsed_body["redirect_to"]
   end
 
   test "registration returns unprocessable entity when ceremony parsing fails" do
