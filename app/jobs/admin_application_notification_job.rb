@@ -1,5 +1,6 @@
 class AdminApplicationNotificationJob < ApplicationJob
   queue_as :default
+  retry_on LoopsDelivery::DeliveryError, wait: 1.minute, attempts: 5, jitter: 0
 
   def perform(membership_application_id)
     applications = nil
@@ -7,7 +8,7 @@ class AdminApplicationNotificationJob < ApplicationJob
 
     MembershipApplication.transaction do
       lock_admin_scope!
-      return if cooldown_active?
+      return if defer_for_cooldown(membership_application_id)
 
       applications = MembershipApplication.lock.where(status: "submitted", admin_notification_sent_at: nil)
                                          .order(:created_at)
@@ -18,7 +19,7 @@ class AdminApplicationNotificationJob < ApplicationJob
     batch_sent_at = Time.current
     MembershipApplication.transaction do
       lock_admin_scope!
-      return if cooldown_active?
+      return if defer_for_cooldown(membership_application_id)
 
       claimed_ids = MembershipApplication.where(id: applications.map(&:id), status: "submitted", admin_notification_sent_at: nil).pluck(:id)
       return if claimed_ids.empty?
@@ -44,8 +45,15 @@ class AdminApplicationNotificationJob < ApplicationJob
       User.order(:id).lock.first!
     end
 
-    def cooldown_active?
+    def defer_for_cooldown(membership_application_id)
       last_sent_at = MembershipApplication.where.not(admin_notification_sent_at: nil).maximum(:admin_notification_sent_at)
-      last_sent_at.present? && last_sent_at >= 1.hour.ago
+      return false unless last_sent_at.present? && last_sent_at >= 1.hour.ago
+
+      if MembershipApplication.exists?(status: "submitted", admin_notification_sent_at: nil)
+        # The existing cooldown includes the exact hour boundary. A duplicate
+        # job is harmless: claims are serialized and rechecked before delivery.
+        self.class.set(wait_until: last_sent_at + 1.hour + 1.second).perform_later(membership_application_id)
+      end
+      true
     end
 end
