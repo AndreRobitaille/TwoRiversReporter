@@ -109,7 +109,7 @@ Rails.application.routes.draw do
       post :clear_completed, on: :collection
     end
 
-    resources :topics, controller: "admin/topics", as: :admin_topics do
+    resources :topics, only: %i[index show update], controller: "admin/topics", as: :admin_topics do
       collection do
         get :search
         post :bulk_update
@@ -126,7 +126,6 @@ Rails.application.routes.draw do
         patch :update_alias, to: "admin/topic_repairs#update_alias"
         post :promote_alias, to: "admin/topic_repairs#promote_alias"
         delete :remove_alias, to: "admin/topic_repairs#remove_alias"
-        post :promote_alias, to: "admin/topic_repairs#promote_alias"
         post :retire, to: "admin/topic_repairs#retire"
         post :approve
         post :block
@@ -139,9 +138,9 @@ Rails.application.routes.draw do
       end
     end
 
-    resources :topic_blocklists, controller: "admin/topic_blocklists", as: :admin_topic_blocklists
+    resources :topic_blocklists, only: %i[index create destroy], controller: "admin/topic_blocklists", as: :admin_topic_blocklists
 
-    resources :redirects, controller: "admin/redirects", as: :admin_redirects
+    resources :redirects, except: :show, controller: "admin/redirects", as: :admin_redirects
 
     resources :committees, controller: "admin/committees", as: :admin_committees do
       member do
