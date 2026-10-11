@@ -151,7 +151,7 @@ class ExpiredLinkRecoveryTest < ActionDispatch::IntegrationTest
     request_replacement
   end
 
-  test "cleanup currently removes the known recovery context without preserving an email oracle" do
+  test "cleanup ends expired-link recovery without preserving an email oracle" do
     ExpiredAuthRecordsCleanupJob.perform_now
     assert_not MagicLink.exists?(@original.id)
     get @approval_url.request_uri

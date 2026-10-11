@@ -405,6 +405,10 @@ pattern, and `actor_email` is why `:nullify` loses nothing.
 - `SignInAttempt` rows older than `SignInAttempt::WINDOW`
 - `KnownContext` rows past `KnownContext::RETENTION`
 
+Owner clarification, October 11, 2026 (#173): this deletion policy is unchanged.
+Expired approval-link recovery is available only while its unused expired row
+exists; cleanup ends that specific recovery context. No retention window is added.
+
 All four accumulate forever today. `SignInAttempt` gains a row per sign-in attempt and is only ever
 read inside a 15-minute window; `MagicLink` rows are dead the moment they are used; `KnownContext`
 rows are a coarse location trail with no further use once stale, which is the deal the retention
