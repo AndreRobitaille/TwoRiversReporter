@@ -87,3 +87,8 @@ gem "diffy", "~> 3.4"
 # device matching. Already present as an actionpack dependency; declared here
 # because this app uses it directly.
 gem "useragent"
+
+group :test do
+  gem "capybara"
+  gem "selenium-webdriver"
+end

@@ -100,3 +100,20 @@ jobs:
         run: bin/rails db:prepare
       - name: Run application tests
         run: bin/rails test
+      - name: Set up Chrome and matching driver
+        id: chrome
+        uses: browser-actions/setup-chrome@48483d551c22a1fe6154c6a195ccc6d5773dc8c4 # v2
+        with:
+          install-chromedriver: true
+      - name: Run browser journeys
+        env:
+          CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
+          PARALLEL_WORKERS: 1
+        run: bin/rails test:system
+      - name: Preserve browser failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-failure-screenshots
+          path: tmp/screenshots
+          if-no-files-found: ignore
