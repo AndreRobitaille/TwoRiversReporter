@@ -274,14 +274,17 @@ All three gates guard HTML actions and JSON endpoints, and a redirect is wrong f
   fetched by `passkey_controller.js`, which would treat a 302 to an HTML page as a malformed
   options response and report a misleading error.
 
-Because a bare 403 gives the member nothing to act on, `/settings/security` also gates its passkey
-management controls at the page level, asking the *same* pair of questions the controller asks —
-freshly reauthenticated **and** an exactly matching context. When either is missing, the "Add a
-passkey" button and the per-credential "Remove" links are replaced by a single link to the challenge
-page. Gating the page on freshness alone would render a button whose endpoint answers 403, and
-`passkey_controller.js` would report that as a failed ceremony rather than as a step-up prompt. The
-JSON 403 is then unreachable through normal use and exists as defence in depth, because a UI-level
-gate is not a security control.
+`/settings/security` offers passkey controls when proof is fresh **and** the session's anchor
+matches. Otherwise, "Add a passkey" and per-credential "Remove" links are replaced by a link
+to the challenge page. Successful step-up refreshes both proof and anchor.
+
+**Owner clarification, October 11, 2026 (#175): preserve the current setup.** The page and
+endpoint deliberately have different allowances: a fresh remembered network/browser pair
+different from the anchor passes the strict endpoint gate, while the page still offers step-up.
+Keep the additive remembered-pair relaxation above; do not tighten endpoints to exact anchor
+matching. Fresh unknown contexts and stale proof are denied. Ownership and last-usable-admin
+protection apply independently. The page is a control-discovery rule, not the authorization
+boundary; direct JSON requests must still enforce those endpoint requirements.
 
 `PasskeysController#destroy` is an ordinary HTML delete, so it takes the redirect path.
 
