@@ -5,6 +5,8 @@ CI.run do
 
   step "Tests", "bin/rails test"
 
+  step "Browser journeys", "bin/rails test:system"
+
   step "Style: Ruby", "bin/rubocop"
 
   step "Security: Gem audit", "bin/bundler-audit"
