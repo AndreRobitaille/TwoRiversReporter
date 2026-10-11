@@ -105,17 +105,22 @@ jobs:
         uses: browser-actions/setup-chrome@48483d551c22a1fe6154c6a195ccc6d5773dc8c4 # v2
         with:
           install-chromedriver: true
-      - name: Verify sandboxed Chrome startup
+      - name: Allow sandboxed Chrome startup on Ubuntu
         env:
           CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
-          CHROME_DEVEL_SANDBOX: /opt/google/chrome/chrome-sandbox
         run: |
-          test -u "$CHROME_DEVEL_SANDBOX"
+          sudo tee /etc/apparmor.d/trr-test-chrome > /dev/null <<EOF
+          abi <abi/4.0>,
+          include <tunables/global>
+          profile trr-test-chrome "$CHROME_BIN" flags=(unconfined) {
+            userns,
+          }
+          EOF
+          sudo apparmor_parser -r /etc/apparmor.d/trr-test-chrome
           "$CHROME_BIN" --headless --disable-dev-shm-usage --dump-dom about:blank
       - name: Run browser journeys
         env:
           CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
-          CHROME_DEVEL_SANDBOX: /opt/google/chrome/chrome-sandbox
           PARALLEL_WORKERS: 1
         run: bin/rails test:system
       - name: Preserve browser failure screenshots
