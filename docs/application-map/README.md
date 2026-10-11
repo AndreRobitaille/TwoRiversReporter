@@ -15,7 +15,10 @@ No browser journeys, production inspections, external email deliveries, paid AI
 calls, application tests, or fault-injection experiments were performed for this
 documentation baseline. A mapped workflow is not a covered or passing workflow.
 
-Current verification: [October 10–11 audit](overnight-progress.md) records four merged changes, two decision-dependent draft PRs, exact runtime/fault evidence and remaining unknown variants at combined master 61d6779. The discovery baseline below is historical, not a claim that subsequent tests did not run.
+Current verification: the [October 10–11 audit](overnight-progress.md) records
+serially merged changes, the October 11 owner decisions, exact runtime/fault
+evidence and remaining unknown variants. The discovery baseline below is
+historical, not a claim that subsequent tests did not run.
 
 ## Read the map
 
@@ -29,8 +32,8 @@ Current verification: [October 10–11 audit](overnight-progress.md) records fou
 | [Data and background workflows](data-and-background.md) | Data dependencies, enrichment, asynchronous state changes, external failures |
 | [Route inventory](routes.md) | Every declared application-controller route and its action-presence check |
 | [Discrepancies and verification needs](verification-register.md) | Conflicting descriptions, unfinished surfaces, and unverified behavior |
-| [Reviewed contracts and decisions](behavior-contracts.md) | Authoritative resolutions and remaining owner choices from #171/#172/#175 |
-| [Observed policy matrices](policy-matrices.md) | Separate source observations and pending access/context/expired-link retention decisions |
+| [Reviewed contracts](behavior-contracts.md) | Authoritative resolutions and October 11 owner decisions for #171/#172/#173/#175 |
+| [Approved policy matrices](policy-matrices.md) | Approved source/context/expired-link contracts, separate from historical observations |
 | [Overnight audit and progress](overnight-progress.md) | Current per-issue acceptance, commands, environments, fault checks and remaining work |
 | [Maintenance and subsequent QA](maintenance-and-qa.md) | Updating this map and using it for the separate coverage/effectiveness review |
 

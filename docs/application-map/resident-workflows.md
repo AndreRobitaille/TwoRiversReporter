@@ -23,8 +23,9 @@ unsettled in the [verification register](verification-register.md).
 - **Observed:** [HomeSelection](../../app/services/resident_content/home_selection.rb),
   [homepage](../../app/views/home/index.html.erb) and partials link all stories/wire
   entries to topics. The approved April 10 homepage design independently requires
-  these destinations; older playbook wording was reconciled. Exact empty-zone
-  differences remain under V-04; see [reviewed contracts](behavior-contracts.md).
+  these destinations; older playbook wording was reconciled. Owner clarification
+  October 11 (#171) preserves the quiet message, omission of empty Wire/More
+  Stories, and visible Next Up/navigation; see [reviewed contracts](behavior-contracts.md).
 
 ## RES-02 — Browse active topics and continue the list (P1)
 
@@ -116,9 +117,9 @@ unsettled in the [verification register](verification-register.md).
   [MeetingsHelper](../../app/helpers/meetings_helper.rb),
   [share JavaScript](../../app/javascript/controllers/share_controller.js),
   [preferred summary](../../app/services/resident_content/meeting_selection.rb).
-- **Unresolved contract:** fixed sections/empty messages in the March 1 meeting
-  design differ from conditional/legacy rendering. Existing behavior stays intact
-  pending the #171 owner choice; see [behavior contracts](behavior-contracts.md).
+- **Approved contract:** owner clarification October 11 (#171) preserves the
+  conditional sections and legacy/agenda-only branches. The March 1 fixed-section
+  proposal is superseded; see [behavior contracts](behavior-contracts.md).
 
 ## RES-07 — Verify a generated claim against its actual source (P0)
 
@@ -136,7 +137,10 @@ unsettled in the [verification register](verification-register.md).
 - **Observed:** [Citations::Resolver](../../app/services/citations/resolver.rb),
   [citation partial](../../app/views/meetings/_citations.html.erb),
   [source catalog](../../app/services/citations/source_catalog.rb). Current gated
-  source chips are not clickable; that policy conflict needs V-05.
+  source chips are not clickable for gated anonymous readers, as approved by
+  the owner October 11 (#172). Allowed readers retain actual destinations;
+  [source verification](policy-matrices.md#public-reporting-and-source-navigation-172) includes a real browser
+  request to a distinctive offline publisher and separate raw-URL withholding.
 
 ## RES-08 — Open a duplicate or cancelled meeting (P0)
 
@@ -166,7 +170,9 @@ unsettled in the [verification register](verification-register.md).
 - **Next:** official page matches person; activity link goes to the approved topic;
   historical membership stays distinct from a current office.
 - **Failures to distinguish:** missing canonical coverage, changed names/aliases,
-  withdrawn source, manual override, stale office, gated roster policy V-05.
+  withdrawn source, manual override, stale office. Owner decision October 11
+  (#172) withholds the entire roster for gated anonymous readers; allowed
+  readers retain the current roster.
 - **Observed:** [CommitteeDirectory](../../app/services/resident_content/committee_directory.rb),
   [committee controller](../../app/controllers/committees_controller.rb),
   [CanonicalRosters](../../app/services/canonical_rosters/synchronizer.rb).

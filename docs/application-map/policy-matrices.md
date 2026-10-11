@@ -1,30 +1,31 @@
-# Observed policy matrices pending owner decisions
+# Approved policy matrices
 
-These are observations, not new approved expectations. Public access was
-measured through real synthetic HTTP requests at master 61d6779; passkey
-states were verified in draft PR #182. Binding requirements and the exact
-owner choices in #172/#175 must be reconciled before policy changes.
+Initial observations used synthetic requests at master 61d6779 and passkey
+PR #182. On October 11, 2026 Andre explicitly approved preserving the current
+anonymous pages, relaxed smart authentication, conditional homepage/meeting
+layouts and expired-record cleanup. Specialized specifications record those
+decisions. No public-access or authentication predicate changed.
 
 ## Public reporting and source navigation (#172)
 
 | Audience / mode | Source PDF/city/recording hrefs | Current committee roster | Generated reporting / item identities |
 | --- | --- | --- | --- |
-| Open anonymous / approved | All four supplied hrefs | Both roster identities | Full reporting marker; both item/speaker identities |
+| Open anonymous / approved | All five supplied hrefs | Both roster identities | Full reporting marker; both item/speaker identities |
 | Gated anonymous | Zero supplied hrefs/URLs in raw HTML | Zero roster identities | Reporting marker absent; both item/speaker identities remain |
-| Gated approved | All four supplied hrefs | Both roster identities | Full reporting marker; both item/speaker identities |
-| Pending/rejected/disabled browser account | Open: four; gated: zero | Open: two; gated: zero | Authentication rejected; anonymous presentation measured |
-| Verified crawler in both modes | All four supplied hrefs | Both roster identities | Full reporting marker; offline verified-IP cache, not live provider verification |
-| Impersonated crawler | Open: four; gated: zero | Open: two; gated: zero | Fake User-Agent follows anonymous presentation |
-| Authorized active API owner, both modes | All four source metadata URLs | Both roster identities | Full generated marker in actual meeting/committee JSON |
+| Gated approved | All five supplied hrefs | Both roster identities | Full reporting marker; both item/speaker identities |
+| Pending/rejected/disabled browser account | Open: five; gated: zero | Open: two; gated: zero | Authentication rejected; anonymous presentation asserted |
+| Verified crawler in both modes | All five supplied hrefs | Both roster identities | Full reporting marker; offline verified-IP cache, not live provider verification |
+| Impersonated crawler | Open: five; gated: zero | Open: two; gated: zero | Fake User-Agent follows anonymous presentation |
+| Authorized active API owner, both modes | All five source metadata URLs | Both roster identities | Full generated marker in actual meeting/committee JSON |
 | Revoked API key, both modes | HTTP 401 | HTTP 401 | No authorized read |
 
 Sources: meetings/show and document-chip partials, committees/show, AccessHelper,
 Crawlers::Verifier, API serializers and the July 24 access design. Existing
 AnonymousLeakSweepTest has distinct signed-in presence and anonymous absence
-passes; it also uses an offline crawler cache. Those tests do not resolve the
-source/roster policy conflict or replace separate quantity/stable-identity tests.
+passes; it also uses an offline crawler cache. Separate quantity/stable-identity
+tests complement the withheld-byte sweep.
 
-Synthetic setup: two explicit-role committee members, two structured agenda
+Historical four-source observer setup: two explicit-role committee members, two structured agenda
 items/speakers, a generated marker beyond teaser length and city/minutes/agenda/
 recording URLs. Approved-reader presence was asserted first in both modes.
 The external observer passed one test / 66 assertions, with undecided anonymous
@@ -40,11 +41,30 @@ observations cover the supplied HTML/JSON routes, not external source usability,
 share/OG/search/stream representations, production CDN caches or any decided
 meeting item/speaker cap. No example source was fetched.
 
-Owner decision needed: exact anonymous hrefs, roster identity visibility and
-item/speaker teaser quantity/identity limits. The separate blob-possession
-decision stays in #154. Next verification must use allowed-content proof first,
-raw representations, stable quantities/identities, transitions and independent
-guard/cap fault experiments. No withholding rule changed here.
+Owner decision October 11: preserve the current signed-out pages. A fresh
+signed-out Chromium profile inspected meeting 277 and City Council's committee
+page through public HTTPS: source chips/Share disabled, roster withheld and
+teaser reporting retained. The web search crawler receives a different verified
+crawler audience and is not evidence of the ordinary anonymous presentation.
+
+Exact approved limits: meeting lede 100 characters, bodies 30 characters at word
+boundaries; no quantity or identity cap on structured highlights, agenda titles
+or speakers. Votes/tallies, decisions, roll calls, hearing lines, citations and
+topic doors are withheld. Source chips emit zero meeting-source URLs; committee
+rosters emit zero identities. Topic listings/search retain the existing two-card
+cap, pinned identities on later pages of the same query, public-name search and
+no withheld-headline matching. The possessed-blob question remains in #154.
+
+`SourceAccessContractTest` converts the matrix to approved expectations using
+five source URLs (including Packet), two roster identities and two distinct
+items/speakers. It proves the allowed fixture first, checks actual hrefs and raw
+HTML/metadata/share attributes, authenticated API JSON, denied formats and
+next-request revalidation. `SourceNavigationJourneysTest` opens the rendered
+City Website link in a real browser window, receives the distinct offline Rack
+publisher page and verifies logout removes the source controls. Publisher
+content is synthetic; external publisher availability and CDN caches remain
+outside this local proof. Existing canary/search/stream and independent
+quantity/pagination-identity faults remain complementary.
 
 ## Passkey page and endpoints (#175)
 
@@ -57,16 +77,15 @@ guard/cap fault experiments. No withholding rule changed here.
 | Stale proof, remembered pair | Locked | Freshness still challenges; JSON 403 |
 
 Sources: Settings::SecurityController#show, Reauthentication's strict/fresh
-gates and PasskeysController. The page comment saying the endpoint requires an
-exact match is stale relative to the remembered-context addendum. This is an
-unnecessary challenge candidate, not evidence of an authorization bypass.
+gates and PasskeysController. The stale exact-match endpoint comment is corrected;
+the owner approved preserving this page/endpoint distinction on October 11.
 Rename has its own endpoint contract and must not be conflated with Add/Remove.
 
-Recommended intended contract: fresh AND (matching anchor OR remembered pair),
-with independent ownership and last-usable-admin protection. Owner decision
-remains pending. Draft [PR #182](https://github.com/AndreRobitaille/TwoRiversReporter/pull/182)
-verifies this existing discrepancy through the same-state HTTP matrix; it does
-not approve the fresh-known UI row. Its secure-localhost virtual CTAP2 journeys
+Approved intended contract: endpoints retain fresh AND (matching anchor OR
+remembered pair); the page retains fresh AND matching anchor, offering step-up
+otherwise. Ownership and last-usable-admin protection are independent.
+[PR #182](https://github.com/AndreRobitaille/TwoRiversReporter/pull/182)
+verifies that approved matrix. Its secure-localhost virtual CTAP2 journeys
 also prove native browser registration/signature verification, sign-in/removal
 and stale-proof step-up. Hardware/biometric/consent remain simulated. Seeded
 credentials and stubbed verification stay distinct component evidence; see the
@@ -77,11 +96,11 @@ credentials and stubbed verification stay distinct component evidence; see the
 July 23 requires a fresh-link action for a known expired approval context.
 July 25's audit/cleanup section requires deleting used or expired MagicLink
 rows. The recovery branch supports an eligible, unused, expired sign-in row
-that still exists, and a characterization verifies cleanup currently removes
+that still exists, and an expectation verifies cleanup removes
 that context. It does not change token retention or create a general email
 lookup endpoint.
 
-Owner choice pending: retain unused expired sign-in rows for a bounded recovery
-window (proposed seven days), or explicitly limit recovery to the time before
-cleanup removes the row. Recovery must keep old links unusable for sign-in,
-respect eligibility/throttling and send a new usable link to the correct account.
+Owner decision October 11: keep current cleanup; recovery is limited to the time
+before cleanup removes the unused expired row. No retention extension. Recovery
+keeps old links unusable for sign-in, respects eligibility/throttling and sends
+a new usable link to the correct account.

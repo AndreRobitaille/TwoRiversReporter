@@ -137,12 +137,16 @@ establish that these outcomes actually occur in a browser.
   sign-in link; completing AUTH-02 permits the first full member read. Denial
   records reviewer/reason, denies login and sends the exact denial reason.
 - **Next:** rejected address cannot silently reapply; reviewing before completed
-  submission must still produce a coherent decision/history.
+  submission must still produce a coherent decision/history. An unused expired
+  approval/sign-in record offers fresh-link recovery only while that row exists;
+  cleanup ends recovery (owner decision October 11, #173).
 - **Failures to distinguish:** missing reason, concurrent review, delivery failure,
   rollback/compensation, expired approval link; never treat an enqueued email as receipt.
 - **Observed:** [MembershipApplicationDecision](../../app/services/admin/membership_application_decision.rb)
   locks/updates records and compensates on delivery errors. Browser handling of
-  all provider failures was not demonstrated; V-07/V-08 remain open.
+  all provider failures was not demonstrated. PR #179 proves visible expired-link
+  recovery through captured delivery and a usable replacement; PR #180 proves
+  queued notification cooldown/retry. External provider behavior remains unverified.
 
 ## AUTH-09 — Read own account profile (P1)
 
@@ -176,7 +180,10 @@ establish that these outcomes actually occur in a browser.
 - **Observed:** [PasskeysController](../../app/controllers/passkeys_controller.rb),
   [credential model](../../app/models/passkey_credential.rb),
   [Security view](../../app/views/settings/security/show.html.erb). Rename has no
-  additional step-up gate. Known-context UI/controller alignment needs V-09.
+  additional step-up gate. Owner decision October 11 (#175) preserves fresh
+  anchor page controls and fresh anchor OR remembered-pair endpoints. The
+  same-state HTTP matrix and native virtual-browser Add/sign-in/Remove/step-up
+  journeys are in [passkey verification](policy-matrices.md#passkey-page-and-endpoints-175).
 
 ## AUTH-11 — Dismiss a passkey reminder (P2)
 

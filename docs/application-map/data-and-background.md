@@ -177,8 +177,10 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   admin batches are bounded and submitted applications are eventually surfaced;
   cleanup retires expired data without revoking valid authority/erasing audit.
 - **Next:** AUTH-02/08 proves delivered-link use, not merely service return;
-  known-context retention/cap reflect policy. Cooldown notification rescheduling
-  is unresolved (V-08).
+  known-context retention/cap reflect policy. PR #180 verifies a deferred batch
+  due at prior delivery + one hour + one second, bounded retry and conditional
+  claim rollback. Expired-link recovery ends when cleanup removes its record
+  (owner decision October 11, #173); no retention extension.
 - **Failure variants:** missing production template/config, provider timeout,
   cooldown drops pending notification, invalid absolute link, cleanup deletes active record.
 - **Observed:** [TransactionalEmail](../../app/services/transactional_email.rb),

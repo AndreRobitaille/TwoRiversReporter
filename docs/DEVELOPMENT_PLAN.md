@@ -589,8 +589,9 @@ Selection uses resident impact then recency, with the thresholds described
 above. See `docs/superpowers/specs/2026-04-10-homepage-redesign-design.md` for
 zone layout, navigation and empty-state intent; the Generated Civic Images
 section governs current image/description treatment. Historical designs remain
-in the repository. Unresolved rendering differences are recorded under #171,
-not silently adopted as new requirements.
+in the repository. Owner clarification, October 11, 2026 (#171): preserve the
+quiet message for no top stories, omit empty Wire/More Stories, and keep Next
+Up and broad navigation visible.
 
 ### Topic Page (Primary Lens)
 
@@ -616,8 +617,11 @@ without `generation_data` (e.g., `headline_only` tier).
 
 ### Meeting Page
 
-Fixed layout, inverted pyramid — every section always visible. Empty
-sections show contextual messages instead of hiding.
+Inverted pyramid with the current conditional sections and legacy/agenda-only
+branches preserved (owner clarification, October 11, 2026, #171). The section
+catalog below does not require every section to render for every meeting.
+Structured Public Input retains its empty message; empty highlights/items
+and absent or legacy reporting keep their existing conditional presentation.
 
 | # | Section | Data Source |
 |---|---------|-------------|

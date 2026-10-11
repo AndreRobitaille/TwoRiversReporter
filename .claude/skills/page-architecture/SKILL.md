@@ -60,11 +60,16 @@ The topic show page (`topics/show.html.erb`) uses an **editorial longform layout
 
 **Remaining issues:**
 - **Coming Up empty most of the time** — agendas not published far in advance. Fallback shows typical committee, but no scheduled date.
-- **Empty-state expectations** — use the topic design's Section Visibility Rules Summary. The meeting design still promises fixed sections; conditional meeting rendering remains a documented contract discrepancy pending review (#171).
+- **Empty-state expectations** — use the topic design's Section Visibility Rules Summary. The October 11 owner clarification (#171) preserves conditional meeting sections and legacy/agenda-only branches.
 
 ## Meeting Show Page
 
-The meeting show page (`meetings/show.html.erb`) uses a **fixed inverted-pyramid layout** — all sections always render, with empty state messages (`.section-empty`) when data is absent. Section order: Header → Headline → Highlights → Public Input → Agenda Items → Topics → Documents.
+The meeting show page (`meetings/show.html.erb`) uses an inverted pyramid with
+conditional sections and legacy/agenda-only branches. Preserve that behavior
+per the October 11 owner clarification (#171); do not force every named section
+or empty message into every variant. Structured Public Input keeps its empty
+state. Available section order: Header → Headline → Highlights → Public Input
+→ Agenda Items → Topics → Documents.
 
 **Structured JSON rendering:** Meeting summary content renders from `MeetingSummary.generation_data` (single-pass structured JSON from `analyze_meeting_content`) instead of two-pass markdown. Helper methods in `MeetingsHelper` extract fields: `meeting_headline`, `meeting_highlights`, `meeting_public_input`, `meeting_item_details`, `decision_badge_class`. The `content` (markdown) field is a fallback for meetings without `generation_data`, rendered in `.meeting-legacy-recap`.
 
