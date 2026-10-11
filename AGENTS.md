@@ -84,3 +84,8 @@ CI note: `bin/ci` runs setup, application tests, RuboCop, bundler-audit, importm
 
 ## More Detail
 For architecture, domain models, deployment notes, and workflow caveats, read `CLAUDE.md`.
+
+For application interfaces, roles, workflow transitions, and the behavioral QA
+reference, see `docs/application-map/README.md`. The map distinguishes intended
+behavior from implementation observations and unresolved verification; binding
+product and specialized specifications remain authoritative.

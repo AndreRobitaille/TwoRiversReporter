@@ -39,10 +39,17 @@ prioritization decisions.
   "Downtown Parking Changes."
 - **Every topic name should be a door they can walk through.** An
   unlinked topic name is a dead end for someone who just got curious.
-- **No accounts.** The public side has no login. They browse what is
-  surfaced to them.
-- **No search (yet).** Discovery is through what the site presents on
-  the homepage and topic index.
+- **Low-friction reading.** Anonymous readers browse full reporting in open
+  mode and teasers in gated mode. Approved members sign in by email link or
+  passkey for full reporting. Membership requires an administrator's approval.
+- **Simple discovery.** The homepage and topic index remain primary entry
+  points. Topic/meeting search and the authenticated resident API are supported;
+  the Explore Topics research/filter interface remains unfinished (#62).
+
+These access and search expectations follow the current Development Plan and
+the specialized passwordless, public-access and resident-API designs. They
+supersede this document's original no-account/no-search assumptions without
+changing the audience's preference for simple, mobile-friendly navigation.
 
 ## What They Need
 
