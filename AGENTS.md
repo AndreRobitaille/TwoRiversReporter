@@ -55,7 +55,7 @@ take the playbook's database dump before a destructive migration.
 - Lint: `bin/rubocop`
 - Local CI: `bin/ci`
 
-CI note: `bin/ci` runs setup, application tests, RuboCop, bundler-audit, importmap audit, and Brakeman. GitHub CI also runs application tests against PostgreSQL.
+CI note: `bin/ci` runs setup, application tests, browser journeys (`bin/rails test:system`), RuboCop, bundler-audit, importmap audit, and Brakeman. GitHub CI runs application and browser tests against PostgreSQL. Run ordinary and browser suites serially against each test database.
 
 ## Verification Rules
 - Ruby/model/job/service changes: run targeted Minitest files and `bin/rubocop`.

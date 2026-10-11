@@ -2,7 +2,7 @@
 
 This register preserves the October 10 discovery findings. Subsequent verified
 work and remaining decisions are recorded in [overnight progress](overnight-progress.md)
-and [reviewed contracts](behavior-contracts.md). Browser foundation #169, resident-context defect #176, notification scheduling #174 and admin route/maintenance #170 are resolved in PRs #177/#178/#180/#181. Recovery #173 and passkey #175 have verified drafts #179/#182 with decisions still open; #171/#172 preserve unresolved policies. The historical evidence below does not imply resolved findings remain untested.
+and [reviewed contracts](behavior-contracts.md). Browser foundation #169, resident-context defect #176, notification scheduling #174 and admin route/maintenance #170 are resolved in PRs #177/#178/#180/#181. Recovery #173 and passkey #175 have verified drafts #179/#182 with decisions still open; #171/#172 preserve unresolved policies. The prioritized #168 audit now also includes real offline transcript preservation/rerun proof in PR #186 (#183); broader variants remain explicitly unknown. The historical evidence below does not imply resolved findings remain untested.
 
 This is a discovery register, not a completed defect or test-coverage audit.
 **All items remain open** at the 2026-10-10 baseline. No passing test count, source
