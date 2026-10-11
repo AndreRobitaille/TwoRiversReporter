@@ -44,6 +44,12 @@ class MagicLink < ApplicationRecord
     end
   end
 
+  def self.expired_sign_in_link(token)
+    link = for_token(token).where(purpose: "sign_in", used_at: nil)
+      .where("expires_at <= ?", Time.current).includes(:user).first
+    link if link&.user&.active_for_authentication?
+  end
+
   def unused?
     used_at.blank?
   end

@@ -100,13 +100,16 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_match /sign in/i, flash[:alert]
   end
 
-  test "get magic_link rejects expired sign in tokens gracefully" do
+  test "get magic_link offers recovery for a known expired eligible sign in token" do
     magic_link = MagicLink.create_for!(@active_user, purpose: "sign_in", expires_at: 1.minute.ago)
 
     get "/session/magic_link", params: { token: magic_link.raw_token }
 
-    assert_redirected_to "/session/new"
-    assert_match /sign in/i, flash[:alert]
+    assert_response :success
+    assert_select "form[action=?][method=post]", resend_expired_magic_link_public_session_path
+    assert_select "input[name=token][value=?]", magic_link.raw_token
+    assert_predicate magic_link.reload, :unused?
+    assert_empty @active_user.sessions
   end
 
   test "get magic_link rejects used sign in tokens gracefully" do
@@ -174,13 +177,14 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "post resend_expired_magic_link redirects with a generic notice" do
+  test "post resend_expired_magic_link requires a known expired context" do
     assert_no_difference "MagicLink.count" do
       post "/session/resend_expired_magic_link"
     end
 
     assert_redirected_to "/session/new"
-    assert_equal "Check your email — we've sent you a message.", flash[:notice]
+    assert_nil flash[:notice]
+    assert_match /invalid or expired/, flash[:alert]
   end
 
   test "destroy signs out" do
