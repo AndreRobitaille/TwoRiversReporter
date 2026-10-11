@@ -52,8 +52,10 @@ request must remove invalid state, and replay must remain denied.
 
 `ResidentNavigationJourneysTest` follows the rendered homepage topic and meeting
 cards and public navigation in open mode, gated anonymous mode and gated member
-mode. These destination checks preserve current navigation; they do not settle
-the unresolved anonymous source-link, roster or teaser policy in #172.
+mode. These destination checks preserve current navigation. The owner-approved
+anonymous source-link, roster and teaser rules are recorded in the
+[reviewed contracts](../application-map/behavior-contracts.md); their dedicated
+verification is described in [source access coverage](source-access.md).
 
 Only the final email transport is captured. Token creation, recipient/URL
 construction, GET/POST consumption, database persistence and session access stay

@@ -119,6 +119,7 @@ script enumerated controller routes and checked each source-backed target with
 records. Documentation links, workflow references, and route-table parity were
 checked, along with `git diff --check`. No application source or tests changed.
 
-The separate test review, new behavioral suite, recurring QA schedule, and
-independent reviewer assignment remain future work, as described in
-[maintenance-and-qa.md](maintenance-and-qa.md).
+The subsequent test review, prioritized behavioral suite, and defect-detection
+evidence are recorded in the [October 10–11 audit](overnight-progress.md).
+Remaining workflow gaps, recurring QA scheduling, and independent reviewer
+assignment are described in [maintenance-and-qa.md](maintenance-and-qa.md).
