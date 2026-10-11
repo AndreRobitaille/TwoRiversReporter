@@ -910,7 +910,9 @@ skill. None of that is duplicated here.
 The system must:
 
 - Never fabricate decisions or votes
-- Always link to official documents
+- Link to official documents for allowed readers; gated anonymous meeting pages
+  retain disabled source labels with no source URLs, per the owner-approved
+  July 24 public-access specification (October 11 clarification, #172).
 - Remain usable if AI fails
 - Be transparent about extraction quality
 - Preserve long-term civic memory
