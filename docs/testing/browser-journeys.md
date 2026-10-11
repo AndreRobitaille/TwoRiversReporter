@@ -30,6 +30,12 @@ Failures produce screenshots in `tmp/screenshots`; GitHub retains them as a
 failure artifact. Application and browser suites run serially against the test
 database.
 
+GitHub's downloaded Chrome for Testing uses the runner's installed Chrome
+setuid sandbox helper through `CHROME_DEVEL_SANDBOX`. The workflow checks that
+helper and smoke-tests headless startup before running the journeys. This follows
+[Chromium's sandbox guidance](https://chromium.googlesource.com/chromium/src/+/main/docs/security/apparmor-userns-restrictions.md)
+for downloaded builds on Ubuntu; the browser sandbox stays enabled.
+
 ## What these tests prove
 
 `AuthenticationJourneysTest` starts anonymous, submits the sign-in form,
