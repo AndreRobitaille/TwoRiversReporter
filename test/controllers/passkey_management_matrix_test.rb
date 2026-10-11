@@ -28,8 +28,8 @@ class PasskeyManagementMatrixTest < ActionDispatch::IntegrationTest
       assert_select "a[href=?][data-turbo-method=delete]", passkey_path(credential), count: state[:page] ? 1 : 0
       assert_select "a[href=?]", new_reauthentication_path, count: state[:page] ? 0 : 1
 
-      # This fresh-known row intentionally characterizes the unresolved mismatch:
-      # the current page blocks while the additive strict endpoint gate passes.
+      # Owner-approved on October 11: the page challenges a different known pair,
+      # while the additive strict endpoint gate accepts it with fresh proof.
       post registration_options_passkeys_path(format: :json)
       assert_response state[:endpoint] ? :success : :forbidden
       assert response.parsed_body.fetch("challenge").present? if state[:endpoint]

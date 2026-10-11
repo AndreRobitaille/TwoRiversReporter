@@ -1,4 +1,4 @@
-# Passkey verification and unresolved context policy
+# Passkey verification and approved context policy
 
 The secure-browser journeys use Selenium's documented
 [virtual authenticator](https://www.selenium.dev/documentation/webdriver/interactions/virtual_authenticator/):
@@ -32,10 +32,12 @@ options/registration/removal for the same persisted session state:
 | Stale matching anchor | Challenge | Denied |
 | Stale known different pair | Challenge | Denied |
 
-The fresh-known row **characterizes an unresolved discrepancy**, not an approved
-policy. July 25's additive strict gate permits an anchor or known pair, while
-its older page paragraph says exact matching. #175 asks Andre to reconcile that
-contract. No control/endpoint policy is changed or inferred from passing tests.
+Andre approved preserving this current matrix on October 11, 2026 in response
+to #175, explaining that overly restrictive smart authentication had been
+relaxed. The endpoint's remembered-pair allowance remains additive; the page
+continues to request step-up before offering controls away from the anchor.
+The July 25 specification now records this distinction. No authentication
+predicate changed, and freshness and ownership remain independent requirements.
 For allowed registration, the matrix probes real options and malformed-payload
 rejection; full successful ceremonies are covered by the separate browser tests.
 Foreign IDs, last usable admin protection, HTML challenges and JSON 403 preserve
