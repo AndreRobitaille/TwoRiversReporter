@@ -1,0 +1,16 @@
+<% content_for(:title) { "Request a fresh sign-in link" } %>
+
+<div class="auth-panel">
+  <div class="auth-mark"><%= render "shared/starburst", size: 56 %></div>
+  <h1 class="auth-title">Your link has expired</h1>
+  <p class="auth-dek">Request a fresh link for this account, then open the new message to confirm sign in.</p>
+
+  <%= render "shared/diamond_divider" %>
+  <%= tag.div(flash[:alert], class: "flash flash--danger") if flash[:alert] %>
+  <%= tag.div(flash[:notice], class: "flash flash--success") if flash[:notice] %>
+
+  <%= form_with url: resend_expired_magic_link_public_session_path, method: :post do |form| %>
+    <%= hidden_field_tag :token, @token %>
+    <%= form.submit "Send me a fresh link", class: "btn btn--primary" %>
+  <% end %>
+</div>
