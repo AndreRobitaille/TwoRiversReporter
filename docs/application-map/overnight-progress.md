@@ -352,6 +352,8 @@ The following runtime-discovered names expand parameterized setup; the roles/sta
 | PasskeyManagementMatrixTest / AUTH-10/12 (July 25 strict/fresh gates; known UI/endpoint distinction owner-approved) | `test_fresh_anchor_rendered_controls_and_direct_credential_endpoints`; `test_fresh_known_pair_rendered_controls_and_direct_credential_endpoints`; `test_fresh_unknown_pair_rendered_controls_and_direct_credential_endpoints`; `test_stale_anchor_rendered_controls_and_direct_credential_endpoints`; `test_stale_known_pair_rendered_controls_and_direct_credential_endpoints`; `test_fresh_owner_sees_own_control_but_foreign_IDs_and_last_usable_admin_removal_preserve_state` |
 | AdminMaintenanceAccessTest / ADM-01/08/09/19 (July 26 admin eligibility/approved interfaces) | `test_eligible_admin_sees_the_supported_controls_and_unsupported_URLs_fail_without_changes`; `test_failed_blocklist_creation_exposes_the_existing_validation_alert_and_leaves_records_intact`; `test_anonymous_cannot_read_or_mutate_the_maintenance_records`; `test_member_cannot_read_or_mutate_the_maintenance_records`; `test_disabled_cannot_read_or_mutate_the_maintenance_records`; `test_pending_cannot_read_or_mutate_the_maintenance_records`; `test_rejected_cannot_read_or_mutate_the_maintenance_records`; `test_no_passkey_cannot_read_or_mutate_the_maintenance_records` |
 | Admin::TopicsControllerTest / cleanup retained richer method | `test_index_renders_inbox_rows_with_repair_entrypoint`; distinct `test_index_sorts_by_mentions_from_header_param`, `test_index_filters_by_lifecycle_status`, `test_updating_resident_impact_score_sets_override_timestamp` remain. Removed duplicate: `test_should_get_index`. |
+| SourceAccessContractTest / RES-07/09/11 (October 11 approved rules) | `test_open_sources_rosters_and_reporting_across_approved_anonymous_ineligible_and_crawler_readers`; `test_gated_sources_rosters_and_reporting_across_approved_anonymous_ineligible_and_crawler_readers`; `test_open_API_sources_and_reporting_require_an_eligible_owner_and_live_key`; `test_gated_API_sources_and_reporting_require_an_eligible_owner_and_live_key`; `test_gated_meeting_retains_all_item_and_speaker_identities_with_exact_body_limits_across_alternate_parameters`; `test_mode_and_eligibility_transitions_revalidate_the_same_client_before_exposing_sources_or_roster`; `test_alternate_HTML_formats_and_the_static_OG_preview_cannot_expose_source_metadata` |
+| SourceNavigationJourneysTest / RES-07/11 | `test_approved_reader_opens_the_actual_source_destination_before_losing_source_controls_on_logout` |
 
 ## Offline pipeline audit and integrated preservation
 
@@ -445,3 +447,12 @@ test/controllers/home_gating_test.rb` passed 121 / 526, with no failures/errors/
 The map retains 57 unique workflow rows and 69 exact acceptance rows. Broader
 57-workflow QA, #54–#58 variants, browser API keys #184, real delivery/AI/worker
 latency and Mac-side observations remain unverified. No recurring automation.
+
+After the normal documentation base refresh to `40fe988`, verbose targets above
+plus `test/integration/source_access_contract_test.rb` passed 128 / 1,150;
+source's seven runtime method names above were discovered in that run. Ruby
+lint remains 605 files clean. Representative allowed-first/withheld-byte/topic
+quantity/pagination-identity faults are repeated for this documentation
+candidate; all are restored before final CI. This PR's diff from master is
+21 Markdown files only, including the preserved original map. The original
+12 checkout files were re-compared byte-for-byte unchanged.

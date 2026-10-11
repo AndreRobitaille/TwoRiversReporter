@@ -33,13 +33,26 @@ class SessionsController < ApplicationController
     @token = params[:token].to_s
     if request.post?
       consume_magic_link!
+    elsif MagicLink.expired_sign_in_link(@token)
+      render :expired_magic_link
     else
       redirect_to(new_public_session_path, alert: friendly_invalid_token_message) unless MagicLink.confirmable?(@token, purpose: "sign_in")
     end
   end
 
   def resend_expired_magic_link
-    redirect_to new_public_session_path, notice: "Check your email — we've sent you a message."
+    @token = params[:token].to_s
+    MagicLinks::ExpiredSignInRecovery.new(@token).call
+    redirect_to magic_link_public_session_path(token: @token), status: :see_other,
+      notice: "Check your email — we've sent you a message."
+  rescue MagicLink::InvalidToken
+    redirect_to new_public_session_path, alert: friendly_invalid_token_message
+  rescue MagicLinks::ExpiredSignInRecovery::Throttled
+    flash.now[:alert] = "A link was requested recently. Please wait before trying again."
+    render :expired_magic_link, formats: [ :html ], status: :too_many_requests
+  rescue LoopsDelivery::DeliveryError
+    flash.now[:alert] = "We couldn't send that message right now. Try again later."
+    render :expired_magic_link, formats: [ :html ], status: :service_unavailable
   end
 
   def destroy
