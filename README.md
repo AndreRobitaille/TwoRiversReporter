@@ -57,6 +57,7 @@ Full spec with SVG motif path data, component patterns, spacing scale, and CSS a
 |----------|---------|
 | [`CLAUDE.md`](CLAUDE.md) | AI coding agent instructions — architecture, conventions, commands |
 | [`docs/DEVELOPMENT_PLAN.md`](docs/DEVELOPMENT_PLAN.md) | Authoritative product spec and architectural constraints |
+| [`docs/application-map/README.md`](docs/application-map/README.md) | Application inventory, intended workflows, state transitions, and independent QA reference |
 | [`docs/superpowers/specs/2026-09-03-canonical-committee-rosters-design.md`](docs/superpowers/specs/2026-09-03-canonical-committee-rosters-design.md) | Committee roster authority, source precedence, and repair operations |
 | [`docs/plans/2026-03-28-atomic-design-system-spec.md`](docs/plans/2026-03-28-atomic-design-system-spec.md) | Visual design system — colors, typography, motifs, components |
 | [`docs/topics/TOPIC_GOVERNANCE.md`](docs/topics/TOPIC_GOVERNANCE.md) | Topic extraction, classification, and lifecycle rules |
@@ -74,7 +75,7 @@ bin/jobs                  # Start background job worker (separate terminal)
 - No SPA — server-rendered HTML everywhere
 - No microservices
 - No commenting system
-- No public user accounts
+- No automatic self-registration — member applications require admin approval
 
 ## License
 
