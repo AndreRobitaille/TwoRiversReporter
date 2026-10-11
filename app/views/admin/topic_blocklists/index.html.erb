@@ -1,5 +1,8 @@
 <% content_for(:title) { "Topic Blocklist - Admin" } %>
 
+<%= tag.div(flash[:notice], class: "flash flash--success") if flash[:notice] %>
+<%= tag.div(flash[:alert], class: "flash flash--danger") if flash[:alert] %>
+
 <div class="page-header">
   <div class="flex items-center justify-between">
     <h1 class="page-title">Topic Blocklist</h1>

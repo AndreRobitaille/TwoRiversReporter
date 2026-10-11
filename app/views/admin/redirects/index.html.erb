@@ -1,5 +1,8 @@
 <% content_for(:title) { "Redirects - Admin" } %>
 
+<%= tag.div(flash[:notice], class: "flash flash--success") if flash[:notice] %>
+<%= tag.div(flash[:alert], class: "flash flash--danger") if flash[:alert] %>
+
 <div class="page-header">
   <div class="flex justify-between items-center">
     <div>
