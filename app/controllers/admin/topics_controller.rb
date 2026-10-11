@@ -38,7 +38,7 @@ module Admin
 
       if @topic.source_notes_changed?
         if @topic.source_notes.present?
-          @topic.added_by = Current.user&.email
+          @topic.added_by = Current.user&.email_address
           @topic.added_at = Time.current
         else
           @topic.added_by = nil
