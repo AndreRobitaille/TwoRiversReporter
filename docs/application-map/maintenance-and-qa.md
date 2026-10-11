@@ -151,8 +151,8 @@ Never combine code coverage, workflow coverage and defect detection into one sco
 
 At the discovery baseline, local/GitHub CI ran application tests without browser coverage. Merged PR #177 adds an explicit `bin/rails test:system` step locally and in GitHub, Selenium/Capybara/Chrome setup and documented invocation. Current local `bin/ci` performs setup, application/browser tests, RuboCop, gem/importmap audits and Brakeman; GitHub runs application/browser tests against PostgreSQL and the lint/security jobs. Historical V-11 records the original absence. Exact current-head discovery/failure/restoration evidence is in the overnight audit.
 
-Adding a browser suite later requires deliberately choosing its harness and CI
-invocation and proving discovery; a new file alone is not evidence it runs.
+Extending browser coverage requires using the documented [journey harness](../testing/browser-journeys.md)
+and proving CI discovery; a new file alone is not evidence it runs.
 Repository changes to Ruby/model/job/service code require targeted Minitest and
 `bin/rubocop`. Multi-stage changes require preservation evidence at each boundary.
 This documentation change ran only the checks listed in [README.md](README.md).
