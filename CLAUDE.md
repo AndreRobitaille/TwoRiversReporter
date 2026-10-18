@@ -25,6 +25,7 @@ If guidance overlaps, follow this order:
 
 ## Before Changing X, Read Y
 
+- Any behavior change or test review → `docs/application-map/README.md`, `docs/application-map/maintenance-and-qa.md`, affected workflow IDs, and their binding product/specialized requirements
 - Topic extraction / triage / summaries / lifecycle → `docs/topics/TOPIC_GOVERNANCE.md`
 - UI, CSS, components, themes → `docs/plans/2026-03-28-atomic-design-system-spec.md`
 - Meeting/topic behavior or recent feature details → relevant spec in `docs/superpowers/specs/`
@@ -70,13 +71,45 @@ Standard Rails and Omakase invocations (`bin/setup`, `bin/dev`, `bin/jobs`, `bin
 | Backfill agenda-only preview summaries | `bin/rails agenda_previews:backfill` |
 | Import local SRT files | `bin/rails "transcripts:import[/path/to/srt/files]"` |
 
-CI (`bin/ci` / `config/ci.rb`) runs setup, application tests, RuboCop, bundler-audit, importmap audit, and Brakeman. GitHub CI runs the application tests against PostgreSQL and installs libvips for real image-variant coverage.
+CI (`bin/ci` / `config/ci.rb`) runs setup, application tests, browser journeys (`bin/rails test:system`), RuboCop, bundler-audit, importmap audit, and Brakeman. GitHub CI runs application and browser tests against PostgreSQL and installs libvips for real image-variant coverage. `bin/rails test` alone does not run browser journeys. Run application and browser suites serially against each test database; see [browser journey setup](docs/testing/browser-journeys.md).
 
 When host binding matters for local development, prefer `0.0.0.0` over `localhost`; the dev machine is accessed remotely.
 
 `bin/rails og:generate` requires Chromium (`chromium`, `chromium-browser`, or `google-chrome` on `PATH`) and optionally `pngquant` for PNG compression. On Arch: `sudo pacman -S chromium pngquant`. The task renders `app/views/og/default.html.erb` to a temp file, screenshots it at 1200×630, writes `public/og-image.png`, and cleans up. Only rerun when the OG design changes.
 
 ## Verification Expectations
+
+Behavioral verification is required alongside development TDD for every behavior
+change. Passing implementation tests alone is insufficient. Read the
+[application map](docs/application-map/README.md) and follow the
+[behavioral QA procedure](docs/application-map/maintenance-and-qa.md).
+
+1. Derive acceptance from binding requirements and the user task before inspecting
+   implementation/test assumptions. Identify affected workflow IDs and relevant
+   roles, access modes, starting states, failure paths, representations, and
+   downstream transitions. Keep intended contracts separate from observations;
+   resolve conflicting contracts before changing behavior.
+2. Execute the complete affected task across the risky boundary. Use browsers for
+   visible controls, Turbo/Stimulus, CSRF/cookies, and native credentials; HTTP for
+   authorization and persistent state; deterministic jobs/services for data stages.
+   Assert outcomes, persisted state, and later-request behavior where applicable.
+   Prove allowed content/access before denial checks. External transport/provider
+   mocks must not bypass the boundary being verified; disclose simulated portions.
+3. For new or materially changed behavioral assertions, demonstrate representative
+   defect detection locally: clean passing baseline → one bounded fault → intended
+   assertion fails → restore → rerun to green. Boot/syntax failures do not count.
+   Preserve unique defect detection when simplifying tests.
+4. Confirm runner discovery/execution and record exact revision/environment,
+   commands, assertions, skips, and limits in affected map/evidence entries. Keep
+   implementation coverage, workflow coverage, and demonstrated defect detection
+   separate. Independently review expectations against requirements; agreement
+   between implementation and its tests, or another agent, does not prove correctness.
+   Report unresolved variants rather than marking them verified.
+
+Documentation-only changes require link/anchor and consistency checks, not new
+application tests. Use verification proportionate to the affected behavior;
+production data copying, real email delivery, paid AI calls, and deployment
+still require their existing authorizations.
 
 - Ruby/model/job/service changes: run targeted Minitest files and `bin/rubocop`.
 - Prompt changes: run local prompt validation; do not treat prod `prompt_templates:populate` as a substitute for verification.

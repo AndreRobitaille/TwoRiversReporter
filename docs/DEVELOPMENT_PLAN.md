@@ -580,26 +580,27 @@ analysis but is distinguished from document content in the prompt.
 
 ### Home
 
-Two topic headline cards in a responsive grid:
+The approved April 10 newspaper homepage supersedes the earlier What Happened /
+Coming Up cards and weekly meeting tables. Top Stories and Wire entries link to
+the topic they describe. Next Up links to the upcoming council meeting or work
+session. Browse All Topics and All Meetings remain direct escape links.
 
-- **What Happened** (left, cool-themed) — Topics with recent motions or
-  status events (past 30 days, impact ≥ 2). Uses `TopicBriefing.headline`
-  (backward-looking).
-- **Coming Up** (right, warm-themed) — Topics appearing in future meetings
-  (impact ≥ 3). Uses `TopicBriefing.upcoming_headline` (forward-looking).
-  Falls back to `topic.description` when no upcoming headline exists.
-- **Meeting diversity filter** — "Coming Up" caps at 2 topics per upcoming
-  meeting to prevent one meeting's related topics from dominating the card.
-  Over-fetches 15 candidates, filters to 5.
-
-Below the cards:
-- Upcoming meetings (grouped by week, next 30 days)
-- Recently completed meetings (grouped by week, past 14 days)
+Selection uses resident impact then recency, with the thresholds described
+above. See `docs/superpowers/specs/2026-04-10-homepage-redesign-design.md` for
+zone layout, navigation and empty-state intent; the Generated Civic Images
+section governs current image/description treatment. Historical designs remain
+in the repository. Owner clarification, October 11, 2026 (#171): preserve the
+quiet message for no top stories, omit empty Wire/More Stories, and keep Next
+Up and broad navigation visible.
 
 ### Topic Page (Primary Lens)
 
-Fixed layout, inverted pyramid — every section always visible. Empty sections
-show contextual messages instead of hiding.
+Inverted pyramid with the adaptive per-section visibility matrix in
+`docs/superpowers/specs/2026-04-10-topic-page-overhaul-design.md` (Section
+Visibility Rules Summary). That specialized matrix supersedes the earlier
+all-sections-visible description. Missing Watch/Story text or linked decisions
+hides the relevant section; Coming Up can show the typical-committee fallback.
+Record remains visible, with a contextual empty state for a topic without history.
 
 | # | Section | Data Source |
 |---|---------|-------------|
@@ -616,8 +617,11 @@ without `generation_data` (e.g., `headline_only` tier).
 
 ### Meeting Page
 
-Fixed layout, inverted pyramid — every section always visible. Empty
-sections show contextual messages instead of hiding.
+Inverted pyramid with the current conditional sections and legacy/agenda-only
+branches preserved (owner clarification, October 11, 2026, #171). The section
+catalog below does not require every section to render for every meeting.
+Structured Public Input retains its empty message; empty highlights/items
+and absent or legacy reporting keep their existing conditional presentation.
 
 | # | Section | Data Source |
 |---|---------|-------------|
@@ -910,7 +914,9 @@ skill. None of that is duplicated here.
 The system must:
 
 - Never fabricate decisions or votes
-- Always link to official documents
+- Link to official documents for allowed readers; gated anonymous meeting pages
+  retain disabled source labels with no source URLs, per the owner-approved
+  July 24 public-access specification (October 11 clarification, #172).
 - Remain usable if AI fails
 - Be transparent about extraction quality
 - Preserve long-term civic memory
@@ -923,6 +929,12 @@ The site is live at `https://tworiversmatters.com`, deployed via Kamal 2
 to a Hetzner VPS. See `CLAUDE.md` for full infrastructure details.
 
 ### Current Status (as of 2026-04-08)
+
+The following status and suggested schedule are historical. Current repository
+configuration declares `Scrapers::DiscoverMeetingsJob` daily at 11pm in
+`config/recurring.yml`; this establishes configured intent, not proof of live
+worker execution. Verify runtime separately when production inspection is
+authorized. The overnight workflow audit makes no production scheduling changes.
 
 The production server runs the full application: public-facing pages,
 admin interface, and Solid Queue job processing (in-process via Puma).

@@ -37,7 +37,7 @@ Public application is a two-step verified flow:
 6. Admins receive batched transactional email notifications for completed applications, no more than once per hour.
 7. Admins review applications under `/admin/users` or a dedicated pending applications view.
 8. Approval activates the user, stores the reviewing admin's decision reason, and automatically sends an approval/sign-in email with a time-limited magic link.
-9. If that approval/sign-in magic link expires, the expired-link page offers a `send me a fresh link` action for that account/email. The user should not have to restart from the normal sign-in page.
+9. If that approval/sign-in magic link expires, the expired-link page offers a `send me a fresh link` action for that account/email while the unused expired record still exists. The user should not have to restart from the normal sign-in page during that window. Owner clarification, October 11, 2026 (#173): keep the July 25 cleanup unchanged; after cleanup removes the record, this recovery path is unavailable and the ordinary sign-in flow remains available. Do not retain expired records longer or look up accounts from unknown tokens.
 10. Rejection keeps or marks the account as rejected/disabled so the email cannot silently reapply without admin awareness. It stores the reviewing admin's decision reason and sends a denial notice containing that exact reason. Admins may decide an application before the applicant completes the full form.
 
 Application data should live in a separate `membership_applications` table rather than directly on `users`. This keeps authentication state focused on accounts while preserving application details, status, and review history.
