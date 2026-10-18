@@ -11,8 +11,8 @@ Detailed layout and data-flow notes for the resident-facing pages. The design sp
 
 The homepage uses a newspaper-style inverted pyramid layout. Four zones, top to bottom:
 
-1. **Top Stories (1-2 items)**: Highest-impact topics with recent activity. Full cards with topic name, description, briefing headline, meeting reference, "Meeting details →" button. Uses `_top_story.html.erb` partial.
-2. **The Wire (4 cards + 6 rows)**: Next tier by impact. Mid-tier cards in 2-col grid (`_wire_card.html.erb`), compact rows below (`_wire_row.html.erb`). Cards link to meetings; rows link to topics.
+1. **Top Stories (1-2 items)**: Highest-impact topics with recent activity. Cards link to the topic page, with a meeting reference as context. Uses `_top_story.html.erb` partial; current image/description treatment follows the Development Plan's Generated Civic Images section.
+2. **The Wire (4 cards + 6 rows)**: Next tier by impact. Mid-tier cards in 2-col grid (`_wire_card.html.erb`), compact rows below (`_wire_row.html.erb`). Both cards and rows link to topics.
 3. **Next Up (1-2)**: Next council meeting and/or work session. Calendar-style date slabs with terra-cotta (council) or teal (work session) coloring. Uses `_next_up.html.erb`.
 4. **Escape Hatches**: "Browse All Topics →" and "All Meetings →" buttons.
 
@@ -22,7 +22,7 @@ The homepage uses a newspaper-style inverted pyramid layout. Four zones, top to 
 
 **CSS**: `app/assets/stylesheets/home.css` — homepage-specific styles. Three visual tiers with decreasing card weight. Atomic motifs (starburst, diamond dividers, atom markers). Explicit click affordances on all interactive elements.
 
-**Known issue**: Top story and wire card links go to meeting pages, which may have thin content (no minutes/transcript). Plan to switch to topic page links once topic pages are improved (see #63, #76, #89).
+**Navigation contract**: Top Stories and Wire entries go to topic pages; Next Up goes to meeting pages. This is specified by the approved April 10 homepage redesign, not inferred solely from current links.
 
 **Design spec**: `docs/superpowers/specs/2026-04-10-homepage-redesign-design.md`
 
@@ -60,11 +60,16 @@ The topic show page (`topics/show.html.erb`) uses an **editorial longform layout
 
 **Remaining issues:**
 - **Coming Up empty most of the time** — agendas not published far in advance. Fallback shows typical committee, but no scheduled date.
-- **Homepage link targets still go to meetings** — can switch to topic page links now that topic pages are credible, but that's a separate change.
+- **Empty-state expectations** — use the topic design's Section Visibility Rules Summary. The October 11 owner clarification (#171) preserves conditional meeting sections and legacy/agenda-only branches.
 
 ## Meeting Show Page
 
-The meeting show page (`meetings/show.html.erb`) uses a **fixed inverted-pyramid layout** — all sections always render, with empty state messages (`.section-empty`) when data is absent. Section order: Header → Headline → Highlights → Public Input → Agenda Items → Topics → Documents.
+The meeting show page (`meetings/show.html.erb`) uses an inverted pyramid with
+conditional sections and legacy/agenda-only branches. Preserve that behavior
+per the October 11 owner clarification (#171); do not force every named section
+or empty message into every variant. Structured Public Input keeps its empty
+state. Available section order: Header → Headline → Highlights → Public Input
+→ Agenda Items → Topics → Documents.
 
 **Structured JSON rendering:** Meeting summary content renders from `MeetingSummary.generation_data` (single-pass structured JSON from `analyze_meeting_content`) instead of two-pass markdown. Helper methods in `MeetingsHelper` extract fields: `meeting_headline`, `meeting_highlights`, `meeting_public_input`, `meeting_item_details`, `decision_badge_class`. The `content` (markdown) field is a fallback for meetings without `generation_data`, rendered in `.meeting-legacy-recap`.
 

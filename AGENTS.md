@@ -36,6 +36,7 @@ Don't copy production data without Andre's yes. On a deploy he asked for, still
 take the playbook's database dump before a destructive migration.
 
 ## Before Changing X, Read Y
+- Any behavior change or test review → `docs/application-map/README.md`, `docs/application-map/maintenance-and-qa.md`, affected workflow IDs, and their binding product/specialized requirements
 - Topic extraction / triage / summaries / lifecycle → `docs/topics/TOPIC_GOVERNANCE.md`
 - UI, CSS, components, themes → `docs/plans/2026-03-28-atomic-design-system-spec.md`
 - Meeting/topic behavior or recent feature details → relevant spec in `docs/superpowers/specs/`
@@ -55,15 +56,26 @@ take the playbook's database dump before a destructive migration.
 - Lint: `bin/rubocop`
 - Local CI: `bin/ci`
 
-CI note: `bin/ci` runs setup, application tests, RuboCop, bundler-audit, importmap audit, and Brakeman. GitHub CI also runs application tests against PostgreSQL.
+CI note: `bin/ci` runs setup, application tests, browser journeys (`bin/rails test:system`), RuboCop, bundler-audit, importmap audit, and Brakeman. GitHub CI runs application and browser tests against PostgreSQL. Run ordinary and browser suites serially against each test database.
 
 ## Verification Rules
+- Behavioral verification is required alongside development TDD for every behavior change. Passing implementation tests alone is insufficient; follow `docs/application-map/maintenance-and-qa.md`.
+- Derive acceptance from binding requirements and the user task before inspecting implementation/test assumptions. The application map is a derived reference; do not turn observed behavior into a requirement. Resolve conflicting contracts before changing behavior.
+- Identify affected workflow IDs and relevant roles, access modes, starting states, failure paths, representations, and downstream transitions. Exercise the complete affected task across the risky boundary: browser for visible controls/Turbo/CSRF/cookies/native credentials, HTTP for authorization and persisted state, deterministic jobs/services for data stages.
+- Assert the meaningful outcome, persisted state, and later-request behavior where applicable. Prove allowed content/access before denial checks. Mocks may replace external transport/providers, but must not bypass the boundary being verified; disclose simulated or unverified portions.
+- For new or materially changed behavioral assertions, prove representative defect detection in an isolated local test environment: clean passing baseline → one bounded fault → intended assertion fails → restore → rerun to green. Boot/syntax failures do not count. Preserve unique defect detection when simplifying tests.
+- Confirm the actual runner discovers and executes the relevant tests; record exact revision/environment, commands, assertions, skips, and limits. Keep implementation coverage, workflow coverage, and demonstrated defect detection separate. Review expectations independently against requirements; implementation/test agreement or another agent's agreement does not prove correctness. Update affected map/evidence entries; report unresolved variants rather than marking them verified.
 - Ruby/model/job/service changes: run targeted Minitest files and `bin/rubocop`.
 - Multi-stage AI/data changes: compare counts and distinctive content at every major upstream → downstream boundary; polished final output is not proof that data survived.
 - Absence/gating tests: first prove the content is present for an allowed user, then remove the guard and confirm the test fails. Test quantity and identity caps separately from canary-text sweeps.
 - Ruby syntax-only checks use `ruby -c path.rb`; never use `load` for syntax checking because it executes the file.
 - After `bin/rails db:migrate`, run `bin/rubocop -A db/schema.rb` and inspect its diff so schema formatting noise does not hide the real migration.
 - Before claiming completion, state which commands and checks actually ran.
+
+Documentation-only changes require link/anchor and consistency checks, not new
+application tests. Use verification proportionate to the affected behavior;
+production data copying, real email delivery, paid AI calls, and deployment
+still require their existing authorizations.
 
 ## Repo Rules
 - Single Rails app; avoid introducing new services/frameworks.
@@ -84,3 +96,8 @@ CI note: `bin/ci` runs setup, application tests, RuboCop, bundler-audit, importm
 
 ## More Detail
 For architecture, domain models, deployment notes, and workflow caveats, read `CLAUDE.md`.
+
+For application interfaces, roles, workflow transitions, and the behavioral QA
+reference, see `docs/application-map/README.md`. The map distinguishes intended
+behavior from implementation observations and unresolved verification; binding
+product and specialized specifications remain authoritative.

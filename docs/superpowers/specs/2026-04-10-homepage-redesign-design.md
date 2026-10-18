@@ -24,7 +24,10 @@ Casually interested residents, 35+, many over 60. They arrive from Facebook neig
 
 ## Information Architecture
 
-Four zones in strict inverted-pyramid priority order. All zones always render (empty states when no data).
+Four zones in strict inverted-pyramid priority order, subject to the Empty
+states rules below. Owner clarification, October 11, 2026 (#171): preserve
+current homepage behavior. No top stories shows the quiet editorial message;
+empty Wire/More Stories is omitted; Next Up and broad navigation remain visible.
 
 ### Zone 1 — Top Stories (1-2 items)
 
