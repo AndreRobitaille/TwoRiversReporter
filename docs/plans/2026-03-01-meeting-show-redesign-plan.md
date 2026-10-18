@@ -1,5 +1,12 @@
 # Meeting Show Page Redesign — Implementation Plan
 
+**Historical implementation plan.**
+
+The October 11, 2026 owner clarification (#171) preserves the current
+conditional meeting sections and legacy/agenda-only rendering. Its fixed-section
+examples below are historical implementation proposals, not current acceptance
+criteria. See the clarification in `2026-03-01-meeting-show-redesign-design.md`.
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Replace the meeting show page's wall-of-text layout with structured JSON rendering (inverted pyramid: headline → highlights → public input → unified agenda item cards → topic cards → documents) and drop the two-pass AI summarization to a single pass.
