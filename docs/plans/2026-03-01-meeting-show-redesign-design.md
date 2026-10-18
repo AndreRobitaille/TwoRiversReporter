@@ -29,7 +29,11 @@ discussed, and what was decided — in that order, without scrolling.
 ### Principle: Inverted Pyramid + Unified Agenda Items
 
 Same principle as the topic show page redesign: most important
-information first, all sections always visible. Additionally, meeting
+information first. Owner clarification, October 11, 2026 (#171): preserve the
+current conditional meeting sections and legacy/agenda-only branches. This
+supersedes this design's original all-sections-visible/mandatory-empty-state
+proposal; the section catalog below describes available sections, not a
+requirement to render every one. Additionally, meeting
 content is organized by agenda item — discussion summaries, public
 hearing input, and votes are shown inline with the item they belong to,
 not in separate sections.
@@ -47,6 +51,11 @@ not in separate sections.
 | 7 | Documents | `meeting.meeting_documents` | Download links. |
 
 ### Empty State Messages
+
+Historical proposal. These messages are not mandatory for every variant.
+Current structured rendering retains Public Input's empty state, while empty
+highlights/items and unavailable legacy reporting use their existing branches.
+Do not add headings or messages to force uniformity across those branches.
 
 | Section | Message |
 |---------|---------|
@@ -333,8 +342,8 @@ After implementation:
    item_details
 2. Re-summarize a subcommittee meeting (e.g., Public Works 130) —
    verify smaller meetings produce adequate detail
-3. Check the meeting show page renders all sections with proper
-   empty states for a meeting with no summary yet
+3. Check the meeting show page preserves conditional sections and the applicable
+   empty/legacy/agenda-only branches for a meeting with no summary yet
 4. Check fallback: a meeting with old markdown `content` but no
    `generation_data` should render the prose block
 5. Compare editorial quality of one-pass item summaries against the
