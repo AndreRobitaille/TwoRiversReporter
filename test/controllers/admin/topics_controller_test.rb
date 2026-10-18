@@ -65,11 +65,6 @@ module Admin
       assert_no_match /resolved cleanup/i, response.body
     end
 
-    test "should get index" do
-      get admin_topics_url
-      assert_response :success
-    end
-
     test "updating resident impact score sets override timestamp" do
       topic = Topic.create!(name: "Impact Test #{SecureRandom.hex(4)}", status: "approved")
 

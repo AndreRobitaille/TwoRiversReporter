@@ -22,7 +22,7 @@ module Documents
       raise ImportError, "Uploaded SRT file is missing" unless @srt_file&.attached?
 
       @meeting.with_lock do
-        srt_content = @srt_file.download
+        srt_content = @srt_file.download.force_encoding(Encoding::UTF_8)
         plain_text = TranscriptDownloader.parse_srt(srt_content)
         raise ImportError, "Uploaded SRT did not contain transcript text" if plain_text.blank?
 

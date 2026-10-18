@@ -89,16 +89,33 @@ This is deliberate. Toggling `before_action` chains at runtime is fragile, and i
 |---|---|---|
 | Home | Topic names, meeting names, dates and counts in full. Every AI-generated card headline/description (`.story-headline`, `.wire-headline`, `.list-desc`) faded at `HomeHelper::GATED_CARD_HEADLINE_CHARS` (38 — roughly six words) | per-card inline sign-in note immediately after the faded text (no page-level gate box) |
 | Meetings index | Full cards — date slab, committee, topic pills, image. `.meetings-card-headline` faded at ~90 chars | per-card sign-in note below the faded headline (no page-level gate box) |
-| Meeting show | Header, committee, date, source banner, headline, first ~240 chars of summary, fading | replaces everything below |
+| Meeting show | Header, committee, date, source banner; headline up to 100 characters; all structured highlights/items/speakers with bodies up to 30 characters; full item titles and speaker identities. Source chips and Share disabled, with no source hrefs or share payload | before the shortened reporting sections |
 | Topics index | First two cards only; `.topics-card-headline` faded | replaces the remaining list |
 | Topic show | Header, dek, **What to Watch** in full | after What to Watch |
 | Committees index | Everything | none |
-| Committee show | Everything above **What They've Been Working On** | at that heading; section contents withheld |
+| Committee show | Committee header/description; no roster heading, roster identities or activity contents | at **What They've Been Working On** |
 | Member show | Everything above **Voting Record** | at that heading; contents withheld |
 | Search results (both) | Same card rules as the parent index | inline |
 | About | Unchanged — see Out of Scope | — |
 
-The two character counts are constants, tuned once they are visible against real content.
+**Owner clarification, October 11, 2026 (#172): preserve the current signed-out
+pages.** Meeting limits are `MeetingsHelper::GATED_LEDE_CHARS = 100` and
+`GATED_ITEM_BODY_CHARS = 30`, cut at word boundaries. There is no quantity or
+identity cap on structured meeting highlights, agenda item titles or speakers:
+every supplied item is retained, in order. Votes/tallies, decision badges,
+roll calls, hearing lines, citations and topic links are wholly withheld.
+Minutes/Agenda/Packet/Recording/City chips retain their labels but emit zero
+source URLs anywhere in the meeting HTML. Share has no attributes or payload.
+Committee rosters have zero visible identities in gated anonymous responses.
+Approved readers and verified crawlers retain complete source links, rosters
+and reporting. Eligible authenticated API owners retain the supported JSON
+source metadata; absent/revoked keys or ineligible owners do not gain access.
+
+The topics index remains capped at two cards per listing/search response.
+Later pages of the same query must retain those identities; searching public
+topic names remains allowed, while withheld briefing text must not influence
+anonymous search matches. This is not a global ban on discovering topic names.
+The separate possessed-blob URL decision remains in #154.
 
 ### Search stays open
 
