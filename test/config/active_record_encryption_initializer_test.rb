@@ -21,7 +21,6 @@ class ActiveRecordEncryptionInitializerTest < ActiveSupport::TestCase
 
   test "derives stable encryption keys from secret_key_base outside production" do
     secret = Rails.application.secret_key_base || ENV["SECRET_KEY_BASE"] || "development_secret_fallback_1234567890"
-    # The initializer runs before Rails switches KeyGenerator's default digest to SHA256.
     generator = ActiveSupport::KeyGenerator.new(secret, hash_digest_class: OpenSSL::Digest::SHA1)
 
     assert_equal encoded_key(generator, "active_record_encryption.primary_key"), @app_encryption.primary_key
