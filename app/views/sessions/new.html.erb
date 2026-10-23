@@ -1,4 +1,5 @@
 <% content_for(:title) { "Sign in" } %>
+<% content_for(:head) { tag.meta(name: "robots", content: "noindex") } %>
 
 <div class="auth-panel">
   <div class="auth-mark"><%= render "shared/starburst", size: 56 %></div>
