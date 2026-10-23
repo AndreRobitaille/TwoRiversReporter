@@ -23,7 +23,20 @@ establish that these outcomes actually occur in a browser.
   malformed input; no account-specific browser response or usable token in HTML.
 - **Indexing:** the public sign-in page emits `<meta name="robots" content="noindex">`.
   The homepage and other public pages stay indexable. `robots.txt` and the sitemap
-  are unchanged, and sign-in eligibility is unchanged.
+  are unchanged, and sign-in eligibility is unchanged. Authenticated step-up at
+  `/reauthentication/new` keeps the layout default. Anonymous requests redirect
+  to `/session/new`.
+- **Check:** `SeoMarkupTest#test_sign-in_screens_are_noindex_and_the_home_page_is_not`
+  gets `/session/new`, a confirmable magic link, and an expired sign-in link, and
+  requires one `noindex` meta on each. The same example then gets `/` and requires
+  zero `meta[name='robots']`. 2026-10-23, Ruby 4.0.7, PostgreSQL
+  `two_rivers_reporter_test`, revision `6dc9d69`:
+  `bin/rails test test/controllers/seo_markup_test.rb test/controllers/sessions_controller_test.rb`
+  (31 runs, 261 assertions, 0 failures, 0 skips) and
+  `bin/rubocop test/controllers/seo_markup_test.rb` (clean). Removing the sign-in
+  meta failed that example on `/session/new` (found 0). Adding the same meta to the
+  homepage failed it on `/` (found 1). Both faults were restored and the same two
+  files passed again. No browser pass; the integration test renders the layout.
 - **Observed:** [SessionsController](../../app/controllers/sessions_controller.rb)
   POST `/session`; [TransactionalEmail](../../app/services/transactional_email.rb),
   [SignInAttempt](../../app/models/sign_in_attempt.rb);
