@@ -171,6 +171,7 @@
     <%# === Key Decisions === %>
     <% highlights = meeting_highlights(gd) %>
     <% items = meeting_item_details(gd) %>
+    <% rendered_topic_ids = [] %>
     <% if highlights.any? %>
       <section class="meeting-article-section">
         <div class="home-section-header">
@@ -297,15 +298,29 @@
                 <% matched_agenda_item.topics.approved
                      .sort_by { |t| [-(t.resident_impact_score || 0)] }
                      .each do |topic| %>
-                  <%= link_to topic_path(topic), class: "meeting-topic-door" do %>
-                    <span class="meeting-topic-door-name"><%= topic.name %></span>
-                    <span class="meeting-topic-door-cta">Full history →</span>
-                  <% end %>
+                  <% rendered_topic_ids << topic.id %>
+                  <%= render "meetings/topic_door", topic: topic %>
                 <% end %>
               </div>
             <% end %>
           </div>
         <% end %>
+      </section>
+    <% end %>
+
+    <% remaining_topics = (@ongoing_topics + @new_topics).reject { |topic| rendered_topic_ids.include?(topic.id) } %>
+    <% if remaining_topics.any? %>
+      <section class="meeting-article-section meeting-related-topics">
+        <div class="home-section-header">
+          <%= render "shared/atom_marker" %>
+          <h2 class="section-label">Related Topics</h2>
+          <span class="section-line"></span>
+        </div>
+        <div class="meeting-item-topics">
+          <% remaining_topics.sort_by { |topic| [-(topic.resident_impact_score || 0), topic.name] }.each do |topic| %>
+            <%= render "meetings/topic_door", topic: topic %>
+          <% end %>
+        </div>
       </section>
     <% end %>
     <% end %>

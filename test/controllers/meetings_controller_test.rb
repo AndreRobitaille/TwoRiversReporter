@@ -241,13 +241,45 @@ class MeetingsControllerTest < ActionDispatch::IntegrationTest
       summary_type: "minutes_recap",
       generation_data: {
         "headline" => "Test",
-        "item_details" => [ { "agenda_item_title" => "TIF Discussion", "summary" => "Discussed TIF" } ]
+        "item_details" => [
+          { "agenda_item_title" => "TIF Discussion", "summary" => "Discussed TIF" },
+          { "agenda_item_title" => "Sidewalk Plan", "summary" => "Discussed sidewalks" }
+        ]
       }
     )
     get meeting_url(@meeting)
     assert_response :success
 
-    assert_select ".meeting-topic-door"
+    assert_select ".meeting-topic-door", count: 2
+    assert_select ".meeting-related-topics", count: 0
+  end
+
+  test "show retains approved topic navigation when communications have no agenda detail card" do
+    SiteSetting.create!(access_mode: "gated", singleton_guard: 0)
+    MeetingSummary.create!(meeting: @meeting, summary_type: "minutes_recap", generation_data: {
+      "headline" => "Council received resident concerns",
+      "public_input" => [ { "type" => "communication", "speaker" => "Councilmember",
+        "summary" => "Residents raised concerns about the sidewalk proposal." } ],
+      "item_details" => [ { "agenda_item_title" => "TIF Discussion", "summary" => "Discussed TIF" } ]
+    })
+
+    get meeting_url(@meeting)
+    assert_response :success
+    assert_select ".meeting-topic-door[href=?]", topic_path(@ongoing_topic), count: 1
+    assert_select ".meeting-related-topics .meeting-topic-door[href=?]", topic_path(@new_topic), count: 1
+    assert_select ".meeting-related-topics a[href=?]", topic_path(@ongoing_topic), count: 0
+    assert_select "a[href=?]", topic_path(@blocked_topic), count: 0
+
+    get topic_url(@new_topic)
+    assert_response :success
+    get meeting_url(@meeting)
+    assert_select ".meeting-related-topics a[href=?]", topic_path(@new_topic), count: 1
+
+    reset!
+    get meeting_url(@meeting)
+    assert_response :success
+    assert_select ".meeting-related-topics", count: 0
+    assert_select ".meeting-topic-door", count: 0
   end
 
   test "show excludes structured section topics from substantive topic display" do

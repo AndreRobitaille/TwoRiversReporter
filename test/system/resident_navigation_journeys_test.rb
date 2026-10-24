@@ -25,6 +25,32 @@ class ResidentNavigationJourneysTest < ApplicationSystemTestCase
     assert_resident_navigation
   end
 
+  test "member follows a communications topic without an agenda detail card" do
+    SiteSetting.create!(access_mode: "gated", singleton_guard: 0)
+    @topic.update!(name: "city administrator conduct and council oversight")
+    MeetingSummary.create!(meeting: @meeting, summary_type: "agenda_preview", generation_data: {
+      "headline" => "Council will hear resident concerns",
+      "public_input" => [], "item_details" => []
+    })
+    sign_in_by_email(User.create!(email_address: "communications-reader@example.com", status: "active"))
+
+    visit meeting_path(@meeting)
+    page.driver.browser.manage.window.resize_to(390, 844)
+    assert_selector ".meeting-related-topics a[href='#{topic_path(@topic)}']", count: 1
+    assert_operator page.evaluate_script("document.documentElement.scrollWidth"), :<=, 390
+    page.execute_script("document.querySelector('.meeting-related-topics').scrollIntoView({block: 'center'})")
+    page.save_screenshot(Rails.root.join("tmp/screenshots/meeting-topic-fallback-mobile.png"))
+    find(".meeting-related-topics a[href='#{topic_path(@topic)}']").click
+    assert_current_path topic_path(@topic)
+    assert_selector "h1", text: /#{Regexp.escape(@topic.name)}/i
+    page.go_back
+    assert_current_path meeting_path(@meeting)
+    page.refresh
+    assert_selector ".meeting-related-topics a[href='#{topic_path(@topic)}']", count: 1
+    page.driver.browser.manage.window.resize_to(1280, 900)
+    page.save_screenshot(Rails.root.join("tmp/screenshots/meeting-topic-fallback-desktop.png"))
+  end
+
   private
 
     def assert_resident_navigation
