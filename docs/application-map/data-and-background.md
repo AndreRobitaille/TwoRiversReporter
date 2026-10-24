@@ -176,6 +176,14 @@ retained in prior meeting analyses.
 Validation is recorded in the
 [topic-context validation](../testing/2026-10-24-topic-context-validation.md).
 
+October 24 job-recovery follow-up: reference-only agenda title revisions retain
+item IDs and downstream links; substantive or conflicting references remain
+ambiguous. Automatic global triage is serialized, validates a strict response
+schema before applying decisions, permits one fresh response after malformed
+output, and skips identical completed input for one hour. Image failures retain
+provider diagnostics; permanent HTTP rejections bypass transient retries. See
+[behavioral and fault evidence](../testing/2026-10-24-background-job-recovery.md).
+
 ## BG-05 — Reconcile current rosters without rewriting attendance (P1)
 
 - **Start / data:** canonical council/manager/organization roster, manual override,

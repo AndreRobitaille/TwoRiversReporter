@@ -2,6 +2,20 @@ require "test_helper"
 
 module Agendas
   class ReconcileItemsTest < ActiveSupport::TestCase
+    test "different reference numbers do not equate otherwise identical child titles" do
+      meeting = Meeting.create!(starts_at: Time.current, detail_page_url: "https://example.com/different-reference")
+      parent = meeting.agenda_items.create!(number: "7.", title: "NEW BUSINESS", kind: "section", order_index: 1)
+      child = meeting.agenda_items.create!(number: "A.", title: "26-123 Harbor repairs", kind: "item", parent: parent, order_index: 2)
+      candidates = [
+        { number: "7.", title: "NEW BUSINESS", kind: "section", parent_key: nil, order_index: 1 },
+        { number: "A.", title: "26-124 Harbor repairs", kind: "item", parent_key: "7.:NEW BUSINESS", order_index: 2 }
+      ]
+      error = assert_raises(Agendas::ReconcileItems::AmbiguousMatchError) { Agendas::ReconcileItems.new(meeting: meeting, candidates: candidates).call }
+      assert_includes error.message, "different substantive title"
+      assert_equal "26-123 Harbor repairs", child.reload.title
+      assert_nil meeting.reload.agenda_structure_digest
+    end
+
     test "updates root and legacy-safe rows in place while preserving ids" do
       meeting = Meeting.create!(body_name: "City Council", meeting_type: "Regular", starts_at: Time.current, status: "parsed", detail_page_url: "http://example.com/reconcile-service")
       parent = meeting.agenda_items.create!(number: "7.", title: "ACTION ITEMS", kind: "section", order_index: 1)

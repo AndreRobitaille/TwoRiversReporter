@@ -13,7 +13,7 @@ class Topics::TriageToolDescriptionTest < ActiveSupport::TestCase
     triage_results = {
       "merge_map" => [],
       "approvals" => [
-        { "topic" => "test topic for triage", "confidence" => 0.95, "rationale" => "Substantive civic topic" }
+        { "topic" => "test topic for triage", "approve" => true, "confidence" => 0.95, "rationale" => "Substantive civic topic" }
       ],
       "blocks" => []
     }

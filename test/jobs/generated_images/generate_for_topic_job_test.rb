@@ -20,6 +20,37 @@ class GeneratedImages::GenerateForTopicJobTest < ActiveJob::TestCase
     assert_match(/GenerateForTopicJob skipped: config disabled/i, logged.first)
   end
 
+  test "permanent image rejection persists provider diagnosis without a network retry" do
+    service = Ai::OpenAiService.new
+    image_client = Object.new
+    image_client.define_singleton_method(:generate) do |**|
+      raise Faraday::BadRequestError.new("HTTP 400", status: 400,
+        body: { "error" => { "message" => "Invalid image size", "code" => "invalid_value" } },
+        headers: { "x-request-id" => "req-image-test" })
+    end
+    caught_error = nil
+    service.stub :build_generated_image_brief, { "civic_issue" => "Road repair", "composition" => "Empty road", "avoid" => "people" } do
+      service.instance_variable_get(:@client).stub :images, image_client do
+        Ai::OpenAiService.stub :new, service do
+          assert_no_enqueued_jobs do
+            begin
+              GeneratedImages::GenerateForTopicJob.perform_now(@topic.id, force: true)
+            rescue GeneratedImages::Generator::NonRetryableRequestError => error
+              caught_error = error
+            end
+          end
+        end
+      end
+    end
+    image = @topic.generated_images.sole.reload
+    assert caught_error, image.failure_reason
+    assert_equal "failed", image.status
+    assert_equal 1, image.retry_count
+    assert_includes image.failure_reason, "Invalid image size"
+    assert_includes image.failure_reason, "req-image-test"
+    assert_not image.file.attached?
+  end
+
   test "logs ineligible topic skip reason" do
     @topic.update!(resident_impact_score: 3)
     logged = []

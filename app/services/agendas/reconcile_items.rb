@@ -121,8 +121,8 @@ module Agendas
 
       if exact_parent.one?
         matched = exact_parent.first
-        if parent_id.present? && matched.kind.present? && matched.title != candidate[:title]
-          raise AmbiguousMatchError, "multiple agenda items match #{candidate.inspect}"
+        if parent_id.present? && matched.kind.present? && !same_item_title?(matched.title, candidate[:title])
+          raise AmbiguousMatchError, "agenda item #{matched.id} has a different substantive title: #{candidate.inspect}"
         end
 
         return exact_parent if parent_id.present? || matched.kind.present?
@@ -139,6 +139,17 @@ module Agendas
       end
 
       scope.none
+    end
+
+    def same_item_title?(existing, incoming)
+      return true if existing == incoming
+
+      # A source may add or remove its year/sequence reference after publication.
+      # Different references on both titles can identify different business.
+      reference = /\A\d{2}-\d{1,5}\s+/
+      return false if existing.match?(reference) == incoming.match?(reference)
+
+      existing.sub(reference, "") == incoming.sub(reference, "")
     end
 
     def candidate_key(candidate)

@@ -1,6 +1,41 @@
 require "test_helper"
 
 class Scrapers::ParseAgendaJobTest < ActiveJob::TestCase
+  test "reference-only title revision preserves agenda identity and downstream links through reruns" do
+    meeting = Meeting.create!(body_name: "City Council", starts_at: Time.current, detail_page_url: "https://example.com/reference-revision")
+    parent = meeting.agenda_items.create!(number: "8.", title: "ACTION ITEMS", kind: "section", order_index: 1)
+    item = meeting.agenda_items.create!(number: "A.", title: "Harbor repairs", kind: "item", parent: parent, order_index: 2)
+    topic = Topic.create!(name: "harbor repairs", status: "approved")
+    item.topics << topic
+    appearance = TopicAppearance.find_by!(topic: topic, meeting: meeting, agenda_item: item)
+    motion = meeting.motions.create!(agenda_item: item, description: "Approve repairs")
+    packet = meeting.meeting_documents.create!(document_type: "packet_pdf", source_url: "https://example.com/harbor.pdf")
+    item.meeting_documents << packet
+    doc = meeting.meeting_documents.create!(document_type: "agenda_html", source_url: "https://example.com/revised-agenda")
+    doc.file.attach(io: StringIO.new(<<~HTML), filename: "agenda.html", content_type: "text/html")
+      <section class="agenda-section">
+        <h2 class="section-header"><num>8.</num><span>ACTION ITEMS</span></h2>
+        <ol class="agenda-items"><li><div class="Section1">
+          <p><num>A.</num>26-123 Harbor repairs</p>
+          <p>Summary: Replace the damaged railing.</p>
+        </div></li></ol>
+      </section>
+    HTML
+
+    assert_enqueued_with(job: ExtractTopicsJob, args: [ meeting.id ]) { Scrapers::ParseAgendaJob.perform_now(meeting.id) }
+    assert_equal [ parent.id, item.id ], meeting.agenda_items.order(:order_index).pluck(:id)
+    assert_equal "26-123 Harbor repairs", item.reload.title
+    assert_equal "Replace the damaged railing.", item.summary
+    assert_equal [ topic.id ], item.topics.pluck(:id)
+    assert_equal [ packet.id ], item.meeting_documents.pluck(:id)
+    assert_equal item.id, appearance.reload.agenda_item_id
+    assert_equal item.id, motion.reload.agenda_item_id
+    assert_no_enqueued_jobs only: ExtractTopicsJob do
+      assert_equal :noop, Scrapers::ParseAgendaJob.perform_now(meeting.id)
+    end
+    assert_equal [ parent.id, item.id ], meeting.agenda_items.order(:order_index).pluck(:id)
+  end
+
   test "parses section headers as structural rows and child agenda items as substantive rows" do
     meeting = Meeting.create!(
       body_name: "Advisory Recreation Board Meeting",
