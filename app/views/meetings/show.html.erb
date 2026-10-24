@@ -2,9 +2,6 @@
 <% content_for(:title) { "#{meeting_name}, #{@meeting.starts_at&.strftime('%b %-d, %Y')} — Two Rivers, WI" } %>
 <% content_for(:description) { meeting_share_description(@meeting) } %>
 <% content_for(:og_type) { "article" } %>
-<% content_for(:head) do %>
-  <script type="application/ld+json"><%= raw json_escape(meeting_event_structured_data(@meeting).to_json) %></script>
-<% end %>
 
 <article class="meeting-article">
 

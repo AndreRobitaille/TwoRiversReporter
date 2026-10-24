@@ -816,6 +816,21 @@ sitemap and permits the supported reporting identities while excluding admin.
 Both public text files refresh after an hour with conditional revalidation;
 the production asset cache lifetime does not apply to these stable URLs.
 
+Search metadata reuses existing public content. Topic descriptions fall back
+to the public topic dek and the existing title-case formatter; briefing
+headlines remain available only to allowed audiences. Official profile titles
+and descriptions use the current office first, then the first displayed
+current voting membership (City Council first, otherwise alphabetical), with
+the page's existing role label. Ended/staff/non-voting memberships cannot
+supply a current title. These metadata rules do not change page headings,
+navigation, topic identity, or access tiers.
+
+The homepage declares the canonical site name in `WebSite` JSON-LD, and the
+publisher's `Organization` links the owner-confirmed Two Rivers Matters Facebook
+page with `sameAs`. Meeting pages omit incomplete `Event` data until reliable
+venue information and its on-page presentation have been reviewed. Removing
+invalid markup does not establish eligibility for Google's event features.
+
 ### Sign-in and access requests
 
 Access mode changes what an anonymous visitor is shown; it never changes

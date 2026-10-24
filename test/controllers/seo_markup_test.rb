@@ -138,7 +138,7 @@ class SeoMarkupTest < ActionDispatch::IntegrationTest
 
     nodes = css_select('script[type="application/ld+json"]').map { |node| JSON.parse(node.text) }
     assert_equal apex, nodes.find { |node| node["@type"] == "WebPage" }["url"]
-    assert_equal apex, nodes.find { |node| node["@type"] == "Event" }["url"]
+    assert_nil nodes.find { |node| node["@type"] == "Event" }
     assert_equal "https://#{WwwRedirect::APEX_HOST}/", nodes.find { |node| node["@type"] == "Organization" }["url"]
     assert_equal "https://#{WwwRedirect::APEX_HOST}/icon.png", nodes.find { |node| node["@type"] == "Organization" }["logo"]
   ensure
@@ -155,7 +155,7 @@ class SeoMarkupTest < ActionDispatch::IntegrationTest
     host! "www.example.com"
   end
 
-  test "organization and meeting event markup use only stored fields" do
+  test "organization identifies the confirmed profile while meeting markup omits an incomplete event" do
     set_access_mode("gated")
     get meeting_path(@meeting)
 
@@ -164,19 +164,16 @@ class SeoMarkupTest < ActionDispatch::IntegrationTest
     event = nodes.find { |node| node["@type"] == "Event" }
     paywall = nodes.find { |node| node["@type"] == "WebPage" }
 
-    assert_equal [ "@context", "@type", "description", "logo", "name", "url" ].sort, organization.keys.sort
+    assert_equal [ "@context", "@type", "description", "logo", "name", "sameAs", "url" ].sort, organization.keys.sort
     assert_equal "Two Rivers Matters", organization["name"]
     assert_equal "https://#{WwwRedirect::APEX_HOST}/", organization["url"]
     assert_equal "https://#{WwwRedirect::APEX_HOST}/icon.png", organization["logo"]
     assert_equal AccessHelper::DEFAULT_SITE_DESCRIPTION, organization["description"]
+    assert_equal [ "https://www.facebook.com/TwoRiversMatters" ], organization["sameAs"]
 
-    assert_equal [ "@context", "@type", "eventStatus", "name", "startDate", "url" ].sort, event.keys.sort
-    assert_equal "City Council", event["name"]
-    assert_equal "https://schema.org/EventScheduled", event["eventStatus"]
-    assert_equal @starts_at.iso8601, event["startDate"]
-    assert_equal "https://#{WwwRedirect::APEX_HOST}#{meeting_path(@meeting)}", event["url"]
-    assert_not_includes event.to_json, "two-rivers.org"
-    assert_not_includes event.to_json, "Council Chambers"
+    assert_nil event
+    assert_not_includes nodes.to_json, "two-rivers.org"
+    assert_not_includes nodes.to_json, "Council Chambers"
 
     assert_equal ".gated-content", paywall.dig("hasPart", "cssSelector")
     assert_equal false, paywall.dig("hasPart", "isAccessibleForFree")
@@ -184,11 +181,13 @@ class SeoMarkupTest < ActionDispatch::IntegrationTest
     assert_select "time.meeting-article-date[datetime='#{@starts_at.iso8601}']"
   end
 
-  test "a cancelled meeting event is marked cancelled" do
+  test "a cancelled meeting keeps its cancellation notice without an incomplete event" do
     @meeting.update!(status: "cancelled")
     get meeting_path(@meeting)
     event = css_select('script[type="application/ld+json"]').map { |node| JSON.parse(node.text) }.find { |node| node["@type"] == "Event" }
-    assert_equal "https://schema.org/EventCancelled", event["eventStatus"]
+    assert_nil event
+    assert_select ".meeting-article", text: /#{Regexp.escape(@meeting.cancellation_notice)}/
+    assert_select "meta[name='description'][content=?]", @meeting.cancellation_notice
   end
 
   test "index paywall markup does not name a section that the page never renders" do

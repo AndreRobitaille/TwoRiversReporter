@@ -76,6 +76,9 @@ unsettled in the [verification register](verification-register.md).
   [controller](../../app/controllers/topics_controller.rb). Actual sections adapt
   to available data. The April 10 topic design's detailed section-visibility
   matrix governs those expected variants; see [reviewed contracts](behavior-contracts.md).
+- **October 24 metadata review:** topic snippets use an allowed briefing headline,
+  then the public dek with the existing title casing. Visible headings and dates
+  are unchanged; see [scope and evidence](seo-review-2026-10-24.md).
 
 ## RES-05 — Find an upcoming or historical meeting (P1)
 
@@ -125,6 +128,9 @@ unsettled in the [verification register](verification-register.md).
   card. Structured pages show existing compact topic links for those otherwise
   unlinked topics; inline links are not duplicated and gated visitors retain
   the same access boundary. See [validation evidence](../testing/2026-10-24-topic-context-validation.md).
+- **October 24 search metadata review:** incomplete Event markup is omitted;
+  venue display and richer anonymous snippets remain deferred. Existing date,
+  cancellation, share and access behavior is retained. See [evidence](seo-review-2026-10-24.md).
 
 ## RES-07 — Verify a generated claim against its actual source (P0)
 
@@ -197,6 +203,10 @@ unsettled in the [verification register](verification-register.md).
 - **Observed:** [OfficialProfile](../../app/services/resident_content/official_profile.rb),
   [MembersController](../../app/controllers/members_controller.rb),
   [member show](../../app/views/members/show.html.erb).
+- **October 24 metadata review:** title/description identify the current office,
+  or the first displayed current committee and its existing role label.
+  Subsequent requests drop ended roles. No roster links or voting access were
+  added; see [evidence](seo-review-2026-10-24.md).
 
 ## RES-11 — Cross an access-mode or audience boundary (P0)
 

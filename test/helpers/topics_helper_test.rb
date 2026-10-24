@@ -358,14 +358,14 @@ class TopicsHelperTest < ActionView::TestCase
 
   test "topic_share_description falls through to bare when briefing is nil" do
     topic = OpenStruct.new(name: "Lead Pipe Replacement", topic_briefing: nil)
-    assert_equal "Lead pipe replacement in Two Rivers, WI — every city meeting where it's come up, every vote, and what's still unresolved.",
+    assert_equal "Lead Pipe Replacement in Two Rivers, WI — every city meeting where it's come up, every vote, and what's still unresolved.",
       topic_share_description(topic)
   end
 
   test "topic_share_description falls through to bare when briefing headline is blank" do
     briefing = OpenStruct.new(headline: "")
     topic = OpenStruct.new(name: "Downtown Parking Study", topic_briefing: briefing)
-    assert_equal "Downtown parking study in Two Rivers, WI — every city meeting where it's come up, every vote, and what's still unresolved.",
+    assert_equal "Downtown Parking Study in Two Rivers, WI — every city meeting where it's come up, every vote, and what's still unresolved.",
       topic_share_description(topic)
   end
 
@@ -376,7 +376,7 @@ class TopicsHelperTest < ActionView::TestCase
     stub_gated(true)
     result = topic_share_description(topic)
 
-    assert_equal "Lead pipe replacement in Two Rivers, WI — every city meeting where it's come up, every vote, and what's still unresolved.",
+    assert_equal "Lead Pipe Replacement in Two Rivers, WI — every city meeting where it's come up, every vote, and what's still unresolved.",
       result
     assert_no_match(/replacement line items/, result)
   end
