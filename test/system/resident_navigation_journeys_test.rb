@@ -2,6 +2,7 @@ require "application_system_test_case"
 
 class ResidentNavigationJourneysTest < ApplicationSystemTestCase
   setup do
+    page.driver.browser.manage.window.resize_to(1280, 900)
     @topic = Topic.create!(name: "browser water improvement", status: "approved",
       lifecycle_status: "active", resident_impact_score: 5, last_activity_at: 1.day.ago)
     @meeting = Meeting.create!(body_name: "City Council Meeting", starts_at: 5.days.from_now,
@@ -49,6 +50,44 @@ class ResidentNavigationJourneysTest < ApplicationSystemTestCase
     assert_selector ".meeting-related-topics a[href='#{topic_path(@topic)}']", count: 1
     page.driver.browser.manage.window.resize_to(1280, 900)
     page.save_screenshot(Rails.root.join("tmp/screenshots/meeting-topic-fallback-desktop.png"))
+  end
+
+  test "member follows a voter profile from a meeting and topic and returns to the record" do
+    SiteSetting.create!(access_mode: "gated", singleton_guard: 0)
+    @meeting.update!(starts_at: 1.day.ago)
+    item = @meeting.agenda_items.first
+    member = Member.create!(name: "Jordan Navigation")
+    motion = @meeting.motions.create!(agenda_item: item, description: "Approve water improvements", outcome: "passed")
+    motion.votes.create!(member: member, value: "yes")
+    @meeting.meeting_summaries.create!(summary_type: "minutes_recap", generation_data: {
+      "headline" => "Water improvements approved", "item_details" => [
+        { "agenda_item_id" => item.id, "agenda_item_title" => item.title, "summary" => "Approved the improvements." }
+      ]
+    })
+    sign_in_by_email(User.create!(email_address: "voter-navigation@example.com", status: "active"))
+
+    visit meeting_path(@meeting)
+    page.driver.browser.manage.window.resize_to(390, 844)
+    find(".meeting-vote-breakdown summary").click
+    within ".meeting-vote-list" do
+      click_link member.name
+    end
+    assert_current_path member_path(member)
+    assert_selector "h1", text: /Jordan Navigation/i
+    find(".member-topic-name a[href='#{topic_path(@topic)}']").click
+    assert_current_path topic_path(@topic)
+    within ".votes-grid" do
+      click_link member.name
+    end
+    assert_current_path member_path(member)
+    find(".member-topic-votes a[href='#{meeting_path(@meeting)}']").click
+    assert_current_path meeting_path(@meeting)
+    page.refresh
+    find(".meeting-vote-breakdown summary").click
+    assert_selector ".meeting-vote-list a[href='#{member_path(member)}']", text: member.name
+    assert_operator page.evaluate_script("document.documentElement.scrollWidth"), :<=, 390
+    page.execute_script("document.querySelector('.meeting-vote-breakdown').scrollIntoView({block: 'center'})")
+    page.save_screenshot(Rails.root.join("tmp/screenshots/voter-profile-link-mobile.png"))
   end
 
   private

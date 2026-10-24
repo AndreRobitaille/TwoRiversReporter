@@ -162,7 +162,7 @@
               <div class="votes-grid">
                 <% motion.votes.each do |vote| %>
                   <div class="vote-card vote-card--<%= vote.value %>">
-                    <span class="font-bold"><%= vote.member.name %></span>
+                    <%= link_to vote.member.name, member_path(vote.member), class: "font-bold" %>
                     <span class="vote-value--<%= vote.value %>"><%= vote.value.titleize %></span>
                   </div>
                 <% end %>

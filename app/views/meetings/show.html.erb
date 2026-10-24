@@ -281,7 +281,11 @@
                   <div class="meeting-vote-list">
                     <% motion.votes.sort_by { |v| v.member&.name&.split&.last || "" }.each do |vote| %>
                       <div class="meeting-vote-row">
-                        <span class="meeting-vote-member"><%= vote.member&.name || "Unknown" %></span>
+                        <% if vote.member %>
+                          <%= link_to vote.member.name, member_path(vote.member), class: "meeting-vote-member" %>
+                        <% else %>
+                          <span class="meeting-vote-member">Unknown</span>
+                        <% end %>
                         <span class="meeting-vote-value meeting-vote-value--<%= vote.value %>"><%= vote.value %></span>
                       </div>
                     <% end %>

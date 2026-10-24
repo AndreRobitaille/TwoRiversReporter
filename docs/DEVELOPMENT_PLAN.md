@@ -680,6 +680,12 @@ field is a fallback for meetings without `generation_data`.
 shows its current public roster. Member pages show the person's current
 public memberships, attendance, and voting record.
 
+Where a meeting roll call or topic Key Decisions section already displays a
+voter's name, the name links to that stored member's profile. Links use the
+vote's member identity and inherit the existing reporting access boundary.
+This navigation is generated from records; it needs no per-page publishing
+and does not certify the extraction or approval status of the source minutes.
+
 **Layout:**
 
 - Committees grouped by type: City Government → Tax-Funded Organizations
