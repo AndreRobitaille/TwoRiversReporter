@@ -203,6 +203,19 @@ module Topics
       assert resolution_entries.all? { |item| item[:item_details_summary].nil? }
     end
 
+    test "administrator background stays separate from resident reports and contributor identity" do
+      @topic.update!(source_notes: "Management leave connects these council discussions.",
+        source_type: "admin_observation", added_by: "Private context contributor", added_at: "2026-10-24")
+
+      context = @builder.build_context_json
+
+      assert_equal "Management leave connects these council discussions.", context.dig(:background_context, :notes)
+      assert_equal "2026-10-24", context.dig(:background_context, :stated_at)
+      assert_nil context[:resident_reported_context]
+      refute_includes context.to_json, "Private context contributor"
+      assert_equal "Proposal to repair.", context[:agenda_items].first[:summary]
+    end
+
     test "includes resident reported context when present" do
       @topic.update!(source_notes: "Residents raised concerns about data centers", source_type: "social_media")
       builder = SummaryContextBuilder.new(@topic, @meeting)
@@ -213,6 +226,7 @@ module Topics
       assert_equal "Resident-reported (no official record)", resident_context[:label]
       assert_equal "social_media", resident_context[:source_type]
       assert_equal "Residents raised concerns about data centers", resident_context[:notes]
+      assert_nil context[:background_context]
     end
 
     test "includes item_details_summary when meeting has a MeetingSummary with matching item_details" do

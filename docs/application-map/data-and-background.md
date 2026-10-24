@@ -149,6 +149,33 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   [description job](../../app/jobs/topics/generate_description_job.rb),
   [Topic Governance](../topics/TOPIC_GOVERNANCE.md).
 
+October 24 leadership-context update: extraction carries administrator notes
+from approved topics' existing appearances into the matching agenda item, so
+reanalysis can rebuild links after removing the current join rows. The notes
+are explicitly background, not meeting records; they do not force a tag or
+cross into another item or meeting. `SummaryContextBuilder` separates
+`admin_observation` notes into internal background without the contributor's
+identity; community and social-media reports keep their resident-report label.
+Briefing prompts integrate dated background without presenting its contributor
+as a public source, preserve actual speaker/document attribution and uncertainty,
+and supersede an older leave status when later evidence changes it. The existing
+story field permits multiple short paragraphs when an approved manual note
+explicitly requests a connected account; other topics retain the concise default.
+All five background notes fit the existing five-chunk, 6,000-character retrieval
+limits; a signed opinion column is distinguished from independent reporting.
+Explicit publication limits apply to both meeting summaries and the rolling
+briefing; private verification notes do not enter retrieved knowledge context.
+Story analysis may assess retaliation or self-interest when concrete evidence
+supports that inference, with material counterevidence considered. Timing alone
+and standing character judgments are insufficient. Neutral evidence-bearing
+fields retain their existing contract; rendering must preserve the assessment's
+basis and uncertainty.
+The briefing constructs its full factual timeline before its editorial story.
+The three-meeting limit on recent raw documents does not limit earlier events
+retained in prior meeting analyses.
+Validation is recorded in the
+[topic-context validation](../testing/2026-10-24-topic-context-validation.md).
+
 ## BG-05 — Reconcile current rosters without rewriting attendance (P1)
 
 - **Start / data:** canonical council/manager/organization roster, manual override,

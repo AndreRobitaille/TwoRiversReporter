@@ -2,6 +2,54 @@ require "test_helper"
 require "minitest/mock"
 
 class ExtractTopicsJobTest < ActiveJob::TestCase
+  test "re-extraction receives approved administrator context for the exact existing appearance" do
+    meeting = Meeting.create!(body_name: "City Council", starts_at: 1.day.ago,
+      detail_page_url: "https://example.com/context-replay")
+    item = meeting.agenda_items.create!(title: "Council Communications", order_index: 1)
+    other_item = meeting.agenda_items.create!(title: "Tree grant", order_index: 2)
+    topic = Topic.create!(name: "Sample manager oversight", status: "approved",
+      source_notes: "TRM administrator identifies this weekend incident as the manager's personal dispute.")
+    blocked = Topic.create!(name: "Blocked interpretation", status: "blocked", source_notes: "BLOCKED CONTEXT")
+    item.topics << topic
+    item.topics << blocked
+    # Reanalysis removes current links before extraction, retaining appearances
+    # until the replacement classifications have been evaluated.
+    AgendaItemTopic.where(agenda_item_id: item.id).destroy_all
+    assert TopicAppearance.exists?(topic: topic, agenda_item: item)
+
+    other_meeting = Meeting.create!(body_name: "City Council", starts_at: 2.days.ago,
+      detail_page_url: "https://example.com/other-context")
+    foreign_item = other_meeting.agenda_items.create!(title: "Council Communications", order_index: 1)
+    foreign_topic = Topic.create!(name: "Another dispute", status: "approved", source_notes: "OTHER MEETING CONTEXT")
+    foreign_item.topics << foreign_topic
+
+    ai = Minitest::Mock.new
+    ai.expect :extract_topics, {
+      items: [ { id: item.id, category: "Governance", tags: [ topic.name ], topic_worthy: true, confidence: 0.9 } ]
+    }.to_json do |text, **_kwargs|
+      scoped_text = text.split("\n---\n").find { |part| part.start_with?("ID: #{item.id}\n") }
+      assert_includes scoped_text, topic.source_notes
+      assert_includes scoped_text, "background, not the meeting record"
+      refute_includes text, "BLOCKED CONTEXT"
+      refute_includes text, "OTHER MEETING CONTEXT"
+      other_text = text.split("\n---\n").find { |part| part.start_with?("ID: #{other_item.id}\n") }
+      refute_includes other_text, topic.source_notes
+      true
+    end
+    retrieval = Object.new
+    def retrieval.retrieve_context(*) = []
+    def retrieval.format_context(*) = ""
+    RetrievalService.stub :new, retrieval do
+      Ai::OpenAiService.stub :new, ai do
+        ExtractTopicsJob.perform_now(meeting.id)
+      end
+    end
+    assert_equal [ topic.id ], item.reload.topic_ids
+    assert_empty other_item.topic_ids
+    assert_equal 1, TopicAppearance.where(topic: topic, agenda_item: item).count
+    ai.verify
+  end
+
   test "continues extracting other tags when an exact topic is blocked" do
     meeting = Meeting.create!(
       body_name: "City Council Work Session", meeting_type: "Regular",

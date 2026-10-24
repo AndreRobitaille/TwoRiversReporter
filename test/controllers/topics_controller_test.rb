@@ -413,6 +413,13 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "show displays story from generation_data current_state" do
+    paragraphs = [
+      "The council voted 5-2 to approve.",
+      "A shop owner posted an altered picture of a family and an artist.",
+      "The manager criticized the owner in a signed opinion column.",
+      "Messages described an anticipated store visit and a request to the chief; arrival is unconfirmed.",
+      "The assessment expansion faced backlash; its withdrawal does not establish why it ended."
+    ]
     TopicBriefing.create!(
       topic: @active_topic,
       headline: "Budget approved",
@@ -421,7 +428,7 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
         "headline" => "Budget approved",
         "editorial_analysis" => {
           "what_to_watch" => "Watch for timeline.",
-          "current_state" => "The council voted 5-2 to approve.",
+          "current_state" => paragraphs.join("\n\n"),
           "process_concerns" => [ "Rushed through without public comment." ],
           "pattern_observations" => []
         },
@@ -434,6 +441,8 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     get topic_url(@active_topic)
     assert_response :success
     assert_select ".topic-story-body", text: /voted 5-2/
+    assert_select ".topic-story-body p", count: paragraphs.length
+    paragraphs.each { |paragraph| assert_select ".topic-story-body p", text: paragraph }
     assert_select ".topic-aside li", text: /Rushed through/
   end
 

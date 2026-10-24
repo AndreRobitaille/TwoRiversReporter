@@ -4,6 +4,13 @@
 **Status:** Draft
 **Scope:** `analyze_topic_briefing` prompt template (both database copy and `lib/prompt_template_data.rb` source)
 
+**October 24 owner clarification:** the historical 1–3 sentence rule below
+remains the default. When an approved manual knowledge note explicitly requests
+a connected account, `current_state` carries the complete story in
+4–5 short paragraphs (about 300–425 words) within the existing topic page.
+Headline limits and the boundary around neutral evidence fields are unchanged.
+See [Summary Generation Architecture](../../DEVELOPMENT_PLAN.md#summary-generation-architecture).
+
 ## Problem
 
 The homepage currently shows twelve topic cards whose headlines read as meta-commentary about the agenda process rather than news residents would click. Seven of twelve end with banned-closer filler like *"vote not reported yet"*, *"keeps coming back"*, or *"still no clear decision"*. Several use quoted jargon (*"contract execution concerns"*, *"TIF talk"*) that the model couldn't translate. Others manufacture process concerns that the underlying analysis doesn't support (*"where it'll happen is still unclear"*).

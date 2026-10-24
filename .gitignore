@@ -40,3 +40,6 @@
 
 # Dangerous local-only scripts
 /bin/clone-production-db
+
+# Internal editorial research and contributor provenance, transferred separately.
+/docs/research/

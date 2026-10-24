@@ -19,6 +19,7 @@ module Topics
         },
         agenda_items: agenda_items,
         continuity_context: continuity,
+        background_context: background_context,
         resident_reported_context: resident_reported_context,
         source_catalog: source_catalog,
         citation_ids: collect_citation_ids(agenda_items, continuity),
@@ -196,8 +197,15 @@ module Topics
       }
     end
 
+    def background_context
+      return nil unless @topic.source_type == "admin_observation" && @topic.source_notes.present?
+
+      { notes: @topic.source_notes, stated_at: @topic.added_at }
+    end
+
     def resident_reported_context
       return nil if @topic.source_notes.blank?
+      return nil if @topic.source_type == "admin_observation"
 
       {
         label: "Resident-reported (no official record)",
