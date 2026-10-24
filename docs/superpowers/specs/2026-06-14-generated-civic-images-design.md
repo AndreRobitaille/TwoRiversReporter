@@ -301,4 +301,5 @@ Prompt/brief tests should use fixtures and assert required structure and guardra
 - Use background jobs for generation; image calls can take long enough that they should not block requests.
 - Keep jobs idempotent and safe to re-run.
 - Use current OpenAI image API documentation during implementation for model name, pricing, supported sizes, and output formats.
+- The default is `gpt-image-2.5-flare`, configurable through `OPENAI_IMAGE_MODEL`. This replaces `gpt-image-1`, which [OpenAI retired on October 23, 2026](https://developers.openai.com/api/docs/models/gpt-image-1). GPT Image requests explicitly send the output format so the returned bytes match the attachment's recorded format and MIME type.
 - Preserve official documents as source of truth; generated images are illustrative and must not replace citations or records.

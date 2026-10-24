@@ -212,7 +212,7 @@ class Ai::OpenAiServiceGeneratedImageBriefTest < ActiveSupport::TestCase
 end
 
 class Ai::OpenAiServiceGenerateCivicImageTest < ActiveSupport::TestCase
-  test "generate_civic_image omits response_format for gpt-image models" do
+  test "generate_civic_image uses the current model and requests the stored JPEG format" do
     image_client = Struct.new(:captured_parameters) do
       def generate(parameters:)
         self.captured_parameters = parameters
@@ -229,27 +229,20 @@ class Ai::OpenAiServiceGenerateCivicImageTest < ActiveSupport::TestCase
     service = Ai::OpenAiService.new
     result = nil
 
-    original_model = Ai::OpenAiService::IMAGE_MODEL
-    Ai::OpenAiService.send(:remove_const, :IMAGE_MODEL)
-    Ai::OpenAiService.const_set(:IMAGE_MODEL, "gpt-image-1")
-
     service.instance_variable_get(:@client).stub :images, image_client do
       result = service.generate_civic_image(prompt: "Create a civic illustration")
     end
 
     assert_equal "jpeg-bytes", result[:bytes]
-    assert_equal "gpt-image-1", result[:model]
+    assert_equal "gpt-image-2.5-flare", result[:model]
     assert_equal "1536x1024", result[:size]
     assert_equal "jpeg", result[:format]
-    assert_equal "gpt-image-1", image_client.captured_parameters[:model]
+    assert_equal "gpt-image-2.5-flare", image_client.captured_parameters[:model]
     assert_equal "Create a civic illustration", image_client.captured_parameters[:prompt]
     assert_equal "1536x1024", image_client.captured_parameters[:size]
     assert_nil image_client.captured_parameters[:response_format]
     assert_nil image_client.captured_parameters[:format]
-    assert_nil image_client.captured_parameters[:output_format]
-  ensure
-    Ai::OpenAiService.send(:remove_const, :IMAGE_MODEL)
-    Ai::OpenAiService.const_set(:IMAGE_MODEL, original_model)
+    assert_equal "jpeg", image_client.captured_parameters[:output_format]
   end
 
   test "generate_civic_image decodes base64 image bytes" do
@@ -283,7 +276,7 @@ class Ai::OpenAiServiceGenerateCivicImageTest < ActiveSupport::TestCase
     assert_equal "1536x1024", image_client.captured_parameters[:size]
     assert_nil image_client.captured_parameters[:response_format]
     assert_nil image_client.captured_parameters[:format]
-    assert_nil image_client.captured_parameters[:output_format]
+    assert_equal "jpeg", image_client.captured_parameters[:output_format]
   end
 
   test "generate_civic_image raises when b64 is missing" do

@@ -9,7 +9,7 @@ module Ai
     DEFAULT_MODEL = ENV.fetch("OPENAI_REASONING_MODEL", "gpt-5.6-terra")
     DEFAULT_GEMINI_MODEL = ENV.fetch("GEMINI_MODEL", "gemini-3-pro-preview")
     LIGHTWEIGHT_MODEL = ENV.fetch("OPENAI_LIGHTWEIGHT_MODEL", "gpt-5.6-luna")
-    IMAGE_MODEL = ENV.fetch("OPENAI_IMAGE_MODEL", "gpt-image-1")
+    IMAGE_MODEL = ENV.fetch("OPENAI_IMAGE_MODEL", "gpt-image-2.5-flare")
     EVALUATION_MODELS = %w[gpt-5.6-luna gpt-5.6-terra gpt-5.6-sol].freeze
     LEGACY_TEMPERATURE_UNSUPPORTED_MODELS = %w[gpt-5-mini gpt-5.4-mini].freeze
     REQUIRED_PROMPT_KEYS = %w[
@@ -447,7 +447,11 @@ module Ai
         prompt: prompt,
         size: size
       }
-      parameters[:response_format] = "b64_json" unless IMAGE_MODEL.to_s.start_with?("gpt-image")
+      if IMAGE_MODEL.to_s.start_with?("gpt-image")
+        parameters[:output_format] = format
+      else
+        parameters[:response_format] = "b64_json"
+      end
 
       response = @client.images.generate(
         parameters: parameters
