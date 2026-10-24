@@ -149,15 +149,16 @@ module TopicsHelper
   # Gated anonymous visitors never see the topic briefing headline anywhere
   # on the show page itself (What to Watch renders a different field), so
   # the meta description can't echo it either — teasing a truncated slice
-  # would invent a leak surface with no on-page counterpart. Fall back to
-  # the non-AI, topic-name-derived sentence for that audience; everyone
-  # else (open mode, signed-in members) gets the real headline.
+  # would invent a leak surface with no on-page counterpart. Use the public
+  # topic description for that audience; allowed readers keep the headline.
   def topic_share_description(topic)
     headline = topic.topic_briefing&.headline
     return headline if headline.present? && !gated_for_visitor?
 
-    name_sentence = topic.name.to_s.downcase.sub(/\A[a-z]/, &:upcase)
-    "#{name_sentence} in Two Rivers, WI — every city meeting where it's come up, every vote, and what's still unresolved."
+    name = topic_title_case(topic.name)
+    return "#{name} in Two Rivers, WI — #{topic.description}" if topic.description.present?
+
+    "#{name} in Two Rivers, WI — every city meeting where it's come up, every vote, and what's still unresolved."
   end
 
   private

@@ -1,5 +1,6 @@
-<% content_for(:title) { @current_position ? "#{@member.name} — #{@current_position.title}" : "#{@member.name} — Two Rivers Committee Member" } %>
-<% content_for(:description) { [@member.name, @current_position&.title, "committee memberships, meeting attendance, and voting record in Two Rivers, WI"].compact.join(" — ") } %>
+<% profile_role = member_profile_role(@current_position, @memberships) %>
+<% content_for(:title) { "#{@member.name} — #{profile_role} in Two Rivers, WI" } %>
+<% content_for(:description) { [@member.name, profile_role, "committee memberships, meeting attendance, and voting record in Two Rivers, WI"].join(" — ") } %>
 <% content_for(:og_type) { "article" } %>
 
 <article class="member-article">

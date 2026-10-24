@@ -1,5 +1,8 @@
 <% content_for(:title) { "Two Rivers Matters: Two Rivers, WI City Hall in Plain English" } %>
 <% content_for(:description) { "What the Two Rivers, WI City Council has been deciding — recent votes, the issues that keep coming back, and what's on the next agenda." } %>
+<% content_for(:head) do %>
+  <script type="application/ld+json"><%= raw json_escape(website_structured_data.to_json) %></script>
+<% end %>
 
 <div class="home-header">
   <h1 class="page-title">What's Happening</h1>

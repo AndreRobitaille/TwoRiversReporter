@@ -43,9 +43,7 @@ module AccessHelper
     data
   end
 
-  # Publisher facts the app already publishes: the site name, this request's
-  # origin, the favicon, and the default description. No founder, place, or
-  # contact fields — those are not stored.
+  # Publisher facts and the owner-confirmed Facebook page (#203).
   def organization_structured_data
     {
       "@context" => "https://schema.org",
@@ -53,7 +51,17 @@ module AccessHelper
       "name" => "Two Rivers Matters",
       "url" => "#{public_site_origin}/",
       "logo" => "#{public_site_origin}/icon.png",
-      "description" => default_site_description
+      "description" => default_site_description,
+      "sameAs" => [ "https://www.facebook.com/TwoRiversMatters" ]
+    }
+  end
+
+  def website_structured_data
+    {
+      "@context" => "https://schema.org",
+      "@type" => "WebSite",
+      "name" => "Two Rivers Matters",
+      "url" => "#{public_site_origin}/"
     }
   end
 

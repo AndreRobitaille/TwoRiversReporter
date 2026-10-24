@@ -108,8 +108,16 @@ pages also declare a `hasPart` `WebPageElement` whose `cssSelector` is
 `.gated-content`. That class wraps their full-content branch; index pages
 retain only the page-level declaration. Anonymous teasers do not
 include the element. The JSON contains no reporting text. Open mode omits
-the paywall markup. A separate `Organization` node and, on meeting pages, an
-`Event` node describe only fields the app already has.
+the paywall markup. A separate `Organization` node identifies the publisher
+and the owner-confirmed Facebook page. The homepage also declares a `WebSite`
+node with the canonical site name and root URL.
+
+Meeting pages omit `Event` markup: the previous node lacked Google's required
+venue data. The stored free-text location is not displayed on the page and is
+not a validated venue/address. Restoring event eligibility requires a reviewed,
+source-backed venue contract; do not invent a citywide default or expose a
+withheld source URL to fill the gap. Meeting dates, cancellation notices and
+registration markup remain independent of Event markup.
 
 ## Discovery files
 

@@ -120,22 +120,6 @@ module MeetingsHelper
 
   SUMMARY_TYPE_PRIORITY = %w[minutes_recap transcript_recap packet_analysis agenda_preview].freeze
 
-  # Event fields are only values the meeting record actually has. Location,
-  # attendance mode, and the city's detail-page URL are omitted: location is
-  # not shown on this page, and the detail URL is withheld from anonymous
-  # visitors.
-  def meeting_event_structured_data(meeting)
-    data = {
-      "@context" => "https://schema.org",
-      "@type" => "Event",
-      "name" => clean_meeting_display(meeting.body_name).presence || "Meeting",
-      "url" => canonical_page_url,
-      "eventStatus" => meeting.cancelled? ? "https://schema.org/EventCancelled" : "https://schema.org/EventScheduled"
-    }
-    data["startDate"] = meeting.starts_at.iso8601 if meeting.starts_at
-    data
-  end
-
   def meeting_share_description(meeting)
     return meeting.cancellation_notice if meeting.cancelled?
 

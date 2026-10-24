@@ -1,4 +1,15 @@
 module MembersHelper
+  # Use the same current-office priority and committee ordering as the page.
+  def member_profile_role(current_position, memberships)
+    return current_position.title if current_position
+
+    membership = memberships.first
+    return "Committee Member" unless membership
+
+    role = membership_badges(membership, include_default: true).first.fetch(:label)
+    "#{membership.committee.name} #{role}"
+  end
+
   def attendance_comparison(data)
     pct = data[:pct]
     text = "#{data[:present]} of #{data[:total]} (#{pct}%)"
