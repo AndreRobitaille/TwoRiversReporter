@@ -130,6 +130,17 @@ Workflows: [RES-05](resident-workflows.md#res-05--find-an-upcoming-or-historical
 | GET | `/meetings(.:format)` | `index` | Present |
 | GET | `/meetings/:id(.:format)` | `show` | Present |
 
+### `meeting_archives`
+
+Source: [archive controller](../../app/controllers/meeting_archives_controller.rb).
+Workflow: [RES-05](resident-workflows.md#res-05--find-an-upcoming-or-historical-meeting-p1).
+Added by the [October 24 archive experiment](search-experiments-2026-10-24.md).
+
+| Verb | Path | Action | Source check |
+| --- | --- | --- | --- |
+| GET | `/meetings/archive(.:format)` | `index` | Present |
+| GET | `/meetings/archive/:year/:month(/page/:page)(.:format)` | `show` | Present |
+
 ### `committees`
 
 Source: [committees controller](../../app/controllers/committees_controller.rb).

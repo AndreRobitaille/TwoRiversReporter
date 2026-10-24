@@ -2892,6 +2892,28 @@ details[open] summary {
   padding: var(--space-4) 0;
 }
 
+.meeting-archive-list {
+  padding: 0;
+  list-style: none;
+}
+
+.meeting-archive-list > li + li {
+  border-top: 1px solid var(--color-border);
+}
+
+.meeting-archive-list .meetings-compact-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.meeting-archive-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
 /* --- Responsive --- */
 
 @media (max-width: 600px) {

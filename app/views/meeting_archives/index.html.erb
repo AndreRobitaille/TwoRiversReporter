@@ -1,0 +1,30 @@
+<% content_for(:title) { "Two Rivers, WI Meeting Archive" } %>
+<% content_for(:description) { "Browse past Two Rivers city meetings by month and follow the meeting record." } %>
+
+<div class="meetings-header">
+  <h1 class="page-title">Meeting Archive</h1>
+  <p class="meetings-tagline">Past Two Rivers meetings, month by month</p>
+</div>
+
+<div class="meetings-content">
+  <% @months.group_by(&:year).each do |year, months| %>
+    <section class="meetings-section">
+      <div class="home-section-header">
+        <%= render "shared/atom_marker", size: 20 %>
+        <h2 class="section-label"><%= year %></h2>
+        <span class="section-line"></span>
+      </div>
+      <ul class="meetings-more-list meeting-archive-list">
+        <% months.each do |month| %>
+          <li>
+            <%= link_to month.strftime("%B %Y"), meeting_archive_month_path(year: month.year, month: month.strftime("%m")), class: "meetings-compact-row" %>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+  <% if @months.empty? %>
+    <p class="meetings-empty-note">No past meetings are available yet.</p>
+  <% end %>
+  <%= link_to "Upcoming and recent meetings", meetings_path, class: "back-link" %>
+</div>

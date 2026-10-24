@@ -8,6 +8,8 @@
 
 <div class="meetings-content">
 
+<p><%= link_to "Browse the meeting archive", meeting_archive_path, class: "back-link" %></p>
+
 <%# === SEARCH === %>
 <div class="meetings-search-wrap">
   <%= form_with url: meetings_path, method: :get, local: true, class: "meetings-search-form" do |form| %>

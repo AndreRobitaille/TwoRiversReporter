@@ -37,6 +37,7 @@ historical, not a claim that subsequent tests did not run.
 | [Overnight audit and progress](overnight-progress.md) | Current per-issue acceptance, commands, environments, fault checks and remaining work |
 | [Maintenance and subsequent QA](maintenance-and-qa.md) | Updating this map and using it for the separate coverage/effectiveness review |
 | [October 24 SEO review](seo-review-2026-10-24.md) | Metadata-only changes, deferred product decisions and local HTTP/fault evidence |
+| [October 24 search experiments](search-experiments-2026-10-24.md) | Meeting archive bet, measurement decisions and behavioral verification |
 
 ## Authority and evidence
 
