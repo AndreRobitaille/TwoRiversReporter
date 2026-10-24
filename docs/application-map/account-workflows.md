@@ -21,9 +21,27 @@ establish that these outcomes actually occur in a browser.
   the emailed link. A failed delivery must not consume the address retry window.
 - **Failures to distinguish:** delivery unavailable, IP limit, address cooldown,
   malformed input; no account-specific browser response or usable token in HTML.
+- **Indexing:** the public sign-in page emits `<meta name="robots" content="noindex">`.
+  The homepage and other public pages stay indexable. `robots.txt` and the sitemap
+  are unchanged, and sign-in eligibility is unchanged. Authenticated step-up at
+  `/reauthentication/new` keeps the layout default. Anonymous requests redirect
+  to `/session/new`.
+- **Check:** `SeoMarkupTest#test_sign-in_screens_are_noindex_and_the_home_page_is_not`
+  gets `/session/new`, a confirmable magic link, and an expired sign-in link, and
+  requires one `noindex` meta on each. The same example then gets `/` and requires
+  zero `meta[name='robots']`. 2026-10-23, Ruby 4.0.7, PostgreSQL
+  `two_rivers_reporter_test`, revision `6dc9d69`:
+  `bin/rails test test/controllers/seo_markup_test.rb test/controllers/sessions_controller_test.rb`
+  (31 runs, 261 assertions, 0 failures, 0 skips) and
+  `bin/rubocop test/controllers/seo_markup_test.rb` (clean). Removing the sign-in
+  meta failed that example on `/session/new` (found 0). Adding the same meta to the
+  homepage failed it on `/` (found 1). Both faults were restored and the same two
+  files passed again. No browser pass; the integration test renders the layout.
 - **Observed:** [SessionsController](../../app/controllers/sessions_controller.rb)
   POST `/session`; [TransactionalEmail](../../app/services/transactional_email.rb),
-  [SignInAttempt](../../app/models/sign_in_attempt.rb). Real mailbox delivery is unverified.
+  [SignInAttempt](../../app/models/sign_in_attempt.rb);
+  [sign-in view](../../app/views/sessions/new.html.erb) sets the robots meta through
+  `content_for(:head)`. Real mailbox delivery is unverified.
 
 ## AUTH-02 — Confirm a magic link and return to the task (P0)
 
@@ -38,10 +56,13 @@ establish that these outcomes actually occur in a browser.
 - **Failures to distinguish:** used/expired/invalid token, inactive owner, unsafe
   external return target. The design's dedicated expired-approval replacement
   journey is not represented by the current page; see V-07.
+- **Indexing:** the magic-link confirmation page and the expired-link recovery page
+  emit the same `noindex` meta. They are sign-in steps. Public reporting pages do not.
 - **Observed:** GET/POST `/session/magic_link`,
   [MagicLink](../../app/models/magic_link.rb),
   [Authentication](../../app/controllers/concerns/authentication.rb),
-  [confirmation view](../../app/views/sessions/magic_link.html.erb).
+  [confirmation view](../../app/views/sessions/magic_link.html.erb),
+  [expired-link view](../../app/views/sessions/expired_magic_link.html.erb).
 
 ## AUTH-03 — Sign in with a passkey (P0)
 

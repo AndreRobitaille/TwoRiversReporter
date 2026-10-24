@@ -76,6 +76,27 @@ class SeoMarkupTest < ActionDispatch::IntegrationTest
     assert_select "meta[name='robots'][content='noindex']"
   end
 
+  test "sign-in screens are noindex and the home page is not" do
+    get "/session/new"
+    assert_response :success
+    assert_select "meta[name='robots'][content='noindex']"
+
+    user = User.create!(email_address: "seo-sign-in@example.com", status: "active")
+    link = MagicLink.create_for!(user, purpose: "sign_in")
+    get "/session/magic_link", params: { token: link.raw_token }
+    assert_response :success
+    assert_select "meta[name='robots'][content='noindex']"
+
+    expired = MagicLink.create_for!(user, purpose: "sign_in", expires_at: 1.minute.ago)
+    get "/session/magic_link", params: { token: expired.raw_token }
+    assert_response :success
+    assert_select "meta[name='robots'][content='noindex']"
+
+    get root_path
+    assert_response :success
+    assert_select "meta[name='robots']", count: 0
+  end
+
   test "missing meeting is a real 404 and a duplicate meeting is a permanent redirect" do
     get meeting_path(id: 9_999_999)
     assert_response :not_found
