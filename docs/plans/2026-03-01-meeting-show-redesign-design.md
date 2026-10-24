@@ -38,6 +38,13 @@ content is organized by agenda item — discussion summaries, public
 hearing input, and votes are shown inline with the item they belong to,
 not in separate sections.
 
+Approved topics linked to substantive agenda items must remain reachable even
+when the generated recap covers an item only under Public Input. In structured
+reporting, use the existing compact topic links in a conditional Related Topics
+section for topics not already linked from an agenda-detail card. Do not add
+duplicate links, expose these links through the anonymous gate, or force an
+empty section into legacy/agenda-only variants.
+
 ### Section Order
 
 | # | Section | Data Source | Visual Treatment |

@@ -120,6 +120,11 @@ unsettled in the [verification register](verification-register.md).
 - **Approved contract:** owner clarification October 11 (#171) preserves the
   conditional sections and legacy/agenda-only branches. The March 1 fixed-section
   proposal is superseded; see [behavior contracts](behavior-contracts.md).
+- **October 24 navigation correction:** approved topics remain reachable when
+  communications appear only in Public Input, without a generated agenda-detail
+  card. Structured pages show existing compact topic links for those otherwise
+  unlinked topics; inline links are not duplicated and gated visitors retain
+  the same access boundary. See [validation evidence](../testing/2026-10-24-topic-context-validation.md).
 
 ## RES-07 — Verify a generated claim against its actual source (P0)
 
