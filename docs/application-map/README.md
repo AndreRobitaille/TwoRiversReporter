@@ -20,6 +20,9 @@ serially merged changes, the October 11 owner decisions, exact runtime/fault
 evidence and remaining unknown variants. The discovery baseline below is
 historical, not a claim that subsequent tests did not run.
 
+The [October 24 voter-profile navigation experiment](member-navigation-2026-10-24.md)
+records the subsequent RES-04/06/10/11 navigation and access checks.
+
 ## Read the map
 
 | Document | Use |

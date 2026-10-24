@@ -3407,6 +3407,12 @@ details[open] summary {
   color: var(--color-text);
 }
 
+a.meeting-vote-member,
+.vote-card a {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
 .meeting-vote-value {
   font-family: var(--font-data);
   font-size: var(--font-size-xs);

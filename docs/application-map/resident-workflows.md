@@ -193,6 +193,11 @@ unsettled in the [verification register](verification-register.md).
 - **Start / data:** civic Member with current office/memberships, attendance and
   linked/unlinked substantive/procedural motions; an official with no record.
 - **Action:** roster name → official → voting topic/meeting; disclose Other Votes.
+- **October 24 navigation experiment:** an already visible voter name in a
+  meeting roll call or topic Key Decisions section also leads to the stored
+  member profile. The profile's existing topic/meeting links complete the
+  return journey; access still follows RES-11. See
+  [acceptance and evidence](member-navigation-2026-10-24.md).
 - **Required state / visible outcome:** public identities and meeting-specific
   evidence; appropriate attendance comparison; voting record avoids unsupported
   inferences and remains distinct from website account data.
