@@ -48,3 +48,12 @@ Synthetic integration coverage follows the topic and returns to the meeting,
 checks approved versus blocked topics, and tests the allowed member before the
 anonymous denial. A browser journey covers the click, Back, reload and mobile
 layout. Bounded missing-link and anonymous-leak faults exercise the assertions.
+
+For the navigation correction, `PARALLEL_WORKERS=2 bin/rails test` passed with
+2,098 tests and 12,481 assertions (one existing skip), followed serially by
+`bin/rails test:system`: 17 tests, 655 assertions, no failures or skips.
+`bin/rubocop` passed for 607 files. Both bounded faults failed at the intended
+rendered-link assertion, and restoration returned the 50 meeting controller
+tests to green. Chrome at 390px and 1280px showed the existing link styling
+without horizontal overflow. These are synthetic local checks; production
+verification separately exercises the actual persisted meeting/topic links.
