@@ -511,6 +511,15 @@ resident-facing markdown. Produces two distinct sections:
 - **Record**: Chronological bullet list. Each bullet ends with meeting
   name and date in parentheses (not internal IDs). Factual only.
 
+October 24 owner clarification: a topic with substantial background about
+connected events must explain that account in the existing **The Story**
+section. When an approved manual knowledge note explicitly requests a connected
+account, the displayed `editorial_analysis.current_state` may contain 4–5 short
+paragraphs, about 300–425 words. Other topics retain the short default even if
+their chronology is long. The rendering pass must preserve the longer account
+when present. This changes narrative depth, not page structure or the boundary
+between background analysis and the meeting-based factual record.
+
 Internal structural categories (Factual Record, Institutional Framing,
 Civic Sentiment) exist in the analysis JSON but are **never exposed** in
 rendered output. The rendering pass synthesizes them into unified

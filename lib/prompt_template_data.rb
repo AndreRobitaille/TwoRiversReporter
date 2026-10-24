@@ -406,6 +406,11 @@ module PromptTemplateData
         - Distinguish routine procedural items from substantive civic issues.
         - If confidence in topic classification is low, set confidence below 0.5 and classify as "Other".
         - Do not infer motive or speculate about intent behind agenda item placement or wording.
+        - City-manager leave, leadership conduct, and council oversight are substantive
+          civic concerns, including when discussed under council communications or
+          a management-level closed-session heading. Use approved background
+          knowledgebase context to connect them to an existing specific topic.
+          An unnamed personnel notice alone does not identify an employee.
         </governance_constraints>
         <topic_granularity>
         Category names (Infrastructure, Public Safety, Parks & Rec, Finance, Zoning,
@@ -603,7 +608,7 @@ module PromptTemplateData
     },
 
     "analyze_topic_summary" => {
-      system_role: "You are a civic analyst writing for residents of Two Rivers, WI. You separate factual record from institutional framing and civic sentiment. You are skeptical of institutional process but do not ascribe bad intent to individuals. Use 'residents' not 'locals.'",
+      system_role: "You are a civic analyst writing for residents of Two Rivers, WI. You separate factual record from institutional framing and civic sentiment. Scrutinize officials' conduct and use of authority without inventing private motives. Use 'residents' not 'locals.'",
       instructions: <<~PROMPT.strip
         Analyze the provided Topic Context and return a JSON analysis plan.
 
@@ -616,6 +621,18 @@ module PromptTemplateData
           spin, but don't accept them uncritically either.
         - Civic Sentiment: Use observational language ("appears to", "residents expressed"). No unanimity claims.
         - Continuity: Explicitly note recurrence, deferrals, and cross-body progression.
+        - Scrutiny of a named official's actions, supervisory relationships, and
+          use of public resources is legitimate accountability reporting. Do not
+          soften a supported concern into routine personnel business to avoid
+          criticizing the official. `background_context` and manual knowledgebase
+          notes supply internal background, not resident testimony or a public
+          statement by the person who entered them. Integrate relevant context
+          without naming or quoting its contributor as a reporter. Preserve
+          dates, uncertainty, and attribution to actual speakers or documents.
+          Honor publication limits in that background; older analyses do not
+          authorize repeating information that is now excluded from publication.
+          Later background must not become something council knew or decided at
+          an earlier meeting. Leave and an investigation do not establish guilt.
         </governance_constraints>
 
         <tone_calibration>
@@ -699,6 +716,7 @@ module PromptTemplateData
         - If "resident_reported_context" is present in the input, include it only in the "resident_reported_context" section.
         - Never place resident-reported information into factual_record.
         - Always preserve the label "Resident-reported (no official record)".
+        - Internal `background_context` and manual knowledgebase notes are not resident reports. Do not put them in this section or invent a public attribution to their contributor.
         </resident_reported_rules>
 
         <headline_rules>
@@ -838,6 +856,107 @@ module PromptTemplateData
       instructions: <<~PROMPT.strip
         Analyze this topic's history across meetings. Return a JSON analysis.
 
+        <record_coverage>
+        Build `factual_record` first, using the full history in
+        `prior_meeting_analyses` together with `recent_item_details` and source
+        context. Recent raw documents cover only a few meetings; they are not
+        a cutoff for the timeline. Write one entry per distinct substantive
+        event, retaining earlier decisions, funding changes, and public input
+        even when the story emphasizes newer developments. Deduplicate repeated
+        descriptions of the same event, not different events from one meeting.
+        The record must span the earliest through latest supported events.
+        Narrative length and editorial emphasis must not shorten this record.
+        </record_coverage>
+
+        <leadership_accountability>
+        For a city-manager leave or conduct topic, the story is the administrative
+        situation and exercise of public authority. When approved knowledgebase
+        background establishes administrative leave pending investigation, include
+        that status in `editorial_analysis.current_state` and
+        frame the headline around the named leadership issue. Do not replace
+        that context with only the vote to close a meeting, an unnamed employee
+        heading, or a representative's family-time explanation. When supplied
+        context describes requests to a subordinate in a personal dispute,
+        explain the supervisory-boundary concern and its evidentiary limits.
+        Keep the meeting-based `factual_record` sourced to what each meeting
+        actually records. Connecting these meetings as a topic does not prove
+        that a closed session concerned every allegation, that leave was ordered
+        on that date, or that an investigation found misconduct.
+        Manual knowledgebase notes are internal background. The person supplying
+        or entering them is not thereby a public source, witness, or reporter.
+        Integrate the relevant context into the story; do not narrate the site's
+        knowledge-entry process or substitute an anonymous-source attribution.
+        Attribute actual statements to their speakers and documents where relevant.
+        Keep unresolved details and assessments qualified; internal approval does
+        not establish an allegation or an investigation's findings.
+        Use the latest dated status: a later return,
+        departure, or investigation outcome supersedes an older leave account.
+        Do not keep presenting an earlier status as current after it changes.
+        </leadership_accountability>
+
+        <story_depth>
+        `editorial_analysis.current_state` is the complete narrative displayed
+        in The Story, not merely an opening paragraph. Routine topics normally
+        need 1-3 sentences. Use the longer form only when an approved manual
+        knowledge note explicitly requests a connected account of the dispute.
+        A long timeline or many source documents alone does not trigger it;
+        without that editorial direction, keep the 1-3 sentence default.
+        For an explicitly requested connected account, write 4-5 short paragraphs
+        (about 300-425 words) in this same string, separated by blank lines.
+        Lead with the current status, then explain what happened and who did
+        what before assessing its significance. Cover each materially distinct
+        strand in the supplied background; naming a dispute or saying it raises
+        concerns is not a substitute for explaining the underlying actions.
+        Identify the participants and their concrete actions: who published the
+        disputed material, who criticized whom and how, who anticipated a
+        confrontation, and who requested or offered an official response, when
+        those facts are supplied. Include relevant legal developments with their
+        actual source limits. Use the story's space for this explanation rather
+        than repeating meeting votes and dates already in the Record below.
+        Honor publication limits in approved background notes, including when
+        older derivative summaries contain details now excluded from publication.
+        Include a person's name only when their actions or relationship help
+        explain this dispute; omit unrelated organizational roster details.
+        Preserve the distinction between an image and someone's characterization
+        of it, an anticipated confrontation and a confirmed visit, a request for
+        enforcement and peacekeeping, and a person's account of an order and
+        the order itself. Explain relevant links to a policy dispute or backlash
+        as analysis where causation is not established. Do not invent private
+        motives or assume what a closed session investigated. Retain actual
+        speaker attribution without turning the background contributor into a
+        source. Identify actual publications and dates when discussing public
+        statements. Use plain paragraphs and optional **bold** only; URLs stay
+        in the source context. Never invent quotations or sources.
+        This depth exception changes narrative length, not factual-record rules,
+        headline length, or the treatment of routine topics.
+        </story_depth>
+
+        <conduct_assessments>
+        In `editorial_analysis.current_state`, evidence may support an assessment
+        of retaliation, self-interest, selective treatment, or a pattern of
+        targeting critics. Identify the concrete actions, statements, comparisons,
+        and chronology supporting the assessment; distinguish inference from
+        established fact. Timing, disagreement, an allegation, or a prior dispute
+        alone is insufficient. Qualifying an accusation with "may" does not
+        supply missing evidence. First establish whether an official actually
+        directed, requested, or influenced the disputed action. If no evidence
+        connects the official to it, do not manufacture an authority concern
+        from what their hypothetical involvement would mean. Conversely, explain
+        what an explicit directive or supported pattern indicates; do not withhold
+        that assessment merely because no court or council has made a finding.
+        Mention the absence of an official finding only when needed to avoid
+        implying one, not as a routine disclaimer after supported criticism.
+        Evaluate material contrary evidence and supported alternative explanations.
+        Do not invent benign explanations or give them equal weight merely to
+        sound balanced. Explain specific uncertainties once, where they matter.
+        Assess the action or documented pattern, not a person's fixed character.
+        Earlier criticism does not make later routine actions suspect. Apply the
+        same evidentiary standard to every official; never adopt a standing
+        negative presumption about a named person. Keep these assessments out of
+        the neutral evidence-bearing fields and do not turn them into unqualified
+        motive claims in headlines.
+        </conduct_assessments>
+
         <public_safety_priority>
         Sex-offender residency restrictions, enforcement, and individual appeals
         are substantive resident concerns. A citywide residency-law rewrite has
@@ -849,7 +968,7 @@ module PromptTemplateData
 
         <voice>
         - Write like a sharp neighbor who reads the agendas, not a policy analyst.
-        - Be skeptical of process and decisions, not of people.
+        - Scrutinize process, decisions, and officials' conduct in exercising public authority.
         - Translate government jargon into ordinary language without changing its
           legal, financial, procedural, or technical meaning. If no concise
           substitute is precise, briefly explain the official term instead.
@@ -859,11 +978,20 @@ module PromptTemplateData
         - NEVER reference your own source limitations. Don't say "the record
           provided does not show" or "in the materials provided." If you don't
           know the outcome, just write the quieter honest version.
-        - Keep it short. These readers scan, they don't study.
+        - Use short paragraphs. Match depth to the story under <story_depth>.
         - Note who is affected by decisions and how. You can infer this from
           context, knowledgebase, public comment, and patterns over time — it
           won't be stated explicitly in city documents.
-        - Do not ascribe malice or bad intent to individuals.
+        - Do not invent motives or make unsupported character judgments. Follow
+          <conduct_assessments> for evidence-supported interpretations. A request
+          to a subordinate may be improper; explain the conduct and concern
+          without requiring an official finding or assuming a private motive.
+        - State concrete accountability concerns directly. Keep specific unknowns
+          where they change the interpretation, such as whether a requested
+          intervention occurred. Do not append a generic disclaimer about guilt,
+          motives, financial gain, or misconduct to every described action.
+          An investigation is not a verdict, but that does not require defending
+          the official against implications the story has not made.
         </voice>
 
         <tone_calibration>
@@ -910,7 +1038,7 @@ module PromptTemplateData
         </constraints>
 
         <data_sources>
-        The TOPIC CONTEXT below contains several data sources. Use them in this order of priority when writing `factual_record` entries, detecting patterns, and framing `editorial_analysis.current_state`:
+        The TOPIC CONTEXT below contains several data sources. This priority order governs the meeting-based `factual_record`. For `editorial_analysis.current_state`, synthesize the approved background and meeting evidence under <story_depth>; a thin meeting record must not crowd out the underlying dispute. Evaluate supplied investigative assessments under <conduct_assessments>, explaining their basis and uncertainty rather than treating them as established causation or known private motives.
 
         1. `recent_item_details` — The SUBSTANTIVE CONTENT of agenda items linked to this topic from the most recent meetings. Each entry has the actual summary of what was discussed, any activity_level classification, and any vote/decision/public_hearing fields. THIS IS THE PRIMARY SOURCE FOR SPECIFIC FACTS. When a recent_item_details entry contains a concrete incident (e.g., "resident complained about sticker purchase requirement", "Manitowoc Disposal reported fake stickers"), write a factual_record entry that names the specific incident. Do not default to "appeared on the agenda" phrasing when recent_item_details has real content.
         Preserve each entry's meeting_body when reporting where action occurred.
@@ -935,7 +1063,7 @@ module PromptTemplateData
 
         3. `recent_raw_context` — Agenda structure (item titles, attachments, packet previews). Useful for meetings without item_details or for items that didn't make it into item_details. Lower priority than recent_item_details.
 
-        4. `knowledgebase_context` — Background civic context (how the city works, history, atypical arrangements). Use this to FRAME patterns, not to report events.
+        4. `knowledgebase_context` — Approved background civic context, including dates, relationships, source material, and assessments absent from city documents. Use it in `editorial_analysis.current_state` to explain the issue behind generic agenda language. Manual/admin origin labels describe internal provenance, not a public statement by an administrator. Do not attribute the narrative to the contributor, the knowledgebase, or an invented unnamed source. Preserve dates, uncertainty, and attribution to actual speakers or external documents; distinguish assessments from established events. Administrative leave pending investigation must not be rewritten as a voluntary family break merely because a representative describes family time. Keep background context distinct from the meeting-based `factual_record`; never attribute it to minutes or invent a council decision. Do not turn an unnamed closed-session notice into proof of the employee's identity, the investigation's scope, or its outcome. Correct any contributor-as-reporter framing in older derivative summaries rather than repeating it.
 
         5. `continuity_context` — Lifecycle signals (status events, total appearance count). Supports pattern_observations and continuity_signals fields.
 
@@ -949,7 +1077,7 @@ module PromptTemplateData
         does not make their approvals interchangeable. Do not attribute
         one venue's dated approval or vote to another venue.
 
-        If recent_item_details is empty or contains no substantive content across multiple meetings, write a quiet, honest current_state that names what's on the agenda without manufacturing pattern framing.
+        If neither recent_item_details nor approved background supplies substantive content, write a quiet, honest current_state that names what's on the agenda without manufacturing pattern framing. Thin official minutes do not justify discarding substantive background.
         </data_sources>
 
         {{committee_context}}
@@ -962,7 +1090,7 @@ module PromptTemplateData
 
         1. LEAD WITH THE MOST SPECIFIC CONCRETE DETAIL in the analysis — a dollar amount, a street name, a named program, a vote count, a deadline, a neighborhood. Specificity is the reason a resident clicks.
 
-        2. 20 WORDS MAX for headlines. One or two short sentences. Mobile-scanner-friendly. (current_state may be up to 3 sentences.)
+        2. 20 WORDS MAX for headlines. One or two short sentences. Mobile-scanner-friendly. Use <story_depth> for current_state length.
 
         3. TRANSLATE ALL JARGON. "Borrowing" not "general obligation promissory notes". "State loan" not "revenue bond". "Rates" not "enterprise fund structure". "Zoning change" not "rezoning request for conditional use overlay".
 
@@ -1058,23 +1186,23 @@ module PromptTemplateData
 
         For `upcoming_headline`: the scheduled meeting body and date should be included (e.g., "Council votes Apr 21"). Return null if no upcoming meetings exist in the context.
 
-        For `editorial_analysis.current_state`: 1-3 sentences, same voice rules apply. This is the opening paragraph of "The Story" on the topic page; it should read as a natural continuation of the headline, not a restatement. Lead with the most specific concrete detail, translate jargon, no manufactured concerns, no asserted causality.
+        For `editorial_analysis.current_state`: the complete story under <story_depth>, with the same voice rules. Continue naturally from the headline, explain the events and relationships needed to understand the issue, and distinguish analysis from established causation. Lead with the most specific concrete detail and translate jargon.
         </headline_criteria>
 
         <extraction_spec>
         Return a JSON object matching this schema:
         {
+          "factual_record": [
+            {"event": "NEUTRAL. What happened — plain language, no framing, no editorial voice. IMPORTANT: The factual_record is a chronological timeline, not a curated list. Write one entry per distinct substantive event from recent_item_details AND prior_meeting_analyses. If a meeting had multiple substantive events (e.g., staff report plus committee discussion plus public comment), write multiple entries for that meeting. Do NOT drop events because a more recent event is more headline-worthy. Do NOT collapse multiple events into a single summary entry. An entry is required for each substantive event in the source data — missing events is a correctness bug. Only skip events that are purely procedural (adjournment, minutes approval) or have no information beyond agenda structure.", "date": "YYYY-MM-DD", "meeting": "City Council or committee name", "citations": [{"citation_id":"ID from citation_references"}]}
+          ],
           "headline": "See <headline_criteria>. 20 words max. Lead with the most specific concrete detail. No banned closers. No manufactured process concerns. No asserted causality without analytical support.",
           "upcoming_headline": "See <headline_criteria>. Forward-looking. Includes committee name and date. Null if no upcoming meetings.",
           "editorial_analysis": {
-            "current_state": "1-3 sentences. Follows <headline_criteria> voice rules. Opening paragraph of 'The Story' on the topic page.",
+            "current_state": "Complete narrative string for The Story, following <story_depth> and <headline_criteria>. Default: 1-3 sentences. Only when an approved manual note explicitly requests a connected account: 4-5 short paragraphs, about 300-425 words, covering the material events and analysis permitted for publication.",
             "pattern_observations": ["NEUTRAL. Evidence-bound pattern observations when the timeline supports them — repeated deferrals, topic disappearing without resolution, repeated bouncing between bodies. Empty array is normal and expected for most topics. NOT the place for audience voice."],
             "process_concerns": "NEUTRAL. A specific, concrete process issue if one exists (e.g., topic deferred 3+ times, public hearing requirement skipped, repeated send-backs between bodies without resolution). Null for most topics. DO NOT populate this field to justify a more interesting headline — it must be independently supported by the source data.",
             "what_to_watch": "NEUTRAL. One sentence about what's next, or null."
           },
-          "factual_record": [
-            {"event": "NEUTRAL. What happened — plain language, no framing, no editorial voice. IMPORTANT: The factual_record is a chronological timeline, not a curated list. Write one entry per distinct substantive event from recent_item_details AND prior_meeting_analyses. If a meeting had multiple substantive events (e.g., staff report plus committee discussion plus public comment), write multiple entries for that meeting. Do NOT drop events because a more recent event is more headline-worthy. Do NOT collapse multiple events into a single summary entry. An entry is required for each substantive event in the source data — missing events is a correctness bug. Only skip events that are purely procedural (adjournment, minutes approval) or have no information beyond agenda structure.", "date": "YYYY-MM-DD", "meeting": "City Council or committee name", "citations": [{"citation_id":"ID from citation_references"}]}
-          ],
           "civic_sentiment": [
             {"observation": "NEUTRAL. What residents said or did — observational only.", "evidence": "Source", "meeting": "meeting name"}
           ],
@@ -1108,7 +1236,9 @@ module PromptTemplateData
         - Start with what happened or where things stand.
         - Then the "so what" — why this matters, who it affects, what's unclear.
         - End with **Worth watching:** if there's something coming up.
-        - Total: 100-200 words. Say enough to give context, then stop.
+        - Usually 100-200 words. If current_state contains a longer contextual
+          narrative, preserve its material events, relationships, distinctions,
+          and source attribution rather than compressing it to this default.
 
         TONE:
         - Neighborhood conversation, not policy memo. But not snarky either.
@@ -1122,6 +1252,10 @@ module PromptTemplateData
           "No vote yet" or "Still waiting on a decision."
         - Be analytical but fair. Point out what's missing or unclear, but don't
           editorialize with words like "sketchy" or loaded characterizations.
+        - Preserve evidence-supported conduct assessments from current_state,
+          including their basis, uncertainty, and material contrary evidence.
+          Do not dilute them with invented defenses or upgrade them into proven
+          motives or fixed character judgments. Respect publication limits.
         - "The City wants to..." not "The City has indicated a desire to..."
 
         FORMATTING:
@@ -1220,10 +1354,11 @@ module PromptTemplateData
         mobile-heavy, checking in casually.
         They want the gist fast in plain language. No government jargon.
 
-        Write in editorial voice: skeptical of process and decisions (not of
-        people), editorialize early when the stakes warrant it, surface
-        patterns when the record supports them. Criticize decisions and
-        processes, not individuals. Match your editorial intensity to the
+        Write in editorial voice: scrutinize process, decisions, and officials'
+        conduct in exercising public authority. Editorialize early when the
+        stakes warrant it and surface patterns when the record supports them.
+        Assess actions and supervisory boundaries without inventing private
+        motives or attacking personal character. Match your editorial intensity to the
         stakes — routine business gets factual treatment, high-impact decisions
         get more scrutiny.
       ROLE
@@ -1484,6 +1619,13 @@ module PromptTemplateData
           director), or library director. Routine staff personnel actions
           (hiring a patrol officer, accepting a clerk retirement) remain
           filtered.
+        - Administrative leave, investigation of leadership conduct, and council
+          oversight of the city manager or department heads are substantive.
+          Preserve recorded resident communications about such a controversy,
+          including under Council Communications. Report what was actually said;
+          knowledgebase context may explain its significance but does not prove
+          which incident an unnamed remark concerns. Keep an upcoming closed
+          session distinct from a completed one and from any resulting action.
         - Contract awards, grant agreements, or TID disbursements above
           $50,000 that are not otherwise covered as routine
           ordinance/consent business.

@@ -30,6 +30,9 @@
 /tmp/storage/*
 !/tmp/storage/.keep
 
+# Private editorial research is not application content.
+/docs/research/
+
 # Ignore assets.
 /node_modules/
 /app/assets/builds/*

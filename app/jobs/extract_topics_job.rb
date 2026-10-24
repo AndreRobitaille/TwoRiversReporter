@@ -12,6 +12,13 @@ class ExtractTopicsJob < ApplicationJob
       return
     end
 
+    # Reanalysis removes links before extraction, but retains appearances until
+    # it evaluates the replacement classifications. Keep the administrator's
+    # existing item-specific context available through that transition.
+    prior_appearances = TopicAppearance.joins(:topic).merge(Topic.approved)
+      .where(meeting_id: meeting.id, agenda_item_id: items.map(&:id))
+      .includes(:topic).order(:id).group_by(&:agenda_item_id)
+
     # Format items for AI — enriched with linked document text
     items_text = items.map do |item|
       parts = []
@@ -19,6 +26,11 @@ class ExtractTopicsJob < ApplicationJob
       parts << "Title: #{item.title}"
       parts << "Section Context: #{item.parent.title}" if item.parent.present?
       parts << "Summary: #{item.summary}" if item.summary.present?
+      prior_appearances.fetch(item.id, []).map(&:topic).uniq(&:id).each do |topic|
+        next if topic.source_notes.blank?
+
+        parts << "Administrator context for existing topic #{topic.name} (background, not the meeting record): #{topic.source_notes}"
+      end
 
       # Include linked document text (truncated per doc)
       item.meeting_documents.each do |doc|
