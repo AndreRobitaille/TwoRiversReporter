@@ -602,6 +602,26 @@ in the repository. Owner clarification, October 11, 2026 (#171): preserve the
 quiet message for no top stories, omit empty Wire/More Stories, and keep Next
 Up and broad navigation visible.
 
+### Meeting archive experiment — October 24, 2026
+
+Owner direction is to make bounded SEO/AEO bets and measure outcomes without
+requiring proof of the original crawl-delay cause. [Experiment #210](https://github.com/AndreRobitaille/TwoRiversReporter/issues/210)
+adds a permanent archive linked from Meetings. `/meetings/archive` groups
+nonempty months by year; `/meetings/archive/:year/:month` lists past canonical
+meetings in local time, newest first, with date, meeting body and cancellation
+state. Each month has links to adjacent available months and both directories.
+Months with over 50 meetings continue through crawlable `/page/:page` paths,
+each with its own canonical URL. Unknown/empty months and invalid pages return
+404; the explicit first-page path redirects to the base month.
+
+The archive contains only these public meeting facts for every audience. It
+does not render analysis, excerpts, document links or topic aggregations, and
+does not change access to destination pages. Existing sitemap contents and
+crawler verification stay unchanged. No data migration, regeneration, external
+notification or new paid AI call is part of this experiment. Search outcomes
+and resident usefulness are judged separately at 2, 4 and 8 weeks after an
+explicitly authorized deployment. See the [experiment and QA record](application-map/search-experiments-2026-10-24.md).
+
 ### Topic Page (Primary Lens)
 
 Inverted pyramid with the adaptive per-section visibility matrix in

@@ -31,6 +31,11 @@ Rails.application.routes.draw do
   # NOTE: when adding a new public resource, update Sitemaps::Catalog so the
   # new pages appear in /sitemap.xml. Internal nav links handle most crawler
   # discovery, but the sitemap is the explicit signal.
+  # Archive navigation deliberately relies on ordinary links for this experiment;
+  # the sitemap continues to advertise the canonical meeting detail pages.
+  get "meetings/archive", to: "meeting_archives#index", as: :meeting_archive
+  get "meetings/archive/:year/:month(/page/:page)", to: "meeting_archives#show", as: :meeting_archive_month,
+    constraints: { year: /\d{4}/, month: /0[1-9]|1[0-2]/, page: /[1-9]\d*/ }
   resources :meetings, only: %i[index show]
   resources :committees, only: %i[index show], param: :slug
   get "members", to: redirect("/committees", status: 301), as: nil

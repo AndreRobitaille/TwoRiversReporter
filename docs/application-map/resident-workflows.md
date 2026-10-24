@@ -97,6 +97,9 @@ unsettled in the [verification register](verification-register.md).
   [index](../../app/views/meetings/index.html.erb),
   [Meeting](../../app/models/meeting.rb). Website lists use 21-day recent/upcoming
   windows; API meeting catalog is not limited to those windows.
+- **October 24 archive experiment:** permanent month navigation supplements
+  those windows, with canonical past meetings and 50 records per page. See the
+  [experiment contract and verification](search-experiments-2026-10-24.md).
 - **Reviewed contract:** approved April 10 homepage Next Up cards open the
   selected meeting identity. Story/Wire cards open topics; see
   [behavior contracts](behavior-contracts.md). The new browser navigation

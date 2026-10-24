@@ -15,6 +15,44 @@ class SearchMetadataTest < ActionDispatch::IntegrationTest
     Rails.cache = @original_cache
   end
 
+  test "archive navigation exposes only public meeting facts and never bypasses the destination gate" do
+    meeting = Meeting.create!(body_name: "Archive Council", starts_at: 2.months.ago,
+      detail_page_url: "https://example.com/archive-gate")
+    meeting.meeting_summaries.create!(summary_type: "minutes_recap",
+      content: ("Opening context for the meeting. " * 20) + "ARCHIVE_WITHHELD_REPORTING_CANARY")
+    archive_month = meeting_archive_month_path(year: meeting.starts_at.year, month: meeting.starts_at.strftime("%m"))
+
+    get meeting_path(meeting), headers: google_headers
+    assert_response :success
+    assert_includes response.body, "ARCHIVE_WITHHELD_REPORTING_CANARY"
+
+    [ {}, google_headers.merge("REMOTE_ADDR" => "198.51.100.42"), google_headers ].each do |headers|
+      [ meeting_archive_path, archive_month ].each do |path|
+        get path, headers: headers
+        assert_response :success
+        assert_not_includes response.body, "Opening context for the meeting"
+        assert_not_includes response.body, "ARCHIVE_WITHHELD_REPORTING_CANARY"
+        assert_select "meta[name=description][content*='Two Rivers']"
+      end
+      assert_select ".meeting-archive-list a[href=?]", meeting_path(meeting)
+    end
+
+    [ {}, google_headers.merge("REMOTE_ADDR" => "198.51.100.42") ].each do |headers|
+      get meeting_path(meeting), headers: headers
+      assert_response :success
+      assert_select "h1", text: /Archive Council/
+      assert_not_includes response.body, "ARCHIVE_WITHHELD_REPORTING_CANARY"
+      assert_includes response.headers["Cache-Control"], "no-store"
+    end
+
+    sign_in_as(User.create!(email_address: "archive-reader@example.com", status: "active"))
+    get archive_month
+    assert_select ".meeting-archive-list a[href=?]", meeting_path(meeting)
+    assert_not_includes response.body, "ARCHIVE_WITHHELD_REPORTING_CANARY"
+    get meeting_path(meeting)
+    assert_includes response.body, "ARCHIVE_WITHHELD_REPORTING_CANARY"
+  end
+
   test "public topic descriptions reach all snippet tags without disclosing the gated headline" do
     topic = Topic.create!(name: "sandy bay highlands", status: "approved",
       description: 'Drainage & PFAS monitoring near "Sandy Bay".')

@@ -1,0 +1,44 @@
+<% content_for(:title) { "#{@month.strftime('%B %Y')} — Two Rivers, WI Meeting Archive#{" — Page #{@page}" if @page > 1}" } %>
+<% content_for(:description) { "Browse Two Rivers city meetings from #{@month.strftime('%B %Y')} and follow each meeting record." } %>
+
+<div class="meetings-header">
+  <h1 class="page-title"><%= @month.strftime("%B %Y") %> Meetings</h1>
+  <p class="meetings-tagline">Two Rivers meeting archive</p>
+</div>
+
+<div class="meetings-content">
+  <ul class="meetings-more-list meeting-archive-list">
+    <% @meetings.each do |meeting| %>
+      <li>
+        <%= link_to meeting_path(meeting), class: "meetings-compact-row" do %>
+          <time class="meetings-compact-date" datetime="<%= meeting.starts_at.iso8601 %>"><%= meeting.starts_at.strftime("%b %-d") %></time>
+          <span class="meetings-compact-name"><%= clean_meeting_display(meeting.body_name).presence || "Meeting" %></span>
+          <% if meeting.cancelled? %><span class="badge badge--warning">Canceled</span><% end %>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+  <% if @page_count > 1 %>
+    <nav class="meetings-show-more meeting-archive-navigation" aria-label="Meetings in this month">
+      <% if @page > 1 %>
+        <%= link_to "Previous page", meeting_archive_month_path(year: @month.year, month: @month.strftime("%m"), page: (@page - 1 if @page > 2)), class: "btn btn--secondary" %>
+      <% end %>
+      <span>Page <%= @page %> of <%= @page_count %></span>
+      <% if @page < @page_count %>
+        <%= link_to "Next page", meeting_archive_month_path(year: @month.year, month: @month.strftime("%m"), page: @page + 1), class: "btn btn--secondary" %>
+      <% end %>
+    </nav>
+  <% end %>
+  <nav class="meetings-show-more meeting-archive-navigation" aria-label="Archive months">
+    <% if @older_month %>
+      <%= link_to "Older: #{@older_month.strftime('%B %Y')}", meeting_archive_month_path(year: @older_month.year, month: @older_month.strftime("%m")), class: "btn btn--secondary", rel: "prev" %>
+    <% end %>
+    <% if @newer_month %>
+      <%= link_to "Newer: #{@newer_month.strftime('%B %Y')}", meeting_archive_month_path(year: @newer_month.year, month: @newer_month.strftime("%m")), class: "btn btn--secondary", rel: "next" %>
+    <% end %>
+  </nav>
+  <nav class="meeting-archive-navigation" aria-label="Meeting directories">
+    <%= link_to "All archive months", meeting_archive_path, class: "back-link" %>
+    <%= link_to "Upcoming and recent meetings", meetings_path, class: "back-link" %>
+  </nav>
+</div>
