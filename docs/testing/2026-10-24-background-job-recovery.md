@@ -24,3 +24,9 @@ Targeted baseline: 92 tests, 376 assertions, no failures/errors/skips. Broader r
 Restored full application suite: `bin/rails test` ran 2,109 tests / 12,573 assertions, zero failures/errors and one existing skip. `bin/rubocop` inspected 611 files clean. `bin/bundler-audit`, `bin/importmap audit`, and Brakeman passed with no vulnerabilities/warnings (temporary writable cache paths used for sandbox compatibility).
 
 Browser suite: `PARALLEL_WORKERS=1 bin/rails test:system` with Chromium and writable temporary XDG paths ran 17 tests / 655 assertions, zero failures/errors/skips. It ran after application tests against the same local test database. These existing browser journeys cover site/navigation/access regressions; the new job behavior is verified by the deterministic pipeline and actual local Solid Queue tests above.
+
+## Retired image model follow-up
+
+The retained provider error identified `gpt-image-1` as unavailable. [OpenAI's model notice](https://developers.openai.com/api/docs/models/gpt-image-1) confirms its October 23 shutdown. The default now uses `gpt-image-2.5-flare`, preserving the environment override and existing generation eligibility. The [Image API contract](https://developers.openai.com/api/docs/guides/image-generation#customize-image-output) supports the existing landscape size and explicit JPEG output. The request now sends that format instead of recording JPEG while leaving the provider's PNG default in effect.
+
+Targeted service/generator/topic-job tests: 44 tests / 171 assertions passed. An isolated fault restored the retired model and failed the intended model/request assertion; the restored full suite passed again (2,109 tests / 12,573 assertions, one existing skip). RuboCop inspected 611 files clean. Provider transport remains simulated in these tests; the account's read-only model list includes Flare, but a successful production generation is required to prove live availability.

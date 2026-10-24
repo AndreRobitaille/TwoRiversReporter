@@ -273,6 +273,8 @@ unscheduled are superseded as an implementation observation (V-04).
 | Loops transactional delivery | AUTH-01/06/08/12, BG-06 | Provider failures differ from invalid input; intended recipient/template/absolute URL; production template IDs are checked at boot |
 | AI/model and embedding providers | ADM-11/12/13/15/16/18, BG-02/03/04 | Retained PromptRun/input, error versus useful result, complete evidence preservation, no paid inspection by default; model/provider values depend on runtime configuration |
 | Published crawler range feeds and reverse-proxy configuration | RES-11/12, BG-07 | Refresh validity/expiry, exact identity/IP, trusted forwarding, cache isolation |
+
+Image-generation default migration and request-format checks are recorded in the [October 24 recovery evidence](../testing/2026-10-24-background-job-recovery.md#retired-image-model-follow-up). Existing image records retain their historical model provenance.
 | PostgreSQL, cache, Solid Queue workers | All persisted transitions/background work | Transaction outcome, genuine row state, idempotency, queue versus workflow status, stale heartbeat; source inspection cannot verify operational liveness |
 | Browser WebAuthn/Turbo/clipboard/share/popups | AUTH-03/04/10/12/13, RES-06, ADM-01/06/07/14 | Real origin, method/CSRF, credential result, copied bytes, cancellation, focus/navigation; unit substitutes do not demonstrate these boundaries |
 
