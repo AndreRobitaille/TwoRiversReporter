@@ -1,6 +1,7 @@
 module Topics
   class AutoTriageJob < ApplicationJob
     queue_as :default
+    limits_concurrency key: "global-triage", duration: 10.minutes
 
     def perform
       proposed_count = Topic.where(status: "proposed").count
@@ -14,7 +15,8 @@ module Topics
         apply: true,
         dry_run: false,
         min_confidence: Topics::TriageTool::DEFAULT_MIN_CONFIDENCE,
-        max_topics: 50
+        max_topics: 50,
+        skip_unchanged: true
       )
     end
   end

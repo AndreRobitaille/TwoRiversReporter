@@ -112,7 +112,8 @@ class ExtractTopicsJob < ApplicationJob
       extraction_status = "processed" if refine_catchall_topics(meeting, ai_service, existing_topics, document_text_by_item_id)
 
       # Schedule auto-triage with delay so extraction jobs from the same scraper run
-      # complete before triage fires. Multiple enqueues are safe — the job is idempotent.
+      # complete before triage fires. Global triage is serialized and skips
+      # identical, recently completed input rather than buying duplicate calls.
       Topics::AutoTriageJob.set(wait: 3.minutes).perform_later
       stamp_processing_state(meeting, extraction_status)
 

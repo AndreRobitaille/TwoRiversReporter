@@ -28,7 +28,7 @@ module Topics
 
     def self.call(apply: false, dry_run: true, min_confidence: DEFAULT_MIN_CONFIDENCE, max_topics: DEFAULT_MAX_TOPICS,
                   similarity_threshold: DEFAULT_SIMILARITY_THRESHOLD, agenda_item_limit: DEFAULT_AGENDA_ITEM_LIMIT,
-                  user_id: nil, user_email: nil)
+                  user_id: nil, user_email: nil, skip_unchanged: false)
       new(
         apply: apply,
         dry_run: dry_run,
@@ -37,11 +37,12 @@ module Topics
         similarity_threshold: similarity_threshold,
         agenda_item_limit: agenda_item_limit,
         user_id: user_id,
-        user_email: user_email
+        user_email: user_email,
+        skip_unchanged: skip_unchanged
       ).call
     end
 
-    def initialize(apply:, dry_run:, min_confidence:, max_topics:, similarity_threshold:, agenda_item_limit:, user_id:, user_email:)
+    def initialize(apply:, dry_run:, min_confidence:, max_topics:, similarity_threshold:, agenda_item_limit:, user_id:, user_email:, skip_unchanged: false)
       @apply = apply
       @dry_run = dry_run
       @min_confidence = normalize_confidence(min_confidence)
@@ -51,29 +52,49 @@ module Topics
       @user_id = user_id
       @user_email = user_email
       @log_path = DEFAULT_LOG_PATH
+      @skip_unchanged = skip_unchanged
     end
 
     def call
       context = build_context
-      response = ::Ai::OpenAiService.new.triage_topics(context)
-      if response.blank?
-        raise "Topic triage returned empty response"
-      end
+      cache_key = completed_context_key(context) if @skip_unchanged && apply_changes?
+      return if cache_key && Rails.cache.read(cache_key)
 
-      results = JSON.parse(response)
+      results = request_results(context)
 
       report_results(results)
       return results unless apply_changes?
 
       user = resolve_user
       apply_results(results, user)
+      Rails.cache.write(cache_key, true, expires_in: 1.hour) if cache_key
       results
-    rescue JSON::ParserError => e
+    rescue JSON::ParserError, TriageResponse::Invalid => e
       Rails.logger.error("Topic triage failed to parse JSON: #{e.message}")
       raise
     end
 
     private
+
+    def request_results(context)
+      attempts = 0
+      begin
+        attempts += 1
+        response = ::Ai::OpenAiService.new.triage_topics(context.deep_dup)
+        TriageResponse.parse(response.to_s)
+      rescue JSON::ParserError, TriageResponse::Invalid
+        # Reject the entire malformed plan before any approvals, merges or blocks.
+        # One fresh response is permitted; never silently discard duplicate keys.
+        retry if attempts < 2
+        raise
+      end
+    end
+
+    def completed_context_key(context)
+      template = PromptTemplate.find_by!(key: "triage_topics")
+      input = [ context, template.updated_at, ::Ai::OpenAiService.model_for_tier(template.model_tier) ]
+      "topic-triage/completed/#{Digest::SHA256.hexdigest(input.to_json)}"
+    end
 
     def apply_changes?
       @apply && !@dry_run

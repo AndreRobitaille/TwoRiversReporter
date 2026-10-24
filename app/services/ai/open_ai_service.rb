@@ -347,14 +347,14 @@ module Ai
           { role: "user", content: prompt }
         ].compact
 
-        content, duration_ms = call_api(model: model, messages: messages, temperature: 0.1, response_format: { type: "json_object" })
+        content, duration_ms = call_api(model: model, messages: messages, temperature: 0.1, response_format: Topics::TriageResponse.response_format)
 
         record_prompt_run(
           template_key: "triage_topics",
           messages: messages,
           response_content: content,
           model: model,
-          response_format: "json_object",
+          response_format: "json_schema",
           temperature: 0.1,
           duration_ms: duration_ms,
           source: source,

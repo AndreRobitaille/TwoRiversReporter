@@ -3,6 +3,7 @@ module GeneratedImages
     DEFAULT_PURPOSE = "feature_and_og"
     DEFAULT_SIZE = "1536x1024"
     DEFAULT_OUTPUT_FORMAT = "jpeg"
+    NonRetryableRequestError = Class.new(StandardError)
 
     def initialize(imageable, source:, purpose: DEFAULT_PURPOSE, custom_prompt: nil, eligibility: nil, generated_image: nil, retrying_after: nil, ai_service: Ai::OpenAiService.new)
       @imageable = imageable
@@ -55,7 +56,16 @@ module GeneratedImages
         end
       end
       image
-    rescue Faraday::Error, Net::OpenTimeout, Net::ReadTimeout => e
+    rescue Faraday::Error => e
+      details = Ai::ApiErrorDetails.new(e)
+      image&.update!(status: "failed", retry_count: image.retry_count + 1, failure_reason: details.message) if image
+      raise if details.retryable?
+
+      # A permanent HTTP rejection must not enter ApplicationJob's network retry
+      # loop. The failed image and queue entry retain the actionable diagnosis.
+      # ActiveJob also matches exception causes, so detach the Faraday cause.
+      raise NonRetryableRequestError, details.message, cause: nil
+    rescue Net::OpenTimeout, Net::ReadTimeout => e
       image&.update!(status: "failed", retry_count: image.retry_count + 1, failure_reason: e.message) if image
       raise
     rescue ActiveRecord::RecordInvalid, ActiveModel::ValidationError, ActiveRecord::RecordNotSaved, ActiveRecord::RecordNotDestroyed => e
