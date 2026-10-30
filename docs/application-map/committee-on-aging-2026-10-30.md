@@ -77,3 +77,42 @@ with no failures or errors and one existing `PromptRunTest` skip for a missing
 meeting fixture. The browser suite ran separately and passed 20 journeys / 701
 assertions with no failures, errors or skips. Full RuboCop, Brakeman,
 bundler-audit and importmap audit passed. No production provider call was made.
+
+## Follow-up: rename check and redirect cache
+
+The migration version `20261030124500` is already recorded in production, so
+editing its body does not run again on deploy. Production's deploy of `9d0d8312`
+reported one renamed meeting, zero topic appearances and zero committee merges.
+`write_redirect` runs only after a successful merge, so no redirect row was
+written and `redirects/lookup_map` does not hide one. A public request to
+`/committees/committee-on-agenda` is 404; `/committees/committee-on-aging` is
+200. No production data change and no one-time cache delete are required.
+
+The rename-only path now uses `outside_references?`, the same leftover meeting
+and topic-appearance check the merge uses after the corrected rows move. A
+non-corrected `/bc-coa/` meeting, or an appearance on a meeting that is not
+being corrected, leaves the Committee On Agenda row in place and creates
+Committee on Aging for the corrected meetings. `write_redirect` deletes
+`Redirect::CACHE_KEY` (`redirects/lookup_map`) after `insert` or
+`update_columns`, which skip `after_commit`.
+
+Focused runner, Ruby from this environment, PostgreSQL test database:
+
+```sh
+PARALLEL_WORKERS=1 bin/rails test test/services/scrapers/committee_on_agenda_name_test.rb test/services/scrapers/committee_on_agenda_repair_safety_test.rb test/integration/committee_on_aging_correction_test.rb
+```
+
+16 runs / 187 assertions, no failures, errors or skips. RuboCop reported no
+offenses on the migration and the safety test.
+
+Fault checks used the same runner and file, one change at a time, then the
+file was restored and the focused runner passed again:
+
+- Rename whenever no Aging row exists, without the leftover check: the two new
+  rename tests fail because the Committee On Agenda name becomes Committee on
+  Aging. Zero errors.
+- Keep only the older URL check (`exclusively_bc_coa?`): those same two tests
+  fail, and the existing mixed non-`/bc-coa/` test still passes. Zero errors.
+- Omit `Rails.cache.delete(Redirect::CACHE_KEY)`: the insert test expects the
+  new destination and gets nil; the update test still returns `/stale`. Zero
+  errors.

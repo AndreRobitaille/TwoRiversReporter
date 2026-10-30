@@ -35,7 +35,10 @@ class RenameCommitteeOnAgendaToCommitteeOnAging < ActiveRecord::Migration[8.1]
     good = CommitteeRow.where(name: CANONICAL_NAME).order(:id).first
     bad = mislabeled_committee(meetings)
 
-    if good.nil? && bad && exclusively_bc_coa?(bad)
+    # Same leftover-reference rule as merge_committee!: an in-place rename is safe
+    # only when every meeting and appearance that points at this committee is one
+    # we are about to correct. Anything else stays on the old row.
+    if good.nil? && bad && !outside_references?(bad, ignoring_meeting_ids: meetings.map(&:id))
       bad.update_columns(name: CANONICAL_NAME, updated_at: Time.current)
       good = CommitteeRow.find(bad.id)
     end
@@ -63,10 +66,22 @@ class RenameCommitteeOnAgendaToCommitteeOnAging < ActiveRecord::Migration[8.1]
     ).order(:id).first
   end
 
-  def exclusively_bc_coa?(committee)
-    meeting_ids = MeetingRow.where(committee_id: committee.id).pluck(:id)
-    meeting_ids.concat(AppearanceRow.where(committee_id: committee.id).pluck(:meeting_id))
-    MeetingRow.where(id: meeting_ids).pluck(:detail_page_url).all? { |url| bc_coa_url?(url) }
+  # After the corrected meetings are moved, merge refuses when any meeting or
+  # appearance still points at the old committee. The rename-only path asks the
+  # same question before the move by ignoring the meetings it is about to correct.
+  def outside_references?(committee, ignoring_meeting_ids: [])
+    meetings = MeetingRow.where(committee_id: committee.id)
+    meetings = meetings.where.not(id: ignoring_meeting_ids) if ignoring_meeting_ids.any?
+    return true if meetings.exists?
+
+    appearances = AppearanceRow.where(committee_id: committee.id)
+    if ignoring_meeting_ids.any?
+      appearances = appearances.where(
+        "meeting_id IS NULL OR meeting_id NOT IN (?)",
+        ignoring_meeting_ids
+      )
+    end
+    appearances.exists?
   end
 
   def mislabeled_meetings
@@ -106,7 +121,7 @@ class RenameCommitteeOnAgendaToCommitteeOnAging < ActiveRecord::Migration[8.1]
   end
 
   def merge_committee!(bad, good)
-    if MeetingRow.where(committee_id: bad.id).exists? || AppearanceRow.where(committee_id: bad.id).exists?
+    if outside_references?(bad)
       say "Left committee #{bad.id} (#{bad.slug}) in place because rows outside /bc-coa/ still reference it"
       return false
     end
@@ -177,6 +192,10 @@ class RenameCommitteeOnAgendaToCommitteeOnAging < ActiveRecord::Migration[8.1]
         updated_at: now
       })
     end
+    # update_columns and insert skip Redirect's after_commit cache clear.
+    # solid_cache outlives a deploy, so a stale lookup map would keep serving
+    # the pre-write result for this source path.
+    Rails.cache.delete(Redirect::CACHE_KEY)
   end
 
   def mislabeled_name?(name)
