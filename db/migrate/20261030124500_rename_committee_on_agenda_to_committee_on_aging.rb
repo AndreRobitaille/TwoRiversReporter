@@ -29,16 +29,20 @@ class RenameCommitteeOnAgendaToCommitteeOnAging < ActiveRecord::Migration[8.1]
   end
 
   def up
-    good = CommitteeRow.where(name: CANONICAL_NAME).order(:id).first
-    bad = mislabeled_committee
-    distinct_bad = good && bad && good.id != bad.id ? bad : nil
+    meetings = mislabeled_meetings
+    return if meetings.empty?
 
-    if bad && good.nil?
+    good = CommitteeRow.where(name: CANONICAL_NAME).order(:id).first
+    bad = mislabeled_committee(meetings)
+
+    if good.nil? && bad && exclusively_bc_coa?(bad)
       bad.update_columns(name: CANONICAL_NAME, updated_at: Time.current)
       good = CommitteeRow.find(bad.id)
     end
+    good ||= CommitteeRow.create!(name: CANONICAL_NAME, slug: "committee-on-aging")
+    distinct_bad = bad if bad && good.id != bad.id
 
-    meeting_ids = rename_meetings!(good)
+    meeting_ids = rename_meetings!(meetings, good)
     appearance_count = rename_appearances!(meeting_ids, good, distinct_bad&.id)
     merged = distinct_bad ? merge_committee!(distinct_bad, good) : false
     remove_aging_alias!(good)
@@ -53,21 +57,30 @@ class RenameCommitteeOnAgendaToCommitteeOnAging < ActiveRecord::Migration[8.1]
 
   private
 
-  def mislabeled_committee
-    CommitteeRow.where("btrim(name) ~* ?", MISLABELED_SQL).order(:id).first
+  def mislabeled_committee(meetings)
+    CommitteeRow.where(id: meetings.map(&:committee_id)).where(
+      "btrim(name) ~* ?", "^committee[[:space:]]+on[[:space:]]+agenda$"
+    ).order(:id).first
   end
 
-  def rename_meetings!(committee)
-    ids = []
-    MeetingRow.where("btrim(body_name) ~* ?", MISLABELED_SQL).where("detail_page_url ILIKE ?", "%#{SOURCE_SLUG}%").find_each do |meeting|
-      next unless mislabeled_name?(meeting.body_name) && bc_coa_url?(meeting.detail_page_url)
+  def exclusively_bc_coa?(committee)
+    meeting_ids = MeetingRow.where(committee_id: committee.id).pluck(:id)
+    meeting_ids.concat(AppearanceRow.where(committee_id: committee.id).pluck(:meeting_id))
+    MeetingRow.where(id: meeting_ids).pluck(:detail_page_url).all? { |url| bc_coa_url?(url) }
+  end
 
-      attributes = { body_name: corrected_name(meeting.body_name), updated_at: Time.current }
-      attributes[:committee_id] = committee.id if committee && meeting.committee_id != committee.id
-      meeting.update_columns(attributes)
-      ids << meeting.id
+  def mislabeled_meetings
+    MeetingRow.where("btrim(body_name) ~* ?", MISLABELED_SQL)
+      .where("detail_page_url ILIKE ?", "%#{SOURCE_SLUG}%").order(:id).select do |meeting|
+        mislabeled_name?(meeting.body_name) && bc_coa_url?(meeting.detail_page_url)
+      end
+  end
+
+  def rename_meetings!(meetings, committee)
+    meetings.each do |meeting|
+      meeting.update_columns(body_name: corrected_name(meeting.body_name), committee_id: committee.id, updated_at: Time.current)
     end
-    ids
+    meetings.map(&:id)
   end
 
   def rename_appearances!(meeting_ids, committee, bad_committee_id)
@@ -124,12 +137,17 @@ class RenameCommitteeOnAgendaToCommitteeOnAging < ActiveRecord::Migration[8.1]
 
   def move_memberships!(bad, good, now)
     MembershipRow.where(committee_id: bad.id).order(:id).find_each do |membership|
-      active_duplicate = membership.ended_on.nil? && MembershipRow.where(
+      active_duplicate = membership.ended_on.nil? && MembershipRow.find_by(
         committee_id: good.id,
         member_id: membership.member_id,
         ended_on: nil
-      ).where.not(id: membership.id).exists?
+      )
       if active_duplicate
+        identity_columns = %w[id committee_id created_at updated_at]
+        unless membership.attributes.except(*identity_columns) == active_duplicate.attributes.except(*identity_columns)
+          raise "Conflicting active committee memberships #{membership.id} and #{active_duplicate.id}; review their roles and source authority before merging"
+        end
+
         membership.delete
       else
         membership.update_columns(committee_id: good.id, updated_at: now)

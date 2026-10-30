@@ -150,12 +150,12 @@ class Scrapers::CommitteeOnAgendaNameTest < ActiveJob::TestCase
     assert_equal meeting.id, appearance.meeting_id
   end
 
-  test "migration deletes a duplicate active membership instead of ending it" do
+  test "migration preserves identical membership data when merging duplicate committees" do
     committee = Committee.create!(name: "Committee on Aging")
     bad = Committee.create!(name: "Committee On Agenda")
     member = Member.create!(name: "Shared Member")
     kept = CommitteeMembership.create!(committee: committee, member: member, source: "admin_manual", role: "member")
-    duplicate = CommitteeMembership.create!(committee: bad, member: member, source: "admin_manual", role: "chair")
+    duplicate = CommitteeMembership.create!(committee: bad, member: member, source: "admin_manual", role: "member")
     Meeting.create!(
       body_name: "Committee On Agenda",
       starts_at: Time.zone.parse("2026-11-02 08:30:00"),

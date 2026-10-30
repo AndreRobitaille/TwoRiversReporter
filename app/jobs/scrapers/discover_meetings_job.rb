@@ -142,7 +142,10 @@ module Scrapers
         end
       end
       if matches.empty? && Scrapers::CommitteeOnAgendaName.bc_coa_source?(detail_url) && Scrapers::CommitteeOnAgendaName.aging_title?(title_text)
-        matches = candidates.select { |meeting| Scrapers::CommitteeOnAgendaName.mislabeled?(meeting.body_name) }
+        matches = candidates.select do |meeting|
+          Scrapers::CommitteeOnAgendaName.bc_coa_source?(meeting.detail_page_url) &&
+            Scrapers::CommitteeOnAgendaName.mislabeled?(meeting.body_name)
+        end
       end
 
       Meeting.preferred_duplicate(matches) || Meeting.new(detail_page_url: detail_url)
