@@ -78,9 +78,14 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   ([CommitteeOnAgendaName](../../app/services/scrapers/committee_on_agenda_name.rb))
   and reuses a meeting under the bad title only when its stored source is also
   `/bc-coa/`. The data migration renames only meetings on that path, with
-  `update_columns`, and does not enqueue summarization or topic jobs. A committee
-  rename requires affected source-backed meetings and no references outside
-  `/bc-coa/`; mixed-source committees remain intact. Identical active membership
+  `update_columns`, and does not enqueue summarization or topic jobs. Renaming
+  the committee row in place uses the same leftover-reference rule as the merge:
+  it happens only when no meeting or topic appearance would still point at that
+  committee after the corrected meetings move. Other references stay on the old
+  row. A redirect written by that migration deletes the `redirects/lookup_map`
+  cache entry after the outer transaction commits, matching `Redirect`'s callback.
+  A concurrent lookup before commit cannot leave the old map cached afterward;
+  a rollback leaves the map intact. Identical active membership
   duplicates can be consolidated, but conflicting roles or provenance abort the
   transactional migration for explicit review. See the
   [October 30 correction evidence](committee-on-aging-2026-10-30.md).
