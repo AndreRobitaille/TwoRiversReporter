@@ -83,7 +83,9 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   it happens only when no meeting or topic appearance would still point at that
   committee after the corrected meetings move. Other references stay on the old
   row. A redirect written by that migration deletes the `redirects/lookup_map`
-  cache entry, because the write bypasses `Redirect`'s callback. Identical active membership
+  cache entry after the outer transaction commits, matching `Redirect`'s callback.
+  A concurrent lookup before commit cannot leave the old map cached afterward;
+  a rollback leaves the map intact. Identical active membership
   duplicates can be consolidated, but conflicting roles or provenance abort the
   transactional migration for explicit review. See the
   [October 30 correction evidence](committee-on-aging-2026-10-30.md).

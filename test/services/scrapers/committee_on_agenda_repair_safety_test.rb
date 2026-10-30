@@ -122,66 +122,11 @@ class Scrapers::CommitteeOnAgendaRepairSafetyTest < ActiveJob::TestCase
     assert_nil Redirect.find_by(source_path: "/committees/committee-on-agenda")
   end
 
-  test "migration clears the redirect lookup cache after inserting a committee redirect" do
-    with_redirect_lookup_cache do
-      committee = Committee.create!(name: "Committee on Aging")
-      bad = Committee.create!(name: "Committee On Agenda")
-      Meeting.create!(body_name: "Committee On Agenda", committee: bad,
-        starts_at: Time.zone.parse("2026-11-02 08:30:00"),
-        detail_page_url: "https://www.two-rivers.org/bc-coa/page/committee-agenda")
-      assert_equal "redirects/lookup_map", Redirect::CACHE_KEY
-      assert_nil Redirect.lookup("/committees/committee-on-agenda")
-      assert Rails.cache.exist?(Redirect::CACHE_KEY)
-
-      assert_no_enqueued_jobs { run_correction }
-
-      hit = Redirect.lookup("/committees/committee-on-agenda")
-      assert_equal "/committees/#{committee.reload.slug}", hit && hit[:destination]
-      assert_equal 301, hit && hit[:status_code]
-    end
-  end
-
-  test "migration clears the redirect lookup cache after updating an existing committee redirect" do
-    with_redirect_lookup_cache do
-      committee = Committee.create!(name: "Committee on Aging")
-      bad = Committee.create!(name: "Committee On Agenda")
-      Meeting.create!(body_name: "Committee On Agenda", committee: bad,
-        starts_at: Time.zone.parse("2026-11-02 08:30:00"),
-        detail_page_url: "https://www.two-rivers.org/bc-coa/page/committee-agenda")
-      now = Time.current
-      Redirect.insert!({
-        source_path: "/committees/committee-on-agenda",
-        destination: "/stale",
-        status_code: 302,
-        hits: 4,
-        created_at: now,
-        updated_at: now
-      })
-      assert_equal "/stale", Redirect.lookup("/committees/committee-on-agenda")[:destination]
-      assert_equal 302, Redirect.lookup("/committees/committee-on-agenda")[:status_code]
-
-      assert_no_enqueued_jobs { run_correction }
-
-      hit = Redirect.lookup("/committees/committee-on-agenda")
-      assert_equal "/committees/#{committee.reload.slug}", hit && hit[:destination]
-      assert_equal 301, hit && hit[:status_code]
-      assert_equal 4, Redirect.find_by!(source_path: "/committees/committee-on-agenda").hits
-    end
-  end
-
   private
 
   def run_correction
     migration = RenameCommitteeOnAgendaToCommitteeOnAging.new
     migration.verbose = false
     ActiveRecord::Base.transaction(requires_new: true) { migration.up }
-  end
-
-  def with_redirect_lookup_cache
-    previous = Rails.cache
-    Rails.cache = ActiveSupport::Cache::MemoryStore.new
-    yield
-  ensure
-    Rails.cache = previous
   end
 end

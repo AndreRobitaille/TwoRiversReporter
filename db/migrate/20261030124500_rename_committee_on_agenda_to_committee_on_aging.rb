@@ -192,10 +192,9 @@ class RenameCommitteeOnAgendaToCommitteeOnAging < ActiveRecord::Migration[8.1]
         updated_at: now
       })
     end
-    # update_columns and insert skip Redirect's after_commit cache clear.
-    # solid_cache outlives a deploy, so a stale lookup map would keep serving
-    # the pre-write result for this source path.
-    Rails.cache.delete(Redirect::CACHE_KEY)
+    # A request before commit can repopulate the map with the old rows.
+    # Match Redirect's after_commit timing even though these writes skip callbacks.
+    ActiveRecord.after_all_transactions_commit { Rails.cache.delete(Redirect::CACHE_KEY) }
   end
 
   def mislabeled_name?(name)

@@ -92,27 +92,59 @@ The rename-only path now uses `outside_references?`, the same leftover meeting
 and topic-appearance check the merge uses after the corrected rows move. A
 non-corrected `/bc-coa/` meeting, or an appearance on a meeting that is not
 being corrected, leaves the Committee On Agenda row in place and creates
-Committee on Aging for the corrected meetings. `write_redirect` deletes
-`Redirect::CACHE_KEY` (`redirects/lookup_map`) after `insert` or
-`update_columns`, which skip `after_commit`.
+Committee on Aging for the corrected meetings. `write_redirect` schedules
+deletion of `Redirect::CACHE_KEY` (`redirects/lookup_map`) with
+`ActiveRecord.after_all_transactions_commit`, because `insert` and
+`update_columns` skip the model callback. Invalidating before commit lets a
+concurrent request cache the old rows; invalidating after the outer commit
+ensures later requests load the committed redirect. Rollback runs no deletion.
 
 Focused runner, Ruby from this environment, PostgreSQL test database:
 
 ```sh
-PARALLEL_WORKERS=1 bin/rails test test/services/scrapers/committee_on_agenda_name_test.rb test/services/scrapers/committee_on_agenda_repair_safety_test.rb test/integration/committee_on_aging_correction_test.rb
+PARALLEL_WORKERS=1 DATABASE_URL=postgresql:///trr_pr221_test_20261030 bin/rails test test/services/scrapers/committee_on_agenda_name_test.rb test/services/scrapers/committee_on_agenda_repair_safety_test.rb test/services/scrapers/committee_redirect_commit_test.rb test/integration/committee_on_aging_correction_test.rb
 ```
 
-16 runs / 187 assertions, no failures, errors or skips. RuboCop reported no
-offenses on the migration and the safety test.
+18 runs / 209 assertions, no failures, errors or skips (Ruby 4.0.7, isolated
+PostgreSQL database). The redirect tests disable transactional fixtures and
+clean up their synthetic records explicitly, so their commits actually occur.
+They retain insert/update cache checks, 301 status/destination and hit history,
+add a real second-connection lookup while the writer is uncommitted, and prove
+the later HTTP request redirects after commit. A separate rollback variant
+verifies the cache survives and the original meeting/committee state returns.
 
-Fault checks used the same runner and file, one change at a time, then the
-file was restored and the focused runner passed again:
+The original branch's rename fault checks found:
 
 - Rename whenever no Aging row exists, without the leftover check: the two new
   rename tests fail because the Committee On Agenda name becomes Committee on
   Aging. Zero errors.
 - Keep only the older URL check (`exclusively_bc_coa?`): those same two tests
   fail, and the existing mixed non-`/bc-coa/` test still passes. Zero errors.
-- Omit `Rails.cache.delete(Redirect::CACHE_KEY)`: the insert test expects the
-  new destination and gets nil; the update test still returns `/stale`. Zero
-  errors.
+- The original cache tests caught omitted invalidation but did not cross an
+  actual outer commit or another database connection.
+
+Subsequent fault checks ran `committee_redirect_commit_test.rb` in an isolated
+checkout and PostgreSQL database: clean 4-test baseline, one bounded fault,
+intended failures with zero errors, restoration and 4 tests green again.
+
+- Clear immediately before commit: concurrency and rollback assertions both
+  fail (two failures). The committed redirect is hidden by the stale map and
+  rollback incorrectly clears the cache.
+- Omit invalidation entirely: insert, update and concurrency assertions fail
+  (three failures), including nil/new destination and `/stale`/updated destination.
+
+The cache transport is a retained `MemoryStore`; PostgreSQL transactions,
+connection isolation and HTTP redirect middleware are real. Production's
+Solid Cache transport is not simulated as a separate cache database by these
+tests. This edits an already-applied migration, so deploy does not exercise
+these new write paths against production rows.
+
+The updated full application runner passed 2,141 tests / 13,103 assertions,
+with no failures or errors and the existing missing-meeting-fixture skip.
+Full RuboCop, Brakeman, bundler-audit and importmap audit passed. Ordinary and
+browser suites use the same isolated test database serially; the synced
+production copy stays in the development database.
+The updated browser run passed 20 journeys / 701 assertions with no failures,
+errors or skips. `bin/sync_prod_db --force` completed again before release;
+the copy confirms migration `20261030124500` is already applied and meeting
+302 remains Committee on Aging with committee 11.
