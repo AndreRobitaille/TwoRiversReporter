@@ -74,6 +74,10 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   [ParseMeetingPageJob](../../app/jobs/scrapers/parse_meeting_page_job.rb),
   [FullPipelineRefreshJob](../../app/jobs/scrapers/full_pipeline_refresh_job.rb),
   [Meeting](../../app/models/meeting.rb).
+  A `/bc-coa/` listing titled "Committee On Agenda" is stored as Committee on Aging
+  ([CommitteeOnAgendaName](../../app/services/scrapers/committee_on_agenda_name.rb))
+  and reuses the meeting already stored under the bad title. The rename uses
+  `update_columns` and does not enqueue summarization or topic jobs.
 - **Reviewed scheduling contract:** recurring.yml currently declares discovery
   daily at 11pm. The older unscheduled/six-hour suggestion is historical.
   Configuration and a passing local enqueue test do not prove production

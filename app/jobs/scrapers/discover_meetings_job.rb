@@ -75,6 +75,8 @@ module Scrapers
       detail_url = details_link["href"]
       # Ensure absolute URL
       detail_url = "https://www.two-rivers.org#{detail_url}" unless detail_url.start_with?("http")
+      # /bc-coa/ listings are titled "Committee On Agenda" on the city site.
+      title_text = Scrapers::CommitteeOnAgendaName.correct(title_text, detail_url)
 
       # Check cutoff unless the source is reusing a detail URL for a different meeting date.
       if since && starts_at < since
@@ -138,6 +140,9 @@ module Scrapers
         matches = candidates.select do |meeting|
           meeting.committee_id.nil? && Meeting.normalized_body_name(meeting.body_name) == normalized_title
         end
+      end
+      if matches.empty? && Scrapers::CommitteeOnAgendaName.bc_coa_source?(detail_url) && Scrapers::CommitteeOnAgendaName.aging_title?(title_text)
+        matches = candidates.select { |meeting| Scrapers::CommitteeOnAgendaName.mislabeled?(meeting.body_name) }
       end
 
       Meeting.preferred_duplicate(matches) || Meeting.new(detail_page_url: detail_url)

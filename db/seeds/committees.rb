@@ -80,7 +80,7 @@ committees_data = [
     description: "Identifies concerns of older citizens and makes recommendations to protect their well-being, rights, and quality of life. Advises the Advisory Recreation Board and city manager on senior citizen issues.",
     committee_type: "city",
     status: "active",
-    aliases: [ "Committee on Aging Meeting", "Committee On Aging" ]
+    aliases: [ "Committee on Aging Meeting", "Committee On Aging", "Committee On Agenda" ]
   },
   {
     name: "Community Development Authority",
