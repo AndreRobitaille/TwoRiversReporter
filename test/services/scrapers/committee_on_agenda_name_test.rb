@@ -110,11 +110,97 @@ class Scrapers::CommitteeOnAgendaNameTest < ActiveJob::TestCase
     assert_equal committee.id, kept.committee_id
     assert_equal "Plan Commission Meeting", other.reload.body_name
     assert_nil other.committee_id
-    assert_equal committee, Committee.resolve("Committee On Agenda")
+    assert_nil Committee.resolve("Committee On Agenda")
+    assert_nil CommitteeAlias.find_by(name: "Committee On Agenda")
 
     assert_no_enqueued_jobs { run_correction }
     assert_equal "Committee on Aging", meeting.reload.body_name
     assert_equal 1, Committee.where(name: "Committee on Aging").count
+  end
+
+  test "migration leaves a mislabeled meeting alone when its url is not bc-coa" do
+    other = Committee.create!(name: "Plan Commission")
+    meeting = Meeting.create!(
+      body_name: "Committee On Agenda",
+      starts_at: Time.zone.parse("2026-11-04 10:00:00"),
+      detail_page_url: "https://www.two-rivers.org/bc-other/page/not-aging",
+      committee: other
+    )
+    topic = Topic.create!(name: "Unrelated agenda title", status: "approved")
+    item = meeting.agenda_items.create!(title: "Report", order_index: 1)
+    appearance = TopicAppearance.create!(
+      topic: topic,
+      meeting: meeting,
+      agenda_item: item,
+      appeared_at: meeting.starts_at,
+      body_name: "Committee On Agenda",
+      committee: other,
+      evidence_type: "agenda_item"
+    )
+    clear_enqueued_jobs
+
+    assert_no_enqueued_jobs { run_correction }
+    assert_no_enqueued_jobs { run_correction }
+
+    assert_equal "Committee On Agenda", meeting.reload.body_name
+    assert_equal other.id, meeting.committee_id
+    assert_equal "Committee On Agenda", appearance.reload.body_name
+    assert_equal other.id, appearance.committee_id
+    assert_equal topic.id, appearance.topic_id
+    assert_equal meeting.id, appearance.meeting_id
+  end
+
+  test "migration deletes a duplicate active membership instead of ending it" do
+    committee = Committee.create!(name: "Committee on Aging")
+    bad = Committee.create!(name: "Committee On Agenda")
+    member = Member.create!(name: "Shared Member")
+    kept = CommitteeMembership.create!(committee: committee, member: member, source: "admin_manual", role: "member")
+    duplicate = CommitteeMembership.create!(committee: bad, member: member, source: "admin_manual", role: "chair")
+    Meeting.create!(
+      body_name: "Committee On Agenda",
+      starts_at: Time.zone.parse("2026-11-02 08:30:00"),
+      detail_page_url: "https://www.two-rivers.org/bc-coa/page/committee-agenda",
+      committee: bad
+    )
+    clear_enqueued_jobs
+
+    assert_no_enqueued_jobs { run_correction }
+
+    assert_nil CommitteeMembership.find_by(id: duplicate.id)
+    kept.reload
+    assert_nil kept.ended_on
+    assert_equal committee.id, kept.committee_id
+    assert_equal "member", kept.role
+    assert_nil Committee.find_by(id: bad.id)
+  end
+
+  test "migration deletes a bad-committee alias whose name already points at another committee" do
+    committee = Committee.create!(name: "Committee on Aging")
+    bad = Committee.create!(name: "Committee On Agenda")
+    other = Committee.create!(name: "Plan Commission")
+    Meeting.create!(
+      body_name: "Committee On Agenda",
+      starts_at: Time.zone.parse("2026-11-02 08:30:00"),
+      detail_page_url: "https://www.two-rivers.org/bc-coa/page/committee-agenda",
+      committee: bad
+    )
+    now = Time.current
+    ActiveRecord::Base.connection.execute("DROP INDEX index_committee_aliases_on_name")
+    CommitteeAlias.insert_all!([
+      { committee_id: other.id, name: "Shared Label", created_at: now, updated_at: now },
+      { committee_id: bad.id, name: "Shared Label", created_at: now, updated_at: now }
+    ])
+    duplicate_id = CommitteeAlias.where(committee_id: bad.id, name: "Shared Label").pick(:id)
+    kept = CommitteeAlias.find_by!(committee_id: other.id, name: "Shared Label")
+    clear_enqueued_jobs
+
+    assert_no_enqueued_jobs { run_correction }
+
+    assert_nil CommitteeAlias.find_by(id: duplicate_id)
+    assert_equal other.id, kept.reload.committee_id
+    assert_equal "Shared Label", kept.name
+    assert_nil Committee.find_by(id: bad.id)
+    assert_equal "committee-on-aging", committee.reload.slug
   end
 
   test "renaming the only mislabeled committee keeps its slug" do
