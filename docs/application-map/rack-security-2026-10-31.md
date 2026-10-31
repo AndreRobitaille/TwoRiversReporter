@@ -2,7 +2,8 @@
 
 Base: `bf58904fa9ef9fee7a5317aa99d061b1b4d24284`, after PR #190.
 The correction updates only Rack from 3.2.7 to 3.2.8 and its package checksum;
-the remaining changes are regression coverage and this verification record.
+the remaining changes are regression coverage, browser-test isolation and this
+verification record.
 
 ## Contract and affected workflows
 
@@ -65,11 +66,19 @@ Inputs were synthetic, including a roughly 64 KiB aligned multipart body.
   The preload supplies synthetic HTML only for the existing scraper fixture URL
   `https://www.two-rivers.org/meetings/duplicate`, which otherwise attempts live
   network access. It does not replace Rack parsing or application authorization.
+- `bin/rails test:system --seed 3640`: 20 tests, 701 assertions, zero
+  failures/errors/skips in isolated Chromium. The initial CI run exposed an
+  existing mobile-window leak: the voter-profile journey leaves the shared
+  browser at 390 pixels, hiding the Admin link in later maintenance journeys.
+  Both Rack versions reproduced the same three errors. The shared system setup
+  now restores its configured 1280-by-900 starting viewport before each test.
+  After a green run, removing only that reset reproduced the three errors;
+  restoring it returned all 20 journeys to green. No product UI or assertion
+  was changed to bypass the affected controls.
 
 The new test file is discovered by the ordinary Rails test runner. Its assertions
 exercise Rack's real parser; no parser or controller authentication is stubbed.
 The consumed-buffer assertion intentionally observes retained scanner bytes to
-detect the resource failure without attempting memory exhaustion. Browser
-journeys and final exact-commit CI are recorded by the pull request workflow,
-not claimed by this local execution record. Real email, paid providers,
+detect the resource failure without attempting memory exhaustion. Final
+exact-commit CI is recorded by the pull request workflow. Real email, paid providers,
 production request limits and deployed behavior remain unverified here.
