@@ -1,0 +1,45 @@
+name: Runtime image
+
+on:
+  pull_request:
+    paths:
+      - Dockerfile
+      - .ruby-version
+      - Gemfile
+      - Gemfile.lock
+      - script/smoke_runtime_image
+      - .github/workflows/runtime-image.yml
+  push:
+    branches: [ master ]
+    paths:
+      - Dockerfile
+      - .ruby-version
+      - Gemfile
+      - Gemfile.lock
+      - script/smoke_runtime_image
+      - .github/workflows/runtime-image.yml
+
+permissions:
+  contents: read
+
+jobs:
+  build_and_smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Build production image
+        run: docker build --tag trr-runtime-check .
+      - name: Verify runtimes and Rails boot without external services
+        run: |
+          ruby_version=$(sed -n 's/^ARG RUBY_VERSION=//p' Dockerfile)
+          deno_version=$(sed -n 's/^ARG DENO_VERSION=//p' Dockerfile)
+          yt_dlp_version=$(sed -n 's/^ARG YT_DLP_VERSION=//p' Dockerfile)
+          test "$(cat .ruby-version)" = "ruby-$ruby_version"
+          docker run --rm --network none --entrypoint /bin/sh \
+            --env SECRET_KEY_BASE_DUMMY=1 \
+            trr-runtime-check script/smoke_runtime_image \
+            "$ruby_version" "$deno_version" "$yt_dlp_version"
