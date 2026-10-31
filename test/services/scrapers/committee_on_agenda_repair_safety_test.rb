@@ -74,6 +74,54 @@ class Scrapers::CommitteeOnAgendaRepairSafetyTest < ActiveJob::TestCase
     assert_nil Redirect.find_by(source_path: "/committees/committee-on-agenda")
   end
 
+  test "migration does not rename the only agenda committee when a non-corrected meeting still references it" do
+    bad = Committee.create!(name: "Committee On Agenda")
+    affected = Meeting.create!(body_name: "Committee On Agenda", committee: bad,
+      starts_at: Time.zone.parse("2026-11-02 08:30:00"),
+      detail_page_url: "https://www.two-rivers.org/bc-coa/page/committee-agenda")
+    leftover = Meeting.create!(body_name: "Senior Services Workshop", committee: bad,
+      starts_at: Time.zone.parse("2026-11-16 08:30:00"),
+      detail_page_url: "https://www.two-rivers.org/bc-coa/page/senior-services-workshop")
+    before = [ bad, leftover ].map(&:attributes)
+    clear_enqueued_jobs
+
+    2.times { assert_no_enqueued_jobs { run_correction } }
+
+    assert_equal before, [ bad, leftover ].map { |record| record.reload.attributes }
+    good = Committee.find_by!(name: "Committee on Aging")
+    assert_not_equal bad.id, good.id
+    assert_equal "Committee on Aging", affected.reload.body_name
+    assert_equal good.id, affected.committee_id
+    assert_equal "committee-on-agenda", bad.slug
+    assert_equal "committee-on-aging", good.slug
+    assert_nil Redirect.find_by(source_path: "/committees/committee-on-agenda")
+    assert_equal 2, Committee.count
+  end
+
+  test "migration does not rename the only agenda committee when an outside appearance still references it" do
+    bad = Committee.create!(name: "Committee On Agenda")
+    affected = Meeting.create!(body_name: "Committee On Agenda", committee: bad,
+      starts_at: Time.zone.parse("2026-11-02 08:30:00"),
+      detail_page_url: "https://www.two-rivers.org/bc-coa/page/committee-agenda")
+    workshop = Meeting.create!(body_name: "Senior Services Workshop",
+      starts_at: Time.zone.parse("2026-11-16 08:30:00"),
+      detail_page_url: "https://www.two-rivers.org/bc-coa/page/senior-services-workshop")
+    topic = Topic.create!(name: "Senior center workshop", status: "approved")
+    appearance = TopicAppearance.create!(topic: topic, meeting: workshop, committee: bad,
+      appeared_at: workshop.starts_at, body_name: "Senior Services Workshop", evidence_type: "meeting_minutes")
+    before = [ bad, workshop, appearance ].map(&:attributes)
+    clear_enqueued_jobs
+
+    assert_no_enqueued_jobs { run_correction }
+
+    assert_equal before, [ bad, workshop, appearance ].map { |record| record.reload.attributes }
+    good = Committee.find_by!(name: "Committee on Aging")
+    assert_equal good.id, affected.reload.committee_id
+    assert_equal "Committee on Aging", affected.body_name
+    assert_equal bad.id, appearance.committee_id
+    assert_nil Redirect.find_by(source_path: "/committees/committee-on-agenda")
+  end
+
   private
 
   def run_correction
