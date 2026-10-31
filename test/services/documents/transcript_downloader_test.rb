@@ -120,6 +120,90 @@ module Documents
       end
     end
 
+    def stub_apify_response(rows)
+      requests = []
+      response = Net::HTTPOK.new("1.1", "200", "OK")
+      response.define_singleton_method(:body) { rows.to_json }
+      Net::HTTP.stub(:start, ->(*args, **options, &block) {
+        http = Object.new
+        http.define_singleton_method(:request) { |request| requests << [ args, options, request ]; response }
+        block.call(http)
+      }) do
+        yield requests
+      end
+    end
+
+    def with_apify_token(token)
+      original = ENV["APIFY_TOKEN"]
+      ENV["APIFY_TOKEN"] = token
+      Rails.application.credentials.stub(:apify_token, nil) { yield }
+    ensure
+      ENV["APIFY_TOKEN"] = original
+    end
+
+    test "falls back to Apify transcripts when yt-dlp is blocked" do
+      rows = [ { "timestamped" => [
+        { "start" => 1.0, "duration" => 2.5, "text" => "Welcome to the city council meeting." },
+        { "start" => 3661.25, "duration" => 2.0, "text" => "Tonight we will discuss the budget proposal." }
+      ], "non_timestamped" => "Welcome to the city council meeting. Tonight we will discuss the budget proposal." } ]
+
+      with_apify_token("test-token") do
+        Open3.stub :capture3, [ "", "ERROR: Sign in to confirm you're not a bot", OpenStruct.new(success?: false) ] do
+          stub_apify_response(rows) do |requests|
+            result = TranscriptDownloader.new(meeting: @meeting, video_url: @video_url).download_and_store
+            assert_predicate result, :created?
+
+            args, options, request = requests.sole
+            assert_equal [ "api.apify.com", 443 ], args
+            assert_equal true, options[:use_ssl]
+            assert_operator options[:read_timeout], :>=, 120
+            assert_equal "/v2/acts/johnvc~YoutubeTranscripts/run-sync-get-dataset-items", request.path
+            assert_equal "Bearer test-token", request["Authorization"]
+            assert_equal({ "youtube_url" => @video_url, "languages" => [ "en" ], "include_metadata" => false }, JSON.parse(request.body))
+          end
+        end
+      end
+
+      doc = @meeting.meeting_documents.find_by!(document_type: "transcript")
+      assert_equal "auto_transcribed", doc.text_quality
+      assert_includes doc.extracted_text, "Tonight we will discuss the budget proposal."
+      srt = doc.file.download
+      assert_includes srt, "00:00:01,000 --> 00:00:03,500"
+      assert_includes srt, "01:01:01,250 --> 01:01:03,250"
+      assert_equal doc.extracted_text, TranscriptDownloader.parse_srt(srt)
+    end
+
+    test "keeps the yt-dlp error when the Apify row has no transcript" do
+      rows = [ { "youtube_url" => @video_url, "success" => false, "error" => "No transcript available" } ]
+
+      with_apify_token("test-token") do
+        Open3.stub :capture3, [ "", "ERROR: Sign in to confirm you're not a bot", OpenStruct.new(success?: false) ] do
+          stub_apify_response(rows) do |requests|
+            error = assert_raises(TranscriptDownloader::DownloadError) do
+              TranscriptDownloader.new(meeting: @meeting, video_url: @video_url).download_and_store
+            end
+            assert_match(/not a bot/, error.message)
+            assert_equal 1, requests.size
+          end
+        end
+      end
+
+      assert_equal 0, @meeting.meeting_documents.where(document_type: "transcript").count
+    end
+
+    test "does not call Apify without a token" do
+      with_apify_token(nil) do
+        Open3.stub :capture3, [ "", "ERROR: Sign in to confirm you're not a bot", OpenStruct.new(success?: false) ] do
+          Net::HTTP.stub :start, ->(*) { flunk "should not call Apify" } do
+            error = assert_raises(TranscriptDownloader::DownloadError) do
+              TranscriptDownloader.new(meeting: @meeting, video_url: @video_url).download_and_store
+            end
+            assert_match(/not a bot/, error.message)
+          end
+        end
+      end
+    end
+
     test "reuses complete transcript document" do
       doc = MeetingDocument.create!(meeting: @meeting, document_type: "transcript", source_url: @video_url, text_quality: "auto_transcribed", extracted_text: "existing transcript")
       doc.file.attach(io: StringIO.new("srt"), filename: "existing.srt", content_type: "text/srt")

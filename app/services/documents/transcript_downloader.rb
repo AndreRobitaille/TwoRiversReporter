@@ -1,4 +1,5 @@
 require "json"
+require "net/http"
 require "open3"
 require "timeout"
 
@@ -8,6 +9,8 @@ module Documents
     YT_DLP_TIMEOUT = 30.seconds
     YT_DLP_BASE_ARGS = [ "yt-dlp", "--no-update", "--js-runtimes", "deno" ].freeze
     YOUTUBE_COOKIES_PATH = "/rails/storage/youtube.cookies.txt"
+    APIFY_TRANSCRIPTS_ENDPOINT = URI("https://api.apify.com/v2/acts/johnvc~YoutubeTranscripts/run-sync-get-dataset-items")
+    APIFY_TIMEOUT = 180.seconds
 
     InvalidUrlError = Class.new(StandardError)
     DownloadError = Class.new(StandardError)
@@ -85,6 +88,12 @@ module Documents
       YT_DLP_BASE_ARGS + [ "--cookies", YOUTUBE_COOKIES_PATH ]
     end
 
+    # Optional fallback for when YouTube blocks yt-dlp on the server (#87).
+    # Credentials first, ENV as the escape hatch, like the other API keys.
+    def self.apify_token
+      Rails.application.credentials.apify_token || ENV["APIFY_TOKEN"].presence
+    end
+
     def initialize(meeting:, video_url:)
       @meeting = meeting
       @video_url = video_url
@@ -131,6 +140,14 @@ module Documents
     private
 
     def download_captions
+      download_yt_dlp_captions
+    rescue DownloadError => e
+      raise if self.class.apify_token.blank?
+
+      download_apify_captions || raise(e)
+    end
+
+    def download_yt_dlp_captions
       Dir.mktmpdir("transcript") do |tmpdir|
         [
           [ "--write-sub", "manual_caption" ],
@@ -167,6 +184,51 @@ module Documents
       srt_content = File.read(srt_files.first)
       plain_text = parse_srt(srt_content)
       [ srt_content, plain_text ]
+    end
+
+    def download_apify_captions
+      request = Net::HTTP::Post.new(APIFY_TRANSCRIPTS_ENDPOINT)
+      request["Authorization"] = "Bearer #{self.class.apify_token}"
+      request["Content-Type"] = "application/json"
+      request.body = { youtube_url: @video_url, languages: [ "en" ], include_metadata: false }.to_json
+
+      response = Net::HTTP.start(
+        APIFY_TRANSCRIPTS_ENDPOINT.host,
+        APIFY_TRANSCRIPTS_ENDPOINT.port,
+        use_ssl: true,
+        open_timeout: 10,
+        read_timeout: APIFY_TIMEOUT.to_i
+      ) { |http| http.request(request) }
+
+      unless response.is_a?(Net::HTTPSuccess)
+        Rails.logger.warn "TranscriptDownloader: Apify transcript fallback returned HTTP #{response.code}"
+        return nil
+      end
+
+      srt_content = srt_from_apify_row(Array(JSON.parse(response.body)).first)
+      plain_text = parse_srt(srt_content)
+      return nil if plain_text.blank?
+
+      [ srt_content, plain_text, "auto_transcribed" ]
+    rescue JSON::ParserError, Timeout::Error, SocketError, IOError, SystemCallError, OpenSSL::SSL::SSLError, Net::HTTPBadResponse, Net::ProtocolError => e
+      Rails.logger.warn "TranscriptDownloader: Apify transcript fallback failed: #{e.message}"
+      nil
+    end
+
+    def srt_from_apify_row(row)
+      return unless row.is_a?(Hash)
+      return if row["error"].present? || row["error_message"].present? || row["success"] == false
+
+      cues = Array(row["timestamped"]).select { |cue| cue.is_a?(Hash) && cue["text"].to_s.strip.present? }
+      cues.each_with_index.map do |cue, index|
+        start = cue["start"].to_f
+        "#{index + 1}\n#{srt_timestamp(start)} --> #{srt_timestamp(start + cue["duration"].to_f)}\n#{cue["text"].to_s.strip}\n"
+      end.join("\n").presence
+    end
+
+    def srt_timestamp(seconds)
+      millis = (seconds * 1000).round
+      format("%02d:%02d:%02d,%03d", millis / 3_600_000, millis / 60_000 % 60, millis / 1000 % 60, millis % 1000)
     end
 
     def parse_srt(srt_content)
