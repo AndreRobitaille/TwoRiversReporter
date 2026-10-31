@@ -29,6 +29,13 @@ The authority advisory explicitly excludes Rails' overridden methods from its
 expected impact, and this application has no `Rack::Static` path-specific
 `header_rules`; no application exploit is claimed for those two advisories.
 
+Compatibility caveat: upstream's stricter boundary counter also rejects a quoted
+single boundary containing the literal `boundary=`, such as `"abcBoundary=def"`.
+A standalone probe confirms that 3.2.7 accepts the matching synthetic form and
+3.2.8 raises `Rack::Multipart::BoundaryTooLongError`. Independent review found no
+affected built-in application workflow. Retain the upstream security patch and
+record this narrow rejection rather than adding a local parser override.
+
 ## Local execution and defect detection
 
 Environment: disposable checkout, Ruby 4.0.7, Linux/amd64 and isolated PostgreSQL.
