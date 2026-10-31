@@ -13,7 +13,7 @@ gem "importmap-rails"
 # Hotwire's SPA-like page accelerator [https://turbo.hotwired.dev]
 gem "turbo-rails"
 # Fast, efficient pagination [https://github.com/ddnexus/pagy]
-gem "pagy", "~> 43.6"
+gem "pagy", "~> 43.8"
 # Hotwire's modest JavaScript framework [https://stimulus.hotwired.dev]
 gem "stimulus-rails"
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
@@ -44,6 +44,9 @@ gem "bootsnap", require: false
 
 # Deploy this application anywhere as a Docker container [https://kamal-deploy.org]
 gem "kamal", require: false
+# Published 2026-10-05. Exact pin stays inside the 14-day release-age rule and
+# clears the net-ssh advisories fixed in 7.3.4 and 7.3.5.
+gem "net-ssh", "7.3.6"
 
 # Add HTTP asset caching/compression and X-Sendfile acceleration to Puma [https://github.com/basecamp/thruster/]
 gem "thruster", require: false

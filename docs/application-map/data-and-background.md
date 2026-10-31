@@ -74,6 +74,21 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   [ParseMeetingPageJob](../../app/jobs/scrapers/parse_meeting_page_job.rb),
   [FullPipelineRefreshJob](../../app/jobs/scrapers/full_pipeline_refresh_job.rb),
   [Meeting](../../app/models/meeting.rb).
+  A `/bc-coa/` listing titled "Committee On Agenda" is stored as Committee on Aging
+  ([CommitteeOnAgendaName](../../app/services/scrapers/committee_on_agenda_name.rb))
+  and reuses a meeting under the bad title only when its stored source is also
+  `/bc-coa/`. The data migration renames only meetings on that path, with
+  `update_columns`, and does not enqueue summarization or topic jobs. Renaming
+  the committee row in place uses the same leftover-reference rule as the merge:
+  it happens only when no meeting or topic appearance would still point at that
+  committee after the corrected meetings move. Other references stay on the old
+  row. A redirect written by that migration deletes the `redirects/lookup_map`
+  cache entry after the outer transaction commits, matching `Redirect`'s callback.
+  A concurrent lookup before commit cannot leave the old map cached afterward;
+  a rollback leaves the map intact. Identical active membership
+  duplicates can be consolidated, but conflicting roles or provenance abort the
+  transactional migration for explicit review. See the
+  [October 30 correction evidence](committee-on-aging-2026-10-30.md).
 - **Reviewed scheduling contract:** recurring.yml currently declares discovery
   daily at 11pm. The older unscheduled/six-hour suggestion is historical.
   Configuration and a passing local enqueue test do not prove production
