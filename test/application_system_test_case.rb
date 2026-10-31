@@ -18,6 +18,7 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
     ActionController::Base.allow_forgery_protection = true
     @original_email_url_options = Rails.application.config.action_mailer.default_url_options
 
+    page.driver.browser.manage.window.resize_to(1280, 900)
     visit root_path
     Rails.application.config.action_mailer.default_url_options = {
       protocol: "http", host: "localhost", port: Capybara.current_session.server.port
