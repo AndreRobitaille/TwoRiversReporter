@@ -124,3 +124,27 @@ server cannot be mistaken for the final server.
 The corrected local suite passed **20 tests / 139 assertions**, with no skips.
 The new cross-connection assertion passed, failed as intended with only the
 uncached read removed in an isolated process, and passed after restoration.
+
+The [corrected PR image run](https://github.com/AndreRobitaille/TwoRiversReporter/actions/runs/41348009570)
+passed the real runtime, four-database, worker, HTTP and compiled asset checks.
+BuildKit peaked at 957,767,680 bytes with zero OOM events. Startup logs contained
+only the intended cleanup job, with no ingestion/provider job attempts.
+
+## Browser CI timing correction
+
+The same commit's application suite passed, but its browser job exposed an
+existing AUTH-10/12 test race: after clicking Remove, `assert_current_path` could
+pass immediately because the browser was already at that URL, before the Turbo
+DELETE finished. The database assertion then observed the still-present passkey.
+The test now waits for the visible empty-passkey state before checking persisted
+deletion. The owned-credential and fresh-proof requirements in the passwordless
+and session designs remain unchanged; no authentication implementation changed.
+
+Both native browser journeys passed locally (two tests / 101 assertions) in
+`/tmp/trr-off-server-browser-check`, using a separate synthetic PostgreSQL database
+and a virtual authenticator on localhost. In that isolated clone only, replacing
+the controller's deletion with a no-op failed the intended empty-state assertion
+(one test / 51 assertions, one failure). Restoring deletion passed the selected
+journey again (one test / 54 assertions). Its original persisted-deletion and
+subsequent-access checks remain. Chromium/driver compatibility warnings were
+reported locally; the actual journeys completed. CI uses a matching browser/driver.

@@ -90,6 +90,7 @@ class PasskeyCeremonyJourneysTest < ApplicationSystemTestCase
     assert_link "Remove", exact: true
     accept_confirm { click_link "Remove", exact: true }
     assert_current_path settings_security_path
+    assert_text "You haven't added any passkeys yet"
     assert_not PasskeyCredential.exists?(credential.id)
     visit settings_security_path
     assert_button "Add a passkey"
