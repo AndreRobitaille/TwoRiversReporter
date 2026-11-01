@@ -48,6 +48,19 @@ take the playbook's database dump before a destructive migration.
 - Deploy / production operations → `.claude/skills/deploying/SKILL.md`, `config/deploy.yml`
 - Admin navigation, admin styling, or any `/admin` page → `docs/superpowers/specs/2026-07-26-admin-ui-revamp-design.md`
 
+## Local Ruby Gems
+
+Local gems live outside the checkout at
+`/home/andre/.local/share/bundle/tworiversreporter`. Before setup, development,
+tests, or local CI in a new clone/worktree, follow
+[Local Ruby gems](README.md#local-ruby-gems) and configure its ignored
+`.bundle/config` to use that permanent directory. This setting is not copied by Git.
+Do not recreate `vendor/bundle/`, point persistent development at a `/tmp` bundle,
+or delete the external bundle during repository/worktree cleanup. The store is
+shared by this application's local checkouts. Preserve the tracked `vendor/fonts/`
+assets. Install missing locked gems with `bundle install --jobs 1`; verify the
+effective path and development boot before removing any old installation.
+
 ## Core Commands
 - Setup: `bin/setup --skip-server`
 - Dev server: `bin/dev`

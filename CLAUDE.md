@@ -50,6 +50,11 @@ Older memory instructions that make this optional are superseded.
 
 ## Commands
 
+Before running local commands in a new clone/worktree, configure the permanent
+external gem store described in [Local Ruby gems](README.md#local-ruby-gems).
+Keep that store at `/home/andre/.local/share/bundle/tworiversreporter` on Andre's
+workstation; do not recreate `vendor/bundle/` or depend on an old `/tmp` bundle.
+
 Standard Rails and Omakase invocations (`bin/setup`, `bin/dev`, `bin/jobs`, `bin/rails test`, `bin/rubocop`, `bin/rails console`, `bin/rails db:migrate`) work as expected. Project-specific tasks:
 
 | Task | Command |
