@@ -128,8 +128,9 @@ values must come from the production dry run, not this local database.
    `trr_kamal` for every Kamal command. Keep that shell/tunnel through final
    verification. No direct or parallel SSH fallback; stop if the tunnel fails.
 2. Commit/push the reviewed change when authorized, then deploy it first with
-   `trr_kamal deploy`. There is no schema migration for this change. Verify the
-   exact running image revision before executing the new tasks. Existing stored
+   `release_deploy` after manually publishing the verified exact-revision CI
+   image, following the deployment playbook. There is no schema migration for
+   this change. Verify the exact running image revision before executing the new tasks. Existing stored
    legacy citations will display as unresolved until individually repaired.
 3. Selectively synchronize **only** `analyze_meeting_content`,
    `analyze_topic_summary`, and `analyze_topic_briefing`, from the newly running

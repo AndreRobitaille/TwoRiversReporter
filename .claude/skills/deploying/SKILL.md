@@ -7,137 +7,135 @@ description: Use when deploying TwoRiversReporter to production, running command
 
 **Live at:** `https://tworiversmatters.com`
 
+## Off-server images and manual deployment
+
+The `Runtime image` workflow (`.github/workflows/runtime-image.yml`) builds
+linux/amd64 on isolated GitHub Actions runners for production-related pull
+requests, every `master` push, and manual workflow dispatches. It never publishes
+to the registry or deploys. Checkout credentials are not persisted, and no
+production credentials, SSH key, email token, AI key, or production data enter CI.
+
+`script/build_production_image` builds an archived Git revision, checks the pinned
+runtimes, and starts the real production entrypoint/Thruster with disposable
+PostgreSQL databases on an internal Docker network. All four databases, a primary
+write/read, Solid Cache, embedded Solid Queue job completion, health, homepage,
+sign-in and compiled stylesheet delivery are checked. Recurring jobs are disabled;
+only a synthetic cleanup job runs. The CI builder has a 3 GiB cap; this does not
+change the existing shared production builder or its 1,536 MiB cap.
+
+Successful push/manual runs export `production-image-<full SHA>` for three days.
+PR runs validate their merge revision but do not export a releasable image.
+Build logs, memory evidence and startup checks are retained for seven days. An
+expired artifact requires a new successful workflow run at the same reviewed ref.
+
+After explicit authorization to publish, use a clean checkout at that exact
+reviewed revision, with its normal required CI checks passing:
+
+```bash
+CRANE=/path/to/crane bin/publish-image ACTIONS_RUN_ID
+export RELEASE_IMAGE_DIGEST=sha256:THE_PRINTED_REGISTRY_DIGEST
+```
+
+`bin/publish-image` needs `gh`, Ruby, gzip, sha256sum and
+[crane](https://github.com/google/go-containerregistry/tree/main/cmd/crane), but
+no local Docker daemon. It checks the workflow identity, successful status, exact
+revision, allowed trigger and downloaded artifact checksums before registry
+access. It decompresses the verified archive, publishes only the SHA tag to
+`ghcr.io/andrerobitaille/two_rivers_reporter`, validates its identity, and prints
+the registry digest. Maintainer authentication stays in a temporary local directory
+removed on exit; it is not sent to CI. Publication is a separate manual action
+from deployment.
+
 ## Mandatory persistent SSH tunnel
 
-**Establish and verify one persistent tunnel before the first production SSH
-operation, including read-only inspection.** Reuse it for the entire operation:
-SSH, Kamal/Net::SSH, Docker/buildx, and post-deploy checks. Do not start with
-direct SSH, create parallel outer connections, or use the tunnel only after
-failures. This rule supersedes older optional-tunnel memory recipes.
+**Before any production SSH operation, including read-only inspection, open
+one `bin/release session`.** This entry point owns the persistent tunnel and
+exports `release_ssh`, `trr_kamal`, `release_deploy`, `release_setup` and
+`release_verify` into an interactive `trr-release>` shell. All commands from
+first inspection through final verification belong in that same shell.
+`bin/release check` is local-only; it does not connect to production.
 
-OpenSSH multiplexing alone is insufficient: Kamal uses Net::SSH and Docker
-can select a different SSH transport or builder. Explicitly route both through
-the local forward. Public HTTPS probes can run without the tunnel.
-
-### Establish once, then verify
-
-Run the following in one persistent Bash shell from the repository root. Keep
-that shell and its environment for all subsequent commands. Do not run setup
-in a short-lived tool call whose exit trap would immediately close the tunnel.
-Required local commands: `ssh`, `socat`, `ruby`, `docker`, and `bin/kamal`.
-If port `22222` is already occupied, identify its owner and reuse a verified
-session or stop; do not kill an unknown listener.
+Finish local checks and any separately authorized commit/push/publication first.
+Deploy only from a clean checkout whose HEAD exactly matches its remote branch:
 
 ```bash
-set -e
-TRR_DEPLOY_DIR=$(mktemp -d /tmp/trr-deploy.XXXXXX)
-export TRR_DEPLOY_DIR
-TRR_SSH_SOCKET="$TRR_DEPLOY_DIR/control"
-trr_cleanup() {
-  if [ -S "$TRR_SSH_SOCKET" ]; then
-    /usr/bin/ssh -F /dev/null -S "$TRR_SSH_SOCKET" -O exit root@178.156.250.235
-  fi
-  rm -rf -- "$TRR_DEPLOY_DIR"
-}
-trap trr_cleanup EXIT
-
-/usr/bin/ssh -F /dev/null -i /home/andre/.ssh/andreg7-id_ed25519 \
-  -o IdentityAgent=none -o IdentitiesOnly=yes -o BatchMode=yes \
-  -o ConnectTimeout=15 -o ExitOnForwardFailure=yes \
-  -o ServerAliveInterval=30 -o ServerAliveCountMax=6 \
-  -M -S "$TRR_SSH_SOCKET" -fN \
-  -L 127.0.0.1:22222:127.0.0.1:22 root@178.156.250.235
-/usr/bin/ssh -F /dev/null -S "$TRR_SSH_SOCKET" -O check root@178.156.250.235
-
-mkdir "$TRR_DEPLOY_DIR/bin"
-cat > "$TRR_DEPLOY_DIR/bin/ssh" <<'SSH'
-#!/bin/sh
-exec /usr/bin/ssh -F /dev/null -o BatchMode=yes -o ConnectTimeout=15 \
-  -o IdentityAgent=none -o IdentitiesOnly=yes \
-  -o 'ProxyCommand=socat - TCP:127.0.0.1:22222' \
-  -i /home/andre/.ssh/andreg7-id_ed25519 "$@"
-SSH
-chmod 700 "$TRR_DEPLOY_DIR/bin/ssh"
-export PATH="$TRR_DEPLOY_DIR/bin:$PATH"
-ssh root@178.156.250.235 true
-```
-
-The last command must succeed through the forward before continuing. The SSH
-wrapper has no direct-connection fallback if the tunnel disappears.
-
-### Route Kamal and Docker through the same tunnel
-
-Create a temporary config from the tracked deployment config. Keep the real
-server address for host identity; the proxy supplies the transport. Do not
-commit machine-specific transport settings or replace the shared config.
-
-```bash
-ruby -ryaml <<'RUBY'
-config = YAML.load_file("config/deploy.yml")
-config["ssh"] = {
-  "config" => false,
-  "keys" => ["/home/andre/.ssh/andreg7-id_ed25519"],
-  "keys_only" => true,
-  "proxy_command" => "socat - TCP:127.0.0.1:22222"
-}
-config["builder"]["local"] = false
-config["builder"]["remote"] = "ssh://root@178.156.250.235"
-File.write(File.join(ENV.fetch("TRR_DEPLOY_DIR"), "deploy.yml"), YAML.dump(config))
-RUBY
-export DOCKER_HOST=ssh://root@178.156.250.235
-unset DOCKER_CONTEXT BUILDX_BUILDER
+bin/release check
 source .env
 export TWO_RIVERS_REPORTER_DATABASE_PASSWORD
-trr_kamal() {
-  /usr/bin/ssh -F /dev/null -S "$TRR_SSH_SOCKET" -O check root@178.156.250.235 || return
-  bin/kamal "$@" -c "$TRR_DEPLOY_DIR/deploy.yml"
-}
-docker version
+export RELEASE_IMAGE_DIGEST=sha256:THE_VERIFIED_REGISTRY_DIGEST
+bin/release session
+# Inside this shell, only when deployment has been explicitly authorized:
+release_deploy
+# Follow-up inspection uses this same tunnel:
+release_verify
+trr_kamal app logs --since 5m
+exit
 ```
 
-Use `trr_kamal` for **every** command below; bare `bin/kamal` bypasses this
-configuration. Docker's SSH subprocesses must use the wrapper on `PATH`.
-Confirm the selected buildx builder uses the remote SSH endpoint. Merely setting
-`DOCKER_HOST` does not override a builder pinned to `/var/run/docker.sock`.
-If a command selects a local builder or direct transport, stop and correct its
-configuration before running it again.
+`config/master.key` must exist. The wrapper reads the identity file from
+`${RELEASE_SSH_CONFIG:-$HOME/.ssh/config}` for `178.156.250.235`. Required local
+commands include SSH, timeout, socat, Ruby, curl, gh and `bin/kamal`. Run production
+commands with host access if the restricted sandbox presents synthetic system
+SSH-file ownership; never chown system files based on that sandbox view.
 
-### Failure, verification, and cleanup
+One outer SSH master opens a localhost-only forward on port 22222. Choose
+`RELEASE_TUNNEL_PORT` if that port is occupied; never stop an unknown listener.
+Both Kamal's Net::SSH and Docker's OpenSSH use this forward through an owned
+wrapper and temporary configuration. Merely setting a control socket or
+`DOCKER_HOST` is insufficient. No remote builder is configured for this release
+path. Every Kamal invocation goes through `trr_kamal`, which checks the tunnel and
+adds `--skip-push` to deployment commands. The pre-build hook refuses image builds.
 
-- If tunnel establishment or verification fails, stop remote operations. Report
-  the exact failure and whether production was changed. Do not retry in a loop,
-  run parallel connection probes, or fall back to direct SSH. A timeout alone
-  does not establish whether the cause is throttling, firewall, or availability.
-- If a previously working tunnel dies, stop dependent processes and clean up
-  that session. After a cooldown, make at most one replacement attempt; if it
-  fails, leave production work blocked and report it.
-- Through the verified tunnel, identify the running image revision before
-  deployment. Preserve that code when reconciling branches; a merged PR alone
-  is not proof that the new commit is deployed.
-- Keep the tunnel open through exact-revision/container verification and recent
-  log inspection. Check `/up`, `/`, and `/session/new` for 200 and anonymous
-  `/admin` for a redirect to `/session/new` over HTTPS.
-- Exit the persistent shell to run its cleanup trap on success or failure.
-  Verify the control socket and temporary directory are gone and port `22222`
-  is closed. Preserve unrelated worktree files. Never report deployment complete
-  without verifying the intended revision is running.
+`release_deploy` requires a verified digest, successful session preflight, clean
+checkout and an exactly pushed HEAD. It pulls and checks the digest, source
+revision, service and linux/amd64 identity. The pre-deploy hook repeats these
+checks after Kamal's final pull and before container replacement. A missing digest
+or changed tag stops the release; there is no production-build fallback.
+Standalone `bin/release deploy`, `setup` and `push-deploy` are disabled.
+
+The preflight records the current Two Rivers image and protected members/public
+containers. Preserve the actual prior running revision as the rollback target;
+local `master` can lag production. The release verifies the intended container,
+image identity, protected-service containers, proxy routes, `/up`, `/`, sign-in,
+anonymous admin redirect and the co-hosted sites. Inspect recent logs and any
+change-specific workflows in the same session before declaring success. Database
+backup requirements below still apply to destructive migrations. Image extraction,
+migrations and brief old/new container overlap still require runtime headroom;
+coordinate one deployment at a time across the shared host.
+
+### Failure, verification and cleanup
+
+- If establishment, verification, or the tunnel fails, stop remote work and report
+  the exact failure and whether production changed. No direct fallback, parallel
+  outer connection, automatic reconnect, or retry loop is allowed.
+- Failed commands return to the existing shell for inspection. Wait at least five
+  minutes before any single further attempt. If the tunnel dies, stop dependent
+  work and clean up; after the cooldown, make at most one chosen replacement
+  attempt. A second failure leaves remote work blocked.
+- Keep the session through final verification, then exit once. Cleanup closes only
+  its owned master and removes the temporary directory/configuration/socket.
+  Confirm its forward is closed. Preserve unrelated worktree files and sessions.
+- Public HTTPS probes do not require SSH. Older optional-tunnel instructions and
+  ad hoc remote-builder recipes are superseded by this entry point.
 
 ## Deploy Commands
 
-All commands below require the verified tunnel and `trr_kamal` function above.
+All production commands below run inside the verified `bin/release session`.
+Publication, deployment and production mutation each need their existing authority.
 
 | Task | Command |
 |------|---------|
-| Full deploy | `trr_kamal deploy` |
-| First-time setup | `trr_kamal setup` |
-| Rails console (prod) | `trr_kamal console` |
+| Deploy verified image | `release_deploy` |
+| First-time setup with verified image | `release_setup` |
+| Rails console | `trr_kamal console` |
 | Tail logs | `trr_kamal logs` |
 | Shell into container | `trr_kamal shell` |
 | DB console | `trr_kamal dbc` |
 | Reboot app | `trr_kamal app boot` |
 | Run a job | `trr_kamal app exec "bin/rails runner 'JobClass.perform_now(id)'"` |
 
-**Gotcha:** all `trr_kamal` commands require the env vars exported first (`source .env && export TWO_RIVERS_REPORTER_DATABASE_PASSWORD`). `.env` keys are not auto-exported to Kamal; prefer `env: clear:` in `deploy.yml` for non-secrets.
+The database password must be exported before opening the session. `.env` keys are
+not automatically exported; non-secret settings belong in `env: clear:`.
 
 ## Automated Runtime Maintenance
 
@@ -177,7 +175,8 @@ After editing `lib/prompt_template_data.rb`, production ordering matters:
 1. Validate locally with `bin/rubocop` and `bin/rails prompt_templates:validate`
 2. Update the local DB with `bin/rails prompt_templates:populate` if needed
 3. Commit and push
-4. Run `trr_kamal deploy`
+4. Wait for the exact-revision image checks, publish it manually, then run
+   `release_deploy` inside the single authorized release session
 5. Then run `trr_kamal app exec "bin/rails prompt_templates:populate"`
 
 `prompt_templates:populate` on prod reads from the running image, not your local filesystem. If you skip deploy, you can repopulate the database from stale code.
@@ -317,7 +316,7 @@ including a `-preauth-` dump taken before the migration that dropped the
 password, TOTP and recovery-code columns.
 
 ```bash
-"$TRR_DEPLOY_DIR/bin/ssh" root@178.156.250.235 \
+release_ssh \
   "docker exec two_rivers_reporter-db pg_dump -U two_rivers_reporter two_rivers_reporter_production" \
   | gzip > ~/backups/tworivers/two_rivers_reporter_production-$(date -u +%Y%m%dT%H%M%SZ).sql.gz
 ```

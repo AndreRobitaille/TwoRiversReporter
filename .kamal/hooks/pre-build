@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+echo 'Build images on an isolated CI runner. Publish the verified artifact manually, then deploy with --skip-push.' >&2
+exit 1

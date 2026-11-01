@@ -47,6 +47,10 @@ it. Never try direct connections first or treat the tunnel as an optional
 workaround. If it fails, stop remote work instead of retrying fresh SSH
 connections. Keep it alive until verification finishes, then clean it up.
 Older memory instructions that make this optional are superseded.
+Use `bin/release session` to own this lifecycle and `release_deploy` to deploy
+an explicitly authorized, manually published CI image. `bin/release check` is
+local-only. The verified `RELEASE_IMAGE_DIGEST` is mandatory; production image
+builds are refused. See the playbook for artifact publication and verification.
 
 ## Commands
 
