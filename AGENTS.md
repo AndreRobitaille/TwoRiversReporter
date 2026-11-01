@@ -25,6 +25,11 @@ socket alone does not route Kamal or Docker through it; configure both clients
 as the playbook specifies. If the tunnel fails, stop remote work and report the
 blocker; do not loop on fresh connections or bypass it with direct SSH.
 Keep the tunnel through verification, then close it and remove temporary config.
+Use `bin/release session` for this lifecycle; `bin/release check` is local-only.
+Images build on isolated GitHub Actions runners. `bin/publish-image` publishes
+a successful exact-revision artifact only when explicitly authorized; deployment
+remains manual via `release_deploy` in the existing session. Require the verified
+`RELEASE_IMAGE_DIGEST`; never fall back to building on production.
 Repository instructions take precedence over older memory recipes that describe
 the tunnel as optional. Public HTTPS health checks do not require SSH.
 

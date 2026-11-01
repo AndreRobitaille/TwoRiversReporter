@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+cd "$(dirname "$0")/../.."
+# Kamal has completed its final pull. Check identity before container replacement.
+exec bin/release verify-image

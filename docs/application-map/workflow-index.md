@@ -1,5 +1,8 @@
 # Workflow index
 
+Operational workflow [OPS-01: build and manually release a reviewed image](off-server-builds-2026-11-01.md)
+is tracked separately from the 57 application workflows below.
+
 Baseline: 2026-10-10. All 57 workflows are documented from requirements and source;
 runtime behavior, test coverage and defect detection were **unverified/unknown** at this discovery baseline. Current reviewed/unknown statuses and exact evidence are maintained separately in the [overnight audit](overnight-progress.md#all-57-workflows--coverage-and-effectiveness-kept-separate).
 Priorities sequence future QA and are not defect severity ratings.

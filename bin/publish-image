@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# Publish an already-tested Actions artifact without a local Docker daemon.
+set -Eeuo pipefail
+umask 077
+cd "$(dirname "$0")/.."
+run_id="${1:?usage: bin/publish-image ACTIONS_RUN_ID}"
+[[ "$run_id" =~ ^[0-9]+$ ]] || exit 64
+head="$(git rev-parse HEAD)"
+repository="AndreRobitaille/TwoRiversReporter"
+image="ghcr.io/andrerobitaille/two_rivers_reporter"
+crane="${CRANE:-crane}"
+command -v "$crane" >/dev/null || { echo "Install crane or set CRANE to its executable path" >&2; exit 1; }
+gh api "repos/$repository/actions/runs/$run_id" | ruby -rjson -e '
+  run = JSON.parse(STDIN.read)
+  abort "Image workflow did not pass" unless run["status"] == "completed" && run["conclusion"] == "success"
+  abort "Image workflow revision mismatch" unless run["head_sha"] == ARGV[0]
+  abort "Wrong image workflow" unless run["path"] == ".github/workflows/runtime-image.yml"
+  abort "Pull-request images cannot be released" unless %w[push workflow_dispatch].include?(run["event"])
+' "$head"
+staging="$(mktemp -d /tmp/trr-production-image.XXXXXX)"
+trap 'rm -rf -- "$staging"' EXIT
+gh run download "$run_id" --repo "$repository" --name "production-image-$head" --dir "$staging"
+ruby -e '
+  files = File.readlines(ARGV[0], chomp: true).map do |line|
+    match = /\A[a-f0-9]{64}  (image\.tar\.gz|revision\.txt)\z/.match(line)
+    abort "Invalid artifact checksum manifest" unless match
+    match[1]
+  end
+  abort "Both artifact checksums are required" unless files.sort == %w[image.tar.gz revision.txt]
+' "$staging/SHA256SUMS"
+(cd "$staging" && sha256sum --strict --check SHA256SUMS)
+[[ "$(cat "$staging/revision.txt")" == "$head" ]] || { echo "Archive revision mismatch" >&2; exit 1; }
+gzip --decompress --stdout "$staging/image.tar.gz" > "$staging/image.tar"
+export DOCKER_CONFIG="$staging/auth"
+mkdir "$DOCKER_CONFIG"
+gh auth token | "$crane" auth login ghcr.io --username "$(gh api user --jq .login)" --password-stdin
+"$crane" push "$staging/image.tar" "$image:$head"
+digest="$("$crane" digest "$image:$head")"
+[[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]] || { echo "Invalid registry digest" >&2; exit 1; }
+"$crane" config "$image@$digest" | ruby -rjson -e '
+  image = JSON.parse(STDIN.read)
+  labels = image.fetch("config").fetch("Labels")
+  abort "Published revision mismatch" unless labels["org.opencontainers.image.revision"] == ARGV[0]
+  abort "Published service mismatch" unless labels["service"] == "two_rivers_reporter"
+  abort "Published image must be linux/amd64" unless image["os"] == "linux" && image["architecture"] == "amd64"
+' "$head"
+printf 'RELEASE_IMAGE_DIGEST=%s\n' "$digest"

@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+# Isolated CI only. No registry publication or production connection is made.
+set -Eeuo pipefail
+[[ "${GITHUB_ACTIONS:-}" == true ]] || { echo "Run image builds on an isolated GitHub Actions runner" >&2; exit 1; }
+[[ -z "${DOCKER_HOST:-}${DOCKER_CONTEXT:-}" ]] || { echo "A remote Docker host or overridden context is not allowed" >&2; exit 1; }
+endpoint="$(docker context inspect default --format '{{.Endpoints.docker.Host}}')"
+[[ "$endpoint" == unix://* ]] || { echo "The default Docker context must use a local socket" >&2; exit 1; }
+revision="$(git rev-parse "${1:?usage: script/build_production_image REVISION OUTPUT_DIRECTORY}^{commit}")"
+output="${2:?missing output directory}"
+mkdir -p "$output/checks"
+output="$(cd "$output" && pwd)"
+context="$(mktemp -d)"
+builder="trr-production-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}"
+app="${builder}-app"
+database="${builder}-db"
+network="${builder}-network"
+cleanup() {
+  docker --context default logs "$app" > "$output/checks/startup.log" 2>&1 || true
+  docker --context default logs "$database" > "$output/checks/database.log" 2>&1 || true
+  docker --context default rm -fv "$app" "$database" >/dev/null 2>&1 || true
+  docker --context default network rm "$network" >/dev/null 2>&1 || true
+  docker --context default buildx rm "$builder" >/dev/null 2>&1 || true
+  rm -rf -- "$context"
+}
+trap cleanup EXIT
+git archive "$revision" | tar -x -C "$context"
+printf '%s\n' "$revision" > "$output/checks/revision.txt"
+docker --context default buildx create --name "$builder" --driver docker-container \
+  --driver-opt image=moby/buildkit:v0.32.2,memory=3072m,memory-swap=3072m
+docker --context default buildx inspect "$builder" --bootstrap
+container="buildx_buildkit_${builder}0"
+docker --context default inspect --format '{{json .HostConfig}}' "$container" > "$output/checks/builder-config.json"
+build_status=0
+docker --context default buildx build --builder "$builder" --platform linux/amd64 --progress plain \
+  --label service=two_rivers_reporter \
+  --label "org.opencontainers.image.revision=$revision" \
+  --label org.opencontainers.image.source=https://github.com/AndreRobitaille/TwoRiversReporter \
+  --provenance=false --load --tag trr-production:verified "$context" \
+  2>&1 | tee "$output/checks/build.log" || build_status="$?"
+builder_pid="$(docker --context default inspect --format '{{.State.Pid}}' "$container")"
+cgroup="/sys/fs/cgroup$(awk -F: '$1 == "0" {print $3}' "/proc/$builder_pid/cgroup")"
+cat "$cgroup/memory.peak" > "$output/checks/memory.peak"
+cat "$cgroup/memory.events" > "$output/checks/memory.events"
+[[ "$build_status" == 0 ]] || exit "$build_status"
+docker --context default image inspect trr-production:verified > "$output/checks/image.json"
+
+ruby_version="$(sed -n 's/^ARG RUBY_VERSION=//p' "$context/Dockerfile")"
+deno_version="$(sed -n 's/^ARG DENO_VERSION=//p' "$context/Dockerfile")"
+yt_dlp_version="$(sed -n 's/^ARG YT_DLP_VERSION=//p' "$context/Dockerfile")"
+[[ "$(cat "$context/.ruby-version")" == "ruby-$ruby_version" ]]
+docker --context default run --rm --network none --env SECRET_KEY_BASE_DUMMY=1 \
+  --entrypoint /bin/sh trr-production:verified script/smoke_runtime_image \
+  "$ruby_version" "$deno_version" "$yt_dlp_version" | tee "$output/checks/runtimes.txt"
+
+# Only the disposable database and app share this network; it has no external route.
+docker --context default pull pgvector/pgvector:pg17
+docker --context default network create --internal "$network"
+docker --context default run -d --name "$database" --network "$network" --network-alias db \
+  --memory 512m --memory-swap 512m \
+  --env POSTGRES_USER=two_rivers_reporter --env POSTGRES_PASSWORD=ci-only \
+  --env POSTGRES_DB=two_rivers_reporter_production pgvector/pgvector:pg17
+ready=false
+for _attempt in {1..30}; do
+  if docker --context default exec "$database" pg_isready -h 127.0.0.1 -U two_rivers_reporter -d two_rivers_reporter_production; then
+    ready=true
+    break
+  fi
+  sleep 1
+done
+[[ "$ready" == true ]] || { echo "Synthetic database did not become ready" >&2; exit 1; }
+docker --context default exec -i "$database" psql -v ON_ERROR_STOP=1 -U two_rivers_reporter \
+  -d two_rivers_reporter_production < "$context/config/postgres/init.sql"
+
+# All clear settings are non-secret. Override only the synthetic database and scheduler.
+ruby -ryaml -e '
+  YAML.safe_load_file(ARGV[0]).fetch("env").fetch("clear").each { |key, value| puts "#{key}=#{value}" }
+' "$context/config/deploy.yml" > "$context/smoke.env"
+cat >> "$context/smoke.env" <<'ENV'
+DB_HOST=db
+TWO_RIVERS_REPORTER_DATABASE_PASSWORD=ci-only
+SECRET_KEY_BASE=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+SOLID_QUEUE_SKIP_RECURRING=true
+ENV
+# Load the four schemas without seeds: seed callbacks enqueue provider jobs.
+# The real entrypoint still executes db:prepare when the server starts below.
+docker --context default run --rm --network "$network" --memory 1536m --memory-swap 1536m \
+  --env-file "$context/smoke.env" --entrypoint /rails/bin/rails \
+  trr-production:verified db:schema:load | tee "$output/checks/schema-load.txt"
+docker --context default run -d --name "$app" --network "$network" \
+  --memory 1536m --memory-swap 1536m --env-file "$context/smoke.env" trr-production:verified
+healthy=false
+for _attempt in {1..60}; do
+  if docker --context default exec "$app" curl --fail --silent --max-time 3 \
+    --header 'X-Forwarded-Proto: https' http://127.0.0.1/up > "$output/checks/health.html"; then
+    healthy=true
+    break
+  fi
+  sleep 1
+done
+[[ "$healthy" == true ]] || { echo "Production entrypoint did not become healthy" >&2; exit 1; }
+docker --context default exec "$app" bin/rails runner script/production_image_smoke.rb | tee "$output/checks/smoke.txt"
+for path in / /session/new; do
+  page="${path##*/}"
+  docker --context default exec "$app" curl --fail --silent --max-time 10 \
+    --header 'Host: tworiversmatters.com' --header 'X-Forwarded-Proto: https' \
+    "http://127.0.0.1$path" > "$output/checks/${page:-home}.html"
+done
+asset="$(docker --context default exec "$app" find public/assets -maxdepth 1 -name '*.css' -printf '%f\n' | head -1)"
+[[ -n "$asset" ]] || { echo "Compiled stylesheet is absent" >&2; exit 1; }
+docker --context default exec "$app" curl --fail --silent --max-time 10 \
+  --header 'Host: tworiversmatters.com' --header 'X-Forwarded-Proto: https' \
+  "http://127.0.0.1/assets/$asset" > "$output/checks/stylesheet.css"
+echo "Production image passed runtime, database, worker, HTTP and asset checks."

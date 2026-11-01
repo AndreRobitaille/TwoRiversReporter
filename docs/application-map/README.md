@@ -34,6 +34,10 @@ The [November 1 meeting-date correction](meeting-card-dates-2026-11-01.md)
 records the UTC projection root cause, Central Time boundary regressions,
 and responsive Wire label checks.
 
+The [November 1 off-server build preparation](off-server-builds-2026-11-01.md)
+records operational workflow OPS-01, manual release guards, local transport
+simulations and the container/CI/production boundaries awaiting verification.
+
 ## Read the map
 
 | Document | Use |
