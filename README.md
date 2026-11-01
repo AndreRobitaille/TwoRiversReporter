@@ -64,11 +64,68 @@ Full spec with SVG motif path data, component patterns, spacing scale, and CSS a
 
 ## Getting Started
 
+Configure local gem storage in each clone/worktree before running setup:
+
 ```bash
+bundle config set --local path "$HOME/.local/share/bundle/tworiversreporter"
+bundle check || bundle install --jobs 1
 bin/setup --skip-server   # Install deps + prepare DB
-bin/dev                   # Start dev server
+bin/dev -b 0.0.0.0        # Start dev server on the remotely accessed workstation
 bin/jobs                  # Start background job worker (separate terminal)
 ```
+
+### Local Ruby gems
+
+On Andre's workstation, installed gems live at
+`/home/andre/.local/share/bundle/tworiversreporter` (Ruby-specific subdirectories
+are managed by Bundler). Use the Ruby version in `.ruby-version`. This permanent,
+application-specific store is shared by the application's local checkouts.
+
+`bundle config set --local` records the path in the checkout's `.bundle/config`.
+That file is deliberately ignored by Git, so repeat the configuration command
+in every new clone or worktree. Normal `bundle`, `bin/rails`, `bin/dev`, and
+`bin/jobs` commands then use the external store without an environment override.
+Check the effective setting with `bundle config get path`; use `bundle config list`
+to inspect conflicting settings rather than assuming `BUNDLE_PATH` overrides an
+existing local configuration.
+
+The former `vendor/bundle/` installation was removed on November 1, 2026 after
+the current locked dependencies were installed externally and development boot,
+eager loading, and the local database connection were verified. Keep these rules:
+
+- Do not recreate `vendor/bundle/` or configure local development with
+  `path vendor/bundle` or Bundler deployment mode.
+- Keep persistent development dependencies outside `/tmp`; temporary test/review
+  bundles from earlier tasks are not the workstation's dependency installation.
+- Preserve the external store during checkout cleanup. Deleting it, or pruning
+  its gems, can break another local checkout using different locked versions.
+- Preserve the tracked `vendor/fonts/` assets used by the application.
+- When the lockfile changes or gems are missing, run `bundle install --jobs 1`
+  against the checked-in `Gemfile.lock`. Do not update dependency versions merely
+  to repair a local installation.
+
+After changing the bundle path, verify it and boot Rails against the local
+development database before removing an old installation. Confirm that inherited
+database URLs do not point at production; this check only reads the local database:
+
+```bash
+bundle config get path
+bundle check
+bin/rails runner -e development - <<'RUBY'
+abort "Unexpected database" unless ActiveRecord::Base.connection_db_config.database == "two_rivers_reporter_development"
+Rails.application.eager_load!
+puts "Rails development boot: #{Rails.version}"
+puts "Local database SELECT 1: #{ActiveRecord::Base.connection.select_value('SELECT 1')}"
+RUBY
+```
+
+In the agent sandbox, Bundler can warn that `/home/andre` is not writable and
+fall back to a temporary home directory. Verify the effective gem path and boot
+checks above; that warning alone is not a reason to relocate the installed gems.
+
+CI and production images use their own dependency installation settings. This
+workstation path belongs in the ignored local configuration, not in `Gemfile`,
+`Gemfile.lock`, or the Docker deployment configuration.
 
 ## Non-Goals
 
