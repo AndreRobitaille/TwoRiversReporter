@@ -66,7 +66,7 @@
               <div class="committee-activity-header">
                 <span class="committee-activity-topic"><%= topic.canonical_name %></span>
                 <% if topic.respond_to?(:latest_meeting_date) && topic.latest_meeting_date %>
-                  <span class="committee-activity-date"><%= topic.latest_meeting_date.strftime("%b %-d") %></span>
+                  <span class="committee-activity-date"><%= short_meeting_date(topic.latest_meeting_date) %></span>
                 <% end %>
               </div>
               <% if headline.present? %>

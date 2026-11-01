@@ -266,6 +266,12 @@ Represents a single official meeting. Belongs to a Committee (optional).
 Key fields: - body_name (historical, as scraped) - committee_id (FK) -
 meeting_type - starts_at - location - detail_page_url - status
 
+Resident-facing meeting dates and times use Central Time (America/Chicago),
+including daylight saving time. Convert the stored instant to the application
+time zone before formatting a calendar date. This also applies to timestamps
+selected through other models or SQL aggregates, which may arrive as UTC
+`Time` objects instead of a time-zone-aware `Meeting#starts_at`.
+
 ### MeetingDocument
 
 Represents any document associated with a meeting.

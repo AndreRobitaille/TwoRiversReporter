@@ -30,7 +30,7 @@
     <% end %>
     <div class="story-footer">
       <% if meeting_ref %>
-        <span class="story-meta"><%= meeting_ref[:date]&.strftime("%b %-d") %> · <%= meeting_ref[:body_name]&.sub(/ Meeting$/, "") %></span>
+        <span class="story-meta"><%= short_meeting_date(meeting_ref[:date]) %> · <%= meeting_ref[:body_name]&.sub(/ Meeting$/, "") %></span>
       <% else %>
         <span class="story-meta"></span>
       <% end %>

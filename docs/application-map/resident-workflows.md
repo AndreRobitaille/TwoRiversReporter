@@ -8,6 +8,10 @@ for audience/mode variants. Contracts come from the [development plan](../DEVELO
 and [resident API contract](../read-only-api.md). Presentation disagreements remain
 unsettled in the [verification register](verification-register.md).
 
+Subsequent [November 1 date and card-label evidence](meeting-card-dates-2026-11-01.md)
+covers specific RES-01/02/03/04/05/06/09/11 variants; the historical discovery
+status below does not imply complete coverage of those workflows.
+
 ## RES-01 — Discover an issue from What's New (P1)
 
 - **Start / data:** approved reusable topics with recent activity and varied

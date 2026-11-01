@@ -26,7 +26,7 @@
     <% end %>
     <div class="wire-footer">
       <% if meeting_ref %>
-        <span class="wire-meta"><%= meeting_ref[:date]&.strftime("%b %-d") %> · <%= meeting_ref[:body_name]&.sub(/ Meeting$/, "") %></span>
+        <span class="wire-meta"><%= short_meeting_date(meeting_ref[:date]) %> · <%= meeting_ref[:body_name]&.sub(/ Meeting$/, "") %></span>
       <% else %>
         <span class="wire-meta"></span>
       <% end %>
