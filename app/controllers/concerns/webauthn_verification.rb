@@ -30,7 +30,8 @@ module WebauthnVerification
         user_verification: true
       )
       credential
-    rescue WebAuthn::Error
+    rescue WebAuthn::Error, OpenSSL::PKey::PKeyError
+      # Malformed ECDSA signatures can raise directly from OpenSSL.
       head :unauthorized
       nil
     end

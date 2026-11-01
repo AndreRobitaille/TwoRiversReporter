@@ -58,8 +58,19 @@ persisted quantity. Omitting persistence fails the intended visible-credential
 assertion, with no incidental missing-record exception. Separate restored faults
 also detect a missing page context predicate and missing endpoint freshness.
 
+`PasskeySignatureErrorsTest` exercises malformed ECDSA signatures through actual
+sign-in and step-up HTTP requests. Invalid and truncated DER must return 401
+without changing stored credentials, creating a session or refreshing stale
+proof. Valid signed proof works before rejection and with a fresh challenge
+afterward; the rejected challenge cannot be reused. These tests use the gem's
+synthetic authenticator and actual WebAuthn/OpenSSL verification, without stubbing
+the verifier. The [November 1 correction evidence](../application-map/webauthn-upgrade-2026-11-01.md#follow-up-malformed-signature-correction)
+records both version runs and a restored fault that accepted malformed
+proof and failed all four intended assertions.
+
 ```sh
 bin/rails test test/controllers/passkeys_controller_test.rb \
+  test/controllers/passkey_signature_errors_test.rb \
   test/controllers/passkey_management_matrix_test.rb \
   test/controllers/settings/security_controller_test.rb
 bin/rails test:system
