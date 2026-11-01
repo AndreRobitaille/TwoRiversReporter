@@ -37,6 +37,12 @@ module MeetingsHelper
         .strip
   end
 
+  # SQL projections/aggregates can return plain UTC Times rather than the
+  # time-zone-aware Meeting attribute. Localize before dropping the time.
+  def short_meeting_date(timestamp)
+    timestamp&.in_time_zone&.strftime("%b %-d")
+  end
+
   def meeting_status_badge(meeting)
     return tag.span(meeting.cancellation_notice, class: "badge badge--warning") if meeting.cancelled?
 

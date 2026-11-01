@@ -30,6 +30,10 @@ The [November 1 WebAuthn upgrade review](webauthn-upgrade-2026-11-01.md) records
 passkey compatibility, browser journeys, bounded fault checks and the
 malformed-signature correction included in PR #226.
 
+The [November 1 meeting-date correction](meeting-card-dates-2026-11-01.md)
+records the UTC projection root cause, Central Time boundary regressions,
+and responsive Wire label checks.
+
 ## Read the map
 
 | Document | Use |

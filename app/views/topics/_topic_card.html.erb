@@ -25,7 +25,7 @@
     <% end %>
     <div class="topics-card-footer">
       <% if ref %>
-        <span class="topics-card-meta"><%= ref[:date].strftime("%b %-d") %> · <%= ref[:body_name] %></span>
+        <span class="topics-card-meta"><%= short_meeting_date(ref[:date]) %> · <%= ref[:body_name] %></span>
       <% end %>
       <span class="topics-card-cta">Read more &rarr;</span>
     </div>

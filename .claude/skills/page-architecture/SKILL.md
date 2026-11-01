@@ -20,6 +20,14 @@ The homepage uses a newspaper-style inverted pyramid layout. Four zones, top to 
 
 **Sort order**: Impact score descending, then recency. NOT chronological. No committee filtering — subcommittee topics surface naturally by impact.
 
+**Meeting dates**: Home, Topics (including search/Turbo cards), and committee
+activity labels use `MeetingsHelper#short_meeting_date`. It converts timestamps
+to the application's Central Time zone before formatting. Joined SQL projections
+and `MAX(meetings.starts_at)` return plain UTC `Time` objects; direct `strftime`
+on them can print tomorrow's date for an evening meeting. Keep the conversion
+before any calendar-date truncation. Wire card footers wrap the metadata or move
+the complete "Full story" label to another row when space is tight.
+
 **CSS**: `app/assets/stylesheets/home.css` — homepage-specific styles. Three visual tiers with decreasing card weight. Atomic motifs (starburst, diamond dividers, atom markers). Explicit click affordances on all interactive elements.
 
 **Navigation contract**: Top Stories and Wire entries go to topic pages; Next Up goes to meeting pages. This is specified by the approved April 10 homepage redesign, not inferred solely from current links.
