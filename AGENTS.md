@@ -7,7 +7,9 @@ This file is the compact entrypoint for coding agents working in this repository
 - Topic extraction, governance, and lifecycle rules: `docs/topics/TOPIC_GOVERNANCE.md`
 - UI/styling/design-system rules: `docs/plans/2026-03-28-atomic-design-system-spec.md`
 - Detailed project handbook: `CLAUDE.md`
-- Production playbook: `.claude/skills/deploying/SKILL.md`
+- Common operator workflow: `docs/SHARED_HOST_DEPLOYMENT.md`
+- Production entry point: `docs/DEPLOYMENT.md`
+- Detailed production playbook: `.claude/skills/deploying/SKILL.md`
 - Page and transcript-pipeline playbook: `.claude/skills/page-architecture/SKILL.md`
 
 If guidance overlaps, follow the more specialized document.
@@ -25,6 +27,8 @@ socket alone does not route Kamal or Docker through it; configure both clients
 as the playbook specifies. If the tunnel fails, stop remote work and report the
 blocker; do not loop on fresh connections or bypass it with direct SSH.
 Keep the tunnel through verification, then close it and remove temporary config.
+Follow `docs/SHARED_HOST_DEPLOYMENT.md` for the same operator sequence used by
+LegionPostTools and wipost165, and `docs/DEPLOYMENT.md` for Two Rivers details.
 Use `bin/release session` for this lifecycle; `bin/release check` is local-only.
 Images build on isolated GitHub Actions runners. `bin/publish-image` publishes
 a successful exact-revision artifact only when explicitly authorized; deployment
@@ -35,7 +39,8 @@ the tunnel as optional. Public HTTPS health checks do not require SSH.
 
 ### Deploys
 Deploy only when Andre explicitly asks. A merge to master is not a deploy.
-Run every Kamal command through `trr_kamal`.
+Run every Kamal command through the session's `release_kamal` helper
+(`trr_kamal` remains a compatibility alias).
 After a failure, wait at least 5 minutes before any single further attempt.
 Don't copy production data without Andre's yes. On a deploy he asked for, still
 take the playbook's database dump before a destructive migration.
@@ -50,7 +55,7 @@ take the playbook's database dump before a destructive migration.
 - Sign-in, membership, admin access, or transactional email → `docs/superpowers/specs/2026-07-23-passwordless-auth-and-applications-design.md`
 - Session lifetime, persistent sessions, context matching, or step-up reauthentication → `docs/superpowers/specs/2026-07-25-session-and-reauthentication-hardening-design.md`
 - Anonymous/public access behavior → `docs/superpowers/specs/2026-07-24-tiered-public-access-design.md`
-- Deploy / production operations → `.claude/skills/deploying/SKILL.md`, `config/deploy.yml`
+- Deploy / production operations → `docs/SHARED_HOST_DEPLOYMENT.md`, `docs/DEPLOYMENT.md`, `.claude/skills/deploying/SKILL.md`, `config/deploy.yml`
 - Admin navigation, admin styling, or any `/admin` page → `docs/superpowers/specs/2026-07-26-admin-ui-revamp-design.md`
 
 ## Local Ruby Gems

@@ -38,6 +38,10 @@ The [November 1 off-server build preparation](off-server-builds-2026-11-01.md)
 records operational workflow OPS-01, manual release guards, local transport
 simulations and the container/CI/production boundaries awaiting verification.
 
+The [November 1 shared-host deployment alignment](shared-host-deployment-2026-11-01.md)
+records the common three-app operator agreement, session helper and local
+lost-tunnel regression evidence. Production activation remains separate.
+
 ## Read the map
 
 | Document | Use |
