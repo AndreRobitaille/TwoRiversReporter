@@ -26,6 +26,10 @@ records the subsequent RES-04/06/10/11 navigation and access checks.
 The [October 31 Rack security correction](rack-security-2026-10-31.md) records
 multipart parser boundaries, upload compatibility and demonstrated defect detection.
 
+The [November 1 WebAuthn upgrade review](webauthn-upgrade-2026-11-01.md) records
+passkey compatibility, browser journeys, bounded fault checks and the
+malformed-signature correction included in PR #226.
+
 ## Read the map
 
 | Document | Use |
