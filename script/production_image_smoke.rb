@@ -16,14 +16,5 @@ Rails.cache.write("production-image-smoke", "synthetic", expires_in: 1.minute)
 abort "Solid Cache round trip failed" unless Rails.cache.read("production-image-smoke") == "synthetic"
 job = ExpiredAuthRecordsCleanupJob.perform_later
 abort "Job enqueue failed" unless job.successfully_enqueued?
-completed = false
-30.times do
-  queued = SolidQueue::Job.find_by(active_job_id: job.job_id)
-  if queued&.finished_at
-    completed = true
-    break
-  end
-  sleep 1
-end
-abort "Embedded Solid Queue worker did not complete the synthetic cleanup job" unless completed
+abort "Embedded Solid Queue worker did not complete the synthetic cleanup job" unless ProductionImageChecks.job_completed?(job.job_id)
 puts "Persisted primary setting, Solid Cache round trip and embedded worker completion passed."

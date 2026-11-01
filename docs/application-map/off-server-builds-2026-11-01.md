@@ -93,8 +93,34 @@ Actions run started, artifact published or production connection opened.
 Real container startup, migrations and worker completion still require the first
 successful exact-revision Actions run. No application data was copied.
 
-Changes remain uncommitted; no push, merge or deployment occurred. After separate
+At initial preparation, changes were uncommitted; no push, merge or deployment occurred. After separate
 commit/push authorization, CI can build automatically. Publication and deployment
 remain manual. Before the first rollout, record the actual live revision and
 review its rollback: legacy images may lack the new revision label. Do not waive
 identity checks or rebuild on production to work around missing evidence.
+
+## First CI execution and correction
+
+After commit/push authorization, PR #229's application and browser CI passed
+(2,171 application tests / 13,548 assertions, one existing missing-fixture skip;
+22 browser tests / 759 assertions, no skips). The first isolated image run built
+successfully, booted the real entrypoint, and reached all four databases. BuildKit
+peaked at 961,257,472 bytes with zero OOM events. Production was not contacted.
+
+That run exposed a smoke-check bug: the worker log showed the cleanup job finished,
+but the Rails runner's query cache retained its earlier unfinished result. The
+[completion probe](../../lib/production_image_checks.rb) now reads uncached.
+A real local database test commits completion through a second connection while
+the observing connection has query caching enabled; missing/unfinished jobs still
+fail. A bounded fault in an isolated process removes the uncached read to prove
+this assertion detects the regression.
+
+Fresh database preparation also ran seed callbacks that queued an unrelated
+provider job. The internal network blocked its connection attempt. The smoke
+setup now loads all four schemas without seeds, then starts the real entrypoint
+and its `db:prepare`. Database readiness uses TCP so the temporary initialization
+server cannot be mistaken for the final server.
+
+The corrected local suite passed **20 tests / 139 assertions**, with no skips.
+The new cross-connection assertion passed, failed as intended with only the
+uncached read removed in an isolated process, and passed after restoration.

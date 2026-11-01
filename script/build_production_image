@@ -61,7 +61,7 @@ docker --context default run -d --name "$database" --network "$network" --networ
   --env POSTGRES_DB=two_rivers_reporter_production pgvector/pgvector:pg17
 ready=false
 for _attempt in {1..30}; do
-  if docker --context default exec "$database" pg_isready -U two_rivers_reporter -d two_rivers_reporter_production; then
+  if docker --context default exec "$database" pg_isready -h 127.0.0.1 -U two_rivers_reporter -d two_rivers_reporter_production; then
     ready=true
     break
   fi
@@ -81,6 +81,11 @@ TWO_RIVERS_REPORTER_DATABASE_PASSWORD=ci-only
 SECRET_KEY_BASE=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 SOLID_QUEUE_SKIP_RECURRING=true
 ENV
+# Load the four schemas without seeds: seed callbacks enqueue provider jobs.
+# The real entrypoint still executes db:prepare when the server starts below.
+docker --context default run --rm --network "$network" --memory 1536m --memory-swap 1536m \
+  --env-file "$context/smoke.env" --entrypoint /rails/bin/rails \
+  trr-production:verified db:schema:load | tee "$output/checks/schema-load.txt"
 docker --context default run -d --name "$app" --network "$network" \
   --memory 1536m --memory-swap 1536m --env-file "$context/smoke.env" trr-production:verified
 healthy=false
