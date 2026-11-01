@@ -161,17 +161,20 @@ WRAPPER
   export release_temp_config release_temp_dir release_control_path
   export -f fail current_branch remote_head assert_remote_matches_head assert_clean_worktree
   export -f assert_http_status release_ssh release_preflight release_run release_setup release_deploy release_verify
-  export -f require_image_digest verify_prebuilt_image trr_kamal assert_tunnel
+  export -f require_image_digest verify_prebuilt_image release_kamal trr_kamal assert_tunnel
   cat > "$release_temp_dir/session.rc" <<'SESSION'
+set +e
+unset PROMPT_COMMAND
+HISTFILE=/dev/null
 PS1='trr-release> '
 echo "One tunnel is open. Keep this shell for the entire operation."
-echo "Commands: release_setup, release_deploy, release_verify, release_ssh <command>. Exit only when finished."
+echo "Commands: release_deploy, release_verify, release_preflight, release_ssh <command>, release_kamal <command>. Exit only when finished."
 if ! release_preflight; then
   echo "Preflight failed. Keep this session open for diagnosis; do not start another tunnel."
 fi
 SESSION
-  # The parent owns cleanup. A failed build/deploy returns to this same shell.
-  bash --noprofile --rcfile "$release_temp_dir/session.rc" -i
+  # The parent owns cleanup. A failed command returns to this same shell.
+  env -u SHELLOPTS -u BASHOPTS bash --noprofile --rcfile "$release_temp_dir/session.rc" -i
 }
 
 assert_tunnel() {
@@ -186,8 +189,23 @@ release_ssh() {
   ssh -o BatchMode=yes "$PROD_HOST" "$@"
 }
 
-trr_kamal() {
+release_kamal() (
   assert_tunnel || return
+  [[ -n "${release_temp_config:-}" && -r "$release_temp_config" ]] || {
+    echo "release: missing generated session configuration" >&2
+    return 1
+  }
+  local argument
+  for argument in "$@"; do
+    case "$argument" in
+      -c*|--config-file|--config-file=*|--config_file|--config_file=*)
+        echo "release: release_kamal selects the session configuration; do not pass -c or --config-file" >&2
+        return 1
+        ;;
+    esac
+  done
+  cd "$APP_ROOT" || return
+  unset SSH_AUTH_SOCK
   case "${1:-}" in
     deploy|setup|redeploy)
       require_image_digest || return
@@ -195,13 +213,15 @@ trr_kamal() {
       ;;
     *) bin/kamal "$@" -c "$release_temp_config" ;;
   esac
-}
+)
+
+trr_kamal() { release_kamal "$@"; }
 
 release_preflight() {
   unset RELEASE_PREFLIGHT_OK
   release_ssh 'hostname; docker --version' || return
-  trr_kamal config >/dev/null || return
-  trr_kamal server exec hostname || return
+  release_kamal config >/dev/null || return
+  release_kamal server exec hostname || return
   release_ssh 'docker ps --filter label=service=two_rivers_reporter --format "{{.ID}} {{.Names}} {{.Image}}"' || return
   release_ssh '{ docker ps --filter label=service=legion_post_165_wi_tools --format "{{.ID}} {{.Names}}"; docker ps --filter label=service=legion_post_165_wi_public --format "{{.ID}} {{.Names}}"; } | sort' > "$release_temp_dir/protected-before.txt" || return
   [[ -s "$release_temp_dir/protected-before.txt" ]] || return 1

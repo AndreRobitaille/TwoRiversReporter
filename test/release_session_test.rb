@@ -45,6 +45,33 @@ class ReleaseSessionTest < Minitest::Test
     end
   end
 
+  def test_common_kamal_helper_uses_the_session_config_and_stops_when_the_tunnel_is_lost
+    with_release do |root, environment|
+      input = "export SSH_AUTH_SOCK=synthetic-agent\ncd /\nrelease_kamal app details\ntouch \"$TEST_ROOT/disconnected\"\nrelease_kamal app details\nexit 0\n"
+      output, status = command(root, environment, "session", input)
+      assert status.success?, output
+      inspections = events(root).grep(/\AKAMAL app details /)
+      assert_equal 1, inspections.size, events(root).inspect
+      assert_match(%r{ -c /tmp/trr-production-release\.[^/ ]+/deploy\.yml\z}, inspections.first)
+      assert_includes output, "Release tunnel is unavailable"
+      assert_equal 1, events(root).count("OPEN")
+      assert_equal 1, events(root).count("CLOSE")
+      assert_equal "CLOSE", events(root).last
+    end
+  end
+
+  def test_common_kamal_helper_refuses_a_caller_supplied_configuration
+    with_release do |root, environment|
+      input = "release_kamal app details -c other.yml\nrelease_kamal app details --config-file=other.yml\nexit 0\n"
+      output, status = command(root, environment, "session", input)
+      assert status.success?, output
+      assert_equal 2, output.scan("release_kamal selects the session configuration").size
+      assert_empty events(root).grep(/\AKAMAL app details /)
+      assert_equal 1, events(root).count("OPEN")
+      assert_equal 1, events(root).count("CLOSE")
+    end
+  end
+
   def test_missing_or_invalid_digest_cannot_fall_back_to_a_production_build
     [ "", "latest", "sha256:wrong" ].each do |digest|
       with_release do |root, environment|
@@ -170,6 +197,7 @@ class ReleaseSessionTest < Minitest::Test
           socat) exit 0 ;;
           timeout) shift 2; exec "$@" ;;
           kamal)
+            [[ -z "${SSH_AUTH_SOCK:-}" && "$PWD" == "$TEST_ROOT" ]] || exit 1
             echo "KAMAL $*" >> "$TEST_ROOT/events"
             if [[ "$1" == deploy ]]; then
               [[ "${FAIL_DEPLOY:-}" != 1 ]] || exit 1
