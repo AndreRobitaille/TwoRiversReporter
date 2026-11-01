@@ -46,7 +46,7 @@ gem "bootsnap", require: false
 gem "kamal", require: false
 # Published 2026-10-05. Exact pin stays inside the 14-day release-age rule and
 # clears the net-ssh advisories fixed in 7.3.4 and 7.3.5.
-gem "net-ssh", "7.3.6"
+gem "net-ssh", "7.3.8"
 
 # Add HTTP asset caching/compression and X-Sendfile acceleration to Puma [https://github.com/basecamp/thruster/]
 gem "thruster", require: false
