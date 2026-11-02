@@ -49,6 +49,7 @@ The topic show page (`topics/show.html.erb`) uses an **editorial longform layout
 **Section visibility** is adaptive. Sections render only when they have content:
 - `What to Watch` — hidden when no briefing
 - `Coming Up` — renders meeting cards when future meetings exist; shows "typically discussed at [committee]" fallback (from `@typical_committee`) when no upcoming but appearance history exists; hidden if neither
+- Coming Up has one card per meeting, labeled with its first linked agenda item in agenda order. Other linked items remain in the record and meeting page; meetings with identical start times remain distinct.
 - `The Story` — hidden when no briefing
 - `Key Decisions` — hidden when `@decisions.any?` is false (motion→agenda_item linking via `agenda_item_ref` required)
 - `Record` — always shown (every topic has ≥1 appearance). Empty state only when `factual_record` is empty.

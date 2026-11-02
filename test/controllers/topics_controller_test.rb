@@ -572,6 +572,45 @@ class TopicsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a.topic-upcoming-link", minimum: 1
   end
 
+  test "show lists each upcoming meeting once using its first agenda item" do
+    starts_at = 7.days.from_now
+    future_meeting = Meeting.create!(body_name: "City Council", starts_at: starts_at, detail_page_url: "https://example.com/council")
+    other_meeting = Meeting.create!(body_name: "Plan Commission", starts_at: starts_at, detail_page_url: "https://example.com/commission")
+    # Create and link the later item first: insertion order is not agenda order.
+    later_item = AgendaItem.create!(meeting: future_meeting, title: "Funding vote", order_index: 8)
+    first_item = AgendaItem.create!(meeting: future_meeting, title: "Project briefing", order_index: 5)
+    other_item = AgendaItem.create!(meeting: other_meeting, title: "Project review", order_index: 1)
+    [ later_item, first_item, other_item ].each do |item|
+      AgendaItemTopic.create!(topic: @active_topic, agenda_item: item)
+    end
+    TopicBriefing.create!(
+      topic: @active_topic, headline: "Project review scheduled", generation_tier: "full",
+      generation_data: {
+        "factual_record" => [
+          { "date" => starts_at.to_date.to_s, "meeting" => "City Council", "event" => "A project briefing is scheduled." },
+          { "date" => starts_at.to_date.to_s, "meeting" => "City Council", "event" => "A funding vote is scheduled." }
+        ]
+      }
+    )
+
+    2.times do
+      get topic_url(@active_topic)
+      assert_response :success
+      assert_equal [ meeting_path(future_meeting), meeting_path(other_meeting) ],
+        css_select("a.topic-upcoming-link").map { |link| link["href"] }
+      assert_select "a.topic-upcoming-link[href=?] .topic-upcoming-item", meeting_path(future_meeting), text: "Project briefing", count: 1
+      assert_select ".topic-timeline-event", text: "A project briefing is scheduled."
+      assert_select ".topic-timeline-event", text: "A funding vote is scheduled."
+      assert_equal [ first_item.id, later_item.id ].sort,
+        @active_topic.topic_appearances.where(meeting: future_meeting).pluck(:agenda_item_id).sort
+    end
+
+    get meeting_path(future_meeting)
+    assert_response :success
+    assert_includes response.body, "Project briefing"
+    assert_includes response.body, "Funding vote"
+  end
+
   test "show loads decisions with motions and votes" do
     item_with_motion = AgendaItem.create!(meeting: @meeting, title: "Vote Item")
     AgendaItemTopic.create!(topic: @active_topic, agenda_item: item_with_motion)
