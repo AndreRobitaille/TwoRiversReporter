@@ -22,6 +22,15 @@ database. Synthetic fixtures only; no AI calls are involved in these tests.
   passes the targeted test: one test, 21 assertions, no failures/errors/skips.
 - `bin/rubocop`: 633 files inspected, no offenses.
 
+The controller suite also passed after rebasing the change onto the deployed
+base `f03db83c4f2d1a6b10490606d1485dc65da0469c`. Release CI then identified
+new dependency advisories. The lockfile updates Nokogiri to 1.19.6 and
+rails-html-sanitizer to 1.7.2, including its required Loofah 2.25.3 dependency.
+The refreshed dependency audit reports no vulnerabilities; Brakeman reports
+no warnings.
+With these dependency patches, `PARALLEL_WORKERS=1 bin/rails test` passed:
+2,174 tests, 13,574 assertions, no failures or errors, one skip.
+
 The assertions exercise authenticated HTTP rendering and later requests. No
 CSS, browser interaction, authentication policy, or AI pipeline behavior changes.
 Browser visual inspection, CI and production deployment are not claimed here.
