@@ -83,6 +83,10 @@ status below does not imply complete coverage of those workflows.
 - **October 24 metadata review:** topic snippets use an allowed briefing headline,
   then the public dek with the existing title casing. Visible headings and dates
   are unchanged; see [scope and evidence](seo-review-2026-10-24.md).
+- **November 2 upcoming meeting correction:** Coming Up shows one card per
+  meeting, using the first linked item in agenda order. Distinct meetings at the
+  same time remain separate; appearance rows and the full record remain intact.
+  See [verification evidence](../testing/2026-11-02-topic-upcoming-meetings.md).
 
 ## RES-05 — Find an upcoming or historical meeting (P1)
 

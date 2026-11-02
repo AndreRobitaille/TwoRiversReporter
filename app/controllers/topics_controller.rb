@@ -92,16 +92,15 @@ class TopicsController < ApplicationController
     @generated_image = @topic.current_generated_image(:og)
     assign_generated_image_meta(@generated_image, alt: "Illustration for #{@topic.name}")
 
-    # Upcoming: future meetings where this topic is on the agenda.
-    # Deduplicate on (meeting_id, agenda_item_id) as a view-layer safety net;
-    # paired with the unique DB index idx_topic_appearances_unique_triple and
-    # the model-level uniqueness validation on TopicAppearance.
+    # Show each future meeting once, using its first linked agenda item.
+    # All appearances remain available to the record and meeting pages.
     @upcoming = @topic.topic_appearances
                       .includes(meeting: [], agenda_item: [])
                       .joins(:meeting)
+                      .left_joins(:agenda_item)
                       .where("meetings.starts_at > ?", Time.current)
-                      .order("meetings.starts_at ASC")
-                      .uniq { |a| [ a.meeting_id, a.agenda_item_id ] }
+                      .order("meetings.starts_at ASC, meetings.id ASC, agenda_items.order_index ASC, topic_appearances.id ASC")
+                      .uniq(&:meeting_id)
 
     @briefing = @topic.topic_briefing
 
