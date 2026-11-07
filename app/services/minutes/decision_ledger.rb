@@ -2,15 +2,15 @@ module Minutes
   # Runs inside Publish's meeting/source transaction. Identity correspondence is
   # separate from semantic validation; every observation remains extracted.
   class DecisionLedger
-    RULE_VERSION = "decision_identity_v1"
+    RULE_VERSION = "decision_identity_v2"
 
     def initialize(meeting, stage)
       raise ArgumentError, "Wrong meeting extraction" unless stage.original_meeting_id == meeting.id && stage.kind == "votes" && stage.status == "completed"
       @meeting, @stage = meeting, stage
       previous = meeting.minutes_publication&.votes_extraction
       raise ArgumentError, "Wrong prior publication" if previous && previous.original_meeting_id != meeting.id
+      @previous = previous ? previous.council_decision_observations.includes(identity_assignment: :correction).to_a : []
       @initial = previous&.id == stage.id || !meeting.council_decisions.exists?
-      @previous = previous ? previous.council_decision_observations.to_a : []
       # Rechecking locations is deterministic, including for a cached stage that
       # predates persisted checks. No provider call or old approval is required.
       @checks = LocateEvidence.new(stage).call(stage.data)
@@ -20,14 +20,23 @@ module Minutes
 
     def observe(data, sequence)
       existing = @stage.council_decision_observations.find_by(sequence: sequence)
-      return existing if existing
+      if existing
+        existing.identity_assignment || existing.create_identity_assignment!(minutes_extraction: @stage, council_decision: existing.council_decision)
+        return existing
+      end
 
       check = @checks.fetch("motions").fetch(sequence - 1).merge(@checks.slice("rule_version", "source_key", "text_version_id"))
       context = agenda_context(data["agenda_item_ref"])
       candidates = @previous.select do |observation|
-        observation.council_decision_id && (observation.location_check["excerpt"] == check["excerpt"] ||
+        assignment = observation.identity_assignment
+        assignment && (assignment.council_decision_id || assignment.correction_id || assignment.conflicting_correction_ids.any?) && (observation.location_check["excerpt"] == check["excerpt"] ||
           (observation.sequence == sequence && observation.agenda_context == context))
       end
+      initial_supported = @initial && first_supported_identity?(check)
+      correction_ids = correction_ids_for(candidates)
+      # If no stable identities exist yet, rewritten evidence must not erase
+      # reviews merely because correspondence can no longer identify a candidate.
+      correction_ids = correction_ids_for(@previous) if @initial && !initial_supported && correction_ids.empty?
       reason = if check["status"] != "located"
         check.fetch("reason")
       elsif @excerpt_counts.fetch(check["excerpt"]) > 1
@@ -39,28 +48,70 @@ module Minutes
       end
 
       decision = nil
+      inherited_correction = nil
       status = "unresolved"
       unless reason
         matches = candidates.select do |observation|
           observation.sequence == sequence && observation.agenda_context == context && observation.location_check["excerpt"] == check["excerpt"]
         end
-        if @initial
+        if correction_ids.any? && (!matches.one? || matches.first.identity_assignment.correction.nil?)
+          reason = "identity_correction_conflict"
+        elsif initial_supported && correction_ids.empty?
           decision = CouncilDecision.create!(meeting: @meeting, original_meeting_id: @meeting.id)
           status = "introduced"
         elsif matches.one?
-          decision = matches.first.council_decision
-          status = "matched"
+          assignment = matches.first.identity_assignment
+          correction = assignment.correction
+          if correction && correction.evidence_manifest["source_key"] != @stage.source_key
+            reason = "identity_correction_source_changed"
+          elsif correction && correction.evidence_manifest["data"] != data
+            reason = "identity_correction_conflict"
+          else
+            decision = assignment.council_decision
+            inherited_correction = correction
+            status = decision ? "matched" : "unresolved"
+            reason = "identity_review_unassigned" unless decision
+          end
         else
           reason = candidates.any? ? "identity_changed" : "unmatched_revision"
         end
       end
 
-      @stage.council_decision_observations.create!(sequence: sequence, data: data, location_check: check,
+      candidate_ids = candidates.flat_map do |candidate|
+        [ candidate.identity_assignment.council_decision_id, candidate.council_decision_id, *candidate.candidate_decision_ids ]
+      end.compact.uniq.sort
+      observation = @stage.council_decision_observations.create!(sequence: sequence, data: data, location_check: check,
         agenda_context: context || {}, council_decision: decision, identity_status: status, reason: reason,
-        candidate_decision_ids: candidates.map(&:council_decision_id).uniq.sort, rule_version: RULE_VERSION)
+        candidate_decision_ids: candidate_ids, rule_version: RULE_VERSION)
+      conflicts = status == "unresolved" && inherited_correction.nil? ? correction_ids : []
+      observation.create_identity_assignment!(minutes_extraction: @stage, council_decision: decision, correction: inherited_correction,
+        conflicting_correction_ids: conflicts)
+      observation
     end
 
     private
+
+    def correction_ids_for(observations)
+      observations.flat_map do |observation|
+        assignment = observation.identity_assignment
+        [ assignment.correction_id, *assignment.conflicting_correction_ids ] if assignment
+      end.compact.uniq.sort
+    end
+
+    def first_supported_identity?(check)
+      return true unless @previous.any? { |observation| review_recorded?(observation.identity_assignment) }
+
+      # A review must not be bypassed by treating rewritten/reordered unknown
+      # evidence as a fresh baseline. Unchanged, unrelated passages can advance.
+      @previous.any? do |observation|
+        !review_recorded?(observation.identity_assignment) && observation.location_check["status"] == "located" &&
+          observation.location_check["excerpt"] == check["excerpt"]
+      end
+    end
+
+    def review_recorded?(assignment)
+      assignment && (assignment.correction_id || assignment.conflicting_correction_ids.any?)
+    end
 
     def reordered_excerpts(previous)
       changed = Set.new

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_07_220000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_07_230000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -148,6 +148,46 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_220000) do
     t.datetime "updated_at", null: false
     t.index [ "name" ], name: "index_committees_on_name", unique: true
     t.index [ "slug" ], name: "index_committees_on_slug", unique: true
+  end
+
+  create_table "council_decision_assignments", force: :cascade do |t|
+    t.bigint "observation_id", null: false
+    t.bigint "minutes_extraction_id", null: false
+    t.bigint "council_decision_id"
+    t.bigint "correction_id"
+    t.jsonb "conflicting_correction_ids", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "correction_id" ], name: "index_council_decision_assignments_on_correction_id"
+    t.index [ "council_decision_id" ], name: "index_council_decision_assignments_on_council_decision_id"
+    t.index [ "minutes_extraction_id", "council_decision_id" ], name: "index_decision_assignments_on_stage_and_decision", unique: true
+    t.index [ "minutes_extraction_id" ], name: "index_council_decision_assignments_on_minutes_extraction_id"
+    t.index [ "observation_id" ], name: "index_council_decision_assignments_on_observation_id", unique: true
+  end
+
+  create_table "council_decision_corrections", force: :cascade do |t|
+    t.bigint "observation_id", null: false
+    t.bigint "basis_observation_id"
+    t.bigint "before_decision_id"
+    t.bigint "after_decision_id"
+    t.bigint "previous_correction_id"
+    t.bigint "actor_id"
+    t.bigint "original_actor_id", null: false
+    t.string "actor_email", null: false
+    t.string "action", null: false
+    t.text "reason", null: false
+    t.string "request_id", null: false
+    t.jsonb "request_manifest", null: false
+    t.jsonb "evidence_manifest", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "actor_id" ], name: "index_council_decision_corrections_on_actor_id"
+    t.index [ "after_decision_id" ], name: "index_council_decision_corrections_on_after_decision_id"
+    t.index [ "basis_observation_id" ], name: "index_council_decision_corrections_on_basis_observation_id"
+    t.index [ "before_decision_id" ], name: "index_council_decision_corrections_on_before_decision_id"
+    t.index [ "observation_id" ], name: "index_council_decision_corrections_on_observation_id"
+    t.index [ "previous_correction_id" ], name: "index_council_decision_corrections_on_previous_correction_id"
+    t.index [ "request_id" ], name: "index_council_decision_corrections_on_request_id", unique: true
   end
 
   create_table "council_decision_observations", force: :cascade do |t|
@@ -949,6 +989,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_220000) do
   add_foreign_key "committee_aliases", "committees"
   add_foreign_key "committee_memberships", "committees"
   add_foreign_key "committee_memberships", "members"
+  add_foreign_key "council_decision_assignments", "council_decision_corrections", column: "correction_id"
+  add_foreign_key "council_decision_assignments", "council_decision_observations", column: "observation_id"
+  add_foreign_key "council_decision_assignments", "council_decisions"
+  add_foreign_key "council_decision_assignments", "minutes_extractions"
+  add_foreign_key "council_decision_corrections", "council_decision_corrections", column: "previous_correction_id"
+  add_foreign_key "council_decision_corrections", "council_decision_observations", column: "basis_observation_id"
+  add_foreign_key "council_decision_corrections", "council_decision_observations", column: "observation_id"
+  add_foreign_key "council_decision_corrections", "council_decisions", column: "after_decision_id"
+  add_foreign_key "council_decision_corrections", "council_decisions", column: "before_decision_id"
+  add_foreign_key "council_decision_corrections", "users", column: "actor_id", on_delete: :nullify
   add_foreign_key "council_decision_observations", "council_decisions"
   add_foreign_key "council_decision_observations", "minutes_extractions"
   add_foreign_key "council_decisions", "meetings", on_delete: :nullify

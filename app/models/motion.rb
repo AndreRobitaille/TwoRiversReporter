@@ -2,7 +2,8 @@ class Motion < ApplicationRecord
   belongs_to :meeting
   belongs_to :agenda_item, optional: true
   belongs_to :decision_observation, class_name: "CouncilDecisionObservation", optional: true
-  has_one :council_decision, through: :decision_observation
+  has_one :identity_assignment, through: :decision_observation
+  has_one :council_decision, through: :identity_assignment
   has_many :votes, dependent: :destroy
 
   validate :decision_observation_matches_meeting
