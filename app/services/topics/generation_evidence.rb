@@ -10,11 +10,16 @@ module Topics
     def self.capture(topic:, meeting:, context:, query:, kind:)
       return unless topic.approved? && sources_current?(context[:source_catalog])
 
+      knowledge = knowledge_inputs(topic)
       input = { context: context.except(:knowledgebase_context), query: query,
-        knowledge: knowledge_inputs(topic), prompts: prompt_inputs(kind),
+        knowledge: knowledge, prompts: prompt_inputs(kind),
         committees: Committee.for_ai_context.pluck(:name, :committee_type, :description) }
       { "version" => VERSION, "kind" => kind, "topic_id" => topic.id, "meeting_id" => meeting.id,
-        "input_sha256" => Digest::SHA256.hexdigest(JSON.generate(canonical(input.as_json))),
+        "input_sha256" => fingerprint(input),
+        "meeting_sha256" => fingerprint(context[:meeting_metadata]),
+        "background_sha256" => fingerprint(context.slice(:background_context, :resident_reported_context)),
+        "agenda_evidence" => Array(context[:agenda_items]).map { |item| fingerprint(item) },
+        "knowledge_evidence" => knowledge_references(knowledge),
         "motion_evidence" => motion_evidence(context) }
     end
 
@@ -40,8 +45,22 @@ module Topics
       # it validated; still reject any known changed source in its catalog.
       return true unless data.key?("evidence_manifest")
 
+      retained = data["evidence_manifest"]
       expected = summary_inputs(summary.topic_id, summary.meeting_id)&.fetch(:evidence)
-      expected.present? && data["evidence_manifest"] == expected
+      return false unless retained.is_a?(Hash) && expected
+
+      # New appearances, aliases, prompts or additional background change the
+      # generation cache key, but do not invalidate supported historical facts.
+      fixed = %w[version kind meeting_id meeting_sha256 background_sha256]
+      return false unless retained.slice(*fixed) == expected.slice(*fixed)
+      return false unless %w[agenda_evidence knowledge_evidence].all? do |key|
+        retained[key].is_a?(Array) && (retained[key] - expected.fetch(key)).empty?
+      end
+
+      events = retained["motion_evidence"]
+      return false unless events.is_a?(Array) && events.all? { |event| event.is_a?(Hash) && event["event_id"].is_a?(Integer) }
+      current = TopicStatusEvent.where(topic_id: summary.topic_id, id: events.map { |event| event["event_id"] }).with_current_evidence
+      (events - current.map { |event| event_reference(event) }).empty?
     end
 
     def self.sources_current?(sources)
@@ -69,6 +88,14 @@ module Topics
     end
     private_class_method :knowledge_inputs
 
+    def self.knowledge_references(knowledge)
+      chunks_by_source = knowledge.fetch(:chunks).group_by { |chunk| chunk[1] }
+      knowledge.fetch(:sources).map do |source|
+        fingerprint([ source, chunks_by_source.fetch(source.first, []) ])
+      end
+    end
+    private_class_method :knowledge_references
+
     def self.prompt_inputs(kind)
       PromptTemplate.where(key: [ "analyze_#{kind}", "render_#{kind}" ]).order(:key).map do |template|
         [ template.key, template.system_role, template.instructions, template.model_tier,
@@ -79,16 +106,25 @@ module Topics
 
     def self.motion_evidence(context)
       continuity = context[:continuity_context] || {}
-      events = Array(continuity[:recent_status_events] || continuity[:status_events]).filter_map do |event|
-        next unless event[:event_id]
-        { "event_id" => event[:event_id], "reference" => event[:motion_reference]&.deep_stringify_keys }
-      end
+      ids = Array(continuity[:recent_status_events] || continuity[:status_events]).filter_map { |event| event[:event_id] }
+      events = TopicStatusEvent.where(id: ids).map { |event| event_reference(event) }
       inherited = Array(context[:prior_meeting_analyses]).flat_map do |analysis|
         Array(analysis.dig("evidence_manifest", "motion_evidence"))
       end
       (events + inherited).uniq.sort_by { |entry| entry.fetch("event_id") }
     end
     private_class_method :motion_evidence
+
+    def self.event_reference(event)
+      { "event_id" => event.id, "reference" => event.motion_reference&.deep_stringify_keys,
+        "event_sha256" => fingerprint(event.attributes.slice("evidence_type", "lifecycle_status", "occurred_at", "notes", "source_ref")) }
+    end
+    private_class_method :event_reference
+
+    def self.fingerprint(value)
+      Digest::SHA256.hexdigest(JSON.generate(canonical(value.as_json)))
+    end
+    private_class_method :fingerprint
 
     def self.canonical(value)
       case value

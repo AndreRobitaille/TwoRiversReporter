@@ -33,6 +33,35 @@ class Topics::GenerationEvidenceTest < ActiveJob::TestCase
     assert_equal original, @meeting.topic_summaries.sole.attributes
   end
 
+  test "new meetings and added background retain valid history beyond the recent raw context cap" do
+    summarize(@meeting)
+    original = @meeting.topic_summaries.sole.attributes
+    assert Topics::GenerationEvidence.summary_current?(@meeting.topic_summaries.sole)
+    source = KnowledgeSource.create!(title: "Additional synthetic background", source_type: "note", origin: "manual", status: "approved", active: true)
+    source.topics << @topic
+    source.knowledge_chunks.create!(content: "Additional background, not a withdrawal", embedding: [ 0.3, 0.4 ])
+    newest = nil
+    4.times do |index|
+      newest, = add_meeting("later-#{index}", "Distinct later synthetic decision #{index}", @meeting.starts_at + (index + 1).hours)
+      summarize(newest)
+    end
+    briefing(newest)
+    assert_equal @claims.values.sort, @briefing_inputs.last[:prior_meeting_analyses].map { |data| data["headline"] }.sort
+    assert_equal 3, @briefing_inputs.last[:recent_raw_context].size
+    assert_equal original, @meeting.topic_summaries.sole.attributes
+  end
+
+  test "topic merge preserves supported prior analysis when the canonical topic id changes" do
+    summarize(@meeting)
+    original = @meeting.topic_summaries.sole.generation_data.deep_dup
+    target = Topic.create!(name: "Synthetic merged civic improvements", status: "approved")
+    Topics::MergeService.new(source_topic: @topic, target_topic: target).call
+    @topic = target
+    briefing
+    assert_equal [ @claims.fetch(@meeting.id) ], @briefing_inputs.last[:prior_meeting_analyses].map { |data| data["headline"] }
+    assert_equal original, @meeting.topic_summaries.sole.generation_data
+  end
+
   test "changed prompt settings invalidate reuse and an in flight prompt revision prevents publication" do
     template = PromptTemplate.create!(key: "analyze_topic_briefing", name: "Synthetic briefing", instructions: "Synthetic first contract", model_tier: "default")
     summarize(@meeting)
@@ -226,6 +255,9 @@ class Topics::GenerationEvidenceTest < ActiveJob::TestCase
     briefing
     refute_includes @calls, :briefing_render
     assert_equal original, @topic.reload.topic_briefing.attributes
+    @hooks.clear
+    briefing
+    assert_empty @briefing_inputs.last[:prior_meeting_analyses]
   end
 
   private
