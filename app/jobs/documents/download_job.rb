@@ -8,6 +8,7 @@ module Documents
     def perform(document_id)
       document = MeetingDocument.find(document_id)
       return unless document.source_url.present?
+      requested_state = download_state(document)
 
       # Prepare conditional GET headers
       headers = {}
@@ -30,34 +31,34 @@ module Documents
         # Rewind for subsequent use
         downloaded_io.rewind
 
-        # Matching bytes are not a content change. Record last-checked time and
-        # any cache headers without moving updated_at.
-        if document.sha256 == sha
-          Rails.logger.info "Document #{document_id} unchanged (SHA match)"
-          record_unchanged_check!(document, **metadata)
-          return
+        changed = false
+        document.with_lock do
+          # Another fetch or source edit won while this request was in flight.
+          return unless download_state(document) == requested_state
+
+          changed = document.sha256 != sha
+          filename = File.basename(URI.parse(document.source_url).path).presence || "document.pdf"
+          if changed
+            document.update!(sha256: sha, **metadata, fetched_at: Time.current)
+            version = document.current_source_version
+            if version
+              # Reuse the archived blob when a publisher restores earlier bytes.
+              document.file.attach(version.file.blob)
+            else
+              document.file.attach(io: downloaded_io, filename: filename)
+            end
+            MeetingDocumentVersion.capture!(document)
+          else
+            record_unchanged_check!(document, **metadata)
+            # A legacy row may not yet have retained bytes. Capture the actual
+            # response, without changing its current attachment or updated_at.
+            MeetingDocumentVersion.capture!(document, file: { io: downloaded_io, filename: filename })
+          end
         end
 
-        # Content changed
-        Rails.logger.info "Document #{document_id} updated/replaced (new SHA: #{sha})"
-
-        # Filename
-        filename = File.basename(URI.parse(document.source_url).path)
-        filename = "document.pdf" if filename.blank?
-
-        # Attach
-        document.file.attach(
-          io: downloaded_io,
-          filename: filename
-        )
-
-        document.update!(
-          sha256: sha,
-          etag: metadata[:etag],
-          last_modified: metadata[:last_modified],
-          content_length: metadata[:content_length],
-          fetched_at: Time.current
-        )
+        # Retaining a previously unversioned artifact is deterministic work.
+        # Only changed bytes enqueue the existing analysis pipeline.
+        return unless changed
 
         # Trigger Analysis for PDFs or Agenda parsing
         if document.document_type.to_s.end_with?("pdf")
@@ -72,16 +73,26 @@ module Documents
           # time and whatever cache headers the response includes, without
           # moving updated_at.
           Rails.logger.info "Document #{document_id} unchanged (304 Not Modified)"
-          record_unchanged_check!(document, **fetch_metadata(e.io))
+          document.with_lock do
+            if download_state(document) == requested_state
+              record_unchanged_check!(document, **fetch_metadata(e.io))
+            end
+          end
         else
           Rails.logger.error "Failed to download document #{document_id}: #{e.message} (status: #{e.io&.status.inspect})"
         end
       rescue StandardError => e
         Rails.logger.error "Error processing document #{document_id}: #{e.message}"
+      ensure
+        downloaded_io.close if downloaded_io.respond_to?(:close)
       end
     end
 
     private
+
+    def download_state(document)
+      document.attributes.slice("source_url", "document_type", "sha256", "fetched_at", "updated_at")
+    end
 
     def fetch_metadata(io)
       meta = io.respond_to?(:meta) ? io.meta : nil
