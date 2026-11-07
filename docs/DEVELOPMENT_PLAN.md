@@ -303,10 +303,39 @@ downstream enqueue; PDF retries preserve completed OCR. Legacy attachments
 without retained download provenance remain unversioned until a full-byte fetch
 and extraction establish it. No historical text is attributed to new bytes.
 
+`MinutesExtraction` retains source-keyed vote/attendance stages, exact text,
+input/prompt/model/rule provenance and complete parsed responses. A stage is
+completed extraction, not semantic or human validation. `MinutesPublication`
+selects compatible completed stages; a meeting/source lock protects atomic
+replacement of the display rows, membership reconciliation and current pointer.
+Known votes remain inspectable in a completed stage while attendance is pending.
+Explicit votes and absences derived from the matching roll call have different
+`Vote#evidence_basis` values; old rows remain `legacy`. Unsupported vote values
+are held rather than converted to abstentions.
+
+Stage claims prevent concurrent duplicate dispatch. Completed stages are reused;
+changed agenda context invalidates only votes. Global prompt/model changes alone
+do not schedule historical extraction. An explicit job with `refresh: true` can
+request extraction for changed settings, while retaining completed-input caching
+and retry guards. Meeting date/committee context is projected with code without
+repeating source extraction, even after global settings change. Invalid
+responses allow at most two attempts; uncertain transport outcomes and unfinished
+claims are not automatically redispatched. Oversized minutes stop before dispatch
+at the existing 50,000-character boundary instead of silently losing the ending.
+These are conservative extraction guards, not #238's request/batch/daily spending
+ledger. Campaign paid dispatch still requires that full cost contract.
+
+The existing nightly repair sweep checks missing/changed stages and recovers
+missing PDF extraction triggers. It does not reprocess untouched completed legacy
+rows merely because this change is deployed. No new schedule is introduced.
+Legacy text can be staged coherently with explicit `legacy_text_projection`
+provenance; it is never relabeled as a retained original artifact. Existing
+summary grounding omits old structured motions while current facts are pending.
+
 These are bounded evidence-foundation slices of #236. Stable decision identity,
-correction reviews, coordinated vote and attendance publication, and budgeted
-incremental generation remain follow-on work. Existing readers still use the
-mutable projection; migrating their provenance and downstream snapshots is
+correction review and budgeted incremental generation remain follow-on work.
+Existing readers still use the mutable display rows; migrating full record
+queries to retained evidence and complete service-period denominators remains
 separate work. Existing citation resolution still rejects changed source versions.
 See the [bounded pilot source check and contract](superpowers/plans/2026-11-07-council-evidence-pilot.md).
 

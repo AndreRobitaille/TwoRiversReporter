@@ -54,6 +54,10 @@ The [November 7 council text-version foundation](council-text-versions-2026-11-0
 records PDF/OCR provenance, complete-page retention, atomic publication,
 unchanged-input reuse, and real local parser plus bounded fault checks.
 
+The [November 7 minutes fact-publication foundation](council-fact-publication-2026-11-07.md)
+records coordinated vote/attendance staging, same-source publication, real
+parallel database execution, member-page HTTP transitions and source/cache guards.
+
 ## Read the map
 
 | Document | Use |
