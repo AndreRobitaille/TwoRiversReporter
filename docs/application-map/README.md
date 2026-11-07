@@ -74,6 +74,10 @@ The [November 7 topic motion-evidence foundation](council-topic-evidence-2026-11
 records retained event references, distinct decisions, current-context filtering,
 topic merges and concurrent continuity checks.
 
+The [November 7 person-merge evidence checks](council-member-merges-2026-11-07.md)
+record conflict refusal, transaction rollback, visible admin feedback and retained
+evidence through compatible person merges and cached minutes reconstruction.
+
 ## Read the map
 
 | Document | Use |

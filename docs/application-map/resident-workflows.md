@@ -223,6 +223,11 @@ status below does not imply complete coverage of those workflows.
   or the first displayed current committee and its existing role label.
   Subsequent requests drop ended roles. No roster links or voting access were
   added; see [evidence](seo-review-2026-10-24.md).
+- **November 7 identity reconstruction:** compatible person merge → source-name
+  alias → cached minutes reconstruction preserves the surviving person's current
+  votes and attendance, original retained attribution, decision review and topic
+  evidence. Fresh authorized member reads are checked; no public route or access
+  change. See [scope and limits](council-member-merges-2026-11-07.md).
 
 ## RES-11 — Cross an access-mode or audience boundary (P0)
 

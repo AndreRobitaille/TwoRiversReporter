@@ -356,6 +356,18 @@ The initial identity and later correspondence are not fact approval:
 all observations remain `extracted`. Replaced agenda row IDs do not change the
 captured textual context. Member aliases remain the one person-identity system.
 
+Person merges deduplicate votes only when their value and evidence basis agree,
+and attendance only when status, attendee type and capacity agree. A disagreement
+refuses the whole merge and preserves both records; it is not resolved by choosing
+the target person's value. Source associations reload before comparison so a
+previously loaded member cannot conceal a newer conflict. The existing admin
+member page displays the refusal.
+Compatible merges retain the source name as an alias, so cached minutes
+reprojection keeps the surviving person while retaining original raw names,
+decision observations, identity reviews and topic evidence. This does not approve
+the facts or add vote/attendance correction controls. Membership/office conflict
+rules and concurrent person-merge/publication coordination remain separate work.
+
 A decision's current observation comes through `CouncilDecisionAssignment` for
 the meeting's current published vote stage; it never falls back to a superseded observation. An unresolved change
 can therefore withdraw that current reference while unrelated decisions advance.
