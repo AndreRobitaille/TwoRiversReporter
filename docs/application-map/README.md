@@ -81,7 +81,11 @@ evidence through compatible person merges and cached minutes reconstruction.
 The [November 7 briefing-withdrawal checks](council-briefing-withdrawal-2026-11-07.md)
 cover decision-identity correction through stored briefing publication, resident
 representations, API freshness, delayed jobs and concurrent first publication.
-Document/knowledge withdrawal and other generated projections remain open.
+Knowledge withdrawal and other generated projections remain open.
+
+The [November 7 document-source withdrawal checks](council-source-withdrawal-2026-11-07.md)
+cover source changes/removal through retained catalog and motion dependencies,
+atomic withdrawal, later resident reads, unchanged reuse and concurrent first publication.
 
 The [November 7 topic-generation dependency checks](council-topic-generation-2026-11-07.md)
 cover unchanged topic-stage reuse, stale-input filtering and rejected in-flight

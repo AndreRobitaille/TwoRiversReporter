@@ -190,6 +190,11 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   [UploadedTranscriptImporter](../../app/services/documents/uploaded_transcript_importer.rb),
   [workflow job](../../app/jobs/admin/transcript_import_workflow_job.rb),
   [meeting summarizer](../../app/jobs/summarize_meeting_job.rb).
+  Identical uploaded SRT content/URL/provenance now reuses its document and
+  dependent briefing receipt. Replacement and withdrawal share a transaction;
+  [source-withdrawal checks](council-source-withdrawal-2026-11-07.md) cover concurrent
+  first publication and failed replacement. General meeting-stage paid-call
+  idempotence remains separate.
 
 ## BG-04 — Update topic continuity and resident priorities (P1)
 
@@ -233,7 +238,9 @@ use the same topic-summary guard. See [behavior, cost limits and fault evidence]
 Known decision-identity corrections now withdraw dependent stored briefings and
 illustrations in the review transaction; resident reads omit them until checked
 full generation replaces them. See the bounded [withdrawal contract and QA](council-briefing-withdrawal-2026-11-07.md).
-Other source-change writers and generated projections remain unverified here.
+Ordinary document save/destroy/touch transactions now also withdraw known catalog
+and motion-dependent briefings; see [source-change QA and its limits](council-source-withdrawal-2026-11-07.md).
+Knowledge changes and other generated projections remain separate work.
 Other stored resident prose and all-writer atomic invalidation remain separate.
 
 October 24 leadership-context update: extraction carries administrator notes

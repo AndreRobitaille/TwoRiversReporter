@@ -378,3 +378,6 @@ assertions below are candidate acceptance criteria based on the user's brief.
 - **Observed:** [AuditEventsController](../../app/controllers/admin/audit_events_controller.rb),
   [AuditEvent](../../app/models/audit_event.rb),
   [audit view](../../app/views/admin/audit_events/index.html.erb).
+  Automated document-dependent briefing withdrawals retain source receipts in
+  the audit metadata and display an Automated actor with the topic label. See
+  [source-withdrawal verification](council-source-withdrawal-2026-11-07.md).
