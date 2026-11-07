@@ -119,6 +119,15 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   Source branches queue packet recap immediately, agenda preview after 5 minutes,
   and minutes recap after 10 minutes. None was run for the map.
 
+- **November 7 artifact foundation:** full-byte downloads retain immutable
+  `MeetingDocumentVersion` records and archived blobs, atomically with replacement.
+  Same-source identical bytes reuse a version without queuing analysis; delayed
+  responses are rejected after another fetch/source edit. Ordinary document
+  deletion unlinks retained versions instead of deleting their evidence.
+  Legacy HTTP 304 does not create a version without bytes. This changes the
+  download boundary only; vote/attendance extraction still lacks coordinated
+  source-version publication. See [scope and verification](council-evidence-2026-11-07.md).
+
 ## BG-03 — Add recording context without replacing official evidence (P0)
 
 - **Start / data:** council recording/captions or uploaded SRT, substantive packet/

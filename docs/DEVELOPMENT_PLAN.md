@@ -279,6 +279,22 @@ Represents any document associated with a meeting.
 Key fields: - meeting_id - document_type - source_url - sha256 -
 page_count - text_quality - extracted_text
 
+`MeetingDocumentVersion` retains downloaded artifact bytes and their source
+URL/type, SHA-256, original document/meeting identity, meeting timestamp,
+retrieval timestamp and HTTP Last-Modified value. Publication time remains
+unknown unless separately established; HTTP metadata does not establish it.
+Versions are collected evidence, not validation of extracted claims. Same-source
+identical bytes reuse the retained version; replacement and ordinary document
+removal preserve earlier artifacts. Delayed downloads cannot overwrite a newer
+fetch or source edit. A legacy document gains a version on its next full-byte
+response; HTTP 304 alone cannot reconstruct missing historical bytes.
+
+This is the first evidence-foundation slice of #236. Extracted page/text
+snapshots, stable decision identity, correction reviews, coordinated vote and
+attendance publication, and budgeted incremental generation remain follow-on
+work. Existing citation resolution still rejects changed source versions.
+See the [bounded pilot source check and contract](superpowers/plans/2026-11-07-council-evidence-pilot.md).
+
 ### Topic (Foundational)
 
 Represents a long-lived civic concern.
