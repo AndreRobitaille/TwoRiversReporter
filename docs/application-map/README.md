@@ -58,6 +58,10 @@ The [November 7 minutes fact-publication foundation](council-fact-publication-20
 records coordinated vote/attendance staging, same-source publication, real
 parallel database execution, member-page HTTP transitions and source/cache guards.
 
+The [November 7 minutes passage-location checks](council-evidence-locations-2026-11-07.md)
+record pinned source passages, ambiguity handling and the boundary between
+locating an excerpt and validating its interpretation.
+
 ## Read the map
 
 | Document | Use |

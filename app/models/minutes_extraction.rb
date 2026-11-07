@@ -30,7 +30,7 @@ class MinutesExtraction < ApplicationRecord
 
   def completed_output_is_immutable
     return unless persisted? && status_in_database == "completed"
-    if will_save_change_to_data? || will_save_change_to_status? || will_save_change_to_completed_at?
+    if will_save_change_to_data? || will_save_change_to_evidence_locations? || will_save_change_to_status? || will_save_change_to_completed_at?
       errors.add(:data, "cannot replace a completed extraction")
     end
   end
