@@ -163,6 +163,43 @@ class CouncilFactWithdrawalTest < ActionDispatch::IntegrationTest
     assert_member_vote "No"
   end
 
+  test "checked generation replaces withdrawn prose from current facts and an unchanged rerun is free" do
+    get topic_path(@topic)
+    assert_includes response.body, STORY
+    refresh_votes
+    assert_nil @topic.reload.published_topic_briefing
+    @provider.define_singleton_method(:analyze_topic_briefing) do |*, **|
+      { headline: "Synthetic corrected vote report",
+        editorial_analysis: { current_state: "Synthetic corrected yes vote", what_to_watch: "Synthetic follow-up" },
+        factual_record: [] }.to_json
+    end
+    withdrawal_providers do
+      Topics::UpdateContinuityJob.perform_now(meeting_id: @meeting.id)
+      Topics::GenerateTopicBriefingJob.perform_now(topic_id: @topic.id, meeting_id: @meeting.id)
+    end
+    assert_not_nil @topic.reload.published_topic_briefing
+    current = @briefing.reload.attributes
+    assert_equal "Synthetic corrected vote report", @briefing.headline
+    receipts = @briefing.generation_data.fetch("evidence_manifest").fetch("motion_evidence")
+    assert_equal [ @meeting.motions.sole.decision_observation_id ], receipts.map { |receipt| receipt.dig("reference", "observation_id") }
+    get topic_path(@topic)
+    assert_response :success
+    assert_includes response.body, "Synthetic corrected yes vote"
+    refute_includes response.body, STORY
+    get "/api/v1/topics/#{@topic.id}", headers: @bearer
+    assert_response :success
+    assert_includes response.body, "Synthetic corrected vote report"
+
+    without_paid_providers do
+      assert_no_enqueued_jobs do
+        Topics::GenerateTopicBriefingJob.perform_now(topic_id: @topic.id, meeting_id: @meeting.id)
+      end
+    end
+    assert_equal current, @briefing.reload.attributes
+    audit = AuditEvent.where(subject: @briefing, action: "topic_briefing.facts_withdrawn").sole
+    assert_equal @original_briefing.fetch("generation_data").fetch("evidence_manifest"), audit.metadata.fetch("evidence_manifest")
+  end
+
   test "a live legacy motion reference is withdrawn when its projection is replaced" do
     legacy_attributes = @event.attributes.slice("evidence_type", "lifecycle_status", "occurred_at", "source_ref")
     @event.destroy!

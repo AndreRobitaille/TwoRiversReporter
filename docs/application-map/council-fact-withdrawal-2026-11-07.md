@@ -1,6 +1,7 @@
 # Fact publication and stored briefings: November 7, 2026
 
 Based on `900d9cb4` ([PR #258](https://github.com/AndreRobitaille/TwoRiversReporter/pull/258)).
+Runtime revision: `9030f2e2`; subsequent changes add recovery verification only.
 Local verification uses Ruby 4.0.9, Rails 8.1.4.1 and PostgreSQL 18.6 with an
 isolated synthetic database. Providers and downloads are deterministic fixtures.
 
@@ -61,6 +62,7 @@ automatic prose rewrite, retry loop, new schedule or schema migration is added.
 | BG-02, date correction | Reproject a changed meeting date from cached stages with providers forbidden. Withdraw old dated motion context while preserving known votes and extraction identities. | The trigger is fact publication, not every meeting metadata edit. |
 | BG-02 / BG-04, known legacy receipt | Generate from a live legacy motion event, replace its projection and verify the retained event receipt is withdrawn. | Unrecorded or already-unresolvable legacy provenance is not invented. |
 | BG-04, late response | Change facts during deterministic briefing analysis after proving the old completion exists. The late output cannot replace the retained withdrawn completion or appear on later reads. | Existing generation guards, newly exercised with fact publication. |
+| BG-04, checked recovery | Run continuity and deterministic full generation from the new publication. Assert the new observation receipt, replacement prose in HTML/API, retained audit history, then byte-for-byte unchanged briefing attributes on a provider-forbidden rerun with no queued jobs. | Explicit fixture generation; no production or automatic paid rewrite. |
 | BG-02 / BG-04, first publication | Separate PostgreSQL connections pause first briefing insertion, start a fact refresh, observe the topic-lock wait, then release the insert. Both transactions finish without a meeting foreign-key deadlock; the newly inserted briefing is withdrawn and the member vote advances. | This concrete interleaving, not a proof of every writer/merge combination. |
 
 The [new integration tests](../../test/integration/council_fact_withdrawal_test.rb)
@@ -74,11 +76,15 @@ the risky new boundary is the database transaction and subsequent HTTP reads.
 Local tests use `RAILS_ENV=test`, an isolated PostgreSQL database and
 `PARALLEL_WORKERS=1`. The final targeted command was
 `bin/rails test test/integration/council_fact_withdrawal_test.rb test/jobs/minutes/fact_publication_test.rb test/jobs/minutes/parallel_publication_test.rb`:
-28 runs, 260 assertions, zero failures/errors/skips. `bin/rubocop` inspected
-690 files without offenses. The integration suite includes the admin audit-log
+29 runs, 280 assertions, zero failures/errors/skips. `bin/rubocop` inspected
+690 files without offenses. Four Markdown files passed 197 local link/anchor
+checks, balanced-fence checks and `git diff --check`. The integration suite includes the admin audit-log
 request and verifies the Automated actor and affected topic after publication.
+At runtime revision `9030f2e2`, `bin/rails test` passed 2,341 tests and 15,139
+assertions with zero failures/errors and one existing PromptRun fixture skip.
+The recovery test was added afterward; runtime code is unchanged.
 
-Eight isolated faults each had a green baseline, an intended assertion failure
+Ten isolated faults each had a green baseline, an intended assertion failure
 with zero errors/skips, restoration and a green rerun:
 
 | Fault | Demonstrated detection |
@@ -91,6 +97,8 @@ with zero errors/skips, restoration and a green rerun:
 | Ignore legacy event receipts | The live legacy reference survives replacement of its motion projection. |
 | Leave the image ready | The superseded-illustration assertion fails. |
 | Construct an AI provider during publication | The completed-stage retry's provider prohibition fails. No real provider is called. |
+| Keep the withdrawal flag after checked generation | The corrected briefing fails to become published. |
+| Bypass completed-briefing reuse | An unchanged recovery rerun attempts forbidden provider construction. |
 
 Initial fixture development exposed a nested Minitest stub and an unused field
 chosen to trigger generation. The fixtures now use one provider wrapper per
@@ -111,3 +119,5 @@ The existing spending-limit requirement in
 [#238](https://github.com/AndreRobitaille/TwoRiversReporter/issues/238) still gates
 new paid generation. No real-provider run, broad import, production operation,
 merge, deployment or campaign-source conclusion is part of this verification.
+Checked regeneration still replaces a mutable briefing row. The audit retains
+dependency/publication history, not an immutable archive of every generated narrative.
