@@ -47,27 +47,6 @@ class Ai::ExtractCommitteeMembersTest < ActiveSupport::TestCase
     mock_client.verify
   end
 
-  test "extract_committee_members truncates long text" do
-    long_text = "x" * 60_000
-
-    captured_params = nil
-    mock_response = {
-      "choices" => [ {
-        "message" => {
-          "content" => '{"voting_members_present":[],"voting_members_absent":[],"non_voting_staff":[],"guests":[]}'
-        }
-      } ]
-    }
-
-    client = @service.instance_variable_get(:@client)
-    client.stub :chat, ->(parameters:) { captured_params = parameters; mock_response } do
-      @service.extract_committee_members(long_text)
-    end
-
-    user_msg = captured_params[:messages].find { |m| m[:role] == "user" }[:content]
-    assert user_msg.length < 55_000, "Prompt should truncate long text"
-  end
-
   test "extract_committee_members prompt includes json keyword" do
     captured_params = nil
     mock_response = {

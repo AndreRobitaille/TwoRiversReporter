@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_07_193000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_07_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -392,7 +392,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_193000) do
     t.datetime "starts_at"
     t.string "status"
     t.datetime "updated_at", null: false
+    t.bigint "minutes_publication_id"
     t.index [ "committee_id" ], name: "index_meetings_on_committee_id"
+    t.index [ "minutes_publication_id" ], name: "index_meetings_on_minutes_publication_id"
   end
 
   create_table "member_aliases", force: :cascade do |t|
@@ -448,6 +450,44 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_193000) do
     t.index [ "reviewed_by_id" ], name: "index_membership_applications_on_reviewed_by_id"
     t.index [ "status" ], name: "index_membership_applications_on_status"
     t.index [ "user_id" ], name: "index_membership_applications_on_user_id"
+  end
+
+  create_table "minutes_extractions", force: :cascade do |t|
+    t.bigint "meeting_id"
+    t.bigint "original_meeting_id", null: false
+    t.bigint "meeting_document_text_version_id"
+    t.string "kind", null: false
+    t.string "input_key", null: false
+    t.string "source_key", null: false
+    t.jsonb "input_manifest", null: false
+    t.text "source_text", null: false
+    t.jsonb "data"
+    t.string "status", default: "pending", null: false
+    t.integer "attempts", default: 0, null: false
+    t.string "error_code"
+    t.datetime "started_at"
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "input_key" ], name: "index_minutes_extractions_on_input_key", unique: true
+    t.index [ "meeting_document_text_version_id" ], name: "index_minutes_extractions_on_meeting_document_text_version_id"
+    t.index [ "meeting_id" ], name: "index_minutes_extractions_on_meeting_id"
+    t.index [ "source_key", "kind", "status" ], name: "index_minutes_extractions_on_source_key_and_kind_and_status"
+  end
+
+  create_table "minutes_publications", force: :cascade do |t|
+    t.bigint "meeting_id"
+    t.bigint "original_meeting_id", null: false
+    t.bigint "votes_extraction_id", null: false
+    t.bigint "attendance_extraction_id", null: false
+    t.string "fingerprint", null: false
+    t.jsonb "projection_context", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "attendance_extraction_id" ], name: "index_minutes_publications_on_attendance_extraction_id"
+    t.index [ "fingerprint" ], name: "index_minutes_publications_on_fingerprint", unique: true
+    t.index [ "meeting_id" ], name: "index_minutes_publications_on_meeting_id"
+    t.index [ "votes_extraction_id" ], name: "index_minutes_publications_on_votes_extraction_id"
   end
 
   create_table "motions", force: :cascade do |t|
@@ -857,6 +897,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_193000) do
     t.bigint "motion_id", null: false
     t.datetime "updated_at", null: false
     t.string "value"
+    t.string "evidence_basis", default: "legacy", null: false
     t.index [ "member_id" ], name: "index_votes_on_member_id"
     t.index [ "motion_id", "member_id" ], name: "idx_votes_unique_per_motion", unique: true
     t.index [ "motion_id" ], name: "index_votes_on_motion_id"
@@ -897,10 +938,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_193000) do
   add_foreign_key "meeting_documents", "meetings"
   add_foreign_key "meeting_summaries", "meetings"
   add_foreign_key "meetings", "committees"
+  add_foreign_key "meetings", "minutes_publications"
   add_foreign_key "member_aliases", "members"
   add_foreign_key "member_positions", "members"
   add_foreign_key "membership_applications", "users"
   add_foreign_key "membership_applications", "users", column: "reviewed_by_id"
+  add_foreign_key "minutes_extractions", "meeting_document_text_versions"
+  add_foreign_key "minutes_extractions", "meetings", on_delete: :nullify
+  add_foreign_key "minutes_publications", "meetings", on_delete: :nullify
+  add_foreign_key "minutes_publications", "minutes_extractions", column: "attendance_extraction_id"
+  add_foreign_key "minutes_publications", "minutes_extractions", column: "votes_extraction_id"
   add_foreign_key "motions", "agenda_items"
   add_foreign_key "motions", "meetings"
   add_foreign_key "passkey_credentials", "users"

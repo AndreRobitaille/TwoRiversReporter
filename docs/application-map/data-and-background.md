@@ -135,6 +135,15 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   downstream analysis; completed OCR takes precedence over PDF retries. This
   does not yet version vote/attendance rows or move resident readers to archived
   evidence. See [boundary and fault evidence](council-text-versions-2026-11-07.md).
+- **November 7 fact publication:** vote/attendance jobs retain separate
+  `MinutesExtraction` outputs and publish a source-matched pair through
+  `MinutesPublication`. Completed stages are independently inspectable; a missing
+  counterpart leaves the prior display pair intact. Claims and stage keys avoid
+  duplicate calls, while deterministic context changes reuse extraction. The
+  existing nightly sweep recovers missing/changed work, respecting stage attempt
+  limits and uncertain outcomes. Oversized inputs are held before provider
+  transport. See [parallel, HTTP and fault evidence](council-fact-publication-2026-11-07.md).
+  Stable decision IDs, explicit corrections and #238's dollar ledger remain open.
 
 ## BG-03 — Add recording context without replacing official evidence (P0)
 

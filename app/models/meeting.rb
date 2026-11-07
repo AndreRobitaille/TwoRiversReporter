@@ -9,6 +9,9 @@ class Meeting < ApplicationRecord
   has_many :meeting_attendances, dependent: :destroy
   has_many :knowledge_sources, dependent: :nullify
   belongs_to :committee, optional: true
+  belongs_to :minutes_publication, optional: true
+  has_many :minutes_extractions, dependent: :nullify
+  has_many :minutes_publications, dependent: :nullify
 
   validates :detail_page_url, presence: true
 
