@@ -336,4 +336,32 @@ class MemberTest < ActiveSupport::TestCase
       refute MemberAlias.exists?(name: source.name)
     end
   end
+
+  test "merge_into! checks current records even when source associations were loaded earlier" do
+    source = Member.create!(name: "Synthetic source")
+    target = Member.create!(name: "Synthetic target")
+    meeting = Meeting.create!(detail_page_url: "https://example.test/cached-merge-records")
+    motion = meeting.motions.create!(description: "Synthetic proposal")
+    source_vote = motion.votes.create!(member: source, value: "yes", evidence_basis: "explicit")
+    motion.votes.create!(member: target, value: "yes", evidence_basis: "explicit")
+    source_attendance = meeting.meeting_attendances.create!(member: source, status: "present", attendee_type: "voting_member")
+    meeting.meeting_attendances.create!(member: target, status: "present", attendee_type: "voting_member")
+
+    source.votes.load
+    source_vote.update!(value: "no")
+    error = assert_raises(ArgumentError) { source.merge_into!(target) }
+    assert_match(/Conflicting votes/, error.message)
+    assert_equal "no", source_vote.reload.value
+    assert_equal 2, motion.votes.count
+
+    source_vote.update!(value: "yes")
+    source.meeting_attendances.load
+    source_attendance.update!(status: "absent")
+    error = assert_raises(ArgumentError) { source.merge_into!(target) }
+    assert_match(/Conflicting attendance/, error.message)
+    assert_equal "absent", source_attendance.reload.status
+    assert_equal 2, motion.votes.count
+    assert_equal 2, meeting.meeting_attendances.count
+    assert Member.exists?(source.id)
+  end
 end

@@ -65,6 +65,7 @@ class Member < ApplicationRecord
     raise ArgumentError, "Cannot merge member into itself" if target.id == id
 
     ActiveRecord::Base.transaction do
+      reload
       # Only identical evidence may be deduplicated. A person merge does not
       # decide which conflicting vote or attendance record is correct.
       votes.each do |vote|
