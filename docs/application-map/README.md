@@ -78,6 +78,10 @@ The [November 7 person-merge evidence checks](council-member-merges-2026-11-07.m
 record conflict refusal, transaction rollback, visible admin feedback and retained
 evidence through compatible person merges and cached minutes reconstruction.
 
+The [November 7 topic-generation dependency checks](council-topic-generation-2026-11-07.md)
+cover unchanged topic-stage reuse, stale-input filtering and rejected in-flight
+publication. Existing resident prose withdrawal and broader cost controls remain open.
+
 ## Read the map
 
 | Document | Use |
