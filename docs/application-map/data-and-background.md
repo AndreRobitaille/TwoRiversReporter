@@ -165,7 +165,9 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   extraction. Identical requests replay once; stale reviews fail. Same-source,
   unchanged observations retain applicable review; changed/conflicting evidence
   retains the review references while withdrawing its current identity link.
-  Other supported decisions continue. See [correction, retention and concurrency
+  Lost correspondence and an intervening empty publication retain possible review
+  dependencies; unchanged unrelated decisions can still advance.
+  See [correction, retention and concurrency
   evidence](council-identity-corrections-2026-11-07.md). Operator UI, factual-value
   corrections and dependent narrative withdrawal remain follow-on work.
 

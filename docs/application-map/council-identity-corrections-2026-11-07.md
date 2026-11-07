@@ -1,6 +1,6 @@
 # Audited decision identity corrections: November 7, 2026
 
-Application revision: `9a909f8f`, based on `77dc24e2`
+Application revision: `59803734`, based on `77dc24e2`
 ([PR #251](https://github.com/AndreRobitaille/TwoRiversReporter/pull/251)).
 Isolated checkout, Ruby 4.0.9, Rails 8.1.4.1, PostgreSQL 18.6 and synthetic data.
 
@@ -63,9 +63,12 @@ extraction from the same retained source can carry it only when the raw observat
 and correspondence remain compatible. Changed source content or interpretation
 cannot inherit that review. The new assignment retains conflicting correction
 IDs and no current decision mapping; subsequent source versions preserve that
-conflict. Explicit re-review records which conflicts it resolved. An empty first
-identity baseline cannot erase prior reviews by repeatedly treating rewritten
-evidence as new. Unchanged unrelated supported passages can still advance.
+conflict. Explicit re-review records which conflicts it resolved. If correspondence
+is lost, unresolved records retain possible review dependencies from the meeting's
+retained assignments. This also survives an intervening publication with no
+decisions; it does not assert that an unknown record is the earlier decision.
+An empty first identity baseline cannot erase prior reviews by repeatedly treating
+rewritten evidence as new. Unchanged unrelated supported passages can still advance.
 
 Actor deletion nulls the live account pointer and preserves its audit snapshot.
 Source/meeting removal retains the review, original observation, text version and
@@ -78,7 +81,7 @@ reapply. No migration was run against production.
 | Workflow / variant | Boundary exercised and required outcome | Limits |
 | --- | --- | --- |
 | BG-02 / ADM-10, ambiguous identity | Real source download/text publication → deterministic vote/attendance jobs → unresolved observation → authorized review service → fresh stable-ID and Motion reads. Reviewed mapping survives replay and date reprojection; raw identity and evidence status remain unchanged. | Internal service, not an operator browser journey or a factual accuracy evaluation. |
-| BG-02, source/extraction revision | Same-source compatible extraction carries review. Changed source or interpretation withdraws the old current identity and preserves conflict references; unrelated matching decisions advance. Repeated revisions cannot reset unresolved review history. | Canonical meeting merging and motion/amendment relationships remain separate. |
+| BG-02, source/extraction revision | Same-source compatible extraction carries review. Changed source or interpretation withdraws the old current identity and preserves conflict references; unrelated matching decisions advance. Repeated revisions, lost correspondence and an intervening empty publication cannot reset unresolved review history. | Canonical meeting merging and motion/amendment relationships remain separate. |
 | BG-02, retries and concurrency | Concurrent review commands use separate PostgreSQL connections; one stale edit loses. Concurrent copies of one request commit one audit and return the same receipt. Replaying an older accepted request cannot undo a later withdrawal. | Deterministic thread scheduling, not distributed load testing. |
 | BG-02, delayed work | A review committed during a deterministic provider response survives the later same-source publication. A failed assignment rolls back its new identity/audit; the same request can retry. | Provider transport is simulated. |
 | ADM-10, member identity | Existing member merge/aliases preserve current votes while reviewed decision identity and original source names survive replay. | No new person directory or identity resolver is introduced. |
@@ -104,11 +107,16 @@ Database work, application tests and fault experiments run serially.
   of the same evidence. The added test failed at the intended current-reference
   assertion: one run, four assertions, one failure, zero errors/skips. Equivalent
   assignment propagation and historical collision checks now cover this boundary.
+- Review of `6a94ffc4` identified lost review lineage when a rewritten motion also
+  moves to a different sequence/agenda context. Two added regressions reproduced
+  this case and an intervening empty publication: two tests, five assertions, two
+  intended failures and no errors/skips. Retained assignment references now survive
+  both transitions and appear in the later review's resolved-conflict audit.
 - Initial focused command: `bin/rails test test/jobs/minutes test/integration/minutes_publication_journey_test.rb test/jobs/extract_votes_job_test.rb test/jobs/extract_committee_members_job_test.rb test/services/scrapers/pipeline_repair_sweep_test.rb test/services/meetings/window_duplicate_cleanup_test.rb`:
   145 tests, 674 assertions, zero failures/errors/skips at the initial implementation.
 - Final identity/regression baseline: `bin/rails test test/jobs/minutes/identity_correction_test.rb test/jobs/minutes/parallel_identity_correction_test.rb test/jobs/minutes/decision_identity_test.rb`:
-  31 tests, 230 assertions, zero failures/errors/skips. This includes the cached
-  restoration correction and real PostgreSQL review concurrency.
+  33 tests, 248 assertions, zero failures/errors/skips. This includes the cached
+  restoration and lost-correspondence corrections and real PostgreSQL concurrency.
 - `bin/rubocop`: 667 files, no offenses. Development eager loading and an isolated
   database `SELECT 1` also passed using the configured permanent bundle.
 - Migration up and empty down/up passed. `bin/rubocop -A db/schema.rb` ran and the
@@ -122,8 +130,10 @@ Database work, application tests and fault experiments run serially.
 Each fault below started from a clean passing baseline, changed one bounded
 behavior, ran `bin/rails test test/jobs/minutes/identity_correction_test.rb -n`
 with the listed filter, reached the intended assertion failure and was restored.
-Every fault run had one test, one failure, zero errors/skips. The current-lookup
-fault was repeated after the lookup became a single database snapshot.
+The first six fault runs each had one test, one failure, zero errors/skips at
+`9a909f8f`. The current-lookup fault was repeated after the lookup became a single
+database snapshot. The seventh fault ran after the new 33-test passing baseline
+at `59803734`; both regressions failed at the intended persisted-reference assertion.
 
 | Fault | Filter | Assertion reached |
 | --- | --- | --- |
@@ -133,8 +143,9 @@ fault was repeated after the lookup became a single database snapshot.
 | Drop conflicting correction references | `/rewritten_evidence_cannot_erase/` | Four assertions; an unresolved review loses its retained dependencies. |
 | Forget an existing review when source content changes | `/review_carries_across_unchanged/` | Five assertions; changed content silently regains the earlier identity. |
 | Update only the current extraction's assignment | `/restoring_a_cached_extraction/` | Four assertions; cached restoration revives a withdrawn mapping. |
+| Retain lost-correspondence conflicts only when no identities exist yet | `/correspondence_is_lost\|empty_publication/` | Two tests, five assertions, two failures, no errors/skips; revised records lose the earlier review references. |
 
-Restored full `bin/rails test` at `9a909f8f`: **2,263 tests, 14,218 assertions,
+Restored full `bin/rails test` at `59803734`: **2,265 tests, 14,236 assertions,
 zero failures/errors**, one existing PromptRun fixture skip. Four changed
 Markdown documents passed 106 local link/anchor checks and balanced-fence checks;
 `git diff --check` passed. No local browser journey was added because this slice
