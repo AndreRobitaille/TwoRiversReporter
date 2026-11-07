@@ -15,6 +15,7 @@ module Minutes
       # predates persisted checks. No provider call or old approval is required.
       @checks = LocateEvidence.new(stage).call(stage.data)
       @excerpt_counts = @checks.fetch("motions").select { |check| check["status"] == "located" }.group_by { |check| check["excerpt"] }.transform_values(&:size)
+      @reordered_excerpts = reordered_excerpts(previous)
     end
 
     def observe(data, sequence)
@@ -33,6 +34,8 @@ module Minutes
         "duplicate_excerpt_attribution"
       elsif context.nil?
         "unresolved_agenda_reference"
+      elsif @reordered_excerpts.include?(check["excerpt"])
+        "source_order_changed"
       end
 
       decision = nil
@@ -58,6 +61,28 @@ module Minutes
     end
 
     private
+
+    def reordered_excerpts(previous)
+      changed = Set.new
+      return changed unless previous
+
+      before = passage_positions(LocateEvidence.new(previous).call(previous.data))
+      after = passage_positions(@checks)
+      # Compare relative retained locations, independently of provider sequence.
+      # A heading/page shift is harmless; an inversion holds both participants.
+      (before.keys & after.keys).combination(2) do |left, right|
+        next if (before[left] <=> before[right]) == (after[left] <=> after[right])
+        changed.merge([ left, right ])
+      end
+      changed
+    end
+
+    def passage_positions(checks)
+      checks.fetch("motions").select { |check| check["status"] == "located" }.group_by { |check| check["excerpt"] }.filter_map do |excerpt, matches|
+        next unless matches.one?
+        [ excerpt, matches.first.fetch("locations").first.values_at("page_number", "start_char") ]
+      end.to_h
+    end
 
     def agenda_context(reference)
       return { "unassigned" => true } if reference.nil?

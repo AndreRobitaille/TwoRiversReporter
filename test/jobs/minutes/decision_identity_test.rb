@@ -103,6 +103,31 @@ class MinutesDecisionIdentityTest < ActiveJob::TestCase
     assert_equal 2, observations.size
   end
 
+  test "document passage order changes require resolution even when provider array order is unchanged" do
+    closing = "Motion to accept the synthetic report passed; Alex Example voted yes."
+    passages = [ *@excerpts, closing ]
+    revision("original-order", [ passages.join("\n") ])
+    publish(excerpts: passages)
+    original = @meeting.motions.order(:id).map(&:decision_observation)
+    assert_equal %w[introduced introduced introduced], original.map(&:identity_status)
+
+    revision("document-reordered", [ [ @excerpts.last, @excerpts.first, closing ].join("\n") ])
+    publish(excerpts: passages)
+    current = @meeting.motions.order(:id).map(&:decision_observation)
+    assert_equal %w[unresolved unresolved matched], current.map(&:identity_status)
+    assert_equal [ "source_order_changed" ], current.first(2).map(&:reason).uniq
+    assert_equal [ nil, nil, original.last.council_decision_id ], current.map(&:council_decision_id)
+    assert original.first(2).all? { |observation| observation.council_decision.current_observation.nil? }
+    assert_equal current.last.id, original.last.council_decision.current_observation.id
+    assert_equal 3, CouncilDecision.count
+    assert_equal 6, CouncilDecisionObservation.count
+    Ai::OpenAiService.stub :new, ->(*) { flunk "Unchanged unresolved input must not dispatch providers" } do
+      ExtractVotesJob.perform_now(@meeting.id)
+      ExtractCommitteeMembersJob.perform_now(@meeting.id)
+    end
+    assert_equal current.map(&:id), @meeting.motions.order(:id).pluck(:decision_observation_id)
+  end
+
   test "unsupported agenda references and missing source excerpts acquire no guessed identity" do
     publish(agenda_ref: "invented agenda")
     assert_equal [ "unresolved_agenda_reference" ], @meeting.motions.map { |motion| motion.decision_observation.reason }.uniq
