@@ -9,7 +9,7 @@ module Minutes
       @meeting, @stage = meeting, stage
       previous = meeting.minutes_publication&.votes_extraction
       raise ArgumentError, "Wrong prior publication" if previous && previous.original_meeting_id != meeting.id
-      @initial = previous.nil? || previous.id == stage.id
+      @initial = previous&.id == stage.id || !meeting.council_decisions.exists?
       @previous = previous ? previous.council_decision_observations.to_a : []
       # Rechecking locations is deterministic, including for a cached stage that
       # predates persisted checks. No provider call or old approval is required.

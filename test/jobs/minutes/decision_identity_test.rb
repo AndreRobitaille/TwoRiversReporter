@@ -114,6 +114,18 @@ class MinutesDecisionIdentityTest < ActiveJob::TestCase
     assert_equal 4, CouncilDecisionObservation.count
   end
 
+  test "first supported evidence establishes identities without claiming to match older unlocated records" do
+    publish(excerpts: [ nil, nil ], descriptions: @excerpts)
+    unlocated = @meeting.motions.map(&:decision_observation)
+    assert_equal 0, CouncilDecision.count
+    revision("first-supported", [ "Supported replacement", *@excerpts ])
+    publish
+    assert_equal 2, CouncilDecision.count
+    assert_equal [ "introduced" ], @meeting.motions.map { |motion| motion.decision_observation.identity_status }.uniq
+    assert unlocated.all? { |observation| observation.reload.council_decision_id.nil? }
+    assert_equal [ "unresolved" ], unlocated.map(&:identity_status).uniq
+  end
+
   test "replacing agenda row IDs preserves exact context and decision identity" do
     publish
     identities = @meeting.motions.order(:id).map { |motion| motion.council_decision.public_id }
