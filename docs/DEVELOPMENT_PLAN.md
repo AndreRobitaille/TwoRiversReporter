@@ -356,16 +356,46 @@ The initial identity and later correspondence are not fact approval:
 all observations remain `extracted`. Replaced agenda row IDs do not change the
 captured textual context. Member aliases remain the one person-identity system.
 
-A decision's current observation comes only from the meeting's current published
-vote stage; it never falls back to a superseded observation. An unresolved change
+A decision's current observation comes through `CouncilDecisionAssignment` for
+the meeting's current published vote stage; it never falls back to a superseded observation. An unresolved change
 can therefore withdraw that current reference while unrelated decisions advance.
 Original observations and opaque IDs survive source/meeting removal. Existing
 Motion rows link to their observations; public routes/API fields and prior topic
 lifecycle references are not migrated by this slice. Cached projection upgrades
 run with code through the existing nightly/job paths, without re-extraction.
 
-These are bounded evidence-foundation slices of #236. Reviewed identity and
-correction resolution, dependent-claim migration, explicit motion/amendment
+`CouncilDecisions::ResolveIdentity` is the internal correction entrypoint. An
+active administrator can assign a retained observation to an existing decision,
+introduce a new identity, or withdraw an assignment. `CouncilDecisionCorrection`
+keeps the actor snapshot, timestamp, reason, before/after identities, prior review,
+request key and retained source/basis references. The raw extraction is immutable;
+identity review does not validate its factual interpretation. No browser control
+or HTTP endpoint for this service is introduced by the foundation.
+
+Reviews and publication serialize on the meeting/source locks. A request key is
+idempotent, an expected prior correction rejects stale edits, and stage/decision
+uniqueness prevents two observations sharing one current identity. Reprocessing
+the same retained source and raw observation carries an applicable correction.
+Review updates equivalent retained observations together, including cached stages,
+and audits their before/after mappings. Restoring an older extraction cannot
+revive a superseded mapping for the same evidence. A historical identity collision
+holds both affected assignments instead of selecting one silently.
+Changed source, changed extraction, or ambiguous correspondence retains explicit
+conflicting review references and no current identity until resolved. Those
+conflicts survive later versions; a subsequent review records which conflicts it
+resolves. Supported unrelated evidence continues. All reconciliation uses code.
+
+`Motion#council_decision` and `CouncilDecision#current_observation` read effective
+assignments. An observation's original `council_decision` remains its extracted
+identity basis; it must not be treated as the current reviewed assignment.
+`CouncilDecision#extracted_observations` preserves that original history separately
+from its effective observation history. Future claim manifests must include the
+assignment's correction/conflict references as well as the extraction version.
+Audit records survive actor/source/meeting removal. Migration rollback refuses
+to drop tables containing reviewed identity history.
+
+These are bounded evidence-foundation slices of #236. The correction review UI,
+vote/attendance value corrections, dependent-claim migration, explicit motion/amendment
 relationships and budgeted incremental generation remain follow-on work.
 Existing readers still use the mutable display rows; migrating full record
 queries to retained evidence and complete service-period denominators remains
