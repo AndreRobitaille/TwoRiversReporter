@@ -310,7 +310,7 @@ selects compatible completed stages; a meeting/source lock protects atomic
 replacement of the display rows, membership reconciliation and current pointer.
 Known votes remain inspectable in a completed stage while attendance is pending.
 New vote stages also retain a deterministic `evidence_locations` check against
-their pinned `MeetingDocumentTextVersion`. Each motion has a source-order sequence
+their pinned `MeetingDocumentTextVersion`. Each motion has an extraction-array sequence
 and either exact page/character ranges or an unresolved reason. Excerpts must
 occur uniquely after whitespace normalization; missing/repeated passages and
 unretained legacy sources acquire no invented location. `located` proves text
@@ -348,7 +348,11 @@ and identity-rule version. Both tables participate in the existing publication
 transaction. Exact unique excerpt/sequence/context correspondence can reuse an
 identity; changed ordering, ambiguous passages, unknown locations or unmatched
 revisions retain an unresolved observation and possible prior identities instead
-of guessing. The initial identity and later correspondence are not fact approval:
+of guessing. Relative page/character locations are compared independently of the
+provider's array order, so unchanged output ordering cannot hide reordered source
+passages. The first supported evidence can establish identities when older
+publications had none; those older unresolved observations remain unmapped.
+The initial identity and later correspondence are not fact approval:
 all observations remain `extracted`. Replaced agenda row IDs do not change the
 captured textual context. Member aliases remain the one person-identity system.
 

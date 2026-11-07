@@ -143,7 +143,8 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   existing nightly sweep recovers missing/changed work, respecting stage attempt
   limits and uncertain outcomes. Oversized inputs are held before provider
   transport. See [parallel, HTTP and fault evidence](council-fact-publication-2026-11-07.md).
-  Stable decision IDs, explicit corrections and #238's dollar ledger remain open.
+  Decision identities are covered by the later slice below; explicit corrections
+  and #238's dollar ledger remain open.
 - **November 7 passage locations:** new vote stages check model-supplied excerpts
   against retained pages with code. Unique passages retain exact character ranges
   and page hashes, including across page breaks; unavailable/ambiguous evidence
@@ -152,7 +153,9 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   evidence](council-evidence-locations-2026-11-07.md).
 - **November 7 decision identity:** publication now records immutable observations
   and stable opaque decision IDs, using exact excerpt/sequence/agenda context
-  correspondence. Unresolved changes retain candidates and withdraw the old
+  correspondence and independent retained-passage ordering. The first supported
+  evidence can establish a baseline without assigning older unresolved records.
+  Unresolved changes retain candidates and withdraw the old
   current identity reference; unrelated matches continue. No semantic approval
   is inferred. See [replay, revision and concurrency evidence](council-decision-identities-2026-11-07.md).
   Reviewed corrections and migration of existing lifecycle references remain open.
