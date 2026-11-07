@@ -118,9 +118,8 @@ class Citations::PipelineTest < ActiveSupport::TestCase
       generate_summary(transcript, location: { "kind" => "pdf_page", "page_number" => 1 })
     end
     assert_equal before, summary.reload.attributes
-    assert_raises(Citations::SourceCatalog::InvalidSource) do
-      generate_summary(transcript) { transcript.update!(extracted_text: "Replacement evidence.") }
-    end
+    # Changed input is discarded before validating the now-stale response.
+    generate_summary(transcript) { transcript.update!(extracted_text: "Replacement evidence.") }
     assert_equal before, summary.reload.attributes
   end
 

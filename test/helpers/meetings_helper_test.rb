@@ -77,7 +77,7 @@ class MeetingsHelperTest < ActionView::TestCase
   end
 
   test "meeting_status_badge adds summary badge when summaries exist" do
-    summary = OpenStruct.new
+    summary = MeetingSummary.new
     meeting = OpenStruct.new(document_status: :minutes, starts_at: 2.days.ago, meeting_summaries: [ summary ])
     result = meeting_status_badge(meeting)
     assert_includes result, "Summary"
@@ -489,7 +489,7 @@ class MeetingsHelperTest < ActionView::TestCase
   end
 
   def build_summary(type:, headline: nil)
-    OpenStruct.new(summary_type: type, generation_data: headline ? { "headline" => headline } : {})
+    MeetingSummary.new(summary_type: type, generation_data: headline ? { "headline" => headline } : {})
   end
 
   def build_item(title)

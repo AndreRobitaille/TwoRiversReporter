@@ -32,7 +32,8 @@ class MeetingSummaryWithdrawalJourneyTest < ApplicationSystemTestCase
       click_link "Back to Meetings"
       assert_current_path meetings_path
       visit meeting_path(@meeting)
-      assert_text "Official sources remain available above."
+      assert_text "Generated analysis was withdrawn because its supporting evidence changed."
+      assert_selector "a[href='#{@document.source_url}']"
       assert_no_text CLAIM
     end
   end
