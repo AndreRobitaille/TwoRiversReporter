@@ -91,8 +91,9 @@ module Topics
         recent_item_details: recent_item_details,
         knowledgebase_context: formatted_kb,
         continuity_context: {
-          status_events: topic.topic_status_events.order(occurred_at: :desc).limit(5).map do |e|
-            { event_type: e.evidence_type, notes: e.notes, date: e.occurred_at&.iso8601 }
+          status_events: topic.topic_status_events.with_current_evidence.order(occurred_at: :desc).limit(5).map do |e|
+            { event_id: e.id, motion_reference: e.motion_reference,
+              event_type: e.evidence_type, notes: e.notes, date: e.occurred_at&.iso8601 }
           end,
           total_appearances: topic.topic_appearances.joins(:agenda_item).merge(AgendaItem.substantive).count
         },

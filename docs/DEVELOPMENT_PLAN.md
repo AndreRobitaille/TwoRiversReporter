@@ -360,8 +360,8 @@ A decision's current observation comes through `CouncilDecisionAssignment` for
 the meeting's current published vote stage; it never falls back to a superseded observation. An unresolved change
 can therefore withdraw that current reference while unrelated decisions advance.
 Original observations and opaque IDs survive source/meeting removal. Existing
-Motion rows link to their observations; public routes/API fields and prior topic
-lifecycle references are not migrated by this slice. Cached projection upgrades
+Motion rows link to their observations; public routes/API fields remain unchanged.
+Topic motion-evidence references are described below. Cached projection upgrades
 run with code through the existing nightly/job paths, without re-extraction.
 
 `CouncilDecisions::ResolveIdentity` is the internal correction entrypoint. An
@@ -394,10 +394,35 @@ assignment's correction/conflict references as well as the extraction version.
 Audit records survive actor/source/meeting removal. Migration rollback refuses
 to drop tables containing reviewed identity history.
 
+Topic motion-outcome events now pin their retained decision observation instead
+of relying on a replaceable Motion ID. Distinct decisions at the same meeting
+remain separate events, including when their outcomes agree. Code-only replay
+and projection repairs reuse the event and update its canonical meeting date;
+new extraction observations create separate historical events. The event's
+effective decision follows the observation's audited identity assignment while
+its original extracted source remains unchanged.
+
+Summary inputs carry each event's ID and its observation, opaque decision,
+source/text version and extraction-provenance references. Review actors and
+private reasons are excluded. These identifiers are internal provenance, not
+public citations or a claim of factual validation.
+
+Per-meeting summary and rolling briefing inputs select only motion events whose
+observation still has a current published motion, matching outcome/date and a
+current link to that topic. Topic merges retain both histories and include each
+current motion once. Exact live legacy references can acquire an observation
+link during ordinary continuity work; missing legacy motions are not guessed or
+backfilled. Topic locking serializes event creation; merges lock both topics in
+a fixed order before moving history, so an in-flight event cannot be missed.
+These are reference and
+projection checks, not factual validation or proof that a project was completed.
+Existing stored narrative withdrawal and dependencies of other lifecycle signals
+remain follow-on work. No new generation trigger or schedule is added.
+
 These are bounded evidence-foundation slices of #236. The correction review UI,
 vote/attendance value corrections, dependent-claim migration, explicit motion/amendment
 relationships and budgeted incremental generation remain follow-on work.
-Existing readers still use the mutable display rows; migrating full record
+Public full-record readers still use the mutable display rows; migrating full record
 queries to retained evidence and complete service-period denominators remains
 separate work. Existing citation resolution still rejects changed source versions.
 See the [bounded pilot source check and contract](superpowers/plans/2026-11-07-council-evidence-pilot.md).

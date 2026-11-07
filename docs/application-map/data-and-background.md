@@ -158,8 +158,8 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   Unresolved changes retain candidates and withdraw the old
   current identity reference; unrelated matches continue. No semantic approval
   is inferred. See [replay, revision and concurrency evidence](council-decision-identities-2026-11-07.md).
-  Identity correction persistence follows below; migration of existing lifecycle
-  references remains open.
+  Identity correction persistence follows below. Topic motion-evidence references
+  follow in BG-04; broader lifecycle dependencies remain open.
 - **November 7 identity corrections:** an internal service records append-only
   identity reviews and changes the effective assignment without overwriting raw
   extraction. Identical requests replay once; stale reviews fail. Same-source,
@@ -215,6 +215,14 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   [briefing job](../../app/jobs/topics/generate_topic_briefing_job.rb),
   [description job](../../app/jobs/topics/generate_description_job.rb),
   [Topic Governance](../topics/TOPIC_GOVERNANCE.md).
+
+November 7 motion-evidence update: continuity events pin retained decision
+observations, keep distinct same-day decisions and reuse events on reprojection.
+Current summary/briefing inputs exclude superseded, orphaned and unlinked motion
+events, while historical records remain inspectable. Topic merges retain both
+histories and expose each current motion once. See [source-to-context, concurrency
+and fault evidence](council-topic-evidence-2026-11-07.md). This does not withdraw
+already generated narratives or validate extracted factual interpretations.
 
 October 24 leadership-context update: extraction carries administrator notes
 from approved topics' existing appearances into the matching agenda item, so

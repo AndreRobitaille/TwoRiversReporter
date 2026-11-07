@@ -70,6 +70,10 @@ The [November 7 identity-correction foundation](council-identity-corrections-202
 records audited identity overrides, replay/conflict handling, actor retention
 and concurrent review checks at the internal service boundary.
 
+The [November 7 topic motion-evidence foundation](council-topic-evidence-2026-11-07.md)
+records retained event references, distinct decisions, current-context filtering,
+topic merges and concurrent continuity checks.
+
 ## Read the map
 
 | Document | Use |
