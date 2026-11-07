@@ -381,3 +381,5 @@ assertions below are candidate acceptance criteria based on the user's brief.
   Automated document-dependent briefing withdrawals retain source receipts in
   the audit metadata and display an Automated actor with the topic label. See
   [source-withdrawal verification](council-source-withdrawal-2026-11-07.md).
+  Fact-publication withdrawal also records before/after snapshots and an Automated
+  actor; see [fact-publication audit checks](council-fact-withdrawal-2026-11-07.md).
