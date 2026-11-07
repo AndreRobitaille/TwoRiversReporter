@@ -38,6 +38,7 @@ module Topics
     def entries_for(meeting)
       summary = ResidentContent::MeetingSelection.preferred_summary(meeting)
       return [] unless summary&.generation_data.is_a?(Hash)
+      return [] unless GenerationEvidence.sources_current?(summary.generation_data["source_catalog"])
 
       details = summary.generation_data["item_details"]
       return [] unless details.is_a?(Array)

@@ -49,7 +49,7 @@ module Topics
                        .distinct
                        .pluck(:id)
 
-      items = @meeting.agenda_items.substantive.where(id: item_ids).includes(:parent).order(:order_index)
+      items = @meeting.agenda_items.substantive.where(id: item_ids).includes(:parent).order(:order_index, :id)
 
       # Build an agenda-ID → item_details entry lookup from the
       # meeting's latest MeetingSummary. This is the substantive content
@@ -117,7 +117,12 @@ module Topics
     end
 
     def latest_summary
-      @latest_summary ||= ResidentContent::MeetingSelection.preferred_summary(@meeting)
+      return @latest_summary if defined?(@latest_summary)
+
+      candidate = ResidentContent::MeetingSelection.preferred_summary(@meeting)
+      @latest_summary = if candidate && GenerationEvidence.sources_current?(candidate.generation_data&.dig("source_catalog"))
+        candidate
+      end
     end
 
     def analysis_source_citations(details)
@@ -154,7 +159,7 @@ module Topics
       # Recent history events
       recent_events = @topic.topic_status_events.with_current_evidence
         .where("occurred_at <= ?", cutoff_time)
-        .order(occurred_at: :desc).limit(3).map do |e|
+        .order(occurred_at: :desc, id: :desc).limit(3).map do |e|
         # Build citation if source_ref has IDs
         citation = nil
         if e.source_ref.present? && e.source_ref["meeting_id"]
@@ -181,7 +186,7 @@ module Topics
         .joins(:agenda_item)
         .merge(AgendaItem.substantive)
         .where("appeared_at < ?", cutoff_time)
-        .order(appeared_at: :desc).limit(3)
+        .order(appeared_at: :desc, id: :desc).limit(3)
         .map do |a|
           {
             date: a.appeared_at.to_date,
