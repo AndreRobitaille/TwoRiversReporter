@@ -21,12 +21,19 @@ module Documents
     def import
       raise ImportError, "Uploaded SRT file is missing" unless @srt_file&.attached?
 
-      @meeting.with_lock do
+      @meeting.with_lock("FOR NO KEY UPDATE") do
         srt_content = @srt_file.download.force_encoding(Encoding::UTF_8)
         plain_text = TranscriptDownloader.parse_srt(srt_content)
         raise ImportError, "Uploaded SRT did not contain transcript text" if plain_text.blank?
 
-        @meeting.meeting_documents.where(document_type: "transcript").destroy_all
+        documents = @meeting.meeting_documents.where(document_type: "transcript").to_a
+        existing = documents.first if documents.one?
+        if existing&.source_url == @youtube_url && existing.text_quality == "uploaded_transcript" &&
+            existing.extracted_text == plain_text && existing.file.attached? &&
+            existing.file.blob.checksum == @srt_file.blob.checksum
+          return Result.new(status: "reused", meeting_document: existing, source: "uploaded_srt")
+        end
+        documents.each(&:destroy!)
 
         document = @meeting.meeting_documents.create!(
           document_type: "transcript",

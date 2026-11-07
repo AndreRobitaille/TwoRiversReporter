@@ -201,7 +201,7 @@
         <% end %>
       </ol>
     <% elsif @briefing_withdrawn %>
-      <p class="section-empty">The generated analysis was withdrawn after an evidence correction. Recorded meeting appearances remain available below.</p>
+      <p class="section-empty">The generated analysis was withdrawn after its supporting evidence changed. Recorded meeting appearances remain available below.</p>
       <ol class="topic-timeline">
         <% @record_meetings.values.flatten.uniq(&:meeting_id).sort_by(&:appeared_at).reverse_each do |appearance| %>
           <li class="topic-timeline-entry">

@@ -93,7 +93,7 @@ module Documents
     def download_and_store
       raise InvalidUrlError, "Invalid YouTube URL" unless self.class.valid_url?(@video_url)
 
-      @meeting.with_lock do
+      @meeting.with_lock("FOR NO KEY UPDATE") do
         existing_document = @meeting.meeting_documents.find_by(document_type: "transcript")
         if existing_document&.file&.attached? && existing_document.extracted_text.present?
           return Result.new(
