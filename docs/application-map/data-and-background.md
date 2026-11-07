@@ -150,6 +150,12 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   stays unresolved. A location match is not approval of a vote or interpretation.
   Old stages are not automatically re-extracted. See [source revision and fault
   evidence](council-evidence-locations-2026-11-07.md).
+- **November 7 decision identity:** publication now records immutable observations
+  and stable opaque decision IDs, using exact excerpt/sequence/agenda context
+  correspondence. Unresolved changes retain candidates and withdraw the old
+  current identity reference; unrelated matches continue. No semantic approval
+  is inferred. See [replay, revision and concurrency evidence](council-decision-identities-2026-11-07.md).
+  Reviewed corrections and migration of existing lifecycle references remain open.
 
 ## BG-03 — Add recording context without replacing official evidence (P0)
 
