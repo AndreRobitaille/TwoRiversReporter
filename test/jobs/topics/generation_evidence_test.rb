@@ -190,6 +190,14 @@ class Topics::GenerationEvidenceTest < ActiveJob::TestCase
     assert_empty @briefing_inputs.last[:prior_meeting_analyses]
   end
 
+  test "operator reanalysis establishes continuity before generating a new topic record" do
+    providers { Topics::MeetingReanalysisService.new(@meeting.id).call }
+    summary = @meeting.topic_summaries.sole
+    assert Topics::GenerationEvidence.summary_current?(summary)
+    assert_equal 1, @calls.count(:summary_analysis)
+    assert_equal [ @claims.fetch(@meeting.id) ], @briefing_inputs.last[:prior_meeting_analyses].map { |data| data["headline"] }
+  end
+
   test "full meeting workflow refuses a stale topic analysis before its render or followup" do
     @hooks[:summary_analysis] = -> { revise(@document, "Replacement during topic analysis") }
     assert_no_enqueued_jobs only: Topics::GenerateTopicBriefingJob do

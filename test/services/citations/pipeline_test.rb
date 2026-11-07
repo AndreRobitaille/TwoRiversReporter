@@ -14,6 +14,8 @@ class Citations::PipelineTest < ActiveSupport::TestCase
     @retrieval = Object.new
     def @retrieval.retrieve_context(*); []; end
     def @retrieval.format_context(*); ""; end
+    def @retrieval.retrieve_topic_context(*, **); []; end
+    def @retrieval.format_topic_context(*); []; end
   end
 
   test "transcript with a packet keeps recording provenance across every boundary" do
@@ -203,13 +205,16 @@ class Citations::PipelineTest < ActiveSupport::TestCase
     assert_equal document.id, recent.first[:citations].first[:document_id]
     assert_equal "Distinctive reported detail.", recent.first[:summary]
     fake = { "citation_id" => reference["citation_id"], "label" => "Incorrect minutes", "private" => "PRIVATE_CITATION_CANARY" }
-    analysis = SummarizeMeetingJob.new.send(:validate_analysis_json,
-      { "factual_record" => [ { "statement" => "Distinctive reported detail.", "citations" => [ fake, { "citation_id" => "doc-unknown" } ] } ] },
-      context[:citation_ids], context[:citation_references])
+    provider = Object.new
+    provider.define_singleton_method(:analyze_topic_summary) do |*, **|
+      { "factual_record" => [ { "statement" => "Distinctive reported detail.", "citations" => [ fake, { "citation_id" => "doc-unknown" } ] } ] }.to_json
+    end
+    provider.define_singleton_method(:render_topic_summary) { |*, **| "Synthetic prose." }
+    stored_topic = Topics::GenerateSummary.new(@topic, @meeting, ai_service: provider, retrieval_service: @retrieval).call
+    analysis = stored_topic.generation_data
     assert_equal [ reference ], analysis["factual_record"].first["citations"]
     refute_includes analysis.to_json, "PRIVATE_CITATION_CANARY"
-    SummarizeMeetingJob.new.send(:save_topic_summary, @meeting, @topic, "Synthetic prose.", analysis.merge("source_catalog" => context[:source_catalog]))
-    stored_topic = @meeting.topic_summaries.first
+    stored_topic.reload
     assert_equal reference, stored_topic.generation_data["factual_record"].first["citations"].first
     assert_equal input_catalog, stored_topic.generation_data["source_catalog"]
     serializer = Api::V1::Serializer.new(base_url: "https://example.test")

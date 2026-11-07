@@ -39,7 +39,7 @@ class ApplicationNotificationTimelineTest < ActiveJob::TestCase
         travel_to @start + 1.hour + 1.second
         perform_enqueued_jobs(only: AdminApplicationNotificationJob, at: Time.current)
         assert_equal 2, messages.size
-        assert_equal [ second.user.email_address, third.user.email_address ], recipients(messages.last)
+        assert_equal [ second.user.email_address, third.user.email_address ].sort, recipients(messages.last).sort
         assert_equal 2, messages.last.data_variables.fetch(:application_count)
         [ second, third ].each { |application| assert_equal Time.current, application.reload.admin_notification_sent_at }
         [ draft, decided ].each { |application| assert_nil application.reload.admin_notification_sent_at }
@@ -75,7 +75,7 @@ class ApplicationNotificationTimelineTest < ActiveJob::TestCase
       capture_transactional_emails do |messages|
         travel_to @start + 1.minute
         perform_enqueued_jobs(only: AdminApplicationNotificationJob, at: Time.current)
-        assert_equal [ first.user.email_address, second.user.email_address ], recipients(messages.sole)
+        assert_equal [ first.user.email_address, second.user.email_address ].sort, recipients(messages.sole).sort
         [ first, second ].each { |application| assert_equal Time.current, application.reload.admin_notification_sent_at }
         assert_empty enqueued_jobs.select { |job| job[:job] == AdminApplicationNotificationJob }
       end

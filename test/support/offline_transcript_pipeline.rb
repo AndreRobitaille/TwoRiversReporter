@@ -129,6 +129,7 @@ module OfflineTranscriptPipeline
       assert_equal @topics.map(&:id).sort, @meeting.topic_summaries.pluck(:topic_id).sort
       @topics.each_with_index do |topic, index|
         summary = @meeting.topic_summaries.find_by!(topic: topic)
+        assert Topics::GenerationEvidence.summary_current?(summary), "the completed workflow must retain current topic dependencies"
         briefing = topic.reload.topic_briefing
         assert_not_nil briefing
         [ summary, briefing ].each do |record|
@@ -156,7 +157,7 @@ module OfflineTranscriptPipeline
       assert_equal 1, @boundaries.count(:meeting)
       assert_equal 1, @boundaries.count(:extraction)
       @topics.each do |topic|
-        assert_equal 2, @boundaries.count([ :topic, topic.id ])
+        assert_equal 1, @boundaries.count([ :topic, topic.id ]), "reanalysis must reuse the identical completed topic stage"
         assert_equal 1, @boundaries.count([ :briefing, topic.id ])
       end
       assert_official_state

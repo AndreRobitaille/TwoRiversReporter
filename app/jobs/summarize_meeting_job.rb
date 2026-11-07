@@ -29,7 +29,8 @@ class SummarizeMeetingJob < ApplicationJob
     # 1. Meeting-Level Summary (Minutes or Packet)
     generate_meeting_summary(meeting, ai_service, retrieval_service)
 
-    # 2. Topic-Level Summaries
+    # 2. Establish deterministic continuity before capturing topic dependencies.
+    Topics::UpdateContinuityJob.perform_now(meeting_id: meeting.id)
     generate_topic_summaries(meeting, ai_service, retrieval_service)
 
     # 3. Prune hollow topic appearances based on the new summary's

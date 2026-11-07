@@ -35,8 +35,8 @@ module Topics
       removed_topic_ids = before_topic_ids - after_topic_ids
       remove_stale_topic_summaries!(meeting, removed_topic_ids)
       remove_stale_topic_status_events!(removed_link_pairs, removed_appearance_ids)
-      regenerate_topic_summaries(meeting, after_topic_ids)
       regenerate_continuity(affected_topic_ids)
+      regenerate_topic_summaries(meeting, after_topic_ids)
       regenerate_briefings(meeting, affected_topic_ids)
 
       selector_ids = homepage_selector_ids

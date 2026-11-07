@@ -58,13 +58,14 @@ module Topics
     end
 
     def self.knowledge_inputs(topic)
-      KnowledgeChunk.joins(:knowledge_source)
+      chunks = KnowledgeChunk.joins(:knowledge_source)
         .where(knowledge_source_id: KnowledgeSourceTopic.where(topic_id: topic.id).select(:knowledge_source_id))
         .where(knowledge_sources: { active: true, status: "approved" })
-        .includes(:knowledge_source).order(:id).map do |chunk|
-          source = chunk.knowledge_source
-          [ chunk.id, chunk.content, chunk.embedding, source.id, source.title, source.origin, source.stated_at, source.body ]
-        end
+        .includes(:knowledge_source).order(:id).to_a
+      sources = chunks.map(&:knowledge_source).uniq(&:id).sort_by(&:id)
+      # Include each source body once, not once per chunk of a long document.
+      { sources: sources.map { |source| [ source.id, source.title, source.origin, source.stated_at, source.body ] },
+        chunks: chunks.map { |chunk| [ chunk.id, chunk.knowledge_source_id, chunk.content, chunk.embedding ] } }
     end
     private_class_method :knowledge_inputs
 

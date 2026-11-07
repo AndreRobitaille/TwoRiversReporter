@@ -62,7 +62,7 @@ module Topics
 
       items.map do |item|
         # Agenda Item Document Attachments
-        doc_attachments = item.meeting_documents.flat_map do |doc|
+        doc_attachments = item.meeting_documents.order(:id).flat_map do |doc|
           snapshot = Citations::SourceCatalog.snapshot(doc)
           resolver = Citations::Resolver.new(meeting: @meeting, catalog: [ snapshot ])
           pages = Citations::SourceCatalog.pages_for(doc)
@@ -227,7 +227,7 @@ module Topics
       summary_sources = latest_summary&.generation_data&.dig("source_catalog") || []
       attachments = @meeting.agenda_items.substantive.joins(:agenda_item_topics)
         .where(agenda_item_topics: { topic_id: @topic.id }).flat_map(&:meeting_documents)
-      (summary_sources + attachments.map { |document| Citations::SourceCatalog.snapshot(document) }).uniq
+      (summary_sources + attachments.uniq(&:id).sort_by(&:id).map { |document| Citations::SourceCatalog.snapshot(document) }).uniq
     end
 
     def collect_citation_references(agenda_items, continuity)

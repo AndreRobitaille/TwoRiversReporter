@@ -48,7 +48,7 @@ module Topics
         .joins(:agenda_item_topics)
         .where(agenda_item_topics: { topic_id: @topic.id })
         .distinct
-        .order(:order_index)
+        .order(:order_index, :id)
 
       items.filter_map do |item|
         entry = matches[item.id]
