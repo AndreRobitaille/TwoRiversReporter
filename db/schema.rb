@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_07_210000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_07_220000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -148,6 +148,36 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_210000) do
     t.datetime "updated_at", null: false
     t.index [ "name" ], name: "index_committees_on_name", unique: true
     t.index [ "slug" ], name: "index_committees_on_slug", unique: true
+  end
+
+  create_table "council_decision_observations", force: :cascade do |t|
+    t.bigint "minutes_extraction_id", null: false
+    t.bigint "council_decision_id"
+    t.integer "sequence", null: false
+    t.jsonb "data", null: false
+    t.jsonb "location_check", null: false
+    t.jsonb "agenda_context", null: false
+    t.string "identity_status", null: false
+    t.string "reason"
+    t.jsonb "candidate_decision_ids", default: [], null: false
+    t.string "rule_version", null: false
+    t.string "evidence_status", default: "extracted", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "council_decision_id" ], name: "index_council_decision_observations_on_council_decision_id"
+    t.index [ "minutes_extraction_id", "council_decision_id" ], name: "index_decision_observations_on_stage_and_decision", unique: true
+    t.index [ "minutes_extraction_id", "sequence" ], name: "index_decision_observations_on_stage_and_sequence", unique: true
+    t.index [ "minutes_extraction_id" ], name: "index_council_decision_observations_on_minutes_extraction_id"
+  end
+
+  create_table "council_decisions", force: :cascade do |t|
+    t.bigint "meeting_id"
+    t.bigint "original_meeting_id", null: false
+    t.string "public_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "meeting_id" ], name: "index_council_decisions_on_meeting_id"
+    t.index [ "public_id" ], name: "index_council_decisions_on_public_id", unique: true
   end
 
   create_table "entities", force: :cascade do |t|
@@ -498,7 +528,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_210000) do
     t.bigint "meeting_id", null: false
     t.string "outcome"
     t.datetime "updated_at", null: false
+    t.bigint "decision_observation_id"
     t.index [ "agenda_item_id" ], name: "index_motions_on_agenda_item_id"
+    t.index [ "decision_observation_id" ], name: "index_motions_on_decision_observation_id", unique: true
     t.index [ "meeting_id" ], name: "index_motions_on_meeting_id"
   end
 
@@ -917,6 +949,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_210000) do
   add_foreign_key "committee_aliases", "committees"
   add_foreign_key "committee_memberships", "committees"
   add_foreign_key "committee_memberships", "members"
+  add_foreign_key "council_decision_observations", "council_decisions"
+  add_foreign_key "council_decision_observations", "minutes_extractions"
+  add_foreign_key "council_decisions", "meetings", on_delete: :nullify
   add_foreign_key "entity_facts", "entities"
   add_foreign_key "entity_mentions", "entities"
   add_foreign_key "entity_mentions", "meeting_documents"
@@ -950,6 +985,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_210000) do
   add_foreign_key "minutes_publications", "minutes_extractions", column: "attendance_extraction_id"
   add_foreign_key "minutes_publications", "minutes_extractions", column: "votes_extraction_id"
   add_foreign_key "motions", "agenda_items"
+  add_foreign_key "motions", "council_decision_observations", column: "decision_observation_id"
   add_foreign_key "motions", "meetings"
   add_foreign_key "passkey_credentials", "users"
   add_foreign_key "prompt_versions", "prompt_templates"

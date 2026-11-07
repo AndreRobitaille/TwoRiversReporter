@@ -2,18 +2,19 @@ module Minutes
   # Called only inside Publish's meeting/source transaction. Raw provider output
   # remains in MinutesExtraction; these rows are the current display projection.
   class Projection
-    def initialize(meeting, input, votes, attendance)
-      @meeting, @input, @votes, @attendance = meeting, input, votes, attendance
+    def initialize(meeting, input, votes_stage, attendance)
+      @meeting, @input, @votes, @attendance = meeting, input, votes_stage.data, attendance
+      @decisions = DecisionLedger.new(meeting, votes_stage)
     end
 
     def call
       @meeting.meeting_attendances.destroy_all
       attendance_changed = create_attendance_records(@meeting, @attendance)
       @meeting.motions.destroy_all
-      motions = normalize_motions(@votes.fetch("motions"), @input.text)
-      motions.each do |data|
+      motions = @votes.fetch("motions").each_with_index.reject { |data, _index| unseconded_motion?(data, @input.text) }
+      motions.each do |data, index|
         motion = @meeting.motions.create!(description: data.fetch("description"), outcome: data["outcome"],
-          agenda_item: resolve_agenda_item(data["agenda_item_ref"], @input.agenda_items))
+          agenda_item: resolve_agenda_item(data["agenda_item_ref"], @input.agenda_items), decision_observation: @decisions.observe(data, index + 1))
         Array(data["votes"]).each do |vote|
           member = Member.resolve(vote["member"])
           next unless member
@@ -29,12 +30,6 @@ module Minutes
     end
 
     private
-
-    def normalize_motions(motions, minutes_text)
-      motions.reject do |motion_data|
-        unseconded_motion?(motion_data, minutes_text)
-      end
-    end
 
     def unseconded_motion?(motion_data, minutes_text)
       description = motion_data["description"].to_s.downcase

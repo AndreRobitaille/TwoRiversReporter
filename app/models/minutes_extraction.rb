@@ -4,6 +4,7 @@ class MinutesExtraction < ApplicationRecord
 
   belongs_to :meeting, optional: true
   belongs_to :meeting_document_text_version, optional: true
+  has_many :council_decision_observations, dependent: :restrict_with_exception
   attr_readonly :original_meeting_id, :meeting_document_text_version_id, :kind,
     :input_key, :source_key, :input_manifest, :source_text
 
