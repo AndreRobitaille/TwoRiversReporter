@@ -23,7 +23,7 @@ module Meetings
     def self.publish(meeting:, summary_type:, expected:, sources:, topic_context: nil)
       with_lock(meeting.id) do
         persist = lambda do
-          current = meeting.meeting_summaries.where(summary_type: summary_type).lock.first
+          current = meeting.meeting_summaries.where(summary_type: summary_type).lock("FOR NO KEY UPDATE").first
           if version(current) == expected && Topics::GenerationEvidence.sources_current?(sources)
             yield
           end
@@ -35,7 +35,8 @@ module Meetings
 
     def self.with_current(summary)
       with_lock(summary.meeting_id) do
-        current = MeetingSummary.published.lock.find_by(id: summary.id)
+        # Serialize content changes without blocking a dependent image's FK check.
+        current = MeetingSummary.published.lock("FOR NO KEY UPDATE").find_by(id: summary.id)
         if current && version(current) == version(summary) &&
             Topics::GenerationEvidence.sources_current?(current.generation_data&.dig("source_catalog"))
           yield

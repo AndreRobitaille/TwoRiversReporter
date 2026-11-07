@@ -42,7 +42,9 @@ module GeneratedImages
       result = @ai_service.generate_civic_image(prompt: prompt, size: DEFAULT_SIZE, output_format: DEFAULT_OUTPUT_FORMAT)
 
       @imageable.generated_images.transaction do
-        @imageable.lock!
+        # Concurrent knowledge publication holds its summary lock while inserting
+        # a Meeting foreign key. Allow that KEY SHARE check to finish.
+        @imageable.lock!(@imageable.is_a?(Meeting) ? "FOR NO KEY UPDATE" : true)
         if !current_source?(image, lock: true)
           image.update!(status: "superseded", failure_reason: source_change_reason)
         elsif automatic_generation?(image) && ready_admin_override_exists?(except: image)
