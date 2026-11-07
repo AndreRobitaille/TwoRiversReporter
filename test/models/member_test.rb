@@ -311,7 +311,7 @@ class MemberTest < ActiveSupport::TestCase
     [ { value: "absent", evidence_basis: "attendance_derived" }, { value: "yes", evidence_basis: "explicit" } ].each do |attributes|
       source_vote.update!(attributes)
       original = [ source_vote, target_vote ].map(&:attributes)
-      error = assert_raises(ArgumentError) { source.merge_into!(target) }
+      error = assert_raises(ArgumentError) { source.reload.merge_into!(target.reload) }
       assert_match(/Conflicting votes/, error.message)
       assert_equal original, [ source_vote, target_vote ].map { |vote| vote.reload.attributes }
       assert Member.exists?(source.id)
@@ -329,7 +329,7 @@ class MemberTest < ActiveSupport::TestCase
       source_attendance.update!(status: "present", attendee_type: "non_voting_staff", capacity: "Clerk")
       source_attendance.update!(change)
       original = [ source_attendance, target_attendance ].map(&:attributes)
-      error = assert_raises(ArgumentError) { source.merge_into!(target) }
+      error = assert_raises(ArgumentError) { source.reload.merge_into!(target.reload) }
       assert_match(/Conflicting attendance/, error.message)
       assert_equal original, [ source_attendance, target_attendance ].map { |record| record.reload.attributes }
       assert Member.exists?(source.id)
