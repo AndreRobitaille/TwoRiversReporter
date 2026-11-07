@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_08_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_08_010000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -853,8 +853,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_000000) do
     t.bigint "triggering_meeting_id"
     t.string "upcoming_headline"
     t.datetime "updated_at", null: false
+    t.datetime "evidence_withdrawn_at"
+    t.bigint "withdrawal_correction_id"
     t.index [ "topic_id" ], name: "index_topic_briefings_on_topic_id", unique: true
     t.index [ "triggering_meeting_id" ], name: "index_topic_briefings_on_triggering_meeting_id"
+    t.index [ "withdrawal_correction_id" ], name: "index_topic_briefings_on_withdrawal_correction_id"
   end
 
   create_table "topic_review_events", force: :cascade do |t|
@@ -1057,6 +1060,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_000000) do
   add_foreign_key "topic_appearances", "committees"
   add_foreign_key "topic_appearances", "meetings"
   add_foreign_key "topic_appearances", "topics"
+  add_foreign_key "topic_briefings", "council_decision_corrections", column: "withdrawal_correction_id"
   add_foreign_key "topic_briefings", "meetings", column: "triggering_meeting_id"
   add_foreign_key "topic_briefings", "topics"
   add_foreign_key "topic_review_events", "topics"

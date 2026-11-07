@@ -351,27 +351,27 @@ class TopicsHelperTest < ActionView::TestCase
 
   test "topic_share_description returns briefing headline when present" do
     briefing = OpenStruct.new(headline: "Council has voted to fund only half of replacement line items.")
-    topic = OpenStruct.new(name: "Lead Pipe Replacement", topic_briefing: briefing)
+    topic = OpenStruct.new(name: "Lead Pipe Replacement", published_topic_briefing: briefing)
     assert_equal "Council has voted to fund only half of replacement line items.",
       topic_share_description(topic)
   end
 
   test "topic_share_description falls through to bare when briefing is nil" do
-    topic = OpenStruct.new(name: "Lead Pipe Replacement", topic_briefing: nil)
+    topic = OpenStruct.new(name: "Lead Pipe Replacement", published_topic_briefing: nil)
     assert_equal "Lead Pipe Replacement in Two Rivers, WI — every city meeting where it's come up, every vote, and what's still unresolved.",
       topic_share_description(topic)
   end
 
   test "topic_share_description falls through to bare when briefing headline is blank" do
     briefing = OpenStruct.new(headline: "")
-    topic = OpenStruct.new(name: "Downtown Parking Study", topic_briefing: briefing)
+    topic = OpenStruct.new(name: "Downtown Parking Study", published_topic_briefing: briefing)
     assert_equal "Downtown Parking Study in Two Rivers, WI — every city meeting where it's come up, every vote, and what's still unresolved.",
       topic_share_description(topic)
   end
 
   test "topic_share_description withholds the briefing headline for a gated visitor" do
     briefing = OpenStruct.new(headline: "Council has voted to fund only half of replacement line items.")
-    topic = OpenStruct.new(name: "Lead Pipe Replacement", topic_briefing: briefing)
+    topic = OpenStruct.new(name: "Lead Pipe Replacement", published_topic_briefing: briefing)
 
     stub_gated(true)
     result = topic_share_description(topic)

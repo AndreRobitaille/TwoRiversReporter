@@ -19,7 +19,9 @@ module CouncilDecisions
       meeting = @observation.minutes_extraction.meeting
       raise Conflict, "The original meeting is unavailable" unless meeting
 
-      meeting.with_lock do
+      # Serialize reviews/publication without blocking a new briefing's foreign
+      # key check while its generator holds the topic lock we acquire below.
+      meeting.with_lock("FOR NO KEY UPDATE") do
         existing = CouncilDecisionCorrection.find_by(request_id: @request_id)
         if existing
           raise Conflict, "Request ID already belongs to another review" unless existing.request_manifest == request_manifest
@@ -52,6 +54,7 @@ module CouncilDecisions
               row.update!(council_decision: target, correction: correction, conflicting_correction_ids: [])
             end
           end
+          Topics::WithdrawCorrectedBriefings.call(observation_ids: changes.map { |change| change.fetch(:assignment).observation_id }, correction: correction)
           meeting.touch
           correction
         end

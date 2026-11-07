@@ -10,6 +10,7 @@ class Topic < ApplicationRecord
   has_many :topic_summaries, dependent: :destroy
   has_many :generated_images, as: :imageable, dependent: :destroy
   has_one :topic_briefing, dependent: :destroy
+  has_one :published_topic_briefing, -> { published }, class_name: "TopicBriefing"
 
   validates :name, presence: true, uniqueness: { case_sensitive: false }
   validates :status, presence: true, inclusion: { in: %w[proposed approved blocked] }
@@ -82,13 +83,13 @@ class Topic < ApplicationRecord
     return none if normalized_query.blank?
 
     term = "%#{sanitize_sql_like(normalized_query)}%"
-    columns = PUBLIC_SEARCH_COLUMNS.dup
-    columns << BRIEFING_SEARCH_COLUMN if briefing_headlines
+    conditions = PUBLIC_SEARCH_COLUMNS.map { |column| "#{column} LIKE :q" }
+    conditions << "(#{BRIEFING_SEARCH_COLUMN} LIKE :q AND topic_briefings.evidence_withdrawn_at IS NULL)" if briefing_headlines
 
     relation = left_outer_joins(:topic_aliases)
     relation = relation.left_outer_joins(:topic_briefing) if briefing_headlines
     relation
-      .where(columns.map { |column| "#{column} LIKE :q" }.join(" OR "), q: term)
+      .where(conditions.join(" OR "), q: term)
       .distinct
       .order(:name)
   end

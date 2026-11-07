@@ -102,7 +102,7 @@ class CommitteesController < ApplicationController
     end
 
     @recent_topics = load_recent_topics
-    @headlines = TopicBriefing.where(topic_id: @recent_topics.map(&:id))
+    @headlines = TopicBriefing.published.where(topic_id: @recent_topics.map(&:id))
                               .pluck(:topic_id, :headline)
                               .to_h
   end

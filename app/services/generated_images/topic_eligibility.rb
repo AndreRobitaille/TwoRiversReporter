@@ -9,7 +9,7 @@ module GeneratedImages
 
     def call
       return Result.new(false, "not in homepage top six") unless @selector.include?(@topic)
-      return Result.new(false, "missing briefing") unless @topic.topic_briefing&.headline.present?
+      return Result.new(false, "missing briefing") unless @topic.published_topic_briefing&.headline.present?
 
       Result.new(true, nil)
     end

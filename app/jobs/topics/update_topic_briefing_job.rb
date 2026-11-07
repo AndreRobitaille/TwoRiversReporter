@@ -8,6 +8,7 @@ module Topics
 
       return unless topic.approved?
       return unless topic_has_substantive_item_for_meeting?(topic, meeting)
+      return if topic.topic_briefing&.evidence_withdrawn_at?
 
       case tier
       when "headline_only"
@@ -25,21 +26,25 @@ module Topics
     private
 
     def update_headline_only(topic, meeting)
-      briefing = topic.topic_briefing || topic.build_topic_briefing
+      topic.with_lock do
+        briefing = topic.topic_briefing || topic.build_topic_briefing
+        return if briefing.evidence_withdrawn_at?
 
-      date_str = meeting.starts_at.strftime("%b %-d")
-      briefing.upcoming_headline = "Coming up at #{meeting.body_name}, #{date_str}"
-      briefing.headline ||= "Topic update"
+        date_str = meeting.starts_at.strftime("%b %-d")
+        briefing.upcoming_headline = "Coming up at #{meeting.body_name}, #{date_str}"
+        briefing.headline ||= "Topic update"
 
-      unless briefing.persisted? && briefing.generation_tier.in?(%w[interim full])
-        briefing.generation_tier = "headline_only"
+        unless briefing.persisted? && briefing.generation_tier.in?(%w[interim full])
+          briefing.generation_tier = "headline_only"
+        end
+        briefing.triggering_meeting = meeting
+        briefing.save!
       end
-      briefing.triggering_meeting = meeting
-      briefing.save!
     end
 
     def update_interim(topic, meeting)
       briefing = topic.topic_briefing || topic.build_topic_briefing
+      original = briefing.persisted? ? briefing.attributes.slice("id", "updated_at") : nil
 
       agenda_items = meeting.agenda_items
         .substantive
@@ -57,20 +62,26 @@ module Topics
 
       result = Ai::OpenAiService.new.generate_briefing_interim(context)
 
-      briefing.upcoming_headline = result["headline"] if result["headline"].present?
-      briefing.headline ||= "Topic update"
-      if result["upcoming_note"].present?
-        briefing.editorial_content = [
-          briefing.editorial_content,
-          result["upcoming_note"]
-        ].compact.join("\n\n")
-      end
+      topic.with_lock do
+        current = TopicBriefing.find_by(topic: topic)
+        return unless current&.attributes&.slice("id", "updated_at") == original && !current&.evidence_withdrawn_at?
+        briefing = current || topic.build_topic_briefing
 
-      unless briefing.persisted? && briefing.generation_tier == "full"
-        briefing.generation_tier = "interim"
+        briefing.upcoming_headline = result["headline"] if result["headline"].present?
+        briefing.headline ||= "Topic update"
+        if result["upcoming_note"].present?
+          briefing.editorial_content = [
+            briefing.editorial_content,
+            result["upcoming_note"]
+          ].compact.join("\n\n")
+        end
+
+        unless briefing.persisted? && briefing.generation_tier == "full"
+          briefing.generation_tier = "interim"
+        end
+        briefing.triggering_meeting = meeting
+        briefing.save!
       end
-      briefing.triggering_meeting = meeting
-      briefing.save!
     end
 
     def topic_has_substantive_item_for_meeting?(topic, meeting)

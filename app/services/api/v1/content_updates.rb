@@ -48,12 +48,13 @@ module Api
 
         def preload_topics(records)
           ids = records.map(&:id)
-          analyses = TopicBriefing.where(topic_id: ids).group(:topic_id).maximum(:updated_at)
+          briefing_updates = TopicBriefing.where(topic_id: ids).group(:topic_id).maximum(:updated_at)
+          analyses = TopicBriefing.published.where(topic_id: ids).group(:topic_id).maximum(:updated_at)
           appearances = TopicAppearance.where(topic_id: ids).group(:topic_id).maximum(:updated_at)
           aliases = TopicAlias.where(topic_id: ids).group(:topic_id).maximum(:updated_at)
           records.each do |record|
             @metadata[[ record.class.name, record.id ]] = {
-              updated_at: [ record.updated_at, analyses[record.id], appearances[record.id], aliases[record.id] ].compact.max,
+              updated_at: [ record.updated_at, briefing_updates[record.id], appearances[record.id], aliases[record.id] ].compact.max,
               last_analysis_updated_at: analyses[record.id], has_analysis: analyses[record.id].present?
             }
           end

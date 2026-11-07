@@ -47,7 +47,7 @@ class MeetingsController < ApplicationController
     approved_topics = Topic.approved
       .joins(:agenda_item_topics)
       .where(agenda_item_topics: { agenda_item_id: substantive_item_ids })
-      .includes(:topic_briefing, topic_appearances: :agenda_item)
+      .includes(:published_topic_briefing, topic_appearances: :agenda_item)
       .distinct
 
     @ongoing_topics, @new_topics = approved_topics.partition do |topic|

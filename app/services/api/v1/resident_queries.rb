@@ -40,7 +40,7 @@ module Api
 
       def topics
         existing = Topic.publicly_visible.search_by_text(@query).reorder(nil).select(:id)
-        briefings = full_text(TopicBriefing.all, briefing_text).select(:topic_id)
+        briefings = full_text(TopicBriefing.published, briefing_text).select(:topic_id)
         Topic.publicly_visible.where(id: existing).or(Topic.publicly_visible.where(id: briefings))
       end
 
