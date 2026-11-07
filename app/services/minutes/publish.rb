@@ -7,7 +7,7 @@ module Minutes
 
     def self.context_for(meeting)
       { "meeting_starts_at" => meeting.starts_at&.utc&.iso8601(6),
-        "committee_id" => meeting.committee_id, "rules" => "minutes_projection_v1" }
+        "committee_id" => meeting.committee_id, "rules" => "minutes_projection_v2" }
     end
 
     def self.current?(meeting, input: nil)
@@ -49,7 +49,7 @@ module Minutes
             meeting: meeting, original_meeting_id: meeting.id, fingerprint: fingerprint, projection_context: context_for(meeting),
             votes_extraction: votes, attendance_extraction: attendance
           )
-          statuses = Projection.new(meeting, input, votes.data, attendance.data).call
+          statuses = Projection.new(meeting, input, votes, attendance.data).call
           state = meeting.processing_state.dup
           statuses.each do |kind, status|
             state[MARKERS.fetch(kind)] = true

@@ -310,14 +310,14 @@ selects compatible completed stages; a meeting/source lock protects atomic
 replacement of the display rows, membership reconciliation and current pointer.
 Known votes remain inspectable in a completed stage while attendance is pending.
 New vote stages also retain a deterministic `evidence_locations` check against
-their pinned `MeetingDocumentTextVersion`. Each motion has a source-order sequence
+their pinned `MeetingDocumentTextVersion`. Each motion has an extraction-array sequence
 and either exact page/character ranges or an unresolved reason. Excerpts must
 occur uniquely after whitespace normalization; missing/repeated passages and
 unretained legacy sources acquire no invented location. `located` proves text
 occurrence only, not semantic accuracy, identity, eligibility or approval.
 Completed checks are immutable with their extraction; preexisting stages remain
 unchecked and are not reprocessed merely to fill this field. Stable decision
-reconciliation will use this evidence rather than rewritten descriptions.
+reconciliation uses retained passages rather than rewritten descriptions.
 Explicit votes and absences derived from the matching roll call have different
 `Vote#evidence_basis` values; old rows remain `legacy`. Unsupported vote values
 are held rather than converted to abstentions.
@@ -341,8 +341,32 @@ Legacy text can be staged coherently with explicit `legacy_text_projection`
 provenance; it is never relabeled as a retained original artifact. Existing
 summary grounding omits old structured motions while current facts are pending.
 
-These are bounded evidence-foundation slices of #236. Stable decision identity,
-correction review and budgeted incremental generation remain follow-on work.
+`CouncilDecision` now provides an opaque durable ID independent of replaceable
+`Motion` rows. Immutable `CouncilDecisionObservation` rows retain each projected
+motion's raw extraction, original sequence, exact agenda context, checked passage
+and identity-rule version. Both tables participate in the existing publication
+transaction. Exact unique excerpt/sequence/context correspondence can reuse an
+identity; changed ordering, ambiguous passages, unknown locations or unmatched
+revisions retain an unresolved observation and possible prior identities instead
+of guessing. Relative page/character locations are compared independently of the
+provider's array order, so unchanged output ordering cannot hide reordered source
+passages. The first supported evidence can establish identities when older
+publications had none; those older unresolved observations remain unmapped.
+The initial identity and later correspondence are not fact approval:
+all observations remain `extracted`. Replaced agenda row IDs do not change the
+captured textual context. Member aliases remain the one person-identity system.
+
+A decision's current observation comes only from the meeting's current published
+vote stage; it never falls back to a superseded observation. An unresolved change
+can therefore withdraw that current reference while unrelated decisions advance.
+Original observations and opaque IDs survive source/meeting removal. Existing
+Motion rows link to their observations; public routes/API fields and prior topic
+lifecycle references are not migrated by this slice. Cached projection upgrades
+run with code through the existing nightly/job paths, without re-extraction.
+
+These are bounded evidence-foundation slices of #236. Reviewed identity and
+correction resolution, dependent-claim migration, explicit motion/amendment
+relationships and budgeted incremental generation remain follow-on work.
 Existing readers still use the mutable display rows; migrating full record
 queries to retained evidence and complete service-period denominators remains
 separate work. Existing citation resolution still rejects changed source versions.

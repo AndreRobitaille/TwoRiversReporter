@@ -12,6 +12,7 @@ class Meeting < ApplicationRecord
   belongs_to :minutes_publication, optional: true
   has_many :minutes_extractions, dependent: :nullify
   has_many :minutes_publications, dependent: :nullify
+  has_many :council_decisions, dependent: :nullify
 
   validates :detail_page_url, presence: true
 

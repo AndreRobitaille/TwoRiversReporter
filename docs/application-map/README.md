@@ -62,6 +62,10 @@ The [November 7 minutes passage-location checks](council-evidence-locations-2026
 record pinned source passages, ambiguity handling and the boundary between
 locating an excerpt and validating its interpretation.
 
+The [November 7 stable decision foundation](council-decision-identities-2026-11-07.md)
+records immutable observations, conservative identity correspondence and
+withdrawal of superseded current references.
+
 ## Read the map
 
 | Document | Use |

@@ -13,7 +13,8 @@ class MinutesParallelPublicationTest < ActiveJob::TestCase
     meeting = Meeting.create!(body_name: "Synthetic Council", starts_at: Time.current, detail_page_url: "https://example.test/parallel/#{suffix}")
     document = meeting.meeting_documents.create!(document_type: "minutes_pdf", source_url: "https://example.test/parallel.pdf")
     URI.stub(:open, ->(*) { StringIO.new("synthetic parallel source") }) { Documents::DownloadJob.perform_now(document.id) }
-    Documents::PublishText.new(document.reload).call(raw_pages: [ "Both synthetic participants attended. The closing action passed." ],
+    passage = "The closing action passed: #{names.join(' and ')} voted yes."
+    Documents::PublishText.new(document.reload).call(raw_pages: [ "#{names.join(' and ')} attended. #{passage}" ],
       page_count: 1, quality: "text", extractor_version: "synthetic_v1")
     artifact = document.reload.current_source_version
     text_version = document.current_text_version
@@ -23,7 +24,7 @@ class MinutesParallelPublicationTest < ActiveJob::TestCase
     mutex = Mutex.new
     service = Object.new
     responses = {
-      extract_votes: { motions: [ { description: "Parallel closing action", outcome: "passed", votes: names.map { |name| { member: name, value: "yes" } } } ] },
+      extract_votes: { motions: [ { description: "Parallel closing action", source_excerpt: passage, outcome: "passed", votes: names.map { |name| { member: name, value: "yes" } } } ] },
       extract_committee_members: { voting_members_present: names, voting_members_absent: [], non_voting_staff: [], guests: [] }
     }
     responses.each do |method, response|
@@ -67,6 +68,10 @@ class MinutesParallelPublicationTest < ActiveJob::TestCase
       assert_equal fresh.minutes_publication.votes_extraction.source_key, fresh.minutes_publication.attendance_extraction.source_key
       assert_equal "processed", fresh.processing_state["votes_extraction_status"]
       assert_equal "processed", fresh.processing_state["committee_members_extraction_status"]
+      observation = fresh.motions.sole.decision_observation
+      assert_equal "introduced", observation.identity_status
+      assert_equal 1, fresh.council_decisions.count
+      assert_equal observation.id, observation.council_decision.current_observation.id
     end
   ensure
     workers&.size&.times { release << true }
@@ -74,8 +79,11 @@ class MinutesParallelPublicationTest < ActiveJob::TestCase
     if meeting&.persisted?
       stage_ids = meeting.minutes_extractions.pluck(:id)
       publication_ids = meeting.minutes_publications.pluck(:id)
+      decision_ids = meeting.council_decisions.pluck(:id)
       meeting.destroy!
       MinutesPublication.where(id: publication_ids).destroy_all
+      CouncilDecisionObservation.where(minutes_extraction_id: stage_ids).destroy_all
+      CouncilDecision.where(id: decision_ids).destroy_all
       MinutesExtraction.where(id: stage_ids).destroy_all
     end
     text_version&.destroy!
