@@ -1,6 +1,6 @@
 # Minutes fact publication: November 7, 2026
 
-Application revision: `58eb24ea`, on extraction foundation `88556acf` (PR #248),
+Application revision: `589fb17c`, on extraction foundation `88556acf` (PR #248),
 source-artifact PR #247 and planning PR #246. Isolated local checkout, Ruby 4.0.9,
 Rails 8.1.4.1, PostgreSQL 18.6 and synthetic test database/storage. Original
 checkout, local development data and production were preserved.
@@ -84,7 +84,7 @@ are omitted from summary grounding while current fact publication is pending.
 | Workflow / variant | Exercised boundary and result | Limits |
 | --- | --- | --- |
 | BG-02, both arrival orders | Retained synthetic source → real jobs with deterministic providers → independent stage rows → atomic publication → fresh model reads. Votes first and attendance first both retain the prior pair until complete; distinct opening/closing decisions survive. | Provider semantics simulated; not real extraction accuracy. |
-| BG-02, real concurrency | Separate PostgreSQL connections, committed input, overlapping vote/attendance jobs and a duplicate vote job held during provider work. One provider call per stage, two extraction rows, one publication, exact known people/votes/attendance on a subsequent uncached read. | Real threads/DB locks; deterministic provider transport, not separate host/load testing. |
+| BG-02, real concurrency | Separate PostgreSQL connections, committed input, overlapping vote/attendance jobs and a duplicate vote job held during provider work. One provider call per stage, two extraction rows, one publication, terminal processing statuses and exact known people/votes/attendance on a subsequent uncached read. | Real threads/DB locks; deterministic provider transport, not separate host/load testing. |
 | BG-02, late/revised work | New source and both new stages complete during an older vote request. Late output remains retained without replacing the new pair. New bytes awaiting matching text dispatch no AI. | Deterministic interleaving. |
 | BG-02, failures | Second-motion persistence failure rolls back votes, attendance and pointer together. Both completed stages survive; retry publishes without another provider call. Unsupported values stop; two invalid attempts exhaust eligibility. Provider timeout is uncertain and is not retried. | Persistence/provider faults simulated. |
 | BG-02, reuse/dependencies | Unchanged runs preserve row identities and make no calls. Agenda changes require only votes; global prompt edits require neither stage. Date correction reprojects cached stages without a call even after prompt edits. Explicit refresh extracts only the changed stage. Provider uses the manifest's pinned template after a database prompt edit. | Same application/source stage behavior, not a complete global AI cache. |
@@ -110,7 +110,7 @@ Final application and behavioral verification ran serially on that database.
   restored repository formatting; inspected diff contains only the two tables,
   meeting pointer, vote evidence basis, indexes/foreign keys and schema revision.
 - Clean focused baseline: `bin/rails test test/jobs/minutes test/integration/minutes_publication_journey_test.rb test/services/ai/minutes_input_test.rb test/jobs/extract_votes_job_test.rb test/jobs/extract_committee_members_job_test.rb test/services/scrapers/pipeline_repair_sweep_test.rb`:
-  106 runs, 370 assertions, zero failures/errors/skips. The runner discovers the
+  107 runs, 378 assertions, zero failures/errors/skips. The runner discovers the
   real concurrency test as well as the HTTP and deterministic job journeys.
 - Existing job component tests now supply the counterpart through its real job
   with a deterministic provider, retaining their membership authority, alias,
@@ -130,8 +130,15 @@ Final application and behavioral verification ran serially on that database.
   17 assertions, one failure, no errors/skips. The later HTTP page incorrectly
   retained the old park action instead of the revised library action. Restore
   source identity from the clean baseline.
-- All faults were restored before the final `bin/rails test`: 2,225 runs,
-  13,924 assertions, zero failures/errors, one existing PromptRun polymorphic-source
+- Fault 4 / review follow-up: a worker can finish its output before the
+  counterpart publishes, then write a late `staged` marker over `processed`.
+  A scheduling-only hook reproduced this in the real pipeline, preserving all
+  persistence and stamp logic. The fix keeps a published stage's terminal status.
+  Removing that guard after a clean baseline makes `-n /late_completion_status/`
+  fail (one run/assertion/failure, no errors/skips). Restored coverage also proves
+  the existing nightly sweep queues the missing summary without either extraction.
+- All faults were restored before the final `bin/rails test`: 2,226 runs,
+  13,932 assertions, zero failures/errors, one existing PromptRun polymorphic-source
   test skip because no meeting fixture exists. An earlier full run exposed the
   old truncation expectation; it was replaced by complete-input and oversize
   rejection coverage for both provider methods.
