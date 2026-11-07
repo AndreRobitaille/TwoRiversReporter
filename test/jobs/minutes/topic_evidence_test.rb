@@ -80,6 +80,8 @@ class MinutesTopicEvidenceTest < ActiveJob::TestCase
     publish
     event = motion_events.find_by!(decision_observation_id: @meeting.motions.order(:id).first.decision_observation_id)
     decision = event.council_decision
+    assert_equal decision.public_id, summary_motion_events.find { |entry| entry[:event_id] == event.id }.dig(:motion_reference, :decision_public_id)
+    assert_equal decision.public_id, briefing_motion_events.find { |entry| entry[:event_id] == event.id }.dig(:motion_reference, :decision_public_id)
     actor = User.create!(email_address: "synthetic-reviewer@example.test", admin: true, status: "active")
     review = CouncilDecisions::ResolveIdentity.call(observation: event.decision_observation, action: "unassign", actor: actor,
       reason: "Synthetic identity correspondence withdrawal", expected_correction_id: nil, request_id: SecureRandom.uuid)
@@ -90,6 +92,8 @@ class MinutesTopicEvidenceTest < ActiveJob::TestCase
     assert_equal @excerpts.first, event.decision_observation.data["source_excerpt"]
     assert_equal "extracted", event.decision_observation.evidence_status
     assert_equal 2, motion_events.with_current_evidence.count
+    assert_nil summary_motion_events.find { |entry| entry[:event_id] == event.id }.dig(:motion_reference, :decision_public_id)
+    assert_nil briefing_motion_events.find { |entry| entry[:event_id] == event.id }.dig(:motion_reference, :decision_public_id)
   end
 
   test "topic merge retains both histories but presents each supported decision once" do
