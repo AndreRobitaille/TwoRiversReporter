@@ -248,6 +248,11 @@ identities, content and eligibility under topic locks before saving a provider
 response. See [agenda-preview transition and concurrency checks](agenda-briefing-context-2026-11-07.md).
 Previously saved meeting summaries still need durable dependency/withdrawal work.
 
+Fact publication now withdraws stored briefings with invalid motion receipts even
+when the source document is unchanged. Fact projection, automated audit and image
+invalidation share one transaction; valid motion context survives a compatible
+attendance refresh. See [fact-publication withdrawal evidence and limits](council-fact-withdrawal-2026-11-07.md).
+
 October 24 leadership-context update: extraction carries administrator notes
 from approved topics' existing appearances into the matching agenda item, so
 reanalysis can rebuild links after removing the current join rows. The notes

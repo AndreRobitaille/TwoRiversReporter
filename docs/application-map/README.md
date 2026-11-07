@@ -91,6 +91,10 @@ The [November 7 agenda-preview context checks](agenda-briefing-context-2026-11-0
 cover withdrawn briefing inputs, changed context during generation, publication
 locking and later meeting reads. Withdrawal of earlier saved previews remains open.
 
+The [November 7 fact-publication withdrawal checks](council-fact-withdrawal-2026-11-07.md)
+cover changed extractions from an unchanged document, atomic withdrawal/audit,
+cached publication retry and concurrent first briefing publication.
+
 The [November 7 topic-generation dependency checks](council-topic-generation-2026-11-07.md)
 cover unchanged topic-stage reuse, stale-input filtering and rejected in-flight
 publication. Broader resident-prose withdrawal and cost controls remain open.

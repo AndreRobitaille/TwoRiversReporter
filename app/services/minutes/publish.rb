@@ -34,7 +34,9 @@ module Minutes
 
     def self.call(meeting)
       published = false
-      meeting.with_lock do
+      # Publication can wait for a topic generator that is inserting a briefing
+      # for this meeting. Its foreign-key check must be able to take KEY SHARE.
+      meeting.with_lock("FOR NO KEY UPDATE") do
         document = meeting.meeting_documents.where(document_type: "minutes_pdf").order(created_at: :desc, id: :desc).first
         return false unless document
         document.with_lock do
@@ -45,6 +47,8 @@ module Minutes
 
           fingerprint = fingerprint_for(meeting, votes, attendance)
           return false if meeting.minutes_publication&.fingerprint == fingerprint
+          previous_publication = meeting.minutes_publication
+          previous_motion_ids = meeting.motions.pluck(:id)
           publication = MinutesPublication.find_by(fingerprint: fingerprint) || MinutesPublication.create!(
             meeting: meeting, original_meeting_id: meeting.id, fingerprint: fingerprint, projection_context: context_for(meeting),
             votes_extraction: votes, attendance_extraction: attendance
@@ -56,6 +60,8 @@ module Minutes
             state[STATUS_KEYS.fetch(kind)] = status
           end
           meeting.update!(minutes_publication: publication, processing_state: state)
+          Topics::WithdrawFactBriefings.call(meeting: meeting, previous_publication: previous_publication,
+            publication: publication, previous_motion_ids: previous_motion_ids)
           published = true
         end
       end

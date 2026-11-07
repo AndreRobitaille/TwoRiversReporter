@@ -7,7 +7,7 @@ module BriefingWithdrawalScenario
   CLAIM = "Syntheticcedaridentityreport".freeze
   STORY = "Synthetic cedar interpretation awaiting a corrected identity".freeze
 
-  def build_withdrawal_scenario
+  def build_withdrawal_scenario(vote_value: "yes")
     @committee = Committee.create!(name: "Synthetic Council", slug: "synthetic-council", status: "active")
     @meeting = Meeting.create!(body_name: @committee.name, committee: @committee, starts_at: 1.day.ago,
       detail_page_url: "https://example.test/withdrawal-meeting")
@@ -24,7 +24,7 @@ module BriefingWithdrawalScenario
     agenda_reference = "#{@agenda.number}: #{@agenda.title}"
     @provider.define_singleton_method(:extract_votes) do |*, **|
       { motions: [ { description: "Approve synthetic cedar improvements", source_excerpt: text,
-        agenda_item_ref: agenda_reference, outcome: "passed", votes: [ { member: "Alex Example", value: "yes" } ] } ] }.to_json
+        agenda_item_ref: agenda_reference, outcome: "passed", votes: [ { member: "Alex Example", value: vote_value } ] } ] }.to_json
     end
     @provider.define_singleton_method(:extract_committee_members) do |*, **|
       { voting_members_present: [ "Alex Example" ], voting_members_absent: [], non_voting_staff: [], guests: [] }.to_json
