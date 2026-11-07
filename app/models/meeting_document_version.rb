@@ -18,9 +18,9 @@ class MeetingDocumentVersion < ApplicationRecord
   validates :capture_method, inclusion: { in: [ "download_sha256_v1" ] }
   validate :retained_file_is_immutable
 
-  def self.key_for(document)
+  def self.key_for(document, sha256: document.sha256)
     Digest::SHA256.hexdigest(JSON.generate([
-      document.id, document.source_url, document.document_type, document.sha256
+      document.id, document.source_url, document.document_type, sha256
     ]))
   end
 

@@ -142,11 +142,30 @@ module Documents
       original = @document.reload.current_source_version
       clear_enqueued_jobs
       MeetingDocumentVersion.stub :capture!, ->(*) { raise ActiveRecord::RecordInvalid } do
-        assert_no_enqueued_jobs { download(@sample.fetch("minutes_v2")) }
+        assert_no_difference "ActiveStorage::Blob.count" do
+          assert_no_enqueued_jobs { download(@sample.fetch("minutes_v2")) }
+        end
       end
       assert_equal original.sha256, @document.reload.sha256
       assert_equal original.file.blob_id, @document.file.blob_id
       assert_equal original.id, @document.current_source_version.id
+    end
+
+    test "failed blob upload cannot publish a version or advance the current source" do
+      download(@sample.fetch("minutes_v1"))
+      original = @document.reload.current_source_version
+      clear_enqueued_jobs
+      ActiveStorage::Blob.service.stub :upload, ->(*) { raise IOError, "synthetic storage outage" } do
+        assert_no_difference "MeetingDocumentVersion.count" do
+          assert_no_enqueued_jobs { download(@sample.fetch("minutes_v2")) }
+        end
+      end
+      assert_equal original.sha256, @document.reload.sha256
+      assert_equal original.id, @document.current_source_version.id
+      assert_equal @sample.fetch("minutes_v1"), @document.file.download
+
+      download(@sample.fetch("minutes_v2"))
+      assert_equal @sample.fetch("minutes_v2"), @document.reload.current_source_version.file.download
     end
 
     private

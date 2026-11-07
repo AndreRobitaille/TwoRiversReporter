@@ -31,29 +31,32 @@ module Documents
         # Rewind for subsequent use
         downloaded_io.rewind
 
+        version_key = MeetingDocumentVersion.key_for(document, sha256: sha)
+        retained_version = MeetingDocumentVersion.find_by(version_key: version_key)
+        unless retained_version
+          # Upload before publishing the version/current metadata. Attaching an
+          # IO inside the transaction would defer upload until after commit.
+          filename = File.basename(URI.parse(document.source_url).path).presence || "document.pdf"
+          uploaded_blob = ActiveStorage::Blob.create_and_upload!(io: downloaded_io, filename: filename)
+        end
+
         changed = false
         document.with_lock do
           # Another fetch or source edit won while this request was in flight.
           return unless download_state(document) == requested_state
 
           changed = document.sha256 != sha
-          filename = File.basename(URI.parse(document.source_url).path).presence || "document.pdf"
           if changed
             document.update!(sha256: sha, **metadata, fetched_at: Time.current)
-            version = document.current_source_version
-            if version
-              # Reuse the archived blob when a publisher restores earlier bytes.
-              document.file.attach(version.file.blob)
-            else
-              document.file.attach(io: downloaded_io, filename: filename)
-            end
-            MeetingDocumentVersion.capture!(document)
           else
             record_unchanged_check!(document, **metadata)
-            # A legacy row may not yet have retained bytes. Capture the actual
-            # response, without changing its current attachment or updated_at.
-            MeetingDocumentVersion.capture!(document, file: { io: downloaded_io, filename: filename })
           end
+
+          # Reuse retained bytes, including when a publisher restores a prior
+          # version. A legacy unchanged response gains an archive only.
+          blob = retained_version ? retained_version.file.blob : uploaded_blob
+          document.file.attach(blob) if changed
+          MeetingDocumentVersion.capture!(document, file: blob)
         end
 
         # Retaining a previously unversioned artifact is deterministic work.
@@ -85,10 +88,17 @@ module Documents
         Rails.logger.error "Error processing document #{document_id}: #{e.message}"
       ensure
         downloaded_io.close if downloaded_io.respond_to?(:close)
+        purge_unused_upload(uploaded_blob) if uploaded_blob
       end
     end
 
     private
+
+    def purge_unused_upload(blob)
+      blob.purge unless blob.attachments.exists?
+    rescue StandardError => e
+      Rails.logger.error "Could not purge unused download blob #{blob.id}: #{e.message}"
+    end
 
     def download_state(document)
       document.attributes.slice("source_url", "document_type", "sha256", "fetched_at", "updated_at")
