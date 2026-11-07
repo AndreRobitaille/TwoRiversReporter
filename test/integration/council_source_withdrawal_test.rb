@@ -17,6 +17,9 @@ class CouncilSourceWithdrawalTest < ActionDispatch::IntegrationTest
 
   teardown do
     ApiAccessToken.where(user_id: @actor&.id).delete_all
+    Session.where(user_id: @actor&.id).delete_all
+    PasskeyCredential.where(user_id: @actor&.id).delete_all
+    KnownContext.where(user_id: @actor&.id).delete_all
     clean_withdrawal_scenario
     if @previous_setting
       @previous_setting.update!(access_mode: @previous_mode)
@@ -70,6 +73,10 @@ class CouncilSourceWithdrawalTest < ActionDispatch::IntegrationTest
     assert_equal 2, @document.reload.source_versions.count
     assert_nil @document.current_text_version
     assert_equal "yes", @meeting.motions.sole.votes.sole.value
+    sign_in_as(@actor)
+    get admin_audit_events_path
+    assert_response :success
+    assert_select "tbody tr", text: /Automated.*topic_briefing\.source_withdrawn.*Topic: #{Regexp.escape(@topic.name)}/m, count: 1
   end
 
   test "unchanged responses failed fetches and restored identical evidence do not request generation" do

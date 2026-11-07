@@ -34,8 +34,8 @@ module Topics
             (motions.nil? || GenerationEvidence.motion_evidence_current?(briefing.topic_id, motions))
 
           document = MeetingDocument.find_by(id: document_id)
-          AuditEvent.record!(actor: nil, action: "topic_briefing.source_withdrawn", subject: briefing,
-            metadata: { method: "document_dependencies_v1", document_id: document_id,
+          AuditEvent.record!(actor: nil, action: "topic_briefing.source_withdrawn", subject: briefing, label: "Topic: #{briefing.topic.name}",
+            metadata: { actor_type: "system", method: "document_dependencies_v1", document_id: document_id,
               reason: document ? "source_changed" : "source_unavailable",
               source_catalog: sources, evidence_manifest: data["evidence_manifest"],
               current_source: document && Citations::SourceCatalog.snapshot(document) })
