@@ -49,8 +49,8 @@ class SummarizeMeetingJob < ApplicationJob
     ai_service = ::Ai::OpenAiService.new
     retrieval_service = RetrievalService.new
 
-    generate_agenda_preview_summary(meeting, agenda_doc, ai_service, retrieval_service)
-    enqueue_briefing_refresh(meeting)
+    summary = generate_agenda_preview_summary(meeting, agenda_doc, ai_service, retrieval_service)
+    enqueue_briefing_refresh(meeting) if summary
   end
 
   def generate_agenda_preview_summary(meeting, agenda_doc, ai_service, retrieval_service)
@@ -64,81 +64,11 @@ class SummarizeMeetingJob < ApplicationJob
     formatted_context = retrieval_service.format_context(retrieved_chunks).split("\n\n")
     kb_context = ai_service.prepare_kb_context(formatted_context)
 
-    topic_context = agenda_topic_context(agenda_doc.extracted_text)
-    combined_context = [ topic_context, kb_context ].reject(&:blank?).join("\n\n")
+    topic_context = Topics::AgendaBriefingContext.new(agenda_doc.extracted_text)
+    combined_context = [ topic_context.text, kb_context ].reject(&:blank?).join("\n\n")
 
     analyze_and_save_summary(meeting, [ agenda_doc ], ai_service, combined_context,
-      type: "agenda", summary_type: "agenda_preview", source_type: "agenda")
-  end
-
-  AGENDA_TOPIC_MIN_TOKEN_OVERLAP = 3
-  AGENDA_TOPIC_MIN_IMPACT = 3
-  AGENDA_TOPIC_MAX_HITS = 6
-  AGENDA_TOPIC_STOPWORDS = Set.new(%w[
-    a an the of and or but to for in on at by with from as is be are was were
-    been being this that these those it its their our your my me us we they he
-    she his her them have has had do does did not no so if then than which who
-    whom whose where when why how all any each every some other into out up down
-    off over under same own more most less few many such new old
-  ]).freeze
-
-  def agenda_topic_context(agenda_text)
-    return "" if agenda_text.blank?
-    agenda_tokens = significant_tokens(agenda_text)
-    return "" if agenda_tokens.size < AGENDA_TOPIC_MIN_TOKEN_OVERLAP
-
-    topics = Topic.approved
-      .where("resident_impact_score >= ?", AGENDA_TOPIC_MIN_IMPACT)
-      .joins(:topic_briefing)
-      .where.not(topic_briefings: { editorial_content: [ nil, "" ] })
-      .includes(:topic_aliases, :topic_briefing)
-
-    scored = topics.filter_map do |topic|
-      needles = [ topic.name ] + topic.topic_aliases.map(&:name)
-      best_overlap = needles.map do |needle|
-        needle_tokens = significant_tokens(needle)
-        next 0 if needle_tokens.size < AGENDA_TOPIC_MIN_TOKEN_OVERLAP
-        (needle_tokens & agenda_tokens).size
-      end.max || 0
-
-      next nil if best_overlap < AGENDA_TOPIC_MIN_TOKEN_OVERLAP
-      [ topic, best_overlap ]
-    end
-
-    hits = scored
-      .sort_by { |topic, overlap| [ -topic.resident_impact_score.to_i, -overlap ] }
-      .first(AGENDA_TOPIC_MAX_HITS)
-      .map(&:first)
-
-    return "" if hits.empty?
-
-    sections = hits.map do |topic|
-      briefing = topic.topic_briefing
-      parts = [ "## Known topic: #{topic.name}" ]
-      parts << "Impact score: #{topic.resident_impact_score}"
-      parts << "Current state: #{briefing.headline}" if briefing.headline.present?
-      parts << "Coming up: #{briefing.upcoming_headline}" if briefing.upcoming_headline.present?
-      parts << briefing.editorial_content.to_s.truncate(1200) if briefing.editorial_content.present?
-      parts.join("\n")
-    end
-
-    <<~TOPIC_CONTEXT.strip
-      <topic_briefings>
-      The following topics are ongoing civic concerns in Two Rivers that share content words with the agenda text. Use them to ground your analysis where clearly relevant to an agenda item — residents already recognize these issues. These are established context, not outcomes from this meeting. Ignore entries that don't actually line up with any item.
-
-      #{sections.join("\n\n")}
-      </topic_briefings>
-    TOPIC_CONTEXT
-  end
-
-  def significant_tokens(text)
-    Set.new(
-      text.to_s.downcase.scan(/[a-z]+/).filter_map do |word|
-        next if word.length < 3
-        next if AGENDA_TOPIC_STOPWORDS.include?(word)
-        word.sub(/s\z/, "")
-      end
-    )
+      type: "agenda", summary_type: "agenda_preview", source_type: "agenda", topic_context: topic_context)
   end
 
   def enqueue_briefing_refresh(meeting)
@@ -190,7 +120,7 @@ class SummarizeMeetingJob < ApplicationJob
     end
   end
 
-  def analyze_and_save_summary(meeting, documents, ai_service, kb_context, type:, summary_type:, source_type:)
+  def analyze_and_save_summary(meeting, documents, ai_service, kb_context, type:, summary_type:, source_type:, topic_context: nil)
     catalog = Citations::SourceCatalog.new(meeting: meeting, documents: documents)
     meeting_record_text = documents.select { |document| document.document_type.in?(%w[minutes_pdf minutes_html transcript]) }
       .map(&:extracted_text).join("\n\n")
@@ -198,8 +128,9 @@ class SummarizeMeetingJob < ApplicationJob
       source: meeting, source_catalog: catalog.sources,
       meeting_record_text: meeting_record_text,
       participant_context: participant_context_for(meeting), motion_context: motion_context_for(meeting))
-    save_summary(meeting, summary_type, json_str, source_catalog: catalog.sources,
-      source_type: source_type, framing: compute_framing(meeting, type))
+    persist = -> { save_summary(meeting, summary_type, json_str, source_catalog: catalog.sources,
+      source_type: source_type, framing: compute_framing(meeting, type)) }
+    topic_context ? topic_context.with_current(&persist) : persist.call
   end
 
   def generate_topic_summaries(meeting, ai_service, retrieval_service)

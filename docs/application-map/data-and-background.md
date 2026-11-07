@@ -243,6 +243,11 @@ and motion-dependent briefings; see [source-change QA and its limits](council-so
 Knowledge changes and other generated projections remain separate work.
 Other stored resident prose and all-writer atomic invalidation remain separate.
 
+Agenda previews now consume only published briefing context and recheck consumed
+identities, content and eligibility under topic locks before saving a provider
+response. See [agenda-preview transition and concurrency checks](agenda-briefing-context-2026-11-07.md).
+Previously saved meeting summaries still need durable dependency/withdrawal work.
+
 October 24 leadership-context update: extraction carries administrator notes
 from approved topics' existing appearances into the matching agenda item, so
 reanalysis can rebuild links after removing the current join rows. The notes
