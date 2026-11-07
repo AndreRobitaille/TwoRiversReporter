@@ -152,7 +152,7 @@ module Topics
       cutoff_time = @meeting.starts_at || Time.current
 
       # Recent history events
-      recent_events = @topic.topic_status_events
+      recent_events = @topic.topic_status_events.with_current_evidence
         .where("occurred_at <= ?", cutoff_time)
         .order(occurred_at: :desc).limit(3).map do |e|
         # Build citation if source_ref has IDs

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_07_230000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_08_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -881,6 +881,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_230000) do
     t.jsonb "source_ref"
     t.bigint "topic_id", null: false
     t.datetime "updated_at", null: false
+    t.bigint "decision_observation_id"
+    t.index [ "decision_observation_id" ], name: "index_topic_status_events_on_decision_observation_id"
+    t.index [ "topic_id", "decision_observation_id", "evidence_type" ], name: "index_topic_events_on_retained_decision"
     t.index [ "topic_id", "occurred_at" ], name: "index_topic_status_events_on_topic_id_and_occurred_at"
     t.index [ "topic_id" ], name: "index_topic_status_events_on_topic_id"
   end
@@ -1058,6 +1061,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_230000) do
   add_foreign_key "topic_briefings", "topics"
   add_foreign_key "topic_review_events", "topics"
   add_foreign_key "topic_review_events", "users"
+  add_foreign_key "topic_status_events", "council_decision_observations", column: "decision_observation_id"
   add_foreign_key "topic_status_events", "topics"
   add_foreign_key "topic_summaries", "meetings"
   add_foreign_key "topic_summaries", "topics"
