@@ -44,7 +44,7 @@ module Api
       def briefing_payload(briefing)
         return unless briefing
 
-        { headline: briefing.headline, ai_generated: true, generated_at: timestamp(briefing.updated_at),
+        { headline: briefing.headline, ai_generated: true, generated_at: timestamp(briefing.last_full_generation_at || briefing.updated_at),
           tier: briefing.generation_tier, what_to_watch: string(@helpers.briefing_what_to_watch(briefing)),
           current_state: string(@helpers.briefing_current_state(briefing)),
           process_concerns: strings(@helpers.briefing_process_concerns(briefing)),

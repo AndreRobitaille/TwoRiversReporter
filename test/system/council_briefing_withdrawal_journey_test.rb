@@ -17,7 +17,11 @@ class CouncilBriefingWithdrawalJourneyTest < ApplicationSystemTestCase
       assert_selector "h1", text: @topic.name.upcase
       assert_no_text STORY
       assert_no_selector "meta[name='description'][content='#{CLAIM}']", visible: :all
-      find("a[href='#{meeting_path(@meeting)}']", match: :first).click
+      assert_text "The generated analysis was withdrawn after an evidence correction."
+      assert_no_text "No meeting activity recorded for this topic yet."
+      within ".topic-article-section--record" do
+        find("a[href='#{meeting_path(@meeting)}']").click
+      end
       assert_current_path meeting_path(@meeting)
       assert_selector "a[href='#{@document.source_url}']"
       visit topics_path

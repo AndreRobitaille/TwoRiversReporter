@@ -103,6 +103,7 @@ class TopicsController < ApplicationController
                       .uniq(&:meeting_id)
 
     @briefing = @topic.published_topic_briefing
+    @briefing_withdrawn = TopicBriefing.where(topic_id: @topic.id).where.not(evidence_withdrawn_at: nil).exists?
 
     # Key decisions: all motions linked to this topic's agenda items
     @decisions = Motion.joins(agenda_item: :agenda_item_topics)

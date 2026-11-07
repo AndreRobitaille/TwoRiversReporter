@@ -200,6 +200,18 @@
           </li>
         <% end %>
       </ol>
+    <% elsif @briefing_withdrawn %>
+      <p class="section-empty">The generated analysis was withdrawn after an evidence correction. Recorded meeting appearances remain available below.</p>
+      <ol class="topic-timeline">
+        <% @record_meetings.values.flatten.uniq(&:meeting_id).sort_by(&:appeared_at).reverse_each do |appearance| %>
+          <li class="topic-timeline-entry">
+            <time class="topic-timeline-date"><%= appearance.appeared_at.strftime("%b %-d, %Y") %></time>
+            <div class="topic-timeline-content">
+              <%= link_to clean_meeting_display(appearance.meeting.body_name), meeting_path(appearance.meeting), class: "topic-timeline-meeting-link" %>
+            </div>
+          </li>
+        <% end %>
+      </ol>
     <% else %>
       <p class="section-empty">No meeting activity recorded for this topic yet.</p>
     <% end %>

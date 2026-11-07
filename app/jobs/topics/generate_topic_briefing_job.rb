@@ -17,8 +17,19 @@ module Topics
         query: briefing_query(topic), kind: "topic_briefing")
       return unless evidence
       existing = TopicBriefing.find_by(topic: topic)
-      return if existing&.generation_tier == "full" && existing.evidence_withdrawn_at.nil? && existing.generation_data.is_a?(Hash) && existing.generation_data["evidence_manifest"] == evidence
       original = existing&.attributes&.slice("id", "updated_at")
+      if existing&.generation_tier == "full" && existing.generation_data.is_a?(Hash) && existing.generation_data["evidence_manifest"] == evidence
+        # A later correction can restore the exact retained inputs. Revalidate
+        # under the publication lock and reuse that completed analysis for free.
+        if existing.evidence_withdrawn_at?
+          topic.with_lock do
+            current = TopicBriefing.find_by(topic: topic)
+            return unless current&.attributes&.slice("id", "updated_at") == original && evidence_current?(topic.id, meeting.id, evidence)
+            current.update!(evidence_withdrawn_at: nil, withdrawal_correction: nil)
+          end
+        end
+        return
+      end
 
       ai_service = Ai::OpenAiService.new
       retrieval_service = RetrievalService.new

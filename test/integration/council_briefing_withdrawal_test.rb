@@ -82,6 +82,31 @@ class CouncilBriefingWithdrawalTest < ActionDispatch::IntegrationTest
     Rails.cache = old_cache
   end
 
+  test "restored identical inputs reuse the withdrawn completion without another provider call" do
+    retained = @briefing.attributes.slice("headline", "generation_data", "editorial_content", "record_content", "last_full_generation_at")
+    decision = @event.council_decision
+    travel 2.seconds
+    withdraw_decision
+    without_paid_providers do
+      CouncilDecisions::ResolveIdentity.call(observation: @event.decision_observation, action: "assign", actor: @actor,
+        reason: "Synthetic identity restored", expected_correction_id: @correction.id, request_id: SecureRandom.uuid,
+        decision: decision, basis_observation: @event.decision_observation)
+      assert_nil @topic.reload.published_topic_briefing, "Restoration still requires a current dependency check"
+      assert_no_enqueued_jobs do
+        Topics::GenerateTopicBriefingJob.perform_now(topic_id: @topic.id, meeting_id: @meeting.id)
+      end
+    end
+    published = @topic.reload.published_topic_briefing
+    assert_not_nil published
+    assert_equal retained, published.attributes.slice(*retained.keys)
+    assert_nil published.withdrawal_correction_id
+    get "/api/v1/topics/#{@topic.id}", headers: @bearer
+    assert_response :success
+    assert_equal retained.fetch("last_full_generation_at").iso8601, response.parsed_body.dig("data", "briefing", "generated_at")
+    assert_nil response.parsed_body.dig("data", "illustration")
+    assert_equal "superseded", @illustration.reload.status
+  end
+
   private
 
   def assert_public_claims
@@ -119,6 +144,9 @@ class CouncilBriefingWithdrawalTest < ActionDispatch::IntegrationTest
     get topic_path(@topic)
     assert_select "h1", text: @topic.name
     assert_select ".topic-feature-image img", count: 0
+    assert_includes response.body, "The generated analysis was withdrawn after an evidence correction."
+    refute_includes response.body, "No meeting activity recorded for this topic yet."
+    assert_select ".topic-article-section--record a[href='#{meeting_path(@meeting)}']", count: 1
     assert_select "a[href='#{meeting_path(@meeting)}']"
     [ {}, { "Accept" => "text/vnd.turbo-stream.html" } ].each do |headers|
       get topics_path, params: { q: CLAIM }, headers: headers
