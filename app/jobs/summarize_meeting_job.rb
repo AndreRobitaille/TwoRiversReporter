@@ -326,6 +326,9 @@ class SummarizeMeetingJob < ApplicationJob
   end
 
   def motion_context_for(meeting)
+    if meeting.minutes_extractions.exists? && !Minutes::Publish.current?(meeting)
+      return "Structured motion extraction is pending for the current minutes."
+    end
     motions = meeting.motions.includes(:agenda_item, :votes).order(:id).to_a
     return "No structured motion extraction available." if motions.empty?
 

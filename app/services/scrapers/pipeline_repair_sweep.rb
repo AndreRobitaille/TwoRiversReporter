@@ -91,8 +91,14 @@ module Scrapers
 
     def repair_extractions(meeting, counters)
       enqueue_if_needed(meeting, counters, :topics_extracted_at, ExtractTopicsJob, :topic_extractions_enqueued) if meeting.agenda_items.substantive.exists?
-      enqueue_if_needed(meeting, counters, :votes_extracted_at, ExtractVotesJob, :vote_extractions_enqueued) if meeting.meeting_documents.where(document_type: "minutes_pdf").where.not(extracted_text: [ nil, "" ]).exists?
-      enqueue_if_needed(meeting, counters, :committee_members_extracted_at, ExtractCommitteeMembersJob, :committee_member_extractions_enqueued) if meeting.meeting_documents.where(document_type: "minutes_pdf").where.not(extracted_text: [ nil, "" ]).exists?
+      if Minutes::Pipeline.needed?(meeting, "votes")
+        ExtractVotesJob.perform_later(meeting.id)
+        counters[:vote_extractions_enqueued] += 1
+      end
+      if Minutes::Pipeline.needed?(meeting, "attendance")
+        ExtractCommitteeMembersJob.perform_later(meeting.id)
+        counters[:committee_member_extractions_enqueued] += 1
+      end
     end
 
     def enqueue_if_needed(meeting, counters, marker, job_class, counter_key)
@@ -116,12 +122,14 @@ module Scrapers
       return false unless document.file.attached?
       return false unless document.document_type.to_s.end_with?("pdf")
 
-      document.extracted_text.blank? || document.page_count.blank? || document.text_quality.blank?
+      (document.source_versions.exists? && document.current_text_version.nil?) ||
+        document.extracted_text.blank? || document.page_count.blank? || document.text_quality.blank?
     end
 
     def extraction_complete_for_summary?(meeting)
       state = meeting.processing_state.stringify_keys
       source_type, = SummarizeMeetingJob.summary_target_for(meeting)
+      return false if source_type == "minutes_pdf" && meeting.minutes_extractions.exists? && !Minutes::Publish.current?(meeting)
       required_markers = required_summary_markers(meeting, source_type)
 
       required_markers.all? do |marker|

@@ -2,6 +2,9 @@ require "base64"
 
 module Ai
   class OpenAiService
+    MAX_MINUTES_CHARS = 50_000
+    class InputTooLargeError < StandardError; end
+
     MODEL_TIERS = %w[heavy default lightweight].freeze
     REASONING_EFFORTS = %w[none low].freeze
 
@@ -117,10 +120,11 @@ module Ai
       render_meeting_summary(text, plan_json, "minutes")
     end
 
-    def extract_votes(text, agenda_items_text: "", source: nil)
-      template = PromptTemplate.find_by!(key: "extract_votes")
+    def extract_votes(text, agenda_items_text: "", source: nil, template: nil)
+      raise InputTooLargeError, "Minutes require a reviewed partition" if text.length > MAX_MINUTES_CHARS
+      template ||= PromptTemplate.find_by!(key: "extract_votes")
       system_role = template.system_role
-      placeholders = { text: text.truncate(50_000), agenda_items: agenda_items_text }
+      placeholders = { text: text, agenda_items: agenda_items_text }
       prompt = template.interpolate(**placeholders)
       model = self.class.model_for_tier(template.model_tier)
 
@@ -146,10 +150,11 @@ module Ai
       content
     end
 
-    def extract_committee_members(text, source: nil)
-      template = PromptTemplate.find_by!(key: "extract_committee_members")
+    def extract_committee_members(text, source: nil, template: nil)
+      raise InputTooLargeError, "Minutes require a reviewed partition" if text.length > MAX_MINUTES_CHARS
+      template ||= PromptTemplate.find_by!(key: "extract_committee_members")
       system_role = template.system_role
-      placeholders = { text: text.truncate(50_000) }
+      placeholders = { text: text }
       prompt = template.interpolate(**placeholders)
       model = self.class.model_for_tier(template.model_tier)
 

@@ -1,7 +1,9 @@
 require "test_helper"
 require "minitest/mock"
+require_relative "../support/minutes_fact_helpers"
 
 class ExtractVotesJobTest < ActiveJob::TestCase
+  include MinutesFactHelpers
   setup do
     @meeting = Meeting.create!(
       body_name: "City Council", meeting_type: "Regular",
@@ -40,7 +42,7 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     end
 
     Ai::OpenAiService.stub :new, mock_ai do
-      ExtractVotesJob.perform_now(@meeting.id)
+      run_votes_job
     end
 
     assert_includes captured_kwargs[:agenda_items_text], "A.: 26-045 Harbor Resolution (ACTION ITEMS)"
@@ -64,7 +66,7 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     end
 
     Ai::OpenAiService.stub :new, mock_ai do
-      ExtractVotesJob.perform_now(@meeting.id)
+      run_votes_job
     end
 
     motion = @meeting.motions.reload.first
@@ -88,7 +90,7 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     end
 
     Ai::OpenAiService.stub :new, mock_ai do
-      ExtractVotesJob.perform_now(@meeting.id)
+      run_votes_job
     end
 
     motion = @meeting.motions.reload.first
@@ -117,7 +119,7 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     end
 
     Ai::OpenAiService.stub :new, mock_ai do
-      ExtractVotesJob.perform_now(@meeting.id)
+      run_votes_job
     end
 
     motion = @meeting.motions.reload.first
@@ -141,7 +143,7 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     end
 
     Ai::OpenAiService.stub :new, mock_ai do
-      ExtractVotesJob.perform_now(@meeting.id)
+      run_votes_job
     end
 
     motion = @meeting.motions.reload.first
@@ -165,7 +167,7 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     end
 
     Ai::OpenAiService.stub :new, mock_ai do
-      ExtractVotesJob.perform_now(@meeting.id)
+      run_votes_job
     end
 
     motion = @meeting.motions.reload.first
@@ -184,7 +186,7 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     end
 
     Ai::OpenAiService.stub :new, mock_ai do
-      ExtractVotesJob.perform_now(@meeting.id)
+      run_votes_job
     end
 
     assert_includes captured_kwargs[:agenda_items_text], "7a: Lead Service Line Replacement Program"
@@ -196,7 +198,7 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     @minutes_doc.destroy!
 
     assert_no_difference "Motion.count" do
-      ExtractVotesJob.perform_now(@meeting.id)
+      run_votes_job
     end
   end
 
@@ -204,7 +206,7 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     @minutes_doc.destroy!
 
     assert_enqueued_with(job: Topics::UpdateContinuityJob, args: [ { meeting_id: @meeting.id } ]) do
-      ExtractVotesJob.perform_now(@meeting.id)
+      run_votes_job
     end
   end
 
@@ -215,7 +217,7 @@ class ExtractVotesJobTest < ActiveJob::TestCase
 
     Ai::OpenAiService.stub :new, mock_ai do
       assert_enqueued_with(job: Topics::UpdateContinuityJob, args: [ { meeting_id: @meeting.id } ]) do
-        ExtractVotesJob.perform_now(@meeting.id)
+        run_votes_job
       end
     end
   end
@@ -251,7 +253,7 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     end
 
     Ai::OpenAiService.stub :new, mock_ai do
-      ExtractVotesJob.perform_now(@meeting.id)
+      run_votes_job
     end
 
     motion = @meeting.motions.reload.first
@@ -291,7 +293,7 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     end
 
     Ai::OpenAiService.stub :new, mock_ai do
-      ExtractVotesJob.perform_now(@meeting.id)
+      run_votes_job
     end
 
     motion = @meeting.motions.reload.first
@@ -327,7 +329,7 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     end
 
     Ai::OpenAiService.stub :new, mock_ai do
-      ExtractVotesJob.perform_now(@meeting.id)
+      run_votes_job
     end
 
     assert_equal child.id, @meeting.motions.reload.first.agenda_item_id
@@ -355,7 +357,7 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     end
 
     Ai::OpenAiService.stub :new, mock_ai do
-      ExtractVotesJob.perform_now(@meeting.id)
+      run_votes_job
     end
 
     assert_equal target_item, @meeting.motions.reload.first.agenda_item
@@ -381,7 +383,7 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     end
 
     Ai::OpenAiService.stub :new, mock_ai do
-      ExtractVotesJob.perform_now(@meeting.id)
+      run_votes_job
     end
 
     motions = @meeting.motions.reload
@@ -404,7 +406,7 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     mock_ai.expect :extract_votes, ai_response do |_text, **kwargs| true end
 
     Ai::OpenAiService.stub :new, mock_ai do
-      ExtractVotesJob.perform_now(@meeting.id)
+      run_votes_job
     end
 
     state = @meeting.reload.processing_state
@@ -415,7 +417,7 @@ class ExtractVotesJobTest < ActiveJob::TestCase
   test "retries missing_source once minutes text becomes available" do
     @minutes_doc.update!(extracted_text: nil)
 
-    ExtractVotesJob.perform_now(@meeting.id)
+    run_votes_job
     assert_equal "missing_source", @meeting.reload.processing_state["votes_extraction_status"]
 
     @minutes_doc.update!(extracted_text: "Motion to approve lead service line contract. Passed 7-0.")
@@ -424,7 +426,7 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     mock_ai.expect :extract_votes, ai_response do |_text, **kwargs| true end
 
     Ai::OpenAiService.stub :new, mock_ai do
-      ExtractVotesJob.perform_now(@meeting.id)
+      run_votes_job
     end
 
     assert_equal "processed", @meeting.reload.processing_state["votes_extraction_status"]
@@ -438,7 +440,7 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     mock_ai.expect :extract_votes, ai_response do |_text, **kwargs| true end
 
     Ai::OpenAiService.stub :new, mock_ai do
-      ExtractVotesJob.perform_now(@meeting.id)
+      run_votes_job
     end
 
     state = @meeting.reload.processing_state
@@ -451,7 +453,7 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     mock_ai.expect :extract_votes, "not-json" do |_text, **kwargs| true end
 
     Ai::OpenAiService.stub :new, mock_ai do
-      ExtractVotesJob.perform_now(@meeting.id)
+      run_votes_job
     end
 
     state = @meeting.reload.processing_state
@@ -496,7 +498,7 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     mock_ai.expect :extract_votes, ai_response do |_text, **_kwargs| true end
 
     Ai::OpenAiService.stub :new, mock_ai do
-      ExtractVotesJob.perform_now(@meeting.id)
+      run_votes_job
     end
 
     motions = @meeting.motions.reload
@@ -529,7 +531,7 @@ class ExtractVotesJobTest < ActiveJob::TestCase
     mock_ai.expect :extract_votes, ai_response do |_text, **_kwargs| true end
 
     Ai::OpenAiService.stub :new, mock_ai do
-      ExtractVotesJob.perform_now(@meeting.id)
+      run_votes_job
     end
 
     motion = @meeting.motions.reload.first
@@ -540,7 +542,7 @@ class ExtractVotesJobTest < ActiveJob::TestCase
   test "records votes extraction missing_source when minutes are absent" do
     @minutes_doc.destroy!
 
-    ExtractVotesJob.perform_now(@meeting.id)
+    run_votes_job
 
     state = @meeting.reload.processing_state
     assert_equal "missing_source", state["votes_extraction_status"]
