@@ -42,16 +42,17 @@ module Topics
       AgendaItemTopic.create!(topic: @topic, agenda_item: ai2)
 
       # Create Motion linked to AI
-      Motion.create!(meeting: m2, agenda_item: ai2, outcome: "passed", description: "Approve ordinance")
+      motion = Motion.create!(meeting: m2, agenda_item: ai2, outcome: "passed", description: "Approve ordinance")
 
       Topics::ContinuityService.call(@topic)
       @topic.reload
 
       assert_equal "resolved", @topic.lifecycle_status
 
-      event = @topic.topic_status_events.find_by(lifecycle_status: "resolved")
-      assert_not_nil event
-      assert_equal "motion_outcome", event.evidence_type
+      events = @topic.topic_status_events.where(evidence_type: "motion_outcome")
+      assert_equal 1, events.count
+      assert_equal "resolved", events.sole.lifecycle_status
+      assert_equal({ "motion_id" => motion.id, "outcome" => "passed" }, events.sole.source_ref)
     end
 
     test "sets status to recurring if appearance after resolution cooldown" do

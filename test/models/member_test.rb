@@ -260,13 +260,13 @@ class MemberTest < ActiveSupport::TestCase
     assert MemberAlias.exists?(member_id: target.id, name: source_name)
   end
 
-  test "merge_into! skips duplicate vote for same motion" do
+  test "merge_into! deduplicates matching votes for the same motion" do
     source = Member.create!(name: "Merge Source #{SecureRandom.hex(4)}")
     target = Member.create!(name: "Merge Target #{SecureRandom.hex(4)}")
     meeting = Meeting.create!(body_name: "Common Council", starts_at: Time.current,
                               detail_page_url: "https://example.com/m-#{SecureRandom.hex(6)}")
     motion = Motion.create!(meeting: meeting, description: "Approve budget", outcome: "passed")
-    Vote.create!(member: source, motion: motion, value: "yes")
+    Vote.create!(member: source, motion: motion, value: "no")
     Vote.create!(member: target, motion: motion, value: "no")
 
     assert_difference "Vote.count", -1 do
@@ -277,12 +277,12 @@ class MemberTest < ActiveSupport::TestCase
     assert_equal "no", target.votes.first.value
   end
 
-  test "merge_into! skips duplicate attendance for same meeting" do
+  test "merge_into! deduplicates matching attendance for the same meeting" do
     source = Member.create!(name: "Merge Source #{SecureRandom.hex(4)}")
     target = Member.create!(name: "Merge Target #{SecureRandom.hex(4)}")
     meeting = Meeting.create!(body_name: "Common Council", starts_at: Time.current,
                               detail_page_url: "https://example.com/m-#{SecureRandom.hex(6)}")
-    MeetingAttendance.create!(member: source, meeting: meeting, status: "present", attendee_type: "voting_member")
+    MeetingAttendance.create!(member: source, meeting: meeting, status: "absent", attendee_type: "voting_member")
     MeetingAttendance.create!(member: target, meeting: meeting, status: "absent", attendee_type: "voting_member")
 
     assert_difference "MeetingAttendance.count", -1 do
@@ -299,5 +299,69 @@ class MemberTest < ActiveSupport::TestCase
     assert_raises(ArgumentError) do
       source.merge_into!(source)
     end
+  end
+
+  test "merge_into! preserves contradictory vote values and evidence bases" do
+    source = Member.create!(name: "Synthetic source")
+    target = Member.create!(name: "Synthetic target")
+    meeting = Meeting.create!(detail_page_url: "https://example.test/merge-vote-conflict")
+    motion = meeting.motions.create!(description: "Synthetic proposal")
+    source_vote = motion.votes.create!(member: source, value: "absent", evidence_basis: "attendance_derived")
+    target_vote = motion.votes.create!(member: target, value: "absent", evidence_basis: "explicit")
+    [ { value: "absent", evidence_basis: "attendance_derived" }, { value: "yes", evidence_basis: "explicit" } ].each do |attributes|
+      source_vote.update!(attributes)
+      original = [ source_vote, target_vote ].map(&:attributes)
+      error = assert_raises(ArgumentError) { source.reload.merge_into!(target.reload) }
+      assert_match(/Conflicting votes/, error.message)
+      assert_equal original, [ source_vote, target_vote ].map { |vote| vote.reload.attributes }
+      assert Member.exists?(source.id)
+      refute MemberAlias.exists?(name: source.name)
+    end
+  end
+
+  test "merge_into! preserves contradictory attendance status type and capacity" do
+    source = Member.create!(name: "Synthetic source")
+    target = Member.create!(name: "Synthetic target")
+    meeting = Meeting.create!(detail_page_url: "https://example.test/merge-attendance-conflict")
+    source_attendance = meeting.meeting_attendances.create!(member: source, status: "present", attendee_type: "non_voting_staff", capacity: "Clerk")
+    target_attendance = meeting.meeting_attendances.create!(member: target, status: "present", attendee_type: "non_voting_staff", capacity: "Clerk")
+    [ { status: "absent" }, { attendee_type: "guest" }, { capacity: "Manager" } ].each do |change|
+      source_attendance.update!(status: "present", attendee_type: "non_voting_staff", capacity: "Clerk")
+      source_attendance.update!(change)
+      original = [ source_attendance, target_attendance ].map(&:attributes)
+      error = assert_raises(ArgumentError) { source.reload.merge_into!(target.reload) }
+      assert_match(/Conflicting attendance/, error.message)
+      assert_equal original, [ source_attendance, target_attendance ].map { |record| record.reload.attributes }
+      assert Member.exists?(source.id)
+      refute MemberAlias.exists?(name: source.name)
+    end
+  end
+
+  test "merge_into! checks current records even when source associations were loaded earlier" do
+    source = Member.create!(name: "Synthetic source")
+    target = Member.create!(name: "Synthetic target")
+    meeting = Meeting.create!(detail_page_url: "https://example.test/cached-merge-records")
+    motion = meeting.motions.create!(description: "Synthetic proposal")
+    source_vote = motion.votes.create!(member: source, value: "yes", evidence_basis: "explicit")
+    motion.votes.create!(member: target, value: "yes", evidence_basis: "explicit")
+    source_attendance = meeting.meeting_attendances.create!(member: source, status: "present", attendee_type: "voting_member")
+    meeting.meeting_attendances.create!(member: target, status: "present", attendee_type: "voting_member")
+
+    source.votes.load
+    source_vote.update!(value: "no")
+    error = assert_raises(ArgumentError) { source.merge_into!(target) }
+    assert_match(/Conflicting votes/, error.message)
+    assert_equal "no", source_vote.reload.value
+    assert_equal 2, motion.votes.count
+
+    source_vote.update!(value: "yes")
+    source.meeting_attendances.load
+    source_attendance.update!(status: "absent")
+    error = assert_raises(ArgumentError) { source.merge_into!(target) }
+    assert_match(/Conflicting attendance/, error.message)
+    assert_equal "absent", source_attendance.reload.status
+    assert_equal 2, motion.votes.count
+    assert_equal 2, meeting.meeting_attendances.count
+    assert Member.exists?(source.id)
   end
 end

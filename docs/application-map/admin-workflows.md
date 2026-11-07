@@ -196,6 +196,13 @@ assertions below are candidate acceptance criteria based on the user's brief.
 - **Observed:** [CommitteesController](../../app/controllers/admin/committees_controller.rb),
   [MembersController](../../app/controllers/admin/members_controller.rb),
   [Committee](../../app/models/committee.rb), [Member](../../app/models/member.rb).
+- **November 7 person-merge evidence:** differing vote values/evidence bases or
+  attendance statuses/types/capacities refuse the whole merge without losing either
+  record. Matching duplicates still merge. The member page renders the result;
+  browser confirmation, HTTP rollback, cached reconstruction and later member
+  reads are covered in [execution evidence](council-member-merges-2026-11-07.md).
+  Membership/office collisions and concurrent person merges are not covered by
+  this change.
 
 ## ADM-11 — Add or curate knowledge context (P1)
 
