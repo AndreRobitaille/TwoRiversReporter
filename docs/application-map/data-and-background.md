@@ -230,7 +230,11 @@ changed inputs or delayed output before publication. Future briefing/description
 inputs omit known-stale prior analyses; topic context omits known-stale meeting
 item details. Both ordinary meeting processing (BG-02) and operator reanalysis
 use the same topic-summary guard. See [behavior, cost limits and fault evidence](council-topic-generation-2026-11-07.md).
-Existing stored resident prose and all-writer atomic invalidation remain separate.
+Known decision-identity corrections now withdraw dependent stored briefings and
+illustrations in the review transaction; resident reads omit them until checked
+full generation replaces them. See the bounded [withdrawal contract and QA](council-briefing-withdrawal-2026-11-07.md).
+Other source-change writers and generated projections remain unverified here.
+Other stored resident prose and all-writer atomic invalidation remain separate.
 
 October 24 leadership-context update: extraction carries administrator notes
 from approved topics' existing appearances into the matching agenda item, so

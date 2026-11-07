@@ -78,9 +78,14 @@ The [November 7 person-merge evidence checks](council-member-merges-2026-11-07.m
 record conflict refusal, transaction rollback, visible admin feedback and retained
 evidence through compatible person merges and cached minutes reconstruction.
 
+The [November 7 briefing-withdrawal checks](council-briefing-withdrawal-2026-11-07.md)
+cover decision-identity correction through stored briefing publication, resident
+representations, API freshness, delayed jobs and concurrent first publication.
+Document/knowledge withdrawal and other generated projections remain open.
+
 The [November 7 topic-generation dependency checks](council-topic-generation-2026-11-07.md)
 cover unchanged topic-stage reuse, stale-input filtering and rejected in-flight
-publication. Existing resident prose withdrawal and broader cost controls remain open.
+publication. Broader resident-prose withdrawal and cost controls remain open.
 
 ## Read the map
 
