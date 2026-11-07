@@ -38,6 +38,10 @@ The [November 1 off-server build preparation](off-server-builds-2026-11-01.md)
 records operational workflow OPS-01, manual release guards, local transport
 simulations and the container/CI/production boundaries awaiting verification.
 
+The [November 7 maintenance verification](maintenance-2026-11-07.md) records the
+Rails security patch, the date-independent BG-01 fixture correction, local
+checks, and maintenance pull requests awaiting integration.
+
 ## Read the map
 
 | Document | Use |
