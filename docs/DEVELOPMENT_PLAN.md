@@ -291,10 +291,23 @@ storage failure cannot publish a missing artifact. A legacy document gains a
 version on its next full-byte response; HTTP 304 alone cannot reconstruct
 missing historical bytes.
 
-This is the first evidence-foundation slice of #236. Extracted page/text
-snapshots, stable decision identity, correction reviews, coordinated vote and
-attendance publication, and budgeted incremental generation remain follow-on
-work. Existing citation resolution still rejects changed source versions.
+`MeetingDocumentTextVersion` retains each successful PDF/OCR extraction against
+its exact retained artifact, including every raw/cleaned page, complete text,
+extractor version, quality and extraction timestamp. It records the `extracted`
+stage, not reviewed or approved claims. Text versions are immutable and survive
+ordinary document removal. The current text pointer is valid only for the current
+source version. Pages, full text and pointer publish together; incomplete,
+failed or superseded parser work cannot replace a completed extraction.
+Unchanged successful inputs reuse the current extraction without another
+downstream enqueue; PDF retries preserve completed OCR. Legacy attachments
+without retained download provenance remain unversioned until a full-byte fetch
+and extraction establish it. No historical text is attributed to new bytes.
+
+These are bounded evidence-foundation slices of #236. Stable decision identity,
+correction reviews, coordinated vote and attendance publication, and budgeted
+incremental generation remain follow-on work. Existing readers still use the
+mutable projection; migrating their provenance and downstream snapshots is
+separate work. Existing citation resolution still rejects changed source versions.
 See the [bounded pilot source check and contract](superpowers/plans/2026-11-07-council-evidence-pilot.md).
 
 ### Topic (Foundational)

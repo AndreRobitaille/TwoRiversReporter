@@ -50,6 +50,10 @@ The [November 7 council evidence foundation](council-evidence-2026-11-07.md)
 records the bounded source check, retained download versions, citation
 compatibility, and isolated retention/stale-response fault experiments.
 
+The [November 7 council text-version foundation](council-text-versions-2026-11-07.md)
+records PDF/OCR provenance, complete-page retention, atomic publication,
+unchanged-input reuse, and real local parser plus bounded fault checks.
+
 ## Read the map
 
 | Document | Use |
