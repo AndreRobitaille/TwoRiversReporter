@@ -1,5 +1,11 @@
 <% content_for(:title) { "#{@member.name} - Admin" } %>
 
+<% if flash[:notice] || flash[:alert] %>
+  <div class="flash <%= flash[:alert] ? 'flash--danger' : 'flash--success' %> mb-4" role="status">
+    <%= flash[:alert] || flash[:notice] %>
+  </div>
+<% end %>
+
 <div class="page-header">
   <div class="flex justify-between items-center">
     <div>
