@@ -228,6 +228,7 @@ Reuse patterns from meeting show page:
 Adaptive behavior:
 
 **When upcoming meetings exist (current behavior, with visual upgrade):**
+- Owner clarification, November 2, 2026: show one card per meeting, using the first linked item in agenda order. Multiple linked items at the same meeting remain in the record and on the meeting page. Separate meetings at the same time still receive separate cards.
 - Calendar-slab style from homepage `_next_up.html.erb` — date displayed prominently, body name as subtitle
 - Terra-cotta accent for council meetings, teal for work sessions (match homepage color logic)
 - Link to meeting page with explicit "View meeting →" button

@@ -42,6 +42,10 @@ The [November 1 shared-host deployment alignment](shared-host-deployment-2026-11
 records the common three-app operator agreement, session helper and local
 lost-tunnel regression evidence. Production activation remains separate.
 
+The [November 7 maintenance verification](maintenance-2026-11-07.md) records the
+Rails security patch, the date-independent BG-01 fixture correction, local
+checks, and maintenance pull requests awaiting integration.
+
 ## Read the map
 
 | Document | Use |

@@ -20,11 +20,12 @@ class Scrapers::CommitteeOnAgendaNameTest < ActiveJob::TestCase
 
     job = Scrapers::DiscoverMeetingsJob.new
     row = listing_row(starts_at, "Committee On Agenda", "/bc-coa/page/committee-agenda")
+    cutoff = starts_at - 1.day
 
     assert_no_difference "Meeting.count" do
       assert_no_enqueued_jobs do
-        assert_equal existing.id, job.send(:process_row, row, 1.day.ago, enqueue_parse_jobs: false)
-        assert_equal existing.id, job.send(:process_row, row, 1.day.ago, enqueue_parse_jobs: false)
+        assert_equal existing.id, job.send(:process_row, row, cutoff, enqueue_parse_jobs: false)
+        assert_equal existing.id, job.send(:process_row, row, cutoff, enqueue_parse_jobs: false)
       end
     end
 
