@@ -7,7 +7,7 @@ module Minutes
 
     def self.context_for(meeting)
       { "meeting_starts_at" => meeting.starts_at&.utc&.iso8601(6),
-        "committee_id" => meeting.committee_id, "rules" => "minutes_projection_v2" }
+        "committee_id" => meeting.committee_id, "rules" => "minutes_projection_v3" }
     end
 
     def self.current?(meeting, input: nil)

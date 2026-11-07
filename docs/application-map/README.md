@@ -66,6 +66,10 @@ The [November 7 stable decision foundation](council-decision-identities-2026-11-
 records immutable observations, conservative identity correspondence and
 withdrawal of superseded current references.
 
+The [November 7 identity-correction foundation](council-identity-corrections-2026-11-07.md)
+records audited identity overrides, replay/conflict handling, actor retention
+and concurrent review checks at the internal service boundary.
+
 ## Read the map
 
 | Document | Use |

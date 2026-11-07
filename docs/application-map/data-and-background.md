@@ -158,7 +158,18 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   Unresolved changes retain candidates and withdraw the old
   current identity reference; unrelated matches continue. No semantic approval
   is inferred. See [replay, revision and concurrency evidence](council-decision-identities-2026-11-07.md).
-  Reviewed corrections and migration of existing lifecycle references remain open.
+  Identity correction persistence follows below; migration of existing lifecycle
+  references remains open.
+- **November 7 identity corrections:** an internal service records append-only
+  identity reviews and changes the effective assignment without overwriting raw
+  extraction. Identical requests replay once; stale reviews fail. Same-source,
+  unchanged observations retain applicable review; changed/conflicting evidence
+  retains the review references while withdrawing its current identity link.
+  Lost correspondence and an intervening empty publication retain possible review
+  dependencies; unchanged unrelated decisions can still advance.
+  See [correction, retention and concurrency
+  evidence](council-identity-corrections-2026-11-07.md). Operator UI, factual-value
+  corrections and dependent narrative withdrawal remain follow-on work.
 
 ## BG-03 — Add recording context without replacing official evidence (P0)
 

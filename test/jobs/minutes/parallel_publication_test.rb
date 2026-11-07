@@ -82,6 +82,7 @@ class MinutesParallelPublicationTest < ActiveJob::TestCase
       decision_ids = meeting.council_decisions.pluck(:id)
       meeting.destroy!
       MinutesPublication.where(id: publication_ids).destroy_all
+      CouncilDecisionAssignment.where(minutes_extraction_id: stage_ids).delete_all
       CouncilDecisionObservation.where(minutes_extraction_id: stage_ids).destroy_all
       CouncilDecision.where(id: decision_ids).destroy_all
       MinutesExtraction.where(id: stage_ids).destroy_all

@@ -2,6 +2,8 @@ class CouncilDecisionObservation < ApplicationRecord
   belongs_to :minutes_extraction
   belongs_to :council_decision, optional: true
   has_one :motion, foreign_key: :decision_observation_id, dependent: :restrict_with_exception
+  has_one :identity_assignment, class_name: "CouncilDecisionAssignment", foreign_key: :observation_id, dependent: :restrict_with_exception
+  has_many :identity_corrections, class_name: "CouncilDecisionCorrection", foreign_key: :observation_id, dependent: :restrict_with_exception
   attr_readonly :minutes_extraction_id, :council_decision_id, :sequence, :data, :location_check,
     :agenda_context, :identity_status, :reason, :candidate_decision_ids, :rule_version, :evidence_status
 
