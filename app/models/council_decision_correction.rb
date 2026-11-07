@@ -16,7 +16,23 @@ class CouncilDecisionCorrection < ApplicationRecord
   before_destroy -> { throw :abort }
 
   def applies_to?(candidate)
-    candidate.minutes_extraction.source_key == evidence_manifest["source_key"] && candidate.data == evidence_manifest["data"]
+    candidate.minutes_extraction.source_key == evidence_manifest["source_key"] && candidate.data == evidence_manifest["data"] &&
+      candidate.sequence == observation.sequence && candidate.agenda_context == observation.agenda_context
+  end
+
+  def records_assignment_change?(assignment)
+    change = Array(evidence_manifest["assignment_changes"]).find { |entry| entry["assignment_id"] == assignment.id }
+    before = %w[council_decision_id correction_id conflicting_correction_ids].to_h { |field| [ field, assignment.attribute_in_database(field) ] }
+    return false unless change && change["before"] == before
+
+    if change["result"] == "applied"
+      assignment.council_decision_id == change["after_decision_id"] && assignment.correction_id == id && assignment.conflicting_correction_ids.empty?
+    elsif change["result"] == "conflict"
+      assignment.council_decision_id.nil? && assignment.correction_id.nil? &&
+        assignment.conflicting_correction_ids == (before["conflicting_correction_ids"] + [ id ]).uniq.sort
+    else
+      false
+    end
   end
 
   private

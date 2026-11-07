@@ -38,12 +38,20 @@ module CouncilDecisions
           if target && CouncilDecisionAssignment.where(minutes_extraction_id: assignment.minutes_extraction_id, council_decision: target).where.not(id: assignment.id).exists?
             raise Conflict, "This decision already identifies another observation in this source"
           end
+          changes = assignment_changes(target)
 
           correction = CouncilDecisionCorrection.create!(observation: @observation, basis_observation: @basis,
             before_decision: assignment.council_decision, after_decision: target, previous_correction: assignment.correction,
             actor: actor, original_actor_id: actor.id, actor_email: actor.email_address, action: @action, reason: @reason,
-            request_id: @request_id, request_manifest: request_manifest, evidence_manifest: evidence_manifest(assignment))
-          assignment.update!(council_decision: target, correction: correction, conflicting_correction_ids: [])
+            request_id: @request_id, request_manifest: request_manifest, evidence_manifest: evidence_manifest(assignment, changes, target))
+          changes.each do |change|
+            row = change.fetch(:assignment)
+            if change.fetch(:result) == "conflict"
+              row.update!(council_decision: nil, correction: nil, conflicting_correction_ids: (row.conflicting_correction_ids + [ correction.id ]).uniq.sort)
+            else
+              row.update!(council_decision: target, correction: correction, conflicting_correction_ids: [])
+            end
+          end
           meeting.touch
           correction
         end
@@ -77,11 +85,30 @@ module CouncilDecisions
         "expected_correction_id" => @expected }
     end
 
-    def evidence_manifest(assignment)
+    def assignment_changes(target)
+      # The same evidence can occur in multiple prompt/context extractions.
+      # Update each equivalent projection so restoring a cached stage cannot
+      # revive an older mapping. Historical identity collisions hold both rows.
+      equivalents = CouncilDecisionAssignment.joins(observation: :minutes_extraction)
+        .where(minutes_extractions: { original_meeting_id: @observation.minutes_extraction.original_meeting_id, source_key: @observation.minutes_extraction.source_key },
+          council_decision_observations: { data: @observation.data, sequence: @observation.sequence, agenda_context: @observation.agenda_context }).order(:id)
+      changes = {}
+      equivalents.each do |row|
+        occupied = CouncilDecisionAssignment.where(minutes_extraction_id: row.minutes_extraction_id, council_decision: target).where.not(id: row.id).first if target
+        changes[row.id] = { assignment: row, result: occupied ? "conflict" : "applied" }
+        changes[occupied.id] = { assignment: occupied, result: "conflict" } if occupied
+      end
+      changes.values
+    end
+
+    def evidence_manifest(assignment, changes, target)
       { "review_scope" => "decision_identity_only", "source_key" => @observation.minutes_extraction.source_key,
         "text_version_id" => @observation.minutes_extraction.meeting_document_text_version_id,
         "data" => @observation.data.deep_dup, "location_check" => @observation.location_check.deep_dup,
         "resolved_conflict_ids" => assignment.conflicting_correction_ids,
+        "assignment_changes" => changes.map { |change| { "assignment_id" => change[:assignment].id,
+          "before" => change[:assignment].attributes.slice("council_decision_id", "correction_id", "conflicting_correction_ids"),
+          "after_decision_id" => change[:result] == "applied" ? target&.id : nil, "result" => change[:result] } },
         "basis_observation_id" => @basis&.id, "basis_source_key" => @basis&.minutes_extraction&.source_key }
     end
   end

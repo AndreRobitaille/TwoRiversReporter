@@ -306,7 +306,51 @@ class MinutesIdentityCorrectionTest < ActiveJob::TestCase
     assert_equal first.data, current.data
   end
 
+  test "restoring a cached extraction cannot revive a mapping withdrawn for the same evidence" do
+    first = @original.first
+    accepted = resolve(first, decision: first.council_decision, basis: first)
+    refresh_votes(first.minutes_extraction.data)
+    replacement = observations.first
+    assert_not_equal first.id, replacement.id
+    assert_equal accepted.id, replacement.identity_assignment.correction_id
+    withdrawn = resolve(replacement, action: "unassign", expected_correction_id: accepted.id)
+    PromptTemplate.find_by!(key: "extract_votes").destroy!
+    without_ai { ExtractVotesJob.perform_now(@meeting.id) }
+    assert_equal first.id, observations.first.id
+    assert_nil CouncilDecision.find(first.council_decision_id).current_observation
+    assert_nil @meeting.motions.order(:id).first.council_decision
+    assert_equal withdrawn.id, first.reload.identity_assignment.correction_id
+    assert_equal 2, CouncilDecisionCorrection.count
+  end
+
+  test "a review holds both historical assignments when its target is occupied in a cached extraction" do
+    first, second = @original
+    changed = first.minutes_extraction.data.deep_dup
+    changed["motions"][1]["description"] = "A revised interpretation of the second motion"
+    refresh_votes(changed)
+    current_first, current_second = observations
+    resolve(current_second, action: "unassign")
+    review = resolve(current_first, decision: second.council_decision, basis: second)
+    assert_equal current_first.id, CouncilDecision.find(second.council_decision_id).current_observation&.id
+    PromptTemplate.find_by!(key: "extract_votes").destroy!
+    without_ai { ExtractVotesJob.perform_now(@meeting.id) }
+    assert_equal @original.map(&:id), observations.map(&:id)
+    assert_nil CouncilDecision.find(second.council_decision_id).current_observation
+    assert observations.all? { |observation| observation.identity_assignment.conflicting_correction_ids.include?(review.id) }
+    assert_equal [ nil, nil ], @meeting.motions.order(:id).map { |motion| motion.council_decision&.id }
+    assert_equal 3, review.evidence_manifest.fetch("assignment_changes").size
+  end
+
   private
+
+  def refresh_votes(data)
+    seed_prompt_templates
+    service = Object.new
+    service.define_singleton_method(:extract_votes) { |*args, **kwargs| data.to_json }
+    Ai::OpenAiService.stub :new, service do
+      ExtractVotesJob.perform_now(@meeting.id, refresh: true)
+    end
+  end
 
   def prepare_unidentified_meeting
     @meeting = Meeting.create!(body_name: "Synthetic Council", starts_at: Time.current, detail_page_url: "https://example.test/unidentified")
