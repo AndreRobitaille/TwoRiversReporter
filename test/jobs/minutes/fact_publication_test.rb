@@ -30,6 +30,29 @@ class MinutesFactPublicationTest < ActiveJob::TestCase
     assert_equal fresh.minutes_publication.votes_extraction.source_key, fresh.minutes_publication.attendance_extraction.source_key
   end
 
+  test "late completion status cannot downgrade publication or block nightly summary recovery" do
+    pipeline = Minutes::Pipeline.new(@meeting.id, "votes")
+    original_stamp = pipeline.method(:stamp)
+    late_stamp = ->(status) do
+      # The counterpart publishes after the vote output commits, before this
+      # worker writes its completion marker. Only scheduling is intercepted.
+      run_attendance if status == "staged"
+      original_stamp.call(status)
+    end
+    response = votes_response.to_json
+    service = Object.new
+    service.define_singleton_method(:extract_votes) { |*args, **kwargs| response }
+    pipeline.stub(:stamp, late_stamp) { with_provider(service) { pipeline.call } }
+    assert_equal "processed", @meeting.reload.processing_state["votes_extraction_status"]
+    assert_equal "processed", @meeting.processing_state["committee_members_extraction_status"]
+    assert_equal [ "Opening action", "Final action" ], @meeting.motions.order(:id).pluck(:description)
+    clear_enqueued_jobs
+    Scrapers::PipelineRepairSweep.new([ @meeting.id ], parsed_meeting_ids: [ @meeting.id ]).call
+    assert_enqueued_with job: SummarizeMeetingJob, args: [ @meeting.id ]
+    assert_no_enqueued_jobs only: ExtractVotesJob
+    assert_no_enqueued_jobs only: ExtractCommitteeMembersJob
+  end
+
   test "unchanged stages do not dispatch providers or replace projected identities" do
     run_votes
     run_attendance

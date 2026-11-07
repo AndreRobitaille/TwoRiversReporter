@@ -65,6 +65,8 @@ class MinutesParallelPublicationTest < ActiveJob::TestCase
       assert_equal 1, fresh.minutes_publications.count
       assert_equal 2, fresh.minutes_extractions.count
       assert_equal fresh.minutes_publication.votes_extraction.source_key, fresh.minutes_publication.attendance_extraction.source_key
+      assert_equal "processed", fresh.processing_state["votes_extraction_status"]
+      assert_equal "processed", fresh.processing_state["committee_members_extraction_status"]
     end
   ensure
     workers&.size&.times { release << true }

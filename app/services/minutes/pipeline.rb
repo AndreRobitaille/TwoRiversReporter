@@ -82,6 +82,9 @@ module Minutes
           current = Input.new(@meeting)
           return unless current.key(@kind) == @input.key(@kind)
         end
+        # A counterpart can publish our completed output before this marker is
+        # written. Preserve that publication's terminal status for nightly repair.
+        return if status == "staged" && @meeting.minutes_publication&.public_send("#{@kind}_extraction_id") == @stage.id
         @meeting.update_columns(processing_state: @meeting.processing_state.merge(
           Publish::MARKERS.fetch(@kind) => true, Publish::STATUS_KEYS.fetch(@kind) => status
         ))
