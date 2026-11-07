@@ -66,7 +66,8 @@ module Minutes
         stamp("parse_error")
         return
       end
-      @stage.update!(data: data, status: "completed", completed_at: Time.current)
+      locations = LocateEvidence.new(@stage).call(data) if @kind == "votes"
+      @stage.update!(data: data, evidence_locations: locations, status: "completed", completed_at: Time.current)
       stamp("staged")
       Publish.call(@meeting)
     rescue Input::Unavailable

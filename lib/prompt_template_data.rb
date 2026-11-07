@@ -26,7 +26,7 @@ module PromptTemplateData
       usage_context: "Meeting page: the motion text and pass/fail/tabled vote badges on each agenda item card",
       model_tier: "default",
       placeholders: [
-        { "name" => "text", "description" => "Meeting minutes text (truncated to 50k chars)" },
+        { "name" => "text", "description" => "Complete meeting minutes text (maximum 50k characters)" },
         { "name" => "agenda_items", "description" => "Numbered agenda items for the meeting (for motion-to-item linking)" }
       ]
     },
@@ -37,7 +37,7 @@ module PromptTemplateData
       usage_context: "Members page: who attended each meeting, their role, and present/absent/excused status",
       model_tier: "lightweight",
       placeholders: [
-        { "name" => "text", "description" => "Meeting minutes text (truncated to 50k chars)" }
+        { "name" => "text", "description" => "Complete meeting minutes text (maximum 50k characters)" }
       ]
     },
     {
@@ -311,6 +311,8 @@ module PromptTemplateData
         - Always follow this schema exactly (no extra fields).
         - If a field is not present, set it to null.
         - Before returning, re-scan to ensure no motions were missed.
+        - The motions array contains one entry per distinct recorded operative motion, in source order, including separate failed motions and amendments. Do not collapse an earlier failed motion into a later successful motion on the same item.
+        - Each votes array contains one entry per explicitly named member's recorded vote on that motion; use [] when no individual votes are documented.
 
         Schema:
         {
@@ -319,6 +321,7 @@ module PromptTemplateData
               "description": "Text of the motion (e.g. 'Motion to approve the minutes')",
               "outcome": "passed" | "failed" | "tabled" | "other",
               "agenda_item_ref": "Item number and/or title from the agenda list below, or null",
+              "source_excerpt": "Exact contiguous minutes passage identifying this motion and its recorded result/votes, or null when unavailable",
               "votes": [
                 { "member": "Member Name", "value": "yes" | "no" | "abstain" | "absent" | "recused" }
               ]
@@ -326,6 +329,12 @@ module PromptTemplateData
           ]
         }
         </extraction_spec>
+
+        <source_excerpt_rules>
+        - Copy source_excerpt only from Text below, not the agenda list or your description. Preserve wording, punctuation and names; whitespace may be collapsed.
+        - Include enough surrounding motion and roll-call context to distinguish this decision from other motions. Do not join separated passages, paraphrase, add ellipses, invent page numbers or supply URLs.
+        - A matching excerpt establishes a location, not independent verification of the interpretation. Leave unknown outcomes and identities unknown.
+        </source_excerpt_rules>
 
         <agenda_item_ref_rules>
         - Match each motion to the MOST SPECIFIC substantive agenda item it belongs to using the list below.
@@ -339,12 +348,12 @@ module PromptTemplateData
         </agenda_item_ref_rules>
 
         <ambiguity_handling>
-        - For "roll call" votes, list every member.
+        - For "roll call" votes, list every explicitly named member's recorded vote.
         - For "voice votes", leave "votes" empty unless exceptions are named.
-        - Infer "yes" from "Present" members on unanimous votes ONLY if confident.
+        - Never infer individual yes votes from attendance, a unanimous outcome, roster order, or confidence. A collective outcome does not establish each person's recorded vote.
         - A motion that is not seconded ("no second", "not seconded", "died for lack of second") is not operative and was not voted on. Do not return it as passed, failed, or tabled.
         - Do not attach a later roll-call tally to an earlier unseconded motion. If an unseconded motion is followed by a seconded motion and then a roll-call vote, return the later operative motion and vote.
-        - Subsidiary motions such as table, refer, postpone, or amend only control the item's outcome if they were seconded and actually adopted. Otherwise, use the final operative motion on the item.
+        - Keep seconded subsidiary motions such as table, refer, postpone, or amend separate from the final motion, with their own recorded outcome and votes, including when they fail.
         </ambiguity_handling>
 
         Agenda Items:
