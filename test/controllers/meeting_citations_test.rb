@@ -70,13 +70,22 @@ class MeetingCitationsTest < ActionDispatch::IntegrationTest
     assert_select "#agenda-item-0 .meeting-citation-link", count: 1
   end
 
-  test "a changed recording cannot hide valid packet references or restore repeated recording citations" do
+  test "a changed recording withdraws analysis while valid packet evidence remains inspectable" do
     add_packet_citations
+    get meeting_path(@meeting)
+    assert_select "#agenda-item-0 .meeting-citation-link[href=?]", "#{@packet.source_url}#page=2", count: 1
+    assert_includes response.body, "Distinctive utility details."
     @transcript.update!(extracted_text: "Replacement recording extraction.")
     get meeting_path(@meeting)
     assert_response :success
-    assert_select "#agenda-item-0 .meeting-citation-link[href=?]", "#{@packet.source_url}#page=2", count: 1
+    assert_select "a[href=?]", @packet.source_url, count: 1
+    assert_not_includes response.body, "Distinctive utility details."
+    assert_includes response.body, "supporting evidence changed"
     assert_not_includes response.body, "Recording transcript (whole source)"
+    citations = Citations::Resolver.for_summary(@summary.reload).resolve_all(@summary.generation_data["item_details"].first["citations"])
+    assert_equal [ @packet.id ], citations.select { |entry| entry[:status] == "resolved" }.map { |entry| entry[:document_id] }
+    assert_equal "#{@packet.source_url}#page=2", citations.find { |entry| entry[:status] == "resolved" }[:source_url]
+    assert_equal [ "source_changed" ], citations.select { |entry| entry[:status] == "unresolved" }.map { |entry| entry[:reason] }
   end
 
   test "citation serialization includes reporting and excludes private citation and catalog fields" do

@@ -54,7 +54,7 @@ class MeetingsController < ApplicationController
       topic.topic_appearances.count { |appearance| appearance.agenda_item.nil? || appearance.agenda_item.substantive? } > 1
     end
 
-    @has_substantive_agenda_content = @meeting.agenda_items.any?(&:substantive?) || @meeting.meeting_summaries.any?
+    @has_substantive_agenda_content = @meeting.agenda_items.any?(&:substantive?) || @meeting.meeting_summaries.any?(&:published?)
     @has_substantive_topic_content = approved_topics.any?
 
     # Supersede chain: minutes > transcript > packet > agenda preview.
@@ -79,9 +79,9 @@ class MeetingsController < ApplicationController
     case zone
     when :upcoming
       topics = meeting.agenda_items.select(&:substantive?).flat_map(&:topics).uniq.select(&:approved?)
-      topics.any? || meeting.meeting_summaries.any? || meeting.document_status.in?([ :agenda, :packet, :minutes ])
+      topics.any? || meeting.meeting_summaries.any?(&:published?) || meeting.document_status.in?([ :agenda, :packet, :minutes ])
     when :recent
-      meeting.meeting_summaries.any?
+      meeting.meeting_summaries.any?(&:published?)
     end
   end
 

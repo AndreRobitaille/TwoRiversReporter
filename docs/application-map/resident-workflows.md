@@ -131,6 +131,8 @@ status below does not imply complete coverage of those workflows.
   [MeetingsHelper](../../app/helpers/meetings_helper.rb),
   [share JavaScript](../../app/javascript/controllers/share_controller.js),
   [preferred summary](../../app/services/resident_content/meeting_selection.rb).
+  Known source changes withdraw saved analysis and explain its absence while
+  preserving official links; see [summary withdrawal journey and HTTP checks](meeting-summary-withdrawal-2026-11-07.md).
 - **Approved contract:** owner clarification October 11 (#171) preserves the
   conditional sections and legacy/agenda-only branches. The March 1 fixed-section
   proposal is superseded; see [behavior contracts](behavior-contracts.md).

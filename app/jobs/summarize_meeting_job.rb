@@ -27,7 +27,7 @@ class SummarizeMeetingJob < ApplicationJob
     retrieval_service = RetrievalService.new
 
     # 1. Meeting-Level Summary (Minutes or Packet)
-    generate_meeting_summary(meeting, ai_service, retrieval_service)
+    return if generate_meeting_summary(meeting, ai_service, retrieval_service) == false
 
     # 2. Establish deterministic continuity before capturing topic dependencies.
     Topics::UpdateContinuityJob.perform_now(meeting_id: meeting.id)
@@ -106,31 +106,39 @@ class SummarizeMeetingJob < ApplicationJob
       documents = [ minutes_doc, background_doc ].compact
       documents << transcript_doc if transcript_doc&.extracted_text.present?
       source_type = transcript_doc&.extracted_text.present? ? "minutes_with_transcript" : "minutes"
-      analyze_and_save_summary(meeting, documents, ai_service, kb_context,
+      summary = analyze_and_save_summary(meeting, documents, ai_service, kb_context,
         type: "minutes", summary_type: "minutes_recap", source_type: source_type)
+      return false unless summary
       meeting.meeting_summaries.where(summary_type: %w[transcript_recap packet_analysis agenda_preview]).destroy_all
     elsif transcript_doc&.extracted_text.present?
-      analyze_and_save_summary(meeting, [ background_doc, transcript_doc ].compact, ai_service, kb_context,
+      summary = analyze_and_save_summary(meeting, [ background_doc, transcript_doc ].compact, ai_service, kb_context,
         type: "transcript", summary_type: "transcript_recap", source_type: "transcript")
+      return false unless summary
       meeting.meeting_summaries.where(summary_type: %w[packet_analysis agenda_preview]).destroy_all
     elsif packet_doc
-      analyze_and_save_summary(meeting, [ packet_doc ], ai_service, kb_context,
+      summary = analyze_and_save_summary(meeting, [ packet_doc ], ai_service, kb_context,
         type: "packet", summary_type: "packet_analysis", source_type: "packet")
+      return false unless summary
       meeting.meeting_summaries.where(summary_type: "agenda_preview").destroy_all
     end
   end
 
   def analyze_and_save_summary(meeting, documents, ai_service, kb_context, type:, summary_type:, source_type:, topic_context: nil)
     catalog = Citations::SourceCatalog.new(meeting: meeting, documents: documents)
+    return unless Topics::GenerationEvidence.sources_current?(catalog.sources)
+
+    expected = Meetings::SummaryPublication.version(meeting.meeting_summaries.find_by(summary_type: summary_type))
     meeting_record_text = documents.select { |document| document.document_type.in?(%w[minutes_pdf minutes_html transcript]) }
       .map(&:extracted_text).join("\n\n")
     json_str = ai_service.analyze_meeting_content(catalog.text, kb_context, type,
       source: meeting, source_catalog: catalog.sources,
       meeting_record_text: meeting_record_text,
       participant_context: participant_context_for(meeting), motion_context: motion_context_for(meeting))
-    persist = -> { save_summary(meeting, summary_type, json_str, source_catalog: catalog.sources,
-      source_type: source_type, framing: compute_framing(meeting, type)) }
-    topic_context ? topic_context.with_current(&persist) : persist.call
+    Meetings::SummaryPublication.publish(meeting: meeting, summary_type: summary_type, expected: expected,
+      sources: catalog.sources, topic_context: topic_context) do
+      save_summary(meeting, summary_type, json_str, source_catalog: catalog.sources,
+        source_type: source_type, framing: compute_framing(meeting, type))
+    end
   end
 
   def generate_topic_summaries(meeting, ai_service, retrieval_service)
@@ -198,6 +206,7 @@ class SummarizeMeetingJob < ApplicationJob
     summary = meeting.meeting_summaries.find_or_initialize_by(summary_type: type)
     summary.generation_data = generation_data
     summary.content = nil
+    summary.evidence_withdrawn_at = nil
     summary.save!
     enqueue_generated_image_job_for_meeting(summary)
     summary

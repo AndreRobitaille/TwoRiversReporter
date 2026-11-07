@@ -66,7 +66,7 @@ module MeetingsHelper
       end
     end
 
-    if meeting.meeting_summaries.any?
+    if meeting.meeting_summaries.any?(&:published?)
       badges << tag.span("Summary", class: "badge badge--success")
     end
 
@@ -226,7 +226,7 @@ module MeetingsHelper
   end
 
   def summary_usable?(summary)
-    summary.content.present? || summary.generation_data.present?
+    summary.published? && (summary.content.present? || summary.generation_data.present?)
   end
 
   def substantive_agenda_items(meeting)

@@ -10,7 +10,7 @@ class MeetingDocument < ApplicationRecord
 
   # Inspect the final transaction state: download and text publication replace
   # several related rows, and intermediate snapshots are not published sources.
-  before_commit :withdraw_changed_source_briefings
+  before_commit :withdraw_changed_source_analysis
 
   scope :search, ->(query) {
     where("search_vector @@ websearch_to_tsquery('english', ?)", query)
@@ -27,8 +27,11 @@ class MeetingDocument < ApplicationRecord
 
   private
 
-  def withdraw_changed_source_briefings
-    Topics::WithdrawSourceBriefings.call(document_id: id, meeting_id: meeting_id)
+  def withdraw_changed_source_analysis
+    Meetings::SummaryPublication.with_lock(meeting_id, meeting_id_before_last_save) do
+      Topics::WithdrawSourceBriefings.call(document_id: id, meeting_id: meeting_id)
+      Meetings::WithdrawSourceSummaries.call(document_id: id)
+    end
   end
 
   def update_search_vector

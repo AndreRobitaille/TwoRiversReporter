@@ -8,7 +8,7 @@ class ExtractKnowledgeJob < ApplicationJob
     meeting = Meeting.find(meeting_id)
 
     # Need at least one summary to extract from
-    summary = meeting.meeting_summaries.order(updated_at: :desc).first
+    summary = meeting.meeting_summaries.published.order(updated_at: :desc).first
     return unless summary&.generation_data.present?
 
     ai_service = Ai::OpenAiService.new
@@ -30,18 +30,20 @@ class ExtractKnowledgeJob < ApplicationJob
     parsed = parse_entries(response)
     return if parsed.empty?
 
-    created_ids = []
-    parsed.each do |entry|
-      next if entry["confidence"].to_f < CONFIDENCE_THRESHOLD
+    Meetings::SummaryPublication.with_current(summary) do
+      created_ids = []
+      parsed.each do |entry|
+        next if entry["confidence"].to_f < CONFIDENCE_THRESHOLD
 
-      source = create_knowledge_source(entry, meeting)
-      link_topics(source, entry["topic_names"])
-      created_ids << source.id
-    end
+        source = create_knowledge_source(entry, meeting)
+        link_topics(source, entry["topic_names"])
+        created_ids << source.id
+      end
 
-    # Enqueue triage if we created any entries
-    if created_ids.any?
-      AutoTriageKnowledgeJob.set(wait: 3.minutes).perform_later
+      # Enqueue triage if we created any entries
+      if created_ids.any?
+        AutoTriageKnowledgeJob.set(wait: 3.minutes).perform_later
+      end
     end
   end
 

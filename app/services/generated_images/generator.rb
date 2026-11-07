@@ -30,8 +30,8 @@ module GeneratedImages
         output_format: DEFAULT_OUTPUT_FORMAT
       )
 
-      unless current_topic_source?(image)
-        image.update!(status: "superseded", failure_reason: "Supporting briefing changed or withdrawn")
+      unless current_source?(image)
+        image.update!(status: "superseded", failure_reason: source_change_reason)
         return image
       end
       image.update!(status: "processing")
@@ -42,9 +42,11 @@ module GeneratedImages
       result = @ai_service.generate_civic_image(prompt: prompt, size: DEFAULT_SIZE, output_format: DEFAULT_OUTPUT_FORMAT)
 
       @imageable.generated_images.transaction do
-        @imageable.lock!
-        if !current_topic_source?(image)
-          image.update!(status: "superseded", failure_reason: "Supporting briefing changed or withdrawn")
+        # Concurrent knowledge publication holds its summary lock while inserting
+        # a Meeting foreign key. Allow that KEY SHARE check to finish.
+        @imageable.lock!(@imageable.is_a?(Meeting) ? "FOR NO KEY UPDATE" : true)
+        if !current_source?(image, lock: true)
+          image.update!(status: "superseded", failure_reason: source_change_reason)
         elsif automatic_generation?(image) && ready_admin_override_exists?(except: image)
           image.update!(status: "superseded", failure_reason: "Admin override exists")
         else
@@ -84,11 +86,23 @@ module GeneratedImages
 
     private
 
-    def current_topic_source?(image)
-      return true unless @source.is_a?(TopicBriefing)
+    def current_source?(image, lock: false)
+      case @source
+      when TopicBriefing
+        current = TopicBriefing.published.find_by(id: @source.id, topic_id: @imageable.id)
+        current && GeneratedImages::ContentFingerprint.for_topic_briefing(current) == image.source_content_fingerprint
+      when MeetingSummary
+        scope = MeetingSummary.published.where(id: @source.id, meeting_id: @imageable.id)
+        # Withdrawal takes this row lock before superseding dependent images.
+        current = (lock ? scope.lock : scope).first
+        current && GeneratedImages::ContentFingerprint.for_meeting_summary(current) == image.source_content_fingerprint
+      else
+        true
+      end
+    end
 
-      current = TopicBriefing.published.find_by(id: @source.id, topic_id: @imageable.id)
-      current && GeneratedImages::ContentFingerprint.for_topic_briefing(current) == image.source_content_fingerprint
+    def source_change_reason
+      "Supporting #{@source.is_a?(MeetingSummary) ? 'summary' : 'briefing'} changed or withdrawn"
     end
 
     def eligibility

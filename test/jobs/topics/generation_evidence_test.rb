@@ -96,7 +96,9 @@ class Topics::GenerationEvidenceTest < ActiveJob::TestCase
     assert_equal [ @claims.fetch(other.id) ], input[:recent_item_details].map { |entry| entry[:summary] }
     refute_includes input.to_json, @claims.fetch(@meeting.id)
     assert_equal old_summary, @meeting.topic_summaries.sole.attributes
-    assert_equal old_meeting_summary, @meeting.meeting_summaries.sole.attributes
+    retained = @meeting.meeting_summaries.sole
+    assert_equal old_meeting_summary.except("updated_at", "evidence_withdrawn_at"), retained.attributes.except("updated_at", "evidence_withdrawn_at")
+    assert_not_nil retained.evidence_withdrawn_at
   end
 
   test "source change during briefing analysis prevents rendering publication and impact side effects" do

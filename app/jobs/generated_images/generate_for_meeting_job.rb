@@ -88,7 +88,7 @@ module GeneratedImages
     end
 
     def meeting_summary_usable?(summary)
-      summary.content.present? || summary.generation_data.present?
+      summary.published? && (summary.content.present? || summary.generation_data.present?)
     end
 
     def summary_priority(summary)
