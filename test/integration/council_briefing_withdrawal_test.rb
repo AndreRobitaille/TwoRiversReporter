@@ -144,7 +144,7 @@ class CouncilBriefingWithdrawalTest < ActionDispatch::IntegrationTest
     get topic_path(@topic)
     assert_select "h1", text: @topic.name
     assert_select ".topic-feature-image img", count: 0
-    assert_includes response.body, "The generated analysis was withdrawn after an evidence correction."
+    assert_includes response.body, "The generated analysis was withdrawn after its supporting evidence changed."
     refute_includes response.body, "No meeting activity recorded for this topic yet."
     assert_select ".topic-article-section--record a[href='#{meeting_path(@meeting)}']", count: 1
     assert_select "a[href='#{meeting_path(@meeting)}']"

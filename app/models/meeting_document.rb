@@ -8,6 +8,10 @@ class MeetingDocument < ApplicationRecord
 
   after_save :update_search_vector, if: :saved_change_to_extracted_text?
 
+  # Inspect the final transaction state: download and text publication replace
+  # several related rows, and intermediate snapshots are not published sources.
+  before_commit :withdraw_changed_source_briefings
+
   scope :search, ->(query) {
     where("search_vector @@ websearch_to_tsquery('english', ?)", query)
   }
@@ -22,6 +26,10 @@ class MeetingDocument < ApplicationRecord
   end
 
   private
+
+  def withdraw_changed_source_briefings
+    Topics::WithdrawSourceBriefings.call(document_id: id, meeting_id: meeting_id)
+  end
 
   def update_search_vector
     Rails.logger.info "UPDATING SEARCH VECTOR for #{id}"

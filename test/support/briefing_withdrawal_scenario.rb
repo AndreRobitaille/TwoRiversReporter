@@ -73,4 +73,33 @@ module BriefingWithdrawalScenario
       RetrievalService.stub(:new, ->(*) { flunk "Withdrawal and resident reads must not request embeddings" }, &block)
     end
   end
+
+  def clean_withdrawal_scenario
+    AuditEvent.where(subject_type: "TopicBriefing", subject_id: TopicBriefing.where(topic_id: [ @topic&.id, @other&.id, @merge_target&.id ]).select(:id)).delete_all
+    AuditEvent.where(actor_id: @actor&.id).delete_all
+    Topic.where(id: [ @topic&.id, @other&.id, @merge_target&.id ]).destroy_all
+    Redirect.where(source_path: "/topics/#{@topic&.id}").delete_all
+    if @meeting&.persisted?
+      stage_ids = @meeting.minutes_extractions.pluck(:id)
+      publication_ids = @meeting.minutes_publications.pluck(:id)
+      decision_ids = @meeting.council_decisions.pluck(:id)
+      observation_ids = CouncilDecisionObservation.where(minutes_extraction_id: stage_ids).pluck(:id)
+      versions = MeetingDocumentVersion.where(original_meeting_id: @meeting.id).to_a
+      text_versions = MeetingDocumentTextVersion.where(meeting_document_version_id: versions.map(&:id)).to_a
+      TranscriptImport.where(meeting_id: @meeting.id).destroy_all
+      @meeting.destroy!
+      MinutesPublication.where(id: publication_ids).destroy_all
+      CouncilDecisionAssignment.where(minutes_extraction_id: stage_ids).delete_all
+      CouncilDecisionCorrection.where(observation_id: observation_ids).delete_all
+      CouncilDecisionObservation.where(id: observation_ids).destroy_all
+      CouncilDecision.where(id: decision_ids).destroy_all
+      MinutesExtraction.where(id: stage_ids).destroy_all
+      text_versions.each(&:destroy!)
+      versions.each(&:destroy!)
+    end
+    @committee&.destroy!
+    Member.where(name: "Alex Example").destroy_all
+    User.where(id: @actor&.id).delete_all
+    perform_enqueued_jobs(only: ActiveStorage::PurgeJob)
+  end
 end

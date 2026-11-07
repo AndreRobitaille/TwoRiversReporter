@@ -12,6 +12,9 @@ module Topics
     def self.capture(topic:, meeting:, context:, query:, kind:)
       return unless topic.approved? && sources_current?(context[:source_catalog])
 
+      motions = motion_evidence(context)
+      return unless motion_evidence_current?(topic.id, motions)
+
       knowledge = knowledge_inputs(topic)
       input = { policy_version: POLICY_VERSION, context: context.except(:knowledgebase_context), query: query,
         knowledge: knowledge, prompts: prompt_inputs(kind),
@@ -22,7 +25,7 @@ module Topics
         "background_sha256" => fingerprint(context.slice(:background_context, :resident_reported_context)),
         "agenda_evidence" => Array(context[:agenda_items]).map { |item| fingerprint(item) },
         "knowledge_evidence" => knowledge_references(knowledge),
-        "motion_evidence" => motion_evidence(context) }
+        "motion_evidence" => motions }
     end
 
     def self.summary_inputs(topic_id, meeting_id)
@@ -66,8 +69,30 @@ module Topics
     def self.motion_evidence_current?(topic_id, events)
       return false unless events.is_a?(Array) && events.all? { |event| event.is_a?(Hash) && event["event_id"].is_a?(Integer) }
       current = TopicStatusEvent.where(topic_id: topic_id, id: events.map { |event| event["event_id"] }).with_current_evidence
-      (events - current.map { |event| event_reference(event) }).empty?
+      (events - current.map { |event| event_reference(event) }).empty? && motion_sources_current?(events)
     end
+
+    def self.motion_sources_current?(events)
+      ids = events.filter_map { |event| event.dig("reference", "observation_id") }.uniq
+      observations = CouncilDecisionObservation.where(id: ids).includes(:minutes_extraction).to_a
+      return false unless observations.size == ids.size
+
+      # Check the pinned document, not a newly discovered but unprocessed URL.
+      # One snapshot per document is shared across all dependent motions.
+      sources = observations.map { |observation| observation.minutes_extraction.input_manifest["source"] }
+      return false unless sources.all? { |source| source.is_a?(Hash) && source["document_id"].is_a?(Integer) }
+      sources.group_by { |source| source["document_id"] }.all? do |id, retained|
+        document = MeetingDocument.find_by(id: id)
+        next false unless document
+        snapshot = Citations::SourceCatalog.snapshot(document)
+        text_version_id = document.current_text_version&.id
+        retained.all? do |source|
+          source.slice(*snapshot.keys) == snapshot &&
+            (source["text_version_id"].nil? || source["text_version_id"] == text_version_id)
+        end
+      end
+    end
+    private_class_method :motion_sources_current?
 
     def self.sources_current?(sources)
       return true if sources.nil? # Legacy provenance remains unknown.

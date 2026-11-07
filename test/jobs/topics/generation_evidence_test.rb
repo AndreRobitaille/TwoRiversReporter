@@ -113,7 +113,7 @@ class Topics::GenerationEvidenceTest < ActiveJob::TestCase
     end
     assert_includes @calls, :briefing_analysis
     refute_includes @calls, :briefing_render
-    assert_equal original, @topic.reload.topic_briefing.attributes
+    assert_retained_withdrawn_briefing(original)
     assert_equal score, @topic.resident_impact_score
   end
 
@@ -143,14 +143,14 @@ class Topics::GenerationEvidenceTest < ActiveJob::TestCase
     assert retained.file.attached?
   end
 
-  test "source change during rendering leaves the previous briefing and timestamp untouched" do
+  test "source change during rendering withdraws the previous briefing without replacing its content" do
     summarize(@meeting)
     briefing
     original = @topic.reload.topic_briefing.attributes
     @agenda.update!(summary: "Another newly recorded agenda detail")
     @hooks[:briefing_render] = -> { revise(@document, "Replacement during rendering") }
     briefing
-    assert_equal original, @topic.reload.topic_briefing.attributes
+    assert_retained_withdrawn_briefing(original)
   end
 
   test "delayed briefing cannot overwrite a newer completed result for the same inputs" do
@@ -276,6 +276,14 @@ class Topics::GenerationEvidenceTest < ActiveJob::TestCase
   end
 
   private
+
+  def assert_retained_withdrawn_briefing(original)
+    current = @topic.reload.topic_briefing
+    assert_equal original.except("updated_at", "evidence_withdrawn_at"), current.attributes.except("updated_at", "evidence_withdrawn_at")
+    assert_not_nil current.evidence_withdrawn_at
+    assert_operator current.updated_at, :>, original.fetch("updated_at")
+    assert_nil @topic.published_topic_briefing
+  end
 
   def publish_decision
     excerpt = @claims.fetch(@meeting.id)

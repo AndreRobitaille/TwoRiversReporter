@@ -184,12 +184,15 @@ module Admin
 
     test "the index lists recorded events" do
       AuditEvent.record!(actor: @admin, action: "user.destroy", label: "gone@example.com")
+      AuditEvent.create!(action: "legacy.action", subject_label: "Legacy missing actor")
       sign_in_as(@admin)
 
       get admin_audit_events_url
 
       assert_response :success
       assert_select "body", text: /gone@example\.com/
+      assert_select "td", text: "recorder@example.com"
+      assert_select "td", text: "(deleted account)"
     end
 
     test "the index is admin only" do

@@ -21,7 +21,7 @@
         <% @audit_events.each do |event| %>
           <tr>
             <td><%= l(event.created_at, format: :short) %></td>
-            <td><%= event.actor_email.presence || "(deleted account)" %></td>
+            <td><%= event.actor_label %></td>
             <td><%= event.action %></td>
             <td><%= event.subject_label.presence || "—" %></td>
             <td><%= event.ip_address.presence || "—" %></td>

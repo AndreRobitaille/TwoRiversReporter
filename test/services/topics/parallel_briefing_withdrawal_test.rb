@@ -8,31 +8,7 @@ class Topics::ParallelBriefingWithdrawalTest < ActiveJob::TestCase
 
   setup { build_withdrawal_scenario }
 
-  teardown do
-    Topic.where(id: [ @topic&.id, @other&.id, @merge_target&.id ]).destroy_all
-    Redirect.where(source_path: "/topics/#{@topic&.id}").delete_all
-    if @meeting&.persisted?
-      stage_ids = @meeting.minutes_extractions.pluck(:id)
-      publication_ids = @meeting.minutes_publications.pluck(:id)
-      decision_ids = @meeting.council_decisions.pluck(:id)
-      observation_ids = CouncilDecisionObservation.where(minutes_extraction_id: stage_ids).pluck(:id)
-      versions = @document.source_versions.to_a
-      text_versions = MeetingDocumentTextVersion.where(meeting_document_version_id: versions.map(&:id)).to_a
-      @meeting.destroy!
-      MinutesPublication.where(id: publication_ids).destroy_all
-      CouncilDecisionAssignment.where(minutes_extraction_id: stage_ids).delete_all
-      CouncilDecisionCorrection.where(observation_id: observation_ids).delete_all
-      CouncilDecisionObservation.where(id: observation_ids).destroy_all
-      CouncilDecision.where(id: decision_ids).destroy_all
-      MinutesExtraction.where(id: stage_ids).destroy_all
-      text_versions.each(&:destroy!)
-      versions.each(&:destroy!)
-    end
-    @committee&.destroy!
-    Member.where(name: "Alex Example").destroy_all
-    User.where(id: @actor&.id).delete_all
-    perform_enqueued_jobs(only: ActiveStorage::PurgeJob)
-  end
+  teardown { clean_withdrawal_scenario }
 
   test "correction waits for first briefing publication then withdraws the newly committed row" do
     @briefing.destroy!
