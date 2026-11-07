@@ -341,6 +341,44 @@ class MinutesIdentityCorrectionTest < ActiveJob::TestCase
     assert_equal 3, review.evidence_manifest.fetch("assignment_changes").size
   end
 
+  test "review lineage survives when correspondence is lost and unrelated decisions still advance" do
+    first = @original.first
+    review = resolve(first, decision: first.council_decision, basis: first)
+    @meeting.agenda_items.create!(number: "6", title: "Revised synthetic matter", order_index: 2)
+    added = "Motion to accept a synthetic report passed; Alex Example voted yes."
+    changed = "A revised synthetic denial motion failed; Alex Example voted no."
+    refs = [ "6: Revised synthetic matter", "5: Synthetic amendment", "6: Revised synthetic matter" ]
+    2.times do |index|
+      revision("lost-correspondence-#{index}", [ "Replacement #{index}", added, @excerpts.last, changed ])
+      publish(excerpts: [ added, @excerpts.last, changed ], agenda_ref: refs)
+      current = observations
+      assert_equal [ review.id ], current.last.identity_assignment.conflicting_correction_ids
+      assert_equal "identity_correction_conflict", current.last.reason
+      assert_nil current.last.identity_assignment.council_decision_id
+      assert_nil CouncilDecision.find(first.council_decision_id).current_observation
+      assert_equal @original.last.council_decision_id, current[1].identity_assignment.council_decision_id
+    end
+    replacement_review = resolve(observations.last, decision: first.council_decision, basis: first)
+    assert_equal [ review.id ], replacement_review.evidence_manifest["resolved_conflict_ids"]
+    assert_equal observations.last.id, CouncilDecision.find(first.council_decision_id).current_observation&.id
+  end
+
+  test "review lineage survives an empty publication before decisions return" do
+    first = @original.first
+    review = resolve(first, decision: first.council_decision, basis: first)
+    revision("empty-replacement", [ "No decisions stated in this synthetic replacement." ])
+    publish(excerpts: [])
+    assert_empty observations
+    assert_nil CouncilDecision.find(first.council_decision_id).current_observation
+    replacement = "A new synthetic record adopts a different proposal; Alex Example voted yes."
+    revision("after-empty", [ replacement ])
+    publish(excerpts: [ replacement ])
+    assert_equal [ review.id ], observations.first.identity_assignment.conflicting_correction_ids
+    assert_nil observations.first.identity_assignment.council_decision_id
+    replacement_review = resolve(observations.first, decision: first.council_decision, basis: first)
+    assert_equal [ review.id ], replacement_review.evidence_manifest["resolved_conflict_ids"]
+  end
+
   private
 
   def refresh_votes(data)
@@ -383,7 +421,7 @@ class MinutesIdentityCorrectionTest < ActiveJob::TestCase
 
   def publish(excerpts: @excerpts, descriptions: excerpts, agenda_ref: "5: Synthetic amendment")
     votes = { motions: excerpts.each_with_index.map { |excerpt, index| { description: descriptions[index], source_excerpt: excerpt,
-      agenda_item_ref: agenda_ref, outcome: index.zero? ? "failed" : "passed",
+      agenda_item_ref: agenda_ref.is_a?(Array) ? agenda_ref[index] : agenda_ref, outcome: index.zero? ? "failed" : "passed",
       votes: [ { member: "Alex Example", value: index.zero? ? "no" : "yes" } ] } } }
     attendance = { voting_members_present: [ "Alex Example" ], voting_members_absent: [], non_voting_staff: [], guests: [] }
     service = Object.new

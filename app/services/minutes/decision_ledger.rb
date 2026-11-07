@@ -2,7 +2,7 @@ module Minutes
   # Runs inside Publish's meeting/source transaction. Identity correspondence is
   # separate from semantic validation; every observation remains extracted.
   class DecisionLedger
-    RULE_VERSION = "decision_identity_v2"
+    RULE_VERSION = "decision_identity_v3"
 
     def initialize(meeting, stage)
       raise ArgumentError, "Wrong meeting extraction" unless stage.original_meeting_id == meeting.id && stage.kind == "votes" && stage.status == "completed"
@@ -10,6 +10,9 @@ module Minutes
       previous = meeting.minutes_publication&.votes_extraction
       raise ArgumentError, "Wrong prior publication" if previous && previous.original_meeting_id != meeting.id
       @previous = previous ? previous.council_decision_observations.includes(identity_assignment: :correction).to_a : []
+      @retained_review_ids = CouncilDecisionAssignment.joins(:minutes_extraction)
+        .where(minutes_extractions: { original_meeting_id: meeting.id })
+        .pluck(:correction_id, :conflicting_correction_ids).flatten.compact.uniq.sort
       @initial = previous&.id == stage.id || !meeting.council_decisions.exists?
       # Rechecking locations is deterministic, including for a cached stage that
       # predates persisted checks. No provider call or old approval is required.
@@ -32,11 +35,12 @@ module Minutes
         assignment && (assignment.council_decision_id || assignment.correction_id || assignment.conflicting_correction_ids.any?) && (observation.location_check["excerpt"] == check["excerpt"] ||
           (observation.sequence == sequence && observation.agenda_context == context))
       end
-      initial_supported = @initial && first_supported_identity?(check)
+      unreviewed_passage = unreviewed_passage?(check)
+      initial_supported = @initial && unreviewed_passage
       correction_ids = correction_ids_for(candidates)
-      # If no stable identities exist yet, rewritten evidence must not erase
-      # reviews merely because correspondence can no longer identify a candidate.
-      correction_ids = correction_ids_for(@previous) if @initial && !initial_supported && correction_ids.empty?
+      # Lost correspondence (including an intervening empty publication) must
+      # preserve possible review dependencies without asserting an identity.
+      correction_ids = @retained_review_ids if !unreviewed_passage && correction_ids.empty?
       reason = if check["status"] != "located"
         check.fetch("reason")
       elsif @excerpt_counts.fetch(check["excerpt"]) > 1
@@ -98,8 +102,8 @@ module Minutes
       end.compact.uniq.sort
     end
 
-    def first_supported_identity?(check)
-      return true unless @previous.any? { |observation| review_recorded?(observation.identity_assignment) }
+    def unreviewed_passage?(check)
+      return true if @retained_review_ids.empty?
 
       # A review must not be bypassed by treating rewritten/reordered unknown
       # evidence as a fresh baseline. Unchanged, unrelated passages can advance.
