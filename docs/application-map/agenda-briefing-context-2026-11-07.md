@@ -1,6 +1,7 @@
 # Agenda previews and withdrawn context: November 7, 2026
 
 Based on `f1ad9087` ([PR #257](https://github.com/AndreRobitaille/TwoRiversReporter/pull/257)).
+Runtime and final targeted-test revision: `062fc9df` ([PR #258](https://github.com/AndreRobitaille/TwoRiversReporter/pull/258)).
 Verification uses Ruby 4.0.9, Rails 8.1.4.1 and PostgreSQL 18.6 in an isolated
 synthetic local database. No paid provider or production operation is involved.
 
