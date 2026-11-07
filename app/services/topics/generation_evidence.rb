@@ -4,14 +4,16 @@ module Topics
   # Dependency receipts are not factual approval. Private input text is hashed,
   # never copied into the generated analysis's publicly consumed JSON.
   class GenerationEvidence
-    # Bump when context, retrieval, or generation policy changes in code.
+    # Receipt format and generation policy are separate: policy changes require
+    # new generation, without declaring supported historical evidence invalid.
     VERSION = 1
+    POLICY_VERSION = 1
 
     def self.capture(topic:, meeting:, context:, query:, kind:)
       return unless topic.approved? && sources_current?(context[:source_catalog])
 
       knowledge = knowledge_inputs(topic)
-      input = { context: context.except(:knowledgebase_context), query: query,
+      input = { policy_version: POLICY_VERSION, context: context.except(:knowledgebase_context), query: query,
         knowledge: knowledge, prompts: prompt_inputs(kind),
         committees: Committee.for_ai_context.pluck(:name, :committee_type, :description) }
       { "version" => VERSION, "kind" => kind, "topic_id" => topic.id, "meeting_id" => meeting.id,

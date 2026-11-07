@@ -223,6 +223,7 @@ class Topics::GenerationEvidenceTest < ActiveJob::TestCase
     providers { Topics::MeetingReanalysisService.new(@meeting.id).call }
     summary = @meeting.topic_summaries.sole
     assert Topics::GenerationEvidence.summary_current?(summary)
+    assert_equal @meeting.starts_at.to_date, @summary_inputs.last[:topic_metadata][:last_seen_at]
     assert_equal 1, @calls.count(:summary_analysis)
     assert_equal [ @claims.fetch(@meeting.id) ], @briefing_inputs.last[:prior_meeting_analyses].map { |data| data["headline"] }
   end
