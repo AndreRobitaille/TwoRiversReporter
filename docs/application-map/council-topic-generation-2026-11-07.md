@@ -1,6 +1,7 @@
 # Topic generation dependencies: November 7, 2026
 
-Runtime revision: `ffcd0939`, initial guards `318c93d9`, based on `6f37b9e5`
+Final runtime revision: `b6b475a9`; initial guards `318c93d9`, ordering fix
+`ffcd0939`, historical-validity fix `b0ebc775`; based on `6f37b9e5`
 ([PR #254](https://github.com/AndreRobitaille/TwoRiversReporter/pull/254)).
 Isolated checkout, Ruby 4.0.9, Rails 8.1.4.1, PostgreSQL 18.6, synthetic records
 and deterministic providers. Execution results are recorded below.
@@ -32,10 +33,18 @@ when generation/retrieval/context policy changes. Neutral motion references
 in the receipt; private knowledge bodies, prompt text and review actor/reason do
 not. A receipt identifies dependencies, not factual approval.
 
+Historical validity is separate from exact generation-cache equality. A retained
+analysis checks its original meeting, agenda anchors, background, knowledge and
+event references. Additional meetings, knowledge or continuity events do not
+erase supported history; retained dependency sets can remain valid within a
+larger current set. Topic merges can move supported analysis to the surviving
+topic without rewriting the original receipt. Prompt/settings changes still
+invalidate generation reuse, but do not themselves invalidate historical facts.
+
 `Topics::GenerateSummary` serves both the ordinary meeting job and operator
 reanalysis. Both callers establish deterministic continuity before capturing
-topic dependencies, so a later continuity update does not immediately invalidate
-new work. It reuses an identical completed topic stage before retrieval or
+topic dependencies, so reanalysis can reuse the same completed topic stage.
+It reuses an identical completed topic stage before retrieval or
 analysis, checks dependencies after retrieval and analysis, then checks again
 before saving. Full briefing checks for reuse before constructing either provider,
 including the embedding provider. The final check and output write hold the topic
@@ -69,6 +78,7 @@ and retry limits remain #238 work before new paid council processing is enabled.
 | BG-04, removed source | A valid headline first reaches description generation. Deleting its document and creating another at the same URL removes that headline and prior briefing analysis; the original artifact remains retained. | Existing descriptions are not automatically withdrawn. |
 | BG-04, knowledge/prompt changes | Approved knowledge withdrawal stops output; private input text is absent from the receipt. Changed prompt settings defeat reuse, and another revision during analysis stops rendering/publication. | Knowledge ingestion/chunk synchronization is separate. |
 | BG-04, delayed output | A nested later worker completes while the earlier result is rendering. Fresh reads retain the newer briefing and summary, including their distinct generated content and timestamps. | Deterministic overlap; no claim of multi-process dispatch deduplication. |
+| BG-04, supported history | Add four later meetings and additional knowledge after the first analysis. All five distinct analyses reach the briefing while raw context remains capped at three meetings. A separate topic merge retains the original supported analysis and receipt. | Added context is not proof that earlier evidence became invalid. |
 
 The tests execute the actual jobs/services and later persisted reads, replacing
 only external transports/providers. They introduce no civic conclusions. No new
@@ -152,6 +162,46 @@ upload, queued processing, status, persisted evidence and later resident/source
 navigation. Its provider assertions run once per topic because the second
 analysis is now reused; the exact retained citation and later page checks remain.
 
+## Review follow-up
+
+Review of `69d8fa33` identified that full cache-key comparison incorrectly removed
+supported historical analyses when later meetings changed topic metadata. Two
+new cases first ran **two tests, three assertions, two intended failures and no
+errors/skips**, reproducing ordinary history loss and topic-merge history loss.
+`b0ebc775` separates retained evidence validity from generation reuse; `3193cce5`
+adds explicit knowledge-withdrawal coverage with unchanged meeting sources.
+The targeted pipeline/citation run passed **37 tests, 921 assertions**; the
+expanded generation file then passed **17 tests, 92 assertions**.
+
+Receipt-format and generation-policy versions are distinct. The generation key
+still includes current prompt/model/policy settings. Historical checks retain
+supported meeting/agenda/background/knowledge/event dependencies even as new
+context is added, and exclude explicitly withdrawn dependencies. A fault that
+restores full cache-key equality detects the history regression; ignoring only
+historical knowledge validation detects the withdrawn-background regression.
+The changed historical-validity meaning initially made the old operator-order
+assertion insufficient. It now checks the actual provider input's established
+last-seen date as well as the stored evidence and call count.
+
+The follow-up fault runs again detected identity withdrawal, stale publication,
+reuse and delayed-output defects. Two added faults bring the distinct total to
+sixteen: restoring full cache equality fails the five-meeting history assertion
+(two assertions at failure, four restored), and ignoring historical knowledge
+dependencies fails the withdrawn-background assertion (three/four). After the
+test refinement, moving operator continuity after generation fails the actual
+provider-context date assertion (two/four). Every successful fault experiment
+was restored and rerun to green without errors/skips.
+
+Final `bin/rails test --seed 48513` at `b6b475a9` passed **2,299 tests,
+14,520 assertions, no failures/errors**, with the same existing skip.
+`bin/rubocop` again passed **675 files**. These results include the regression
+identified in [the initial PR review](https://github.com/AndreRobitaille/TwoRiversReporter/pull/255#discussion_r4503746341);
+the original `69d8fa33` CI/runtime checks passed before that review fix and are
+not verification of the final revision.
+Final `bin/rails test:system` at `b6b475a9` also passed **23 journeys, 779
+assertions, no failures/errors/skips**, including transcript upload through later
+resident/source navigation. The original checkout remains clean at `da8d2588`.
+
 ## Remaining boundaries
 
 Stored public briefing/description prose, meeting recaps, metadata, search and
@@ -163,6 +213,10 @@ lock, so a source mutation after the final dependency check remains a separate
 atomic invalidation boundary. Knowledge source body edits are fingerprinted, but
 asynchronous source-to-chunk freshness is not solved here. Interim briefing and
 description publication guards remain separate from this full-briefing scope.
+Existing summary/briefing rows remain mutable projections: successful generation
+still replaces their previous output. This slice retains old output when work is
+rejected or excluded from new context; it does not add an immutable narrative
+archive.
 
 No paid AI, production access, data copy/sync/backfill, GitHub merge or deployment
 was performed. The original checkout and preceding branches remain preserved.
