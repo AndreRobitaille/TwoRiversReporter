@@ -1,7 +1,8 @@
 # Council source artifact foundation: November 7, 2026
 
-Application revision: `504ec74a` (on planning baseline `da8d2588`, with base
-application `5d9ff761`). Local isolated checkout, Ruby 4.0.9, Rails 8.1.4.1,
+Application revision: `d1a95364` (initial checks at `504ec74a`, on planning
+baseline `da8d2588`, with base application `5d9ff761`). Local isolated checkout,
+Ruby 4.0.9, Rails 8.1.4.1,
 PostgreSQL 18.6, synthetic test database and separate disk storage. Existing
 checkout and development data were preserved. This evidence is local, not a
 production check or a real-provider accuracy evaluation.
@@ -24,7 +25,7 @@ AI extraction accuracy, complete term coverage, or campaign follow-through.
 | --- | --- | --- |
 | BG-02, first/replaced download | Deterministic HTTP response → real DownloadJob → PostgreSQL and Active Storage → fresh model read. Distinct synthetic revisions retain exact bytes and hashes; each changed version is collected, with no inherited approval; meeting/retrieval/HTTP dates remain separate and publication unknown. | Verified job/data journey; HTTP transport simulated, downstream AI jobs queued but not executed. |
 | BG-02, unchanged/reverted input | Same SHA and 304 preserve current content timestamp; same source/version reuses row/blob, queues no additional analysis; byte reversion reuses its earlier archive. A legacy SHA-only row gains retained bytes on a full response without an analysis enqueue. | Verified download boundary, not full AI stage-cache behavior (#238). Reversion still triggers existing analysis because the current document changed. |
-| BG-02, failed/delayed work | 404 preserves existing evidence. Interleaved competing download completes during the first request; late 200/304 cannot replace its bytes or metadata. Rejected archive persistence rolls back current metadata/file and queues no analysis. | Deterministic competing-request simulation, not independent worker/process load testing. |
+| BG-02, failed/delayed work | 404 preserves existing evidence. Interleaved competing download completes during the first request; late 200/304 cannot replace its bytes or metadata. Rejected archive persistence rolls back current metadata/file and removes the unused staged blob. Failed byte upload cannot publish a version or advance the current source; a later retry succeeds. | Deterministic competing-request/storage-failure simulation, not independent worker/process load testing. |
 | BG-01/RES-08, removal | Delete document and run actual queued Active Storage purge jobs; archived version and exact original bytes remain readable with original IDs/URL. | Document-removal boundary verified; no change to canonical meeting merge rules. |
 | RES-07, source identity | Existing valid page citation resolves first, then becomes unresolved with `source_changed` after a source change despite the retained artifact. New source URL gets a distinct version; old source URL remains in history. | Model/resolver plus existing HTTP citation tests; no new route or archive presentation. |
 | BG-02, persistence guards | Retained metadata/file reject replacement; database unique index rejects duplicate source identity even with model validation bypassed. | Component coverage, separate from the job journey. |
@@ -61,6 +62,10 @@ changed boundary: this PR adds no page/control, cookie, CSRF or navigation behav
 - Local documentation checker: six touched Markdown files, 103 relative
   links/anchors, balanced code fences and valid synthetic JSON. Official source
   links/hashes and the referenced PDF pages were checked separately in the pilot.
+- Final storage-boundary correction (`d1a95364`): the same focused command above
+  ran 51 tests, 306 assertions, zero failures/errors/skips; `bin/rubocop` again
+  passed all 637 files. Final `bin/rails test`: 2,188 runs, 13,667 assertions,
+  zero failures/errors, the same one pre-existing PromptRun skip.
 
 ## Demonstrated defect detection
 
@@ -76,6 +81,15 @@ baseline, with no other source changes, then restored using Git before rerunning
    Run `-n /a_delayed_successful_response/`. Result: 1 run, 1 assertion, 1 failure,
    no errors/skips: later fresh read contains stale competing bytes instead of
    the corrected minutes. Restore the guard and verify the checkout diff is clean.
+3. During final review, add a deterministic disk-upload failure before changing
+   the implementation. The earlier code fails the explicit version-count
+   assertion: one new version was committed despite missing bytes (1 run,
+   4 assertions, 1 failure, no errors/skips). This exposed Active Storage's
+   after-commit upload timing. Upload new bytes before the metadata transaction,
+   and purge unused successfully staged blobs after stale/rolled-back work.
+   The new test now passes, verifies the earlier bytes remain readable, and
+   exercises a successful retry. This was a discovered and fixed defect, separate
+   from the two artificial mutations.
 
 ## Remaining scope
 

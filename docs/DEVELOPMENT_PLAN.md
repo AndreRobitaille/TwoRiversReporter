@@ -286,8 +286,10 @@ unknown unless separately established; HTTP metadata does not establish it.
 Versions are collected evidence, not validation of extracted claims. Same-source
 identical bytes reuse the retained version; replacement and ordinary document
 removal preserve earlier artifacts. Delayed downloads cannot overwrite a newer
-fetch or source edit. A legacy document gains a version on its next full-byte
-response; HTTP 304 alone cannot reconstruct missing historical bytes.
+fetch or source edit. New bytes upload before the metadata transaction, so a
+storage failure cannot publish a missing artifact. A legacy document gains a
+version on its next full-byte response; HTTP 304 alone cannot reconstruct
+missing historical bytes.
 
 This is the first evidence-foundation slice of #236. Extracted page/text
 snapshots, stable decision identity, correction reviews, coordinated vote and
