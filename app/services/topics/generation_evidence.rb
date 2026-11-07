@@ -60,8 +60,12 @@ module Topics
       end
 
       events = retained["motion_evidence"]
+      motion_evidence_current?(summary.topic_id, events)
+    end
+
+    def self.motion_evidence_current?(topic_id, events)
       return false unless events.is_a?(Array) && events.all? { |event| event.is_a?(Hash) && event["event_id"].is_a?(Integer) }
-      current = TopicStatusEvent.where(topic_id: summary.topic_id, id: events.map { |event| event["event_id"] }).with_current_evidence
+      current = TopicStatusEvent.where(topic_id: topic_id, id: events.map { |event| event["event_id"] }).with_current_evidence
       (events - current.map { |event| event_reference(event) }).empty?
     end
 

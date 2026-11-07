@@ -20,7 +20,7 @@ class TopicsController < ApplicationController
       end
 
       search_scope = matches
-                       .includes(:topic_briefing)
+                       .includes(:published_topic_briefing)
                        .order(Arel.sql("resident_impact_score DESC NULLS LAST"), last_activity_at: :desc, id: :desc)
 
       # Gated anonymous visitors are pinned to page 1: the view caps them to
@@ -65,7 +65,7 @@ class TopicsController < ApplicationController
       # Preload briefings to avoid N+1 on cards
       ActiveRecord::Associations::Preloader.new(
         records: @hero_topics + @topics,
-        associations: :topic_briefing
+        associations: :published_topic_briefing
       ).call
 
       # Highlight signals for all visible topics
@@ -102,7 +102,7 @@ class TopicsController < ApplicationController
                       .order("meetings.starts_at ASC, meetings.id ASC, agenda_items.order_index ASC, topic_appearances.id ASC")
                       .uniq(&:meeting_id)
 
-    @briefing = @topic.topic_briefing
+    @briefing = @topic.published_topic_briefing
 
     # Key decisions: all motions linked to this topic's agenda items
     @decisions = Motion.joins(agenda_item: :agenda_item_topics)

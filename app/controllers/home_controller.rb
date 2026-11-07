@@ -25,7 +25,7 @@ class HomeController < ApplicationController
   def load_headlines(topics)
     return if topics.empty?
 
-    @headlines = TopicBriefing
+    @headlines = TopicBriefing.published
       .where(topic_id: topics.map(&:id))
       .each_with_object({}) { |b, h| h[b.topic_id] = b.headline if b.headline.present? }
   end

@@ -26,12 +26,12 @@ module Api
           description: topic.description, lifecycle: topic.lifecycle_status,
           resident_impact_score: topic.resident_impact_score,
           last_activity_at: timestamp(topic.last_activity_at),
-          headline: topic.topic_briefing&.headline, links: { website: url(topic_path(topic)),
+          headline: topic.published_topic_briefing&.headline, links: { website: url(topic_path(topic)),
             api: url("/api/v1/topics/#{topic.id}") }, illustration: illustration(topic, :og) }.merge(update_metadata(topic))
       end
 
       def topic_detail(record)
-        briefing = record.topic_briefing
+        briefing = record.published_topic_briefing
         upcoming = record.topic_appearances.joins(:meeting).where("meetings.starts_at > ?", Time.current)
           .includes(:meeting, :agenda_item).order("meetings.starts_at ASC", id: :asc)
         result = topic(record)
@@ -182,7 +182,7 @@ module Api
         memberships = ResidentContent::CommitteeDirectory.new.public_memberships(committee)
         topics = Topic.publicly_visible.joins(agenda_item_topics: { agenda_item: :meeting })
           .where(meetings: { committee_id: committee.id }).select("topics.*, MAX(meetings.starts_at) AS latest_meeting_date")
-          .group("topics.id").includes(:topic_briefing)
+          .group("topics.id").includes(:published_topic_briefing)
           .order(Arel.sql("topics.resident_impact_score DESC NULLS LAST, latest_meeting_date DESC, topics.id DESC")).limit(7)
         committee_reference(committee).merge(description: committee.description,
           roster: memberships.map { |membership| membership_payload(membership).merge(official: official(membership.member)) },

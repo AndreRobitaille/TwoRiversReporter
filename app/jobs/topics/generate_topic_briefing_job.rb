@@ -17,7 +17,7 @@ module Topics
         query: briefing_query(topic), kind: "topic_briefing")
       return unless evidence
       existing = TopicBriefing.find_by(topic: topic)
-      return if existing&.generation_tier == "full" && existing.generation_data.is_a?(Hash) && existing.generation_data["evidence_manifest"] == evidence
+      return if existing&.generation_tier == "full" && existing.evidence_withdrawn_at.nil? && existing.generation_data.is_a?(Hash) && existing.generation_data["evidence_manifest"] == evidence
       original = existing&.attributes&.slice("id", "updated_at")
 
       ai_service = Ai::OpenAiService.new
@@ -198,6 +198,8 @@ module Topics
       briefing.generation_tier = "full"
       briefing.last_full_generation_at = Time.current
       briefing.triggering_meeting = meeting
+      briefing.evidence_withdrawn_at = nil
+      briefing.withdrawal_correction = nil
       briefing.save!
       enqueue_generated_image_refresh
     end

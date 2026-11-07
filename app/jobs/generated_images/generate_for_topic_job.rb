@@ -10,7 +10,7 @@ module GeneratedImages
       payload = nil
 
       topic.with_lock do
-        briefing = topic.reload.topic_briefing
+        briefing = topic.reload.published_topic_briefing
         return log_skip("missing briefing", topic_id) unless briefing
 
         eligibility = topic_eligibility_for(topic, force: force, custom_prompt: custom_prompt)

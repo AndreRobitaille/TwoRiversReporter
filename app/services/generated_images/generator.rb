@@ -30,6 +30,10 @@ module GeneratedImages
         output_format: DEFAULT_OUTPUT_FORMAT
       )
 
+      unless current_topic_source?(image)
+        image.update!(status: "superseded", failure_reason: "Supporting briefing changed or withdrawn")
+        return image
+      end
       image.update!(status: "processing")
       eligibility_result = eligibility_result_for
       visual_brief = VisualBriefBuilder.new(@imageable, source: @source, eligibility: eligibility_result, ai_service: @ai_service).call
@@ -39,7 +43,9 @@ module GeneratedImages
 
       @imageable.generated_images.transaction do
         @imageable.lock!
-        if automatic_generation?(image) && ready_admin_override_exists?(except: image)
+        if !current_topic_source?(image)
+          image.update!(status: "superseded", failure_reason: "Supporting briefing changed or withdrawn")
+        elsif automatic_generation?(image) && ready_admin_override_exists?(except: image)
           image.update!(status: "superseded", failure_reason: "Admin override exists")
         else
           image.file.attach(io: StringIO.new(result[:bytes]), filename: filename_for(result[:format]), content_type: content_type_for(result[:format]))
@@ -77,6 +83,13 @@ module GeneratedImages
     end
 
     private
+
+    def current_topic_source?(image)
+      return true unless @source.is_a?(TopicBriefing)
+
+      current = TopicBriefing.published.find_by(id: @source.id, topic_id: @imageable.id)
+      current && GeneratedImages::ContentFingerprint.for_topic_briefing(current) == image.source_content_fingerprint
+    end
 
     def eligibility
       case @source
