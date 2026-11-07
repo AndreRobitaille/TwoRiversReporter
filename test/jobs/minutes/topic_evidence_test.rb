@@ -159,6 +159,28 @@ class MinutesTopicEvidenceTest < ActiveJob::TestCase
     assert_equal original_excerpt, first.reload.decision_observation.data["source_excerpt"]
   end
 
+  test "summary boundaries retain distinct evidence references without private review metadata" do
+    publish
+    retained = motion_events.to_a
+    reviewed = retained.first.decision_observation
+    actor = User.create!(email_address: "private-source-reviewer@example.test", admin: true, status: "active")
+    reason = "Private synthetic identity review notes"
+    CouncilDecisions::ResolveIdentity.call(observation: reviewed, action: "assign", decision: reviewed.council_decision,
+      basis_observation: reviewed, actor: actor, reason: reason, expected_correction_id: nil, request_id: SecureRandom.uuid)
+    [ summary_motion_events, briefing_motion_events ].each do |events|
+      assert_equal retained.map(&:id).sort, events.map { |event| event[:event_id] }.compact.sort
+      references = events.map { |event| event.fetch(:motion_reference) }
+      assert_equal retained.map(&:decision_observation_id).sort, references.map { |ref| ref.fetch(:observation_id) }.sort
+      assert_equal retained.map { |event| event.council_decision.public_id }.sort, references.map { |ref| ref.fetch(:decision_public_id) }.sort
+      assert_equal [ reviewed.minutes_extraction.source_key ], references.map { |ref| ref.fetch(:source_key) }.uniq
+      assert_equal [ reviewed.minutes_extraction.meeting_document_text_version_id ], references.map { |ref| ref.fetch(:text_version_id) }.uniq
+      assert_equal [ "retained_artifact" ], references.map { |ref| ref.fetch(:source_provenance) }.uniq
+      assert_equal [ "extracted" ], references.map { |ref| ref.fetch(:evidence_status) }.uniq
+      refute_includes events.to_json, actor.email_address
+      refute_includes events.to_json, reason
+    end
+  end
+
   private
 
   def motion_events
@@ -166,11 +188,19 @@ class MinutesTopicEvidenceTest < ActiveJob::TestCase
   end
 
   def summary_motion_notes
+    summary_motion_events.map { |event| event[:notes] }
+  end
+
+  def summary_motion_events
     Topics::SummaryContextBuilder.new(@topic, @meeting).build_context_json[:continuity_context][:recent_status_events]
-      .select { |event| event[:evidence] == "motion_outcome" }.map { |event| event[:notes] }
+      .select { |event| event[:evidence] == "motion_outcome" }
   end
 
   def briefing_motion_notes
+    briefing_motion_events.map { |event| event[:notes] }
+  end
+
+  def briefing_motion_events
     captured = nil
     calls = 0
     service = Object.new
@@ -192,7 +222,7 @@ class MinutesTopicEvidenceTest < ActiveJob::TestCase
       end
     end
     assert_equal 2, calls
-    captured[:continuity_context][:status_events].select { |event| event[:event_type] == "motion_outcome" }.map { |event| event[:notes] }
+    captured[:continuity_context][:status_events].select { |event| event[:event_type] == "motion_outcome" }
   end
 
   def revision(bytes, pages)

@@ -166,6 +166,8 @@ module Topics
         end
 
         {
+          event_id: e.id,
+          motion_reference: e.motion_reference,
           date: e.occurred_at.to_date,
           status: e.lifecycle_status,
           evidence: e.evidence_type,

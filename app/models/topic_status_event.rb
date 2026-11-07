@@ -15,6 +15,16 @@ class TopicStatusEvent < ApplicationRecord
     where.not(evidence_type: "motion_outcome").or(where(id: current_motion_event_ids))
   }
 
+  # Internal provenance, not a source citation or approval of the extracted fact.
+  def motion_reference
+    return unless decision_observation
+
+    stage = decision_observation.minutes_extraction
+    { observation_id: decision_observation.id, decision_public_id: council_decision&.public_id,
+      source_key: stage.source_key, text_version_id: stage.meeting_document_text_version_id,
+      source_provenance: stage.input_manifest.dig("source", "provenance"), evidence_status: decision_observation.evidence_status }
+  end
+
   def self.current_motion_event_ids
     where(evidence_type: "motion_outcome")
       .joins(<<~SQL)
