@@ -692,6 +692,44 @@ vote's member identity and inherit the existing reporting access boundary.
 This navigation is generated from records; it needs no per-page publishing
 and does not certify the extraction or approval status of the source minutes.
 
+**Planned member-page enrichment — direction agreed November 7, 2026:**
+
+Extend the existing `/members/:id` pages into year-round records of each
+official's priorities, actions, and progress over time. Build on current
+attendance and vote tracking with a shared, automatically maintained profile.
+AI extracts and relates sourced evidence and generates cited explanations;
+deterministic jobs validate identities/references, calculate metrics, and refresh
+affected records as new evidence arrives. Routine operation must not depend on
+hand-written profiles, per-page publishing, or approval of every routine update.
+Manual work supplies difficult sources, corrects errors, and resolves ambiguity.
+
+The next election cohort is the initial rollout scope. Campaign statements enrich
+the ongoing record; a separate election-season product is not required. Expected
+manual inputs are locating the HTR candidate-profile article and preparing
+voter-forum transcripts outside the website. Source intake should extract evidence
+for all relevant members from one supplied article or prepared transcript.
+Formal-conduct coverage is limited to documented complaints and findings.
+
+The proposed page centers on **what they said → what they did → what happened**,
+with a term selector, cited overview, public-issue timelines, attendance, full
+decision history, peer/staff comparisons, formal-case history, and source coverage.
+Reuse nightly meeting discovery and document-change detection; refresh affected
+profiles from validated evidence changes, with scheduled reconciliation for
+missed updates and older records. Prove this loop on one multi-candidate campaign
+source and a small meeting sample before expanding the shared April 2024 backfill.
+Reconciliation belongs in existing nightly processing; do not add an hourly
+schedule or periodic AI rewrites. Reuse source analysis across members, skip
+unchanged work, coalesce relevant changes, and enforce explicit spending/retry
+limits before paid generation. Attendance and comparison arithmetic use code.
+
+See the [member-profile planning proposal](superpowers/specs/2026-11-07-council-accountability-design.md)
+for proposed page contents, sources, update cadence, release sequence, and
+remaining decisions. [GitHub parent #234](https://github.com/AndreRobitaille/TwoRiversReporter/issues/234)
+links the milestones, implementation issues, and documentation review.
+This records product direction, not shipped behavior;
+detailed metrics, validation rules, and implementation still need pilot validation
+and verification under the existing source and governance contracts.
+
 **Layout:**
 
 - Committees grouped by type: City Government → Tax-Funded Organizations
