@@ -246,7 +246,9 @@ Other stored resident prose and all-writer atomic invalidation remain separate.
 Agenda previews now consume only published briefing context and recheck consumed
 identities, content and eligibility under topic locks before saving a provider
 response. See [agenda-preview transition and concurrency checks](agenda-briefing-context-2026-11-07.md).
-Previously saved meeting summaries still need durable dependency/withdrawal work.
+Saved meeting summaries now withdraw on changes to recorded document dependencies;
+see [summary publication, consumers and QA](meeting-summary-withdrawal-2026-11-07.md).
+Previously consumed topic-briefing and other missing dependencies remain open.
 
 Fact publication now withdraws stored briefings with invalid motion receipts even
 when the source document is unchanged. Fact projection, automated audit and image

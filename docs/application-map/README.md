@@ -95,6 +95,11 @@ The [November 7 fact-publication withdrawal checks](council-fact-withdrawal-2026
 cover changed extractions from an unchanged document, atomic withdrawal/audit,
 cached publication retry and concurrent first briefing publication.
 
+The [November 7 saved meeting-summary checks](meeting-summary-withdrawal-2026-11-07.md)
+cover known document changes through atomic summary/image withdrawal, later
+resident reads, queued consumers and concurrent first publication. Missing legacy,
+fact-publication and previously consumed topic-context dependencies remain open.
+
 The [November 7 topic-generation dependency checks](council-topic-generation-2026-11-07.md)
 cover unchanged topic-stage reuse, stale-input filtering and rejected in-flight
 publication. Broader resident-prose withdrawal and cost controls remain open.
