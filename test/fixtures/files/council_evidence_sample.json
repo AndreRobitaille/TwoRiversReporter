@@ -1,0 +1,23 @@
+{
+  "synthetic": true,
+  "notice": "Invented people and events for deterministic tests; no claims about actual officials.",
+  "campaign": {
+    "url": "https://example.test/campaign/2024",
+    "event_on": "2024-03-01",
+    "published_on": "2024-03-02",
+    "text": "Question: What will you do about park fees? Alex Example: I will vote against the proposed new park admission fee. Blair Sample: I favor the proposed fee if it funds accessible paths.",
+    "expected_participants": ["Alex Example", "Blair Sample"]
+  },
+  "minutes_v1": "Synthetic Council minutes, May 6, 2024. Present: Alex Example, Blair Sample, Casey Fixture. Item 4: Adopt the park admission fee. Alex Example: no; Blair Sample: yes; Casey Fixture: yes. Motion passed. Item 5: Request a maintenance report. Motion carried; individual votes not recorded. No fee implementation report was supplied.",
+  "minutes_v2": "Corrected synthetic Council minutes, May 6, 2024. Present: Alex Example, Blair Sample, Casey Fixture. Item 4: Adopt the park admission fee. Alex Example: no; Blair Sample: yes; Casey Fixture: yes. Motion passed. Item 5: Request an accessibility report. Motion carried; individual votes not recorded. No fee implementation report was supplied.",
+  "expected": {
+    "decision_count": 2,
+    "fee_named_votes": {"Alex Example": "no", "Blair Sample": "yes", "Casey Fixture": "yes"},
+    "alex_action": "voted against the fee",
+    "alex_relationship": "consistent with the specific stated voting commitment",
+    "council_decision": "fee authorized",
+    "issue_implementation_outcome": "unknown",
+    "report_motion_named_votes": {},
+    "report_motion_coverage": "individual votes unknown; do not manufacture unanimous named votes"
+  }
+}
