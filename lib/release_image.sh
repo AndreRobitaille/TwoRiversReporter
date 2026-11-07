@@ -35,8 +35,8 @@ release_run() (
   assert_clean_worktree
   assert_remote_matches_head
   release_ssh true </dev/null
-  trr_kamal build pull
+  release_kamal build pull
   verify_prebuilt_image "$(git rev-parse HEAD)"
-  trr_kamal "$1"
+  release_kamal "$1"
   release_verify
 )

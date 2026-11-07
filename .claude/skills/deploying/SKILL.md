@@ -7,6 +7,12 @@ description: Use when deploying TwoRiversReporter to production, running command
 
 **Live at:** `https://tworiversmatters.com`
 
+Read the [shared operator agreement](../../../docs/SHARED_HOST_DEPLOYMENT.md) and
+[Two Rivers deployment entry point](../../../docs/DEPLOYMENT.md) first. They align
+the operator sequence with LegionPostTools and wipost165 and distinguish automatic
+guards from checks still assigned to the operator. This playbook supplies the
+Two Rivers details; commands in historical plans do not supersede it.
+
 ## Off-server images and manual deployment
 
 The `Runtime image` workflow (`.github/workflows/runtime-image.yml`) builds
@@ -50,7 +56,7 @@ from deployment.
 
 **Before any production SSH operation, including read-only inspection, open
 one `bin/release session`.** This entry point owns the persistent tunnel and
-exports `release_ssh`, `trr_kamal`, `release_deploy`, `release_setup` and
+exports `release_ssh`, `release_kamal`, `release_deploy`, `release_setup` and
 `release_verify` into an interactive `trr-release>` shell. All commands from
 first inspection through final verification belong in that same shell.
 `bin/release check` is local-only; it does not connect to production.
@@ -68,7 +74,7 @@ bin/release session
 release_deploy
 # Follow-up inspection uses this same tunnel:
 release_verify
-trr_kamal app logs --since 5m
+release_kamal app logs --since 5m
 exit
 ```
 
@@ -83,8 +89,10 @@ One outer SSH master opens a localhost-only forward on port 22222. Choose
 Both Kamal's Net::SSH and Docker's OpenSSH use this forward through an owned
 wrapper and temporary configuration. Merely setting a control socket or
 `DOCKER_HOST` is insufficient. No remote builder is configured for this release
-path. Every Kamal invocation goes through `trr_kamal`, which checks the tunnel and
+path. Every Kamal invocation goes through `release_kamal`, which checks the tunnel and
 adds `--skip-push` to deployment commands. The pre-build hook refuses image builds.
+`trr_kamal` remains a compatibility alias; use `release_kamal` in new instructions
+so the session commands match the other two repositories.
 
 `release_deploy` requires a verified digest, successful session preflight, clean
 checkout and an exactly pushed HEAD. It pulls and checks the digest, source
@@ -127,12 +135,12 @@ Publication, deployment and production mutation each need their existing authori
 |------|---------|
 | Deploy verified image | `release_deploy` |
 | First-time setup with verified image | `release_setup` |
-| Rails console | `trr_kamal console` |
-| Tail logs | `trr_kamal logs` |
-| Shell into container | `trr_kamal shell` |
-| DB console | `trr_kamal dbc` |
-| Reboot app | `trr_kamal app boot` |
-| Run a job | `trr_kamal app exec "bin/rails runner 'JobClass.perform_now(id)'"` |
+| Rails console | `release_kamal console` |
+| Tail logs | `release_kamal logs` |
+| Shell into container | `release_kamal shell` |
+| DB console | `release_kamal dbc` |
+| Reboot app | `release_kamal app boot` |
+| Run a job | `release_kamal app exec "bin/rails runner 'JobClass.perform_now(id)'"` |
 
 The database password must be exported before opening the session. `.env` keys are
 not automatically exported; non-secret settings belong in `env: clear:`.
@@ -177,7 +185,7 @@ After editing `lib/prompt_template_data.rb`, production ordering matters:
 3. Commit and push
 4. Wait for the exact-revision image checks, publish it manually, then run
    `release_deploy` inside the single authorized release session
-5. Then run `trr_kamal app exec "bin/rails prompt_templates:populate"`
+5. Then run `release_kamal app exec "bin/rails prompt_templates:populate"`
 
 `prompt_templates:populate` on prod reads from the running image, not your local filesystem. If you skip deploy, you can repopulate the database from stale code.
 
@@ -282,7 +290,7 @@ six transactional ids and nothing else:
   `LoopsDelivery::MissingApiKey` on every sign-in attempt. It is uniform across
   all three branches, so it is not an enumeration oracle — but it is the whole
   front door, and sign-in is the only way in. Verify it separately:
-  `trr_kamal app exec 'bin/rails runner "puts LoopsDelivery.configured?"'`
+  `release_kamal app exec 'bin/rails runner "puts LoopsDelivery.configured?"'`
   must print `true`.
 - `ADMIN_NOTIFICATION_EMAIL` is also send-time only, raised from
   `TransactionalEmail.admin_application_notifications`. Its absence breaks the
@@ -362,7 +370,7 @@ first and confirm the owner's is not among them. Run this **against the old imag
 180 days in the container you are about to replace:
 
 ```bash
-trr_kamal app exec "bin/rails runner 'doomed = Session.where(\"last_seen_at IS NULL OR last_seen_at < ?\", 60.days.ago); owner = User.find_by(email_address: \"andre@xyzmodem.com\"); puts \"sessions total: \" + Session.count.to_s; puts \"invalidated by the 60-day rule: \" + doomed.count.to_s; puts \"owner sessions invalidated: \" + doomed.where(user_id: owner.id).count.to_s'"
+release_kamal app exec "bin/rails runner 'doomed = Session.where(\"last_seen_at IS NULL OR last_seen_at < ?\", 60.days.ago); owner = User.find_by(email_address: \"andre@xyzmodem.com\"); puts \"sessions total: \" + Session.count.to_s; puts \"invalidated by the 60-day rule: \" + doomed.count.to_s; puts \"owner sessions invalidated: \" + doomed.where(user_id: owner.id).count.to_s'"
 ```
 
 If the owner's count is anything but `0`, sign in again from the browser you intend to deploy from
@@ -377,7 +385,7 @@ Confirm the backfill first. Both counts must be `0`; a session missing `ip_prefi
 `ip_address` means the backfill did not run, and every live member would be challenged at once:
 
 ```bash
-trr_kamal app exec "bin/rails runner 'puts \"sessions: \" + Session.count.to_s; puts \"missing ip_prefix: \" + Session.where(ip_prefix: nil).where.not(ip_address: nil).count.to_s; puts \"missing reauthenticated_at: \" + Session.where(reauthenticated_at: nil).count.to_s'"
+release_kamal app exec "bin/rails runner 'puts \"sessions: \" + Session.count.to_s; puts \"missing ip_prefix: \" + Session.where(ip_prefix: nil).where.not(ip_address: nil).count.to_s; puts \"missing reauthenticated_at: \" + Session.where(reauthenticated_at: nil).count.to_s'"
 ```
 
 Then walk it in a browser, on `https://tworiversmatters.com`:
@@ -412,7 +420,7 @@ on — the recipes below target the most recently seen session, which is the wro
 several:
 
 ```bash
-trr_kamal app exec "bin/rails runner 'User.find_by(email_address: \"andre@xyzmodem.com\").sessions.order(:last_seen_at).each { |s| puts s.slice(:id, :ip_address, :ip_prefix, :device_fingerprint, :reauthenticated_at, :last_seen_at).inspect }'"
+release_kamal app exec "bin/rails runner 'User.find_by(email_address: \"andre@xyzmodem.com\").sessions.order(:last_seen_at).each { |s| puts s.slice(:id, :ip_address, :ip_prefix, :device_fingerprint, :reauthenticated_at, :last_seen_at).inspect }'"
 ```
 
 **Re-anchor** a session to the network and browser the next request will actually come from. This is
@@ -425,7 +433,7 @@ curl -s https://api.ipify.org; echo
 ```
 
 ```bash
-trr_kamal app exec "bin/rails runner 'ip = \"203.0.113.45\"; s = User.find_by(email_address: \"andre@xyzmodem.com\").sessions.order(:last_seen_at).last; s.update_columns(ip_prefix: NetworkPrefix.for(ip), device_fingerprint: DeviceFingerprint.for(s.user_agent), reauthenticated_at: Time.current); puts s.slice(:id, :ip_prefix, :device_fingerprint, :reauthenticated_at).inspect'"
+release_kamal app exec "bin/rails runner 'ip = \"203.0.113.45\"; s = User.find_by(email_address: \"andre@xyzmodem.com\").sessions.order(:last_seen_at).last; s.update_columns(ip_prefix: NetworkPrefix.for(ip), device_fingerprint: DeviceFingerprint.for(s.user_agent), reauthenticated_at: Time.current); puts s.slice(:id, :ip_prefix, :device_fingerprint, :reauthenticated_at).inspect'"
 ```
 
 Substitute the real address for `203.0.113.45`. That command keeps the browser half of the anchor,
@@ -434,7 +442,7 @@ changed. If you are moving the session to a **different browser**, paste that br
 string in as well:
 
 ```bash
-trr_kamal app exec "bin/rails runner 'ip = \"203.0.113.45\"; ua = \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36\"; s = User.find_by(email_address: \"andre@xyzmodem.com\").sessions.order(:last_seen_at).last; s.update_columns(ip_prefix: NetworkPrefix.for(ip), device_fingerprint: DeviceFingerprint.for(ua), reauthenticated_at: Time.current); puts s.slice(:id, :ip_prefix, :device_fingerprint, :reauthenticated_at).inspect'"
+release_kamal app exec "bin/rails runner 'ip = \"203.0.113.45\"; ua = \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36\"; s = User.find_by(email_address: \"andre@xyzmodem.com\").sessions.order(:last_seen_at).last; s.update_columns(ip_prefix: NetworkPrefix.for(ip), device_fingerprint: DeviceFingerprint.for(ua), reauthenticated_at: Time.current); puts s.slice(:id, :ip_prefix, :device_fingerprint, :reauthenticated_at).inspect'"
 ```
 
 The User-Agent goes inside the Ruby script, which is itself inside single quotes inside the shell's
@@ -450,7 +458,7 @@ admin gate honours a recent step-up as well as a matching context, which is what
 but it expires, and it does **not** open passkey add or remove, which require the context to match:
 
 ```bash
-trr_kamal app exec "bin/rails runner 's = User.find_by(email_address: \"andre@xyzmodem.com\").sessions.order(:last_seen_at).last; s.update_columns(reauthenticated_at: Time.current); puts s.slice(:id, :ip_prefix, :device_fingerprint, :reauthenticated_at).inspect'"
+release_kamal app exec "bin/rails runner 's = User.find_by(email_address: \"andre@xyzmodem.com\").sessions.order(:last_seen_at).last; s.update_columns(reauthenticated_at: Time.current); puts s.slice(:id, :ip_prefix, :device_fingerprint, :reauthenticated_at).inspect'"
 ```
 
 **Last resort**, if a session is beyond saving: destroy it and sign in again. A new session records
@@ -458,5 +466,5 @@ the correct context on arrival, and `start_new_session_for` stamps `reauthentica
 passkey setup works immediately:
 
 ```bash
-trr_kamal app exec "bin/rails runner 'User.find_by(email_address: \"andre@xyzmodem.com\").sessions.destroy_all; puts \"sessions destroyed; sign in again\"'"
+release_kamal app exec "bin/rails runner 'User.find_by(email_address: \"andre@xyzmodem.com\").sessions.destroy_all; puts \"sessions destroyed; sign in again\"'"
 ```

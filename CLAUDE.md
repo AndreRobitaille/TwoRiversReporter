@@ -30,7 +30,7 @@ If guidance overlaps, follow this order:
 - UI, CSS, components, themes → `docs/plans/2026-03-28-atomic-design-system-spec.md`
 - Meeting/topic behavior or recent feature details → relevant spec in `docs/superpowers/specs/`
 - Prompt template or AI pipeline work → the `deploying` skill (prompt-template deploy ordering)
-- Deploy / production operations → the `deploying` skill + `config/deploy.yml`
+- Deploy / production operations → `docs/SHARED_HOST_DEPLOYMENT.md`, `docs/DEPLOYMENT.md`, the `deploying` skill + `config/deploy.yml`
 - Homepage / topic show / meeting show / transcript pipeline → the `page-architecture` skill
 - Sign-in, sessions, applications, admin access, transactional email → `docs/superpowers/specs/2026-07-23-passwordless-auth-and-applications-design.md`
 - Anything an anonymous visitor can see → `docs/superpowers/specs/2026-07-24-tiered-public-access-design.md`
@@ -38,6 +38,10 @@ If guidance overlaps, follow this order:
 - Admin navigation, admin styling, or any `/admin` page → `docs/superpowers/specs/2026-07-26-admin-ui-revamp-design.md`
 
 ## Production SSH prerequisite
+
+Use [the shared operator agreement](docs/SHARED_HOST_DEPLOYMENT.md) for the common
+three-app release sequence and [the deployment entry point](docs/DEPLOYMENT.md)
+for Two Rivers prerequisites, automatic checks and remaining operator duties.
 
 Before any production SSH command, including read-only checks, follow the
 **Mandatory persistent SSH tunnel** procedure in
@@ -278,7 +282,7 @@ Live at `https://tworiversmatters.com` (Hetzner VPS, Kamal 2, Docker + pgvector)
 - **Uploaded source images** — Admin-uploaded replacements use an "Uploaded image" cutline. Variants pad rather than crop, and detail pages contain the full image; preserve source-map boundaries and legends. Generated images keep their existing crop and "AI image" label.
 - **Impact rating enforcement** — Homepage ranking uses `resident_impact_score` (1-5), not admin `importance` (0-10). `Topics::ResidentImpactPolicy` enforces sex-offender minimums through the shared AI score writer and upcoming headline/interim updates: 3 for cases, 4 for documented law rewrites, 5 for explicit citywide-prohibition replacement. Elevated minimums require substantive, non-cancelled, recent/upcoming agenda-title evidence. Topic row locks protect current admin overrides from stale job objects. Pruning must retain these agenda appearances even if AI labels them low activity.
 - **Visual direction** — Generated civic images should resemble restrained local newspaper/editorial photos, not cartoons, vector art, AI explainer graphics, or symbolic collages. Use one dominant resident-visible physical anchor; do not try to show every meeting item. Prefer streets, curbs, sidewalks, utility infrastructure, homes, parks, lakefront/beach access, and public facilities. For named/specific local places or landmarks, use cropped non-identifying details rather than a full invented stand-in. Admin upload override is expected for hard local-facility cases. Rendering: homepage top-six cards use a small fixed side thumbnail (≈200×134 top stories, ≈104×78 wire cards) with no overlay label and no topic description; topic/meeting detail pages show an edge-to-edge feature image with a drop shadow and an "AI image" cutline. The `/topics` and `/meetings` index cards show a fixed 3:2 thumbnail (≈132px, matches the source aspect so it isn't over-cropped) when an image exists — floated-right inside the card body with the text wrapping around it on both topic and meeting cards (description dropped on topic cards). The float pattern keeps text readable at mobile widths instead of crushing it into a narrow column beside a fixed image; a `::after` clearfix on the body reserves the thumbnail height on short cards. Index/home image data is batch-loaded via the `LoadsGeneratedImages` controller concern (`generated_images_for(records, surface:)`). Image-less cards/pages omit the image with no reserved space (image-present layouts gated by a `--with-image` modifier class).
-- **Generated image operations** — Image generation uses `Ai::OpenAiService#generate_civic_image` and defaults to `gpt-image-1` at `1536x1024`. After editing `lib/prompt_template_data.rb`, run `bin/rails prompt_templates:populate` locally before manual regeneration so the database prompt reflects code. For production, deploy first, then run `trr_kamal app exec "bin/rails prompt_templates:populate"` (the tunnel-bound function from that playbook) before regenerating images.
+- **Generated image operations** — Image generation uses `Ai::OpenAiService#generate_civic_image` and defaults to `gpt-image-1` at `1536x1024`. After editing `lib/prompt_template_data.rb`, run `bin/rails prompt_templates:populate` locally before manual regeneration so the database prompt reflects code. For production, deploy first, then run `release_kamal app exec "bin/rails prompt_templates:populate"` (the tunnel-bound function from that playbook) before regenerating images.
 - **Summaries require citations** — All factual claims must trace to document artifacts (e.g., `[Packet Page 12]`).
 - **Separate fact from inference** — Topic summaries distinguish factual record, institutional framing, and civic sentiment.
 - **Credentials** — Encrypted in `config/credentials.yml.enc`, decrypted via `config/master.key` (gitignored). Access via `Rails.application.credentials.<key>`.
