@@ -260,6 +260,20 @@ class Topics::GenerationEvidenceTest < ActiveJob::TestCase
     assert_empty @briefing_inputs.last[:prior_meeting_analyses]
   end
 
+  test "withdrawn knowledge invalidates retained analysis without changing its meeting sources" do
+    source = KnowledgeSource.create!(title: "Withdrawn synthetic background", source_type: "note", origin: "manual", status: "approved", active: true)
+    source.topics << @topic
+    source.knowledge_chunks.create!(content: "Synthetic interpretation to withdraw", embedding: [ 0.5, 0.6 ])
+    summarize(@meeting)
+    briefing
+    original = @meeting.topic_summaries.sole.attributes
+    assert_equal [ @claims.fetch(@meeting.id) ], @briefing_inputs.last[:prior_meeting_analyses].map { |data| data["headline"] }
+    source.update!(status: "blocked")
+    briefing
+    assert_empty @briefing_inputs.last[:prior_meeting_analyses]
+    assert_equal original, @meeting.topic_summaries.sole.attributes
+  end
+
   private
 
   def publish_decision
