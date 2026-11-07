@@ -87,6 +87,10 @@ The [November 7 document-source withdrawal checks](council-source-withdrawal-202
 cover source changes/removal through retained catalog and motion dependencies,
 atomic withdrawal, later resident reads, unchanged reuse and concurrent first publication.
 
+The [November 7 agenda-preview context checks](agenda-briefing-context-2026-11-07.md)
+cover withdrawn briefing inputs, changed context during generation, publication
+locking and later meeting reads. Withdrawal of earlier saved previews remains open.
+
 The [November 7 topic-generation dependency checks](council-topic-generation-2026-11-07.md)
 cover unchanged topic-stage reuse, stale-input filtering and rejected in-flight
 publication. Broader resident-prose withdrawal and cost controls remain open.
