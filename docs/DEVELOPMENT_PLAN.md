@@ -309,6 +309,15 @@ completed extraction, not semantic or human validation. `MinutesPublication`
 selects compatible completed stages; a meeting/source lock protects atomic
 replacement of the display rows, membership reconciliation and current pointer.
 Known votes remain inspectable in a completed stage while attendance is pending.
+New vote stages also retain a deterministic `evidence_locations` check against
+their pinned `MeetingDocumentTextVersion`. Each motion has a source-order sequence
+and either exact page/character ranges or an unresolved reason. Excerpts must
+occur uniquely after whitespace normalization; missing/repeated passages and
+unretained legacy sources acquire no invented location. `located` proves text
+occurrence only, not semantic accuracy, identity, eligibility or approval.
+Completed checks are immutable with their extraction; preexisting stages remain
+unchecked and are not reprocessed merely to fill this field. Stable decision
+reconciliation will use this evidence rather than rewritten descriptions.
 Explicit votes and absences derived from the matching roll call have different
 `Vote#evidence_basis` values; old rows remain `legacy`. Unsupported vote values
 are held rather than converted to abstentions.
