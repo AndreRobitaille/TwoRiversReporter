@@ -9,7 +9,8 @@ class Topics::ParallelBriefingWithdrawalTest < ActiveJob::TestCase
   setup { build_withdrawal_scenario }
 
   teardown do
-    Topic.where(id: [ @topic&.id, @other&.id ]).destroy_all
+    Topic.where(id: [ @topic&.id, @other&.id, @merge_target&.id ]).destroy_all
+    Redirect.where(source_path: "/topics/#{@topic&.id}").delete_all
     if @meeting&.persisted?
       stage_ids = @meeting.minutes_extractions.pluck(:id)
       publication_ids = @meeting.minutes_publications.pluck(:id)
@@ -85,5 +86,63 @@ class Topics::ParallelBriefingWithdrawalTest < ActiveJob::TestCase
     release << true if release
     workers&.each { |worker| worker.join(10) }
     TopicBriefing.skip_callback(:create, :before, callback) if callback
+  end
+
+  test "cached review discovers the survivor after a concurrent topic merge" do
+    @merge_target = Topic.create!(name: "Synthetic corrected merge survivor", status: "approved")
+    entered, release, started = Queue.new, Queue.new, Queue.new
+    workers = []
+    target_id = @merge_target.id
+    callback = -> do
+      if topic_id == target_id
+        entered << true
+        release.pop
+      end
+    end
+    TopicAlias.set_callback(:create, :before, callback)
+    without_paid_providers do
+      workers << Thread.new do
+        ActiveRecord::Base.connection_pool.with_connection do
+          Topics::MergeService.new(source_topic: Topic.find(@topic.id), target_topic: Topic.find(target_id)).call
+        end
+      end
+      Timeout.timeout(10) { entered.pop }
+      workers << Thread.new do
+        ActiveRecord::Base.connection_pool.with_connection do |connection|
+          ActiveRecord::Base.cache do
+            started << connection.select_value("SELECT pg_backend_pid()")
+            Timeout.timeout(5) do
+              CouncilDecisions::ResolveIdentity.call(observation: CouncilDecisionObservation.find(@event.decision_observation_id),
+                action: "unassign", actor: User.find(@actor.id), reason: "Synthetic review crossing a topic merge",
+                expected_correction_id: nil, request_id: SecureRandom.uuid)
+            end
+          end
+        end
+      rescue Timeout::Error => error
+        error
+      end
+      pid = Timeout.timeout(10) { started.pop }
+      Timeout.timeout(10) do
+        while workers.last.alive?
+          waiting = ActiveRecord::Base.uncached do
+            ActiveRecord::Base.connection.select_value("SELECT wait_event_type FROM pg_stat_activity WHERE pid = #{Integer(pid)}")
+          end
+          break if waiting == "Lock"
+          sleep 0.01
+        end
+      end
+      release << true
+      results = Timeout.timeout(10) { workers.map(&:value) }
+      assert_instance_of CouncilDecisionCorrection, results.last, "Review must complete on the surviving topic instead of reusing a cached deleted owner"
+    end
+    assert_not Topic.exists?(@topic.id)
+    assert_nil @merge_target.reload.published_topic_briefing
+    assert_equal @briefing.id, @merge_target.topic_briefing.id
+    assert_not_nil @merge_target.topic_briefing.withdrawal_correction_id
+    assert_not_nil @other.reload.published_topic_briefing
+  ensure
+    release << true if release
+    workers&.each { |worker| worker.join(10) }
+    TopicAlias.skip_callback(:create, :before, callback) if callback
   end
 end
