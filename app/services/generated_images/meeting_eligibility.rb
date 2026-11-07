@@ -12,7 +12,7 @@ module GeneratedImages
     end
 
     def call
-      return Result.new(false, "missing summary", nil, false) unless @summary
+      return Result.new(false, "missing summary", nil, false) unless @summary&.published?
 
       candidates = candidate_texts
       substantive_candidates = candidates.select { |text| substantive?(text) }
@@ -64,7 +64,7 @@ module GeneratedImages
     end
 
     def usable_summary?(summary)
-      summary.generation_data.present? || summary.content.present?
+      summary.published? && (summary.generation_data.present? || summary.content.present?)
     end
   end
 end

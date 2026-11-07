@@ -16,9 +16,10 @@ module Citations
 
     def call(apply: false, expected: {})
       MeetingSummary.transaction do
+        # Source writers lock the document before withdrawing dependent summaries.
+        document = MeetingDocument.lock.find(@document_id)
         summary = MeetingSummary.lock.find(@summary_id)
         run = PromptRun.lock.find(@prompt_run_id)
-        document = MeetingDocument.lock.find(@document_id)
         document.extractions.lock.load
         prove_identity!(summary, run, document)
         before = protected_digest(summary)

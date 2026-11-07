@@ -225,6 +225,8 @@ module TopicsHelper
     return agenda_item&.title unless meeting
 
     meeting.meeting_summaries.each do |summary|
+      next unless summary.published?
+
       items = summary.generation_data&.dig("item_details")
       next unless items.is_a?(Array)
 

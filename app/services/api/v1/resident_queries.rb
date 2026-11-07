@@ -14,7 +14,7 @@ module Api
       ].freeze
 
       def self.preferred_summaries
-        MeetingSummary.where("NULLIF(btrim(content), '') IS NOT NULL OR (generation_data IS NOT NULL AND generation_data NOT IN ('{}'::jsonb, 'null'::jsonb))")
+        MeetingSummary.published.where("NULLIF(btrim(content), '') IS NOT NULL OR (generation_data IS NOT NULL AND generation_data NOT IN ('{}'::jsonb, 'null'::jsonb))")
           .select("DISTINCT ON (meeting_id) meeting_summaries.*")
           .order(:meeting_id).in_order_of(:summary_type, MeetingSummary::SUMMARY_TYPES, filter: false)
           .order(updated_at: :desc, id: :asc)

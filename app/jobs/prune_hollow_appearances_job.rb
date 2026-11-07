@@ -26,9 +26,15 @@ class PruneHollowAppearancesJob < ApplicationJob
     meeting = Meeting.find_by(id: meeting_id)
     return unless meeting
 
-    summary = meeting.meeting_summaries.order(created_at: :desc).first
+    summary = meeting.meeting_summaries.published.order(created_at: :desc).first
     return unless summary&.generation_data.is_a?(Hash)
 
+    Meetings::SummaryPublication.with_current(summary) { prune(meeting, summary) }
+  end
+
+  private
+
+  def prune(meeting, summary)
     item_details = summary.generation_data["item_details"]
     return unless item_details.is_a?(Array)
 
@@ -71,11 +77,9 @@ class PruneHollowAppearancesJob < ApplicationJob
     affected_topic_ids.each do |topic_id|
       topic = Topic.find_by(id: topic_id)
       next unless topic
-      demote_topic(topic, meeting_id)
+      demote_topic(topic, meeting.id)
     end
   end
-
-  private
 
   def hollow?(agenda_item, entry)
     return false if Motion.where(agenda_item_id: agenda_item.id).exists?
