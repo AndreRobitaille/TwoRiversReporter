@@ -76,7 +76,7 @@ briefing reuse still returns before either provider is constructed.
 | BG-04, delayed jobs and recovery | Correct during rendering; old prose stays withdrawn. Correct during image transport; late bytes never attach/publish. A fresh full briefing restores publication; an older interim response cannot overwrite it; unchanged rerun has no provider calls. | No real image or language-model calls. |
 | BG-04, concurrent first publication | Separate PostgreSQL connections hold the first briefing insert at its callback, begin correction, observe a database lock wait, release generation, then read the new row as withdrawn. | Does not claim global paid-dispatch coalescing or all writer interleavings. |
 | BG-04, concurrent topic merge | Pause a merge under both topic locks, start review with the query cache enabled, then complete the merge. The review follows the retained briefing to the survivor and withdraws it; unrelated briefing stays published. | Separate PostgreSQL connections; other invalidation writers remain out of scope. |
-| RES-02 / RES-04 / RES-05, browser | Follow the topic card, see analysis and metadata, correct, reload, follow the remaining meeting link and official-source link, search, and open the unrelated topic. | Correction is invoked internally; no new review UI is introduced. |
+| RES-02 / RES-04 / RES-05, browser | Follow the topic card, see analysis and metadata, correct, reload, follow the remaining meeting link, check the official-source link is present, search, and open the unrelated topic. | Correction is invoked internally; no new review UI is introduced. |
 
 An existing Turbo search request crashed because its template read only the browse
 collection. The template now reads the actual search collection and preserves the
