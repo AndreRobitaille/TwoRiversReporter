@@ -42,6 +42,21 @@ module Minutes
       digest(manifest(kind))
     end
 
+    def matches_evidence?(stage, kind)
+      stage && stage.source_key == source_key &&
+        (kind != "votes" || stage.input_manifest["agenda"] == manifest(kind)["agenda"])
+    end
+
+    def completed_stage(kind)
+      exact = MinutesExtraction.find_by(input_key: key(kind), status: "completed")
+      return exact if exact
+
+      # A settings edit alone does not invalidate previously extracted civic
+      # facts. Reuse compatible evidence until an explicit extraction replaces it.
+      MinutesExtraction.where(source_key: source_key, kind: kind, status: "completed")
+        .order(completed_at: :desc, id: :desc).detect { |stage| matches_evidence?(stage, kind) }
+    end
+
     def agenda_text
       agenda_items.map do |item|
         label = item.number.present? ? "#{item.number}: #{item.title}" : item.title

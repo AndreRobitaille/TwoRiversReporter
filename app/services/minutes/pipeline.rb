@@ -4,11 +4,11 @@ module Minutes
 
     def self.needed?(meeting, kind)
       input = Input.new(meeting)
+      return true if Publish.repair_needed?(meeting, input: input)
       stage = MinutesExtraction.find_by(input_key: input.key(kind))
       return stage.retryable? if stage && stage.status != "completed"
-      if stage
-        counterpart = MinutesExtraction.find_by(input_key: input.key(kind == "votes" ? "attendance" : "votes"), status: "completed")
-        return counterpart.present? && !Publish.current?(meeting, input: input)
+      if stage || input.completed_stage(kind)
+        return Publish.repair_needed?(meeting, input: input)
       end
       # Do not turn deployment into a paid reprocessing of untouched legacy rows.
       terminal_legacy = meeting.processing_state[Publish::STATUS_KEYS.fetch(kind)].in?(%w[processed empty])
@@ -17,16 +17,19 @@ module Minutes
       false
     end
 
-    def initialize(meeting_id, kind)
+    def initialize(meeting_id, kind, refresh: false)
       @meeting = Meeting.find(meeting_id)
       @kind = kind
+      @refresh = refresh
     end
 
     def call
+      return if !@refresh && Publish.call(@meeting)
       @meeting.with_lock do
         @input = Input.new(@meeting)
-        @stage = MinutesExtraction.find_by(input_key: @input.key(@kind)) ||
-          MinutesExtraction.create!(@input.stage_attributes(@meeting, @kind))
+        @stage = MinutesExtraction.find_by(input_key: @input.key(@kind))
+        @stage ||= @input.completed_stage(@kind) unless @refresh
+        @stage ||= MinutesExtraction.create!(@input.stage_attributes(@meeting, @kind))
       end
       if @stage.status == "completed"
         Publish.call(@meeting)
@@ -103,7 +106,7 @@ module Minutes
         %w[voting_members_present voting_members_absent non_voting_staff guests].each do |key|
           raise InvalidOutput unless data[key].is_a?(Array)
           data[key].each do |entry|
-            name = entry.is_a?(Hash) ? entry["name"] : entry
+            name = key.in?(%w[non_voting_staff guests]) && entry.is_a?(Hash) ? entry["name"] : entry
             raise InvalidOutput unless name.is_a?(String)
           end
         end

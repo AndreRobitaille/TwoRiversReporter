@@ -13,8 +13,21 @@ module Minutes
     def self.current?(meeting, input: nil)
       input ||= Input.new(meeting)
       publication = meeting.minutes_publication
-      publication && publication.projection_context == context_for(meeting) && publication.votes_extraction.input_key == input.key("votes") &&
-        publication.attendance_extraction.input_key == input.key("attendance")
+      publication && publication.projection_context == context_for(meeting) &&
+        input.matches_evidence?(publication.votes_extraction, "votes") &&
+        input.matches_evidence?(publication.attendance_extraction, "attendance")
+    rescue Input::Unavailable
+      false
+    end
+
+    def self.fingerprint_for(meeting, votes, attendance)
+      Digest::SHA256.hexdigest(JSON.generate([ meeting.id, votes.id, attendance.id, context_for(meeting) ]))
+    end
+
+    def self.repair_needed?(meeting, input: nil)
+      input ||= Input.new(meeting)
+      votes, attendance = input.completed_stage("votes"), input.completed_stage("attendance")
+      votes && attendance && meeting.minutes_publication&.fingerprint != fingerprint_for(meeting, votes, attendance)
     rescue Input::Unavailable
       false
     end
@@ -26,12 +39,12 @@ module Minutes
         return false unless document
         document.with_lock do
           input = Input.new(meeting)
-          return false if current?(meeting, input: input)
-          votes = MinutesExtraction.find_by(input_key: input.key("votes"), status: "completed")
-          attendance = MinutesExtraction.find_by(input_key: input.key("attendance"), status: "completed")
+          votes = input.completed_stage("votes")
+          attendance = input.completed_stage("attendance")
           return false unless votes && attendance
 
-          fingerprint = Digest::SHA256.hexdigest(JSON.generate([ meeting.id, votes.id, attendance.id, context_for(meeting) ]))
+          fingerprint = fingerprint_for(meeting, votes, attendance)
+          return false if meeting.minutes_publication&.fingerprint == fingerprint
           publication = MinutesPublication.find_by(fingerprint: fingerprint) || MinutesPublication.create!(
             meeting: meeting, original_meeting_id: meeting.id, fingerprint: fingerprint, projection_context: context_for(meeting),
             votes_extraction: votes, attendance_extraction: attendance

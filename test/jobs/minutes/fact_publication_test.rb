@@ -136,6 +136,21 @@ class MinutesFactPublicationTest < ActiveJob::TestCase
     assert_equal 0, Vote.where(value: "abstain").count
   end
 
+  test "unsupported voting roster shapes are held instead of becoming invented people" do
+    bad = { voting_members_present: [ { name: "Alex Example" } ], voting_members_absent: [], non_voting_staff: [], guests: [] }
+    calls = 0
+    service = Object.new
+    service.define_singleton_method(:extract_committee_members) { |*args, **kwargs| calls += 1; bad.to_json }
+    with_provider(service) { 3.times { ExtractCommitteeMembersJob.perform_now(@meeting.id) } }
+    assert_equal 2, calls
+    stage = MinutesExtraction.find_by!(kind: "attendance")
+    assert_equal "failed", stage.status
+    assert_equal [ { "name" => "Alex Example" } ], stage.data["voting_members_present"]
+    run_votes
+    assert_equal [ @old_member.id ], @meeting.meeting_attendances.pluck(:member_id)
+    assert_equal 0, MinutesPublication.count
+  end
+
   test "uncertain provider outcome is retained without an automatic retry" do
     calls = 0
     service = Object.new
@@ -252,8 +267,11 @@ class MinutesFactPublicationTest < ActiveJob::TestCase
     with_provider(service) { ExtractVotesJob.perform_now(@meeting.id) }
     assert_equal [ "Prior action" ], @meeting.motions.pluck(:description)
     run_attendance
-    assert_equal [ "Prior action" ], @meeting.motions.pluck(:description)
-    run_votes
+    # The old prompt's complete response still describes this exact source.
+    assert_equal [ "Opening action", "Final action" ], @meeting.motions.order(:id).pluck(:description)
+    old_stage = @meeting.reload.minutes_publication.votes_extraction_id
+    run_votes(refresh: true)
+    assert_not_equal old_stage, @meeting.reload.minutes_publication.votes_extraction_id
     assert_equal [ "Opening action", "Final action" ], @meeting.motions.order(:id).pluck(:description)
     assert_equal 1, MinutesExtraction.where(kind: "attendance").count
     assert_equal 2, MinutesExtraction.where(kind: "votes").count
@@ -277,6 +295,30 @@ class MinutesFactPublicationTest < ActiveJob::TestCase
     assert_equal 2, MinutesExtraction.count
   end
 
+  test "a global prompt edit does not turn nightly reconciliation into a historical rewrite" do
+    seed_prompt_templates
+    run_votes
+    run_attendance
+    old_publication = @meeting.reload.minutes_publication
+    PromptTemplate.find_by!(key: "extract_votes").update!(instructions: "Changed extraction instructions {{text}} {{agenda_items}}")
+    PromptTemplate.find_by!(key: "extract_committee_members").update!(instructions: "Changed roll call instructions {{text}}")
+    assert_not Minutes::Pipeline.needed?(@meeting.reload, "votes")
+    assert_not Minutes::Pipeline.needed?(@meeting, "attendance")
+    assert Minutes::Publish.current?(@meeting)
+    @meeting.update!(starts_at: @meeting.starts_at - 1.day)
+    assert Minutes::Pipeline.needed?(@meeting.reload, "votes")
+    assert Minutes::Pipeline.needed?(@meeting, "attendance")
+    Ai::OpenAiService.stub :new, ->(*) { flunk "Queued deterministic repairs must not refresh global settings" } do
+      ExtractVotesJob.perform_now(@meeting.id)
+      ExtractCommitteeMembersJob.perform_now(@meeting.id)
+    end
+    run_votes(refresh: true)
+    current = @meeting.reload.minutes_publication
+    assert_not_equal old_publication.votes_extraction_id, current.votes_extraction_id
+    assert_equal old_publication.attendance_extraction_id, current.attendance_extraction_id
+    assert_equal 1, MinutesExtraction.where(kind: "attendance").count
+  end
+
   private
 
   def revision(bytes, text)
@@ -291,11 +333,11 @@ class MinutesFactPublicationTest < ActiveJob::TestCase
     ] }
   end
 
-  def run_votes(value: "no", outcome: "failed")
+  def run_votes(value: "no", outcome: "failed", refresh: false)
     response = votes_response(value: value, outcome: outcome).to_json
     service = Object.new
     service.define_singleton_method(:extract_votes) { |*args, **kwargs| response }
-    with_provider(service) { ExtractVotesJob.perform_now(@meeting.id) }
+    with_provider(service) { ExtractVotesJob.perform_now(@meeting.id, refresh: refresh) }
   end
 
   def run_attendance(absent: true)

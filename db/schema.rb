@@ -472,6 +472,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_200000) do
     t.index [ "input_key" ], name: "index_minutes_extractions_on_input_key", unique: true
     t.index [ "meeting_document_text_version_id" ], name: "index_minutes_extractions_on_meeting_document_text_version_id"
     t.index [ "meeting_id" ], name: "index_minutes_extractions_on_meeting_id"
+    t.index [ "source_key", "kind", "status" ], name: "index_minutes_extractions_on_source_key_and_kind_and_status"
   end
 
   create_table "minutes_publications", force: :cascade do |t|

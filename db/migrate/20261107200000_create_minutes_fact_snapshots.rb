@@ -18,6 +18,7 @@ class CreateMinutesFactSnapshots < ActiveRecord::Migration[8.1]
       t.timestamps
     end
     add_index :minutes_extractions, :input_key, unique: true
+    add_index :minutes_extractions, [ :source_key, :kind, :status ]
 
     create_table :minutes_publications do |t|
       t.references :meeting, foreign_key: { on_delete: :nullify }
