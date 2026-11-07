@@ -119,7 +119,7 @@ module OfflineTranscriptPipeline
         "factual_record" => [ { "text" => @facts[index], "event" => @facts[index], "date" => @meeting.starts_at.to_date.iso8601, "meeting" => @meeting.body_name, "citations" => [ { "citation_id" => citation_id, "source_url" => "https://example.test/model-invented-source" } ] } ] }.to_json
     end
 
-    def assert_complete_state
+    def assert_complete_state(topic_calls: 1, briefing_calls: 1)
       assert_equal "completed", @import.reload.status, @import.error_message
       assert_equal @topics.map(&:id).sort, @import.affected_topic_ids
       assert_uploaded_source(@import.meeting_document)
@@ -157,8 +157,8 @@ module OfflineTranscriptPipeline
       assert_equal 1, @boundaries.count(:meeting)
       assert_equal 1, @boundaries.count(:extraction)
       @topics.each do |topic|
-        assert_equal 1, @boundaries.count([ :topic, topic.id ]), "reanalysis must reuse the identical completed topic stage"
-        assert_equal 1, @boundaries.count([ :briefing, topic.id ])
+        assert_equal topic_calls, @boundaries.count([ :topic, topic.id ]), "only changed topic-summary inputs may request generation"
+        assert_equal briefing_calls, @boundaries.count([ :briefing, topic.id ]), "only changed briefing inputs may request generation"
       end
       assert_official_state
     end
