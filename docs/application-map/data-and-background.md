@@ -224,6 +224,14 @@ histories and expose each current motion once. See [source-to-context, concurren
 and fault evidence](council-topic-evidence-2026-11-07.md). This does not withdraw
 already generated narratives or validate extracted factual interpretations.
 
+November 7 generation dependency update: shared topic-summary and full-briefing
+stages retain dependency receipts, reuse identical completed inputs and reject
+changed inputs or delayed output before publication. Future briefing/description
+inputs omit known-stale prior analyses; topic context omits known-stale meeting
+item details. Both ordinary meeting processing (BG-02) and operator reanalysis
+use the same topic-summary guard. See [behavior, cost limits and fault evidence](council-topic-generation-2026-11-07.md).
+Existing stored resident prose and all-writer atomic invalidation remain separate.
+
 October 24 leadership-context update: extraction carries administrator notes
 from approved topics' existing appearances into the matching agenda item, so
 reanalysis can rebuild links after removing the current join rows. The notes

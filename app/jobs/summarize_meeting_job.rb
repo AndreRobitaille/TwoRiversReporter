@@ -29,7 +29,8 @@ class SummarizeMeetingJob < ApplicationJob
     # 1. Meeting-Level Summary (Minutes or Packet)
     generate_meeting_summary(meeting, ai_service, retrieval_service)
 
-    # 2. Topic-Level Summaries
+    # 2. Establish deterministic continuity before capturing topic dependencies.
+    Topics::UpdateContinuityJob.perform_now(meeting_id: meeting.id)
     generate_topic_summaries(meeting, ai_service, retrieval_service)
 
     # 3. Prune hollow topic appearances based on the new summary's
@@ -210,59 +211,18 @@ class SummarizeMeetingJob < ApplicationJob
       .where(agenda_item_topics: { agenda_item_id: meeting.agenda_items.substantive.select(:id) })
       .distinct
       .each do |topic|
-      # Retrieve context specific to the topic
-      query_builder = Topics::RetrievalQueryBuilder.new(topic, meeting)
-      query = query_builder.build_query
-
-      retrieved_chunks = retrieval_service.retrieve_topic_context(topic: topic, query_text: query, limit: 5, max_chars: 6000)
-      formatted_context = retrieval_service.format_topic_context(retrieved_chunks)
-
-      builder = Topics::SummaryContextBuilder.new(topic, meeting)
-      context_json = builder.build_context_json(kb_context_chunks: formatted_context)
-
-      analysis_json_str = ai_service.analyze_topic_summary(context_json, source: topic)
-
-      unless analysis_json_str.present?
-        Rails.logger.error("Empty response from analyze_topic_summary for Topic #{topic.id}")
-        next
-      end
-
-      # Parse safely for storage
-      analysis_json = begin
-        JSON.parse(analysis_json_str)
-      rescue JSON::ParserError
-        Rails.logger.error("Failed to parse topic summary analysis for Topic #{topic.id}")
-        {}
-      end
-
-      # Validate citations
-      analysis_json = validate_analysis_json(analysis_json, context_json[:citation_ids], context_json[:citation_references])
-
-      analysis_json["source_catalog"] = context_json[:source_catalog].deep_dup
-      markdown_content = ai_service.render_topic_summary(analysis_json.to_json, source: topic)
-
-      save_topic_summary(meeting, topic, markdown_content, analysis_json)
-
-      # Propagate resident impact score to topic
-      if analysis_json["resident_impact"].is_a?(Hash)
-        score = analysis_json["resident_impact"]["score"].to_i
-        topic.update_resident_impact_from_ai(score) if score.between?(1, 5)
-      end
+      summary = Topics::GenerateSummary.new(topic, meeting, ai_service: ai_service, retrieval_service: retrieval_service).call
+      next unless summary
 
       # Trigger full briefing generation
       Topics::GenerateTopicBriefingJob.perform_later(
         topic_id: topic.id,
         meeting_id: meeting.id
       )
+    rescue JSON::ParserError
+      Rails.logger.error("Failed to parse topic summary analysis for Topic #{topic.id}")
     end
   end
-
-  def validate_analysis_json(json, allowed_citation_ids, citation_references = {})
-    references = citation_references.slice(*Array(allowed_citation_ids).compact)
-    Citations::TopicAnalysis.copy_references!(json, references: references,
-      require_citations: %w[factual_record institutional_framing])
-  end
-
 
   def compute_framing(meeting, type)
     starts_at = meeting.starts_at
@@ -310,13 +270,6 @@ class SummarizeMeetingJob < ApplicationJob
     summary.save!
     enqueue_generated_image_job_for_meeting(summary)
     summary
-  end
-
-  def save_topic_summary(meeting, topic, content, generation_data)
-    summary = meeting.topic_summaries.find_or_initialize_by(topic: topic, summary_type: "topic_digest")
-    summary.content = content
-    summary.generation_data = generation_data
-    summary.save!
   end
 
   def participant_context_for(meeting)

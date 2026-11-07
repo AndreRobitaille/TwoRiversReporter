@@ -8,7 +8,7 @@ module Topics
     def build_query
       # 1. Canonical Name & Aliases
       names = [ @topic.canonical_name ]
-      names += @topic.topic_aliases.pluck(:name)
+      names += @topic.topic_aliases.order(:name).pluck(:name)
       names_str = names.uniq.join(" OR ")
 
       # 2. Recent Appearances (last 3, excluding current)
@@ -16,7 +16,7 @@ module Topics
         .joins(:agenda_item)
         .merge(AgendaItem.substantive)
         .where.not(meeting_id: @meeting.id)
-        .order(appeared_at: :desc)
+        .order(appeared_at: :desc, id: :desc)
         .limit(3)
         .map { |a| "#{a.body_name} on #{a.appeared_at.to_date}" }
         .join(", ")
@@ -27,6 +27,7 @@ module Topics
         .includes(:parent)
         .joins(:agenda_item_topics)
         .where(agenda_item_topics: { topic_id: @topic.id })
+        .order(:order_index, :id)
         .map(&:display_context_title)
         .join(", ")
 
