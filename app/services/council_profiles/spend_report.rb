@@ -9,7 +9,8 @@ module CouncilProfiles
       receipts = MinutesRequest.where(council_ai_reservation_id: ids).to_a +
         CampaignRequest.includes(:campaign_extraction).where(council_ai_reservation_id: ids).to_a +
         CampaignActionRequest.where(council_ai_reservation_id: ids).to_a +
-        CouncilIssueRequest.where(council_ai_reservation_id: ids).to_a
+        CouncilIssueRequest.where(council_ai_reservation_id: ids).to_a +
+        CouncilFormalRequest.where(council_ai_reservation_id: ids).to_a
       by_reservation = receipts.index_by(&:council_ai_reservation_id)
       groups = reservations.group_by { |reservation| stage_name(by_reservation[reservation.id]) }
       reserved = reservations.sum(&:reserved_microusd)
@@ -34,6 +35,7 @@ module CouncilProfiles
       when CampaignRequest then "campaign_#{receipt.campaign_extraction.purpose}"
       when CampaignActionRequest then "campaign_actions"
       when CouncilIssueRequest then "issue_updates"
+      when CouncilFormalRequest then "formal_records"
       else "unknown"
       end
     end

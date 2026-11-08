@@ -437,3 +437,19 @@ assertions below are candidate acceptance criteria based on the user's brief.
   [Shared issue matching checks](campaign-topic-matching-2026-11-08.md) cover the
   subsequent private match status, reasons, topic navigation and separate cost
   estimate. Reading these results does not enqueue work or authorize generation.
+
+## ADM-22 — Supply and correct a formal case record (P1)
+
+- **Start / role:** active administrator with a passkey and matching or recently
+  reauthenticated context; an actual underlying case record and publication extract.
+- **Action:** The Record → Formal Case Records → Add record or Correct record.
+  Verify the officials whose conduct is at issue, documented service concerned,
+  and text cleared for publication. Keep private editorial notes separate.
+- **Required outcome:** intake persists the editor's verification; routine source
+  processing still needs an explicit exact-request allowance. Unsupported record
+  types and unverified sources remain private. Prior completed analysis and its
+  source text remain inspectable; versions are scoped to their source.
+- **Next:** BG-10 → RES-10 publishes only known, unambiguous subjects. Correcting
+  source text removes stale events on later reads; title, private-note and service
+  attribution corrections reuse analysis. No ordinary reader can view or edit intake.
+- **Evidence:** [formal-record verification](council-formal-records-2026-11-08.md).

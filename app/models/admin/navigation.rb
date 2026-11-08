@@ -42,6 +42,8 @@ module Admin
                    description: "Governing bodies and the descriptions the AI reads."),
           Item.new(label: "Members", path_helper: :admin_members_path, controller: "members",
                    description: "Officials, aliases, votes, and attendance."),
+          Item.new(label: "Formal Case Records", path_helper: :admin_council_formal_sources_path, controller: "council_formal_sources",
+                   description: "Supply verified complaint, response and disposition records."),
           Item.new(label: "Knowledge Sources", path_helper: :admin_knowledge_sources_path, controller: "knowledge_sources",
                    description: "Background context retrieved during summarization."),
           Item.new(label: "Knowledge Search", path_helper: :admin_search_path, controller: "searches",

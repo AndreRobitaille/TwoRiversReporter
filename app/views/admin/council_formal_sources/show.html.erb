@@ -1,0 +1,39 @@
+<% content_for(:title) { "#{@source.title} - Formal record - Admin" } %>
+<% if flash[:notice] %>
+  <div class="flash flash--success" role="status"><%= flash[:notice] %></div>
+<% end %>
+<h1><%= @source.title %></h1>
+<p><%= @source.reviewing_body %> · <%= @source.case_reference %></p>
+<p><%= @source.eligible? ? "Verified formal source" : "Private source: not eligible for publication" %></p>
+<%= link_to "Correct record", edit_admin_council_formal_source_path(@source), class: "btn btn--secondary" %>
+<%= link_to "Source record", @source.source_url, class: "btn btn--secondary" %>
+<% if @review && !@review.current? %><p>Viewing an earlier or unpublished analysis. It is not used on the member page.</p><% end %>
+<% if @review %>
+  <h2>Processing</h2>
+  <p><%= @review.status.humanize %><% if @review.error_code %> · <%= @review.error_code.humanize %><% end %></p>
+  <% if @cost&.dig(:state) == "estimate" %>
+    <p>Conservative remaining request allowance: <%= number_to_currency(@cost.fetch(:remaining_cost_microusd) / 1_000_000.0, precision: 3) %>. This is not a charge or authorization.</p>
+  <% end %>
+  <% if @review.status == "completed" %>
+    <p><%= pluralize(@review.data.fetch("events").size, "dated event") %> retained. Identity and service validation still control public inclusion.</p>
+    <% if @review.data["formal_record"] == false %><p>The supplied extract did not establish an actual formal record. No case events will publish.</p><% end %>
+    <% @review.data.fetch("events").each do |event| %>
+      <div class="review-card">
+        <strong><%= event.fetch("occurred_on") %> · <%= CouncilProfiles::FormalRecords::LABELS.fetch(event.fetch("kind")) %></strong>
+        <p><%= event.fetch("subjects").join(", ") %></p>
+        <blockquote><%= event.fetch("quote") %></blockquote>
+      </div>
+    <% end %>
+  <% end %>
+<% else %>
+  <p>No analysis is prepared yet. Unverified records and non-case material stay private.</p>
+<% end %>
+<details><summary>Supplied source extract</summary><div class="detail-value detail-value--preserve"><%= @review&.context&.fetch("permitted_text") || @source.permitted_text %></div></details>
+<% if @source.private_notes.present? %><details><summary>Private editorial notes</summary><p><%= @source.private_notes %></p></details><% end %>
+<p><%= pluralize(@reviews.size, "retained analysis version") %></p>
+
+<ul>
+  <% @reviews.each do |review| %>
+    <li><%= link_to "#{review.created_at.strftime('%b %-d, %Y %H:%M')} · #{review.status.humanize}", admin_council_formal_source_path(@source, version: review.id) %></li>
+  <% end %>
+</ul>

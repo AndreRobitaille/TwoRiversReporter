@@ -1,0 +1,29 @@
+<% if @record_period.selectable.any? %>
+  <details class="member-peer-comparisons" id="formal-cases">
+    <summary>Formal complaints and findings</summary>
+    <% if @formal_cases.empty? %>
+      <p>No supported case records are included here. Coverage is incomplete.</p>
+    <% else %>
+      <% @formal_cases.each do |record| %>
+        <details class="member-campaign-context" data-formal-case>
+          <summary><%= record.fetch(:title) %></summary>
+          <p><%= record.fetch(:reviewing_body) %> · <%= record.fetch(:reference) %></p>
+          <% record.fetch(:rows).each do |row| %>
+            <% event, source = row.values_at(:event, :source) %>
+            <div class="member-campaign-position" data-formal-event="<%= event.fetch("kind") %>">
+              <strong><%= CouncilProfiles::FormalRecords::LABELS.fetch(event.fetch("kind")) %></strong>
+              <p><%= Date.iso8601(event.fetch("occurred_on")).strftime("%b %-d, %Y") %></p>
+              <details class="member-campaign-context">
+                <summary>Record and source</summary>
+                <% if source.policy_label.present? %><p><%= source.policy_label %></p><% end %>
+                <blockquote><%= event.fetch("quote") %></blockquote>
+                <%= link_to "Read the source record", source.source_url %>
+              </details>
+            </div>
+          <% end %>
+        </details>
+      <% end %>
+      <p>Coverage is incomplete. A complaint is an allegation; dismissal alone does not establish that every allegation was false.</p>
+    <% end %>
+  </details>
+<% end %>

@@ -159,6 +159,16 @@ module Ai
           response_format: { type: "json_object" }).merge(max_completion_tokens: MAX_CAMPAIGN_COMPLETION_TOKENS)
       end
 
+      def council_formal_parameters(context)
+        text = JSON.generate(context)
+        raise InputTooLargeError, "Formal source requires a bounded publication extract" if text.length > 60_000
+        template = PromptTemplate.find_by!(key: "extract_council_formal_records")
+        messages = [ { role: "system", content: template.system_role },
+          { role: "user", content: template.interpolate(context: text) } ]
+        build_chat_parameters(model: model_for_tier(template.model_tier), messages: messages,
+          response_format: { type: "json_object" }).merge(max_completion_tokens: MAX_CAMPAIGN_COMPLETION_TOKENS)
+      end
+
       def council_issue_parameters(context)
         text = JSON.generate(context)
         limit = if context.dig("source", "document_type") == "packet_pdf"

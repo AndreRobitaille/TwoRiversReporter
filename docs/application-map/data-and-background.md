@@ -483,6 +483,21 @@ and held before provider construction; no text is silently truncated.
 
 
 
+## BG-10 — Extract shared formal case events (P1)
+
+- **Start / data:** verified formal source with publication-cleared text, known
+  subject labels, populated prompt and an explicit exact-request spending run.
+- **Action:** source-save or existing nightly recovery prepares one retained
+  request for all subjects. Missing/expired allowance holds before transport.
+- **Required outcome:** dated procedural events carry exact passages; record type
+  constrains possible events. Policy text and ordinary criticism produce no case.
+  Identity/service checks apply on every read; unchanged input buys no new analysis.
+- **Failures / limits:** two malformed-response attempts; incomplete, uncertain
+  or oversized work holds. No automatic discovery of unsupported case websites,
+  no default live allowance and no conduct grade. Real-provider interpretation
+  accuracy is separate from deterministic contract tests.
+- **Evidence:** [formal-record verification](council-formal-records-2026-11-08.md).
+
 ## Configured recurring entry points
 
 These are strings in [config/recurring.yml](../../config/recurring.yml), not proof

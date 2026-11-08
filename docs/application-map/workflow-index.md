@@ -64,6 +64,7 @@ after the discovery baseline; the current index contains 59 application workflow
 | [ADM-19](admin-workflows.md#adm-19--change-public-access-mode-or-a-url-redirect-p0) | Change public access mode or a URL redirect | P0 |
 | [ADM-20](admin-workflows.md#adm-20--review-an-audit-event-after-a-sensitive-action-p1) | Review an audit event after a sensitive action | P1 |
 | [ADM-21](admin-workflows.md#adm-21--supply-and-correct-a-shared-campaign-article-p1) | Supply and correct a shared campaign article | P1 |
+| [ADM-22](admin-workflows.md#adm-22--supply-and-correct-a-formal-case-record-p1) | Supply and correct a formal case record | P1 |
 | [BG-01](data-and-background.md#bg-01--discoverupdate-an-event-and-preserve-cancellation-p1) | Discover/update an event and preserve cancellation | P1 |
 | [BG-02](data-and-background.md#bg-02--enrich-agendapacket-content-then-supersede-with-minutes-p0) | Enrich agenda/packet content, then supersede with minutes | P0 |
 | [BG-03](data-and-background.md#bg-03--add-recording-context-without-replacing-official-evidence-p0) | Add recording context without replacing official evidence | P0 |
@@ -71,8 +72,9 @@ after the discovery baseline; the current index contains 59 application workflow
 | [BG-05](data-and-background.md#bg-05--reconcile-current-rosters-without-rewriting-attendance-p1) | Reconcile current rosters without rewriting attendance | P1 |
 | [BG-06](data-and-background.md#bg-06--deliver-notifications-and-retire-expired-auth-evidence-p1) | Deliver notifications and retire expired auth evidence | P1 |
 | [BG-07](data-and-background.md#bg-07--refresh-crawler-verification-and-expire-diagnostics-p1) | Refresh crawler verification and expire diagnostics | P1 |
-| [BG-08](data-and-background.md#bg-08--extract-a-shared-campaign-article-within-a-spending-allowance-p1) | Extract a shared campaign article within a spending allowance | P1 |
-| [BG-09](data-and-background.md#bg-09--extract-shared-official-issue-milestones-p1) | Extract shared official issue milestones | P1 |
+| [BG-08](data-and-background.md#bg-08--extract-a-shared-campaign-source-within-a-spending-allowance-p1) | Extract a shared campaign source within a spending allowance | P1 |
+| [BG-09](data-and-background.md#bg-09--extract-shared-official-issue-milestones-and-actions-p1) | Extract shared official issue milestones and actions | P1 |
+| [BG-10](data-and-background.md#bg-10--extract-shared-formal-case-events-p1) | Extract shared formal case events | P1 |
 
 See [maintenance and QA](maintenance-and-qa.md) for the later coverage/effectiveness
 record schema and [verification register](verification-register.md) for unresolved

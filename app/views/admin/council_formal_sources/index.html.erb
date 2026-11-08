@@ -1,0 +1,17 @@
+<h1>Formal case records</h1>
+<p>Supply underlying records for an actual formal case. Policy discussions and ordinary criticism do not establish a case.</p>
+<%= link_to "Add record", new_admin_council_formal_source_path, class: "btn btn--primary" %>
+<div class="table-container">
+  <table class="table">
+    <thead><tr><th>Record</th><th>Case</th><th>Publication</th></tr></thead>
+    <tbody>
+      <% @sources.each do |source| %>
+        <tr>
+          <td><%= link_to source.title, admin_council_formal_source_path(source) %></td>
+          <td><%= source.case_reference %></td>
+          <td><%= source.eligible? ? "Verified source" : "Private / not eligible" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

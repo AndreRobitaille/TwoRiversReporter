@@ -75,6 +75,10 @@ concurrent reservation, budget-paused retries and retained uncertain amounts.
 The [November 8 monthly council cost checks](council-monthly-costs-2026-11-08.md)
 add an explicit monthly ceiling across runs/days and a read-only stage usage report.
 
+The [November 8 formal-record checks](council-formal-records-2026-11-08.md)
+record verified source intake, shared dated events, compact case disclosures,
+private-note exclusion, service attribution and bounded spending.
+
 The [November 8 registered live-source checks](council-live-sources-2026-11-08.md)
 record new-source triggers, existing nightly recovery and explicitly scoped
 future processing under shared monthly spending limits.

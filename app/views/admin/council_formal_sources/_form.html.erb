@@ -1,0 +1,44 @@
+<%= form_with model: [:admin, source] do |form| %>
+  <% if source.errors.any? %><div class="flash flash--danger" role="alert"><%= source.errors.full_messages.to_sentence %></div><% end %>
+  <% { title: "Short public case title", case_reference: "Case reference (reuse for later records)", reviewing_body: "Receiving or reviewing body", policy_label: "Applicable policy and version, if established" }.each do |field, label| %>
+    <div class="form-group">
+      <%= form.label field, label, class: "form-label" %>
+      <%= form.text_field field, class: "form-input", required: field != :policy_label %>
+    </div>
+  <% end %>
+  <div class="form-group">
+    <%= form.label :source_url, "Public source record link", class: "form-label" %>
+    <%= form.url_field :source_url, class: "form-input", required: true %>
+  </div>
+  <div class="form-group">
+    <%= form.label :record_kind, "Record type", class: "form-label" %>
+    <%= form.select :record_kind, CouncilFormalSource::KINDS.map { |kind| [kind.humanize, kind] }, {}, class: "form-select" %>
+  </div>
+  <div class="form-group">
+    <%= form.label :published_on, "Record publication date", class: "form-label" %>
+    <%= form.date_field :published_on, class: "form-input", required: true %>
+  </div>
+  <div class="form-group">
+    <%= form.label :subject_names_text, "Officials the case concerns (one exact subject label per line)", class: "form-label" %>
+    <%= form.text_area :subject_names_text, rows: 3, class: "form-textarea", required: true %>
+    <p class="text-sm text-muted">List the officials whose conduct is at issue, using their labels in the record. Keep complainants, witnesses and reviewers out of this list. Unknown or ambiguous identities remain unpublished.</p>
+  </div>
+  <div class="form-group">
+    <%= form.label :service_period_keys, "Documented Council service this case concerns", class: "form-label" %>
+    <%= form.select :service_period_keys, CouncilServicePeriod.distinct.order(:period_key).pluck(:period_key), {}, multiple: true, class: "form-select" %>
+    <p class="text-sm text-muted">A later appeal can concern an earlier term. Verify the connection to that service; do not use the publication date as a substitute.</p>
+  </div>
+  <div class="form-group">
+    <%= form.label :permitted_text, "Source extract cleared for publication", class: "form-label" %>
+    <%= form.text_area :permitted_text, rows: 14, class: "form-textarea", required: true %>
+    <p class="text-sm text-muted">Preserve dates, official subject labels, procedural meaning and qualifications. Omit unnecessary complainant identities, addresses and contact details. Supported passages may appear publicly.</p>
+  </div>
+  <div class="form-group">
+    <%= form.label :private_notes, "Private editorial notes (never sent to AI or shown publicly)", class: "form-label" %>
+    <%= form.text_area :private_notes, rows: 3, class: "form-textarea" %>
+  </div>
+  <div class="form-group"><label><%= form.check_box :active %> Include this source when eligible</label></div>
+  <div class="form-group"><label><%= check_box_tag :verified, "1", false %> I checked the underlying formal record, the officials and Council service involved, and the text cleared for publication.</label></div>
+  <%= form.submit "Save record", class: "btn btn--primary" %>
+  <%= link_to "Cancel", admin_council_formal_sources_path, class: "btn btn--secondary" %>
+<% end %>
