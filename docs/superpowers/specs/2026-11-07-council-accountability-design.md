@@ -37,6 +37,13 @@ and sequencing of the more detailed proposals below.
   meeting/source navigation, and honest coverage, followed by evidenced service
   periods and campaign enrichment. Show missing campaign material as a gap;
   do not delay the first useful page for it or imply a complete term denominator.
+- The default Featured votes view must paginate as well as All recorded votes.
+  Keep procedural decisions when the recorded vote is not unanimous approval;
+  omit routine procedural motions only when passed with every recorded attendee
+  voting yes. Exclude absences from that test; abstentions and recusals are not
+  affirmative votes. Apply the rule even when a procedural motion is associated
+  with an important topic. This uses recorded votes, not an inferred complete
+  attendance denominator. Keep the unfiltered view available for inspection.
 - A correction is entered once, retained, and reflected in the affected record
   and implemented profile views. Reuse existing refresh paths for known
   dependents. Defer further generalized withdrawal cascades, speculative race

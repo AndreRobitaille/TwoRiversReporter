@@ -68,6 +68,11 @@
         <% if @show_all_votes %>
           <%= render "recorded_votes" %>
         <% else %>
+          <p class="member-recorded-coverage">Featured votes leave out routine procedural motions approved by everyone in the recorded roll call. Absences do not count as opposition. The site's record may omit meetings or votes.</p>
+          <% if @pagy.in.positive? %>
+            <p class="member-recorded-count"><%= @pagy.from %>–<%= @pagy.to %> of <%= @pagy.count %> featured decisions · Newest pages first, grouped by topic</p>
+          <% end %>
+          <%= render "vote_pagination" %>
           <% if @topic_groups.any? %>
             <% @topic_groups.each do |group| %>
               <div class="member-topic-group">
@@ -79,7 +84,7 @@
                     <div class="member-vote-row">
                       <div class="member-vote-motion">
                         <span class="member-vote-date"><%= vote.motion.meeting.starts_at&.strftime("%b %-d, %Y") %></span>
-                        <%= link_to vote_context(vote), meeting_path(vote.motion.meeting) %>
+                        <%= link_to vote.motion.description.presence || vote_context(vote), meeting_path(vote.motion.meeting) %>
                       </div>
                       <div class="member-vote-result">
                         <span class="vote-value <%= vote_color_class(vote.value) %>"><%= vote.value.titleize %></span>
@@ -93,16 +98,16 @@
           <% end %>
 
           <% if @other_votes.any? %>
-            <details class="member-other-votes">
+            <details class="member-other-votes" open>
               <summary>Other Votes (<%= @other_votes.size %>)</summary>
-              <p class="member-other-votes-desc">Additional votes outside the featured topics. See all recorded votes for procedural decisions.</p>
+              <p class="member-other-votes-desc">Additional decisions outside the topics above, including procedural votes that were not unanimously approved.</p>
               <div class="member-other-votes-list">
                 <% @other_votes.each do |vote| %>
                   <div class="member-vote-row member-vote-row--compact">
                     <div class="member-vote-motion">
                       <span class="member-vote-date"><%= vote.motion.meeting.starts_at&.strftime("%b %-d, %Y") %></span>
                       <span class="member-vote-body"><%= vote.motion.meeting.body_name %></span>
-                      <%= link_to vote_context(vote), meeting_path(vote.motion.meeting) %>
+                      <%= link_to vote.motion.description.presence || vote_context(vote), meeting_path(vote.motion.meeting) %>
                     </div>
                     <div class="member-vote-result">
                       <span class="vote-value <%= vote_color_class(vote.value) %>"><%= vote.value.titleize %></span>
@@ -115,8 +120,14 @@
           <% end %>
 
           <% if @topic_groups.empty? && @other_votes.empty? %>
-            <p class="section-empty">No featured votes found for this official. Other decisions may appear in all recorded votes.</p>
+            <% if @pagy.count.zero? %>
+              <p class="section-empty">No featured votes found for this official. Other decisions may appear in all recorded votes.</p>
+            <% else %>
+              <p class="section-empty">No featured votes on this page.</p>
+              <%= link_to "Return to the newest votes", member_path(@member, anchor: "voting-record") %>
+            <% end %>
           <% end %>
+          <%= render "vote_pagination" %>
         <% end %>
       <% end %>
     <% end %>

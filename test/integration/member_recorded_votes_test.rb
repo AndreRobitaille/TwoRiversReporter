@@ -60,6 +60,59 @@ class MemberRecordedVotesTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", member_path(@member, votes: "all", anchor: "voting-record"), text: "Return to the newest votes"
   end
 
+  test "featured pages retain older substantive votes and omit unanimously approved procedural votes" do
+    votes = 26.times.map { |index| record_vote("Substantive decision #{index}") }
+    routine = record_vote("Accept consent agenda")
+    routine.motion.votes.create!(member: Member.create!(name: "Absent member"), value: "absent")
+
+    get member_path(@member)
+    assert_select ".member-vote-row", count: 25
+    assert_not_includes response.body, routine.motion.description
+    assert_select ".member-vote-motion a", text: votes.first.motion.description, count: 0
+    assert_select ".member-vote-pages a[href=?]", member_path(@member, page: 2, anchor: "voting-record"), text: "Older votes", count: 2
+
+    get member_path(@member, page: 2)
+    assert_select ".member-vote-row", count: 1
+    assert_includes response.body, votes.first.motion.description
+    assert_select ".member-vote-views a[aria-current='page']", text: "Featured votes"
+    assert_select ".member-vote-pages a[href=?]", member_path(@member, page: 1, anchor: "voting-record"), text: "Newer votes", count: 2
+
+    SiteSetting.create!(access_mode: "gated", singleton_guard: 0)
+    get member_path(@member, page: 2)
+    assert_not_includes response.body, votes.first.motion.description
+    assert_select ".member-vote-pages", count: 0
+  end
+
+  test "featured procedural decisions use everyone's recorded vote even when linked to important topics" do
+    item = @meeting.agenda_items.create!(title: "Manager selection")
+    item.agenda_item_topics.create!(topic: Topic.create!(name: "manager search", status: "approved", resident_impact_score: 4))
+    routine = record_vote("Convene in closed session for interviews", agenda_item: item)
+    get member_path(@member)
+    assert_select ".member-vote-row", count: 0
+
+    other = Member.create!(name: "Other attending member")
+    other_vote = routine.motion.votes.create!(member: other, value: "no")
+    %w[no abstain recused].each do |value|
+      other_vote.update!(value: value)
+      get member_path(@member)
+      assert_select ".member-vote-row", count: 1
+      assert_includes response.body, routine.motion.description
+    end
+
+    other_vote.update!(value: "yes")
+    get member_path(@member)
+    assert_select ".member-vote-row", count: 0
+
+    routine.update!(value: "no")
+    other_vote.update!(value: "no")
+    routine.motion.update!(outcome: "failed")
+    get member_path(@member)
+    assert_select ".member-vote-row", count: 1
+
+    get member_path(@member, votes: "all")
+    assert_select "#recorded-vote-#{routine.id}"
+  end
+
   test "gated audience changes withhold the entire recorded list and later pages" do
     vote = record_vote("Authorize the distinctive harbor assessment")
     get member_path(@member, votes: "all")
