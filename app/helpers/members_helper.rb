@@ -22,6 +22,7 @@ module MembersHelper
     when "no" then "Voted no"
     when "abstain" then "Abstained"
     when "absent" then "Absent"
+    when "recused" then "Recused"
     else "Vote not recorded"
     end
   end

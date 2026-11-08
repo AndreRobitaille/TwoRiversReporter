@@ -95,6 +95,15 @@ class MemberProfileLayoutTest < ActionDispatch::IntegrationTest
     assert_select "[data-campaign-vote='#{record.id}']", text: /#{Regexp.escape(record.motion.description)}/
   end
 
+  test "a recorded recusal stays distinct from a missing vote in the issue summary" do
+    record = activity_vote(date: Date.new(2025, 9, 15), value: "recused", outcome: "passed")
+    get member_path(@jordan)
+    assert_response :success
+    assert_select ".member-campaign-actions strong", text: "Recused"
+    assert_select ".member-campaign-actions", text: /Vote not recorded/, count: 0
+    assert_select "[data-campaign-vote='#{record.id}']", text: /Jordan Example: Recused/
+  end
+
   test "repeated statements share issue navigation without losing qualifications or source evidence" do
     data = campaign_response_data
     answer = data.fetch("participants").first.fetch("answers").first

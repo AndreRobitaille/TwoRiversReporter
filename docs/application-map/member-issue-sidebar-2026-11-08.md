@@ -48,7 +48,7 @@ CHROME_BIN=/usr/bin/chromium bin/rails test \
 bin/rubocop
 ```
 
-Results: **37 application tests / 414 assertions** and **5 browser journeys /
+Results: **38 application tests / 420 assertions** and **5 browser journeys /
 155 assertions**, no failures, errors or skips; **780 Ruby files**, no offenses.
 The first browser attempt used a mismatched installed Chrome/driver and ran zero
 assertions; selecting the existing Chromium binary resolved the environment
@@ -73,6 +73,12 @@ The utility subject test failed against the old generic-adoption display. An
 additional rendered-text assertion exposed double-escaped quote entities in
 title excerpts; using plain-string truncation fixed it while leaving ordinary
 ERB escaping intact. The full focused suite passed after restoration/correction.
+
+Automatic review of `d0debdb` found that a recorded recusal was mislabeled as
+missing in the compact action. An HTTP regression first failed with Vote not
+recorded, then passed after adding the explicit Recused label. The expanded
+record already retained the recusal. The full focused application suite and
+RuboCop passed again after this one-line display correction.
 
 ## Real-data verification and limits
 
