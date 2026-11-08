@@ -22,7 +22,7 @@ module Campaigns
       parameters = stage.parameters.deep_symbolize_keys
       response = Ai::OpenAiService.new.extract_campaign_source(parameters: parameters,
         request_recorder: CouncilProfiles::RequestRecorder.new(stage))
-      data = ExtractedStatements.new(version.body).parse(response)
+      data = ExtractedStatements.new(version.body, speaker_segments: version.prepared_transcript["segments"]).parse(response)
       stage.update!(status: "completed", data: data, completed_at: Time.current)
       stage
     rescue CouncilProfiles::ReserveAiSpend::Paused => e

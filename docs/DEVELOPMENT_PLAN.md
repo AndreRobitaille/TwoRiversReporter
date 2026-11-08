@@ -1004,6 +1004,24 @@ result. Establish the relevant term's coverage and review non-vote activity befo
 making the absence finding; an empty match list or the current partial backfill
 does not establish it. Broad aspirations are not specific promises.
 
+Prepared forum requests retain the complete supplied transcript in one shared
+analysis for all candidates. The initial whole-source boundary is 100,000
+characters; forums over 50,000 characters declare a 32,000-token response ceiling
+to preserve full answers and their conditions. Articles retain their 50,000/8,000
+limits. These are request boundaries, not spending authorization or proof of
+provider accuracy: each paid request still needs an exact estimate and approved
+allowance covering its actual output ceiling. Oversized sources and incomplete
+responses remain retained without publishing partial results. See
+[full-forum verification](application-map/full-campaign-forums-2026-11-08.md).
+
+The real forum pilot also fixes the campaign response contract: answers require
+literal `question`, `passage`, and `statements` keys, with reviewed speaker labels
+used for attribution. Invalid response structure is retained as failed work,
+not a completed extraction. Shared issue-matching context is bounded at 150,000
+characters to accommodate a complete forum's statements and the existing topic
+catalog; the separate request budget and 8,000-token response ceiling still apply.
+See [pilot validation](application-map/campaign-forum-pilot-2026-11-08.md).
+
 The proposed page centers on **what they said → what they did → what happened**,
 with a term selector, cited overview, public-issue timelines, attendance, full
 decision history, peer/staff comparisons, formal-case history, and source coverage.

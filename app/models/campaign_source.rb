@@ -3,8 +3,8 @@ require "uri"
 
 # Private source intake. Processing happens after the source is committed.
 class CampaignSource < ApplicationRecord
-  SNAPSHOT_FIELDS = %w[title source_url publisher published_on election_on coverage coverage_notes body].freeze
-  COVERAGES = { "full_article" => "Complete article", "selected_excerpts" => "Selected excerpts" }.freeze
+  SNAPSHOT_FIELDS = %w[title source_url publisher published_on election_on coverage coverage_notes body prepared_transcript].freeze
+  COVERAGES = { "full_article" => "Complete article", "selected_excerpts" => "Selected excerpts", "full_transcript" => "Complete prepared transcript" }.freeze
 
   has_many :versions, class_name: "CampaignSourceVersion", dependent: :restrict_with_exception
   attr_accessor :submitted_by
@@ -13,10 +13,12 @@ class CampaignSource < ApplicationRecord
   normalizes :body, with: ->(value) { value.gsub(/\r\n?/, "\n").strip }
   normalizes :coverage_notes, with: ->(value) { value.strip.presence }
   validates :title, :source_url, :publisher, :election_on, :body, presence: true
+  validates :published_on, presence: true, if: :forum?
   validates :source_url, uniqueness: true
   validates :coverage, inclusion: { in: COVERAGES.keys }
   validates :body, length: { maximum: 200_000 }
   validate :publisher_url
+  validate :transcript_coverage
   after_save :retain_version
   after_commit :queue_processing, on: %i[create update]
 
@@ -24,14 +26,26 @@ class CampaignSource < ApplicationRecord
     versions.find_by(version_key: version_key)
   end
 
+  def forum?
+    prepared_transcript.present?
+  end
+
   private
+
+  def transcript_coverage
+    if forum? != (coverage == "full_transcript")
+      errors.add(:coverage, "must describe the supplied article or prepared transcript")
+    end
+  end
 
   def queue_processing
     ExtractCampaignSourceJob.perform_later(id) unless current_version.extraction
   end
 
   def version_key
-    Digest::SHA256.hexdigest(JSON.generate([ id, attributes.slice(*SNAPSHOT_FIELDS) ]))
+    snapshot = attributes.slice(*SNAPSHOT_FIELDS)
+    snapshot.delete("prepared_transcript") unless forum?
+    Digest::SHA256.hexdigest(JSON.generate([ id, snapshot ]))
   end
 
   def retain_version

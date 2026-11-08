@@ -24,7 +24,7 @@
   </div>
   <div class="form-group">
     <%= form.label :coverage, "Text included", class: "form-label" %>
-    <%= form.select :coverage, CampaignSource::COVERAGES.map { |value, label| [label, value] }, {}, class: "form-select" %>
+    <%= form.select :coverage, CampaignSource::COVERAGES.except("full_transcript").map { |value, label| [label, value] }, {}, class: "form-select" %>
   </div>
   <div class="form-group">
     <%= form.label :coverage_notes, "Missing material or other context", class: "form-label" %>
