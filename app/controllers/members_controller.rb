@@ -28,6 +28,7 @@ class MembersController < ApplicationController
 
     @show_all_votes = params[:votes] == "all"
     unless gated_for_visitor?
+      @peer_comparisons = ResidentContent::PeerVotes.new(@member, attendance: @council_attendance).summaries
       if @show_all_votes
         @pagy, @recorded_votes = pagy(:offset, profile.votes, limit: 25)
       else
@@ -35,5 +36,20 @@ class MembersController < ApplicationController
         @topic_groups, @other_votes = profile.vote_groups(featured_votes)
       end
     end
+  end
+
+  def compare
+    @member = Member.find(params[:id])
+    @peer = Member.find(params[:peer_id])
+    raise ActiveRecord::RecordNotFound if @peer == @member
+    @record_period = ResidentContent::CouncilPeriod.new(@member, key: params[:term])
+    @show_divided = params[:subset] == "divided"
+    unless gated_for_visitor?
+      attendance = ResidentContent::CouncilAttendance.new(@member, period: @record_period.selected).call
+      @comparison = ResidentContent::PeerVotes.new(@member, attendance: attendance).compare(@peer)
+      rows = @comparison.fetch(:rows).select { |row| row.fetch(:excluded).nil? && (!@show_divided || row.fetch(:divided)) }
+      @pagy, @comparison_rows = pagy(:offset, rows, limit: 25)
+    end
+    respond_to { |format| format.html }
   end
 end

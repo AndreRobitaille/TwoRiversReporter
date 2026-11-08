@@ -208,6 +208,11 @@ status below does not imply complete coverage of those workflows.
 
 ## RES-10 — Inspect an official's attendance and voting record (P1)
 
+- **November 8 peer votes:** selected terms offer a closed alphabetical comparison
+  table with inspectable shared yes/no fractions and a separate divided subset.
+  The detail route preserves the term through pagination and source navigation,
+  shows exclusions and keeps official outcomes separate. Corrected facts recalculate
+  on subsequent reads without AI. See [peer-vote evidence](council-peer-votes-2026-11-08.md).
 - **November 8 period selection:** the Council record selector defaults to the
   latest usable evidenced service period, scopes attendance and votes to its
   eligible Council inventory, and preserves the period through view switches

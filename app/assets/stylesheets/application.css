@@ -5892,6 +5892,60 @@ th.sortable-header:hover {
   margin-bottom: var(--space-2);
 }
 
+.member-peer-comparisons,
+.member-comparison-method {
+  margin: var(--space-6) 0;
+}
+
+.member-peer-comparisons > summary,
+.member-comparison-method > summary {
+  color: var(--color-primary);
+  cursor: pointer;
+  padding: var(--space-3) 0;
+  font-weight: var(--font-weight-semibold);
+}
+
+.member-peer-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.member-peer-table th,
+.member-peer-table td {
+  text-align: left;
+  padding: var(--space-3) var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.member-comparison-ballots {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+}
+
+.member-comparison-votes .member-vote-motion > a,
+.member-comparison-votes .member-vote-split {
+  display: block;
+  margin-top: var(--space-2);
+}
+
+.member-comparison-votes .member-vote-motion > a {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.member-comparison-wording {
+  margin-top: var(--space-2);
+  font-size: var(--font-size-sm);
+}
+
+.member-comparison-wording summary {
+  cursor: pointer;
+  color: var(--color-text-secondary);
+}
+
 .member-vote-views [aria-current="page"] {
   background: var(--color-primary);
   color: var(--color-surface);

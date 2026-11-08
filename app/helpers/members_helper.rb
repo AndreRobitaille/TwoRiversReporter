@@ -21,6 +21,10 @@ module MembersHelper
     period.ended_on ? "#{start_date} – #{period.ended_on.strftime('%b %-d, %Y')}" : "Since #{start_date}"
   end
 
+  def peer_vote_fraction(same, compared)
+    compared.zero? ? "Not available" : "#{same} of #{compared}"
+  end
+
   def vote_context(vote)
     # Prefer agenda item title over motion description — it's what the vote was actually about
     vote.motion.agenda_item&.title || vote.motion.description
@@ -49,7 +53,11 @@ module MembersHelper
   end
 
   def campaign_decision_title(vote)
-    title = (vote_context(vote).presence || vote.motion.description).to_s.sub(/\A\d{2}-\d{3}\s+/, "")
+    member_decision_title(vote.motion)
+  end
+
+  def member_decision_title(motion)
+    title = (motion.agenda_item&.title.presence || motion.description).to_s.sub(/\A\d{2}-\d{3}\s+/, "")
     # Application headings repeat the docket and applicant address. Keep the
     # requested assistance and named applicant; the full title stays in details.
     if application = title.match(/\AApplication for (.+?) by (.+?), \d.*\z/i)

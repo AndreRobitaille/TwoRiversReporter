@@ -142,6 +142,7 @@
           <% end %>
         <% end %>
       </section>
+      <%= render "peer_comparisons" unless gated_for_visitor? %>
     </div>
     <% if has_campaign %>
       <aside class="member-profile-sidebar" aria-labelledby="campaign-record-heading">
