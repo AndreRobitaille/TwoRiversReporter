@@ -3,7 +3,16 @@ require "base64"
 module Ai
   class OpenAiService
     MAX_MINUTES_CHARS = 50_000
+    MAX_MINUTES_COMPLETION_TOKENS = 4_000
     class InputTooLargeError < StandardError; end
+    class IncompleteResponseError < StandardError
+      attr_reader :finish_reason
+
+      def initialize(finish_reason)
+        @finish_reason = finish_reason
+        super("Minutes response did not finish normally: #{finish_reason || 'missing finish reason'}")
+      end
+    end
 
     MODEL_TIERS = %w[heavy default lightweight].freeze
     REASONING_EFFORTS = %w[none low].freeze
@@ -120,7 +129,7 @@ module Ai
       render_meeting_summary(text, plan_json, "minutes")
     end
 
-    def extract_votes(text, agenda_items_text: "", source: nil, template: nil)
+    def extract_votes(text, agenda_items_text: "", source: nil, template: nil, request_recorder: nil)
       raise InputTooLargeError, "Minutes require a reviewed partition" if text.length > MAX_MINUTES_CHARS
       template ||= PromptTemplate.find_by!(key: "extract_votes")
       system_role = template.system_role
@@ -133,7 +142,8 @@ module Ai
         { role: "user", content: prompt }
       ].compact
 
-      content, duration_ms = call_api(model: model, messages: messages, temperature: 0.1, response_format: { type: "json_object" })
+      content, duration_ms = call_api(model: model, messages: messages, temperature: 0.1, response_format: { type: "json_object" },
+        max_completion_tokens: MAX_MINUTES_COMPLETION_TOKENS, request_recorder: request_recorder)
 
       record_prompt_run(
         template_key: "extract_votes",
@@ -150,7 +160,7 @@ module Ai
       content
     end
 
-    def extract_committee_members(text, source: nil, template: nil)
+    def extract_committee_members(text, source: nil, template: nil, request_recorder: nil)
       raise InputTooLargeError, "Minutes require a reviewed partition" if text.length > MAX_MINUTES_CHARS
       template ||= PromptTemplate.find_by!(key: "extract_committee_members")
       system_role = template.system_role
@@ -163,7 +173,8 @@ module Ai
         { role: "user", content: prompt }
       ].compact
 
-      content, duration_ms = call_api(model: model, messages: messages, response_format: { type: "json_object" })
+      content, duration_ms = call_api(model: model, messages: messages, response_format: { type: "json_object" },
+        max_completion_tokens: MAX_MINUTES_COMPLETION_TOKENS, request_recorder: request_recorder)
 
       record_prompt_run(
         template_key: "extract_committee_members",
@@ -851,22 +862,29 @@ module Ai
 
     # Production and evaluator calls share the same effective parameter rules,
     # including suppression of unsupported temperature values.
-    def call_api(model:, messages:, temperature: nil, response_format: nil, reasoning_effort: nil)
-      result = perform_chat(model:, messages:, temperature:, response_format:, reasoning_effort:)
+    def call_api(model:, messages:, temperature: nil, response_format: nil, reasoning_effort: nil, max_completion_tokens: nil, request_recorder: nil)
+      result = perform_chat(model:, messages:, temperature:, response_format:, reasoning_effort:, max_completion_tokens:, request_recorder:)
       [ result.fetch(:content), result.fetch(:duration_ms) ]
     end
 
-    def perform_chat(model:, messages:, temperature: nil, response_format: nil, reasoning_effort: nil)
+    def perform_chat(model:, messages:, temperature: nil, response_format: nil, reasoning_effort: nil, max_completion_tokens: nil, request_recorder: nil)
       params = self.class.build_chat_parameters(
         model:, messages:, temperature:, response_format:, reasoning_effort:
       )
+      params[:max_completion_tokens] = max_completion_tokens if max_completion_tokens
+      request_recorder&.start!(params)
       start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       response = @client.chat(parameters: params)
       duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
+      request_recorder&.received!(response, duration_ms: duration_ms)
+
+      finish_reason = response.dig("choices", 0, "finish_reason")
+      if max_completion_tokens && finish_reason != "stop"
+        raise IncompleteResponseError, finish_reason
+      end
 
       content = response.dig("choices", 0, "message", "content")
       if content.nil?
-        finish_reason = response.dig("choices", 0, "finish_reason")
         raise EmptyResponseError, "OpenAI returned empty content (finish_reason: #{finish_reason})"
       end
 
@@ -878,8 +896,9 @@ module Ai
         usage: self.class.usage_from(response),
         request_parameters: params.except(:messages)
       }
-    rescue Faraday::Error => e
-      Rails.logger.error("OpenAI API error: #{e.class} — #{e.message}")
+    rescue StandardError => e
+      request_recorder&.uncertain!(e)
+      Rails.logger.error("OpenAI API error: #{e.class} — #{e.message}") if e.is_a?(Faraday::Error)
       raise
     end
 

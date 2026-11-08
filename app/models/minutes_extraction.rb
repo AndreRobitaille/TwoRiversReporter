@@ -5,11 +5,12 @@ class MinutesExtraction < ApplicationRecord
   belongs_to :meeting, optional: true
   belongs_to :meeting_document_text_version, optional: true
   has_many :council_decision_observations, dependent: :restrict_with_exception
+  has_many :requests, class_name: "MinutesRequest", dependent: :restrict_with_exception
   attr_readonly :original_meeting_id, :meeting_document_text_version_id, :kind,
     :input_key, :source_key, :input_manifest, :source_text
 
   validates :kind, inclusion: { in: KINDS }
-  validates :status, inclusion: { in: %w[pending running completed failed uncertain oversized] }
+  validates :status, inclusion: { in: %w[pending running completed failed uncertain oversized incomplete] }
   validates :input_key, uniqueness: true, format: { with: /\A[0-9a-f]{64}\z/ }
   validates :source_key, format: { with: /\A[0-9a-f]{64}\z/ }
   validates :data, presence: true, if: -> { status == "completed" }

@@ -44,11 +44,16 @@ module Minutes
 
       begin
         service = Ai::OpenAiService.new
+        recorder = RequestRecorder.new(@stage)
         response = if @kind == "votes"
-          service.extract_votes(@input.text, agenda_items_text: @input.agenda_text, source: @meeting, template: @input.template(@kind))
+          service.extract_votes(@input.text, agenda_items_text: @input.agenda_text, source: @meeting, template: @input.template(@kind), request_recorder: recorder)
         else
-          service.extract_committee_members(@input.text, source: @meeting, template: @input.template(@kind))
+          service.extract_committee_members(@input.text, source: @meeting, template: @input.template(@kind), request_recorder: recorder)
         end
+      rescue Ai::OpenAiService::IncompleteResponseError => e
+        @stage.update!(status: "incomplete", error_code: e.finish_reason || "missing_finish_reason")
+        stamp("needs_review")
+        return
       rescue StandardError => e
         # A transport failure may already have been billed. Do not auto-redrive
         # uncertain requests; #238 supplies the durable spend/recovery contract.

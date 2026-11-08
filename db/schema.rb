@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_08_040000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_08_050000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -568,6 +568,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_040000) do
     t.index [ "votes_extraction_id" ], name: "index_minutes_publications_on_votes_extraction_id"
   end
 
+  create_table "minutes_requests", force: :cascade do |t|
+    t.bigint "minutes_extraction_id", null: false
+    t.integer "attempt", null: false
+    t.string "status", null: false
+    t.jsonb "messages", null: false
+    t.jsonb "request_parameters", null: false
+    t.string "provider_response_id"
+    t.string "response_model"
+    t.string "finish_reason"
+    t.jsonb "usage"
+    t.text "response_body"
+    t.string "error_class"
+    t.integer "duration_ms"
+    t.datetime "started_at", null: false
+    t.datetime "finished_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "minutes_extraction_id", "attempt" ], name: "index_minutes_requests_on_minutes_extraction_id_and_attempt", unique: true
+    t.index [ "minutes_extraction_id" ], name: "index_minutes_requests_on_minutes_extraction_id"
+    t.check_constraint "attempt > 0", name: "minutes_requests_positive_attempt"
+  end
+
   create_table "motions", force: :cascade do |t|
     t.bigint "agenda_item_id"
     t.datetime "created_at", null: false
@@ -1048,6 +1070,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_040000) do
   add_foreign_key "minutes_publications", "meetings", on_delete: :nullify
   add_foreign_key "minutes_publications", "minutes_extractions", column: "attendance_extraction_id"
   add_foreign_key "minutes_publications", "minutes_extractions", column: "votes_extraction_id"
+  add_foreign_key "minutes_requests", "minutes_extractions"
   add_foreign_key "motions", "agenda_items"
   add_foreign_key "motions", "council_decision_observations", column: "decision_observation_id"
   add_foreign_key "motions", "meetings"

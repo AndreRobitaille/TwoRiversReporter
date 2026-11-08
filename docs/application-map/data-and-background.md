@@ -145,6 +145,14 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   transport. See [parallel, HTTP and fault evidence](council-fact-publication-2026-11-07.md).
   Decision identities are covered by the later slice below; explicit corrections
   and #238's dollar ledger remain open.
+- **November 7 minutes request accounting:** the actual vote/attendance transport
+  now receives a 4,000 completion-token limit and a durable per-attempt receipt
+  committed before dispatch. Usage, response model/ID, finish reason and partial
+  output remain inspectable independently of PromptRun pruning. Non-stop responses
+  are held without automatic retry or fact publication; unknown outcomes retain
+  their receipt. See [request boundaries and fault evidence](minutes-request-receipts-2026-11-07.md).
+  Input-token estimation and request/run/daily dollar reservations remain open;
+  paid enrichment is not enabled by these guards.
 - **November 7 passage locations:** new vote stages check model-supplied excerpts
   against retained pages with code. Unique passages retain exact character ranges
   and page hashes, including across page breaks; unavailable/ambiguous evidence

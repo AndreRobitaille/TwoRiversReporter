@@ -62,6 +62,11 @@ The [November 7 minutes passage-location checks](council-evidence-locations-2026
 record pinned source passages, ambiguity handling and the boundary between
 locating an excerpt and validating its interpretation.
 
+The [November 7 minutes request-receipt checks](minutes-request-receipts-2026-11-07.md)
+cover bounded provider output, durable attempt/usage records, partial-response
+holds, process/transport interruption and duplicate concurrent dispatch prevention.
+Dollar reservations and paid-pilot authorization remain separate requirements.
+
 The [November 7 stable decision foundation](council-decision-identities-2026-11-07.md)
 records immutable observations, conservative identity correspondence and
 withdrawal of superseded current references.

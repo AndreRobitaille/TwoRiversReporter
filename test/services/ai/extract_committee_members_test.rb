@@ -17,6 +17,7 @@ class Ai::ExtractCommitteeMembersTest < ActiveSupport::TestCase
 
     mock_response = {
       "choices" => [ {
+        "finish_reason" => "stop",
         "message" => {
           "content" => {
             "voting_members_present" => [ "Smith", "Johnson", "Williams" ],
@@ -51,6 +52,7 @@ class Ai::ExtractCommitteeMembersTest < ActiveSupport::TestCase
     captured_params = nil
     mock_response = {
       "choices" => [ {
+        "finish_reason" => "stop",
         "message" => {
           "content" => '{"voting_members_present":[],"voting_members_absent":[],"non_voting_staff":[],"guests":[]}'
         }

@@ -334,6 +334,31 @@ at the existing 50,000-character boundary instead of silently losing the ending.
 These are conservative extraction guards, not #238's request/batch/daily spending
 ledger. Campaign paid dispatch still requires that full cost contract.
 
+Minutes vote/attendance requests now send the pilot contract's 4,000-token
+completion ceiling through the existing AI client. This covers generated output,
+including reasoning tokens; it does not count or bound the fully rendered input
+prompt or establish a dollar allowance. Each actual job dispatch first retains a
+`MinutesRequest` against its extraction and attempt, with the exact messages and
+effective parameters. The provider response ID/model, finish reason, available
+usage and response body are saved before interpreting the response. Missing usage
+remains unknown. These receipts survive PromptRun pruning and source/meeting
+removal; finished receipts cannot be edited or removed through the model, and
+migration rollback refuses to discard them.
+The ceiling is recorded as a request constraint without changing the existing
+extraction identity, so introducing it cannot reset old uncertain/claimed work
+or completed-input reuse.
+
+A length-limited, filtered or missing-finish response is held as `incomplete`,
+even when its partial text parses as valid JSON. It cannot replace published facts
+or acquire another automatic attempt from a retry/nightly check. Uncertain
+transport or receipt-persistence outcomes remain held; process interruption
+leaves the durable dispatched receipt and the claimed stage. Invalid JSON from
+an otherwise finished response still uses the existing two-attempt ceiling, with
+separate receipts. Completed-input reuse and parallel stage claims continue to
+avoid duplicate requests. This is request-accounting groundwork for #238, not
+its request/run/daily dollar reservation ledger or permission to enable paid
+enrichment. Authorized paid-pilot budget remains zero.
+
 The existing nightly repair sweep checks missing/changed stages and recovers
 missing PDF extraction triggers. It does not reprocess untouched completed legacy
 rows merely because this change is deployed. No new schedule is introduced.
