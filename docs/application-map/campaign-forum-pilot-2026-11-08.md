@@ -37,7 +37,7 @@ spending, reuse and later member-read checks remain in the focused suite.
 
 - Ruby 4.0.9, PostgreSQL; application tests use a separate synthetic test database.
 - `bin/rails test test/jobs/extract_campaign_source_job_test.rb test/integration/full_campaign_forum_test.rb test/jobs/prepared_campaign_forum_extraction_test.rb test/integration/campaign_cost_preflight_test.rb test/integration/member_campaign_record_test.rb test/integration/campaign_topic_matching_test.rb`: 34 tests, 412 assertions, no failures/errors/skips.
-- `bin/rubocop`: 788 files, no offenses.
+- `bin/rubocop`: 771 files on the PR branch (788 on the integrated local preview), no offenses.
 - Representative defect detection: removing the new answer-field guard causes
   the intended failed-versus-completed assertion to fail (one test, one failure).
   Restoring it returns the focused suite to green. Syntax/boot failure was not
