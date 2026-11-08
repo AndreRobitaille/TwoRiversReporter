@@ -269,6 +269,12 @@ coverage, recording availability, or usable speaker attribution. HTR, candidate
 sites/materials, forum organizers, and other contemporaneous interviews remain
 collection paths. Campaign evidence may predate the April meeting backfill.
 
+November 8 update: the owner located the relevant 2024 HTR questionnaire, and its
+dated archive was readable. The [pilot source inventory](https://github.com/AndreRobitaille/TwoRiversReporter/blob/codex/council-evidence-foundation/docs/superpowers/plans/2026-11-07-council-evidence-pilot.md#november-8-source-discovery-2024-htr-questionnaire)
+records the original/archive links, attribution, inspected passages, and remaining
+limits. The initial cohort now has a located campaign source; automated intake
+and campaign-to-action verification remain implementation work.
+
 ## Attendance, decisions, and comparisons
 
 ### Attendance
