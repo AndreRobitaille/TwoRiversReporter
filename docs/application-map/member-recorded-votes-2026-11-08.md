@@ -107,3 +107,33 @@ Verification on this revision, in the same isolated environment:
 The preview now runs independently of the tool session as a local user service
 bound to `0.0.0.0:3000`, using the existing development database. Its HTTP response
 and listener were verified. No production operation or paid source analysis ran.
+
+
+## Current presentation: numbered pages below the votes
+
+Revision `5c205e9e20d59440faa4b4f9ae36f443ba3b587f` follows the owner's next preview review and
+[AUDIENCE.md](../AUDIENCE.md). This supersedes the earlier placement and leading
+copy above: both views now begin with votes, without the disclaimer or introductory
+counter. One numbered pager appears only below the list. It shows the current
+page, uses 44px controls, and preserves the selected view and voting-record anchor.
+Pagy's existing series helper supplies the page window and previous/next arrows;
+no new pagination algorithm or JavaScript is introduced. Accurate recorded-vote
+labels and empty states remain. Selection, access rules and saved data are unchanged.
+
+Validation, using the same isolated PostgreSQL/Ruby environment:
+
+- `bin/rails test test/integration/member_recorded_votes_test.rb test/controllers/members_controller_test.rb test/controllers/members_show_gating_test.rb`:
+  24 tests, 203 assertions, no failures/errors/skips.
+- `CHROME_BIN=/usr/bin/chromium bin/rails test test/system/member_recorded_votes_journeys_test.rb`:
+  2 journeys, 53 assertions, no failures/errors/skips. Numbered links work in both
+  views; the pager is unique and below the final vote; current-page and access
+  checks pass. Desktop/phone screenshots were inspected.
+- Read-only local development preview at 390px: page 4 of 7, five numbered links
+  plus arrows, 44-by-44px link targets and no horizontal overflow. This checks the
+  layout against the existing local snapshot, not the underlying source accuracy.
+- `bin/rubocop --cache false`: 635 files, no offenses. Documentation link/anchor
+  and whitespace checks passed.
+- A process-local fault dropped `votes=all` from pagination URLs. The query-state
+  assertion failed as intended (1 test, 7 assertions, 1 failure, no errors). The
+  unmodified application then passed the focused 24-test suite. The live preview
+  was not altered by the fault.
