@@ -310,6 +310,49 @@ class AgendaBriefingContextTest < ActionDispatch::IntegrationTest
     refute_includes response.body, CLAIM
   end
 
+  test "admin alias move withdraws the preview that depended on its original ownership" do
+    original_name = @topic.name
+    @topic.update!(name: "Synthetic unrelated concern")
+    topic_alias = @topic.topic_aliases.create!(name: original_name)
+    generate_preview
+    assert_resident_headline CLAIM
+    summary = @meeting.meeting_summaries.sole
+    original = summary.generation_data
+    image = @meeting.generated_images.create!(status: "ready", purpose: "feature_and_og", source_summary: summary)
+    independent = extra_preview_meeting(@other.name)
+    generate_preview(meeting: independent)
+    independent_before = independent.meeting_summaries.sole.attributes
+    session = sign_in_as_admin(@actor)
+    clear_enqueued_jobs
+
+    without_paid_providers do
+      post move_alias_admin_topic_path(@topic), params: {
+        alias_id: topic_alias.id, target_topic_id: @other.id, reason: "Synthetic ownership correction", q: "synthetic"
+      }
+      assert_redirected_to admin_topic_url(@topic, q: "synthetic")
+      assert_equal @other.id, topic_alias.reload.topic_id
+      assert_equal @other.id, Topic.find_by_name_or_alias(original_name).id
+      assert_equal "Synthetic ownership correction", TopicReviewEvent.where(topic: @other, action: "alias_moved").sole.reason
+      assert_not summary.reload.published?
+      assert_equal original, summary.generation_data
+      assert_equal "superseded", image.reload.status
+      assert_equal independent_before, independent.meeting_summaries.sole.reload.attributes
+      assert_equal 1, AuditEvent.where(subject: summary, action: "meeting_summary.topic_context_withdrawn").count
+      cookies.delete(:session_id)
+      get meeting_path(@meeting)
+      assert_response :success
+      refute_includes response.body, CLAIM
+      assert_select "a[href='#{@agenda_document.source_url}']"
+      get "/api/v1/meetings/#{@meeting.id}", headers: @bearer
+      assert_response :success
+      assert_nil response.parsed_body.dig("data", "summary")
+      assert_enqueued_jobs 0
+    end
+  ensure
+    session&.destroy!
+    @actor.passkey_credentials.delete_all
+  end
+
   test "topic merge withdraws the consumed retired identity without replacing its receipt" do
     generate_preview
     summary = @meeting.meeting_summaries.sole
