@@ -65,7 +65,13 @@ locating an excerpt and validating its interpretation.
 The [November 7 minutes request-receipt checks](minutes-request-receipts-2026-11-07.md)
 cover bounded provider output, durable attempt/usage records, partial-response
 holds, process/transport interruption and duplicate concurrent dispatch prevention.
-Dollar reservations and paid-pilot authorization remain separate requirements.
+That slice's dollar-reservation gap is addressed in part by the following work;
+paid-pilot authorization remains separate.
+
+The [November 7 council spending-reservation checks](council-spend-reservations-2026-11-07.md)
+cover exact prepared request estimates, shared daily and run allowances,
+concurrent reservation, budget-paused retries and retained uncertain amounts.
+Actual token/pricing preflight and paid-pilot approval remain unimplemented.
 
 The [November 7 stable decision foundation](council-decision-identities-2026-11-07.md)
 records immutable observations, conservative identity correspondence and

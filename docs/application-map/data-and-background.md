@@ -93,6 +93,10 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   daily at 11pm. The older unscheduled/six-hour suggestion is historical.
   Configuration and a passing local enqueue test do not prove production
   execution or the city's publication time; see [behavior contracts](behavior-contracts.md).
+- **Council budget boundary:** the existing nightly repair sweep may requeue
+  budget-paused minutes work, but admission supplies no new budget, attempt or
+  provider call when limits still hold. Source collection and deterministic
+  publication remain independent. See [budget checks](council-spend-reservations-2026-11-07.md).
 
 ## BG-02 — Enrich agenda/packet content, then supersede with minutes (P0)
 
@@ -151,8 +155,20 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   output remain inspectable independently of PromptRun pruning. Non-stop responses
   are held without automatic retry or fact publication; unknown outcomes retain
   their receipt. See [request boundaries and fault evidence](minutes-request-receipts-2026-11-07.md).
-  Input-token estimation and request/run/daily dollar reservations remain open;
-  paid enrichment is not enabled by these guards.
+  The following slice adds reservations against approved estimates; real
+  token/pricing validation and paid-pilot authorization remain open.
+- **November 7 council minutes reservations:** selected meetings retain a budget
+  requirement across ordinary deliveries and source changes. An internal job
+  binds pending work to an explicitly authorized run/day and exact prepared
+  request estimates. Admission locks day then run, enforces request/run/day,
+  request-count, concurrency and declared-token limits, and commits the full
+  integer micro-USD reservation with the receipt before transport. Completed
+  responses release only concurrency; unknown outcomes retain amount and slot.
+  Budget pauses preserve attempts; completed facts and deterministic correction
+  still reuse without calls. No other AI paths or new schedule are enrolled.
+  Token counts/rates are supplied approved preflight inputs, not automatically
+  verified prices or measured tokenization. See [real database contention and
+  fault evidence](council-spend-reservations-2026-11-07.md).
 - **November 7 passage locations:** new vote stages check model-supplied excerpts
   against retained pages with code. Unique passages retain exact character ranges
   and page hashes, including across page breaks; unavailable/ambiguous evidence
