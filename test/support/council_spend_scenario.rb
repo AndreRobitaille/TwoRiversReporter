@@ -33,6 +33,7 @@ module CouncilSpendScenario
     CouncilAiReservation.where(council_ai_budget_run_id: @budget_run_ids).delete_all
     CouncilAiBudgetRun.where(id: @budget_run_ids).delete_all
     CouncilAiBudgetDay.where(id: @created_budget_day_id).delete_all
+    CouncilAiBudgetMonth.where(id: @created_budget_month_id).delete_all
     PromptRun.where(source_type: "Meeting", source_id: @meeting.id).delete_all
     text_version&.destroy!
     artifact&.destroy!
@@ -56,8 +57,13 @@ module CouncilSpendScenario
     end
   end
 
-  def budget_run(day_limit: 100_000, **attributes)
+  def budget_run(day_limit: 100_000, month_limit: 1_000_000, **attributes)
     @actor ||= User.create!(email_address: "synthetic-budget-admin@example.test", admin: true, status: "active")
+    unless CouncilAiBudgetMonth.exists?(budget_month: Date.current.beginning_of_month)
+      month = CouncilAiBudgetMonth.create!(budget_month: Date.current.beginning_of_month, limit_microusd: month_limit,
+        actor: @actor, authorized_at: Time.current, authorization_basis: "Synthetic test allowance only")
+      @created_budget_month_id = month.id
+    end
     day = CouncilAiBudgetDay.find_by(budget_on: Date.current)
     unless day
       day = CouncilAiBudgetDay.create!(budget_on: Date.current, limit_microusd: day_limit, actor: @actor,

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_08_230000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_08_233000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -309,6 +309,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_230000) do
     t.datetime "updated_at", null: false
     t.index [ "actor_id" ], name: "index_council_ai_budget_days_on_actor_id"
     t.index [ "budget_on" ], name: "index_council_ai_budget_days_on_budget_on", unique: true
+  end
+
+  create_table "council_ai_budget_months", force: :cascade do |t|
+    t.date "budget_month", null: false
+    t.bigint "limit_microusd", null: false
+    t.bigint "actor_id"
+    t.bigint "original_actor_id", null: false
+    t.datetime "authorized_at", null: false
+    t.text "authorization_basis", null: false
+    t.datetime "revoked_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "actor_id" ], name: "index_council_ai_budget_months_on_actor_id"
+    t.index [ "budget_month" ], name: "index_council_ai_budget_months_on_budget_month", unique: true
   end
 
   create_table "council_ai_budget_runs", force: :cascade do |t|
@@ -1260,6 +1274,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_230000) do
   add_foreign_key "committee_memberships", "committees"
   add_foreign_key "committee_memberships", "members"
   add_foreign_key "council_ai_budget_days", "users", column: "actor_id", on_delete: :nullify
+  add_foreign_key "council_ai_budget_months", "users", column: "actor_id", on_delete: :nullify
   add_foreign_key "council_ai_budget_runs", "council_ai_budget_days"
   add_foreign_key "council_ai_budget_runs", "users", column: "actor_id", on_delete: :nullify
   add_foreign_key "council_ai_reservations", "council_ai_budget_runs"
