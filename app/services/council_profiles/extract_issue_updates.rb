@@ -35,6 +35,7 @@ module CouncilProfiles
       response = Ai::OpenAiService.new.extract_council_evidence(parameters: stage.parameters.deep_symbolize_keys,
         request_recorder: RequestRecorder.new(stage))
       stage.update!(status: "completed", data: IssueUpdates.new(stage.context).parse(response), completed_at: Time.current)
+      MatchCampaignIssueEvidenceJob.perform_later(stage.id)
       stage
     rescue IssueInput::Unavailable
       stage

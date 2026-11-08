@@ -28,7 +28,7 @@ module ResidentContent
         actions.filter_map do |action|
           related = action.fetch("topic_ids").filter_map { |id| topics[id] }
           next if related.empty?
-          { evidence: action, citation: citation, meeting: stage.meeting_document.meeting, topics: related }
+          { evidence: action, citation: citation, meeting: stage.meeting_document.meeting, topics: related, review: stage }
         end
       end
       rows.uniq { |row| row.fetch(:evidence).except("agenda_item_id", "topic_ids") }

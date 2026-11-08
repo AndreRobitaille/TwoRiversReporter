@@ -208,6 +208,11 @@ status below does not imply complete coverage of those workflows.
 
 ## RES-10 — Inspect an official's attendance and voting record (P1)
 
+- **November 8 direct evidence matching:** specific campaign positions can show
+  matched recorded work and separately labeled issue updates, including an
+  unsuccessful proposal with no vote. Topic overlap alone cannot publish the
+  connection. All-records issue history includes documented terms and excludes
+  service gaps. See [matching evidence](campaign-issue-evidence-2026-11-08.md).
 - **November 8 formal cases:** verified case records supply dated events in a
   closed section, with independently opened source passages. Complaints,
   dispositions and appeals remain distinct; missing records are incomplete

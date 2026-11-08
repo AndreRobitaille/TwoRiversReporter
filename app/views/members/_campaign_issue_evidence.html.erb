@@ -1,0 +1,10 @@
+<% evidence = action.fetch(:evidence) %>
+<div class="member-campaign-action" data-campaign-issue-evidence="<%= action.fetch(:kind) %>">
+  <strong><%= action.fetch(:kind) == "action" ? "Recorded work" : "Issue update" %></strong>
+  <p class="member-campaign-action-title"><%= evidence.fetch("summary") %></p>
+  <% if evidence["occurred_on"] %>
+    <time class="member-vote-date" datetime="<%= evidence.fetch("occurred_on") %>"><%= Date.iso8601(evidence.fetch("occurred_on")).strftime("%b %-d, %Y") %></time>
+  <% else %>
+    <span class="member-vote-date">Reported <%= action.fetch(:reported_on).strftime("%b %-d, %Y") %></span>
+  <% end %>
+</div>

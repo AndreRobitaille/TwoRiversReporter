@@ -59,10 +59,11 @@ module CouncilProfiles
     def self.policy_for(stage, month)
       policy = month.live_actions
       return if policy.blank?
-      return policy if stage.is_a?(CampaignActionReview)
-      return unless stage.is_a?(CouncilIssueReview)
+      return policy if stage.is_a?(CampaignActionReview) && !stage.issue_evidence?
+      source = stage.is_a?(CampaignActionReview) ? stage.issue_review : stage
+      return unless source.is_a?(CouncilIssueReview)
       scope = policy["issue_sources"]
-      document = stage.meeting_document
+      document = source.meeting_document
       return unless scope && document && scope.fetch("document_types").include?(document.document_type) &&
         scope.fetch("committee_ids").include?(document.meeting.committee_id)
       policy.merge("starting_on" => scope.fetch("starting_on"))

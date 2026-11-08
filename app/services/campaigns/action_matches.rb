@@ -4,7 +4,12 @@ module Campaigns
 
     def initialize(context)
       @keys = context.fetch("pairs").map { |pair| pair.fetch("key") }.sort
-      @minutes = normalize(context.fetch("minutes"))
+      @issue_evidence = context["rules"] == IssueEvidenceInput::RULES
+      @quotes = if @issue_evidence
+        context.fetch("pairs").to_h { |pair| [ pair.fetch("key"), normalize(pair.fetch("evidence").fetch("quote")) ] }
+      else
+        @keys.to_h { |key| [ key, normalize(context.fetch("minutes")) ] }
+      end
     end
 
     def parse(response)
@@ -18,15 +23,19 @@ module Campaigns
         valid = match["status"].in?(%w[direct not_direct insufficient_evidence]) &&
           match["reason"].is_a?(String) && match["reason"].present? && match["reason"].length <= 1_000
         if match["status"] == "direct"
-          quote = match["minutes_quote"]
-          valid &&= quote.is_a?(String) && quote.length.between?(20, 2_000) && @minutes.include?(normalize(quote))
+          quote = match[quote_field]
+          valid &&= quote.is_a?(String) && quote.length.between?(20, 2_000) && @quotes.fetch(match.fetch("key")).include?(normalize(quote))
         end
         raise InvalidResponse unless valid
       end
-      { "matches" => matches.map { |match| match.slice("key", "status", "reason", "minutes_quote") } }
+      { "matches" => matches.map { |match| match.slice("key", "status", "reason", quote_field) } }
     end
 
     private
+
+    def quote_field
+      @issue_evidence ? "source_quote" : "minutes_quote"
+    end
 
     def normalize(text)
       text.split.join(" ")

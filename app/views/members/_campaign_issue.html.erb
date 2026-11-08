@@ -8,7 +8,7 @@
   <%= render "campaign_comparison", statement: statement, actions: comparisons.first&.last || [] %>
   <% if comparisons.size > 1 %>
     <details class="member-campaign-context">
-      <summary>More positions and decisions (<%= comparisons.size - 1 %>)</summary>
+      <summary>More positions and <%= comparisons.any? { |_statement, actions| actions.any? { |action| action[:kind] } } ? "records" : "decisions" %> (<%= comparisons.size - 1 %>)</summary>
       <% comparisons.drop(1).each do |matched_statement, actions| %>
         <%= render "campaign_comparison", statement: matched_statement, actions: actions %>
       <% end %>

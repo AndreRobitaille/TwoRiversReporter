@@ -12,6 +12,14 @@ class CampaignActionReview < ApplicationRecord
     true
   end
 
+  def issue_evidence?
+    context["rules"] == Campaigns::IssueEvidenceInput::RULES
+  end
+
+  def issue_review
+    CouncilIssueReview.find_by(id: context["issue_review_id"]) if issue_evidence?
+  end
+
   def budget_request_key
     "campaign_action/#{id}/#{attempts}"
   end

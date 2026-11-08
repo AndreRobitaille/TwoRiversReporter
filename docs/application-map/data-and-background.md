@@ -456,6 +456,12 @@ and held before provider construction; no text is silently truncated.
 
 ## BG-09 — Extract shared official issue milestones and actions (P1)
 
+- **Statement comparison extension:** after shared evidence or campaign-topic
+  publication, and during existing nightly recovery, new statement/evidence pairs
+  enter the existing cached comparison pipeline. Exact retained passages supply
+  context; direct and negative results are reused. Source-channel scope and its
+  date window apply in addition to shared spending limits. See
+  [campaign/issue evidence verification](campaign-issue-evidence-2026-11-08.md).
 - **Start / data:** explicitly selected official minutes or packet document, existing
   approved agenda/topic links, populated prompt and exact month/day/run budget.
 - **Action:** `ExtractCouncilIssueUpdatesJob` retains one shared source result;

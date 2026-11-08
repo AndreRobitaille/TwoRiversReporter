@@ -48,6 +48,13 @@ module MembersHelper
       actions = @campaign_actions.fetch(statement.id, []).select do |action|
         (action.fetch(:vote).motion.agenda_item.topics.map(&:id) & issue.fetch(:topic_ids)).any?
       end
+      actions += (@campaign_issue_evidence || {}).fetch(statement.id, []).select do |record|
+        (record.fetch(:topics).map(&:id) & issue.fetch(:topic_ids)).any?
+      end
+      actions.sort_by! do |row|
+        row[:vote] ? row.fetch(:vote).motion.meeting.starts_at.to_date.iso8601 : row.dig(:evidence, "occurred_on") || row.fetch(:reported_on).iso8601
+      end
+      actions.reverse!
       [ statement, actions ] if actions.any?
     end
   end

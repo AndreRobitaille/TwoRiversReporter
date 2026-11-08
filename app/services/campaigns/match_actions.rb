@@ -33,6 +33,7 @@ module Campaigns
     end
 
     def self.call(stage, budget_run: nil)
+      return stage if stage.issue_evidence? && !stage.issue_review&.current_citation
       claimed = false
       budget_run ||= CouncilProfiles::LiveBudget.call(stage)
       claimed = stage.claim!(budget_run)

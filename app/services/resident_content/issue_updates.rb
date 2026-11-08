@@ -7,6 +7,14 @@ module ResidentContent
     end
 
     def call
+      unless @period.selected
+        return @period.selectable.flat_map do |service|
+          period = CouncilPeriod.new(@member, key: service.period_key)
+          attendance = CouncilAttendance.new(@member, period: service).call
+          self.class.new(@member, attendance: attendance, period: period, statements: @statements).call
+        end.uniq { |row| [ row[:review].id, row[:evidence] ] }
+          .sort_by { |row| [ row[:reported_on], row[:meeting].id ] }.reverse
+      end
       return [] unless @period.range && @attendance
       agenda_ids = @member.votes.joins(:motion).where(motions: { meeting_id: @attendance.fetch(:meeting_ids) })
         .select("motions.agenda_item_id")
@@ -29,7 +37,7 @@ module ResidentContent
           related = update.fetch("topic_ids").filter_map { |id| topics[id] }
           next if related.empty?
           rows << { evidence: update, meeting: document.meeting, citation: citation, topics: related,
-            reported_on: Date.iso8601(stage.context.fetch("reported_on")) }
+            reported_on: Date.iso8601(stage.context.fetch("reported_on")), review: stage }
         end
       end
       rows.uniq { |row| [ row[:reported_on], row[:evidence], row[:citation][:source_url] ] }
