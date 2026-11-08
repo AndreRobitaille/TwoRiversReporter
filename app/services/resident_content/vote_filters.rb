@@ -36,6 +36,8 @@ module ResidentContent
           values = motion.votes.map(&:value)
           next false unless values.include?("yes") && values.include?("no")
         end
+        next true if words.empty?
+
         text = [ motion.description, motion.agenda_item&.display_context_title ].compact.join(" ").downcase
         words.all? { |word| text.include?(word) }
       end

@@ -7,6 +7,23 @@ class MemberVoteFiltersTest < ActionDispatch::IntegrationTest
 
   setup { setup_vote_filters }
 
+  test "search includes parent headings without a separate query for each parent" do
+    expected = @grant_votes.first(3)
+    expected.each_with_index do |vote, index|
+      parent = @meeting.agenda_items.create!(title: "Water infrastructure #{index}", kind: "section")
+      vote.motion.agenda_item.update!(title: "Budget action", parent: parent)
+    end
+    queries = []
+    subscriber = ->(*, payload) { queries << payload[:sql] if payload[:sql].match?(/FROM "agenda_items"/) }
+    result = nil
+    ActiveSupport::Notifications.subscribed(subscriber, "sql.active_record") do
+      profile = ResidentContent::OfficialProfile.new(@member)
+      result = ResidentContent::VoteFilters.new(profile, params: { q: "water" }).call(featured: false)
+    end
+    assert_equal expected.map(&:id).sort, result.map(&:id).sort
+    assert_operator queries.size, :<=, 2, "Agenda children and parents should load in batches: #{queries.inspect}"
+  end
+
   test "search and topic filters apply before pagination without multiplying multi-topic decisions" do
     Ai::OpenAiService.stub(:new, ->(*) { flunk "Searching saved votes must not call AI" }) do
       get member_path(@member, votes: "all", q: "Hamilton GRANT agreement", topic: @topic.id, kind: "substantive")

@@ -37,7 +37,7 @@ backfill, merge or deployment. No test fixtures were loaded into the real previe
 
 - `bin/rails test test/integration/member_vote_filters_test.rb
   test/integration/member_recorded_votes_test.rb
-  test/integration/member_council_period_test.rb`: **21 tests, 290 assertions**,
+  test/integration/member_council_period_test.rb`: **22 tests, 293 assertions**,
   no failures/errors/skips. Covers combined search, topic uniqueness, literal
   punctuation, pre-pagination counts, corrected votes, body/term scope, distinct
   procedural modes, view/period/clear links, unique label IDs and gated reads.
@@ -74,3 +74,9 @@ The other review session's voter agents remain unreachable through the app's
 local transport. No new persona review is claimed. Full-term coverage, later
 source backfill and the remaining non-filter acceptance under #237 remain
 separate from this slice.
+
+Review follow-up: preload agenda parents and skip constructing search text for
+empty searches. Three distinct parent headings now load in one batch; the
+regression verifies matching parent text and at most two agenda queries. Removing
+the preload caused four agenda queries and the intended assertion failed; the
+restored test passed (1 test, 3 assertions). Full RuboCop remained clean.
