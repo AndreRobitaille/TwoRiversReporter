@@ -18,11 +18,13 @@ class CampaignActionJourneysTest < ApplicationSystemTestCase
       issue.find(".member-campaign-summary").click
       assert_text @specific.data.fetch("summary")
       actions = "[data-campaign-actions-for='#{@specific.id}']"
-      assert_selector "#{actions} .member-campaign-vote-results", text: "Jordan Example: Yes"
+      assert_selector "#{actions} .member-campaign-vote-results", text: "Voted yes"
       assert_selector "#{actions} .member-campaign-vote-results", text: "Council: Failed"
+      assert_no_text "This motion proposed the same owner-occupancy requirement"
       assert_no_selector "#{actions} blockquote", text: @quote
-      find("#{actions} summary", text: "Supporting minutes passage").click
+      find("#{actions} summary", text: "Supporting details").click
       assert_selector "#{actions} blockquote", text: @quote
+      assert_text "This motion proposed the same owner-occupancy requirement"
       find("#{actions} a", text: "Meeting and sources").click
       assert_current_path meeting_path(@vote.motion.meeting)
       page.go_back

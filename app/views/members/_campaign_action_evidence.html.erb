@@ -1,0 +1,8 @@
+<% motion = action.fetch(:vote).motion %>
+<div class="member-campaign-vote" data-campaign-evidence-for="<%= action.fetch(:vote).id %>">
+  <p><strong><%= vote_context(action.fetch(:vote)) %></strong></p>
+  <p><%= action.fetch(:reason) %></p>
+  <p><strong>Motion:</strong> <%= motion.description %></p>
+  <blockquote><%= action.fetch(:minutes_quote) %></blockquote>
+  <%= link_to "Meeting and sources", meeting_path(motion.meeting), class: "member-campaign-meeting" %>
+</div>

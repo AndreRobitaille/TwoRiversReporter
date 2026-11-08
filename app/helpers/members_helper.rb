@@ -33,4 +33,24 @@ module MembersHelper
     else "vote-value--neutral"
     end
   end
+
+  def campaign_issue_actions(issue)
+    issue.fetch(:statements).filter_map do |statement|
+      actions = @campaign_actions.fetch(statement.id, []).select do |action|
+        (action.fetch(:vote).motion.agenda_item.topics.map(&:id) & issue.fetch(:topic_ids)).any?
+      end
+      [ statement, actions ] if actions.any?
+    end
+  end
+
+  def campaign_decision_title(vote)
+    title = vote_context(vote).to_s.sub(/\A\d{2}-\d{3}\s+/, "")
+    # Application headings repeat the docket and applicant address. Keep the
+    # requested assistance and named applicant; the full title stays in details.
+    if application = title.match(/\AApplication for (.+?) by (.+?), \d.*\z/i)
+      "#{application[1]} — #{application[2]}"
+    else
+      title.presence || "Motion description unavailable."
+    end
+  end
 end

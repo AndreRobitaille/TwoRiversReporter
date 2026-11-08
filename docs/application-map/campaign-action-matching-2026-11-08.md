@@ -164,4 +164,32 @@ Implementation tests use deterministic provider responses; the preview findings
 come from the real sources. A contrary-policy scenario is tested synthetically,
 not presented as a real finding about these candidates.
 
+## Resident readability correction
+
+The owner accepted the connections but rejected the amount of default text.
+RES-10 now shows one matched position instead of a generic position followed by
+the matched position, and at most two compact decision rows. Member vote and
+Council result remain separate. One closed Supporting details disclosure retains
+the explanations, original agenda titles, actual motions, exact minutes passages
+and meeting links. Additional matched positions stay available in a closed
+disclosure; the full campaign source section is unchanged.
+
+The three existing resident-persona reviewers in the separate profile-review
+session inspected the real phone preview. All could identify the businesses,
+Brandt's yes votes, date and Council approvals after the first simplification.
+Their remaining title suggestion was applied: application boilerplate, docket
+numbers and addresses move to supporting details; requested assistance and named
+applicants remain visible. This is deterministic display formatting, not a new
+AI summary. The final TID panel has 60 visible words including headings and controls.
+This feedback is a readability check, not independent source validation.
+
+Verification after this correction: 18 targeted matching/layout HTTP tests / 185
+assertions, two browser journeys / 42 assertions, and RuboCop pass. Making the
+supporting disclosure open by default fails the intended browser assertion that
+the explanation is initially hidden; restoring it passes (one journey / 17
+assertions). Real phone and desktop inspection confirms the complete evidence
+opens, other issue sections stay open independently, and the phone layout does
+not overflow. Replaying the real-data verification still retains all 94 campaign
+statements, 2,174 votes and six provider receipts with zero added requests.
+
 No production operation, database sync, production backfill, merge or deployment.

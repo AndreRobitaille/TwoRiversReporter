@@ -1,0 +1,19 @@
+<div class="member-campaign-position" <%= tag.attributes(data: { campaign_actions_for: statement.id }) if actions.any? %>>
+  <p><%= statement.data.fetch("summary") %></p>
+  <% if statement.data["conditions"].present? %><p class="member-campaign-qualification"><%= statement.data["conditions"] %></p><% end %>
+  <% if statement.data["timeframe"].present? %><p class="member-campaign-qualification"><%= statement.data["timeframe"] %></p><% end %>
+  <% if actions.any? %>
+    <h4 class="member-campaign-activity-heading">On the Council</h4>
+    <%= render partial: "campaign_action", collection: actions.first(2), as: :action %>
+    <% if actions.size > 2 %>
+      <details class="member-campaign-context">
+        <summary><%= pluralize(actions.size - 2, "more decision") %></summary>
+        <%= render partial: "campaign_action", collection: actions.drop(2), as: :action %>
+      </details>
+    <% end %>
+    <details class="member-campaign-context member-campaign-supporting">
+      <summary>Supporting details</summary>
+      <%= render partial: "campaign_action_evidence", collection: actions, as: :action %>
+    </details>
+  <% end %>
+</div>

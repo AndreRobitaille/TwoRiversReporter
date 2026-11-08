@@ -225,6 +225,10 @@ status below does not imply complete coverage of those workflows.
   slice adds only supported specific statement/decision links, preserving the
   member vote and Council result separately; it does not grade promises or
   infer inaction. See [matching checks](campaign-action-matching-2026-11-08.md).
+  A matched issue opens with one position and at most two compact decision rows;
+  explanations and full source passages stay behind Supporting details. Other
+  matched positions remain available in a closed disclosure, without generating
+  new summaries for presentation.
   Reads use existing analysis with no new AI. See the
   [issue sidebar checks](member-issue-sidebar-2026-11-08.md).
 - **November 8 recorded-vote view:** switch from Featured votes to All recorded

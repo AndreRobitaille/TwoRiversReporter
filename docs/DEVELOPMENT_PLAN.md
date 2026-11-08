@@ -978,6 +978,14 @@ summary before longer forum records for the initial position, while preserving
 distinct claims in Campaign sources. Vote history does not determine which
 campaign issues appear. This layout introduces no generation step.
 When no approved issue links exist, retain the statement-list fallback.
+When a specific decision match is available, show its actual saved statement as
+the initial position instead of repeating both it and the generic issue summary.
+Keep the open panel short: at most two decision rows with a readable title,
+member vote, separate Council result and date. Put explanations, full formal
+titles, exact motions and minutes passages behind one Supporting details
+disclosure. Additional matched positions remain available in a closed disclosure;
+all campaign statements and citations remain in the source section. Readability
+changes must reuse saved evidence without another AI call.
 
 Use the independently assessed topic importance for normal ordering. A major,
 specific campaign promise may additionally warrant a highlight when direct

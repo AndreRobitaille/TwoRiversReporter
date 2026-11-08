@@ -20,7 +20,7 @@ class CampaignActionMatchingTest < ActionDispatch::IntegrationTest
       assert_response :success
       assert_select "[data-campaign-actions-for=?]", @specific.id do
         assert_select "[data-campaign-action=?]", @vote.id
-        assert_select ".member-campaign-vote-results", text: /Jordan Example: Yes.*Council: Failed/m
+        assert_select ".member-campaign-vote-results", text: /Voted yes.*Council: Failed/m
         assert_select "blockquote", text: @quote
         assert_select "a[href=?]", meeting_path(@vote.motion.meeting)
       end
@@ -151,7 +151,7 @@ class CampaignActionMatchingTest < ActionDispatch::IntegrationTest
         MatchCampaignActionsJob.perform_now
         get member_path(@jordan)
         assert_select "[data-campaign-actions-for=?] [data-campaign-action=?]", @specific.id, current_vote.id
-        assert_select "#campaign-record .member-campaign-vote-results", text: /Jordan Example: Recused/
+        assert_select "#campaign-record .member-campaign-vote-results", text: /Recused/
       end
     end
     assert_equal raw, stage.reload.attributes.slice("context", "data", "parameters")
@@ -172,7 +172,7 @@ class CampaignActionMatchingTest < ActionDispatch::IntegrationTest
     get member_path(@jordan)
     assert_select "[data-campaign-actions-for=?]", @specific.id do
       assert_select "p", text: "The motion removes the residency condition that the campaign statement supported."
-      assert_select ".member-campaign-vote-results", text: /Jordan Example: Yes.*Council: Passed/m
+      assert_select ".member-campaign-vote-results", text: /Voted yes.*Council: Passed/m
     end
   end
 
