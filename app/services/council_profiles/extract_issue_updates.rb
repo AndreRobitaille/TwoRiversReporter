@@ -27,6 +27,7 @@ module CouncilProfiles
     def self.call(stage, budget_run: nil)
       # Never spend on a source that was replaced after preparation.
       return stage unless stage.meeting_document && IssueInput.new(stage.meeting_document).key == stage.input_key
+      return stage if recover_received(stage)
       claimed = false
       budget_run ||= LiveBudget.call(stage)
       claimed = stage.claim!(budget_run)
@@ -34,8 +35,7 @@ module CouncilProfiles
       raise ReserveAiSpend::Paused, "missing_budget" unless budget_run
       response = Ai::OpenAiService.new.extract_council_evidence(parameters: stage.parameters.deep_symbolize_keys,
         request_recorder: RequestRecorder.new(stage))
-      stage.update!(status: "completed", data: IssueUpdates.new(stage.context).parse(response), completed_at: Time.current)
-      MatchCampaignIssueEvidenceJob.perform_later(stage.id)
+      publish(stage, response)
       stage
     rescue IssueInput::Unavailable
       stage
@@ -56,5 +56,26 @@ module CouncilProfiles
       stage.update!(status: "uncertain", error_code: e.class.name) if claimed && stage.status == "running"
       raise
     end
+
+    def self.recover_received(stage)
+      stage.with_lock do
+        return false unless stage.status == "failed" && stage.error_code == IssueUpdates::InvalidResponse.name
+        receipt = stage.requests.order(:attempt).last
+        return false unless receipt&.status == "received" && receipt.finish_reason == "stop"
+
+        publish(stage, receipt.response_body)
+        true
+      end
+    rescue JSON::ParserError, IssueUpdates::InvalidResponse
+      false
+    end
+    private_class_method :recover_received
+
+    def self.publish(stage, response)
+      data = IssueUpdates.new(stage.context, document: stage.meeting_document).parse(response)
+      stage.update!(status: "completed", data: data, completed_at: Time.current, error_code: nil)
+      MatchCampaignIssueEvidenceJob.perform_later(stage.id)
+    end
+    private_class_method :publish
   end
 end
