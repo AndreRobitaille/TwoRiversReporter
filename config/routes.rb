@@ -84,6 +84,7 @@ Rails.application.routes.draw do
 
   scope :admin do
     resources :campaign_sources, only: %i[index show new create edit update], controller: "admin/campaign_sources", as: :admin_campaign_sources
+    resource :campaign_forum, only: %i[new create], controller: "admin/campaign_forums", as: :admin_campaign_forum
 
     resource :site_settings, only: %i[show update], controller: "admin/site_settings", as: :admin_site_settings
 

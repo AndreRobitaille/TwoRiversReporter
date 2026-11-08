@@ -423,8 +423,12 @@ assertions below are candidate acceptance criteria based on the user's brief.
 - **Evidence:** [intake contract and verification](campaign-source-intake-2026-11-08.md).
   [Shared extraction checks](shared-campaign-extraction-2026-11-08.md) cover BG-08
   through this private view. [Member publication checks](member-campaign-records-2026-11-08.md)
-  cover the subsequent identity/publication boundary. Forum handoff and a real
-  paid-pilot authorization remain separate work.
+  cover the subsequent identity/publication boundary. The
+  [prepared forum extension](prepared-campaign-forums-2026-11-08.md) accepts
+  owner-verified speaker files, preserves every candidate and original source,
+  retains corrections, and bounds generated quotations to the verified speaker.
+  Larger full transcripts remain retained and held at the existing analysis limit;
+  bounded long-source processing and paid evaluation remain separate work.
   [Automatic update checks](campaign-update-triggers-2026-11-08.md) cover saved
   corrections, cached publication and recovery during existing nightly processing.
   [Cost planning checks](campaign-cost-preflight-2026-11-08.md) cover offline

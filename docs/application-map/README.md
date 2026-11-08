@@ -120,6 +120,13 @@ The [November 8 direct matching checks](campaign-action-matching-2026-11-08.md)
 cover shared cached statement/decision comparisons, exact spending admission,
 source-backed display and the bounded real Airbnb test.
 
+The [November 8 real forum evaluation](campaign-forum-pilot-2026-11-08.md)
+covers the observed response-field mismatch, its bounded fix and the limits of
+real-provider source coverage.
+The [November 8 full-forum request checks](full-campaign-forums-2026-11-08.md)
+cover bounded whole-transcript requests, matching output allowances, retained
+closing answers and zero-call preparation using both owner-supplied recordings.
+
 The [November 7 stable decision foundation](council-decision-identities-2026-11-07.md)
 records immutable observations, conservative identity correspondence and
 withdrawal of superseded current references.
@@ -289,3 +296,7 @@ assignment are described in [maintenance-and-qa.md](maintenance-and-qa.md).
 The [November 8 campaign-related issue record](member-campaign-activity-2026-11-08.md)
 records real cohort votes, source navigation, separate member/Council results and
 representative eligibility/access defect checks for RES-10/11.
+
+The [November 8 prepared forum intake](prepared-campaign-forums-2026-11-08.md)
+records the owner-verified transcript handoff, retention of all candidates,
+speaker-bound extraction checks and real-file size limits.

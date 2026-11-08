@@ -6,6 +6,8 @@ module Ai
     MAX_MINUTES_COMPLETION_TOKENS = 4_000
     MAX_CAMPAIGN_CHARS = 50_000
     MAX_CAMPAIGN_COMPLETION_TOKENS = 8_000
+    MAX_CAMPAIGN_FORUM_CHARS = 100_000
+    MAX_CAMPAIGN_FORUM_COMPLETION_TOKENS = 32_000
     class InputTooLargeError < StandardError; end
     class IncompleteResponseError < StandardError
       attr_reader :finish_reason
@@ -118,7 +120,13 @@ module Ai
       end
 
       def campaign_request_parameters(version)
-        raise InputTooLargeError, "Campaign source requires partitioning" if version.body.length > MAX_CAMPAIGN_CHARS
+        input_limit = version.forum? ? MAX_CAMPAIGN_FORUM_CHARS : MAX_CAMPAIGN_CHARS
+        raise InputTooLargeError, "Campaign source requires partitioning" if version.body.length > input_limit
+        output_limit = if version.body.length > MAX_CAMPAIGN_CHARS
+          MAX_CAMPAIGN_FORUM_COMPLETION_TOKENS
+        else
+          MAX_CAMPAIGN_COMPLETION_TOKENS
+        end
         template = PromptTemplate.find_by!(key: "extract_campaign_statements")
         messages = [
           (template.system_role.present? ? { role: "system", content: template.system_role } : nil),
@@ -126,7 +134,7 @@ module Ai
             coverage: version.coverage, coverage_notes: version.coverage_notes.to_s) }
         ].compact
         build_chat_parameters(model: model_for_tier(template.model_tier), messages: messages,
-          response_format: { type: "json_object" }).merge(max_completion_tokens: MAX_CAMPAIGN_COMPLETION_TOKENS)
+          response_format: { type: "json_object" }).merge(max_completion_tokens: output_limit)
       end
 
       def campaign_topic_matching_parameters(context)

@@ -210,6 +210,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_09_002000) do
     t.bigint "submitted_by_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "prepared_transcript", default: {}, null: false
     t.index [ "campaign_source_id" ], name: "index_campaign_source_versions_on_campaign_source_id"
     t.index [ "submitted_by_id" ], name: "index_campaign_source_versions_on_submitted_by_id"
     t.index [ "version_key" ], name: "index_campaign_source_versions_on_version_key", unique: true
@@ -226,6 +227,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_09_002000) do
     t.text "body", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "prepared_transcript", default: {}, null: false
     t.index [ "source_url" ], name: "index_campaign_sources_on_source_url", unique: true
   end
 

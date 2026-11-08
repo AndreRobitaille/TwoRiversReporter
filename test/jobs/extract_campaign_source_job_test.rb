@@ -106,6 +106,25 @@ class ExtractCampaignSourceJobTest < ActiveJob::TestCase
     end
   end
 
+  test "missing answer fields retain the receipt as invalid output rather than completing an empty projection" do
+    data = campaign_response_data
+    answer = data.fetch("participants").first.fetch("answers").first
+    answer["original_question"] = answer.delete("question")
+    answer["full_answer_passage"] = answer.delete("passage")
+    with_campaign_transport(content: data.to_json) do
+      ExtractCampaignSourceJob.perform_now(@source.id, budget_run_id: campaign_budget.id)
+      stage = @source.reload.current_version.extraction
+      assert_equal "failed", stage.status
+      assert_equal "Campaigns::ExtractedStatements::InvalidResponse", stage.error_code
+      assert_equal data, JSON.parse(stage.requests.sole.response_body)
+      assert_equal "received", stage.requests.sole.status
+      assert_empty stage.campaign_statements
+      assert_empty stage.data
+      assert_equal 1, stage.attempts
+      assert_equal 1, @calls.size
+    end
+  end
+
   test "an unresolved attribution or passage is held without discarding other statements" do
     data = campaign_response_data
     data.fetch("participants").last.merge!("name" => nil, "name_quote" => nil)

@@ -394,11 +394,19 @@ provider diagnostics; permanent HTTP rejections bypass transient retries. See
   [Verifier](../../app/services/crawlers/verifier.rb),
   [Probe](../../app/services/crawlers/probe.rb), [crawler policy](../verified-crawler-access.md).
 
-## BG-08 — Extract a shared campaign article within a spending allowance (P1)
+## BG-08 — Extract a shared campaign source within a spending allowance (P1)
+
+The [prepared forum extension](prepared-campaign-forums-2026-11-08.md) reuses this
+shared pipeline for externally labeled sources and checks returned quotes against
+verified speaker spans. The [full-forum request checks](full-campaign-forums-2026-11-08.md)
+extend new prepared requests to 100,000 source characters, with an explicit
+32,000-token response ceiling above 50,000 characters. Article limits and the
+required spending authorization remain unchanged. Larger sources are retained
+and held before provider construction; no text is silently truncated.
 
 - **Start / data:** retained CampaignSourceVersion, populated campaign prompt,
   explicit month/day/run allowances and exact request estimate. No budget means paused.
-- **Action:** ExtractCampaignSourceJob analyzes the supplied article once for all
+- **Action:** ExtractCampaignSourceJob analyzes the supplied source once for all
   participants through the existing AI service and shared spending recorder.
   A committed source save queues it when extraction is missing. Nightly discovery
   queues ReconcileCampaignSourcesJob to recover missing/pending intake and publish
