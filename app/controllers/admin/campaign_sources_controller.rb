@@ -24,6 +24,8 @@ module Admin
       @version = params[:version].present? ? @versions.find(params[:version]) : @source.current_version
       @extraction = @version.extraction
       @cost_preflight = Campaigns::CostPreflight.call(@version)
+      @topic_matching = @version.topic_matching
+      @matching_cost = Campaigns::CostPreflight.for_stage(@topic_matching) if @topic_matching
     end
 
     def edit

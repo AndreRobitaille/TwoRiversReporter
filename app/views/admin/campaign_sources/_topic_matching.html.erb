@@ -1,0 +1,24 @@
+<section class="card" data-campaign-topic-matching>
+  <h2 class="card-title">Related issue matching</h2>
+  <p>Status: <%= matching.status.humanize %></p>
+  <p>Uses saved statements across all candidates. An issue link does not establish support for a particular action or a completed promise.</p>
+  <% if matching.status == "completed" %>
+    <% statements = matching.context.fetch("statements").index_by { |statement| statement.fetch("sequence") } %>
+    <% links = matching.campaign_statement_topics.includes(:campaign_statement).index_by { |link| [link.campaign_statement.sequence, link.original_topic_id] } %>
+    <% topic_ids = matching.data.fetch("matches").flat_map { |match| match.fetch("topic_ids") } %>
+    <% topics = Topic.reusable.where(id: topic_ids + links.values.map(&:topic_id)).index_by(&:id) %>
+    <% matching.data.fetch("matches").each do |match| %>
+      <% statement = statements.fetch(match.fetch("sequence")) %>
+      <div class="detail-value" data-campaign-topic-match>
+        <h3><%= statement.fetch("source_name") %></h3>
+        <p><%= statement.fetch("summary") %></p>
+        <p><strong><%= match.fetch("status").humanize %>:</strong> <%= match.fetch("reason") %></p>
+        <% match.fetch("topic_ids").each do |topic_id| %>
+          <% topic = topics[links[[match.fetch("sequence"), topic_id]]&.topic_id || topic_id] %>
+          <% if topic %><p><%= link_to topic.canonical_name, topic_path(topic) %></p><% end %>
+        <% end %>
+      </div>
+    <% end %>
+  <% end %>
+</section>
+<%= render "cost_preflight", preflight: preflight, title: "Issue matching cost" %>

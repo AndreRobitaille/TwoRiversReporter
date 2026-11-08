@@ -7,6 +7,7 @@ class Topic < ApplicationRecord
   has_many :topic_appearances, dependent: :destroy
   has_many :topic_status_events, dependent: :destroy
   has_many :topic_review_events, dependent: :destroy
+  has_many :campaign_statement_topics, dependent: :destroy
   has_many :topic_summaries, dependent: :destroy
   has_many :generated_images, as: :imageable, dependent: :destroy
   has_one :topic_briefing, dependent: :destroy

@@ -30,8 +30,8 @@ module CampaignExtractionScenario
         "supporting_quote" => "Morgan Example did not supply an answer to this question." } ] }
   end
 
-  def campaign_budget(**overrides)
-    stage = Campaigns::ExtractSource.prepare(@source.current_version)
+  def campaign_budget(stage: nil, **overrides)
+    stage ||= Campaigns::ExtractSource.prepare(@source.current_version)
     parameters = stage.parameters.deep_symbolize_keys
     actor = User.find_or_create_by!(email_address: "synthetic-campaign-budget@example.test") { |user| user.assign_attributes(admin: true, status: "active") }
     day = CouncilAiBudgetDay.find_or_create_by!(budget_on: Date.current) do |row|

@@ -30,6 +30,7 @@ module Topics
         source_topic.topic_review_events.update_all(topic_id: target_topic.id)
         move_topic_summaries!
         move_knowledge_source_topics!
+        source_topic.campaign_statement_topics.update_all(topic_id: target_topic.id)
 
         if source_topic.topic_briefing && !target_topic.topic_briefing
           source_topic.topic_briefing.update!(topic: target_topic)

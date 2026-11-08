@@ -3,6 +3,8 @@ class CampaignStatement < ApplicationRecord
 
   belongs_to :campaign_extraction
   belongs_to :member, optional: true
+  has_many :campaign_statement_topics, dependent: :destroy
+  has_many :related_topics, -> { approved.distinct }, through: :campaign_statement_topics, source: :topic
   delegate :campaign_source_version, to: :campaign_extraction
   attr_readonly :campaign_extraction_id, :sequence, :data
 

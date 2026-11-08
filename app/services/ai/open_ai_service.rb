@@ -128,6 +128,18 @@ module Ai
         build_chat_parameters(model: model_for_tier(template.model_tier), messages: messages,
           response_format: { type: "json_object" }).merge(max_completion_tokens: MAX_CAMPAIGN_COMPLETION_TOKENS)
       end
+
+      def campaign_topic_matching_parameters(context)
+        text = JSON.generate(context)
+        raise InputTooLargeError, "Topic matching requires partitioning" if text.length > Campaigns::MatchTopics::MAX_CONTEXT_CHARS
+        template = PromptTemplate.find_by!(key: "match_campaign_topics")
+        messages = [
+          { role: "system", content: template.system_role },
+          { role: "user", content: template.interpolate(context: text) }
+        ]
+        build_chat_parameters(model: model_for_tier(template.model_tier), messages: messages,
+          response_format: { type: "json_object" }).merge(max_completion_tokens: MAX_CAMPAIGN_COMPLETION_TOKENS)
+      end
     end
 
     # Experimental calls use the same parameter construction as production but

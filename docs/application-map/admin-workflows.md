@@ -430,3 +430,6 @@ assertions below are candidate acceptance criteria based on the user's brief.
   [Cost planning checks](campaign-cost-preflight-2026-11-08.md) cover offline
   source-level estimates, saved-analysis reuse and unavailable/held states.
   Reading an estimate creates no processing or spending authorization.
+  [Shared issue matching checks](campaign-topic-matching-2026-11-08.md) cover the
+  subsequent private match status, reasons, topic navigation and separate cost
+  estimate. Reading these results does not enqueue work or authorize generation.

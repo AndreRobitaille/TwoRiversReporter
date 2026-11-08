@@ -16,13 +16,25 @@ module Campaigns
 
     def self.call(version)
       stage = version.extraction
+      parameters = stage ? stage.parameters.deep_symbolize_keys : Ai::OpenAiService.campaign_request_parameters(version)
+      estimate(stage, parameters)
+    rescue Ai::OpenAiService::InputTooLargeError
+      { state: "held", reason: "Source needs partitioning" }
+    rescue ActiveRecord::RecordNotFound
+      { state: "unavailable", reason: "Campaign extraction prompt is missing" }
+    end
+
+    def self.for_stage(stage)
+      estimate(stage, stage.parameters.deep_symbolize_keys)
+    end
+
+    def self.estimate(stage, parameters)
       return { state: "reuse", cost_microusd: 0 } if stage&.status == "completed"
       if stage && !stage.status.in?(%w[pending failed budget_paused])
         return { state: "held", reason: stage.status.humanize }
       end
 
-      parameters = stage ? stage.parameters.deep_symbolize_keys : Ai::OpenAiService.campaign_request_parameters(version)
-      if CampaignExtraction.exists?(status: "completed", parameters: parameters)
+      if CampaignExtraction.exists?(purpose: stage&.purpose || "statements", status: "completed", parameters: parameters)
         return { state: "reuse", cost_microusd: 0 }
       end
       attempts = CampaignExtraction::MAX_ATTEMPTS - (stage&.attempts || 0)
@@ -52,11 +64,8 @@ module Campaigns
         request_digest: CouncilProfiles::ReserveAiSpend.request_digest(parameters),
         pricing_source: PRICING_SOURCE + model, pricing_checked_on: PRICING_CHECKED_ON,
         pricing_valid_through: PRICING_VALID_THROUGH }
-    rescue Ai::OpenAiService::InputTooLargeError
-      { state: "held", reason: "Source needs partitioning" }
-    rescue ActiveRecord::RecordNotFound
-      { state: "unavailable", reason: "Campaign extraction prompt is missing" }
     end
+    private_class_method :estimate
 
     def self.supported_request?(parameters)
       allowed = %i[model messages reasoning_effort temperature response_format max_completion_tokens]
