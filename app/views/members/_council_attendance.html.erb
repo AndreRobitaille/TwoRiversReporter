@@ -1,0 +1,39 @@
+<section class="member-article-section" id="council-attendance" aria-labelledby="council-attendance-heading">
+  <div class="home-section-header">
+    <%= render "shared/atom_marker" %>
+    <h2 class="section-label" id="council-attendance-heading">Council attendance</h2>
+    <span class="section-line"></span>
+  </div>
+  <% rows = attendance.fetch(:rows) %>
+  <% period = attendance.fetch(:period) %>
+  <p class="member-attendance-coverage">
+    Term began <%= period.started_on.strftime("%b %-d, %Y") %><%= " · Ended #{period.ended_on.strftime('%b %-d, %Y')}" if period.ended_on %>
+  </p>
+  <% if rows.any? %>
+    <p class="member-attendance-coverage">
+      Available records: <%= rows.last.fetch(:meeting).starts_at.strftime("%b %-d, %Y") %> – <%= rows.first.fetch(:meeting).starts_at.strftime("%b %-d, %Y") %>
+    </p>
+    <dl class="member-attendance-counts">
+      <% ResidentContent::CouncilAttendance::LABELS.each do |status, label| %>
+        <div data-attendance-status="<%= status %>">
+          <dt><%= label %></dt>
+          <dd><%= attendance.fetch(:counts).fetch(status) %></dd>
+        </div>
+      <% end %>
+    </dl>
+    <details class="member-attendance-meetings">
+      <summary>View <%= rows.size %> Council meetings</summary>
+      <ul>
+        <% rows.each do |row| %>
+          <% meeting = row.fetch(:meeting) %>
+          <li>
+            <%= link_to "#{meeting.starts_at.strftime('%b %-d, %Y')} · #{row.fetch(:type)}", meeting_path(meeting) %>
+            <span><%= ResidentContent::CouncilAttendance::LABELS.fetch(row.fetch(:status)) %></span>
+          </li>
+        <% end %>
+      </ul>
+    </details>
+  <% else %>
+    <p class="section-empty">No Council meeting records for this service period yet.</p>
+  <% end %>
+</section>

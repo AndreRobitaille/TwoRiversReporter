@@ -225,8 +225,16 @@ status below does not imply complete coverage of those workflows.
   added; see [evidence](seo-review-2026-10-24.md).
 - **Sourced service dates:** accepted Council periods appear separately from
   current titles, with retained PDF links. Unknown ends display only the start;
-  this increment does not scope attendance or votes to a term. See
+  the initial increment did not scope attendance or votes to a term. See
   [contract and verification](council-service-periods-2026-11-08.md).
+- **Council attendance:** the latest sourced period and current Council role
+  (or sourced end) bound the known meeting inventory. HTML shows present, absent,
+  excused and not-recorded counts, coverage dates and expandable meeting links.
+  Cancelled, future, out-of-service and listening sessions are excluded;
+  committee records stay separate. Missing roll calls do not become absences.
+  Counts remain public in gated mode; votes retain their existing access rule.
+  No term selector, new API fields or complete-history claim is added. See
+  [real-data and workflow evidence](council-attendance-2026-11-08.md).
 
 ## RES-11 — Cross an access-mode or audience boundary (P0)
 

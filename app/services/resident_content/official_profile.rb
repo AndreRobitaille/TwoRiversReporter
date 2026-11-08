@@ -69,6 +69,26 @@ module ResidentContent
       by_committee.sort_by { |c, _| [ c.name == "City Council" ? 0 : 1, c.name ] }
     end
 
+    # Recorded rows only; these are not complete-term denominators or comparable
+    # peer rates. The separate Council projection reconciles its known inventory.
+    def recorded_attendance(excluding_committee_id: nil)
+      records = @member.meeting_attendances.voting_members.joins(:meeting)
+        .where("meetings.starts_at <= ?", Time.current).includes(meeting: :committee)
+      records = records.where.not(meetings: { committee_id: excluding_committee_id }) if excluding_committee_id
+      groups = records.reject { |record| record.meeting.cancelled? }.group_by { |record| record.meeting.committee }
+      result = groups.filter_map do |committee, attendances|
+        next unless committee
+        statuses = attendances.group_by { |record| record.meeting.duplicate_identity_key }.values.map do |duplicates|
+          values = duplicates.map(&:status).uniq
+          values.one? ? values.sole : "unknown"
+        end
+        counts = CouncilAttendance::LABELS.keys.to_h { |status| [ status, statuses.count(status) ] }
+        [ committee, counts ]
+      end
+      result.sort_by! { |committee, _| [ committee.name == "City Council" ? 0 : 1, committee.name ] }
+      result.presence
+    end
+
     private
 
     def build_vote_groups(votes)

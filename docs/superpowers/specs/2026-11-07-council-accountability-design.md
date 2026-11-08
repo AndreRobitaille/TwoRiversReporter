@@ -254,6 +254,24 @@ with 8 present, 1 absent, 1 excused, and 2 unknown yields 8/10 known meetings,
 with 2 unresolved; it is neither 8/12 confirmed attendance nor perfect coverage.
 Peer comparisons must use comparable service periods and meeting types.
 
+The first reconciled HTML slice uses the latest accepted Council service period.
+A sourced start together with an explicitly current Council position supports an
+ongoing window through today. A sourced end bounds a completed period; an unknown
+end without a current Council position cannot establish that window. A title
+alone never supplies the historical start, and the calculation does not write an
+assumed end date. This combines the two accepted inputs; a missing end by itself
+still does not establish uninterrupted service.
+
+Show the available inventory's date range and all four counts without a
+percentage or peer ranking. The known inventory is incomplete until backfill;
+"Not recorded" means a missing or unresolved named voting-member roll call for
+an eligible known meeting, not an absence. Exclude cancellations and listening
+sessions. Existing imports default `meeting_type` to regular even for special
+and listening sessions, so this slice recognizes supported types from explicit
+Council titles. Other committees and officials without usable service dates
+show recorded counts only. Term selection, partial attendance and API changes
+remain separate work.
+
 ### Decision record
 
 Preserve the exact motion, agenda context, sequence, amendments, withdrawal or
