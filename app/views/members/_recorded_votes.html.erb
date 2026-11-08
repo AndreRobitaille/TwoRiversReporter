@@ -20,7 +20,11 @@
     <% end %>
   </div>
 <% elsif @pagy.count.zero? %>
-  <p class="member-recorded-empty section-empty"><%= @record_period.selected ? "No recorded Council votes for this service period yet." : "No votes have been recorded for this member yet." %></p>
+  <% if @vote_filters.active? %>
+    <p class="member-recorded-empty section-empty">No votes match these filters.</p>
+  <% else %>
+    <p class="member-recorded-empty section-empty"><%= @record_period.selected ? "No recorded Council votes for this service period yet." : "No votes have been recorded for this member yet." %></p>
+  <% end %>
 <% else %>
   <p class="member-recorded-empty section-empty">No recorded votes on this page.</p>
   <%= link_to "Return to the newest votes", member_path(@member, **@record_params, votes: "all", anchor: "voting-record") %>

@@ -31,10 +31,13 @@ class MembersController < ApplicationController
       @issue_updates = ResidentContent::IssueUpdates.new(@member, attendance: @council_attendance,
         period: @record_period, statements: @campaign_statements || []).call
       @peer_comparisons = ResidentContent::PeerVotes.new(@member, attendance: @council_attendance).summaries
+      @vote_filters = ResidentContent::VoteFilters.new(profile, params: params)
+      @record_params.merge!(@vote_filters.query_params)
+      filtered_votes = @vote_filters.call(featured: !@show_all_votes)
       if @show_all_votes
-        @pagy, @recorded_votes = pagy(:offset, profile.votes, limit: 25)
+        @pagy, @recorded_votes = pagy(:offset, filtered_votes, limit: 25)
       else
-        @pagy, featured_votes = pagy(:offset, profile.resident_votes, limit: 25)
+        @pagy, featured_votes = pagy(:offset, filtered_votes, limit: 25)
         @topic_groups, @other_votes = profile.vote_groups(featured_votes)
       end
     end

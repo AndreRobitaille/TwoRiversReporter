@@ -22,7 +22,7 @@ module ResidentContent
 
     def votes
       records = @member.votes.joins(motion: :meeting)
-        .includes(motion: [ :meeting, :votes, { agenda_item: { agenda_item_topics: :topic } } ])
+        .includes(motion: [ :meeting, :votes, { agenda_item: [ :parent, { agenda_item_topics: :topic } ] } ])
         .order("meetings.starts_at DESC", id: :desc)
       records = records.where(motions: { meeting_id: @council_meeting_ids }) unless @council_meeting_ids.nil?
       records

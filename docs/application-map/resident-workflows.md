@@ -208,6 +208,10 @@ status below does not imply complete coverage of those workflows.
 
 ## RES-10 — Inspect an official's attendance and voting record (P1)
 
+- **November 8 vote search:** search and approved-topic/body/type/divided filters
+  apply before pagination in both recorded and featured views. Controls preserve
+  service period and view through search, paging, source navigation and clearing,
+  with no AI. See [filter evidence](member-vote-filters-2026-11-08.md).
 - **November 8 shared issue updates:** selected official minutes can supply a
   short project/policy update to every relevant profile without another vote.
   Source/report dates, conditions and body remain separate from member credit
