@@ -82,6 +82,9 @@ The [November 8 automatic campaign update checks](campaign-update-triggers-2026-
 cover source-save triggers, cached updates and existing nightly missed-work recovery.
 The [November 8 campaign cost planning checks](campaign-cost-preflight-2026-11-08.md)
 cover read-only source estimates and their limits before paid-pilot authorization.
+The [November 8 shared issue matching checks](campaign-topic-matching-2026-11-08.md)
+cover saved statements through approved topic links and private review, with a
+real-data reference sample and deterministic provider transport.
 
 The [November 7 stable decision foundation](council-decision-identities-2026-11-07.md)
 records immutable observations, conservative identity correspondence and

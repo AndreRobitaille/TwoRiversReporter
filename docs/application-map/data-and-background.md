@@ -425,6 +425,13 @@ provider diagnostics; permanent HTTP rejections bypass transient retries. See
   [Cost planning](campaign-cost-preflight-2026-11-08.md) supplies a read-only
   admin/CLI estimate; actual input-token verification and owner authorization
   remain prerequisites to treating it as a dispatch allowance.
+  [Shared issue matching](campaign-topic-matching-2026-11-08.md) adds a separate,
+  bounded source-level stage after statement publication. It reuses saved
+  statements and approved reusable topics, retains every match or uncertainty,
+  and publishes associations only for accepted member statements. The existing
+  nightly recovery handles missing/pending matching and cached publication.
+  Topic links are not action alignment or outcome findings. The initial topic
+  catalog is pinned; new-topic rematching remains unfinished.
 
 ## Configured recurring entry points
 
