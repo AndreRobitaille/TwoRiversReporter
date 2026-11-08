@@ -1,5 +1,9 @@
 # Application behavior map
 
+The [November 8 source-footer correction](council-source-quote-footers-2026-11-08.md)
+records a real-source quotation failure, exact-passage restoration and reuse of
+the retained response without another paid call.
+
 Baseline: **2026-10-10**, checkout `0849dfc34fdb9db0a3fdd22640ee87a2d4f298cb`.
 
 This map describes Two Rivers Reporter's resident website, account system,

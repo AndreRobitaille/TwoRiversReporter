@@ -3,8 +3,9 @@ module CouncilProfiles
     class InvalidResponse < StandardError; end
     STATUSES = %w[proposed authorized funded underway completed rejected deferred unresolved].freeze
 
-    def initialize(context)
+    def initialize(context, document: nil)
       @context = context
+      @quotes = SourceQuote.new(context, document: document)
     end
 
     def parse(response)
@@ -68,8 +69,8 @@ module CouncilProfiles
       valid = item && ids.is_a?(Array) && ids.any? && ids.uniq == ids &&
         (ids - item.fetch("topics").map { |topic| topic.fetch("id") }).empty? && text?(row["quote"], 2_000)
       raise InvalidResponse unless valid
-      quote = row.fetch("quote").split.join(" ")
-      raise InvalidResponse unless quote.length >= 20 && @context.fetch("text").split.join(" ").include?(quote)
+      quote = @quotes.resolve(row.fetch("quote"))
+      raise InvalidResponse unless quote && quote.length.between?(20, 2_000)
       date = row["occurred_on"]
       if date
         raise InvalidResponse unless date.is_a?(String) && date.match?(/\A\d{4}-\d{2}-\d{2}\z/) &&
