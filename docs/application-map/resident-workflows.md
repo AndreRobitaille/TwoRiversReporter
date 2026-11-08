@@ -223,6 +223,10 @@ status below does not imply complete coverage of those workflows.
   or the first displayed current committee and its existing role label.
   Subsequent requests drop ended roles. No roster links or voting access were
   added; see [evidence](seo-review-2026-10-24.md).
+- **Sourced service dates:** accepted Council periods appear separately from
+  current titles, with retained PDF links. Unknown ends display only the start;
+  this increment does not scope attendance or votes to a term. See
+  [contract and verification](council-service-periods-2026-11-08.md).
 
 ## RES-11 — Cross an access-mode or audience boundary (P0)
 
