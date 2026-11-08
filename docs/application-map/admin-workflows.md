@@ -400,3 +400,20 @@ assertions below are candidate acceptance criteria based on the user's brief.
   publication snapshots in the same fact transaction; see [rollback and audit checks](meeting-summary-facts-2026-11-07.md).
   Saved agenda-context withdrawals retain consumed and current topic sections with
   an Automated actor; see [transaction and retained-context checks](agenda-summary-dependencies-2026-11-07.md).
+
+## ADM-21 — Supply and correct a shared campaign article (P1)
+
+- **Start / data:** eligible admin with permitted questionnaire text, its publisher
+  link, election date, known publication date and complete/excerpt coverage.
+- **Action:** Members → Campaign sources → Add article; save once for all supplied
+  participants; Edit article to correct it; open a retained version.
+- **Required outcome:** complete supplied text/context and source metadata persist
+  privately. Unchanged input reuses its version; duplicate URL intake cannot undo
+  an explicit correction. Source retention creates no candidate, office or claim.
+- **Next:** the saved source is ready for later shared extraction. This slice
+  queues no work, calls no AI and does not publish the article or statements.
+- **Failures:** missing input, invalid publisher link, missing publication date
+  versus invented date, partial coverage, lost continuation/qualification,
+  unauthorized current/historical access, and an old submission replacing an edit.
+- **Evidence:** [intake contract and verification](campaign-source-intake-2026-11-08.md).
+  Extraction, forum handoff and paid-generation admission remain separate work.

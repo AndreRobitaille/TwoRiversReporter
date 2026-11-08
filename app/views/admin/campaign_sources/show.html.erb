@@ -1,0 +1,38 @@
+<% content_for(:title) { "#{@source.title} - Campaign source - Admin" } %>
+<% if flash[:notice] %>
+  <div class="flash flash--success" role="status"><%= flash[:notice] %></div>
+<% end %>
+<div class="page-header">
+  <div class="flex justify-between items-center">
+    <div>
+      <h1 class="page-title"><%= @version.title %></h1>
+      <p class="page-subtitle">Saved source text. Analysis has not been enabled.</p>
+    </div>
+    <%= link_to "Edit article", edit_admin_campaign_source_path(@source), class: "btn btn--primary" %>
+  </div>
+</div>
+<p><%= link_to "All campaign sources", admin_campaign_sources_path %></p>
+<% if @version != @source.current_version %>
+  <p class="flash">Viewing an earlier version. <%= link_to "View current version", admin_campaign_source_path(@source) %></p>
+<% end %>
+<dl class="detail-list">
+  <dt class="detail-term">Publisher</dt><dd class="detail-value"><%= link_to @version.publisher, @version.source_url, target: "_blank", rel: "noopener" %></dd>
+  <dt class="detail-term">Published</dt><dd class="detail-value"><%= @version.published_on&.strftime("%B %-d, %Y") || "Unknown" %></dd>
+  <dt class="detail-term">Election</dt><dd class="detail-value"><%= @version.election_on.strftime("%B %-d, %Y") %></dd>
+  <dt class="detail-term">Coverage</dt><dd class="detail-value"><%= CampaignSource::COVERAGES.fetch(@version.coverage) %></dd>
+  <% if @version.coverage_notes.present? %>
+    <dt class="detail-term">Context</dt><dd class="detail-value"><%= @version.coverage_notes %></dd>
+  <% end %>
+</dl>
+<div class="card">
+  <h2 class="card-title">Article text</h2>
+  <div data-campaign-source-text class="detail-value detail-value--preserve"><%= @version.body %></div>
+</div>
+<section class="card">
+  <h2 class="card-title">Saved versions</h2>
+  <ul>
+    <% @versions.each do |version| %>
+      <li><%= link_to version.created_at.strftime("%b %-d, %Y at %l:%M %p"), admin_campaign_source_path(@source, version: version.id) %><%= " (viewing)" if version == @version %></li>
+    <% end %>
+  </ul>
+</section>

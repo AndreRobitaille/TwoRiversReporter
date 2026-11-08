@@ -18,6 +18,24 @@ promise that every representation is supported or authorized.
 
 Current reconciliation: PR #181 removes the ten unsupported dispatch rows and duplicate promotion after reviewing actual controls, while retaining approved compatibility actions. `ApplicationDispatchTest` verifies current repository routes; real browser/denial/failure evidence is in the [audit](overnight-progress.md#merged-notification-and-admin-evidence). The expanded table below preserves the historical discovery revision.
 
+## Campaign article intake addition: November 8, 2026
+
+ADM-21 adds these private admin dispatches. They were enumerated locally and
+checked by `ApplicationDispatchTest`; actual form and access evidence is in
+[campaign intake verification](campaign-source-intake-2026-11-08.md).
+
+| Verb | Path | Action |
+| --- | --- | --- |
+| GET | `/admin/campaign_sources` | `admin/campaign_sources#index` |
+| POST | `/admin/campaign_sources` | `admin/campaign_sources#create` |
+| GET | `/admin/campaign_sources/new` | `admin/campaign_sources#new` |
+| GET | `/admin/campaign_sources/:id/edit` | `admin/campaign_sources#edit` |
+| GET | `/admin/campaign_sources/:id` | `admin/campaign_sources#show` |
+| PATCH / PUT | `/admin/campaign_sources/:id` | `admin/campaign_sources#update` |
+
+These routes do not expose a public campaign source or an extraction action.
+The historical inventory below is unchanged.
+
 ## Application routes
 
 ### `home`
