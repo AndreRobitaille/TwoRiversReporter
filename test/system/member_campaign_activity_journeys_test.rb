@@ -11,9 +11,24 @@ class MemberCampaignActivityJourneysTest < ApplicationSystemTestCase
       activity_vote(date: Date.new(2025, 6, day), agenda_title: "Water renewal decision #{day}",
         description: "Motion to adopt the resolution")
     end
+    other = activity_vote(date: Date.new(2025, 6, 30), description: "Maintain the public pier")
+    other.motion.agenda_item.topics.clear
     Ai::OpenAiService.stub(:new, ->(*) { flunk "Reading existing activity must stay offline" }) do
       visit member_path(@jordan)
+      page.driver.browser.manage.window.resize_to(1280, 900)
+      assert_selector ".member-profile-sidebar #campaign-record", count: 1
+      assert page.evaluate_script("document.querySelector('.member-profile-sidebar').getBoundingClientRect().left >= document.querySelector('.member-profile-primary').getBoundingClientRect().right"),
+        "Campaign context should sit beside the main record on desktop"
+      assert page.evaluate_script("document.querySelector('.member-profile-sidebar').getBoundingClientRect().width < document.querySelector('.member-profile-primary').getBoundingClientRect().width")
+      assert_no_selector ".member-other-votes[open]"
+      assert_no_text "Maintain the public pier"
+      find(".member-other-votes > summary").click
+      assert_text "Maintain the public pier"
+      find(".member-other-votes > summary").click
       page.driver.browser.manage.window.resize_to(390, 844)
+      assert page.evaluate_script("document.querySelector('.member-profile-sidebar').getBoundingClientRect().top >= document.querySelector('.member-profile-primary').getBoundingClientRect().bottom"),
+        "The main record should precede campaign context on a phone"
+      click_link "Campaign priorities", exact: true
       within "[data-campaign-activity]" do
         assert_selector "[data-campaign-vote]", count: 3, visible: true
         assert_no_selector "[data-campaign-vote='#{records.first.id}']", visible: true
@@ -31,6 +46,7 @@ class MemberCampaignActivityJourneysTest < ApplicationSystemTestCase
       assert_current_path meeting_path(records.first.motion.meeting)
       page.go_back
       page.refresh
+      assert_no_selector ".member-other-votes[open]"
       assert_selector "[data-campaign-activity]", count: 1
       assert_selector "[data-campaign-vote]", count: 3, visible: true
       assert_operator page.evaluate_script("document.documentElement.scrollWidth"), :<=, 390

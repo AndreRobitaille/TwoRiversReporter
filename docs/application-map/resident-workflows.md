@@ -211,6 +211,11 @@ status below does not imply complete coverage of those workflows.
 - **Start / data:** civic Member with current office/memberships, attendance and
   linked/unlinked substantive/procedural motions; an official with no record.
 - **Action:** roster name → official → voting topic/meeting; disclose Other Votes.
+- **November 8 layout adjustment:** the primary record precedes campaign context
+  in document/phone order; campaign context sits in a secondary column on desktop.
+  Jump links retain easy access to both. Other Votes starts closed but its saved
+  decisions and links remain server-rendered for permitted readers, including
+  verified Google requests. See [layout checks](member-record-layout-2026-11-08.md).
 - **November 8 recorded-vote view:** switch from Featured votes to All recorded
   votes (`?votes=all`), paginate 25 saved decisions at a time in either view, and
   follow a motion to its meeting and sources. Featured omits procedural motions

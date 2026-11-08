@@ -935,6 +935,13 @@ voter-forum transcripts outside the website. Source intake should extract eviden
 for all relevant members from one supplied article or prepared transcript.
 Formal-conduct coverage is limited to documented complaints and findings.
 
+Owner layout direction (November 8, 2026): the ongoing service, attendance and
+voting record is primary. Campaign context belongs in a secondary desktop column
+and follows the main record on phones, with a direct jump link. Additional votes
+start collapsed and remain available through a native disclosure. Keep the same
+sourced reporting in the HTML for permitted readers and verified crawlers: the
+audience also receives civic information through Google Search and its AI results.
+
 The proposed page centers on **what they said → what they did → what happened**,
 with a term selector, cited overview, public-issue timelines, attendance, full
 decision history, peer/staff comparisons, formal-case history, and source coverage.

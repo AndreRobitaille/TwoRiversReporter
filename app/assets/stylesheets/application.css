@@ -5467,6 +5467,51 @@ th.sortable-header:hover {
   margin: 0 auto;
 }
 
+.member-profile-primary,
+.member-profile-sidebar {
+  min-width: 0;
+}
+
+.member-profile-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.member-profile-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  text-underline-offset: 3px;
+}
+
+#campaign-record {
+  scroll-margin-top: 6rem;
+}
+
+.member-profile-sidebar .member-campaign-card {
+  padding: var(--space-3) var(--space-4);
+}
+
+@media (min-width: 64rem) {
+  .member-article--with-campaign {
+    max-width: 72rem;
+  }
+
+  .member-article--with-campaign .member-profile-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-8);
+  }
+
+  .member-profile-sidebar {
+    padding-left: var(--space-5);
+    border-left: 1px solid var(--color-border);
+  }
+}
+
 .member-article-header {
   margin-bottom: var(--space-4);
 }

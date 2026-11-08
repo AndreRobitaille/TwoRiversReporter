@@ -2,7 +2,7 @@
   <section class="member-article-section" id="campaign-record">
     <div class="home-section-header">
       <%= render "shared/atom_marker" %>
-      <h2 class="section-label">What they campaigned on</h2>
+      <h2 class="section-label" id="campaign-record-heading">What they campaigned on</h2>
       <span class="section-line"></span>
     </div>
     <% statements.group_by { |statement| statement.campaign_source_version.election_on }.each do |election, records| %>
