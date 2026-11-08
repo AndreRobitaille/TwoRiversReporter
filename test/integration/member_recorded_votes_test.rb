@@ -12,6 +12,7 @@ class MemberRecordedVotesTest < ActionDispatch::IntegrationTest
     2.times do |index|
       item.agenda_item_topics.create!(topic: Topic.create!(name: "selection topic #{index}", status: "approved", resident_impact_score: 4))
     end
+    item.agenda_item_topics.create!(topic: Topic.create!(name: "selection background", status: "approved", resident_impact_score: 1))
     closed = record_vote("Enter closed session for interviews", agenda_item: item)
     negotiation = record_vote("Authorize negotiations, returning the proposed agreement for later Council action", agenda_item: item)
     abstention = record_vote("Accept the quarterly report", value: "abstain")
@@ -21,6 +22,8 @@ class MemberRecordedVotesTest < ActionDispatch::IntegrationTest
     Ai::OpenAiService.stub(:new, ->(*) { flunk "Reading saved votes must not call AI" }) do
       get member_path(@member)
       assert_select "a[href=?]", member_path(@member, votes: "all", anchor: "voting-record"), text: "All recorded votes"
+      assert_select ".member-vote-row", count: 4
+      assert_select ".member-vote-motion a", text: negotiation.motion.description, count: 1
 
       get member_path(@member, votes: "all")
       assert_response :success

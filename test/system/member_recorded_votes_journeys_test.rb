@@ -65,6 +65,7 @@ class MemberRecordedVotesJourneysTest < ApplicationSystemTestCase
     meeting = Meeting.create!(body_name: "City Council", starts_at: Time.zone.local(2025, 5, 30, 11, 45), detail_page_url: "https://example.com/featured-source")
     item = meeting.agenda_items.create!(title: "Council decisions")
     item.agenda_item_topics.create!(topic: Topic.create!(name: "neighborhood improvements", status: "approved", resident_impact_score: 4))
+    item.agenda_item_topics.create!(topic: Topic.create!(name: "council budget", status: "approved", resident_impact_score: 3))
     contested = meeting.motions.create!(description: "Convene in closed session for negotiations", outcome: "passed", agenda_item: item)
     contested.votes.create!(member: member, value: "yes")
     contested.votes.create!(member: Member.create!(name: "Dissenting member"), value: "no")

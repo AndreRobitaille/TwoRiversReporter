@@ -76,15 +76,11 @@ module ResidentContent
 
     def build_vote_groups(votes)
       topic_votes = Hash.new { |h, k| h[k] = { topic: nil, votes: [], latest_date: nil, qualifies: false } }
-      other_votes = []
 
       votes.each do |vote|
         topics = vote.motion.agenda_item&.agenda_item_topics&.map(&:topic)&.select { |t| t.status == "approved" }
 
-        if topics.blank?
-          other_votes << vote
-          next
-        end
+        next if topics.blank?
 
         topics.each do |topic|
           group = topic_votes[topic.id]
@@ -112,20 +108,17 @@ module ResidentContent
       # Sort by impact score then recency
       qualified = topic_votes.values
         .select { |g| g[:qualifies] }
-        .sort_by { |g| [ -(g[:topic].resident_impact_score || 0), g[:latest_date] ? -g[:latest_date].to_i : 0 ] }
+        .sort_by { |g| [ -(g[:topic].resident_impact_score || 0), g[:latest_date] ? -g[:latest_date].to_i : 0, g[:topic].id ] }
         .first(5)
 
-      # Move non-qualifying topic votes into other_votes
-      qualified_topic_ids = qualified.map { |g| g[:topic].id }.to_set
-      topic_votes.each do |_topic_id, group|
-        unless qualified_topic_ids.include?(group[:topic].id)
-          other_votes.concat(group[:votes])
-        end
+      # Display a decision once, under its highest-ranked featured topic.
+      displayed_vote_ids = Set.new
+      qualified.each do |group|
+        group[:votes].select! { |vote| displayed_vote_ids.add?(vote.id) }
       end
+      qualified.reject! { |group| group[:votes].empty? }
 
-      other_votes.uniq!
-      other_votes.sort_by! { |v| v.motion.meeting.starts_at }.reverse!
-
+      other_votes = votes.reject { |vote| displayed_vote_ids.include?(vote.id) }
       [ qualified, other_votes ]
     end
 
