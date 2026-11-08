@@ -23,6 +23,9 @@ historical, not a claim that subsequent tests did not run.
 The [October 24 voter-profile navigation experiment](member-navigation-2026-10-24.md)
 records the subsequent RES-04/06/10/11 navigation and access checks.
 
+The [November 8 recorded-vote view](member-recorded-votes-2026-11-08.md) records
+RES-10/11 pagination, source navigation, coverage wording and access checks.
+
 The [October 31 Rack security correction](rack-security-2026-10-31.md) records
 multipart parser boundaries, upload compatibility and demonstrated defect detection.
 
