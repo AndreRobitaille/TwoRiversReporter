@@ -32,13 +32,14 @@ module Api
             .order(:meeting_id, :document_type, created_at: :desc, id: :desc).group_by(&:meeting_id)
           analyses = ResidentQueries.preferred_summaries.where(meeting_id: ids)
             .reselect("DISTINCT ON (meeting_id) meeting_id, updated_at").map { |row| [ row.meeting_id, row.updated_at ] }.to_h
+          withdrawals = MeetingSummary.where(meeting_id: ids).group(:meeting_id).maximum(:evidence_withdrawn_at)
           agenda = AgendaItem.substantive.where(meeting_id: ids).group(:meeting_id).maximum(:updated_at)
           records.each do |record|
             docs = documents.fetch(record.id, [])
             document_time = docs.map(&:updated_at).max
             analysis_time = record.cancelled? ? nil : analyses[record.id]
             @metadata[[ record.class.name, record.id ]] = {
-              updated_at: [ record.updated_at, document_time, analysis_time, agenda[record.id] ].compact.max,
+              updated_at: [ record.updated_at, document_time, analysis_time, withdrawals[record.id], agenda[record.id] ].compact.max,
               last_document_updated_at: document_time, last_analysis_updated_at: analysis_time,
               available_document_types: docs.map(&:document_type).sort,
               has_analysis: analysis_time.present?, has_transcript: docs.any? { |doc| doc[:transcript_available] }

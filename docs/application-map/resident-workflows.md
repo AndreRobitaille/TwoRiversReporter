@@ -136,6 +136,8 @@ status below does not imply complete coverage of those workflows.
   Corrected extracted votes also withdraw summaries with incompatible motion
   receipts, even with unchanged minutes; later member and meeting reads are
   covered in [summary fact-dependency checks](meeting-summary-facts-2026-11-07.md).
+  A later topic-briefing correction also withdraws a preview with a known receipt,
+  including a different future meeting; see [saved agenda dependency checks](agenda-summary-dependencies-2026-11-07.md).
 - **Approved contract:** owner clarification October 11 (#171) preserves the
   conditional sections and legacy/agenda-only branches. The March 1 fixed-section
   proposal is superseded; see [behavior contracts](behavior-contracts.md).
@@ -296,6 +298,10 @@ status below does not imply complete coverage of those workflows.
   [ResidentQueries](../../app/services/api/v1/resident_queries.rb).
 
 ## RES-14 — Discover newly available evidence for an old event (P1)
+
+- **November 7 withdrawal freshness:** `updated_since` includes a summary withdrawal
+  even when the meeting and its own document did not change; available-analysis
+  metadata still excludes withdrawn prose. See [cross-meeting API evidence](agenda-summary-dependencies-2026-11-07.md).
 
 - **Start / data:** historical meeting/topic; newly changed document, recap,
   briefing, alias or appearance; separately unchanged scrape and extraction rerun.

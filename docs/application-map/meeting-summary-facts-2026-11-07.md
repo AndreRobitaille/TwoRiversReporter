@@ -125,6 +125,10 @@ link/anchor and balanced-fence checks; `git diff --check` passed.
 
 ## Remaining scope and cost
 
+Subsequent [saved agenda dependency work](agenda-summary-dependencies-2026-11-07.md)
+adds durable topic-context receipts and withdrawal. The scope below records this
+earlier slice as originally verified.
+
 This adds **structured motion dependencies of saved meeting summaries**. Participant
 and roster inputs, knowledge context, previously consumed topic-briefing context,
 all direct mutable-row writers and complete narrative history remain separate work.

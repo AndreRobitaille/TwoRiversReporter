@@ -29,7 +29,7 @@ class PruneHollowAppearancesJob < ApplicationJob
     summary = meeting.meeting_summaries.published.order(created_at: :desc).first
     return unless summary&.generation_data.is_a?(Hash)
 
-    Meetings::SummaryPublication.with_current(summary) { prune(meeting, summary) }
+    Meetings::SummaryPublication.with_current(summary, topic_ids: meeting.topics.pluck(:id)) { prune(meeting, summary) }
   end
 
   private

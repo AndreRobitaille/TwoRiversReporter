@@ -252,7 +252,11 @@ Saved summaries also retain their consumed structured motion context. Fact
 republication withdraws incompatible known summaries and illustrations atomically;
 compatible context survives. Final summary publication and consumers recheck the
 receipt. See [summary fact dependencies and verification](meeting-summary-facts-2026-11-07.md).
-Previously consumed topic-briefing and other missing dependencies remain open.
+Saved previews now retain consumed topic-briefing sections. Normal briefing,
+topic and alias changes withdraw invalid known dependents; checked consumers use
+topic-before-summary locks, and API freshness includes withdrawal. See
+[saved agenda dependencies and concurrency evidence](agenda-summary-dependencies-2026-11-07.md).
+Knowledge, participant and other unrecorded dependencies remain open.
 
 Fact publication now withdraws stored briefings with invalid motion receipts even
 when the source document is unchanged. Fact projection, automated audit and image

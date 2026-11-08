@@ -27,16 +27,22 @@ class ExtractKnowledgeJob < ApplicationJob
 
     return if response.blank?
 
-    parsed = parse_entries(response)
+    parsed = parse_entries(response).select { |entry| entry["confidence"].to_f >= CONFIDENCE_THRESHOLD }
     return if parsed.empty?
 
-    Meetings::SummaryPublication.with_current(summary) do
+    # Acquire every topic we will reference with the consumed context, before
+    # the summary row. Recheck aliases after waiting; do not silently redirect
+    # a captured attribution to a different topic during publication.
+    topics = parsed.flat_map { |entry| Array(entry["topic_names"]) }.uniq.to_h do |name|
+      [ name, Topic.find_by_name_or_alias(name, Topic.approved) ]
+    end
+    Meetings::SummaryPublication.with_current(summary, topic_ids: topics.values.compact.map(&:id)) do
+      next unless topics.all? { |name, topic| Topic.find_by_name_or_alias(name, Topic.approved)&.id == topic&.id }
+
       created_ids = []
       parsed.each do |entry|
-        next if entry["confidence"].to_f < CONFIDENCE_THRESHOLD
-
         source = create_knowledge_source(entry, meeting)
-        link_topics(source, entry["topic_names"])
+        link_topics(source, entry["topic_names"], topics)
         created_ids << source.id
       end
 
@@ -94,11 +100,11 @@ class ExtractKnowledgeJob < ApplicationJob
     )
   end
 
-  def link_topics(source, topic_names)
+  def link_topics(source, topic_names, resolved_topics)
     return if topic_names.blank?
 
     Array(topic_names).each do |name|
-      topic = Topic.find_by_name_or_alias(name, Topic.approved)
+      topic = resolved_topics[name]
       next unless topic
 
       source.knowledge_source_topics.find_or_create_by!(topic: topic)
