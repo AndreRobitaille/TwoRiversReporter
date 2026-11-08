@@ -15,6 +15,6 @@ class ReconcileCampaignSourcesJob < ApplicationJob
       end
     end
     MatchCampaignActionsJob.perform_later
-    ExtractCouncilIssueUpdatesJob.perform_later
+    ExtractCouncilIssueUpdatesJob.perform_later if CouncilIssueReview.where.not(meeting_document_id: nil).exists?
   end
 end

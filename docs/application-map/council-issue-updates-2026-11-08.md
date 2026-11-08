@@ -111,3 +111,11 @@ sources remains open. Missing evidence never proves no work or completion.
 The user's other profile-review session could not be reached through the app's
 local transport; no new voter-persona review is claimed. The source-based
 compact presentation still needs that review on populated real records.
+
+## CI follow-up
+
+The first full CI run found five existing recovery assertions failing because an
+empty issue-source recovery job was queued even when no source had been selected.
+Recovery now checks for selected sources before enqueueing. This avoids idle work
+and preserves the established no-work contract. The recovery, campaign-topic and
+new issue integration files passed together: **23 tests, 246 assertions**.

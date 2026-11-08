@@ -99,6 +99,7 @@ class CouncilIssueUpdatesTest < ActionDispatch::IntegrationTest
 
   test "budget pauses before transport and nightly recovery only revisits selected sources" do
     Ai::OpenAiService.stub(:new, ->(*) { flunk "Source selection is not spending authorization" }) do
+      assert_no_enqueued_jobs(only: ExtractCouncilIssueUpdatesJob) { ReconcileCampaignSourcesJob.perform_now }
       ExtractCouncilIssueUpdatesJob.perform_now
       assert_equal 0, CouncilIssueReview.count
       ExtractCouncilIssueUpdatesJob.perform_now(@document.id)
