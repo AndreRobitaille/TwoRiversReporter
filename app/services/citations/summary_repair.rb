@@ -6,7 +6,7 @@ module Citations
   # label, so they are intentionally refused instead of attributed by guesswork.
   class SummaryRepair
     class Unprovable < StandardError; end
-    SERVER_FIELDS = %w[source_type framing source_catalog citation_schema_version citation_provenance motion_context_manifest].freeze
+    SERVER_FIELDS = %w[source_type framing source_catalog citation_schema_version citation_provenance motion_context_manifest topic_context_manifest].freeze
 
     def initialize(summary_id:, prompt_run_id:, document_id:)
       @summary_id = summary_id
@@ -149,7 +149,7 @@ module Citations
       Digest::SHA256.hexdigest(JSON.generate({
         summary: summary.attributes.except("generation_data", "updated_at"),
         reporting: self.class.reporting_data(summary.generation_data),
-        summary_source: summary.generation_data.slice("source_type", "framing", "motion_context_manifest"), meeting: meeting.attributes,
+        summary_source: summary.generation_data.slice("source_type", "framing", "motion_context_manifest", "topic_context_manifest"), meeting: meeting.attributes,
         agenda_items: meeting.agenda_items.order(:id).map(&:attributes),
         documents: meeting.meeting_documents.order(:id).map(&:attributes),
         extractions: Extraction.joins(:meeting_document).where(meeting_documents: { meeting_id: meeting.id }).order(:id).map(&:attributes),

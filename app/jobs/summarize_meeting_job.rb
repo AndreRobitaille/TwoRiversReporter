@@ -138,7 +138,7 @@ class SummarizeMeetingJob < ApplicationJob
     Meetings::SummaryPublication.publish(meeting: meeting, summary_type: summary_type, expected: expected,
       sources: catalog.sources, topic_context: topic_context, motion_context: motion_context) do
       save_summary(meeting, summary_type, json_str, source_catalog: catalog.sources,
-        source_type: source_type, framing: compute_framing(motion_context.meeting, type), motion_context_manifest: motion_context.manifest)
+        source_type: source_type, framing: compute_framing(motion_context.meeting, type), motion_context_manifest: motion_context.manifest, topic_context_manifest: topic_context&.manifest)
     end
   end
 
@@ -193,7 +193,7 @@ class SummarizeMeetingJob < ApplicationJob
     parts.join("\n")
   end
 
-  def save_summary(meeting, type, json_str, source_catalog:, source_type: nil, framing: nil, motion_context_manifest: nil)
+  def save_summary(meeting, type, json_str, source_catalog:, source_type: nil, framing: nil, motion_context_manifest: nil, topic_context_manifest: nil)
     generation_data = begin
       JSON.parse(json_str)
     rescue JSON::ParserError => e
@@ -204,6 +204,7 @@ class SummarizeMeetingJob < ApplicationJob
     generation_data["source_type"] = source_type if source_type
     generation_data["framing"] = framing if framing
     generation_data["motion_context_manifest"] = motion_context_manifest
+    generation_data["topic_context_manifest"] = topic_context_manifest
 
     summary = meeting.meeting_summaries.find_or_initialize_by(summary_type: type)
     summary.generation_data = generation_data

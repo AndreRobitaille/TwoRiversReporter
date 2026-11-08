@@ -197,6 +197,8 @@ class MeetingSummaryFactDependenciesTest < ActionDispatch::IntegrationTest
   end
 
   test "agenda preview pins its structured minutes dependency even when minutes are outside its source catalog" do
+    # Isolate the minutes dependency from independently sufficient topic context.
+    @topic.update!(resident_impact_score: 2)
     agenda_doc = @meeting.meeting_documents.create!(document_type: "agenda_pdf",
       source_url: "https://example.test/fact-summary-agenda.pdf", extracted_text: "Synthetic cedar improvements")
     generate_summary(mode: :agenda_preview)

@@ -11,4 +11,19 @@ class TopicBriefing < ApplicationRecord
   validates :generation_tier, presence: true,
     inclusion: { in: %w[headline_only interim full] }
   validates :topic_id, uniqueness: true
+
+  before_save :lock_agenda_context_topics
+  before_destroy :lock_agenda_context_topics, prepend: true
+  after_save :withdraw_dependent_agenda_summaries
+  after_destroy :withdraw_dependent_agenda_summaries
+
+  private
+
+  def lock_agenda_context_topics
+    Topics::AgendaBriefingContext.lock_topics(topic_id, topic_id_in_database)
+  end
+
+  def withdraw_dependent_agenda_summaries
+    Meetings::WithdrawAgendaSummaries.call(topic_ids: [ topic_id, topic_id_before_last_save ])
+  end
 end

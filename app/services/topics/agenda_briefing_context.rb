@@ -2,6 +2,7 @@ module Topics
   # Generated background for an agenda preview, separate from its official source
   # catalog. Capture once before generation and check those exact inputs at save.
   class AgendaBriefingContext
+    VERSION = 1
     MIN_TOKEN_OVERLAP = 3
     MIN_IMPACT = 3
     MAX_HITS = 6
@@ -13,7 +14,41 @@ module Topics
       off over under same own more most less few many such new old
     ]).freeze
 
-    def initialize(agenda_text)
+    def self.current_manifest(manifest)
+      new(nil, receipt: manifest).current_manifest if valid_manifest?(manifest)
+    end
+
+    def self.with_current(manifest, topic_ids: [], &block)
+      if manifest.nil?
+        Topic.transaction do
+          lock_topics(topic_ids)
+          yield
+        end
+      elsif valid_manifest?(manifest)
+        new(nil, receipt: manifest).with_current(topic_ids: topic_ids, &block)
+      end
+    end
+
+    def self.lock_topics(*ids)
+      Topic.where(id: ids.flatten.compact.uniq).order(:id).lock.load
+    end
+
+    def self.valid_manifest?(manifest)
+      manifest.is_a?(Hash) && manifest["version"] == VERSION &&
+        manifest["agenda_tokens"].is_a?(Array) && manifest["agenda_tokens"].all? { |token| token.is_a?(String) } &&
+        manifest["entries"].is_a?(Array) && manifest["entries"].size <= MAX_HITS &&
+        manifest["entries"].all? do |item|
+          item.is_a?(Hash) && item["topic_id"].is_a?(Integer) && item["briefing_id"].is_a?(Integer) && item["section"].is_a?(String)
+        end
+    end
+    private_class_method :valid_manifest?
+
+    def initialize(agenda_text, receipt: nil)
+      if receipt
+        @agenda_tokens = Set.new(receipt.fetch("agenda_tokens"))
+        @entries = receipt.fetch("entries")
+        return
+      end
       @agenda_tokens = significant_tokens(agenda_text)
       @entries = if @agenda_tokens.size < MIN_TOKEN_OVERLAP
         []
@@ -33,22 +68,33 @@ module Topics
         <topic_briefings>
         The following topics are ongoing civic concerns in Two Rivers that share content words with the agenda text. Use them to ground your analysis where clearly relevant to an agenda item — residents already recognize these issues. These are established context, not outcomes from this meeting. Ignore entries that don't actually line up with any item.
 
-        #{@entries.map { |item| item.fetch(:section) }.join("\n\n")}
+        #{@entries.map { |item| item.fetch("section") }.join("\n\n")}
         </topic_briefings>
       TOPIC_CONTEXT
     end
 
-    def with_current
-      # Publication/withdrawal writers take the same topic locks. The provider
-      # runs before this transaction, so no lock is held across a network call.
+    def manifest
+      { "version" => VERSION, "agenda_tokens" => @agenda_tokens.to_a.sort, "entries" => @entries }
+    end
+
+    def current_manifest
+      current = eligible_topics.where(id: @entries.map { |item| item.fetch("topic_id") }).filter_map do |topic|
+        entry(topic) if token_overlap(topic) >= MIN_TOKEN_OVERLAP
+      end.index_by { |item| item.fetch("topic_id") }
+      manifest.merge("entries" => @entries.filter_map { |item| current[item.fetch("topic_id")] })
+    end
+
+    def current?
+      manifest == current_manifest
+    end
+
+    def with_current(topic_ids: [])
+      # Topic, alias and briefing writers share these locks, including when no
+      # summary exists yet. Providers run before this transaction.
       Topic.transaction do
         Topic.uncached do
-          ids = @entries.map { |item| item.fetch(:topic_id) }
-          Topic.where(id: ids).order(:id).lock.load
-          current = eligible_topics.where(id: ids).filter_map do |topic|
-            entry(topic) if token_overlap(topic) >= MIN_TOKEN_OVERLAP
-          end
-          yield if current.sort_by { |item| item.fetch(:topic_id) } == @entries.sort_by { |item| item.fetch(:topic_id) }
+          self.class.lock_topics(topic_ids, @entries.map { |item| item.fetch("topic_id") })
+          yield if current?
         end
       end
     end
@@ -68,7 +114,7 @@ module Topics
       parts << "Current state: #{briefing.headline}" if briefing.headline.present?
       parts << "Coming up: #{briefing.upcoming_headline}" if briefing.upcoming_headline.present?
       parts << briefing.editorial_content.to_s.truncate(1200) if briefing.editorial_content.present?
-      { topic_id: topic.id, briefing_id: briefing.id, section: parts.join("\n") }
+      { "topic_id" => topic.id, "briefing_id" => briefing.id, "section" => parts.join("\n") }
     end
 
     def token_overlap(topic)

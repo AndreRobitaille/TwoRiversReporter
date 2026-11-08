@@ -100,6 +100,11 @@ class Topic < ApplicationRecord
   }
 
   before_validation :maintain_derived_fields
+  before_destroy :lock_agenda_context_topic, prepend: true
+  after_update :withdraw_dependent_agenda_summaries,
+    if: -> { saved_change_to_name? || saved_change_to_status? || saved_change_to_resident_impact_score? }
+  after_destroy :withdraw_dependent_agenda_summaries
+
 
   RESIDENT_IMPACT_OVERRIDE_WINDOW = 180.days
 
@@ -181,6 +186,14 @@ class Topic < ApplicationRecord
   end
 
   private
+
+  def lock_agenda_context_topic
+    Topics::AgendaBriefingContext.lock_topics(id)
+  end
+
+  def withdraw_dependent_agenda_summaries
+    Meetings::WithdrawAgendaSummaries.call(topic_ids: [ id ])
+  end
 
   def maintain_derived_fields
     self.name = self.class.normalize_name(name)
