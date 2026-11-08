@@ -81,7 +81,8 @@ evidence through compatible person merges and cached minutes reconstruction.
 The [November 7 briefing-withdrawal checks](council-briefing-withdrawal-2026-11-07.md)
 cover decision-identity correction through stored briefing publication, resident
 representations, API freshness, delayed jobs and concurrent first publication.
-Knowledge withdrawal and other generated projections remain open.
+Subsequent slices cover additional generated dependencies; the original limits
+remain recorded in that report.
 
 The [November 7 document-source withdrawal checks](council-source-withdrawal-2026-11-07.md)
 cover source changes/removal through retained catalog and motion dependencies,
@@ -106,7 +107,12 @@ refreshes, audit rollback, late responses and concurrent first summary publicati
 The [November 7 saved agenda dependency checks](agenda-summary-dependencies-2026-11-07.md)
 cover later topic-context changes through atomic preview/image withdrawal,
 cross-meeting API freshness, checked knowledge links and actual database races.
-Missing legacy, participant, knowledge and other unrecorded dependencies remain open.
+
+The [November 7 knowledge dependency checks](knowledge-summary-dependencies-2026-11-07.md)
+cover newly extracted knowledge's summary receipts, atomic withdrawal, later
+retrieval/search, late triage/ingestion, retained review history and the actual
+admin Re-ingest control. Legacy provenance, additional raw-text and participant
+inputs, stored patterns and other unrecorded dependencies remain open.
 
 The [November 7 topic-generation dependency checks](council-topic-generation-2026-11-07.md)
 cover unchanged topic-stage reuse, stale-input filtering and rejected in-flight

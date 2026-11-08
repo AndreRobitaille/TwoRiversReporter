@@ -256,7 +256,13 @@ Saved previews now retain consumed topic-briefing sections. Normal briefing,
 topic and alias changes withdraw invalid known dependents; checked consumers use
 topic-before-summary locks, and API freshness includes withdrawal. See
 [saved agenda dependencies and concurrency evidence](agenda-summary-dependencies-2026-11-07.md).
-Knowledge, participant and other unrecorded dependencies remain open.
+Newly extracted knowledge now retains its supporting summary identity and payload
+receipt. Summary changes/removal withdraw known dependents without erasing text,
+review state or chunks. Fresh retrieval, topic input receipts and pattern inputs
+omit withdrawn evidence; checked triage and ingestion reject late work. See
+[knowledge dependencies, browser behavior and fault evidence](knowledge-summary-dependencies-2026-11-07.md).
+Additional raw-text/participant inputs, stored patterns and other generated
+knowledge-dependent projections remain separate work.
 
 Fact publication now withdraws stored briefings with invalid motion receipts even
 when the source document is unchanged. Fact projection, automated audit and image
