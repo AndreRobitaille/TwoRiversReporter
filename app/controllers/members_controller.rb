@@ -28,6 +28,8 @@ class MembersController < ApplicationController
 
     @show_all_votes = params[:votes] == "all"
     unless gated_for_visitor?
+      @issue_updates = ResidentContent::IssueUpdates.new(@member, attendance: @council_attendance,
+        period: @record_period, statements: @campaign_statements || []).call
       @peer_comparisons = ResidentContent::PeerVotes.new(@member, attendance: @council_attendance).summaries
       if @show_all_votes
         @pagy, @recorded_votes = pagy(:offset, profile.votes, limit: 25)

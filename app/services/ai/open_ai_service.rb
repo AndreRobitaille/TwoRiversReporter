@@ -150,6 +150,16 @@ module Ai
         build_chat_parameters(model: model_for_tier(template.model_tier), messages: messages,
           response_format: { type: "json_object" }).merge(max_completion_tokens: MAX_CAMPAIGN_COMPLETION_TOKENS)
       end
+
+      def council_issue_parameters(context)
+        text = JSON.generate(context)
+        raise InputTooLargeError, "Issue source requires partitioning" if text.length > CouncilProfiles::ExtractIssueUpdates::MAX_CONTEXT_CHARS
+        template = PromptTemplate.find_by!(key: "extract_council_issue_updates")
+        messages = [ { role: "system", content: template.system_role },
+          { role: "user", content: template.interpolate(context: text) } ]
+        build_chat_parameters(model: model_for_tier(template.model_tier), messages: messages,
+          response_format: { type: "json_object" }).merge(max_completion_tokens: MAX_CAMPAIGN_COMPLETION_TOKENS)
+      end
     end
 
     # Experimental calls use the same parameter construction as production but
@@ -202,14 +212,15 @@ module Ai
       content
     end
 
-    # Campaign extraction always supplies the spending recorder. The retained
-    # receipt contains the exact prompt, provider output and usage for all people.
-    def extract_campaign_source(parameters:, request_recorder:)
-      raise ArgumentError, "Campaign extraction requires a spending recorder" unless request_recorder
+    # Shared council extraction retains exact requests, responses and spending.
+    def extract_council_evidence(parameters:, request_recorder:)
+      raise ArgumentError, "Council extraction requires a spending recorder" unless request_recorder
 
       content, = call_api(**parameters, request_recorder: request_recorder)
       content
     end
+
+    alias_method :extract_campaign_source, :extract_council_evidence
 
     def extract_committee_members(text, source: nil, template: nil, request_recorder: nil)
       placeholders = { text: text }

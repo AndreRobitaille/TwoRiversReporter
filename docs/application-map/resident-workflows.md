@@ -208,6 +208,11 @@ status below does not imply complete coverage of those workflows.
 
 ## RES-10 — Inspect an official's attendance and voting record (P1)
 
+- **November 8 shared issue updates:** selected official minutes can supply a
+  short project/policy update to every relevant profile without another vote.
+  Source/report dates, conditions and body remain separate from member credit
+  and campaign alignment. Reads use current saved evidence only; details are
+  independent disclosures. See [issue-update evidence](council-issue-updates-2026-11-08.md).
 - **November 8 peer votes:** selected terms offer a closed alphabetical comparison
   table with inspectable shared yes/no fractions and a separate divided subset.
   The detail route preserves the term through pagination and source navigation,

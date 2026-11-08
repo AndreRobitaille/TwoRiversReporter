@@ -142,7 +142,12 @@
           <% end %>
         <% end %>
       </section>
-      <%= render "peer_comparisons" unless gated_for_visitor? %>
+      <% unless gated_for_visitor? %>
+        <%= gated_content do %>
+          <%= render "issue_updates" %>
+          <%= render "peer_comparisons" %>
+        <% end %>
+      <% end %>
     </div>
     <% if has_campaign %>
       <aside class="member-profile-sidebar" aria-labelledby="campaign-record-heading">

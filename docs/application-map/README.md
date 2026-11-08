@@ -75,6 +75,10 @@ concurrent reservation, budget-paused retries and retained uncertain amounts.
 The [November 8 monthly council cost checks](council-monthly-costs-2026-11-08.md)
 add an explicit monthly ceiling across runs/days and a read-only stage usage report.
 
+The [November 8 shared issue-update checks](council-issue-updates-2026-11-08.md)
+record bounded official-minutes extraction, shared member projections, source
+corrections, spending holds and real concession-source evaluation for BG-09.
+
 The [November 8 live action-admission checks](council-live-action-budget-2026-11-08.md)
 cover an explicit monthly opt-in for new meetings, bounded nightly recovery and
 the historical-backfill boundary. No policy is enabled by the migration.

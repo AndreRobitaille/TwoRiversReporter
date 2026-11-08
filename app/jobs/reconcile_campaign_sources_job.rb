@@ -15,5 +15,6 @@ class ReconcileCampaignSourcesJob < ApplicationJob
       end
     end
     MatchCampaignActionsJob.perform_later
+    ExtractCouncilIssueUpdatesJob.perform_later
   end
 end

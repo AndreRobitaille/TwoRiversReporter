@@ -1,0 +1,49 @@
+module CouncilProfiles
+  class ExtractIssueUpdates
+    MAX_CONTEXT_CHARS = 60_000
+
+    def self.prepare(document)
+      document.with_lock do
+        input = IssueInput.new(document)
+        # Template/model edits alone do not reopen historical sources.
+        existing = CouncilIssueReview.find_by(input_key: input.key)
+        return existing if existing
+        attributes = { meeting_document: document, input_key: input.key, context: input.context }
+        begin
+          attributes[:parameters] = Ai::OpenAiService.council_issue_parameters(input.context)
+        rescue Ai::OpenAiService::InputTooLargeError
+          attributes.merge!(status: "oversized", error_code: "issue_source_requires_partition")
+        end
+        CouncilIssueReview.create!(attributes)
+      end
+    rescue IssueInput::Unavailable
+      nil
+    end
+
+    def self.call(stage, budget_run: nil)
+      # Never spend on a source that was replaced after preparation.
+      return stage unless stage.meeting_document && IssueInput.new(stage.meeting_document).key == stage.input_key
+      claimed = stage.claim!(budget_run)
+      return stage unless claimed
+      raise ReserveAiSpend::Paused, "missing_budget" unless budget_run
+      response = Ai::OpenAiService.new.extract_council_evidence(parameters: stage.parameters.deep_symbolize_keys,
+        request_recorder: RequestRecorder.new(stage))
+      stage.update!(status: "completed", data: IssueUpdates.new(stage.context).parse(response), completed_at: Time.current)
+      stage
+    rescue IssueInput::Unavailable
+      stage
+    rescue ReserveAiSpend::Paused => e
+      stage.update!(status: "budget_paused", error_code: e.message, attempts: stage.attempts - 1)
+      stage
+    rescue JSON::ParserError, IssueUpdates::InvalidResponse => e
+      stage.update!(status: "failed", error_code: e.class.name)
+      stage
+    rescue Ai::OpenAiService::IncompleteResponseError
+      stage.update!(status: "incomplete", error_code: "incomplete_response")
+      stage
+    rescue StandardError => e
+      stage.update!(status: "uncertain", error_code: e.class.name) if claimed && stage.status == "running"
+      raise
+    end
+  end
+end

@@ -72,6 +72,7 @@ after the discovery baseline; the current index contains 59 application workflow
 | [BG-06](data-and-background.md#bg-06--deliver-notifications-and-retire-expired-auth-evidence-p1) | Deliver notifications and retire expired auth evidence | P1 |
 | [BG-07](data-and-background.md#bg-07--refresh-crawler-verification-and-expire-diagnostics-p1) | Refresh crawler verification and expire diagnostics | P1 |
 | [BG-08](data-and-background.md#bg-08--extract-a-shared-campaign-article-within-a-spending-allowance-p1) | Extract a shared campaign article within a spending allowance | P1 |
+| [BG-09](data-and-background.md#bg-09--extract-shared-official-issue-milestones-p1) | Extract shared official issue milestones | P1 |
 
 See [maintenance and QA](maintenance-and-qa.md) for the later coverage/effectiveness
 record schema and [verification register](verification-register.md) for unresolved
