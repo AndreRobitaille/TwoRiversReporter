@@ -12,7 +12,7 @@ module ResidentContent
       ranges = periods.map { |period| period.started_on..(period.ended_on || Date.current) }
       start_date = ranges.map(&:begin).min
       end_date = ranges.map(&:end).max
-      stages = CouncilIssueReview.where(status: "completed").where(
+      stages = CouncilIssueReview.from_minutes.where(status: "completed").where(
         "EXISTS (SELECT 1 FROM jsonb_array_elements(council_issue_reviews.data->'actions') action " \
         "WHERE action->>'occurred_on' BETWEEN ? AND ?)", start_date.iso8601, end_date.iso8601)
       rows = stages.includes(meeting_document: :meeting).flat_map do |stage|

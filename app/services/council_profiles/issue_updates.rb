@@ -14,11 +14,14 @@ module CouncilProfiles
       raise InvalidResponse unless data.is_a?(Hash) && data["complete"] == true &&
         rows.is_a?(Array) && rows.size <= 40 && rows.all? { |row| row.is_a?(Hash) }
 
-      result = { "updates" => rows.map { |row| validate(row) }.uniq }
+      # Packets provide proposal/recommendation context. Their attached minutes
+      # and draft resolutions cannot establish actions at this Council meeting.
+      minutes = @context.dig("source", "document_type").in?(%w[minutes_pdf minutes_html])
+      result = { "updates" => minutes ? rows.map { |row| validate(row) }.uniq : [] }
       if @context["schema_version"].to_i >= 2
         actions = data["actions"]
         raise InvalidResponse unless actions.is_a?(Array) && actions.size <= 40
-        result["actions"] = actions.map { |row| validate_action(row) }.uniq
+        result["actions"] = minutes ? actions.map { |row| validate_action(row) }.uniq : []
       end
       if @context["schema_version"] == 3
         recommendations = data["recommendations"]

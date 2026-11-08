@@ -8,6 +8,8 @@ class CouncilIssueReview < ApplicationRecord
   validates :status, inclusion: { in: %w[pending running completed failed uncertain incomplete oversized budget_paused] }
   validate :retain_completed_output
 
+  scope :from_minutes, -> { joins(:meeting_document).where(meeting_documents: { document_type: %w[minutes_pdf minutes_html] }) }
+
   def budget_required?
     true
   end

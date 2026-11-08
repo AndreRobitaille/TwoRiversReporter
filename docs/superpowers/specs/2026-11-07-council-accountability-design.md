@@ -33,6 +33,14 @@ and sequencing of the more detailed proposals below.
   source content or an explicit factual correction can trigger fact extraction;
   a narrative prompt/model change alone cannot. This is an operating assumption,
   not a claim that city records never change or our extraction is always right.
+- Reuse the app's established minutes-first workflow. The meeting's own minutes
+  establish its votes and decisions. Packets are secondary proposal context and
+  may contain old subcommittee minutes in consent-agenda attachments; those do
+  not establish actions at the current Council meeting. The profile evidence
+  stage uses minutes for actions/outcomes and may use a specifically selected
+  packet for explicit recommendations. Do not build a parallel packet-to-decision
+  interpretation or recovery system. Routine cost planning starts with minutes,
+  without assuming a separate analysis of every packet.
 - Make the next slice a readable member record under #237/#240: recorded votes,
   meeting/source navigation, and honest coverage, followed by evidenced service
   periods and campaign enrichment. Show missing campaign material as a gap;

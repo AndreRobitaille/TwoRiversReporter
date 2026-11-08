@@ -52,7 +52,9 @@ module MembersHelper
         (record.fetch(:topics).map(&:id) & issue.fetch(:topic_ids)).any?
       end
       actions.sort_by! do |row|
-        row[:vote] ? row.fetch(:vote).motion.meeting.starts_at.to_date.iso8601 : row.dig(:evidence, "occurred_on") || row.fetch(:reported_on).iso8601
+        date = row[:vote] ? row.fetch(:vote).motion.meeting.starts_at.to_date.iso8601 : row.dig(:evidence, "occurred_on") || row.fetch(:reported_on).iso8601
+        # On the same date, show what this member did before general issue updates.
+        [ date, row[:kind] == "outcome" ? 0 : 1 ]
       end
       actions.reverse!
       [ statement, actions ] if actions.any?
