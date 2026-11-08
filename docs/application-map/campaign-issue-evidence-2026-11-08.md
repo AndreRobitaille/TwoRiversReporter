@@ -97,3 +97,31 @@ requires an exact allowance, and the monthly ceiling bounds aggregate admission.
 Real-provider interpretation accuracy, broader source completeness, final cohort
 validation and full-term absence assessment remain open. No new paid calls,
 production operations, database sync, historical backfill, merge or deployment ran.
+
+## Combined real-data cohort check
+
+The integrated stack at `8333c9a` was served in development from a separate
+checkout using the owner's existing local data, with no worker or live allowance.
+A read-only Selenium/Capybara browser session checked Bittner, Brandt and Derby
+at desktop and 390px widths. Both forums and the HTR article remain linked in
+each member's saved campaign evidence. Independent issue disclosures, bottom
+pagination, retained term/view on page two, reload and peer comparison sections
+worked. Brandt's Airbnb condition appears once, with no trailing duplicate;
+his two saved business-grant comparisons open their evidence and reach the
+source meeting. Empty formal coverage is explicitly incomplete, not a clean
+record claim. No synthetic analysis was inserted into those profiles. The newer
+issue-analysis and formal-record tables remain empty in that local dataset.
+
+The initial CI application suite passed 2,626 tests, 18,650 assertions, with
+one existing skip. The browser suite exposed a pending Turbo anchor navigation
+in the earlier campaign-activity journey; local reproduction also produced an
+empty topic attribute during that transition. The journey now waits for the
+expected fragment and navigation completion before operating disclosures. All
+open/close and independent-section assertions remain. The three related browser
+journeys pass together: 3 tests, 61 assertions, no skips. This is a test timing
+correction, not a claim that a user-visible defect was repaired.
+
+The real-data check verifies existing saved material and controls. It does not
+establish accuracy of future provider results, complete-term coverage, all-member
+service dates, or production operation. Full cohort/backfill acceptance remains
+open under #245.
