@@ -1,7 +1,8 @@
 # Extracted knowledge and summary dependencies: November 7, 2026
 
 Based on `ba7dab06` ([PR #262](https://github.com/AndreRobitaille/TwoRiversReporter/pull/262)).
-Implementation revision: `9765a0de`. Local verification uses Ruby 4.0.9,
+Implementation revisions: `9765a0de`, with summary-version follow-up `f8281fd9`.
+Local verification uses Ruby 4.0.9,
 Rails 8.1.4.1, isolated PostgreSQL 18.6 and deterministic provider/download/embedding
 responses. The browser journey uses the repository's Chrome/Capybara harness.
 
@@ -54,6 +55,11 @@ lock across a provider call. The tested first-publication interleaving proves a
 concurrent withdrawal waits and finds both new entries. It is not a proof of all
 writers or arbitrary concurrent topic-link edits.
 
+The shared summary publication guard also compares payload, identity and withdrawal
+state, not only the timestamp. A summary edit or withdrawal during a provider call
+rejects the old response even when both changes share a timestamp. This applies to
+new knowledge and replacement summaries without scheduling a replacement call.
+
 The existing admin index/detail pages identify withdrawn evidence separately from
 review status. Re-ingest refuses it without queuing work. Editing or approving a
 withdrawn entry does not clear the receipt/withdrawal, and those fields are not
@@ -68,7 +74,7 @@ the existing admin flash style; its absence was reproduced in the browser.
 | BG-04 / ADM-20 | Withdrawal audit failure rolls back the originating correction, summary and both knowledge entries. A retry withdraws once. Original receipt, body, review state and chunks survive. | Existing audit persistence, not a new audit control. |
 | BG-04, replacement/removal | Changed summary generation withdraws prior entries; new extraction has new receipts without inheriting old availability. Ordinary summary destruction retains knowledge and its original summary identity. | No complete historical summary archive is added. |
 | BG-04, compatibility | Timestamp changes and JSON key reordering preserve exact knowledge attributes and queue no work. | Receipt compatibility, not a completed extraction-stage cache. |
-| BG-04, late work | Late triage cannot approve withdrawn or edited input. Late embedding output cannot replace retained or newer chunks; provider failure retains the whole previous index and a successful retry preserves the final passage. Already-withdrawn jobs construct no provider. | No general spending ledger or retry-budget implementation. |
+| BG-04, late work | Summary edits and withdrawals with unchanged timestamps reject late knowledge or summary output. Late triage cannot approve withdrawn or edited input. Late embedding output cannot replace retained or newer chunks; provider failure retains the whole previous index and a successful retry preserves the final passage. Already-withdrawn jobs construct no provider. | No general spending ledger or retry-budget implementation. |
 | BG-04, future inputs | Topic generation receipts omit withdrawn knowledge. Pattern inputs omit withdrawn knowledge, inactive notes and withdrawn briefings while preserving independent inputs. | Existing stored patterns and in-flight pattern generation are separate work. |
 | ADM-11, HTTP | Allowed detail first; then withdrawal notice, rejected re-ingestion, retained body/review state, and an edit that cannot clear server-owned provenance or reactivate availability. | Test session helper; no new authentication behavior. |
 | ADM-11, browser | Captured-email sign-in, sidebar navigation, real Re-ingest/Turbo/CSRF/cookies, queued ingestion and stored chunk first; then withdrawal notice, visible refusal, zero queued ingestion and retained chunk on later reads. Index keeps Approved review status beside Evidence withdrawn. | Synthetic passkey establishes eligibility, not a new credential ceremony. Desktop render inspected; no responsive redesign. |
@@ -79,9 +85,15 @@ the existing admin flash style; its absence was reproduced in the browser.
 The initial pipeline check failed with the two withdrawn dependents still present
 in fresh retrieval: 1 test / 8 assertions, one intended failure, zero errors/skips.
 The first corrected baseline passed 1 / 25. The expanded regression passed
-68 tests / 622 assertions before the final topic-input case. The final focused
+68 tests / 622 assertions before the final topic-input case. The initial focused
 integration baseline passed 14 / 157, and the browser journey passed 1 / 34.
 All passing counts have zero failures/errors/skips.
+
+The follow-up summary-version regression passed 90 tests / 897 assertions,
+including both same-timestamp cases and the source/fact/agenda withdrawal,
+knowledge extraction/triage, pruning and concurrent publication paths. The
+new cases first reproduced stale knowledge publication (1 / 4, one failure)
+and stale summary restoration (1 / 3, one failure), with no errors/skips.
 
 Commands use `RAILS_ENV=test`, an isolated test database, and `PARALLEL_WORKERS=1`;
 application and browser suites run serially against that database:
@@ -92,11 +104,12 @@ bin/rubocop -A db/schema.rb
 bin/rails test test/integration/knowledge_summary_dependencies_test.rb test/jobs/extract_knowledge_job_test.rb test/jobs/auto_triage_knowledge_job_test.rb test/jobs/extract_knowledge_patterns_job_test.rb test/services/retrieval_service_test.rb test/models/knowledge_source_test.rb test/integration/agenda_briefing_context_test.rb test/services/meetings/parallel_summary_withdrawal_test.rb
 bin/rails test test/integration/knowledge_summary_dependencies_test.rb
 bin/rails test test/system/knowledge_withdrawal_journey_test.rb
+bin/rails test test/integration/knowledge_summary_dependencies_test.rb test/integration/agenda_briefing_context_test.rb test/integration/meeting_summary_fact_dependencies_test.rb test/integration/meeting_summary_source_withdrawal_test.rb test/jobs/extract_knowledge_job_test.rb test/jobs/auto_triage_knowledge_job_test.rb test/jobs/prune_hollow_appearances_job_test.rb test/services/meetings/parallel_summary_withdrawal_test.rb --seed 64056
 bin/rails test
 bin/rubocop
 ```
 
-Seventeen isolated faults each failed the intended assertion with one failure,
+Nineteen isolated faults each failed the intended assertion with one failure,
 zero errors/skips, then passed after restoration. Commands used the corresponding
 integration or system file with `-n /test_name_fragment/`.
 
@@ -119,6 +132,8 @@ integration or system file with `-n /test_name_fragment/`.
 | Omit summary locking during first knowledge publication | The concurrent correcting writer fails to wait for dependency registration. |
 | Ignore withdrawal in topic-generation receipts | Invalid knowledge remains in the captured dependency set. |
 | Queue ingestion after editing withdrawn text | The admin edit silently queues forbidden follow-up work. |
+| Omit payload fields from the summary publication version | Late knowledge output survives a changed summary with the same timestamp. |
+| Omit withdrawal state from the summary publication version | Late summary output silently restores a withdrawal with the same timestamp. |
 
 
 The new browser test initially lacked its job-test helper; that errored run is
@@ -130,6 +145,10 @@ a cached first observation had timed out despite the real writer waiting.
 The original retained-state assertion reloads records after triage; a briefing
 rollback assertion uses its actual withdrawal field instead of a nonexistent
 instance predicate. These test-setup/assertion corrections are not product faults.
+An interrupted follow-up run left one synthetic meeting/topic in the isolated
+test database. Two regression runs hit duplicate-name setup errors until those
+specific records were removed; the 90-test rerun above then passed. No production
+or development data was involved.
 
 The full application suite at `9765a0de` passed 2,395 tests / 15,856 assertions,
 zero failures/errors and one existing PromptRun fixture skip. RuboCop inspected
