@@ -20,10 +20,10 @@
     <% end %>
   </div>
 <% elsif @pagy.count.zero? %>
-  <p class="member-recorded-empty section-empty">No votes have been recorded for this member yet.</p>
+  <p class="member-recorded-empty section-empty"><%= @record_period.selected ? "No recorded Council votes for this service period yet." : "No votes have been recorded for this member yet." %></p>
 <% else %>
   <p class="member-recorded-empty section-empty">No recorded votes on this page.</p>
-  <%= link_to "Return to the newest votes", member_path(@member, votes: "all", anchor: "voting-record") %>
+  <%= link_to "Return to the newest votes", member_path(@member, **@record_params, votes: "all", anchor: "voting-record") %>
 <% end %>
 
 <%= render "vote_pagination" %>

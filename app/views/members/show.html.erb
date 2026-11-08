@@ -8,7 +8,7 @@
   <header class="member-article-header">
     <h1 class="member-article-title"><%= @member.name %></h1>
     <% if @current_position %>
-      <span class="badge badge--info"><%= @current_position.title %></span>
+      <span class="badge badge--info"><%= "Current: " if @record_period.selected&.ended_on %><%= @current_position.title %></span>
     <% end %>
   </header>
 
@@ -21,12 +21,13 @@
 
   <div class="member-profile-layout">
     <div class="member-profile-primary">
+      <%= render "record_period" %>
       <%= render "service_periods", periods: @service_periods %>
 
       <section class="member-article-section">
         <div class="home-section-header">
           <%= render "shared/atom_marker" %>
-          <h2 class="section-label">Committees</h2>
+          <h2 class="section-label">Current committees</h2>
           <span class="section-line"></span>
         </div>
 
@@ -75,8 +76,8 @@
         <% else %>
           <%= gated_content do %>
             <nav class="member-vote-views" aria-label="Voting record views">
-              <%= link_to "Featured votes", member_path(@member, anchor: "voting-record"), class: "btn btn--secondary", aria: { current: ("page" unless @show_all_votes) } %>
-              <%= link_to "All recorded votes", member_path(@member, votes: "all", anchor: "voting-record"), class: "btn btn--secondary", aria: { current: ("page" if @show_all_votes) } %>
+              <%= link_to "Featured votes", member_path(@member, **@record_params, anchor: "voting-record"), class: "btn btn--secondary", aria: { current: ("page" unless @show_all_votes) } %>
+              <%= link_to "All recorded votes", member_path(@member, **@record_params, votes: "all", anchor: "voting-record"), class: "btn btn--secondary", aria: { current: ("page" if @show_all_votes) } %>
             </nav>
 
             <% if @show_all_votes %>
@@ -133,7 +134,7 @@
                   <p class="section-empty">No featured votes found for this official. Other decisions may appear in all recorded votes.</p>
                 <% else %>
                   <p class="section-empty">No featured votes on this page.</p>
-                  <%= link_to "Return to the newest votes", member_path(@member, anchor: "voting-record") %>
+                  <%= link_to "Return to the newest votes", member_path(@member, **@record_params, anchor: "voting-record") %>
                 <% end %>
               <% end %>
               <%= render "vote_pagination" %>

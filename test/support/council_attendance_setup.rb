@@ -7,6 +7,9 @@ module CouncilAttendanceSetup
     @member = Member.create!(name: "Jordan Attendance")
     @council = Committee.find_or_create_by!(name: "City Council") { |committee| committee.slug = "city-council" }
     @source = service_source
+    # This retained-document fixture is not part of the scenario's held-meeting
+    # inventory. Each test creates the Council meetings it intends to reconcile.
+    @source.meeting_document.meeting.update!(body_name: "Synthetic service-date source")
     @period = CouncilServicePeriod.record_starts!(period_key: "2024-election", source_version: @source, page: 5,
       entries: [ { member_id: @member.id, started_on: "2024-04-16" } ]).sole
     @position = @member.member_positions.create!(kind: "city_council", title: "City Council Member",

@@ -5874,6 +5874,24 @@ th.sortable-header:hover {
   margin: var(--space-4) 0;
 }
 
+.member-record-period {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.member-record-period-choice {
+  flex: 1 1 15rem;
+  min-width: 0;
+}
+
+.member-record-period .form-label {
+  display: block;
+  margin-bottom: var(--space-2);
+}
+
 .member-vote-views [aria-current="page"] {
   background: var(--color-primary);
   color: var(--color-surface);
