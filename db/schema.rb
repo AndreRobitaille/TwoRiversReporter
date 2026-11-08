@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_30_124500) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_07_190000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -308,6 +308,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_30_124500) do
     t.index [ "meeting_id", "member_id" ], name: "index_meeting_attendances_on_meeting_id_and_member_id", unique: true
     t.index [ "meeting_id" ], name: "index_meeting_attendances_on_meeting_id"
     t.index [ "member_id" ], name: "index_meeting_attendances_on_member_id"
+  end
+
+  create_table "meeting_document_versions", force: :cascade do |t|
+    t.bigint "meeting_document_id"
+    t.bigint "original_document_id", null: false
+    t.string "version_key", null: false
+    t.string "sha256", null: false
+    t.text "source_url", null: false
+    t.string "document_type", null: false
+    t.bigint "original_meeting_id", null: false
+    t.datetime "meeting_starts_at"
+    t.datetime "retrieved_at", null: false
+    t.datetime "source_last_modified"
+    t.datetime "published_at"
+    t.string "evidence_status", default: "collected", null: false
+    t.string "capture_method", default: "download_sha256_v1", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "meeting_document_id" ], name: "index_meeting_document_versions_on_meeting_document_id"
+    t.index [ "version_key" ], name: "index_meeting_document_versions_on_version_key", unique: true
   end
 
   create_table "meeting_documents", force: :cascade do |t|
@@ -854,6 +874,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_30_124500) do
   add_foreign_key "magic_links", "users"
   add_foreign_key "meeting_attendances", "meetings"
   add_foreign_key "meeting_attendances", "members"
+  add_foreign_key "meeting_document_versions", "meeting_documents", on_delete: :nullify
   add_foreign_key "meeting_documents", "meetings"
   add_foreign_key "meeting_summaries", "meetings"
   add_foreign_key "meetings", "committees"

@@ -2,6 +2,7 @@ class MeetingDocument < ApplicationRecord
   belongs_to :meeting
   has_many :extractions, dependent: :destroy
   has_many :transcript_imports, dependent: :nullify
+  has_many :source_versions, class_name: "MeetingDocumentVersion", dependent: :nullify
   has_one_attached :file
 
   after_save :update_search_vector, if: :saved_change_to_extracted_text?
@@ -9,6 +10,10 @@ class MeetingDocument < ApplicationRecord
   scope :search, ->(query) {
     where("search_vector @@ websearch_to_tsquery('english', ?)", query)
   }
+
+  def current_source_version
+    source_versions.find_by(version_key: MeetingDocumentVersion.key_for(self))
+  end
 
   private
 

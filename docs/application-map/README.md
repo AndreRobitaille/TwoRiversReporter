@@ -46,6 +46,10 @@ The [November 7 maintenance verification](maintenance-2026-11-07.md) records the
 Rails security patch, the date-independent BG-01 fixture correction, local
 checks, and maintenance pull requests awaiting integration.
 
+The [November 7 council evidence foundation](council-evidence-2026-11-07.md)
+records the bounded source check, retained download versions, citation
+compatibility, and isolated retention/stale-response fault experiments.
+
 ## Read the map
 
 | Document | Use |
