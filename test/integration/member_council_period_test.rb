@@ -91,4 +91,21 @@ class MemberCouncilPeriodTest < ActionDispatch::IntegrationTest
     assert_select ".member-vote-pages, .member-recorded-motion", count: 0
     assert_equal "private, no-store", response.headers["Cache-Control"]
   end
+
+  test "attendance representative cannot hide votes saved on another meeting alias" do
+    # Establish the saved votes before a richer duplicate becomes the displayed
+    # attendance representative. Source enrichment must not hide the vote rows.
+    get member_path(@member, term: @period.period_key, votes: "all")
+    assert_select ".member-recorded-motion", count: 25, text: /Current road/
+    duplicate = council_meeting("2024-04-16", attendance: "present")
+    duplicate.meeting_documents.create!(document_type: "minutes_pdf", source_url: "https://example.test/richer-alias.pdf")
+    get member_path(@member, term: @period.period_key, votes: "all")
+    assert_select "#council-attendance li", count: 1
+    assert_select "#council-attendance a[href=?]", meeting_path(duplicate)
+    assert_select ".member-recorded-motion", count: 25, text: /Current road/
+    get member_path(@member, term: @period.period_key)
+    assert_select ".member-vote-motion", count: 25, text: /Current road/
+    get member_path(@member, term: @period.period_key, votes: "all", page: 2)
+    assert_select ".member-recorded-motion", count: 1, text: "Current road project 0"
+  end
 end

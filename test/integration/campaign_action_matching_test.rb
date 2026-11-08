@@ -62,6 +62,30 @@ class CampaignActionMatchingTest < ActionDispatch::IntegrationTest
     assert_equal 2, @calls.size
   end
 
+  test "a richer attendance alias preserves the saved campaign action and its cached comparison" do
+    duplicate = Meeting.create!(body_name: "City Council", starts_at: Date.new(2025, 6, 2).in_time_zone.change(hour: 18),
+      detail_page_url: "https://example.test/attendance-alias")
+    setup_campaign_actions
+    review_campaign_actions
+    original = @vote.motion.meeting
+    # Both now have documents; the earlier alias becomes the representative.
+    duplicate.meeting_documents.create!(document_type: "minutes_pdf", source_url: "https://example.test/alias.pdf")
+    attendance = ResidentContent::CouncilAttendance.new(@jordan).call
+    assert_includes attendance.fetch(:meeting_ids), original.id
+    assert_includes attendance.fetch(:meeting_ids), duplicate.id
+    assert_equal duplicate.id, attendance.fetch(:rows).find { |row| row.fetch(:meeting_ids).include?(original.id) }.fetch(:meeting).id
+    candidates = Campaigns::ActionCandidates.for_member(@jordan, attendance: attendance)
+    assert_includes candidates.map { |candidate| candidate.fetch(:vote).id }, @vote.id
+    Ai::OpenAiService.stub(:new, ->(*) { flunk "Changing the attendance representative must reuse saved matching" }) do
+      get member_path(@jordan)
+      assert_select "#campaign-record [data-campaign-action=?]", @vote.id
+      assert_no_difference "CampaignActionRequest.count" do
+        MatchCampaignActionsJob.perform_now
+      end
+    end
+    assert_equal 1, @calls.size
+  end
+
   test "incomplete and invented evidence cannot publish and retries are bounded" do
     setup_campaign_actions
     stage = Campaigns::MatchActions.prepare(@vote.motion.meeting).sole

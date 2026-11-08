@@ -30,7 +30,7 @@ module ResidentContent
     def related_votes(topic_ids)
       return [] if topic_ids.empty? || @council_attendance.nil?
 
-      meeting_ids = @council_attendance.fetch(:rows).map { |row| row.fetch(:meeting).id }
+      meeting_ids = @council_attendance.fetch(:meeting_ids)
       agenda_ids = AgendaItemTopic.where(topic_id: topic_ids).select(:agenda_item_id)
       records = @member.votes
         .joins(motion: :meeting)

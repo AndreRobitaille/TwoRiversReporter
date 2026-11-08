@@ -15,7 +15,7 @@ class MembersController < ApplicationController
     @record_params = @service_periods.any? || params[:term].present? ? { term: @record_period.key } : {}
 
     @council_attendance = ResidentContent::CouncilAttendance.new(@member, period: @record_period.selected).call
-    meeting_ids = @council_attendance&.fetch(:rows)&.map { |row| row.fetch(:meeting).id }
+    meeting_ids = @council_attendance&.fetch(:meeting_ids)
     profile = ResidentContent::OfficialProfile.new(@member,
       council_meeting_ids: (@record_period.selected ? meeting_ids || [] : nil), during: @record_period.range)
     @attendance = profile.recorded_attendance(excluding_committee_id: @council_attendance&.fetch(:committee_id))

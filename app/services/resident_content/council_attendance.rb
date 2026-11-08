@@ -34,10 +34,10 @@ module ResidentContent
         statuses = duplicates.flat_map(&:meeting_attendances)
           .select { |record| record.member_id == @member.id && record.attendee_type == "voting_member" }
           .map(&:status).uniq
-        { meeting: meeting, type: type, status: statuses.one? ? statuses.sole : "unknown" }
+        { meeting: meeting, meeting_ids: duplicates.map(&:id), type: type, status: statuses.one? ? statuses.sole : "unknown" }
       end.sort_by { |row| [ row[:meeting].starts_at, row[:meeting].id ] }.reverse
 
-      { committee_id: council.id, period: period, rows: rows,
+      { committee_id: council.id, period: period, rows: rows, meeting_ids: rows.flat_map { |row| row.fetch(:meeting_ids) },
         counts: LABELS.keys.to_h { |status| [ status, rows.count { |row| row[:status] == status } ] } }
     end
 

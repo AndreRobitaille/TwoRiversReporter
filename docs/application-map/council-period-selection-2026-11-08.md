@@ -67,6 +67,11 @@ testing its absence in gated HTML.
   of the excluded real votes found two unlinked special/reorganizational meetings;
   their saved votes now appear, with only other-committee votes outside the
   selected Council record. No source or vote rows were rewritten.
+- Review follow-up: retain every eligible alias ID for vote and campaign-action
+  selection while displaying one attendance representative. A richer duplicate
+  must not hide existing votes or trigger new analysis. Targeted HTTP/campaign
+  regressions pass (25 tests, 274 assertions); reverting to representative-only
+  vote IDs fails the intended later-request assertion, then passes on restoration.
 
 Commands:
 
