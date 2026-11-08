@@ -737,11 +737,16 @@ Ordinary failed-job retries and corrections need not wait for that nightly pass.
   need not rewrite nine summaries. Reuse existing narrative text where valid,
   while publishing newly validated structured facts without waiting for prose.
 - Before paid pilot work, configure and authorize a bounded run budget. Before
-  automatic production generation, configure daily and per-batch limits, maximum
+  automatic production generation, configure monthly, daily and per-batch limits, maximum
   attempts, and a maximum cost/token allowance per request. Reserve allowance
   before dispatch so concurrent jobs cannot each spend the same remaining budget;
   conservatively account for uncertain provider outcomes. No budget means no
   automatic paid dispatch, not unlimited spending.
+- The monthly ceiling spans every council run/day; new days, retries and rollover
+  do not create spending authorization. Report retained reservations separately
+  from measured usage. Estimate recurring costs separately from campaign intake
+  and historical processing. Full-term backfill requires the owner's personal
+  approval of a concrete cost and run proposal.
 - When a limit is reached, pause paid generation, preserve queued work and
   source collection, and continue independent deterministic updates. Retry and
   reconciliation must not reset limits. Live changes take priority over a

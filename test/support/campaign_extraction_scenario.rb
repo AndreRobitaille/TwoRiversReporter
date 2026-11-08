@@ -34,6 +34,9 @@ module CampaignExtractionScenario
     stage ||= Campaigns::ExtractSource.prepare(@source.current_version)
     parameters = stage.parameters.deep_symbolize_keys
     actor = User.find_or_create_by!(email_address: "synthetic-campaign-budget@example.test") { |user| user.assign_attributes(admin: true, status: "active") }
+    CouncilAiBudgetMonth.find_or_create_by!(budget_month: Date.current.beginning_of_month) do |row|
+      row.assign_attributes(limit_microusd: 1_000_000, actor: actor, authorized_at: Time.current, authorization_basis: "Synthetic test only")
+    end
     day = CouncilAiBudgetDay.find_or_create_by!(budget_on: Date.current) do |row|
       row.assign_attributes(limit_microusd: 100_000, actor: actor, authorized_at: Time.current, authorization_basis: "Synthetic test only")
     end

@@ -164,7 +164,7 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   binds pending work to an explicitly authorized run/day and exact prepared
   request estimates. Selection and claims serialize on the meeting lock so an
   ordinary worker cannot claim from an earlier unbudgeted snapshot.
-  Admission locks day then run, enforces request/run/day,
+  Admission now locks month then day then run, enforces request/run/day/month,
   request-count, concurrency and declared-token limits, and commits the full
   integer micro-USD reservation with the receipt before transport. Completed
   responses release only concurrency; unknown outcomes retain amount and slot.
@@ -172,7 +172,8 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   still reuse without calls. No other AI paths or new schedule are enrolled.
   Token counts/rates are supplied approved preflight inputs, not automatically
   verified prices or measured tokenization. See [real database contention and
-  fault evidence](council-spend-reservations-2026-11-07.md).
+  fault evidence](council-spend-reservations-2026-11-07.md) and the subsequent
+  [monthly cap and cost report](council-monthly-costs-2026-11-08.md).
 - **November 7 passage locations:** new vote stages check model-supplied excerpts
   against retained pages with code. Unique passages retain exact character ranges
   and page hashes, including across page breaks; unavailable/ambiguous evidence
@@ -396,7 +397,7 @@ provider diagnostics; permanent HTTP rejections bypass transient retries. See
 ## BG-08 — Extract a shared campaign article within a spending allowance (P1)
 
 - **Start / data:** retained CampaignSourceVersion, populated campaign prompt,
-  explicit run/day allowance and exact request estimate. No budget means paused.
+  explicit month/day/run allowances and exact request estimate. No budget means paused.
 - **Action:** ExtractCampaignSourceJob analyzes the supplied article once for all
   participants through the existing AI service and shared spending recorder.
   A committed source save queues it when extraction is missing. Nightly discovery

@@ -71,6 +71,9 @@ paid-pilot authorization remains separate.
 The [November 7 council spending-reservation checks](council-spend-reservations-2026-11-07.md)
 cover exact prepared request estimates, shared daily and run allowances,
 concurrent reservation, budget-paused retries and retained uncertain amounts.
+
+The [November 8 monthly council cost checks](council-monthly-costs-2026-11-08.md)
+add an explicit monthly ceiling across runs/days and a read-only stage usage report.
 Actual token/pricing preflight and paid-pilot approval remain unimplemented.
 
 The [November 8 shared campaign extraction checks](shared-campaign-extraction-2026-11-08.md)

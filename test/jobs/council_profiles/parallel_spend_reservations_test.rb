@@ -159,6 +159,31 @@ class CouncilProfilesParallelSpendReservationsTest < ActiveJob::TestCase
     end
   end
 
+  test "dispatch waits for the monthly authorization lock before reserving" do
+    run = budget_run
+    pid = Queue.new
+    thread = nil
+    begin
+      with_transport do
+        CouncilAiBudgetMonth.sole.with_lock do
+          thread = worker do
+            pid << ActiveRecord::Base.connection.select_value("SELECT pg_backend_pid()")
+            CouncilProfiles::ExtractMinutesJob.perform_now(@meeting.id, "votes", budget_run_id: run.id)
+          end
+          assert database_lock_wait?(pid.pop), "Paid dispatch must lock the monthly allowance"
+          assert_empty @calls
+          assert_equal 0, run.reservations.count
+        end
+        Timeout.timeout(15) { thread.value }
+      end
+      assert_equal 1, @calls.size
+      assert_equal 4_100, CouncilAiBudgetMonth.sole.reserved_microusd
+      assert_equal "completed", @meeting.minutes_extractions.sole.status
+    ensure
+      thread&.join(15)
+    end
+  end
+
   private
 
   def worker(&block)
