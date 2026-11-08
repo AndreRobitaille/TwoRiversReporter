@@ -31,6 +31,16 @@ module CouncilProfiles
             day = run.council_ai_budget_day
             raise Paused, "budget_expired" unless day.budget_on == Date.current && run.expires_at > Time.current
             raise Paused, "budget_revoked" if run.revoked_at
+            if run.live_budget_month_id
+              policy = month.live_actions
+              raise Paused, "live_policy_mismatch" unless run.live_budget_month_id == month.id && policy.present?
+              unless stage.is_a?(CampaignActionReview) && stage.meeting&.reload&.starts_at&.to_date&.between?(Date.iso8601(policy.fetch("starting_on")), Date.current)
+                raise Paused, "outside_live_meeting_window"
+              end
+              daily_requests = CouncilAiReservation.joins(:council_ai_budget_run).where(council_ai_budget_runs: { council_ai_budget_day_id: day.id })
+              raise Paused, "live_daily_request_limit" if daily_requests.count >= policy.fetch("max_requests_per_day")
+              raise Paused, "live_concurrency_limit" if month.reservations.where(finished_at: nil).count >= policy.fetch("max_concurrent")
+            end
             digest = request_digest(parameters)
             estimate = run.request_estimates.find { |row| row["stage_key"] == stage.input_key && row["request_digest"] == digest }
             raise Paused, "missing_request_estimate" unless estimate
@@ -40,6 +50,9 @@ module CouncilProfiles
               raise Paused, "output_token_limit"
             end
             amount = RequestEstimate.ceiling_microusd(estimate)
+            if run.live_budget_month_id && day.reserved_microusd + amount > month.live_actions.fetch("daily_limit_microusd")
+              raise Paused, "live_daily_budget_limit"
+            end
             raise Paused, "request_budget_limit" if amount > run.request_limit_microusd
             raise Paused, "run_budget_limit" if run.reservations.sum(:reserved_microusd) + amount > run.limit_microusd
             raise Paused, "monthly_budget_limit" if month.reserved_microusd + amount > month.limit_microusd

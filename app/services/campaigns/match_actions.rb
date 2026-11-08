@@ -33,7 +33,10 @@ module Campaigns
     end
 
     def self.call(stage, budget_run: nil)
-      return stage unless stage.claim!(budget_run)
+      claimed = false
+      budget_run ||= CouncilProfiles::LiveActionBudget.call(stage)
+      claimed = stage.claim!(budget_run)
+      return stage unless claimed
       raise CouncilProfiles::ReserveAiSpend::Paused, "missing_budget" unless budget_run
 
       response = Ai::OpenAiService.new.extract_campaign_source(parameters: stage.parameters.deep_symbolize_keys,
@@ -41,7 +44,11 @@ module Campaigns
       stage.update!(status: "completed", data: ActionMatches.new(stage.context).parse(response), completed_at: Time.current)
       stage
     rescue CouncilProfiles::ReserveAiSpend::Paused => e
-      stage.update!(status: "budget_paused", error_code: e.message, attempts: stage.attempts - 1)
+      stage.with_lock do
+        if claimed || stage.status.in?(%w[pending failed budget_paused])
+          stage.update!(status: "budget_paused", error_code: e.message, attempts: stage.attempts - (claimed ? 1 : 0))
+        end
+      end
       stage
     rescue JSON::ParserError, ActionMatches::InvalidResponse => e
       stage.update!(status: "failed", error_code: e.class.name)

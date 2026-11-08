@@ -747,6 +747,10 @@ Ordinary failed-job retries and corrections need not wait for that nightly pass.
   from measured usage. Estimate recurring costs separately from campaign intake
   and historical processing. Full-term backfill requires the owner's personal
   approval of a concrete cost and run proposal.
+- An automatic live policy names its earliest eligible meeting date and cannot
+  silently widen that window into historical work. Renewing a month may retain
+  the approved live window. A policy must explicitly select its conservative
+  estimation method; request estimates are not relabeled as measured usage.
 - When a limit is reached, pause paid generation, preserve queued work and
   source collection, and continue independent deterministic updates. Retry and
   reconciliation must not reset limits. Live changes take priority over a

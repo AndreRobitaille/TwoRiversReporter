@@ -34,7 +34,8 @@ module Campaigns
         return { state: "held", reason: stage.status.humanize }
       end
 
-      if CampaignExtraction.exists?(purpose: stage&.purpose || "statements", status: "completed", parameters: parameters)
+      if (stage.nil? || stage.is_a?(CampaignExtraction)) &&
+          CampaignExtraction.exists?(purpose: stage&.purpose || "statements", status: "completed", parameters: parameters)
         return { state: "reuse", cost_microusd: 0 }
       end
       attempts = CampaignExtraction::MAX_ATTEMPTS - (stage&.attempts || 0)
@@ -60,6 +61,7 @@ module Campaigns
         "input_rate_microusd" => input_rate, "output_rate_microusd" => output_rate)
       { state: "estimate", model: model, input_allowance: input_allowance,
         output_allowance: output_allowance, cost_microusd: amount,
+        input_rate_microusd: input_rate, output_rate_microusd: output_rate,
         attempts_remaining: attempts, remaining_cost_microusd: amount * attempts,
         request_digest: CouncilProfiles::ReserveAiSpend.request_digest(parameters),
         pricing_source: PRICING_SOURCE + model, pricing_checked_on: PRICING_CHECKED_ON,

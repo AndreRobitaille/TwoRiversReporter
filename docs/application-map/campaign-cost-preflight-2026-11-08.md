@@ -94,3 +94,8 @@ Actual tokenization/billing, account processing tier, owner-selected pilot/day
 allowances and real-provider extraction accuracy remain unverified. This report
 cannot be passed directly to budget admission as a verified request estimate.
 No paid AI, production operation, merge, deployment or backfill occurred.
+
+Subsequent bounded extension: [live action admission](council-live-action-budget-2026-11-08.md)
+allows an explicit monthly policy to opt into this conservative estimation method
+for new action comparisons. It records the method and exact request digest; it
+does not relabel estimates as measured usage or enable source intake/backfill.
