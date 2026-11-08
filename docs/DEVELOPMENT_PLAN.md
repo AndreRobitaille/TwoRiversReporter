@@ -935,6 +935,16 @@ voter-forum transcripts outside the website. Source intake should extract eviden
 for all relevant members from one supplied article or prepared transcript.
 Formal-conduct coverage is limited to documented complaints and findings.
 
+Prepared forum requests retain the complete supplied transcript in one shared
+analysis for all candidates. The initial whole-source boundary is 100,000
+characters; forums over 50,000 characters declare a 32,000-token response ceiling
+to preserve full answers and their conditions. Articles retain their 50,000/8,000
+limits. These are request boundaries, not spending authorization or proof of
+provider accuracy: each paid request still needs an exact estimate and approved
+allowance covering its actual output ceiling. Oversized sources and incomplete
+responses remain retained without publishing partial results. See
+[full-forum verification](application-map/full-campaign-forums-2026-11-08.md).
+
 The proposed page centers on **what they said → what they did → what happened**,
 with a term selector, cited overview, public-issue timelines, attendance, full
 decision history, peer/staff comparisons, formal-case history, and source coverage.
