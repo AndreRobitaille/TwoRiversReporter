@@ -117,5 +117,16 @@ from the real development data. External AI is forbidden in the new HTTP tests.
   schema formatting was corrected with `bin/rubocop -A db/schema.rb` and the
   inspected diff contained only that table/index/foreign-key addition.
 
+CI's first run at `58fb6cc4` passed the application suite (2,200 tests,
+13,812 assertions, zero failures/errors, one skip) but exposed a browser setup
+error: `db:prepare` seeds the City Council committee, while the new helper tried
+to create it again. The helper now reuses that canonical committee. Against a
+separate database prepared with the same `bin/rails db:prepare` command,
+`CHROME_BIN=/usr/bin/chromium bin/rails test:system` passed all **24 journeys,
+779 assertions, zero failures/errors/skips**. The changed helper also passed
+RuboCop. This follow-up changes test setup only; application code remains at
+the revision recorded above. Runtime-image checks and automatic code/security
+reviews completed at `58fb6cc4`, with no review findings posted.
+
 No paid generation, production data transfer, historical backfill, merge or
 deployment ran. No new schedule or production configuration was introduced.

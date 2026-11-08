@@ -5,7 +5,7 @@ module CouncilAttendanceSetup
 
   def setup_council_attendance
     @member = Member.create!(name: "Jordan Attendance")
-    @council = Committee.create!(name: "City Council", slug: "city-council")
+    @council = Committee.find_or_create_by!(name: "City Council") { |committee| committee.slug = "city-council" }
     @source = service_source
     @period = CouncilServicePeriod.record_starts!(period_key: "2024-election", source_version: @source, page: 5,
       entries: [ { member_id: @member.id, started_on: "2024-04-16" } ]).sole
