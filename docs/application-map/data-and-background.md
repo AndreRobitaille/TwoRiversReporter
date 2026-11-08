@@ -395,6 +395,12 @@ provider diagnostics; permanent HTTP rejections bypass transient retries. See
 
 ## BG-08 — Extract a shared campaign article within a spending allowance (P1)
 
+The [prepared forum extension](prepared-campaign-forums-2026-11-08.md) reuses this
+shared pipeline for shorter externally labeled sources and checks returned quotes
+against verified speaker spans. Complete longer forums are retained and held
+before provider construction; they are not silently truncated.
+
+
 - **Start / data:** retained CampaignSourceVersion, populated campaign prompt,
   explicit run/day allowance and exact request estimate. No budget means paused.
 - **Action:** ExtractCampaignSourceJob analyzes the supplied article once for all

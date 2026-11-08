@@ -43,6 +43,15 @@ class PreparedCampaignForumExtractionTest < ActiveJob::TestCase
       assert_equal original, stage.campaign_statements.order(:sequence).pluck(:id, :data)
       assert_equal [ @jordan.id, avery.id ].sort, stage.campaign_statements.where(status: "accepted").pluck(:member_id).sort
       assert_equal 0, avery.member_positions.count
+
+      exported_again = forum_export.merge("savedAt" => "2026-11-08T12:00:00Z")
+      Campaigns::ImportPreparedForum.call(file: StringIO.new(exported_again.to_json), actor: @source.current_version.submitted_by,
+        gaps_are_moderator: true, source: @source, attributes: { publisher: @source.publisher,
+          published_on: @source.published_on, election_on: @source.election_on })
+      ExtractCampaignSourceJob.perform_now(@source.id)
+      assert_equal stage.id, @source.reload.current_version.extraction.reused_from_id
+      assert_equal 1, @calls.size
+      assert_equal 5, @source.current_version.extraction.campaign_statements.count
     end
   end
 
