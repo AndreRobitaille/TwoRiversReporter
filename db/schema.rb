@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_08_030000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_08_040000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -340,8 +340,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_030000) do
     t.bigint "source_summary_id"
     t.jsonb "source_summary_manifest"
     t.datetime "evidence_withdrawn_at"
+    t.jsonb "source_catalog"
     t.index [ "meeting_id" ], name: "index_knowledge_sources_on_meeting_id"
     t.index [ "origin" ], name: "index_knowledge_sources_on_origin"
+    t.index [ "source_catalog" ], name: "index_knowledge_sources_on_source_catalog", using: :gin
     t.index [ "source_summary_id" ], name: "index_knowledge_sources_on_source_summary_id"
     t.index [ "status" ], name: "index_knowledge_sources_on_status"
   end
