@@ -1,9 +1,6 @@
 class MembersController < ApplicationController
   allow_unauthenticated_access
 
-  # Motion descriptions that are procedural — filter from "Other Votes"
-  PROCEDURAL_PATTERNS = ResidentContent::OfficialProfile::PROCEDURAL_PATTERNS
-
   def show
     @member = Member.find(params[:id])
 
@@ -22,10 +19,13 @@ class MembersController < ApplicationController
 
     @show_all_votes = params[:votes] == "all"
     profile = ResidentContent::OfficialProfile.new(@member)
-    if @show_all_votes
-      @pagy, @recorded_votes = pagy(:offset, profile.votes, limit: 25) unless gated_for_visitor?
-    else
-      @topic_groups, @other_votes = profile.vote_groups
+    unless gated_for_visitor?
+      if @show_all_votes
+        @pagy, @recorded_votes = pagy(:offset, profile.votes, limit: 25)
+      else
+        @pagy, featured_votes = pagy(:offset, profile.resident_votes, limit: 25)
+        @topic_groups, @other_votes = profile.vote_groups(featured_votes)
+      end
     end
   end
 

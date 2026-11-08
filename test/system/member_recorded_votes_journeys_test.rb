@@ -27,7 +27,7 @@ class MemberRecordedVotesJourneysTest < ApplicationSystemTestCase
     page.save_screenshot(Rails.root.join("tmp/screenshots/recorded-votes-desktop.png"))
 
     page.driver.browser.manage.window.resize_to(390, 844)
-    click_link "Older votes"
+    click_link "Older votes", match: :first
     assert_selector ".member-recorded-votes .member-vote-row", count: 1
     assert_selector "#recorded-vote-#{vote.id}", text: motion.description
     assert_selector ".member-vote-views a[aria-current='page']", text: "All recorded votes"
@@ -43,7 +43,7 @@ class MemberRecordedVotesJourneysTest < ApplicationSystemTestCase
     source_window.close
     page.go_back
     assert_selector "#recorded-vote-#{vote.id}", text: motion.description
-    click_link "Newer votes"
+    click_link "Newer votes", match: :first
     assert_selector ".member-recorded-votes .member-vote-row", count: 25
     click_link "Featured votes"
     assert_no_selector ".member-recorded-votes"
@@ -58,5 +58,39 @@ class MemberRecordedVotesJourneysTest < ApplicationSystemTestCase
     assert_text /Sign in to keep reading/i
     assert_not_includes page.html, motion.description
     assert_no_selector ".member-recorded-votes, .member-vote-pages"
+  end
+
+  test "featured decisions paginate on a phone and preserve a contested procedural vote" do
+    member = Member.create!(name: "Morgan Featured")
+    meeting = Meeting.create!(body_name: "City Council", starts_at: Time.zone.local(2025, 5, 30, 11, 45), detail_page_url: "https://example.com/featured-source")
+    item = meeting.agenda_items.create!(title: "Council decisions")
+    item.agenda_item_topics.create!(topic: Topic.create!(name: "neighborhood improvements", status: "approved", resident_impact_score: 4))
+    contested = meeting.motions.create!(description: "Convene in closed session for negotiations", outcome: "passed", agenda_item: item)
+    contested.votes.create!(member: member, value: "yes")
+    contested.votes.create!(member: Member.create!(name: "Dissenting member"), value: "no")
+    25.times do |index|
+      meeting.motions.create!(description: "Fund neighborhood project #{index}", outcome: "passed", agenda_item: item)
+        .votes.create!(member: member, value: "yes")
+    end
+    meeting.motions.create!(description: "Accept consent agenda", outcome: "passed", agenda_item: item)
+      .votes.create!(member: member, value: "yes")
+
+    page.driver.browser.manage.window.resize_to(390, 844)
+    visit member_path(member, anchor: "voting-record")
+    assert_selector ".member-vote-row", count: 25
+    assert_no_text "Accept consent agenda"
+    assert_selector ".member-vote-pages", count: 2
+    assert_selector ".member-vote-views a[aria-current='page']", text: "Featured votes"
+    assert_operator page.evaluate_script("document.documentElement.scrollWidth"), :<=, 390
+    page.save_screenshot(Rails.root.join("tmp/screenshots/featured-votes-mobile.png"))
+    click_link "Older votes", match: :first
+    assert_text contested.description
+    assert_selector ".member-vote-row", count: 1
+    assert_current_path member_path(member, page: 2)
+    click_link contested.description
+    assert_current_path meeting_path(meeting)
+    page.go_back
+    click_link "Newer votes", match: :first
+    assert_selector ".member-vote-row", count: 25
   end
 end

@@ -1,0 +1,10 @@
+<% if @pagy.previous || @pagy.next %>
+  <nav class="member-vote-pages" aria-label="Voting record pages">
+    <% if @pagy.previous %>
+      <%= link_to "Newer votes", member_path(@member, votes: ("all" if @show_all_votes), page: @pagy.previous, anchor: "voting-record"), class: "btn btn--secondary", rel: "prev" %>
+    <% end %>
+    <% if @pagy.next %>
+      <%= link_to "Older votes", member_path(@member, votes: ("all" if @show_all_votes), page: @pagy.next, anchor: "voting-record"), class: "btn btn--secondary", rel: "next" %>
+    <% end %>
+  </nav>
+<% end %>

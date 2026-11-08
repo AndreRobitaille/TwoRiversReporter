@@ -16,6 +16,50 @@ not shipped behavior. Publication rules and cost limits need pilot evidence
 before broad rollout. GitHub tracking links below organize implementation;
 this document does not claim the feature is implemented or deployed.
 
+## Delivery priority and proportionality
+
+Owner decision, November 8, 2026: TwoRiversReporter is an independent city
+watchdog, not the official city record or a legal records system. Ordinary site
+errors can be corrected when discovered or reported. Engineer for useful,
+sourced reporting and practical correction, without treating every possible
+mistake as a severe or irreversible outcome. This decision governs the scope
+and sequencing of the more detailed proposals below.
+
+- Preserve the existing implementation PRs. Keep stable source/decision links,
+  basic extraction validation, reuse of unchanged work, and explicit spending
+  and retry limits. No paid generation is enabled by this adjustment.
+- Treat published minutes and accepted votes as stable during ordinary operation.
+  Meeting/topic prose reanalysis reuses established votes and attendance. Changed
+  source content or an explicit factual correction can trigger fact extraction;
+  a narrative prompt/model change alone cannot. This is an operating assumption,
+  not a claim that city records never change or our extraction is always right.
+- Make the next slice a readable member record under #237/#240: recorded votes,
+  meeting/source navigation, and honest coverage, followed by evidenced service
+  periods and campaign enrichment. Show missing campaign material as a gap;
+  do not delay the first useful page for it or imply a complete term denominator.
+- The default Featured votes view must paginate as well as All recorded votes.
+  Keep procedural decisions when the recorded vote is not unanimous approval;
+  omit routine procedural motions only when passed with every recorded attendee
+  voting yes. Exclude absences from that test; abstentions and recusals are not
+  affirmative votes. Apply the rule even when a procedural motion is associated
+  with an important topic. This uses recorded votes, not an inferred complete
+  attendance denominator. Keep the unfiltered view available for inspection.
+- A correction is entered once, retained, and reflected in the affected record
+  and implemented profile views. Reuse existing refresh paths for known
+  dependents. Defer further generalized withdrawal cascades, speculative race
+  handling, and rare correction variants until a concrete problem warrants a
+  bounded fix; they are not prerequisites for the first readable record.
+- Judge progress by the reader's source-to-page workflow. A synthetic failure
+  demonstrates a conditional defect, not its frequency in production. Identify
+  whether a problem is observed, introduced by new code, or hypothetical before
+  investing in more defenses. Apply representative behavioral checks to the
+  slice being delivered; do not expand into an exhaustive fault matrix.
+
+Source attribution, no fabricated votes or conclusions, access/privacy rules,
+and enforced spending limits remain requirements. Formal complaints and findings
+still need careful attribution. Proportionality changes delivery priorities;
+it does not turn unsupported claims into acceptable reporting.
+
 ## Purpose and first release
 
 A resident should be able to answer: What did this person say they would do?

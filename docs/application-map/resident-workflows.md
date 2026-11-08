@@ -211,6 +211,14 @@ status below does not imply complete coverage of those workflows.
 - **Start / data:** civic Member with current office/memberships, attendance and
   linked/unlinked substantive/procedural motions; an official with no record.
 - **Action:** roster name → official → voting topic/meeting; disclose Other Votes.
+- **November 8 recorded-vote view:** switch from Featured votes to All recorded
+  votes (`?votes=all`), paginate 25 saved decisions at a time in either view, and
+  follow a motion to its meeting and sources. Featured omits procedural motions
+  only when passed with all recorded non-absent votes affirmative; All recorded
+  votes keeps them. Both views retain motion descriptions and state coverage
+  limits. Page controls appear above and below the list. No new
+  term denominator or campaign comparison is implied. See
+  [acceptance and evidence](member-recorded-votes-2026-11-08.md).
 - **October 24 navigation experiment:** an already visible voter name in a
   meeting roll call or topic Key Decisions section also leads to the stored
   member profile. The profile's existing topic/meeting links complete the

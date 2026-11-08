@@ -3,11 +3,11 @@ module ResidentContent
     PROCEDURAL_PATTERNS = [
       /adjourn/i,
       /approve.*minutes/i,
-      /approve.*consent\s+agenda/i,
+      /(?:approv|accept|adopt).*consent\s+agenda/i,
       /approve.*agenda\s+as/i,
       /close.*public\s+hearing/i,
       /open.*public\s+hearing/i,
-      /enter.*closed\s+session/i,
+      /(?:enter|convene|move|go).*closed\s+session/i,
       /reconvene/i,
       /roll\s+call/i,
       /pledge\s+of\s+allegiance/i
@@ -23,14 +23,12 @@ module ResidentContent
         .order("meetings.starts_at DESC", id: :desc)
     end
 
-    def vote_groups
-      build_vote_groups(votes)
+    def vote_groups(records = resident_votes)
+      build_vote_groups(records)
     end
 
     def resident_votes
-      groups, other = vote_groups
-      (groups.flat_map { |group| group[:votes] } + other).uniq
-        .sort_by { |vote| [ -(vote.motion.meeting.starts_at || Time.at(0)).to_i, -vote.id ] }
+      votes.reject { |vote| procedural_vote?(vote) && unanimously_approved?(vote.motion) }
     end
 
     def attendance
@@ -91,6 +89,11 @@ module ResidentContent
 
     private
 
+    def unanimously_approved?(motion)
+      attending_votes = motion.votes.reject { |vote| vote.value == "absent" }
+      motion.outcome == "passed" && attending_votes.any? && attending_votes.all? { |vote| vote.value == "yes" }
+    end
+
     def build_vote_groups(votes)
       topic_votes = Hash.new { |h, k| h[k] = { topic: nil, votes: [], latest_date: nil, qualifies: false } }
       other_votes = []
@@ -140,8 +143,7 @@ module ResidentContent
         end
       end
 
-      # Filter out procedural votes from other_votes
-      other_votes.reject! { |v| procedural_vote?(v) }
+      other_votes.uniq!
       other_votes.sort_by! { |v| v.motion.meeting.starts_at }.reverse!
 
       [ qualified, other_votes ]

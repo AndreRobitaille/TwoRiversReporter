@@ -6,6 +6,7 @@
 
 <% if @recorded_votes.any? %>
   <p class="member-recorded-count"><%= @pagy.from %>–<%= @pagy.to %> of <%= @pagy.count %> recorded votes · Newest first</p>
+  <%= render "vote_pagination" %>
   <div class="member-recorded-votes member-topic-votes">
     <% @recorded_votes.each do |vote| %>
       <% motion = vote.motion %>
@@ -33,13 +34,4 @@
   <%= link_to "Return to the newest votes", member_path(@member, votes: "all", anchor: "voting-record") %>
 <% end %>
 
-<% if @pagy.previous || @pagy.next %>
-  <nav class="member-vote-pages" aria-label="Recorded vote pages">
-    <% if @pagy.previous %>
-      <%= link_to "Newer votes", member_path(@member, votes: "all", page: @pagy.previous, anchor: "voting-record"), class: "btn btn--secondary", rel: "prev" %>
-    <% end %>
-    <% if @pagy.next %>
-      <%= link_to "Older votes", member_path(@member, votes: "all", page: @pagy.next, anchor: "voting-record"), class: "btn btn--secondary", rel: "next" %>
-    <% end %>
-  </nav>
-<% end %>
+<%= render "vote_pagination" %>
