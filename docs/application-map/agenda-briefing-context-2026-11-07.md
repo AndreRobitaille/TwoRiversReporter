@@ -93,6 +93,10 @@ the broader compatibility check.
 
 ## Scope still open
 
+Subsequent [saved agenda dependency work](agenda-summary-dependencies-2026-11-07.md)
+adds durable topic-context receipts and withdrawal. The scope below records this
+earlier slice as originally verified.
+
 This fixes input selection and in-flight agenda publication. It does not retain
 durable cross-projection dependency receipts or withdraw a previously saved
 MeetingSummary after a later briefing correction. Such a correction can still

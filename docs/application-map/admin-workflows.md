@@ -387,3 +387,5 @@ assertions below are candidate acceptance criteria based on the user's brief.
   identity and retained source snapshots; see [summary audit checks](meeting-summary-withdrawal-2026-11-07.md).
   Fact-dependent summary withdrawal records old/current motion receipts and
   publication snapshots in the same fact transaction; see [rollback and audit checks](meeting-summary-facts-2026-11-07.md).
+  Saved agenda-context withdrawals retain consumed and current topic sections with
+  an Automated actor; see [transaction and retained-context checks](agenda-summary-dependencies-2026-11-07.md).

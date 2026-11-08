@@ -89,7 +89,7 @@ atomic withdrawal, later resident reads, unchanged reuse and concurrent first pu
 
 The [November 7 agenda-preview context checks](agenda-briefing-context-2026-11-07.md)
 cover withdrawn briefing inputs, changed context during generation, publication
-locking and later meeting reads. Withdrawal of earlier saved previews remains open.
+locking and later meeting reads.
 
 The [November 7 fact-publication withdrawal checks](council-fact-withdrawal-2026-11-07.md)
 cover changed extractions from an unchanged document, atomic withdrawal/audit,
@@ -102,8 +102,11 @@ resident reads, queued consumers and concurrent first publication.
 The [November 7 summary fact-dependency checks](meeting-summary-facts-2026-11-07.md)
 cover captured motion context, corrected facts from unchanged minutes, compatible
 refreshes, audit rollback, late responses and concurrent first summary publication.
-Missing legacy, participant, knowledge and previously consumed topic-context
-dependencies remain open.
+
+The [November 7 saved agenda dependency checks](agenda-summary-dependencies-2026-11-07.md)
+cover later topic-context changes through atomic preview/image withdrawal,
+cross-meeting API freshness, checked knowledge links and actual database races.
+Missing legacy, participant, knowledge and other unrecorded dependencies remain open.
 
 The [November 7 topic-generation dependency checks](council-topic-generation-2026-11-07.md)
 cover unchanged topic-stage reuse, stale-input filtering and rejected in-flight
