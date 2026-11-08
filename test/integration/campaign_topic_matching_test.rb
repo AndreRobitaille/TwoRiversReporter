@@ -109,8 +109,20 @@ class CampaignTopicMatchingTest < ActionDispatch::IntegrationTest
     assert_no_enqueued_jobs { ReconcileCampaignSourcesJob.perform_now }
   end
 
+  test "a complete larger matching context fits its bounded request without losing the final statement" do
+    context = { "source" => "Beginning. " + "x" * 149_967 + " Closing." }
+    assert_equal 150_000, JSON.generate(context).length
+    parameters = Ai::OpenAiService.campaign_topic_matching_parameters(context)
+    assert_includes parameters.fetch(:messages).last.fetch(:content), JSON.generate(context)
+    assert_equal 8_000, parameters.fetch(:max_completion_tokens)
+    context["source"] += "x"
+    assert_raises(Ai::OpenAiService::InputTooLargeError) do
+      Ai::OpenAiService.campaign_topic_matching_parameters(context)
+    end
+  end
+
   test "oversized context is held in full without truncation or a provider call" do
-    @water.update!(description: "source context " * 10_000)
+    @water.update!(description: "source context " * 12_000)
     @source.update!(publisher: "A metadata correction")
     Ai::OpenAiService.stub(:new, ->(*) { flunk "Oversized matching must not reach a provider" }) do
       ExtractCampaignSourceJob.perform_now(@source.id)

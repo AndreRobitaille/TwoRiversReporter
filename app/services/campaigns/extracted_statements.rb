@@ -42,6 +42,10 @@ module Campaigns
     end
 
     def check_answer(answer, attribution, name)
+      unless %w[question passage].all? { |key| answer[key].is_a?(String) && answer[key].present? }
+        raise InvalidResponse
+      end
+
       question_location = locate(answer["question"])
       passage_location = locate(answer["passage"])
       statements = rows(answer, "statements").map do |statement|

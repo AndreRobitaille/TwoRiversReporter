@@ -945,6 +945,14 @@ allowance covering its actual output ceiling. Oversized sources and incomplete
 responses remain retained without publishing partial results. See
 [full-forum verification](application-map/full-campaign-forums-2026-11-08.md).
 
+The real forum pilot also fixes the campaign response contract: answers require
+literal `question`, `passage`, and `statements` keys, with reviewed speaker labels
+used for attribution. Invalid response structure is retained as failed work,
+not a completed extraction. Shared issue-matching context is bounded at 150,000
+characters to accommodate a complete forum's statements and the existing topic
+catalog; the separate request budget and 8,000-token response ceiling still apply.
+See [pilot validation](application-map/campaign-forum-pilot-2026-11-08.md).
+
 The proposed page centers on **what they said → what they did → what happened**,
 with a term selector, cited overview, public-issue timelines, attendance, full
 decision history, peer/staff comparisons, formal-case history, and source coverage.

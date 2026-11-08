@@ -3,7 +3,7 @@ module Campaigns
   # The topic catalog is pinned when prepared; ordinary page reads and unrelated
   # topic changes do not cause a new analysis of the same campaign source.
   class MatchTopics
-    MAX_CONTEXT_CHARS = 100_000
+    MAX_CONTEXT_CHARS = 150_000
 
     def self.prepare(version)
       existing = version.topic_matching
