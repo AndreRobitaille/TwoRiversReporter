@@ -12,7 +12,7 @@ module ResidentContent
           period = CouncilPeriod.new(@member, key: service.period_key)
           attendance = CouncilAttendance.new(@member, period: service).call
           self.class.new(@member, attendance: attendance, period: period, statements: @statements).call
-        end.uniq { |row| [ row[:review].id, row[:evidence] ] }
+        end.uniq { |row| [ row[:meeting].id, row[:evidence] ] }
           .sort_by { |row| [ row[:reported_on], row[:meeting].id ] }.reverse
       end
       return [] unless @period.range && @attendance
@@ -40,7 +40,11 @@ module ResidentContent
             reported_on: Date.iso8601(stage.context.fetch("reported_on")), review: stage }
         end
       end
-      rows.uniq { |row| [ row[:reported_on], row[:evidence], row[:citation][:source_url] ] }
+      covered_items = rows.map { |row| [ row[:meeting].id, row[:evidence]["agenda_item_id"] ] }.to_set
+      rows.concat(MeetingIssueHistory.call(topics: topics, during: @period.range).reject do |row|
+        covered_items.include?([ row[:meeting].id, row[:evidence]["agenda_item_id"] ])
+      end)
+      rows.uniq { |row| [ row[:meeting].id, row[:reported_on], row[:evidence] ] }
         .sort_by { |row| [ row[:reported_on], row[:meeting].id ] }.reverse
     end
   end

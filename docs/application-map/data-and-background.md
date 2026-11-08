@@ -456,13 +456,21 @@ and held before provider construction; no text is silently truncated.
 
 ## BG-09 — Extract shared official issue milestones and actions (P1)
 
+- **Routine reuse:** profile issue history reads the existing published minutes
+  agenda summaries, topic links and citations. It creates no parallel extraction
+  record. Recurring source admission and budget selection exclude a second
+  general minutes pass, even under an older minutes-enabled policy. Retained
+  supplemental evidence/comparisons remain usable; new missing-fact extraction
+  requires a separately bounded run. Selected packet recommendations remain
+  separate. See [saved-analysis checks](council-saved-history-2026-11-08.md).
+
 - **Statement comparison extension:** after shared evidence or campaign-topic
   publication, and during existing nightly recovery, new statement/evidence pairs
   enter the existing cached comparison pipeline. Exact retained passages supply
   context; direct and negative results are reused. Source-channel scope and its
   date window apply in addition to shared spending limits. See
   [campaign/issue evidence verification](campaign-issue-evidence-2026-11-08.md).
-- **Start / data:** explicitly selected official minutes or packet document, existing
+- **Supplemental start / data:** explicitly selected official minutes or packet document, existing
   approved agenda/topic links, populated prompt and exact month/day/run budget.
 - **Action:** `ExtractCouncilIssueUpdatesJob` retains one shared source result;
   existing nightly campaign recovery revisits selected documents and explicitly

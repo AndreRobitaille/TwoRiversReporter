@@ -1033,6 +1033,15 @@ Reconciliation belongs in existing nightly processing; do not add an hourly
 schedule or periodic AI rewrites. Reuse source analysis across members, skip
 unchanged work, coalesce relevant changes, and enforce explicit spending/retry
 limits before paid generation. Attendance and comparison arithmetic use code.
+Profile issue history reads the existing published minutes agenda summaries,
+topic links and source citations. This adds no AI requests or copied extraction
+records. Recurring profile source extraction does not admit minutes, including
+under an older allowance that listed them. Retained supplemental evidence and
+its specific campaign comparisons remain usable; saved generic summaries do not
+automatically become statement/action matches. Explicitly selected packet
+recommendations and bounded manual missing-fact work remain separate. See
+[saved-analysis reuse checks](application-map/council-saved-history-2026-11-08.md).
+
 Live source admission must explicitly identify committees, document types and a
 source-specific start date; an older campaign-comparison allowance cannot enable
 historical packet or minutes processing. These sources use the same monthly,

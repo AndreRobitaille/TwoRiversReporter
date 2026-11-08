@@ -39,8 +39,11 @@ and sequencing of the more detailed proposals below.
   not establish actions at the current Council meeting. The profile evidence
   stage uses minutes for actions/outcomes and may use a specifically selected
   packet for explicit recommendations. Do not build a parallel packet-to-decision
-  interpretation or recovery system. Routine cost planning starts with minutes,
-  without assuming a separate analysis of every packet.
+  interpretation or recovery system. Read saved minutes agenda summaries and
+  their existing topic links/citations for profile issue history. Do not run a
+  second general minutes analysis for profiles. A missing structured fact may
+  justify a separately bounded source request; a generic issue summary does not
+  establish a specific campaign promise match.
 - Make the next slice a readable member record under #237/#240: recorded votes,
   meeting/source navigation, and honest coverage, followed by evidenced service
   periods and campaign enrichment. Show missing campaign material as a gap;

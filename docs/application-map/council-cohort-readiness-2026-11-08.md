@@ -74,7 +74,9 @@ covering every paid stage it invokes. Existing accepted votes must be reused.
 
 ## Recurring cost proposal and limits
 
-The sample-based conservative workload is five minutes analyses, five packet
+**Historical scenario, superseded for routine processing by the
+[saved-analysis reuse correction](council-saved-history-2026-11-08.md).**
+The sample-based conservative workload was five minutes analyses, five packet
 analyses, ten campaign/vote comparison batches and ten campaign/issue comparison
 batches per month. At the prepared sample sizes this reserves about **$6.35 for
 one attempt each, or $12.70 if every request uses two attempts**. The full twenty-
@@ -150,3 +152,9 @@ five assumed packet analyses from the earlier scenario gives approximately
 packet recommendation work is additional and remains inside any explicit overall
 allowance. No allowance is enabled; the earlier five-packet scenario is an upper
 workload illustration, not the default workflow.
+
+The later saved-analysis reuse correction also removes the five duplicate
+minutes analyses. With the same comparison-batch assumptions, the remaining
+incremental ceiling is about $3.70 for one attempt or $7.40 with two attempts
+everywhere. Existing meeting/topic processing, selected supplemental sources and
+backfill remain separate; no recurring allowance is enabled.
