@@ -14,6 +14,7 @@ class ReconcileCampaignSourcesJob < ApplicationJob
         ExtractCampaignSourceJob.perform_later(source.id)
       end
     end
+    ExtractCouncilFormalRecordsJob.perform_later if CouncilFormalSource.where(active: true).where.not(verified_at: nil).exists?
     MatchCampaignActionsJob.perform_later
     ExtractCouncilIssueUpdatesJob.perform_later if CouncilIssueReview.where.not(meeting_document_id: nil).exists? || CouncilProfiles::LiveSources.enabled?
   end

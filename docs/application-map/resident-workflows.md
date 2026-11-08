@@ -208,6 +208,12 @@ status below does not imply complete coverage of those workflows.
 
 ## RES-10 — Inspect an official's attendance and voting record (P1)
 
+- **November 8 formal cases:** verified case records supply dated events in a
+  closed section, with independently opened source passages. Complaints,
+  dispositions and appeals remain distinct; missing records are incomplete
+  coverage. Documented service and known identity control inclusion, including
+  a post-term disposition about earlier service. See
+  [formal-record evidence](council-formal-records-2026-11-08.md).
 - **November 8 work beyond votes:** shared official evidence can show attributed
   proposals/requests even without a vote or prior campaign/topic record. Known
   identity and service dates control the projection; short actions and closed
