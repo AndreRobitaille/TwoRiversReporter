@@ -1,0 +1,29 @@
+<% content_for(:title) { "Campaign sources - Admin" } %>
+<div class="page-header">
+  <div class="flex justify-between items-center">
+    <div>
+      <h1 class="page-title">Campaign sources</h1>
+      <p class="page-subtitle">Save one article for all of its candidates.</p>
+    </div>
+    <%= link_to "Add article", new_admin_campaign_source_path, class: "btn btn--primary" %>
+  </div>
+</div>
+<p><%= link_to "Back to members", admin_members_path %></p>
+<% if @sources.empty? %>
+  <div class="empty-state">No campaign articles have been saved.</div>
+<% else %>
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>Article</th><th>Election</th><th>Coverage</th></tr></thead>
+      <tbody>
+        <% @sources.each do |source| %>
+          <tr>
+            <td><%= link_to source.title, admin_campaign_source_path(source) %></td>
+            <td><%= source.election_on.strftime("%b %-d, %Y") %></td>
+            <td><%= CampaignSource::COVERAGES.fetch(source.coverage) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

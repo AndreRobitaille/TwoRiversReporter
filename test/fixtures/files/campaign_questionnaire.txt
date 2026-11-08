@@ -1,0 +1,15 @@
+Synthetic candidate questionnaire - not a real campaign source
+
+Question 1: What would you prioritize?
+Jordan Example: Repair neighborhood water lines.
+Taylor Example: Improve park access if grant funding is available.
+Morgan Example: Publish clearer spending reports.
+
+Question 2: How would you pay for it?
+Jordan Example: Start with the oldest pipes and seek grants.
+The second paragraph qualifies this answer: do not delay urgent repairs while waiting.
+Taylor Example: Use the existing capital plan.
+Morgan Example did not supply an answer to this question.
+
+Private source marker: questionnaire-cobalt
+Literal quoted markup: <script>not executable</script>

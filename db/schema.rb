@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_08_060000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_08_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -108,6 +108,40 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_060000) do
     t.index [ "actor_id" ], name: "index_audit_events_on_actor_id"
     t.index [ "created_at" ], name: "index_audit_events_on_created_at"
     t.index [ "subject_type", "subject_id" ], name: "index_audit_events_on_subject_type_and_subject_id"
+  end
+
+  create_table "campaign_source_versions", force: :cascade do |t|
+    t.bigint "campaign_source_id", null: false
+    t.string "title", null: false
+    t.string "source_url", null: false
+    t.string "publisher", null: false
+    t.date "published_on"
+    t.date "election_on", null: false
+    t.string "coverage", default: "full_article", null: false
+    t.text "coverage_notes"
+    t.text "body", null: false
+    t.string "version_key", null: false
+    t.string "content_sha256", null: false
+    t.bigint "submitted_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "campaign_source_id" ], name: "index_campaign_source_versions_on_campaign_source_id"
+    t.index [ "submitted_by_id" ], name: "index_campaign_source_versions_on_submitted_by_id"
+    t.index [ "version_key" ], name: "index_campaign_source_versions_on_version_key", unique: true
+  end
+
+  create_table "campaign_sources", force: :cascade do |t|
+    t.string "title", null: false
+    t.string "source_url", null: false
+    t.string "publisher", null: false
+    t.date "published_on"
+    t.date "election_on", null: false
+    t.string "coverage", default: "full_article", null: false
+    t.text "coverage_notes"
+    t.text "body", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "source_url" ], name: "index_campaign_sources_on_source_url", unique: true
   end
 
   create_table "committee_aliases", force: :cascade do |t|
@@ -1075,6 +1109,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_060000) do
   add_foreign_key "agenda_items", "meetings"
   add_foreign_key "api_access_tokens", "users"
   add_foreign_key "audit_events", "users", column: "actor_id"
+  add_foreign_key "campaign_source_versions", "campaign_sources"
+  add_foreign_key "campaign_source_versions", "users", column: "submitted_by_id", on_delete: :nullify
   add_foreign_key "committee_aliases", "committees"
   add_foreign_key "committee_memberships", "committees"
   add_foreign_key "committee_memberships", "members"
