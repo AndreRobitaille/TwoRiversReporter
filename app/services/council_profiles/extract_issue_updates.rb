@@ -27,6 +27,8 @@ module CouncilProfiles
     def self.call(stage, budget_run: nil)
       # Never spend on a source that was replaced after preparation.
       return stage unless stage.meeting_document && IssueInput.new(stage.meeting_document).key == stage.input_key
+      claimed = false
+      budget_run ||= LiveBudget.call(stage)
       claimed = stage.claim!(budget_run)
       return stage unless claimed
       raise ReserveAiSpend::Paused, "missing_budget" unless budget_run
@@ -37,7 +39,11 @@ module CouncilProfiles
     rescue IssueInput::Unavailable
       stage
     rescue ReserveAiSpend::Paused => e
-      stage.update!(status: "budget_paused", error_code: e.message, attempts: stage.attempts - 1)
+      stage.with_lock do
+        if claimed || stage.status.in?(%w[pending failed budget_paused])
+          stage.update!(status: "budget_paused", error_code: e.message, attempts: stage.attempts - (claimed ? 1 : 0))
+        end
+      end
       stage
     rescue JSON::ParserError, IssueUpdates::InvalidResponse => e
       stage.update!(status: "failed", error_code: e.class.name)

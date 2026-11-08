@@ -1033,6 +1033,12 @@ Reconciliation belongs in existing nightly processing; do not add an hourly
 schedule or periodic AI rewrites. Reuse source analysis across members, skip
 unchanged work, coalesce relevant changes, and enforce explicit spending/retry
 limits before paid generation. Attendance and comparison arithmetic use code.
+Live source admission must explicitly identify committees, document types and a
+source-specific start date; an older campaign-comparison allowance cannot enable
+historical packet or minutes processing. These sources use the same monthly,
+daily, request, concurrency and retry limits, with no default allowance. Existing
+nightly processing recovers missed updates. See [registered live-source checks](application-map/council-live-sources-2026-11-08.md).
+
 
 The bounded recommendation implementation compares independently recorded yes/no
 votes only against the same full unchanged proposal and an explicitly attributed
