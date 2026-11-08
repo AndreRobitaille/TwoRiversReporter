@@ -1,6 +1,6 @@
 # Campaign article intake: November 8, 2026
 
-Application revision: `8e9dfb59c5728b3c80f8548c49e2af023828f7a6`, based on PR #266's
+Application revision: `337b0d497ce0ef38bd015056785a81d57c7d3956`, based on PR #266's
 spending-control branch. This is the first intake slice of
 [#239](https://github.com/AndreRobitaille/TwoRiversReporter/issues/239), not a
 completed campaign extractor or member-page enrichment loop.
@@ -30,6 +30,8 @@ line endings are normalized. Repeated saves reuse an identical version and leave
 the source timestamp alone when nothing changes. An explicit edit retains the
 earlier version and makes the corrected input current. Submitting an already
 saved URL opens that source instead of overwriting an explicit correction.
+Snapshots reload the persisted article under the save transaction's row lock,
+so overlapping partial edits retain the actual saved combination of fields.
 
 Source text is private to existing passkey-eligible admins. Historical versions
 use the same access boundary, and supplied markup is rendered as text. Submitted
@@ -58,7 +60,7 @@ other real copyrighted article was committed or loaded by this check.
   isolated database. `bin/rubocop -A db/schema.rb` restored schema formatting;
   the inspected diff contains only those tables, indexes, foreign keys and version.
 - `bin/rails test test/models/campaign_source_test.rb test/integration/campaign_source_intake_test.rb test/controllers/admin/members_controller_test.rb test/controllers/admin/base_controller_test.rb test/routing/application_dispatch_test.rb`:
-  **17 tests, 131 assertions, zero failures/errors/skips**. Real HTTP save/edit/read
+  **18 tests, 142 assertions, zero failures/errors/skips**. Real HTTP save/edit/read
   requests preserve exact supplied text and context, original/corrected versions,
   coverage and submitter identity. Repeated intake cannot undo the correction.
   Invalid input preserves the form and current saved version. An allowed admin
@@ -84,11 +86,21 @@ after the explicit correction (1 test, 30 assertions, 1 failure, no errors/skips
 The controller now returns the saved record for duplicate submissions; edits
 remain the explicit correction path. The restored HTTP command above passed.
 
+The PR review identified a second defect: two independently loaded source objects
+could save different fields, leaving the final database row without a matching
+snapshot. A deterministic stale-instance reproduction failed on the absent version
+(1 test, 1 assertion, 1 failure, no errors/skips). The callback now reloads under
+the source row lock before retaining the persisted fields. The restored check
+reads both current and intermediate versions through HTTP, proving the combined
+title/body display and the preserved earlier body. This verifies the reported
+interleaving without claiming simultaneous-browser stress testing.
+
 A separate process-local fault removed `require_admin` only from the new
 controller. The test first read the text as an admin, then failed when the ordinary
 account received HTTP 200 instead of a redirect (1 test, 4 assertions, 1 failure,
 no errors/skips). The unmodified 17-test command then passed. No running preview
-or application source file was changed by this fault.
+or application source file was changed by this fault. The final 18-test command,
+mobile journey and RuboCop were rerun after the overlapping-edit correction.
 
 These are bounded implementation/conditional-defect checks, not evidence of
 production failure frequency. Paid extraction, automatic publication, source
