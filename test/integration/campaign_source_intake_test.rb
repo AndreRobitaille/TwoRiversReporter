@@ -19,8 +19,8 @@ class CampaignSourceIntakeTest < ActionDispatch::IntegrationTest
       source = CampaignSource.sole
       assert_redirected_to admin_campaign_source_path(source)
       follow_redirect!
-      assert_equal campaign_article_attributes[:body], css_select(".campaign-source-text").sole.text
-      assert_select ".campaign-source-text script", count: 0
+      assert_equal campaign_article_attributes[:body], css_select("[data-campaign-source-text]").sole.text
+      assert_select "[data-campaign-source-text] script", count: 0
       assert_equal @admin.id, source.current_version.submitted_by_id
       assert_equal campaign_article_attributes[:body], source.current_version.body
       assert_match "Analysis has not been enabled", response.body
@@ -34,7 +34,7 @@ class CampaignSourceIntakeTest < ActionDispatch::IntegrationTest
       patch admin_campaign_source_path(source), params: { campaign_source: { body: "Revised questionnaire-cobalt", coverage: "selected_excerpts", coverage_notes: "One reviewed answer" } }
       assert_redirected_to admin_campaign_source_path(source)
       get admin_campaign_source_path(source)
-      assert_select ".campaign-source-text", text: "Revised questionnaire-cobalt"
+      assert_select "[data-campaign-source-text]", text: "Revised questionnaire-cobalt"
       assert_includes response.body, "Selected excerpts"
 
       corrected_version = source.reload.current_version
@@ -42,10 +42,10 @@ class CampaignSourceIntakeTest < ActionDispatch::IntegrationTest
       assert_redirected_to admin_campaign_source_path(source)
       assert_equal corrected_version.id, source.reload.current_version.id
       follow_redirect!
-      assert_select ".campaign-source-text", text: "Revised questionnaire-cobalt"
+      assert_select "[data-campaign-source-text]", text: "Revised questionnaire-cobalt"
 
       get admin_campaign_source_path(source, version: original.id)
-      assert_equal campaign_article_attributes[:body], css_select(".campaign-source-text").sole.text
+      assert_equal campaign_article_attributes[:body], css_select("[data-campaign-source-text]").sole.text
       assert_includes response.body, "Viewing an earlier version"
     end
   end
@@ -77,12 +77,12 @@ class CampaignSourceIntakeTest < ActionDispatch::IntegrationTest
     get admin_campaign_source_path(source)
     assert_response :success
     assert_select "h1", text: "Corrected questionnaire title"
-    assert_select ".campaign-source-text", text: "Corrected questionnaire-cobalt answer"
+    assert_select "[data-campaign-source-text]", text: "Corrected questionnaire-cobalt answer"
 
     get admin_campaign_source_path(source, version: title_edit.current_version.id)
     assert_response :success
     assert_select "h1", text: "Corrected questionnaire title"
-    assert_equal campaign_article_attributes[:body], css_select(".campaign-source-text").sole.text
+    assert_equal campaign_article_attributes[:body], css_select("[data-campaign-source-text]").sole.text
   end
 
   test "a permitted admin read comes before ordinary-account and logged-out denial" do

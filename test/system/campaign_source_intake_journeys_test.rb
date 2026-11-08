@@ -18,7 +18,7 @@ class CampaignSourceIntakeJourneysTest < ApplicationSystemTestCase
     fill_in "Election date", with: "04/06/2027"
     fill_in "Article text", with: campaign_article_attributes[:body]
     click_button "Save article"
-    assert_selector ".campaign-source-text", text: "questionnaire-cobalt"
+    assert_selector "[data-campaign-source-text]", text: "questionnaire-cobalt"
     source = CampaignSource.sole
     original = source.current_version
     assert_equal Date.new(2027, 4, 6), source.election_on
