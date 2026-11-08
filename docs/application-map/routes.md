@@ -33,6 +33,15 @@ checked by `ApplicationDispatchTest`; actual form and access evidence is in
 | GET | `/admin/campaign_sources/:id` | `admin/campaign_sources#show` |
 | PATCH / PUT | `/admin/campaign_sources/:id` | `admin/campaign_sources#update` |
 
+The prepared-forum extension adds two admin-only routes:
+
+| Verb | Path | Action |
+| --- | --- | --- |
+| GET | `/admin/campaign_forum/new` | `admin/campaign_forums#new` |
+| POST | `/admin/campaign_forum` | `admin/campaign_forums#create` |
+
+The form also accepts an existing source ID for an explicit replacement; article
+editing redirects forum sources there. See [verification](prepared-campaign-forums-2026-11-08.md).
 These routes do not expose a public campaign source or an extraction action.
 The historical inventory below is unchanged.
 

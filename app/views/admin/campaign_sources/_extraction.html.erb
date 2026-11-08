@@ -33,6 +33,6 @@
     <% end %>
   <% else %>
     <p><%= extraction.status.humanize %><%= ": #{extraction.error_code.humanize}" if extraction.error_code.present? %>.</p>
-    <p>The saved article remains available. No statements have been published.</p>
+    <p>The saved source remains available in full. No statements have been published.</p>
   <% end %>
 </section>
