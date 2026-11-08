@@ -91,6 +91,31 @@ class CouncilRecordedActionsTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "all records includes each documented term but excludes a gap in service" do
+    @period.update!(ended_on: Date.new(2025, 12, 31), end_source_version: @source, end_page: 5)
+    second = @member.council_service_periods.create!(period_key: "2026-appointment", started_on: Date.new(2026, 5, 1),
+      start_source_version: @source, start_page: 5)
+    data = action_response.merge("updates" => [])
+    dates = %w[2025-07-09 2026-03-01 2026-06-01]
+    data["actions"] = dates.map do |date|
+      data["actions"].first.merge("occurred_on" => date, "summary" => "Proposed a park design on #{date}.",
+        "quote" => "Jordan Attendance proposed a park design on #{date}; no second was received.")
+    end
+    @document.update!(extracted_text: data["actions"].map { |action| action["quote"] }.join("\n"))
+    @update_meeting.update!(starts_at: Time.zone.parse("2026-07-01 18:00"))
+    extract_recorded_actions(data)
+    get member_path(@member, term: second.period_key)
+    assert_select "#recorded-actions [data-recorded-action]", count: 1
+    assert_select "#recorded-actions", text: /2026-06-01/
+    get member_path(@member, term: @period.period_key)
+    assert_select "#recorded-actions [data-recorded-action]", count: 1
+    assert_select "#recorded-actions", text: /2025-07-09/
+    get member_path(@member, term: "all")
+    assert_select "#recorded-actions [data-recorded-action]", count: 2
+    assert_not_includes response.body, "Proposed a park design on 2026-03-01."
+    assert_equal 1, @calls.size
+  end
+
   test "unlocated speaker invented action and missing complete array fail validation" do
     stage = CouncilProfiles::ExtractIssueUpdates.prepare(@document)
     parser = CouncilProfiles::IssueUpdates.new(stage.context)

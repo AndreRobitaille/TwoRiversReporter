@@ -98,3 +98,12 @@ No automatic campaign-to-advocacy matching, complete discussion coverage,
 staff-recommendation comparison or formal-case extraction is claimed. These
 remain parent-issue work. An absent action is not proof of inaction. Real profile
 population and the other session's voter review remain unverified for this slice.
+
+## Review follow-up
+
+The all-records selection now includes actions across every evidenced selectable
+service period, rather than hiding the section when no single term is selected.
+Gaps between terms remain excluded. The added two-term scenario passes in the
+8-test/83-assertion action integration file; restoring the old guard fails its
+expected two-action count, and restoration returns the file to green. Targeted
+RuboCop passes. This correction changes eligibility scope without another AI call.
