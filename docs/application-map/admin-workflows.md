@@ -385,3 +385,5 @@ assertions below are candidate acceptance criteria based on the user's brief.
   actor; see [fact-publication audit checks](council-fact-withdrawal-2026-11-07.md).
   Known document changes also withdraw saved meeting summaries, with the meeting
   identity and retained source snapshots; see [summary audit checks](meeting-summary-withdrawal-2026-11-07.md).
+  Fact-dependent summary withdrawal records old/current motion receipts and
+  publication snapshots in the same fact transaction; see [rollback and audit checks](meeting-summary-facts-2026-11-07.md).

@@ -248,6 +248,10 @@ identities, content and eligibility under topic locks before saving a provider
 response. See [agenda-preview transition and concurrency checks](agenda-briefing-context-2026-11-07.md).
 Saved meeting summaries now withdraw on changes to recorded document dependencies;
 see [summary publication, consumers and QA](meeting-summary-withdrawal-2026-11-07.md).
+Saved summaries also retain their consumed structured motion context. Fact
+republication withdraws incompatible known summaries and illustrations atomically;
+compatible context survives. Final summary publication and consumers recheck the
+receipt. See [summary fact dependencies and verification](meeting-summary-facts-2026-11-07.md).
 Previously consumed topic-briefing and other missing dependencies remain open.
 
 Fact publication now withdraws stored briefings with invalid motion receipts even
