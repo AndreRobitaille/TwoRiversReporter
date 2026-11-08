@@ -27,7 +27,7 @@ class ExtractKnowledgeJob < ApplicationJob
 
     return if response.blank?
 
-    parsed = parse_entries(response)
+    parsed = parse_entries(response).select { |entry| entry["confidence"].to_f >= CONFIDENCE_THRESHOLD }
     return if parsed.empty?
 
     # Acquire every topic we will reference with the consumed context, before
@@ -41,8 +41,6 @@ class ExtractKnowledgeJob < ApplicationJob
 
       created_ids = []
       parsed.each do |entry|
-        next if entry["confidence"].to_f < CONFIDENCE_THRESHOLD
-
         source = create_knowledge_source(entry, meeting)
         link_topics(source, entry["topic_names"], topics)
         created_ids << source.id

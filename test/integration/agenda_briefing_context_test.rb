@@ -36,6 +36,7 @@ class AgendaBriefingContextTest < ActionDispatch::IntegrationTest
   teardown do
     ApiAccessToken.where(user_id: @actor&.id).delete_all
     summary_ids = MeetingSummary.where(meeting_id: [ @meeting&.id ] + @extra_meetings.map(&:id)).pluck(:id)
+    KnowledgeSource.where(meeting_id: [ @meeting&.id ] + @extra_meetings.map(&:id)).destroy_all
     @extra_meetings.each(&:destroy!)
     clean_withdrawal_scenario
     AuditEvent.where(subject_type: "MeetingSummary", subject_id: summary_ids).delete_all
@@ -515,53 +516,72 @@ class AgendaBriefingContextTest < ActionDispatch::IntegrationTest
     KnowledgeSource.skip_callback(:create, :before, callback) if callback
   end
 
-  test "an alias reassignment while knowledge waits rejects its captured topic mapping" do
-    @agenda_document.update!(extracted_text: @other.name)
-    topic_alias = @topic.topic_aliases.create!(name: "Synthetic separate knowledge subject")
-    generate_preview
-    entered, release, started, errors = Queue.new, Queue.new, Queue.new, Queue.new
-    workers = []
-    alias_id, alias_name = topic_alias.id, topic_alias.name
-    callback = -> do
-      if id == alias_id
-        entered << true
-        release.pop
-      end
-    end
-    TopicAlias.set_callback(:update, :after, callback)
-    @provider.define_singleton_method(:extract_knowledge) do |**|
-      { entries: [ { title: "Synthetic reassigned knowledge", body: "Synthetic context", confidence: 0.9,
-        reasoning: "Synthetic support", topic_names: [ alias_name ] } ] }.to_json
-    end
-    clear_enqueued_jobs
-    withdrawal_providers do
-      workers << Thread.new do
-        ActiveRecord::Base.connection_pool.with_connection { topic_alias.update!(topic: @other) }
-      rescue => error
-        errors << error
-      end
-      Timeout.timeout(10) { entered.pop }
-      workers << Thread.new do
-        ActiveRecord::Base.connection_pool.with_connection do |connection|
-          started << connection.select_value("SELECT pg_backend_pid()")
-          ExtractKnowledgeJob.perform_now(@meeting.id)
+  {
+    "an alias reassignment while knowledge waits rejects its captured topic mapping" => 0.9,
+    "a rejected knowledge alias change does not block an accepted independent entry" => 0.1
+  }.each do |name, confidence|
+    test name do
+      @agenda_document.update!(extracted_text: @other.name)
+      topic_alias = @topic.topic_aliases.create!(name: "Synthetic separate knowledge subject")
+      generate_preview
+      entered, release, started, errors = Queue.new, Queue.new, Queue.new, Queue.new
+      workers = []
+      alias_id, alias_name = topic_alias.id, topic_alias.name
+      callback = -> do
+        if id == alias_id
+          entered << true
+          release.pop
         end
-      rescue => error
-        errors << error
       end
-      assert_worker_wait(started, workers.last)
-      release << true
-      Timeout.timeout(10) { workers.each(&:value) }
+      TopicAlias.set_callback(:update, :after, callback)
+      independent_name = @other.name
+      @provider.define_singleton_method(:extract_knowledge) do |**|
+        entries = [ { title: "Synthetic reassigned knowledge", body: "Synthetic context", confidence: confidence,
+          reasoning: "Synthetic support", topic_names: [ alias_name ] } ]
+        if confidence == 0.1
+          entries << { title: "Synthetic independent knowledge", body: "Synthetic accepted context", confidence: 0.9,
+            reasoning: "Synthetic support", topic_names: [ independent_name ] }
+        end
+        { entries: entries }.to_json
+      end
+      clear_enqueued_jobs
+      withdrawal_providers do
+        workers << Thread.new do
+          ActiveRecord::Base.connection_pool.with_connection { topic_alias.update!(topic: @other) }
+        rescue => error
+          errors << error
+        end
+        Timeout.timeout(10) { entered.pop }
+        workers << Thread.new do
+          ActiveRecord::Base.connection_pool.with_connection do |connection|
+            started << connection.select_value("SELECT pg_backend_pid()")
+            ExtractKnowledgeJob.perform_now(@meeting.id)
+          end
+        rescue => error
+          errors << error
+        end
+        assert_worker_wait(started, workers.last)
+        release << true
+        Timeout.timeout(10) { workers.each(&:value) }
+      end
+      assert errors.empty?, "Unexpected worker error: #{errors.pop unless errors.empty?}"
+      if confidence == 0.9
+        assert_empty @meeting.knowledge_sources
+        assert_no_enqueued_jobs
+      else
+        assert_equal 1, @meeting.knowledge_sources.count
+        assert_equal "Synthetic independent knowledge", @meeting.knowledge_sources.sole.title
+        assert_equal [ @other.id ], @meeting.knowledge_sources.sole.topics.pluck(:id)
+        assert_enqueued_jobs 1, only: AutoTriageKnowledgeJob
+        assert_enqueued_jobs 0, only: ExtractKnowledgeJob
+      end
+      assert_equal @other.id, Topic.find_by_name_or_alias(alias_name).id
+      assert_predicate @meeting.meeting_summaries.sole.reload, :published?
+    ensure
+      release << true if release
+      workers&.each { |worker| worker.join(10) }
+      TopicAlias.skip_callback(:update, :after, callback) if callback
     end
-    assert errors.empty?, "Unexpected worker error: #{errors.pop unless errors.empty?}"
-    assert_empty @meeting.knowledge_sources
-    assert_equal @other.id, Topic.find_by_name_or_alias(alias_name).id
-    assert_predicate @meeting.meeting_summaries.sole.reload, :published?
-    assert_no_enqueued_jobs
-  ensure
-    release << true if release
-    workers&.each { |worker| worker.join(10) }
-    TopicAlias.skip_callback(:update, :after, callback) if callback
   end
 
   private
