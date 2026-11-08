@@ -942,9 +942,11 @@ start collapsed and remain available through a native disclosure. Keep the same
 sourced reporting in the HTML for permitted readers and verified crawlers: the
 audience also receives civic information through Google Search and its AI results.
 
-Campaign sources belong in compact issue rows, with the first open and Other
-issues closed. Opening another issue or source must not close a reader's existing
-selection. Use a small white inset panel and side rule to separate the saved
+Show every campaign issue heading, with only the first position open. Do not hide
+potentially important proposals under Other issues based on vote history or a
+coarse topic score. Opening another issue or source must not close a reader's
+existing selection. Put citations and full source detail together at the bottom,
+not beneath each issue as well. Use a small white inset panel and side rule to separate the saved
 position from its dated campaign sources; these summaries are paraphrases, not
 verbatim quotations. Keep qualifications and deadlines beside the position.
 Remove the redundant Follow this issue control. Preserve all accepted statements,
@@ -960,11 +962,21 @@ between the specific statement and decision, not merely their shared topic;
 that analysis must be shared across members and reused for unchanged inputs.
 The direct comparison is unfinished. Do not fill its gap with broader topic votes.
 
-Issue navigation reuses approved topic links and existing impact/activity data;
+Issue navigation reuses approved topic links and existing impact scores;
 repeated campaign mentions do not increase priority. Prefer a saved written-source
 summary before longer forum records for the initial position, while preserving
-distinct claims in Campaign sources. This layout introduces no generation step.
+distinct claims in Campaign sources. Vote history does not determine which
+campaign issues appear. This layout introduces no generation step.
 When no approved issue links exist, retain the statement-list fallback.
+
+Use the independently assessed topic importance for normal ordering. A major,
+specific campaign promise may additionally warrant a highlight when direct
+evidence shows a contrary action or no matching action in the available record.
+The Airbnb-regulation example illustrates this exception; it is not a keyword
+rule or a conclusion about any candidate. Such highlights need the actual
+promise, relevant decisions and coverage together. Coarse statement-type labels
+or rhetorical emphasis alone do not establish importance, contradiction or
+inaction. Direct matching and these highlights remain subsequent work.
 
 The proposed page centers on **what they said → what they did → what happened**,
 with a term selector, cited overview, public-issue timelines, attendance, full

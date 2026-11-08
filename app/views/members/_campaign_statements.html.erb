@@ -10,22 +10,12 @@
       <% issues = @campaign_issues.fetch(election) %>
       <% if issues.any? %>
         <div class="member-campaign-list">
-          <% issues.first(3).each_with_index do |issue, index| %>
+          <% issues.each_with_index do |issue, index| %>
             <%= render "campaign_issue", issue: issue, expanded: index.zero? %>
           <% end %>
         </div>
-        <% if issues.size > 3 %>
-          <details class="member-campaign-overflow">
-            <summary>Other issues (<%= issues.size - 3 %>)</summary>
-            <div class="member-campaign-list">
-              <% issues.drop(3).each do |issue| %>
-                <%= render "campaign_issue", issue: issue, expanded: false %>
-              <% end %>
-            </div>
-          </details>
-        <% end %>
         <details class="member-campaign-evidence">
-          <summary>Campaign statements and sources (<%= records.size %>)</summary>
+          <summary>Campaign sources and full statements (<%= records.size %>)</summary>
           <%= render partial: "campaign_statement", collection: records, as: :record %>
         </details>
       <% else %>

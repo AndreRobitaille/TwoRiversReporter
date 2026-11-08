@@ -65,7 +65,7 @@ class MemberProfileLayoutTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "#campaign-record > .member-campaign-list > .member-campaign-issue", count: 1
     assert_select "#campaign-record > .member-campaign-evidence[open]", count: 0
-    assert_select "#campaign-record > .member-campaign-evidence > summary", text: "Campaign statements and sources (5)"
+    assert_select "#campaign-record > .member-campaign-evidence > summary", text: "Campaign sources and full statements (5)"
     assert_select "#campaign-record > .member-campaign-evidence .member-campaign-card", count: 5
     assert_select ".member-campaign-card[open]", count: 0
     assert_select ".member-campaign-card a[href=?]", @source.source_url, count: 5
@@ -83,9 +83,40 @@ class MemberProfileLayoutTest < ActionDispatch::IntegrationTest
     assert_select "#campaign-record", text: /Adopt the sewer-charge ordinance/, count: 0
     assert_select "#campaign-record [data-campaign-vote], #campaign-record .member-campaign-actions", count: 0
     assert_select "#campaign-record a", text: "Follow this issue", count: 0
-    assert_select ".member-campaign-issue > .member-campaign-evidence > summary", text: "Campaign sources"
+    assert_select ".member-campaign-issue .member-campaign-evidence, .member-campaign-issue a", count: 0
+    assert_select "#campaign-record > .member-campaign-evidence > summary", text: "Campaign sources and full statements (2)"
     assert_select ".member-campaign-issue[name], .member-campaign-card[name]", count: 0
     assert_equal "yes", record.reload.value
+  end
+
+  test "every issue heading is visible without vote history and sources appear only at the bottom" do
+    data = campaign_response_data
+    answer = data.fetch("participants").first.fetch("answers").first
+    passage = answer.fetch("passage")
+    extra = [ "Promote downtown festivals.", "Improve park access.", "Publish spending reports." ]
+    answer["passage"] = ([ passage ] + extra).join(" ")
+    extra.each do |quote|
+      answer.fetch("statements") << answer.fetch("statements").first.merge("summary" => quote, "supporting_quote" => quote)
+    end
+    @source.update!(body: @source.body.sub(passage, answer.fetch("passage")))
+    analyze_member_campaign(content: data.to_json)
+    topics = [ @water ] + %w[tourism parks budget].map { |name| Topic.create!(name: name, status: "approved") }
+    stage = Campaigns::MatchTopics.prepare(@source.current_version)
+    data = { "matches" => stage.context.fetch("statements").map do |statement|
+      topic = topics[statement.fetch("sequence")]
+      { "sequence" => statement.fetch("sequence"), "status" => topic ? "matched" : "no_match",
+        "topic_ids" => topic ? [ topic.id ] : [], "reason" => "Deterministic navigation fixture." }
+    end }
+    with_campaign_transport(content: data.to_json) do
+      MatchCampaignTopicsJob.perform_now(@source.id, budget_run_id: campaign_budget(stage: stage).id)
+    end
+    get member_path(@jordan)
+    assert_response :success
+    assert_select "#campaign-record > .member-campaign-list > .member-campaign-issue", count: 4
+    assert_select "#campaign-record .member-campaign-overflow", count: 0
+    assert_select ".member-campaign-issue a, .member-campaign-issue .member-campaign-evidence", count: 0
+    assert_select "#campaign-record > .member-campaign-evidence .member-campaign-card", count: 5
+    assert_select "#campaign-record a[href=?]", @source.source_url, count: 5
   end
 
   test "repeated statements share issue navigation without losing qualifications or source evidence" do
@@ -108,7 +139,6 @@ class MemberProfileLayoutTest < ActionDispatch::IntegrationTest
     with_campaign_transport(content: matches.to_json) do
       MatchCampaignTopicsJob.perform_now(@source.id, budget_run_id: campaign_budget(stage: stage).id)
     end
-    repeated = @source.current_version.extraction.campaign_statements.find_by!(sequence: 1)
     activity_vote(date: Date.new(2025, 7, 7))
     before = [ CampaignRequest.count, CampaignExtraction.count ]
     Ai::OpenAiService.stub(:new, ->(*) { flunk "Grouping saved evidence must not generate prose" }) do
@@ -116,7 +146,7 @@ class MemberProfileLayoutTest < ActionDispatch::IntegrationTest
     end
     assert_select ".member-campaign-issue", count: 1
     assert_select "#campaign-record [data-campaign-vote]", count: 0
-    assert_select "[data-campaign-source-statement='#{repeated.id}']", text: /Only when grants cover the cost/
+    assert_select "#campaign-record > .member-campaign-evidence", text: /Only when grants cover the cost/
     assert_select "#campaign-record > .member-campaign-evidence .member-campaign-card", count: 3
     assert_equal before, [ CampaignRequest.count, CampaignExtraction.count ]
   end

@@ -36,17 +36,15 @@ class MemberCampaignActivityJourneysTest < ApplicationSystemTestCase
       first_issue = find(".member-campaign-issue[open]")["data-campaign-topic"]
       find(".member-campaign-issue:not([open]) > summary").click
       assert_selector ".member-campaign-issue[open]", count: 2
-      within "[data-campaign-topic='#{first_issue}']" do
-        find("summary", text: "Campaign sources", exact_text: true).click
-        assert_link "Example Newspaper"
-        assert_no_selector "[data-campaign-vote]", visible: :all
-      end
+      assert_no_selector ".member-campaign-issue a", visible: :all
       other_issue = find(".member-campaign-issue:not([data-campaign-topic='#{first_issue}'])")
-      other_issue.find("summary", text: "Campaign sources", exact_text: true).click
-      assert_selector ".member-campaign-evidence[open]", count: 2
       other_issue.find(".member-campaign-summary").click
       assert_selector ".member-campaign-issue[open]", count: 1
-      assert_selector "[data-campaign-topic='#{first_issue}'][open] .member-campaign-evidence[open]"
+      assert_selector "[data-campaign-topic='#{first_issue}'][open]"
+      find("#campaign-record > .member-campaign-evidence > summary").click
+      find(".member-campaign-card > summary", match: :first).click
+      assert_link "Example Newspaper"
+      assert_no_selector "#campaign-record [data-campaign-vote]", visible: :all
       click_link "Voting record", exact: true
       within ".member-profile-primary" do
         click_link "Motion to adopt the resolution", match: :first

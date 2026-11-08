@@ -216,9 +216,10 @@ status below does not imply complete coverage of those workflows.
   Jump links retain easy access to both. Other Votes starts closed but its saved
   decisions and links remain server-rendered for permitted readers, including
   verified Google requests. See [layout checks](member-record-layout-2026-11-08.md).
-  The subsequent issue sidebar shows three issue rows per election, first open,
-  with a saved position and Campaign sources. Other issues and full evidence
-  start closed; opening one does not close another. The owner rejected automatic
+  The subsequent issue sidebar shows every issue heading per election, with
+  only the first position open. Citations/full statements appear once at the
+  bottom. Opening one issue or statement does not close another; topic scores
+  and vote history do not hide issue headings. The owner rejected automatic
   topic-based vote pairs as misleading, so the campaign section no longer renders
   them. Votes remain in the main record; direct statement/action comparisons are
   unfinished. Reads use existing analysis with no new AI. See the

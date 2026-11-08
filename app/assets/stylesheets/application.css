@@ -5559,12 +5559,6 @@ th.sortable-header:hover {
   font-size: var(--font-size-sm);
 }
 
-.member-campaign-source-record {
-  border-top: 1px solid var(--color-border);
-  padding: var(--space-3) 0;
-  font-size: var(--font-size-sm);
-}
-
 .member-campaign-election {
   font-family: var(--font-data);
   font-size: var(--font-size-sm);

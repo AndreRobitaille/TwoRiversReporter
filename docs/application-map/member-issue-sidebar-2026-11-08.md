@@ -7,20 +7,20 @@ specific proposal. Direct campaign-to-action comparisons remain unfinished.
 
 ## Final reader contract
 
-- Three issue rows appear per election; the first is open. Other issues and
-  full sources start closed. Opening another issue or statement never closes
+- All issue headings appear per election; only the first position is open.
+  Full sources start closed. Opening another issue or statement never closes
   the reader's existing selection. Native disclosures need no extra request.
 - A small white panel with a side rule separates the saved position from
   Campaign sources. It contains a paraphrase, not a fabricated quotation.
   Qualifications and deadlines remain beside the position.
-- Campaign sources retains distinct saved statements, their qualifications,
-  publisher links and dates. The full statement archive retains questions and
-  source context. All permitted content remains server-rendered.
+- Campaign sources and full statements appears once at the bottom, retaining
+  distinct statements, qualifications, publisher links, dates and questions.
+  Issue panels do not repeat citations. All permitted content remains in HTML.
 - Follow this issue is removed. Automatic topic-based vote pairings and their
   Council results are omitted from campaign content. Existing votes and meeting
   links remain in the main record. A shared utility topic does not connect an
   added-water-users proposal to a sewer-charge ordinance.
-- Navigation reuses approved topic links and existing impact/activity. Repetition
+- Navigation reuses approved topic links and existing impact scores. Repetition
   does not raise priority. Written-source summaries lead when available; distinct
   forum positions remain in the sources. Exact duplicate evidence groups combine
   for navigation only. Retrospective claims stay in the full statement archive.
@@ -31,7 +31,7 @@ specific proposal. Direct campaign-to-action comparisons remain unfinished.
 ## Verification
 
 Environment: `codex/member-issue-sidebar`, initial base `961bee1`, with the owner
-revision following `c4cc052`; Ruby 4.0.9, PostgreSQL, Chromium, a separate regression
+revision following `c605850`; Ruby 4.0.9, PostgreSQL, Chromium, a separate regression
 DB and deterministic provider responses. Commands actually run:
 
 ```sh
@@ -47,7 +47,7 @@ CHROME_BIN=/usr/bin/chromium bin/rails test \
 bin/rubocop --cache false
 ```
 
-**36 application tests / 409 assertions**, **5 browser journeys / 150 assertions**,
+**37 application tests / 416 assertions**, **5 browser journeys / 150 assertions**,
 all passing without skips; **780 Ruby files**, no offenses. Browser checks cover
 independent issue and statement controls, retained open source details, manual
 closing, main-record meeting navigation, return/refresh, desktop proportions,
@@ -63,12 +63,19 @@ It failed at the intended campaign-content assertion while first proving the
 vote existed in the main record. Restoring the partial passed **5 tests / 53
 assertions**. The fault was never copied into the real-data preview.
 
+A second isolated fault restored a three-heading cap. The new no-vote-history
+case expected all four independently matched issue headings and failed with
+three; restoration passed **6 tests / 60 assertions**. The same test proves that
+source links occur only in the full bottom archive, not again in issue panels.
+
 Real local article/forum data retained all accepted summaries in member HTML:
 Bittner 34 (31 forum), Brandt 27 (25 forum), Derby 33 (31 forum). Repeated unchanged
 extraction/matching jobs and reads made zero provider calls and left requests,
 reservations, votes, people and office counts unchanged. The revised Bittner
 390-pixel view was visually inspected, and opening Utility Rates left Hamilton
-open with no sewer vote in either campaign panel. Local history gaps remain.
+open with no sewer vote in either campaign panel. The final navigation includes
+all issue headings, including tourism promotion spending, without needing to
+expand an Other issues category. Local history gaps remain.
 
 ## Human review and limits
 
@@ -81,6 +88,9 @@ compact vote renderer was removed. Vote values in the main record are unchanged.
 
 This is source organization, not completion of the intended action comparison.
 A later comparison must relate a specific statement to specific decision evidence
-and reuse that analysis across members. This slice does not certify every forum
+and reuse that analysis across members. Normal ordering uses the existing topic
+importance; a specific major promise with contrary action or no matching action
+in the available record may warrant an additional supported highlight. Those
+highlights are not implemented here. This slice does not certify every forum
 interpretation, explain legal effects or establish live Google indexing. No new
 paid analysis, production copy, backfill, merge or deployment was performed.

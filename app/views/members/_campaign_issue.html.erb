@@ -9,15 +9,4 @@
     <% if statement.data["conditions"].present? %><p class="member-campaign-qualification"><%= statement.data["conditions"] %></p><% end %>
     <% if statement.data["timeframe"].present? %><p class="member-campaign-qualification"><%= statement.data["timeframe"] %></p><% end %>
   </div>
-  <details class="member-campaign-evidence">
-    <summary>Campaign sources</summary>
-    <% issue.fetch(:statements).each do |record| %>
-      <div class="member-campaign-source-record" data-campaign-source-statement="<%= record.id %>">
-        <p><%= record.data.fetch("summary") %></p>
-        <% if record.data["conditions"].present? %><p><%= record.data["conditions"] %></p><% end %>
-        <% if record.data["timeframe"].present? %><p><%= record.data["timeframe"] %></p><% end %>
-        <p class="member-campaign-source"><%= link_to record.campaign_source_version.publisher, record.campaign_source_version.source_url, rel: "noopener" %> · <%= record.campaign_source_version.published_on&.strftime("%b %-d, %Y") %></p>
-      </div>
-    <% end %>
-  </details>
 </details>
