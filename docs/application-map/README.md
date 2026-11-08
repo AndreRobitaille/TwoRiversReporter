@@ -53,6 +53,9 @@ compatibility, and isolated retention/stale-response fault experiments.
 The [November 8 Council service-date slice](council-service-periods-2026-11-08.md)
 records shared-source date persistence and the profile-to-retained-PDF journey.
 
+The [November 8 Council attendance slice](council-attendance-2026-11-08.md)
+records real-data reconciliation, missing roll calls and mobile meeting links.
+
 ## Read the map
 
 | Document | Use |
