@@ -72,12 +72,40 @@ metadata and short permitted supporting excerpts if later supplied for intake;
 do not mirror the full article. Search-index and fetched participant lists
 differed, another reason to pin content versions before attribution.
 
-The bounded search for 2024 HTR/questionnaire material did not establish a
-permitted multi-candidate source covering Brandt, Derby and Bittner. A 2025 HTR
-syndication lead and the design's 2025 League forum listing concern another
-cohort. No recording/audio or speaker labeling was verified. **2024 campaign
-coverage is missing**; no real campaign-to-action relationship is asserted.
-The 2024 and 2026 sources must not be joined into a fictitious longitudinal claim.
+### November 8 source discovery: 2024 HTR questionnaire
+
+The owner supplied the [March 27, 2024 HTR questionnaire](https://www.htrnews.com/story/news/politics/elections/2024/03/27/two-rivers-council-candidates-talk-about-the-citys-potential-as-the-april-2-election-nears/73099320007/).
+Its [April 7, 2024 archive](https://web.archive.org/web/20240407044833/https://www.htrnews.com/story/news/politics/elections/2024/03/27/two-rivers-council-candidates-talk-about-the-citys-potential-as-the-april-2-election-nears/73099320007/)
+was readable in the browser on November 8, 2026. Alisa M. Schafer is the author;
+the publisher is the Manitowoc Herald Times Reporter. The article includes
+Bittner, Brandt, Dahlke, Derby, and Quackenbush, with five question groups and
+named responses. HTR notes editorial changes for clarity and brevity.
+
+Brief paraphrases for the three initial-profile members:
+
+| Member | Supported position | Passage locator |
+| --- | --- | --- |
+| Mark Bittner | Riverfront redevelopment with housing, retail and small industry; preserve public shoreline access. | Question 3, Bittner answer and following continuation paragraph |
+| Doug Brandt | Attract residents/workers through housing and quality of life; continue incremental infrastructure improvements. | Question 3, Brandt answer |
+| Shannon Derby | Retain council–manager government and proactively address short-term rentals. | Question 3, Derby answer |
+
+Derby supplied no budget answer in question 5. That is a source gap, not a policy
+position. Her government-structure answer does not establish a position on a
+particular manager's appointment, employment, or pay.
+
+This resolves the earlier missing-article lead for the 2024 cohort. It is a
+source reference, not complete campaign coverage or a verified extraction run.
+Use the canonical publisher URL for attribution and the dated archive to identify
+the version inspected. The owner's access link displayed that archive; no account,
+subscription purchase, paid AI, or production import was used. Do not commit the
+full article. For intake, retain the question context and candidate labels;
+Bittner's second paragraph must remain attached to his question 3 answer.
+One source can serve all five candidates, with service eligibility applied later.
+No later action or outcome has yet been matched to these positions.
+
+The 2025 HTR/League leads and 2026 questionnaire concern other cohorts. No forum
+recording/audio or speaker labeling was verified. The sources must not be joined
+into a fictitious longitudinal claim.
 
 Foundation tests instead use clearly synthetic people and sources. The shared
 fixture includes two candidates, a candidate who votes against a fee and loses,
