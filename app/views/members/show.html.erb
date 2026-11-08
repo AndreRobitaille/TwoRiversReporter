@@ -146,6 +146,7 @@
       </section>
       <% unless gated_for_visitor? %>
         <%= gated_content do %>
+          <%= render "recorded_actions" %>
           <%= render "issue_updates" %>
           <%= render "peer_comparisons" %>
         <% end %>

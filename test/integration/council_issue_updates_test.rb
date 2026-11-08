@@ -15,7 +15,7 @@ class CouncilIssueUpdatesTest < ActionDispatch::IntegrationTest
     @document.update!(source_url: sample.fetch("source_url"), extracted_text: sample.fetch("text"))
     quote = "It was noted that without additional grants or sponsorships, the project cannot proceed at the proposed scope."
     stage = CouncilProfiles::ExtractIssueUpdates.prepare(@document)
-    data = { "complete" => true, "updates" => [ { "agenda_item_id" => @item.id, "topic_ids" => [ @topic.id ],
+    data = { "complete" => true, "actions" => [], "updates" => [ { "agenda_item_id" => @item.id, "topic_ids" => [ @topic.id ],
       "subject" => "Neshotah Beach concession stand renovation", "status" => "unresolved", "occurred_on" => nil,
       "summary" => "Additional grants or sponsorships were still needed for the proposed renovation.", "conditions" => nil, "quote" => quote } ] }
     with_campaign_transport(content: data.to_json) do

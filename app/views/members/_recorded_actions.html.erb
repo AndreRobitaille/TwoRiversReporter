@@ -1,0 +1,16 @@
+<% if @recorded_actions.any? %>
+  <section class="member-article-section" id="recorded-actions">
+    <div class="home-section-header">
+      <%= render "shared/atom_marker" %>
+      <h2 class="section-label">Work beyond votes</h2>
+      <span class="section-line"></span>
+    </div>
+    <%= render partial: "recorded_action", collection: @recorded_actions.first(3), as: :action %>
+    <% if @recorded_actions.size > 3 %>
+      <details class="member-other-votes">
+        <summary><%= pluralize(@recorded_actions.size - 3, "more action") %></summary>
+        <%= render partial: "recorded_action", collection: @recorded_actions.drop(3), as: :action %>
+      </details>
+    <% end %>
+  </section>
+<% end %>
