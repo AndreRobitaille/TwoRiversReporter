@@ -39,9 +39,6 @@ module Minutes
         @stage = MinutesExtraction.find_by(input_key: @input.key(@kind))
         @stage ||= @input.completed_stage(@kind) unless @refresh
         @stage ||= MinutesExtraction.create!(@input.stage_attributes(@meeting, @kind))
-        if @meeting.council_ai_budget_required? && @stage.status.in?(%w[pending failed budget_paused])
-          @stage.update!(budget_required: true, council_ai_budget_run_id: @meeting.council_ai_budget_run_id)
-        end
       end
       if @stage.status == "completed"
         Publish.call(@meeting)
@@ -52,7 +49,12 @@ module Minutes
         stamp("needs_review")
         return
       end
-      return unless @stage.claim!
+      # Selection and claims serialize on the meeting. Reload its requirement
+      # here so an ordinary delivery cannot claim from an earlier snapshot.
+      claimed = @meeting.with_lock do
+        @stage.claim!(budget_required: @meeting.council_ai_budget_required?, budget_run_id: @meeting.council_ai_budget_run_id)
+      end
+      return unless claimed
 
       begin
         service = Ai::OpenAiService.new

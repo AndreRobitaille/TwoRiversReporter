@@ -361,7 +361,10 @@ these receipts; neither slice authorizes paid enrichment.
 Council-requested minutes work enters through
 `CouncilProfiles::ExtractMinutesJob`. Selection permanently requires budget
 admission for this meeting's pending and future minutes stages, including
-ordinary retry/nightly deliveries. Previously unselected meetings keep their
+ordinary retry/nightly deliveries. Selection and stage claims share the meeting
+lock; a claim inherits the persisted requirement and run inside that transaction,
+even when an ordinary worker prepared its input before selection.
+Previously unselected meetings keep their
 existing ingestion behavior. This is a minutes integration, not app-wide billing.
 No automatic trigger selects meetings or creates spending authorization.
 

@@ -22,10 +22,12 @@ class MinutesExtraction < ApplicationRecord
     status.in?(%w[pending failed budget_paused]) && attempts < MAX_ATTEMPTS
   end
 
-  def claim!
+  def claim!(budget_required: false, budget_run_id: nil)
     with_lock do
       return false unless retryable?
-      update!(status: "running", attempts: attempts + 1, started_at: Time.current, error_code: nil)
+      attributes = { status: "running", attempts: attempts + 1, started_at: Time.current, error_code: nil }
+      attributes.merge!(budget_required: true, council_ai_budget_run_id: budget_run_id) if budget_required
+      update!(attributes)
     end
     true
   end

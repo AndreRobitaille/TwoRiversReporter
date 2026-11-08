@@ -9,6 +9,69 @@ class CouncilProfilesParallelSpendReservationsTest < ActiveJob::TestCase
   setup { setup_spend_scenario }
   teardown { cleanup_spend_scenario }
 
+  test "council selection before an ordinary claim inherits the missing budget across workers" do
+    ordinary_ready, council_selected, release_ordinary, release_council = 4.times.map { Queue.new }
+    original_text = Minutes::Input.instance_method(:text)
+    original_publish = Minutes::Publish.method(:call)
+    # Pause after ordinary input preparation, outside the meeting transaction.
+    # The real claim, selection, admission and persistence still execute.
+    Minutes::Input.define_method(:text) do
+      if Thread.current[:council_selection_race] == :ordinary && !ActiveRecord::Base.connection.transaction_open?
+        Thread.current[:council_selection_race] = nil
+        ordinary_ready << true
+        release_ordinary.pop
+      end
+      original_text.bind_call(self)
+    end
+    pause_after_selection = ->(meeting) do
+      if Thread.current[:council_selection_race] == :council
+        Thread.current[:council_selection_race] = nil
+        council_selected << true
+        release_council.pop
+      end
+      original_publish.call(meeting)
+    end
+    workers = []
+    begin
+      with_transport do
+        Minutes::Publish.stub(:call, pause_after_selection) do
+          Timeout.timeout(15) do
+            workers << worker do
+              Thread.current[:council_selection_race] = :ordinary
+              ExtractVotesJob.perform_now(@meeting.id)
+            end
+            ordinary_ready.pop
+            assert_equal "pending", @meeting.minutes_extractions.sole.status
+            assert_not @meeting.minutes_extractions.sole.budget_required?
+            workers << worker do
+              Thread.current[:council_selection_race] = :council
+              CouncilProfiles::ExtractMinutesJob.perform_now(@meeting.id, "votes")
+            end
+            council_selected.pop
+            assert Meeting.find(@meeting.id).council_ai_budget_required?
+            release_ordinary << true
+            workers.first.value
+            assert_empty @calls
+            release_council << true
+            workers.last.value
+          end
+        end
+        ExtractVotesJob.perform_now(@meeting.id)
+      end
+      ActiveRecord::Base.uncached do
+        assert_empty @calls
+        assert_held "votes", "missing_budget"
+        assert @meeting.minutes_extractions.sole.budget_required?
+        assert_equal 0, MinutesRequest.where(minutes_extraction_id: @meeting.minutes_extractions.select(:id)).count
+      end
+    ensure
+      release_ordinary << true
+      release_council << true
+      workers.each { |thread| thread.join(15) }
+      Minutes::Input.define_method(:text, original_text)
+    end
+  end
+
   test "parallel runs cannot both reserve the last daily allowance" do
     first = budget_run(day_limit: 4_100)
     second = budget_run

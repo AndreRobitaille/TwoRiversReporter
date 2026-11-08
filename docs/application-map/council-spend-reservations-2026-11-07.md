@@ -1,7 +1,8 @@
 # Council minutes spending reservations: November 7, 2026
 
 Base: `249894d5` ([PR #265](https://github.com/AndreRobitaille/TwoRiversReporter/pull/265)).
-Implementation revision: `27f7758b`.
+Initial implementation revision: `27f7758b`; the subsequent review correction is
+recorded below and in the pull request.
 Verification uses Ruby 4.0.9, Rails 8.1.4.1 and isolated PostgreSQL 18.6.
 All source material, people, provider responses, token counts and prices in the
 new tests are synthetic. No allowance has been created outside the test database.
@@ -23,6 +24,9 @@ and new source versions inherit the requirement. Previously unselected meetings
 retain existing ingestion behavior; this does not enroll every AI caller or
 retroactively budget work already claimed before selection. There is no new
 automatic trigger, schedule, browser control or public response field.
+Selection and claims share the meeting lock. Claiming atomically inherits the
+persisted budget requirement/run while updating the stage, even when an ordinary
+worker prepared its input before selection.
 
 An active administrator records one immutable allowance per application-calendar
 day and an immutable run authorization. Runs include request/run limits,
@@ -87,6 +91,7 @@ including after revocation or without a current allowance.
 | BG-02, persistence failures | Failure creating the receipt rolls back the reservation before transport. Failure finishing the reservation rolls back the received receipt and retains an uncertain attempt, amount and slot. |
 | BG-02, retention | Non-admin authorization, authorization replacement and financial edits are refused. Deleting a source meeting and author retains receipts/reservations/original actor IDs; rollback refuses to discard history. |
 | BG-02, real parallel daily admission | Two PostgreSQL connections use different runs. The first pauses after admission checks; the second actually waits on a database lock. After release, only one request/reservation exists, and a fresh read sees the second stage paused at the daily limit. |
+| BG-02, selection/ordinary claim race | Separate workers prepare an ordinary unbudgeted stage, commit council selection, then resume the ordinary claim before the council worker resumes. No transport escapes; fresh reads and a later ordinary delivery retain the missing-budget pause, zero attempts and zero receipts. |
 | BG-02, real concurrent transport | While the first request awaits its provider response and occupies the run slot, a second worker is held before transport. Finishing the first releases the slot; a later ordinary job publishes the complete source-matched pair with exactly two calls. |
 | BG-02, compatibility/correction | Unselected ordinary ingestion creates no council reservations. Selecting already-completed facts adds no call. A later date correction republishes deterministically without an allowance or new extraction. |
 
@@ -107,6 +112,17 @@ The first guarded pass ran 13 tests / 143 assertions; the expanded pass ran
 all passing with zero errors/skips. A retention-test assertion was corrected to
 expect the existing dependent-record deletion exception rather than a false
 return; the stored-history expectation was unchanged.
+
+Automatic code review then identified a gap between reading a stage's budget
+requirement and claiming it. The added real-worker regression reproduced one
+unbudgeted dispatch after selection (one test / five assertions, one intended
+failure, no errors/skips). Selection and claim now share the meeting lock, and
+budget inheritance happens within the stage claim transaction. The new test
+passed with 12 assertions. Its scheduling wrappers pause input access and the
+publication entrypoint but still execute those original methods; they do not
+replace claims, admission, database locks or persistence.
+The final serial targeted run passed 160 tests / 1,017 assertions, with zero
+failures/errors/skips. The original 159-test result above predates this correction.
 
 Commands use `RAILS_ENV=test`, an isolated database and `PARALLEL_WORKERS=1`:
 
@@ -130,6 +146,11 @@ immutability, paused-attempt restoration, inherited budget requirements and
 the shared daily lock. The last experiment used actual competing PostgreSQL
 connections: without the daily lock, the second run no longer waited for the
 first reservation, and the lock-wait assertion failed.
+After the review correction, two further baseline/fault/restored experiments
+removed the claim's meeting lock and its budget inheritance separately. Both
+produced intended assertion failures without errors/skips and passed after
+restoration. This adds selection-order defect detection and re-proves inherited
+budget enforcement at its new claim boundary.
 
 RuboCop inspected 723 files with no offenses. Five Markdown files passed 141 local
 link/anchor and balanced-fence checks; `git diff --check` passed. The isolated

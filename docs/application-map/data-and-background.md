@@ -160,7 +160,9 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
 - **November 7 council minutes reservations:** selected meetings retain a budget
   requirement across ordinary deliveries and source changes. An internal job
   binds pending work to an explicitly authorized run/day and exact prepared
-  request estimates. Admission locks day then run, enforces request/run/day,
+  request estimates. Selection and claims serialize on the meeting lock so an
+  ordinary worker cannot claim from an earlier unbudgeted snapshot.
+  Admission locks day then run, enforces request/run/day,
   request-count, concurrency and declared-token limits, and commits the full
   integer micro-USD reservation with the receipt before transport. Completed
   responses release only concurrency; unknown outcomes retain amount and slot.
