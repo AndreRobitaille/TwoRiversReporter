@@ -957,10 +957,20 @@ must not place a vote beneath a campaign position. The owner identified the
 water-user proposal versus sewer-charge ordinance as a misleading pair, even
 under the Related Council votes heading. The source sidebar therefore does not
 render automatic topic-based vote pairs or their Council results. Existing votes
-remain in the main record. A future comparison needs a supported relationship
+remain in the main record. A comparison needs a supported relationship
 between the specific statement and decision, not merely their shared topic;
 that analysis must be shared across members and reused for unchanged inputs.
-The direct comparison is unfinished. Do not fill its gap with broader topic votes.
+The initial comparison slice may display a directly relevant recorded motion
+beside the exact matched statement, with an explanation, supporting minutes
+passage, member vote and separate Council result. An opposing motion can also
+be relevant; relevance itself is not a finding of consistency or a promise grade.
+Do not fill missing comparisons with broader topic votes or infer inaction from
+an empty result. Broad priorities, advocacy, opportunity/coverage assessments,
+contradiction highlights and issue completion remain separate unfinished work.
+Cache both accepted and rejected comparisons. Share meeting text across members,
+compare only new statement/decision evidence, and reuse results after metadata-only
+corrections. New evidence queues the bounded stage; missed-work checks use existing
+nightly campaign recovery. Exact request allowances must precede paid calls.
 
 Issue navigation reuses approved topic links and existing impact scores;
 repeated campaign mentions do not increase priority. Prefer a saved written-source

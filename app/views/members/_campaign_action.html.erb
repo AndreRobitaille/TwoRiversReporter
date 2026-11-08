@@ -1,0 +1,8 @@
+<div data-campaign-action="<%= action.fetch(:vote).id %>">
+  <p><%= action.fetch(:reason) %></p>
+  <%= render "campaign_vote", vote: action.fetch(:vote) %>
+  <details class="member-campaign-context">
+    <summary>Supporting minutes passage</summary>
+    <blockquote><%= action.fetch(:minutes_quote) %></blockquote>
+  </details>
+</div>

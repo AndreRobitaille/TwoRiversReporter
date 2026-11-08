@@ -91,6 +91,9 @@ and saved content through the existing verified Google access path.
 The [November 8 issue sidebar checks](member-issue-sidebar-2026-11-08.md)
 cover compact issue navigation, independently controlled campaign sources,
 retained forum evidence and omission of unsupported topic-based vote pairings.
+The [November 8 direct matching checks](campaign-action-matching-2026-11-08.md)
+cover shared cached statement/decision comparisons, exact spending admission,
+source-backed display and the bounded real Airbnb test.
 
 The [November 7 stable decision foundation](council-decision-identities-2026-11-07.md)
 records immutable observations, conservative identity correspondence and

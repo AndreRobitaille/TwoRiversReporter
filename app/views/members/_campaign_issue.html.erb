@@ -9,4 +9,24 @@
     <% if statement.data["conditions"].present? %><p class="member-campaign-qualification"><%= statement.data["conditions"] %></p><% end %>
     <% if statement.data["timeframe"].present? %><p class="member-campaign-qualification"><%= statement.data["timeframe"] %></p><% end %>
   </div>
+  <% issue.fetch(:statements).each do |matched_statement| %>
+    <% actions = @campaign_actions.fetch(matched_statement.id, []) %>
+    <% if actions.any? %>
+      <div class="member-campaign-position" data-campaign-actions-for="<%= matched_statement.id %>">
+        <% if matched_statement != statement %>
+          <p><%= matched_statement.data.fetch("summary") %></p>
+          <% if matched_statement.data["conditions"].present? %><p class="member-campaign-qualification"><%= matched_statement.data["conditions"] %></p><% end %>
+          <% if matched_statement.data["timeframe"].present? %><p class="member-campaign-qualification"><%= matched_statement.data["timeframe"] %></p><% end %>
+        <% end %>
+        <h4>Documented decisions</h4>
+        <%= render partial: "campaign_action", collection: actions.first(2), as: :action %>
+        <% if actions.size > 2 %>
+          <details>
+            <summary><%= pluralize(actions.size - 2, "more decision") %></summary>
+            <%= render partial: "campaign_action", collection: actions.drop(2), as: :action %>
+          </details>
+        <% end %>
+      </div>
+    <% end %>
+  <% end %>
 </details>

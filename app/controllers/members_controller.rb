@@ -18,6 +18,8 @@ class MembersController < ApplicationController
     @campaign_statements = CampaignStatement.current_for(@member) unless gated_for_visitor?
     if @campaign_statements&.any?
       @campaign_issues = ResidentContent::CampaignIssues.new(statements: @campaign_statements).call
+      @campaign_actions = ResidentContent::CampaignActions.new(@member, statements: @campaign_statements,
+        council_attendance: @council_attendance).call
     end
 
     @show_all_votes = params[:votes] == "all"

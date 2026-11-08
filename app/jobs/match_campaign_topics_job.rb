@@ -5,5 +5,6 @@ class MatchCampaignTopicsJob < ApplicationJob
 
     stage = Campaigns::MatchTopics.call(source.current_version, budget_run: CouncilAiBudgetRun.find_by(id: budget_run_id))
     Campaigns::PublishTopicMatches.call(stage)
+    MatchCampaignActionsJob.perform_later if stage&.status == "completed"
   end
 end

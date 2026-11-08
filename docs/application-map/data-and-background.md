@@ -432,6 +432,12 @@ provider diagnostics; permanent HTTP rejections bypass transient retries. See
   nightly recovery handles missing/pending matching and cached publication.
   Topic links are not action alignment or outcome findings. The initial topic
   catalog is pinned; new-topic rematching remains unfinished.
+  [Direct decision matching](campaign-action-matching-2026-11-08.md) shares each
+  meeting's source across unreviewed statement/motion pairs. Negative results
+  are cached too. Metadata corrections reuse semantic results; new evidence
+  queues preparation through existing publication/recovery paths. No allowance
+  means no provider transport. The first slice covers recorded votes only;
+  broad-priority assessments, advocacy and coverage-aware inaction remain open.
 
 ## Configured recurring entry points
 
