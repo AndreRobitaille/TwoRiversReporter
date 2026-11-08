@@ -177,6 +177,7 @@ Workflows: [RES-10](resident-workflows.md#res-10--inspect-an-officials-attendanc
 | Verb | Path | Action | Source check |
 | --- | --- | --- | --- |
 | GET | `/members/:id(.:format)` | `show` | Present |
+| GET | `/members/:id/compare/:peer_id(.:format)` | `compare` | HTML only; term/subset preserved; reporting gate and verified crawler access |
 
 ### `topics`
 

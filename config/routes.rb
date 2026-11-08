@@ -39,7 +39,9 @@ Rails.application.routes.draw do
   resources :meetings, only: %i[index show]
   resources :committees, only: %i[index show], param: :slug
   get "members", to: redirect("/committees", status: 301), as: nil
-  resources :members, only: %i[show]
+  resources :members, only: %i[show] do
+    get "compare/:peer_id", action: :compare, on: :member, as: :compare
+  end
   get "topics/explore", to: "topics#explore", as: :topics_explore
   resources :topics, only: %i[index show]
   resources :applications, only: %i[new create edit update] do

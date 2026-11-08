@@ -1,0 +1,22 @@
+<% if @peer_comparisons&.any? %>
+  <details class="member-peer-comparisons" id="peer-comparisons">
+    <summary>Voting with other members</summary>
+    <p>How often they cast the same yes/no vote.</p>
+    <div class="member-peer-table">
+      <table>
+        <thead><tr><th scope="col">Member</th><th scope="col">All compared votes</th><th scope="col">Divided votes</th></tr></thead>
+        <tbody>
+          <% @peer_comparisons.each do |comparison| %>
+            <% peer = comparison.fetch(:peer) %>
+            <tr>
+              <th scope="row"><%= link_to peer.name, member_path(peer) %></th>
+              <td><%= link_to peer_vote_fraction(comparison.fetch(:same), comparison.fetch(:compared)), compare_member_path(@member, peer_id: peer.id, term: @record_period.key) %></td>
+              <td><%= link_to peer_vote_fraction(comparison.fetch(:divided_same), comparison.fetch(:divided_compared)), compare_member_path(@member, peer_id: peer.id, term: @record_period.key, subset: "divided") %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <p class="member-attendance-coverage">Comparisons require documented shared service dates. Open a count to see its votes and exclusions.</p>
+  </details>
+<% end %>

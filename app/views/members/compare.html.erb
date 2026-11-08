@@ -1,0 +1,61 @@
+<% content_for(:title) { "#{@member.name} and #{@peer.name} — Council votes" } %>
+<% content_for(:description) { "Compare recorded Council votes by #{@member.name} and #{@peer.name} in Two Rivers, WI." } %>
+<article class="member-article">
+  <header class="member-article-header">
+    <h1 class="member-article-title">Voting together</h1>
+    <p><%= @member.name %> and <%= @peer.name %></p>
+    <% if @record_period.selected %><p><%= council_period_label(@record_period.selected) %></p><% end %>
+  </header>
+  <% if gated_for_visitor? %>
+    <%= render "shared/gate" %>
+  <% else %>
+    <%= gated_content do %>
+      <% compared = @comparison.fetch(@show_divided ? :divided_compared : :compared) %>
+      <% same = @comparison.fetch(@show_divided ? :divided_same : :same) %>
+      <p class="member-comparison-result"><%= compared.zero? ? "No comparable votes in this selection." : "Same vote on #{same} of #{compared} decisions." %></p>
+      <% unless @record_period.selected %><p>Choose a documented Council term on the member's record to compare votes.</p><% end %>
+      <nav class="member-vote-views" aria-label="Comparison views">
+        <%= link_to "All compared votes", compare_member_path(@member, peer_id: @peer.id, term: @record_period.key), class: "btn btn--secondary", aria: { current: ("page" unless @show_divided) } %>
+        <%= link_to "Divided votes", compare_member_path(@member, peer_id: @peer.id, term: @record_period.key, subset: "divided"), class: "btn btn--secondary", aria: { current: ("page" if @show_divided) } %>
+      </nav>
+      <details class="member-comparison-method">
+        <summary>What counts here</summary>
+        <p>Only recorded yes/no votes on the same substantive decision during both members' documented service. Divided votes had at least one yes and one no. Abstentions, recusals, absences and missing votes are excluded. Routine procedural motions are excluded. A Council decision's official outcome is separate from this comparison.</p>
+        <% excluded = @comparison.fetch(:rows).reject { |row| row.fetch(:excluded).nil? } %>
+        <% if excluded.any? %>
+          <ul>
+            <% excluded.each do |row| %>
+              <li><%= link_to row.fetch(:motion).description, meeting_path(row.fetch(:motion).meeting) %> — <%= row.fetch(:excluded) %>; <%= @member.name %>: <%= row[:own]&.titleize || "Not recorded" %>, <%= @peer.name %>: <%= row[:other]&.titleize || "Not recorded" %>.</li>
+            <% end %>
+          </ul>
+        <% end %>
+        <% if @comparison.fetch(:duplicate_meetings).any? %>
+          <p>Meetings with votes on multiple imported copies are left out until the copies are reconciled:</p>
+          <ul><% @comparison.fetch(:duplicate_meetings).each do |row| %><li><%= link_to row.fetch(:meeting).starts_at.strftime("%b %-d, %Y"), meeting_path(row.fetch(:meeting)) %></li><% end %></ul>
+        <% end %>
+        <p>This covers available records, not every meeting in the term.</p>
+      </details>
+      <div id="comparison-votes" class="member-comparison-votes member-topic-votes">
+        <% @comparison_rows.each do |row| %>
+          <% motion = row.fetch(:motion) %>
+          <% decision_title = member_decision_title(motion) %>
+          <div class="member-vote-row" data-comparison-motion="<%= motion.id %>">
+            <div class="member-vote-motion">
+              <span class="member-vote-date"><%= motion.meeting.starts_at.strftime("%b %-d, %Y") %></span>
+              <%= link_to decision_title, meeting_path(motion.meeting) %>
+              <span class="member-vote-split">Council: <%= motion.outcome.presence&.titleize || "Unknown" %> · <%= vote_split(motion) %></span>
+              <% if decision_title != motion.description %>
+                <details class="member-comparison-wording"><summary>Motion wording</summary><p><%= motion.description %></p></details>
+              <% end %>
+            </div>
+            <div class="member-comparison-ballots"><span><%= @member.name %>: <strong class="<%= vote_color_class(row.fetch(:own)) %>"><%= row.fetch(:own).titleize %></strong></span><span><%= @peer.name %>: <strong class="<%= vote_color_class(row.fetch(:other)) %>"><%= row.fetch(:other).titleize %></strong></span></div>
+          </div>
+        <% end %>
+      </div>
+      <% if @pagy.last > 1 %>
+        <div class="member-vote-pages"><p class="member-vote-page-status">Page <%= @pagy.page %> of <%= @pagy.last %></p><%= @pagy.series_nav(slots: 5, fragment: "comparison-votes", aria_label: "Comparison pages").html_safe %></div>
+      <% end %>
+    <% end %>
+  <% end %>
+  <%= link_to "Back to #{@member.name}'s record", member_path(@member, term: @record_period.key, anchor: "peer-comparisons"), class: "back-link" %>
+</article>

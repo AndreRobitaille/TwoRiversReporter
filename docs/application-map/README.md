@@ -77,7 +77,10 @@ add an explicit monthly ceiling across runs/days and a read-only stage usage rep
 
 The [November 8 Council period-selection checks](council-period-selection-2026-11-08.md)
 cover term-scoped attendance/votes, preserved navigation and phone controls.
-Actual token/pricing preflight and paid-pilot approval remain unimplemented.
+
+The [November 8 peer-vote checks](council-peer-votes-2026-11-08.md) cover shared
+yes/no fractions, divided decisions, correction reads, drill-down navigation and
+reporting/crawler access without AI calls.
 
 The [November 8 shared campaign extraction checks](shared-campaign-extraction-2026-11-08.md)
 cover a supplied multi-candidate article through bounded shared analysis and

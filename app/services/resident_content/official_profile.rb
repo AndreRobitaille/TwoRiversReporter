@@ -40,6 +40,10 @@ module ResidentContent
       !(procedural_vote?(vote) && unanimously_approved?(vote.motion))
     end
 
+    def substantive_motion?(motion)
+      motion.description.present? && PROCEDURAL_PATTERNS.none? { |pattern| motion.description.match?(pattern) }
+    end
+
     def attendance
       records = @member.meeting_attendances
         .voting_members
@@ -153,9 +157,7 @@ module ResidentContent
     end
 
     def procedural_vote?(vote)
-      desc = vote.motion.description
-      return true if desc.blank?
-      PROCEDURAL_PATTERNS.any? { |pattern| desc.match?(pattern) }
+      !substantive_motion?(vote.motion)
     end
   end
 end
