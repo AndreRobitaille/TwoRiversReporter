@@ -79,6 +79,10 @@ positive cases only. The real development database was not migrated or populated
   regex filters each executed one test and failed for the intended assertion.
 - Migration ran only on the isolated database; schema RuboCop formatting and
   the resulting three-table/foreign-key diff were inspected. Full RuboCop passes.
+- CI additionally found an undefined admin table wrapper class and a weak
+  source-link warning. Both now use the existing table wrapper and safe external
+  URL helper. The admin view-hygiene/formal intake/record tests then passed:
+  **15 tests, 181 assertions**; Brakeman reports zero warnings.
 
 The [April 6, 2026 official Council packet, page 4](https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Packet-92069de44a594aa6990824383b8252fd.pdf)
 was inspected visually. Its code-of-conduct adoption item is policy, not an

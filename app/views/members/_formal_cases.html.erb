@@ -17,7 +17,7 @@
                 <summary>Record and source</summary>
                 <% if source.policy_label.present? %><p><%= source.policy_label %></p><% end %>
                 <blockquote><%= event.fetch("quote") %></blockquote>
-                <%= link_to "Read the source record", source.source_url %>
+                <%= link_to "Read the source record", safe_external_url(source.source_url) %>
               </details>
             </div>
           <% end %>

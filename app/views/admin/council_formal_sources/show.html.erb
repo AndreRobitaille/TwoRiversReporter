@@ -6,7 +6,7 @@
 <p><%= @source.reviewing_body %> · <%= @source.case_reference %></p>
 <p><%= @source.eligible? ? "Verified formal source" : "Private source: not eligible for publication" %></p>
 <%= link_to "Correct record", edit_admin_council_formal_source_path(@source), class: "btn btn--secondary" %>
-<%= link_to "Source record", @source.source_url, class: "btn btn--secondary" %>
+<%= link_to "Source record", safe_external_url(@source.source_url), class: "btn btn--secondary" %>
 <% if @review && !@review.current? %><p>Viewing an earlier or unpublished analysis. It is not used on the member page.</p><% end %>
 <% if @review %>
   <h2>Processing</h2>
