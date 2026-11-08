@@ -251,3 +251,7 @@ The subsequent test review, prioritized behavioral suite, and defect-detection
 evidence are recorded in the [October 10–11 audit](overnight-progress.md).
 Remaining workflow gaps, recurring QA scheduling, and independent reviewer
 assignment are described in [maintenance-and-qa.md](maintenance-and-qa.md).
+
+The [November 8 campaign-related issue record](member-campaign-activity-2026-11-08.md)
+records real cohort votes, source navigation, separate member/Council results and
+representative eligibility/access defect checks for RES-10/11.
