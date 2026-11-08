@@ -117,7 +117,7 @@ class MemberEvidenceMergeJourneyTest < ActionDispatch::IntegrationTest
     without_ai { get member_path(member) }
     assert_response :success
     assert_select ".member-vote-row", count: 1
-    assert_select ".member-vote-motion", text: /Synthetic garden funding/
+    assert_select ".member-vote-motion", text: /Fund the synthetic garden/
     assert_select ".vote-value", text: value, count: 1
   end
 end

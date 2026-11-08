@@ -254,6 +254,13 @@ status below does not imply complete coverage of those workflows.
   Reads and unchanged publication call no AI. RES-11 applies to the entire
   generated section. See [real-data and regression checks](member-campaign-records-2026-11-08.md).
 
+- **November 8 related issue records:** approved campaign-topic links expose existing
+  eligible Council votes beneath the statement. Agenda titles identify decisions;
+  member votes and Council results stay separate, with meeting/source navigation.
+  New accepted facts appear on the next read without AI. This is issue context,
+  not a finding of promise fulfillment or project completion. See
+  [real-data, browser and fault evidence](member-campaign-activity-2026-11-08.md).
+
 ## RES-11 — Cross an access-mode or audience boundary (P0)
 
 - **Start / data:** distinctive allowed/withheld content, more than two topics,

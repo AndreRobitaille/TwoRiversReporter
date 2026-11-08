@@ -24,6 +24,7 @@
               <% if source.published_on %> · <%= source.published_on.strftime("%b %-d, %Y") %><% end %>
               <% if source.coverage == "selected_excerpts" %> · Selected excerpts<% end %>
             </p>
+            <%= render "campaign_activity", activity: @campaign_activity.fetch(record.id) %>
           </article>
         <% end %>
       </div>

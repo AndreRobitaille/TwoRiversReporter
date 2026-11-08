@@ -1,0 +1,17 @@
+<% motion = vote.motion %>
+<% agenda_title = motion.agenda_item.title.presence %>
+<div class="member-campaign-vote" data-campaign-vote="<%= vote.id %>">
+  <time class="member-vote-date" datetime="<%= motion.meeting.starts_at.to_date.iso8601 %>"><%= motion.meeting.starts_at.strftime("%b %-d, %Y") %></time>
+  <p><strong><%= agenda_title || motion.description.presence || "Motion description unavailable." %></strong></p>
+  <div class="member-campaign-vote-results">
+    <span><%= @member.name %>: <strong class="<%= vote_color_class(vote.value) %>"><%= vote.value&.titleize || "Unknown" %></strong></span>
+    <span>Council: <strong><%= motion.outcome.presence&.titleize || "Not recorded" %></strong> · <%= vote_split(motion) %></span>
+  </div>
+  <% if agenda_title && motion.description.present? && motion.description != agenda_title %>
+    <details class="member-campaign-motion">
+      <summary>Motion wording</summary>
+      <p><%= motion.description %></p>
+    </details>
+  <% end %>
+  <%= link_to "Meeting and sources", meeting_path(motion.meeting), class: "member-campaign-meeting" %>
+</div>

@@ -1,0 +1,23 @@
+<% if activity[:topics].any? %>
+  <div class="member-campaign-activity" data-campaign-activity>
+    <h4 class="member-campaign-activity-heading">Related issue record</h4>
+    <ul class="member-campaign-issues">
+      <% activity[:topics].each do |topic| %>
+        <li><%= link_to topic.canonical_name, topic_path(topic) %></li>
+      <% end %>
+    </ul>
+    <% if activity[:votes].any? %>
+      <div class="member-campaign-votes">
+        <%= render partial: "campaign_vote", collection: activity[:votes].first(3), as: :vote %>
+      </div>
+      <% if activity[:votes].size > 3 %>
+        <details class="member-campaign-more">
+          <summary>Show <%= pluralize(activity[:votes].size - 3, "more related vote") %></summary>
+          <%= render partial: "campaign_vote", collection: activity[:votes].drop(3), as: :vote %>
+        </details>
+      <% end %>
+    <% elsif activity[:service_window_known] %>
+      <p class="member-campaign-empty">No related Council votes in the available record.</p>
+    <% end %>
+  </div>
+<% end %>

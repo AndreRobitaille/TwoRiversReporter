@@ -29,7 +29,11 @@ module ResidentContent
     end
 
     def resident_votes
-      votes.reject { |vote| procedural_vote?(vote) && unanimously_approved?(vote.motion) }
+      votes.select { |vote| featured_vote?(vote) }
+    end
+
+    def featured_vote?(vote)
+      !(procedural_vote?(vote) && unanimously_approved?(vote.motion))
     end
 
     def attendance

@@ -13,16 +13,16 @@ class MinutesPublicationJourneyTest < ActionDispatch::IntegrationTest
     revision("original", "Alex Example attended and voted no on park funding.")
     run_stage(:extract_votes, motions: [ { description: "Reserve synthetic park funding", outcome: "failed", votes: [ { member: @member.name, value: "no" } ] } ])
     run_stage(:extract_committee_members, voting_members_present: [ @member.name ], voting_members_absent: [], non_voting_staff: [], guests: [])
-    assert_member_record("Reserve synthetic park funding", "No", "100%")
+    assert_member_record("Reserve synthetic park funding", "No", "1 present")
     previous_publication = @meeting.reload.minutes_publication_id
 
     revision("corrected", "Alex Example was absent. Blair Example voted yes to the revised library project.")
     run_stage(:extract_votes, motions: [ { description: "Approve revised synthetic library project", outcome: "passed", votes: [ { member: "Blair Example", value: "yes" } ] } ])
-    assert_member_record("Reserve synthetic park funding", "No", "100%")
+    assert_member_record("Reserve synthetic park funding", "No", "1 present")
     assert_equal previous_publication, @meeting.reload.minutes_publication_id
 
     run_stage(:extract_committee_members, voting_members_present: [ "Blair Example" ], voting_members_absent: [ @member.name ], non_voting_staff: [], guests: [])
-    assert_member_record("Approve revised synthetic library project", "Absent", "0%")
+    assert_member_record("Approve revised synthetic library project", "Absent", "1 absent")
     assert_not_equal previous_publication, @meeting.reload.minutes_publication_id
     assert_equal "attendance_derived", @member.votes.last.evidence_basis
     assert_select "a[href=?]", meeting_path(@meeting), minimum: 1
