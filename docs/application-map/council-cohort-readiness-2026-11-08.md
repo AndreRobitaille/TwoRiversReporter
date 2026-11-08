@@ -121,3 +121,32 @@ here. An open implementation PR is not a shipped feature or completion of parent
 Sources: [city meeting list](https://www.two-rivers.org/meetings),
 [May 5, 2025 minutes](https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-0a069b395b7b4040b2b46a2a7190f8f0.pdf),
 [April 6, 2026 minutes](https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-92069de44a594aa6990824383b8252fd.pdf).
+
+## Existing minutes authority carried into profiles
+
+The owner reaffirmed the existing app contract: the current meeting's minutes
+establish its votes and decisions. Packets often contain old subcommittee minutes
+as consent-agenda attachments. The new profile path now applies that same source
+boundary. Packet responses cannot add actions or issue outcomes, and saved packet
+rows are excluded from those profile projections. Explicit recommendations remain
+separate; the existing vote extractor and accepted votes are unchanged.
+
+The separate bounded December packet experiment remained held after quotation
+and attribution validation failed. None of its generated updates or recommendations
+were published. No further paid retry or new retry machinery was introduced.
+
+The source-boundary checks first proved minutes-backed actions/outcomes visible,
+then showed identical text in a packet could supply only the separate recommendation.
+Cached packet actions were also excluded. Removing the parser boundary and then
+the projection boundary independently failed the intended assertions; both faults
+were restored. The final selection passed 45 tests / 436 assertions, with no
+skips; full RuboCop passed across 867 files. This is a correction to the new
+profile path, not a new vote-extraction
+workflow or a claim of comprehensive source accuracy.
+
+The routine cost scenario should consequently start with minutes. Removing the
+five assumed packet analyses from the earlier scenario gives approximately
+**$4.56 for one attempt each, or $9.12 if all requests use two attempts**. Selected
+packet recommendation work is additional and remains inside any explicit overall
+allowance. No allowance is enabled; the earlier five-packet scenario is an upper
+workload illustration, not the default workflow.

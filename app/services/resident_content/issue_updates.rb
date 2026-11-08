@@ -24,7 +24,7 @@ module ResidentContent
       return [] if topics.empty?
 
       rows = []
-      relevant = CouncilIssueReview.where(status: "completed")
+      relevant = CouncilIssueReview.from_minutes.where(status: "completed")
         .joins(meeting_document: :meeting).where(meetings: { starts_at: @period.range })
       topic_conditions = topics.keys.map { |_| "council_issue_reviews.data @> ?::jsonb" }.join(" OR ")
       topic_values = topics.keys.map { |id| { updates: [ { topic_ids: [ id ] } ] }.to_json }
