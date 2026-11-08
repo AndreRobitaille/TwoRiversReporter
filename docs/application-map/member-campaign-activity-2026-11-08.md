@@ -102,3 +102,20 @@ body meetings, topic correction, access and overflow. The real related-vote samp
 contains affirmative member votes, so it does not independently verify every
 regression variant. Broad provider accuracy, semantic action alignment, completed
 project outcomes, full-term coverage and production behavior remain unverified.
+
+## Combined-branch CI follow-up
+
+The first hosted run discovered four older integration assertions that had not
+previously run with this combination of branches. Three still expected an agenda
+title in the recorded-motion row; the fourth expected attendance percentages for
+an unsourced service window. The agreed recorded-vote/attendance contracts use
+the motion description and recorded status counts. The assertions now inspect
+those same substantive vote and attendance outcomes, retaining the staged
+publication, identity-merge, conflict rollback and later-read boundaries.
+
+`bin/rails test test/integration/minutes_publication_journey_test.rb test/integration/member_evidence_merge_journey_test.rb`
+passes four tests/112 assertions. A process-local fault forcing stale attendance
+counts passes the initial record and then fails the corrected read: one absent
+expected, one present rendered. The restored journey passes one test/26 assertions.
+No application behavior changed in this follow-up. Full combined-suite execution
+and exact-head hosted CI are recorded in the PR when they finish.
