@@ -187,6 +187,7 @@ Workflows: [RES-10](resident-workflows.md#res-10--inspect-an-officials-attendanc
 | --- | --- | --- | --- |
 | GET | `/members/:id(.:format)` | `show` | Present |
 | GET | `/members/:id/compare/:peer_id(.:format)` | `compare` | HTML only; term/subset preserved; reporting gate and verified crawler access |
+| GET | `/members/:id/recommendations(.:format)` | `recommendations` | HTML only; recommending source, term, subset and pagination; reporting gate and verified crawler access |
 
 ### `topics`
 

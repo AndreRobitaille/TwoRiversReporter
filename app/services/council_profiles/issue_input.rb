@@ -1,5 +1,5 @@
 module CouncilProfiles
-  # One official minutes source, with existing approved agenda/topic links.
+  # One official minutes or packet source, with approved agenda/topic links.
   # Member identities and votes are intentionally absent from this request.
   class IssueInput
     class Unavailable < StandardError; end
@@ -7,7 +7,7 @@ module CouncilProfiles
 
     def initialize(document)
       meeting = document.meeting
-      raise Unavailable unless document.document_type.in?(%w[minutes_pdf minutes_html]) &&
+      raise Unavailable unless document.document_type.in?(%w[minutes_pdf minutes_html packet_pdf]) &&
         document.extracted_text.present? && meeting.starts_at && meeting.starts_at <= Time.current && !meeting.cancelled?
 
       # Do not reinterpret an unparsed replacement download as the old source.

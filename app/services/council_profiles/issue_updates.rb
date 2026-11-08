@@ -14,15 +14,35 @@ module CouncilProfiles
         rows.is_a?(Array) && rows.size <= 40 && rows.all? { |row| row.is_a?(Hash) }
 
       result = { "updates" => rows.map { |row| validate(row) }.uniq }
-      if @context["schema_version"] == 2
+      if @context["schema_version"].to_i >= 2
         actions = data["actions"]
         raise InvalidResponse unless actions.is_a?(Array) && actions.size <= 40
         result["actions"] = actions.map { |row| validate_action(row) }.uniq
+      end
+      if @context["schema_version"] == 3
+        recommendations = data["recommendations"]
+        raise InvalidResponse unless recommendations.is_a?(Array) && recommendations.size <= 40
+        result["recommendations"] = recommendations.map { |row| validate_recommendation(row) }.uniq
       end
       result
     end
 
     private
+
+    def validate_recommendation(row)
+      raise InvalidResponse unless row.is_a?(Hash) && text?(row["author"], 120) &&
+        (row["role"].nil? || text?(row["role"], 120)) &&
+        row["author_kind"].in?(%w[city_manager staff_member department advisory_body unspecified_staff]) &&
+        row["position"].in?(%w[support oppose]) && text?(row["proposal"], 2_000) &&
+        (row["conditions"].nil? || text?(row["conditions"], 300)) &&
+        row["timing"].in?(%w[before_vote after_vote unclear])
+      evidence = validate_evidence(row.merge("occurred_on" => row["made_on"]))
+      quote = evidence.fetch("quote").downcase
+      raise InvalidResponse unless quote.include?(row.fetch("author").split.join(" ").downcase) &&
+        quote.include?(row.fetch("proposal").split.join(" ").downcase) &&
+        (row["role"].nil? || quote.include?(row["role"].split.join(" ").downcase))
+      evidence.except("occurred_on").merge(row.slice("author", "role", "author_kind", "position", "proposal", "conditions", "made_on", "timing"))
+    end
 
     def validate_action(row)
       raise InvalidResponse unless row.is_a?(Hash) &&

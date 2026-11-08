@@ -1034,6 +1034,14 @@ schedule or periodic AI rewrites. Reuse source analysis across members, skip
 unchanged work, coalesce relevant changes, and enforce explicit spending/retry
 limits before paid generation. Attendance and comparison arithmetic use code.
 
+The bounded recommendation implementation compares independently recorded yes/no
+votes only against the same full unchanged proposal and an explicitly attributed
+pre-decision recommendation. It keeps named managers, staff and advisory bodies
+separate; changed wording, extra conditions, amendments and uncertain timing stay
+unresolved. New recommendations share the issue/action source request, while old
+completed analyses remain cached. See [implementation and verification limits](application-map/council-staff-recommendations-2026-11-08.md).
+
+
 See the [member-profile planning proposal](superpowers/specs/2026-11-07-council-accountability-design.md)
 for proposed page contents, sources, update cadence, release sequence, and
 remaining decisions. [GitHub parent #234](https://github.com/AndreRobitaille/TwoRiversReporter/issues/234)
