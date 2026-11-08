@@ -332,3 +332,7 @@ speaker-bound extraction checks and real-file size limits.
 The [November 8 saved-analysis reuse checks](council-saved-history-2026-11-08.md)
 cover existing minutes summaries reaching member issue history without a second
 AI pass, and preventing recurring duplicate minutes extraction (RES-10/11, BG-09).
+
+The [November 8 minutes-attribution correction](minutes-motion-attribution-2026-11-08.md)
+checks explicit mover/seconder wording through existing meeting/topic processing
+(BG-02), without another extraction or changes to accepted votes.

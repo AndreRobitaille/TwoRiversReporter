@@ -113,6 +113,10 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
 - **Next:** verify source characters/pages and distinctive events → parsed agenda
   IDs → topic appearances → recap item details/highlights → topic context/briefing →
   HTML/API. Compare counts AND distinct identities/content at each major boundary.
+- **Minutes attribution correction:** the existing validator accepts explicit
+  passive motion wording and roster-unique initials. Verified roles survive
+  meeting publication and shared topic inputs; accepted votes are unchanged.
+  See [source and workflow checks](minutes-motion-attribution-2026-11-08.md).
 - **Failure variants:** download failure, OCR poor/no text, missing prompt,
   unsupported motion excerpt/tally, context overflow, stale lower-tier recap,
   partial enqueue races. Delay is not completion evidence.

@@ -671,7 +671,9 @@ contextual titles. Each item detail carries its matching `agenda_item_id`.
 Structured `motion` details preserve verified mover, seconder, named no
 votes, and recorded absences through the topic pipeline.
 Motion identities and numeric tallies carry supporting source excerpts;
-validate those excerpts before passing the fields downstream. Participant
+validate those excerpts before passing the fields downstream. Accept the city's
+explicit "motion made by" / "seconded by" wording and uniquely identifying
+initials, keeping adjacent mover/seconder clauses separate. Participant
 rosters provide spelling, not an unnamed speaker's role. A collective
 voice vote does not establish a numeric tally. Item summaries remain
 factual, with attributed arguments rather than inferred vote motives.
