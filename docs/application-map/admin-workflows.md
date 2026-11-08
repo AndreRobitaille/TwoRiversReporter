@@ -427,3 +427,6 @@ assertions below are candidate acceptance criteria based on the user's brief.
   paid-pilot authorization remain separate work.
   [Automatic update checks](campaign-update-triggers-2026-11-08.md) cover saved
   corrections, cached publication and recovery during existing nightly processing.
+  [Cost planning checks](campaign-cost-preflight-2026-11-08.md) cover offline
+  source-level estimates, saved-analysis reuse and unavailable/held states.
+  Reading an estimate creates no processing or spending authorization.

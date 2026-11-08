@@ -21,6 +21,7 @@
   <% end %>
 </dl>
 <%= render "extraction", extraction: @extraction if @extraction %>
+<%= render "cost_preflight", preflight: @cost_preflight %>
 <div class="card">
   <h2 class="card-title">Article text</h2>
   <div data-campaign-source-text class="detail-value detail-value--preserve"><%= @version.body %></div>

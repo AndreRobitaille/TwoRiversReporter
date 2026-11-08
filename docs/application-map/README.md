@@ -80,6 +80,8 @@ real provider. The subsequent [member campaign record checks](member-campaign-re
 cover existing-person matching, public statements and real local cohort data.
 The [November 8 automatic campaign update checks](campaign-update-triggers-2026-11-08.md)
 cover source-save triggers, cached updates and existing nightly missed-work recovery.
+The [November 8 campaign cost planning checks](campaign-cost-preflight-2026-11-08.md)
+cover read-only source estimates and their limits before paid-pilot authorization.
 
 The [November 7 stable decision foundation](council-decision-identities-2026-11-07.md)
 records immutable observations, conservative identity correspondence and

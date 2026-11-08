@@ -422,6 +422,9 @@ provider diagnostics; permanent HTTP rejections bypass transient retries. See
   current-source projection and cached identity repair. [Automatic update checks](campaign-update-triggers-2026-11-08.md)
   cover source-save triggers and nightly recovery. Paid admission, real-provider
   accuracy and campaign/action comparisons remain subsequent work.
+  [Cost planning](campaign-cost-preflight-2026-11-08.md) supplies a read-only
+  admin/CLI estimate; actual input-token verification and owner authorization
+  remain prerequisites to treating it as a dispatch allowance.
 
 ## Configured recurring entry points
 
