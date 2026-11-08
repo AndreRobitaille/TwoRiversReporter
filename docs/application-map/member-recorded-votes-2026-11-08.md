@@ -72,3 +72,38 @@ After restoring the exact controller, the new integration file passed all five
 tests and 98 assertions. These prove detection of the bounded defects, not their
 frequency in production. No paid AI, production operations, data backfill, merge
 or deployment ran. Full-suite CI is reported on the pull request separately.
+
+
+## Owner review follow-up: Featured pagination and procedural votes
+
+Revision `0093a897bffda825da8b125316b8219a275a18f9` addresses the owner's preview feedback. Both views now
+paginate 25 distinct saved decisions, with controls above and below the list.
+Featured retains topic grouping and opens Other Votes by default. Motion links
+show the stored description so separate decisions under an agenda remain clear.
+
+The shared website/API selector omits a procedural motion only when it passed
+and every recorded non-absent vote is yes. A no, abstention, recusal, failed vote
+or unresolved record prevents that exclusion. Important-topic links do not bypass
+the rule. Local saved records confirmed the closed-session wording variants
+"convene," "enter" and "move"; these and consent-agenda acceptance are covered.
+The unfiltered All recorded votes view remains available. No new AI calls or
+attendance/eligibility denominator is introduced.
+
+Verification on this revision, in the same isolated environment:
+
+- The prior focused application command plus
+  `test/controllers/api/resident_api_test.rb`: **47 tests, 890 assertions**, no
+  failures/errors/skips, after restoring the fault below.
+- `bin/rails test test/system/member_recorded_votes_journeys_test.rb` with Chromium:
+  **2 journeys, 50 assertions**, no failures/errors/skips. The additional phone
+  journey follows Featured → older page → contested procedural vote → meeting →
+  back → newer page. The 390px screenshot was inspected; no horizontal overflow.
+- `bin/rubocop --cache false`: **635 files, no offenses**.
+- A process-local override reinstated blanket procedural filtering. The assertion
+  requiring the contested motion failed (1 test, 2 assertions, 1 failure, no
+  errors); the normal suite then passed. The running preview was unaffected.
+- Documentation links/anchors and `git diff --check` passed.
+
+The preview now runs independently of the tool session as a local user service
+bound to `0.0.0.0:3000`, using the existing development database. Its HTTP response
+and listener were verified. No production operation or paid source analysis ran.
