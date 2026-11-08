@@ -5467,6 +5467,47 @@ th.sortable-header:hover {
   margin: 0 auto;
 }
 
+.member-profile-primary,
+.member-profile-sidebar {
+  min-width: 0;
+}
+
+.member-profile-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.member-profile-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  text-underline-offset: 3px;
+}
+
+#campaign-record {
+  scroll-margin-top: 6rem;
+}
+
+@media (min-width: 64rem) {
+  .member-article--with-campaign {
+    max-width: 72rem;
+  }
+
+  .member-article--with-campaign .member-profile-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-8);
+  }
+
+  .member-profile-sidebar {
+    padding-left: var(--space-5);
+    border-left: 1px solid var(--color-border);
+  }
+}
+
 .member-article-header {
   margin-bottom: var(--space-4);
 }
@@ -5492,16 +5533,11 @@ th.sortable-header:hover {
 }
 
 .member-campaign-list {
-  display: grid;
-  gap: var(--space-3);
+  border-top: 1px solid var(--color-border);
 }
 
 .member-campaign-card {
-  padding: var(--space-4) var(--space-5);
-  border: 1px solid var(--color-border);
-  border-left: 3px solid var(--color-teal);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .member-campaign-card p {
@@ -5509,11 +5545,56 @@ th.sortable-header:hover {
 }
 
 .member-campaign-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: 56px;
+  padding: var(--space-4) 0;
+  list-style: none;
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
+  color: var(--color-teal);
+  cursor: pointer;
 }
 
-.member-campaign-context summary {
+.member-campaign-summary::-webkit-details-marker {
+  display: none;
+}
+
+.member-campaign-qualification {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: normal;
+}
+
+.member-campaign-summary svg {
+  flex-shrink: 0;
+}
+
+.member-campaign-card[open] > .member-campaign-summary svg {
+  transform: rotate(90deg);
+}
+
+.member-campaign-summary:hover {
+  color: var(--color-terra-cotta);
+}
+
+.member-campaign-summary:focus-visible {
+  outline: 2px solid var(--color-teal);
+  outline-offset: 3px;
+}
+
+.member-campaign-detail {
+  padding: 0 0 var(--space-4) var(--space-3);
+  border-left: 2px solid var(--color-border);
+  font-size: var(--font-size-sm);
+}
+
+.member-campaign-context summary,
+.member-campaign-overflow > summary {
   min-height: 44px;
   align-content: center;
   color: var(--color-primary);

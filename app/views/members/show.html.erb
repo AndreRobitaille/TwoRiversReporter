@@ -3,7 +3,8 @@
 <% content_for(:description) { [@member.name, profile_role, "committee memberships, meeting attendance, and voting record in Two Rivers, WI"].join(" — ") } %>
 <% content_for(:og_type) { "article" } %>
 
-<article class="member-article">
+<% has_campaign = @campaign_statements&.any? %>
+<article class="member-article<%= " member-article--with-campaign" if has_campaign %>">
   <header class="member-article-header">
     <h1 class="member-article-title"><%= @member.name %></h1>
     <% if @current_position %>
@@ -11,128 +12,142 @@
     <% end %>
   </header>
 
-  <%= render "service_periods", periods: @service_periods %>
-
-  <%= render "campaign_statements", statements: @campaign_statements if @campaign_statements&.any? %>
-
-  <section class="member-article-section">
-    <div class="home-section-header">
-      <%= render "shared/atom_marker" %>
-      <h2 class="section-label">Committees</h2>
-      <span class="section-line"></span>
-    </div>
-
-    <div class="member-committees">
-      <% @memberships.each do |cm| %>
-        <%= link_to committee_path(cm.committee.slug), class: "member-committee #{"member-committee--council" if cm.committee.name == "City Council"}" do %>
-          <span class="member-committee-name"><%= cm.committee.name %></span>
-          <% membership_badges(cm, include_default: true).each do |badge| %>
-            <span class="badge badge--<%= badge[:variant] %>"><%= badge[:label] %></span>
-          <% end %>
-        <% end %>
-      <% end %>
-    </div>
-  </section>
-
-  <%= render "council_attendance", attendance: @council_attendance if @council_attendance %>
-
-  <% if @attendance %>
-    <section class="member-article-section">
-      <div class="home-section-header">
-        <%= render "shared/atom_marker" %>
-        <h2 class="section-label"><%= @council_attendance ? "Other committee attendance" : "Recorded attendance" %></h2>
-        <span class="section-line"></span>
-      </div>
-
-      <div class="member-attendance-list">
-        <% @attendance.each do |committee, data| %>
-          <div class="member-attendance-row">
-            <span class="member-attendance-committee"><%= committee.name %></span>
-            <span class="member-attendance-stat"><%= recorded_attendance_summary(data) %></span>
-          </div>
-        <% end %>
-      </div>
-    </section>
+  <% if has_campaign %>
+    <nav class="member-profile-nav" aria-label="Member record sections">
+      <a href="#voting-record">Voting record</a>
+      <a href="#campaign-record">Campaign priorities</a>
+    </nav>
   <% end %>
 
-  <section class="member-article-section">
-    <div class="home-section-header">
-      <%= render "shared/atom_marker" %>
-      <h2 class="section-label" id="voting-record">Voting Record</h2>
-      <span class="section-line"></span>
-    </div>
+  <div class="member-profile-layout">
+    <div class="member-profile-primary">
+      <%= render "service_periods", periods: @service_periods %>
 
-    <% if gated_for_visitor? %>
-      <%= render "shared/gate" %>
-    <% else %>
-      <%= gated_content do %>
-        <nav class="member-vote-views" aria-label="Voting record views">
-          <%= link_to "Featured votes", member_path(@member, anchor: "voting-record"), class: "btn btn--secondary", aria: { current: ("page" unless @show_all_votes) } %>
-          <%= link_to "All recorded votes", member_path(@member, votes: "all", anchor: "voting-record"), class: "btn btn--secondary", aria: { current: ("page" if @show_all_votes) } %>
-        </nav>
+      <section class="member-article-section">
+        <div class="home-section-header">
+          <%= render "shared/atom_marker" %>
+          <h2 class="section-label">Committees</h2>
+          <span class="section-line"></span>
+        </div>
 
-        <% if @show_all_votes %>
-          <%= render "recorded_votes" %>
-        <% else %>
-          <% if @topic_groups.any? %>
-            <% @topic_groups.each do |group| %>
-              <div class="member-topic-group">
-                <h3 class="member-topic-name">
-                  <%= link_to group[:topic].canonical_name, topic_path(group[:topic]) %>
-                </h3>
-                <div class="member-topic-votes">
-                  <% group[:votes].each do |vote| %>
-                    <div class="member-vote-row">
-                      <div class="member-vote-motion">
-                        <span class="member-vote-date"><%= vote.motion.meeting.starts_at&.strftime("%b %-d, %Y") %></span>
-                        <%= link_to vote.motion.description.presence || vote_context(vote), meeting_path(vote.motion.meeting) %>
-                      </div>
-                      <div class="member-vote-result">
-                        <span class="vote-value <%= vote_color_class(vote.value) %>"><%= vote.value.titleize %></span>
-                        <span class="member-vote-split"><%= vote_split(vote.motion) %> · <%= vote.motion.outcome&.titleize || "Unknown" %></span>
-                      </div>
-                    </div>
-                  <% end %>
-                </div>
-              </div>
+        <div class="member-committees">
+          <% @memberships.each do |cm| %>
+            <%= link_to committee_path(cm.committee.slug), class: "member-committee #{"member-committee--council" if cm.committee.name == "City Council"}" do %>
+              <span class="member-committee-name"><%= cm.committee.name %></span>
+              <% membership_badges(cm, include_default: true).each do |badge| %>
+                <span class="badge badge--<%= badge[:variant] %>"><%= badge[:label] %></span>
+              <% end %>
             <% end %>
           <% end %>
+        </div>
+      </section>
 
-          <% if @other_votes.any? %>
-            <details class="member-other-votes" open>
-              <summary>Other Votes (<%= @other_votes.size %>)</summary>
-              <p class="member-other-votes-desc">Additional decisions outside the topics above, including procedural votes that were not unanimously approved.</p>
-              <div class="member-other-votes-list">
-                <% @other_votes.each do |vote| %>
-                  <div class="member-vote-row member-vote-row--compact">
-                    <div class="member-vote-motion">
-                      <span class="member-vote-date"><%= vote.motion.meeting.starts_at&.strftime("%b %-d, %Y") %></span>
-                      <span class="member-vote-body"><%= vote.motion.meeting.body_name %></span>
-                      <%= link_to vote.motion.description.presence || vote_context(vote), meeting_path(vote.motion.meeting) %>
-                    </div>
-                    <div class="member-vote-result">
-                      <span class="vote-value <%= vote_color_class(vote.value) %>"><%= vote.value.titleize %></span>
-                      <span class="member-vote-split"><%= vote_split(vote.motion) %> · <%= vote.motion.outcome&.titleize || "Unknown" %></span>
+      <%= render "council_attendance", attendance: @council_attendance if @council_attendance %>
+
+      <% if @attendance %>
+        <section class="member-article-section">
+          <div class="home-section-header">
+            <%= render "shared/atom_marker" %>
+            <h2 class="section-label"><%= @council_attendance ? "Other committee attendance" : "Recorded attendance" %></h2>
+            <span class="section-line"></span>
+          </div>
+
+          <div class="member-attendance-list">
+            <% @attendance.each do |committee, data| %>
+              <div class="member-attendance-row">
+                <span class="member-attendance-committee"><%= committee.name %></span>
+                <span class="member-attendance-stat"><%= recorded_attendance_summary(data) %></span>
+              </div>
+            <% end %>
+          </div>
+        </section>
+      <% end %>
+
+      <section class="member-article-section">
+        <div class="home-section-header">
+          <%= render "shared/atom_marker" %>
+          <h2 class="section-label" id="voting-record">Voting Record</h2>
+          <span class="section-line"></span>
+        </div>
+
+        <% if gated_for_visitor? %>
+          <%= render "shared/gate" %>
+        <% else %>
+          <%= gated_content do %>
+            <nav class="member-vote-views" aria-label="Voting record views">
+              <%= link_to "Featured votes", member_path(@member, anchor: "voting-record"), class: "btn btn--secondary", aria: { current: ("page" unless @show_all_votes) } %>
+              <%= link_to "All recorded votes", member_path(@member, votes: "all", anchor: "voting-record"), class: "btn btn--secondary", aria: { current: ("page" if @show_all_votes) } %>
+            </nav>
+
+            <% if @show_all_votes %>
+              <%= render "recorded_votes" %>
+            <% else %>
+              <% if @topic_groups.any? %>
+                <% @topic_groups.each do |group| %>
+                  <div class="member-topic-group">
+                    <h3 class="member-topic-name">
+                      <%= link_to group[:topic].canonical_name, topic_path(group[:topic]) %>
+                    </h3>
+                    <div class="member-topic-votes">
+                      <% group[:votes].each do |vote| %>
+                        <div class="member-vote-row">
+                          <div class="member-vote-motion">
+                            <span class="member-vote-date"><%= vote.motion.meeting.starts_at&.strftime("%b %-d, %Y") %></span>
+                            <%= link_to vote.motion.description.presence || vote_context(vote), meeting_path(vote.motion.meeting) %>
+                          </div>
+                          <div class="member-vote-result">
+                            <span class="vote-value <%= vote_color_class(vote.value) %>"><%= vote.value.titleize %></span>
+                            <span class="member-vote-split"><%= vote_split(vote.motion) %> · <%= vote.motion.outcome&.titleize || "Unknown" %></span>
+                          </div>
+                        </div>
+                      <% end %>
                     </div>
                   </div>
                 <% end %>
-              </div>
-            </details>
-          <% end %>
+              <% end %>
 
-          <% if @topic_groups.empty? && @other_votes.empty? %>
-            <% if @pagy.count.zero? %>
-              <p class="section-empty">No featured votes found for this official. Other decisions may appear in all recorded votes.</p>
-            <% else %>
-              <p class="section-empty">No featured votes on this page.</p>
-              <%= link_to "Return to the newest votes", member_path(@member, anchor: "voting-record") %>
+              <% if @other_votes.any? %>
+                <details class="member-other-votes">
+                  <summary>Other Votes (<%= @other_votes.size %>)</summary>
+                  <p class="member-other-votes-desc">Additional decisions outside the topics above, including procedural votes that were not unanimously approved.</p>
+                  <div class="member-other-votes-list">
+                    <% @other_votes.each do |vote| %>
+                      <div class="member-vote-row member-vote-row--compact">
+                        <div class="member-vote-motion">
+                          <span class="member-vote-date"><%= vote.motion.meeting.starts_at&.strftime("%b %-d, %Y") %></span>
+                          <span class="member-vote-body"><%= vote.motion.meeting.body_name %></span>
+                          <%= link_to vote.motion.description.presence || vote_context(vote), meeting_path(vote.motion.meeting) %>
+                        </div>
+                        <div class="member-vote-result">
+                          <span class="vote-value <%= vote_color_class(vote.value) %>"><%= vote.value.titleize %></span>
+                          <span class="member-vote-split"><%= vote_split(vote.motion) %> · <%= vote.motion.outcome&.titleize || "Unknown" %></span>
+                        </div>
+                      </div>
+                    <% end %>
+                  </div>
+                </details>
+              <% end %>
+
+              <% if @topic_groups.empty? && @other_votes.empty? %>
+                <% if @pagy.count.zero? %>
+                  <p class="section-empty">No featured votes found for this official. Other decisions may appear in all recorded votes.</p>
+                <% else %>
+                  <p class="section-empty">No featured votes on this page.</p>
+                  <%= link_to "Return to the newest votes", member_path(@member, anchor: "voting-record") %>
+                <% end %>
+              <% end %>
+              <%= render "vote_pagination" %>
             <% end %>
           <% end %>
-          <%= render "vote_pagination" %>
         <% end %>
-      <% end %>
+      </section>
+    </div>
+    <% if has_campaign %>
+      <aside class="member-profile-sidebar" aria-labelledby="campaign-record-heading">
+        <%= render "campaign_statements", statements: @campaign_statements %>
+      </aside>
     <% end %>
-  </section>
+  </div>
 
   <%= link_to committees_path, class: "back-link" do %>
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
