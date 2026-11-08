@@ -157,6 +157,10 @@ assertions below are candidate acceptance criteria based on the user's brief.
   cannot become overriding canonical topics/names.
 - **Next:** normalized lookup and resident/admin search recover intended identity;
   alias removal affects lookup but does not erase its topic's official history.
+  The admin alias-move action uses checked model callbacks: saved previews that
+  relied on its former ownership withdraw with their images and retain the consumed
+  context. Independent previews stay published; later public/API reads reflect the
+  withdrawal (see [saved agenda checks](agenda-summary-dependencies-2026-11-07.md)).
 - **Failure variants:** alias disappeared, wrong topic, target missing, collision,
   invalid promotion/flip, interrupted modal/select flow.
 - **Observed:** [repair controller](../../app/controllers/admin/topic_repairs_controller.rb),

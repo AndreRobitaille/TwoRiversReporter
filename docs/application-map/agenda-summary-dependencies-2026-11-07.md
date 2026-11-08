@@ -1,7 +1,8 @@
 # Saved agenda previews and topic dependencies: November 7, 2026
 
 Based on `2ce9c8d0` ([PR #261](https://github.com/AndreRobitaille/TwoRiversReporter/pull/261)).
-Initial implementation: `eef8c72f`; final runtime/test revision: `0f5d88fd`.
+Initial implementation: `eef8c72f`; main regression revision: `0f5d88fd`;
+admin alias-move review fix: `f1110196`.
 Local verification uses Ruby 4.0.9, Rails 8.1.4.1, PostgreSQL 18.6 and an isolated
 synthetic database. Provider responses and downloads are deterministic fixtures.
 
@@ -32,7 +33,9 @@ Existing matching, six-topic cap and 1,200-character editorial excerpt remain.
 
 Normal TopicBriefing and TopicAlias saves/deletions acquire their parent topic
 locks in ID order before writing. Topic name, status and impact updates, plus
-topic deletion, also check known dependents. `Meetings::WithdrawAgendaSummaries`
+topic deletion, also check known dependents. The existing admin alias-move action
+uses the checked model update and records its review event in the same transaction.
+`Meetings::WithdrawAgendaSummaries`
 compares the captured sections and their continued eligibility, using one
 transaction for the triggering mutation, summary flag, audit and image status.
 The original payload and consumed context remain retained. A merge or deletion
@@ -67,6 +70,7 @@ and download responses are synthetic; the civic claims are not about real people
 | BG-02 / BG-04 / RES-06 / RES-13 | Two briefings supply a saved preview; identity correction withdraws one briefing and its dependent preview/image. Retain the original payload, both consumed identities and audit. A separate preview using only the unaffected topic stays unchanged. | Open HTML and authenticated API; existing access policy is unchanged. |
 | BG-02 / RES-06 / RES-13 / RES-14 | Historical source replacement withdraws a future meeting's preview whose official catalog contains only its own agenda and whose motion receipt has no minutes. Conditional HTML returns changed content, API search omits the old claim, and `updated_since` includes the future meeting. | Real source job and later requests; deterministic transport. |
 | BG-04 / ADM-06 / ADM-07 / ADM-08 | Name, approval, impact, alias relevance, briefing removal and actual topic merge invalidate consumed context. The original receipt is retained and an independent target-topic preview survives the merge. | Model/service boundary for these existing controls; no new admin UI. |
+| ADM-08 / RES-06 / RES-13, alias move | An authenticated admin POST moves the relevance alias and records the reason; its original preview/image withdraw, original payload and audit survive, later anonymous HTML and API omit the claim, and a separate target-topic preview stays unchanged. | Actual HTTP action; existing controls and browser interaction are unchanged. |
 | BG-04 / ADM-20 | Failed withdrawal audit rolls back the briefing and summary; later reads still show the supported version. A retry withdraws once with an Automated actor and before/current context. | Audit persistence verified; unchanged audit UI is covered by existing tests. |
 | BG-04, compatible updates | Timestamp changes, record content, description and prose beyond the consumed excerpt preserve exact summary attributes and queue no jobs. A changed consumed coming-up headline withdraws the preview. | This is dependency compatibility, not general meeting-generation caching. |
 | BG-04, recovery and consumers | Explicit regeneration restores a current receipt and publication. Late knowledge output from changed context is discarded; already-withdrawn queued knowledge/pruning jobs do not construct providers. Citation repair retains the server receipt. | Previously created knowledge is not retrospectively withdrawn here. |
@@ -97,7 +101,7 @@ bin/rails test
 bin/rubocop
 ```
 
-Fourteen bounded fault experiments each failed the intended assertion with zero
+Fifteen bounded fault experiments each failed the intended assertion with zero
 test errors, then passed after restoration. Targeted commands used the relevant
 integration file with `-n /test_name_fragment/`.
 
@@ -108,6 +112,7 @@ integration file with `-n /test_name_fragment/`.
 | Omit the briefing writer's parent lock | Direct mutation does not wait for first preview publication. |
 | Omit topic-status propagation | Blocked topic context remains in a published preview. |
 | Omit alias-removal propagation | A preview remains published after its relevance alias disappears. |
+| Bypass callbacks in the admin alias-move action | The HTTP request moves ownership but leaves its original preview published. |
 | Do not retain the topic receipt | Historical correction leaves the future preview unchanged; conditional HTML incorrectly returns 304. |
 | Omit withdrawal from API freshness | The changed future meeting is missing from `updated_since`. |
 | Lock the summary before checking topic context | Concurrent knowledge work queues a deadlock retry. |
@@ -120,7 +125,7 @@ integration file with `-n /test_name_fragment/`.
 
 `bin/rubocop` inspected 701 files without offenses. Seven Markdown files passed
 292 local link/anchor and balanced-fence checks; `git diff --check` passed.
-The final `bin/rails test` at `0f5d88fd` passed 2,380 tests / 15,670 assertions,
+The local full `bin/rails test` at `0f5d88fd` passed 2,380 tests / 15,670 assertions,
 zero failures/errors and one existing PromptRun fixture skip.
 
 The first full run had two failures and two errors from leaked synthetic knowledge
@@ -135,6 +140,27 @@ original source/receipt assertions remain. The citation-repair fixture uses the
 provider's actual reporting shape instead of deriving it from the implementation's
 server-field list. A mistyped filtered test command executed zero tests; it was
 not counted as passing evidence, and the discovered test ran in the final baseline.
+
+## Automatic review follow-up
+
+The code review on `d7c6375` identified an existing application write that bypassed
+these callbacks: the admin alias-move action used `update_all`. A new HTTP test
+reproduced the finding (1 test / 17 assertions, one failure, zero errors/skips).
+The action now uses `update!` and commits the review event in the same transaction.
+The agenda and admin repair suites passed 51 tests / 554 assertions at `f1110196`:
+
+```sh
+bin/rails test test/integration/agenda_briefing_context_test.rb test/controllers/admin/topic_repairs_controller_test.rb
+```
+
+After that passing baseline, restoring the callback bypass failed the intended
+publication assertion (1 / 17, one failure, zero errors/skips); restoring the fix
+passed 1 test / 29 assertions. This is the fifteenth bounded fault experiment.
+RuboCop again passed all 701 files, and whitespace checks passed. The first added
+test run hit the last-admin safeguard during fixture cleanup; cleanup now deletes
+only its own synthetic passkey after destroying its test session. That errored
+run is not defect-detection evidence. Final-head CI and runtime results are
+recorded on [PR #262](https://github.com/AndreRobitaille/TwoRiversReporter/pull/262).
 
 ## Remaining scope and cost
 
