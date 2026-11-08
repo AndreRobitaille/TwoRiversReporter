@@ -1,0 +1,45 @@
+<p class="member-recorded-coverage">
+  These are the votes recorded by this site, including procedural decisions.
+  The list may omit meetings or votes and does not establish a complete term history.
+  Missing records do not imply absence or abstention.
+</p>
+
+<% if @recorded_votes.any? %>
+  <p class="member-recorded-count"><%= @pagy.from %>–<%= @pagy.to %> of <%= @pagy.count %> recorded votes · Newest first</p>
+  <div class="member-recorded-votes member-topic-votes">
+    <% @recorded_votes.each do |vote| %>
+      <% motion = vote.motion %>
+      <div class="member-vote-row" id="recorded-vote-<%= vote.id %>">
+        <div class="member-vote-motion">
+          <span class="member-vote-date"><%= motion.meeting.starts_at&.strftime("%b %-d, %Y") %></span>
+          <span class="member-vote-body"><%= motion.meeting.body_name %></span>
+          <% if motion.agenda_item&.title.present? %>
+            <p class="member-recorded-agenda"><%= motion.agenda_item.title %></p>
+          <% end %>
+          <p class="member-recorded-motion"><%= motion.description.presence || "Motion description unavailable." %></p>
+          <%= link_to "Meeting and sources", meeting_path(motion.meeting), class: "member-recorded-source" %>
+        </div>
+        <div class="member-vote-result">
+          <span class="vote-value <%= vote_color_class(vote.value) %>"><%= vote.value&.titleize || "Unknown" %></span>
+          <span class="member-vote-split">Recorded yes/no: <%= vote_split(motion) %> · <%= motion.outcome.presence&.titleize || "Unknown" %></span>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% elsif @pagy.count.zero? %>
+  <p class="member-recorded-empty section-empty">No votes have been recorded for this member yet.</p>
+<% else %>
+  <p class="member-recorded-empty section-empty">No recorded votes on this page.</p>
+  <%= link_to "Return to the newest votes", member_path(@member, votes: "all", anchor: "voting-record") %>
+<% end %>
+
+<% if @pagy.previous || @pagy.next %>
+  <nav class="member-vote-pages" aria-label="Recorded vote pages">
+    <% if @pagy.previous %>
+      <%= link_to "Newer votes", member_path(@member, votes: "all", page: @pagy.previous, anchor: "voting-record"), class: "btn btn--secondary", rel: "prev" %>
+    <% end %>
+    <% if @pagy.next %>
+      <%= link_to "Older votes", member_path(@member, votes: "all", page: @pagy.next, anchor: "voting-record"), class: "btn btn--secondary", rel: "next" %>
+    <% end %>
+  </nav>
+<% end %>

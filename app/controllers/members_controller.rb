@@ -20,7 +20,13 @@ class MembersController < ApplicationController
     @attendance = load_attendance
     @campaign_statements = CampaignStatement.current_for(@member) unless gated_for_visitor?
 
-    @topic_groups, @other_votes = ResidentContent::OfficialProfile.new(@member).vote_groups
+    @show_all_votes = params[:votes] == "all"
+    profile = ResidentContent::OfficialProfile.new(@member)
+    if @show_all_votes
+      @pagy, @recorded_votes = pagy(:offset, profile.votes, limit: 25) unless gated_for_visitor?
+    else
+      @topic_groups, @other_votes = profile.vote_groups
+    end
   end
 
   private
