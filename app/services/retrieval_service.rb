@@ -10,7 +10,7 @@ class RetrievalService
 
     # Base scope: Active knowledge chunks
     scope = KnowledgeChunk.joins(:knowledge_source)
-                        .where(knowledge_sources: { active: true, status: "approved" })
+                        .merge(KnowledgeSource.retrievable)
 
     # Apply candidate scope if provided (e.g. topic filter)
     scope = scope.merge(candidate_scope) if candidate_scope

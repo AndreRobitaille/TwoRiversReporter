@@ -41,7 +41,7 @@ class ExtractKnowledgeJob < ApplicationJob
 
       created_ids = []
       parsed.each do |entry|
-        source = create_knowledge_source(entry, meeting)
+        source = create_knowledge_source(entry, meeting, summary)
         link_topics(source, entry["topic_names"], topics)
         created_ids << source.id
       end
@@ -85,7 +85,7 @@ class ExtractKnowledgeJob < ApplicationJob
     []
   end
 
-  def create_knowledge_source(entry, meeting)
+  def create_knowledge_source(entry, meeting, summary)
     KnowledgeSource.create!(
       title: entry["title"].to_s.truncate(255),
       body: entry["body"].to_s,
@@ -96,7 +96,9 @@ class ExtractKnowledgeJob < ApplicationJob
       reasoning: entry["reasoning"].to_s,
       confidence: entry["confidence"].to_f,
       stated_at: meeting.starts_at&.to_date,
-      meeting: meeting
+      meeting: meeting,
+      source_summary: summary,
+      source_summary_manifest: Knowledge::SummaryEvidence.capture(summary)
     )
   end
 

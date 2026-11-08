@@ -37,7 +37,8 @@ module Admin
       end
 
       if @source.update(source_params)
-        redirect_to admin_knowledge_source_path(@source), notice: "Knowledge source updated. Re-ingestion queued if content changed."
+        notice = @source.available? ? "Knowledge source updated. Re-ingestion queued if content changed." : "Knowledge source updated. Supporting evidence remains withdrawn."
+        redirect_to admin_knowledge_source_path(@source), notice: notice
       else
         render :edit, status: :unprocessable_entity
       end
@@ -49,6 +50,11 @@ module Admin
     end
 
     def reingest
+      unless @source.available?
+        redirect_to admin_knowledge_source_path(@source), alert: "Supporting evidence was withdrawn. Re-ingestion was not queued."
+        return
+      end
+
       IngestKnowledgeSourceJob.perform_later(@source.id)
       redirect_to admin_knowledge_source_path(@source), notice: "Re-ingestion queued."
     end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_08_020000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_08_030000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -337,8 +337,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_020000) do
     t.datetime "updated_at", null: false
     t.text "verification_notes"
     t.date "verified_on"
+    t.bigint "source_summary_id"
+    t.jsonb "source_summary_manifest"
+    t.datetime "evidence_withdrawn_at"
     t.index [ "meeting_id" ], name: "index_knowledge_sources_on_meeting_id"
     t.index [ "origin" ], name: "index_knowledge_sources_on_origin"
+    t.index [ "source_summary_id" ], name: "index_knowledge_sources_on_source_summary_id"
     t.index [ "status" ], name: "index_knowledge_sources_on_status"
   end
 
@@ -1020,6 +1024,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_020000) do
   add_foreign_key "knowledge_chunks", "knowledge_sources"
   add_foreign_key "knowledge_source_topics", "knowledge_sources"
   add_foreign_key "knowledge_source_topics", "topics"
+  add_foreign_key "knowledge_sources", "meeting_summaries", column: "source_summary_id", on_delete: :nullify
   add_foreign_key "knowledge_sources", "meetings"
   add_foreign_key "known_contexts", "users"
   add_foreign_key "magic_links", "users"

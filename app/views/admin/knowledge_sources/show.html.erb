@@ -1,3 +1,9 @@
+<% if flash[:notice] || flash[:alert] %>
+  <div class="flash <%= flash[:alert] ? 'flash--danger' : 'flash--success' %> mb-4" role="status">
+    <%= flash[:alert] || flash[:notice] %>
+  </div>
+<% end %>
+
 <div class="page-header">
   <div class="flex justify-between items-center">
     <div>
@@ -7,6 +13,9 @@
         <h1 class="page-title mb-0"><%= @source.title %></h1>
       </div>
       <div class="flex gap-2">
+        <% unless @source.available? %>
+          <span class="badge badge--warning">Evidence withdrawn</span>
+        <% end %>
         <span class="badge badge--default"><%= @source.source_type.upcase %></span>
         <span class="badge badge--info"><%= @source.origin.humanize %></span>
         <% case @source.status %>
@@ -26,6 +35,10 @@
     </div>
   </div>
 </div>
+
+<% unless @source.available? %>
+  <p class="card mb-4">Supporting summary evidence changed or was removed. This entry and its indexed chunks are retained for review but excluded from AI context. Editing or approving this entry does not restore its supporting evidence.</p>
+<% end %>
 
 <% if @source.origin != "manual" %>
   <div class="card mb-4">
