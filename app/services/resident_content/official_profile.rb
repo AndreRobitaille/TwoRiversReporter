@@ -14,14 +14,18 @@ module ResidentContent
       /pledge\s+of\s+allegiance/i
     ].freeze
 
-    def initialize(member)
+    def initialize(member, council_meeting_ids: nil, during: nil)
       @member = member
+      @council_meeting_ids = council_meeting_ids
+      @during = during
     end
 
     def votes
-      @member.votes.joins(motion: :meeting)
+      records = @member.votes.joins(motion: :meeting)
         .includes(motion: [ :meeting, :votes, { agenda_item: { agenda_item_topics: :topic } } ])
         .order("meetings.starts_at DESC", id: :desc)
+      records = records.where(motions: { meeting_id: @council_meeting_ids }) unless @council_meeting_ids.nil?
+      records
     end
 
     def vote_groups(records = resident_votes)
@@ -77,6 +81,7 @@ module ResidentContent
     def recorded_attendance(excluding_committee_id: nil)
       records = @member.meeting_attendances.voting_members.joins(:meeting)
         .where("meetings.starts_at <= ?", Time.current).includes(meeting: :committee)
+      records = records.where(meetings: { starts_at: @during }) if @during
       records = records.where.not(meetings: { committee_id: excluding_committee_id }) if excluding_committee_id
       groups = records.reject { |record| record.meeting.cancelled? }.group_by { |record| record.meeting.committee }
       result = groups.filter_map do |committee, attendances|

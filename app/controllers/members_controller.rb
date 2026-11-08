@@ -10,20 +10,23 @@ class MembersController < ApplicationController
       .includes(:committee)
       .sort_by { |cm| [ cm.committee.name == "City Council" ? 0 : 1, cm.committee.name ] }
     @current_position = @member.primary_current_position
-    @service_periods = @member.council_service_periods.newest_first
-      .includes(start_source_version: { file_attachment: :blob }, end_source_version: { file_attachment: :blob })
+    @record_period = ResidentContent::CouncilPeriod.new(@member, key: params[:term])
+    @service_periods = @record_period.periods
+    @record_params = @service_periods.any? || params[:term].present? ? { term: @record_period.key } : {}
 
-    @council_attendance = ResidentContent::CouncilAttendance.new(@member).call
-    @attendance = load_attendance
+    @council_attendance = ResidentContent::CouncilAttendance.new(@member, period: @record_period.selected).call
+    meeting_ids = @council_attendance&.fetch(:meeting_ids)
+    profile = ResidentContent::OfficialProfile.new(@member,
+      council_meeting_ids: (@record_period.selected ? meeting_ids || [] : nil), during: @record_period.range)
+    @attendance = profile.recorded_attendance(excluding_committee_id: @council_attendance&.fetch(:committee_id))
     @campaign_statements = CampaignStatement.current_for(@member) unless gated_for_visitor?
     if @campaign_statements&.any?
       @campaign_issues = ResidentContent::CampaignIssues.new(statements: @campaign_statements).call
       @campaign_actions = ResidentContent::CampaignActions.new(@member, statements: @campaign_statements,
-        council_attendance: @council_attendance).call
+        council_attendance: @council_attendance || ResidentContent::CouncilAttendance.new(@member).call).call
     end
 
     @show_all_votes = params[:votes] == "all"
-    profile = ResidentContent::OfficialProfile.new(@member)
     unless gated_for_visitor?
       if @show_all_votes
         @pagy, @recorded_votes = pagy(:offset, profile.votes, limit: 25)
@@ -32,12 +35,5 @@ class MembersController < ApplicationController
         @topic_groups, @other_votes = profile.vote_groups(featured_votes)
       end
     end
-  end
-
-  private
-
-  def load_attendance
-    ResidentContent::OfficialProfile.new(@member).recorded_attendance(
-      excluding_committee_id: @council_attendance&.fetch(:committee_id))
   end
 end

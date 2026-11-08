@@ -208,6 +208,12 @@ status below does not imply complete coverage of those workflows.
 
 ## RES-10 — Inspect an official's attendance and voting record (P1)
 
+- **November 8 period selection:** the Council record selector defaults to the
+  latest usable evidenced service period, scopes attendance and votes to its
+  eligible Council inventory, and preserves the period through view switches
+  and pagination. All available records keeps the broader recorded history;
+  current roles remain labeled when viewing an earlier period. See
+  [period-selection evidence](council-period-selection-2026-11-08.md).
 - **Start / data:** civic Member with current office/memberships, attendance and
   linked/unlinked substantive/procedural motions; an official with no record.
 - **Action:** roster name → official → voting topic/meeting; disclose Other Votes.

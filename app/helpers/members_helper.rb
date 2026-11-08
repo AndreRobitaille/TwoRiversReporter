@@ -16,6 +16,11 @@ module MembersHelper
     end.join(" · ")
   end
 
+  def council_period_label(period)
+    start_date = period.started_on.strftime("%b %-d, %Y")
+    period.ended_on ? "#{start_date} – #{period.ended_on.strftime('%b %-d, %Y')}" : "Since #{start_date}"
+  end
+
   def vote_context(vote)
     # Prefer agenda item title over motion description — it's what the vote was actually about
     vote.motion.agenda_item&.title || vote.motion.description
