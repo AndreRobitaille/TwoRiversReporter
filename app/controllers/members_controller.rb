@@ -16,6 +16,7 @@ class MembersController < ApplicationController
     @service_periods = @member.council_service_periods.newest_first
       .includes(start_source_version: { file_attachment: :blob }, end_source_version: { file_attachment: :blob })
 
+    @council_attendance = ResidentContent::CouncilAttendance.new(@member).call
     @attendance = load_attendance
 
     @topic_groups, @other_votes = ResidentContent::OfficialProfile.new(@member).vote_groups
@@ -24,6 +25,7 @@ class MembersController < ApplicationController
   private
 
   def load_attendance
-    ResidentContent::OfficialProfile.new(@member).attendance
+    ResidentContent::OfficialProfile.new(@member).recorded_attendance(
+      excluding_committee_id: @council_attendance&.fetch(:committee_id))
   end
 end

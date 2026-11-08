@@ -10,22 +10,10 @@ module MembersHelper
     "#{membership.committee.name} #{role}"
   end
 
-  def attendance_comparison(data)
-    pct = data[:pct]
-    text = "#{data[:present]} of #{data[:total]} (#{pct}%)"
-
-    if data[:avg_rate]
-      diff = pct - data[:avg_rate]
-      if diff > 5
-        text += " — above #{data[:avg_rate]}% avg"
-      elsif diff < -5
-        text += " — below #{data[:avg_rate]}% avg"
-      else
-        text += " — near #{data[:avg_rate]}% avg"
-      end
-    end
-
-    text
+  def recorded_attendance_summary(counts)
+    ResidentContent::CouncilAttendance::LABELS.filter_map do |status, label|
+      "#{counts.fetch(status)} #{label.downcase}" if counts.fetch(status).positive?
+    end.join(" · ")
   end
 
   def vote_context(vote)
