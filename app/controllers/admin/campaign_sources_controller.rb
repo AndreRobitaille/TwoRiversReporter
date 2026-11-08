@@ -1,6 +1,7 @@
 module Admin
   class CampaignSourcesController < BaseController
     before_action :set_source, only: %i[show edit update]
+    before_action :use_forum_import, only: %i[edit update]
 
     def index
       @sources = CampaignSource.order(updated_at: :desc, id: :desc)
@@ -43,7 +44,11 @@ module Admin
     end
 
     def source_params
-      params.require(:campaign_source).permit(*CampaignSource::SNAPSHOT_FIELDS)
+      params.require(:campaign_source).permit(*(CampaignSource::SNAPSHOT_FIELDS - [ "prepared_transcript" ]))
+    end
+
+    def use_forum_import
+      redirect_to new_admin_campaign_forum_path(source_id: @source.id) if @source.forum?
     end
 
     def save_source(failure_view)

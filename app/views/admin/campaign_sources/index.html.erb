@@ -1,20 +1,21 @@
 <% content_for(:title) { "Campaign sources - Admin" } %>
 <div class="page-header">
-  <div class="flex justify-between items-center">
+  <div>
     <div>
       <h1 class="page-title">Campaign sources</h1>
-      <p class="page-subtitle">Save one article for all of its candidates.</p>
+      <p class="page-subtitle">Keep articles and prepared forums for every candidate.</p>
     </div>
     <%= link_to "Add article", new_admin_campaign_source_path, class: "btn btn--primary" %>
+    <%= link_to "Import forum", new_admin_campaign_forum_path, class: "btn btn--secondary" %>
   </div>
 </div>
 <p><%= link_to "Back to members", admin_members_path %></p>
 <% if @sources.empty? %>
-  <div class="empty-state">No campaign articles have been saved.</div>
+  <div class="empty-state">No campaign sources have been saved.</div>
 <% else %>
   <div class="table-wrapper">
     <table>
-      <thead><tr><th>Article</th><th>Election</th><th>Coverage</th></tr></thead>
+      <thead><tr><th>Source</th><th>Election</th><th>Coverage</th></tr></thead>
       <tbody>
         <% @sources.each do |source| %>
           <tr>

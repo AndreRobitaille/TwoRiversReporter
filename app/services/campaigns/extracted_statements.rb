@@ -5,8 +5,9 @@ module Campaigns
     class InvalidResponse < StandardError; end
     KINDS = %w[commitment priority position retrospective_claim].freeze
 
-    def initialize(text)
+    def initialize(text, speaker_segments: nil)
       @text = text
+      @speaker_segments = speaker_segments
     end
 
     def parse(response)
@@ -18,7 +19,7 @@ module Campaigns
         name_quote = participant["name_quote"]
         attribution = name.is_a?(String) && name.present? && name_quote.is_a?(String) &&
           name_quote.include?(name) && locate(name_quote)
-        answers = rows(participant, "answers").map { |answer| check_answer(answer, attribution) }
+        answers = rows(participant, "answers").map { |answer| check_answer(answer, attribution, name) }
         participant.slice("name", "name_quote").merge("answers" => answers)
       end
       gaps = rows(data, "coverage_gaps").map do |gap|
@@ -40,14 +41,14 @@ module Campaigns
       value
     end
 
-    def check_answer(answer, attribution)
+    def check_answer(answer, attribution, name)
       question_location = locate(answer["question"])
       passage_location = locate(answer["passage"])
       statements = rows(answer, "statements").map do |statement|
         location = if passage_location
           locate(statement["supporting_quote"], text: answer["passage"], offset: passage_location.fetch("start"))
         end
-        exception = if !attribution
+        exception = if !attribution || (location && !speaker_matches?(name, location))
           "unresolved_attribution"
         elsif !question_location || !passage_location || !location
           "unresolved_source_passage"
@@ -59,6 +60,15 @@ module Campaigns
       end
       answer.slice("question", "passage").merge("question_location" => question_location,
         "passage_location" => passage_location, "statements" => statements)
+    end
+
+    def speaker_matches?(name, location)
+      return true unless @speaker_segments
+
+      @speaker_segments.any? do |segment|
+        segment["attribution"] == "reviewer_verified" && segment["speaker"]&.casecmp?(name) &&
+          location.fetch("start") >= segment.fetch("text_start") && location.fetch("end") <= segment.fetch("text_end")
+      end
     end
 
     def locate(quote, text: @text, offset: 0)
