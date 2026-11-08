@@ -75,6 +75,10 @@ concurrent reservation, budget-paused retries and retained uncertain amounts.
 The [November 8 monthly council cost checks](council-monthly-costs-2026-11-08.md)
 add an explicit monthly ceiling across runs/days and a read-only stage usage report.
 
+The [November 8 explicit recommendation checks](council-staff-recommendations-2026-11-08.md)
+record shared packet/minutes extraction, unchanged-proposal comparisons, inspectable
+fractions, mobile navigation, access controls and offline cost ceilings.
+
 The [November 8 member vote-filter checks](member-vote-filters-2026-11-08.md)
 record scoped search/filtering, preserved pagination and source navigation, and
 phone/desktop verification using real concession decisions.

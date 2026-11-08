@@ -1,6 +1,7 @@
 module CouncilProfiles
   class ExtractIssueUpdates
     MAX_CONTEXT_CHARS = 60_000
+    MAX_PACKET_CONTEXT_CHARS = 120_000
 
     def self.prepare(document)
       document.with_lock do
@@ -10,7 +11,7 @@ module CouncilProfiles
         return existing if existing
         # The response schema is not evidence identity: extending extraction must
         # not reopen completed historical sources or cause extra paid calls.
-        context = input.context.merge("schema_version" => 2)
+        context = input.context.merge("schema_version" => 3)
         attributes = { meeting_document: document, input_key: input.key, context: context }
         begin
           attributes[:parameters] = Ai::OpenAiService.council_issue_parameters(context)

@@ -11,7 +11,7 @@ module SiteAccess
     "topics" => %w[index show],
     "meetings" => %w[index show],
     "committees" => %w[show],
-    "members" => %w[show compare],
+    "members" => %w[show compare recommendations],
     "crawler_probes" => %w[show],
     "sitemaps" => %w[show]
   }.freeze

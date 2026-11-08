@@ -1,0 +1,61 @@
+<% content_for(:title) { "#{@member.name} — Staff recommendations" } %>
+<article class="member-article">
+  <header class="member-article-header">
+    <h1 class="member-article-title">Staff recommendations</h1>
+    <p><%= @member.name %></p>
+  </header>
+  <% if gated_for_visitor? %>
+    <%= render "shared/gate" %>
+  <% else %>
+    <%= gated_content do %>
+      <% group = @recommendation_group %>
+      <% total = group.fetch(@show_divided ? :divided_compared : :compared) %>
+      <% supported = group.fetch(@show_divided ? :divided_supported : :supported) %>
+      <h2><%= group.dig(:author, "author") %></h2>
+      <p><%= total.zero? ? "No comparable votes in this selection." : "Supported the recommendation on #{supported} of #{total} comparable votes." %></p>
+      <nav class="member-vote-views" aria-label="Recommendation views">
+        <%= link_to "All recorded decisions", recommendations_member_path(@member, source: group[:key], term: @record_period.key), class: "btn btn--secondary" %>
+        <%= link_to "Divided votes", recommendations_member_path(@member, source: group[:key], term: @record_period.key, subset: "divided"), class: "btn btn--secondary" %>
+      </nav>
+      <details class="member-comparison-method">
+        <summary>What counts here</summary>
+        <p>Only independently recorded yes/no votes on the unchanged proposal, with a recommendation made before the decision. Different wording, amendments, conflicts and unclear timing remain unresolved. A missing recommendation is not disagreement.</p>
+        <p>No explicit recommendation has been collected for <%= pluralize(@missing_recommendations, "recorded substantive decision") %> in this selection.</p>
+      </details>
+      <div id="recommendation-decisions" class="member-topic-votes">
+        <% @recommendation_rows.each do |row| %>
+          <% motion = row[:motion]
+             result = if row[:excluded]
+               "unresolved"
+             elsif row[:supported]
+               "supported"
+             else
+               "opposed"
+             end %>
+          <div class="member-campaign-position" data-recommendation-result="<%= result %>">
+            <% if motion %>
+              <strong><%= link_to member_decision_title(motion), meeting_path(motion.meeting) %></strong>
+              <p><%= motion.meeting.starts_at.strftime("%b %-d, %Y") %> · Voted <%= row[:own]&.titleize || "Not recorded" %> · Council: <%= motion.outcome&.titleize || "Unknown" %></p>
+            <% else %>
+              <strong><%= row.fetch(:sources).first.fetch(:title) %></strong>
+            <% end %>
+            <p><%= row[:excluded] || (row[:supported] ? "Supported the recommendation" : "Opposed the recommendation") %></p>
+            <details class="member-campaign-context">
+              <summary>Recommendation and source</summary>
+              <% if motion %><p><strong>Recorded motion:</strong> <%= motion.description %></p><% end %>
+              <% row.fetch(:sources).each do |source| %>
+                <% evidence = source.fetch(:evidence) %>
+                <p><%= evidence.fetch("author") %><% if evidence["role"].present? %> · <%= evidence["role"] %><% end %></p>
+                <% if evidence["made_on"] %><p>Recommendation dated <%= Date.iso8601(evidence["made_on"]).strftime("%b %-d, %Y") %></p><% end %>
+                <blockquote><%= evidence.fetch("quote") %></blockquote>
+                <%= link_to source.fetch(:citation).fetch(:label), source.fetch(:citation).fetch(:source_url) || meeting_path(source.fetch(:meeting)) %>
+              <% end %>
+            </details>
+          </div>
+        <% end %>
+      </div>
+      <% if @pagy.last > 1 %><div class="member-vote-pages"><%= @pagy.series_nav(slots: 5, fragment: "recommendation-decisions", aria_label: "Recommendation pages").html_safe %></div><% end %>
+    <% end %>
+  <% end %>
+  <%= link_to "Back to #{@member.name}'s record", member_path(@member, term: @record_period.key, anchor: "staff-recommendations"), class: "back-link" %>
+</article>

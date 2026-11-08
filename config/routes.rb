@@ -41,6 +41,7 @@ Rails.application.routes.draw do
   get "members", to: redirect("/committees", status: 301), as: nil
   resources :members, only: %i[show] do
     get "compare/:peer_id", action: :compare, on: :member, as: :compare
+    get "recommendations", on: :member
   end
   get "topics/explore", to: "topics#explore", as: :topics_explore
   resources :topics, only: %i[index show]

@@ -32,6 +32,7 @@ class MembersController < ApplicationController
       @issue_updates = ResidentContent::IssueUpdates.new(@member, attendance: @council_attendance,
         period: @record_period, statements: @campaign_statements || []).call
       @peer_comparisons = ResidentContent::PeerVotes.new(@member, attendance: @council_attendance).summaries
+      @staff_recommendations = ResidentContent::StaffRecommendations.new(@member, period: @record_period).groups
       @vote_filters = ResidentContent::VoteFilters.new(profile, params: params)
       @record_params.merge!(@vote_filters.query_params)
       filtered_votes = @vote_filters.call(featured: !@show_all_votes)
@@ -55,6 +56,20 @@ class MembersController < ApplicationController
       @comparison = ResidentContent::PeerVotes.new(@member, attendance: attendance).compare(@peer)
       rows = @comparison.fetch(:rows).select { |row| row.fetch(:excluded).nil? && (!@show_divided || row.fetch(:divided)) }
       @pagy, @comparison_rows = pagy(:offset, rows, limit: 25)
+    end
+    respond_to { |format| format.html }
+  end
+
+  def recommendations
+    @member = Member.find(params[:id])
+    @record_period = ResidentContent::CouncilPeriod.new(@member, key: params[:term])
+    @show_divided = params[:subset] == "divided"
+    unless gated_for_visitor?
+      report = ResidentContent::StaffRecommendations.new(@member, period: @record_period)
+      @recommendation_group = report.groups.find { |group| group[:key] == params[:source] } || raise(ActiveRecord::RecordNotFound)
+      @missing_recommendations = report.missing_count
+      rows = @recommendation_group.fetch(:rows).select { |row| !@show_divided || row[:divided] }
+      @pagy, @recommendation_rows = pagy(:offset, rows, limit: 25)
     end
     respond_to { |format| format.html }
   end

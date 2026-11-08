@@ -456,7 +456,7 @@ and held before provider construction; no text is silently truncated.
 
 ## BG-09 — Extract shared official issue milestones and actions (P1)
 
-- **Start / data:** explicitly selected official minutes document, existing
+- **Start / data:** explicitly selected official minutes or packet document, existing
   approved agenda/topic links, populated prompt and exact month/day/run budget.
 - **Action:** `ExtractCouncilIssueUpdatesJob` retains one shared source result;
   existing nightly campaign recovery revisits selected documents only.
@@ -471,6 +471,10 @@ and held before provider construction; no text is silently truncated.
   [Recorded-action verification](council-recorded-actions-2026-11-08.md) extends new
   requests with attributed actions. Completed older results reuse unchanged;
   actor resolution on read creates neither people nor service records.
+  [Explicit recommendation verification](council-staff-recommendations-2026-11-08.md)
+  adds attributed recommendations to the same new request. Exact unchanged-proposal
+  comparisons use recorded votes; changed wording and uncertain timing stay unresolved.
+
 
 ## Configured recurring entry points
 

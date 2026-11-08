@@ -141,7 +141,7 @@ class CouncilRecordedActionsTest < ActionDispatch::IntegrationTest
     @update_meeting.update!(body_name: "City Council Work Session", starts_at: Time.zone.parse("2025-11-24 18:00"))
     @document.update!(source_url: sample.fetch("source_url"), extracted_text: sample.fetch("text"))
     quote = "Councilmember Bittner advocated for reconsidering the library funding increase, noting its community importance"
-    data = { "complete" => true, "updates" => [], "actions" => [
+    data = { "complete" => true, "updates" => [], "recommendations" => [], "actions" => [
       { "agenda_item_id" => @item.id, "topic_ids" => [ @topic.id ], "speaker" => "Councilmember Bittner",
         "kind" => "follow_up", "occurred_on" => "2025-11-24", "quote" => quote,
         "summary" => "Advocated reconsidering the library funding increase; no clear consensus was reached." }

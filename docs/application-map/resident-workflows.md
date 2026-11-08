@@ -306,6 +306,12 @@ status below does not imply complete coverage of those workflows.
   Eligibility/query coverage is retained separately. Historical evidence remains
   in [the earlier report](member-campaign-activity-2026-11-08.md).
 
+- **November 8 explicit recommendations:** a closed member section links each
+  recommending source's all/divided fraction to included decisions and exclusions.
+  Same-proposal semantics, known pre-decision timing and actual service dates bound
+  comparison; no unified staff position is inferred. Details and evidence are in
+  [the verification record](council-staff-recommendations-2026-11-08.md).
+
 ## RES-11 — Cross an access-mode or audience boundary (P0)
 
 - **Start / data:** distinctive allowed/withheld content, more than two topics,

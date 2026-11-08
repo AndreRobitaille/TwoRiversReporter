@@ -34,7 +34,7 @@ module CouncilIssueScenario
   end
 
   def issue_response
-    { "complete" => true, "actions" => [], "updates" => [
+    { "complete" => true, "actions" => [], "recommendations" => [], "updates" => [
       { "agenda_item_id" => @item.id, "topic_ids" => [ @topic.id ], "subject" => "Park renovation", "status" => "unresolved",
         "summary" => "The renovation still needs a $100,000 grant before construction can begin.", "conditions" => nil,
         "occurred_on" => nil, "quote" => @quote },

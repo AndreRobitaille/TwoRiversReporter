@@ -1,0 +1,20 @@
+<% if @staff_recommendations.any? %>
+  <details class="member-peer-comparisons" id="staff-recommendations">
+    <summary>Staff and advisory recommendations</summary>
+    <p>Recorded votes supporting an explicit recommendation.</p>
+    <div class="member-peer-table">
+      <table>
+        <thead><tr><th scope="col">Recommendation from</th><th scope="col">All compared votes</th><th scope="col">Divided votes</th></tr></thead>
+        <tbody>
+          <% @staff_recommendations.each do |group| %>
+            <tr>
+              <th scope="row"><%= group.dig(:author, "author") %><% if group.dig(:author, "role").present? && group.dig(:author, "role") != group.dig(:author, "author") %><br><%= group.dig(:author, "role") %><% end %></th>
+              <td><%= link_to peer_vote_fraction(group[:supported], group[:compared]), recommendations_member_path(@member, source: group[:key], term: @record_period.key) %></td>
+              <td><%= link_to peer_vote_fraction(group[:divided_supported], group[:divided_compared]), recommendations_member_path(@member, source: group[:key], term: @record_period.key, subset: "divided") %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </details>
+<% end %>
