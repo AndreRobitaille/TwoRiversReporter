@@ -196,6 +196,10 @@ assertions below are candidate acceptance criteria based on the user's brief.
 - **Observed:** [CommitteesController](../../app/controllers/admin/committees_controller.rb),
   [MembersController](../../app/controllers/admin/members_controller.rb),
   [Committee](../../app/models/committee.rb), [Member](../../app/models/member.rb).
+- **Service history:** member merges preserve sourced Council periods; conflicting
+  period keys roll back through the existing error path. Model-boundary evidence
+  and the unmodified admin-control scope are recorded in
+  [service-date verification](council-service-periods-2026-11-08.md).
 
 ## ADM-11 — Add or curate knowledge context (P1)
 

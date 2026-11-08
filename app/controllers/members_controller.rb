@@ -13,6 +13,8 @@ class MembersController < ApplicationController
       .includes(:committee)
       .sort_by { |cm| [ cm.committee.name == "City Council" ? 0 : 1, cm.committee.name ] }
     @current_position = @member.primary_current_position
+    @service_periods = @member.council_service_periods.newest_first
+      .includes(start_source_version: { file_attachment: :blob }, end_source_version: { file_attachment: :blob })
 
     @attendance = load_attendance
 

@@ -50,6 +50,9 @@ The [November 7 council evidence foundation](council-evidence-2026-11-07.md)
 records the bounded source check, retained download versions, citation
 compatibility, and isolated retention/stale-response fault experiments.
 
+The [November 8 Council service-date slice](council-service-periods-2026-11-08.md)
+records shared-source date persistence and the profile-to-retained-PDF journey.
+
 ## Read the map
 
 | Document | Use |
