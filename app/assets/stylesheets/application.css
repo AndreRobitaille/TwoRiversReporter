@@ -5595,7 +5595,66 @@ th.sortable-header:hover {
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
   text-align: right;
-  white-space: nowrap;
+  white-space: normal;
+}
+
+.member-attendance-coverage {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.member-attendance-counts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-4) 0;
+}
+
+.member-attendance-counts > div {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+}
+
+.member-attendance-counts dt {
+  font-size: var(--font-size-sm);
+}
+
+.member-attendance-counts dd {
+  margin: var(--space-2) 0 0;
+  font: var(--font-weight-semibold) 1.5rem var(--font-data);
+}
+
+.member-attendance-meetings summary {
+  cursor: pointer;
+  padding: var(--space-3) 0;
+  color: var(--color-primary);
+}
+
+.member-attendance-meetings ul {
+  list-style: none;
+  padding: 0;
+}
+
+.member-attendance-meetings li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--font-size-sm);
+}
+
+.member-attendance-meetings li span {
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .member-attendance-counts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .member-topic-group {
