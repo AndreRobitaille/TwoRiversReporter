@@ -413,11 +413,14 @@ assertions below are candidate acceptance criteria based on the user's brief.
 - **Next:** source intake queues no work and calls no AI. After a separately
   budgeted extraction job, the source page shows all extracted participants,
   statements, qualifications, supporting passages and reported gaps privately.
-  Neither intake nor this analysis view publishes campaign claims.
+  Intake and page reads do not publish claims. The extraction job now publishes
+  statements whose source passage and unique existing member identity pass the
+  automatic checks; this view links matched records and identifies exceptions.
 - **Failures:** missing input, invalid publisher link, missing publication date
   versus invented date, partial coverage, lost continuation/qualification,
   unauthorized current/historical access, and an old submission replacing an edit.
 - **Evidence:** [intake contract and verification](campaign-source-intake-2026-11-08.md).
   [Shared extraction checks](shared-campaign-extraction-2026-11-08.md) cover BG-08
-  through this private view. Identity/publication, forum handoff and real paid-pilot
-  authorization remain separate work.
+  through this private view. [Member publication checks](member-campaign-records-2026-11-08.md)
+  cover the subsequent identity/publication boundary. Forum handoff and a real
+  paid-pilot authorization remain separate work.

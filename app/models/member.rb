@@ -8,6 +8,7 @@ class Member < ApplicationRecord
   has_many :current_member_positions, -> { current }, class_name: "MemberPosition"
   has_many :meeting_attendances, dependent: :destroy
   has_many :member_aliases, dependent: :destroy
+  has_many :campaign_statements, dependent: :nullify
   has_many :committees, through: :committee_memberships
   validates :name, presence: true, uniqueness: true
 
@@ -113,6 +114,9 @@ class Member < ApplicationRecord
           position.update!(member_id: target.id)
         end
       end
+
+      # Preserve campaign evidence and its original source attribution.
+      campaign_statements.update_all(member_id: target.id)
 
       # Move aliases to target (skip if name already taken)
       member_aliases.each do |member_alias|
