@@ -38,7 +38,7 @@ class MemberProfileLayoutTest < ActionDispatch::IntegrationTest
       get member_path(@jordan), headers: { "User-Agent" => "Googlebot/2.1", "REMOTE_ADDR" => "66.249.66.1" }
       assert_response :success
       assert_equal expected, css_select("#campaign-record").sole.text
-      assert_select "#campaign-record a[href=?]", @source.source_url, count: 2
+      assert_select "#campaign-record .member-campaign-card a[href=?]", @source.source_url, count: 2
       assert_select ".member-other-votes[open]", count: 0
       assert_select ".member-other-votes a[href=?]", meeting_path(@other.motion.meeting), text: @other.motion.description
       assert_equal "private, no-store", response.headers["Cache-Control"]
@@ -53,7 +53,7 @@ class MemberProfileLayoutTest < ActionDispatch::IntegrationTest
     Rails.cache = original_cache if original_cache
   end
 
-  test "longer campaigns show three statements first while retaining the rest and their sources" do
+  test "additional statements remain in the full evidence disclosure instead of multiplying priority rows" do
     original = @jordan.campaign_statements.first
     3.times do |index|
       extra = original.dup
@@ -63,12 +63,91 @@ class MemberProfileLayoutTest < ActionDispatch::IntegrationTest
     end
     get member_path(@jordan)
     assert_response :success
-    assert_select "#campaign-record > .member-campaign-list > .member-campaign-card", count: 3
-    assert_select ".member-campaign-overflow[open]", count: 0
-    assert_select ".member-campaign-overflow > summary", text: "2 more campaign statements"
-    assert_select ".member-campaign-overflow .member-campaign-card", count: 2
+    assert_select "#campaign-record > .member-campaign-list > .member-campaign-issue", count: 1
+    assert_select "#campaign-record > .member-campaign-evidence[open]", count: 0
+    assert_select "#campaign-record > .member-campaign-evidence > summary", text: "Campaign sources and full statements (5)"
+    assert_select "#campaign-record > .member-campaign-evidence .member-campaign-card", count: 5
     assert_select ".member-campaign-card[open]", count: 0
     assert_select ".member-campaign-card a[href=?]", @source.source_url, count: 5
     assert_includes response.body, "Additional campaign priority 3."
+  end
+
+  test "a shared topic never pairs an unrelated vote with a campaign position" do
+    record = activity_vote(date: Date.new(2025, 9, 15), value: "yes", outcome: "passed",
+      agenda_title: "Amount of Sewer Service Charges",
+      description: "Adopt the sewer-charge ordinance")
+    get member_path(@jordan)
+    assert_response :success
+    assert_select ".member-profile-primary", text: /Adopt the sewer-charge ordinance/
+    assert_select "#campaign-record .member-campaign-position", text: /Repair neighborhood water lines/
+    assert_select "#campaign-record", text: /Adopt the sewer-charge ordinance/, count: 0
+    assert_select "#campaign-record [data-campaign-vote], #campaign-record .member-campaign-actions", count: 0
+    assert_select "#campaign-record a", text: "Follow this issue", count: 0
+    assert_select ".member-campaign-issue .member-campaign-evidence, .member-campaign-issue a", count: 0
+    assert_select "#campaign-record > .member-campaign-evidence > summary", text: "Campaign sources and full statements (2)"
+    assert_select ".member-campaign-issue[name], .member-campaign-card[name]", count: 0
+    assert_equal "yes", record.reload.value
+  end
+
+  test "every issue heading is visible without vote history and sources appear only at the bottom" do
+    data = campaign_response_data
+    answer = data.fetch("participants").first.fetch("answers").first
+    passage = answer.fetch("passage")
+    extra = [ "Promote downtown festivals.", "Improve park access.", "Publish spending reports." ]
+    answer["passage"] = ([ passage ] + extra).join(" ")
+    extra.each do |quote|
+      answer.fetch("statements") << answer.fetch("statements").first.merge("summary" => quote, "supporting_quote" => quote)
+    end
+    @source.update!(body: @source.body.sub(passage, answer.fetch("passage")))
+    analyze_member_campaign(content: data.to_json)
+    topics = [ @water ] + %w[tourism parks budget].map { |name| Topic.create!(name: name, status: "approved") }
+    stage = Campaigns::MatchTopics.prepare(@source.current_version)
+    data = { "matches" => stage.context.fetch("statements").map do |statement|
+      topic = topics[statement.fetch("sequence")]
+      { "sequence" => statement.fetch("sequence"), "status" => topic ? "matched" : "no_match",
+        "topic_ids" => topic ? [ topic.id ] : [], "reason" => "Deterministic navigation fixture." }
+    end }
+    with_campaign_transport(content: data.to_json) do
+      MatchCampaignTopicsJob.perform_now(@source.id, budget_run_id: campaign_budget(stage: stage).id)
+    end
+    get member_path(@jordan)
+    assert_response :success
+    assert_select "#campaign-record > .member-campaign-list > .member-campaign-issue", count: 4
+    assert_select "#campaign-record .member-campaign-overflow", count: 0
+    assert_select ".member-campaign-issue a, .member-campaign-issue .member-campaign-evidence", count: 0
+    assert_select "#campaign-record > .member-campaign-evidence .member-campaign-card", count: 5
+    assert_select "#campaign-record a[href=?]", @source.source_url, count: 5
+  end
+
+  test "repeated statements share issue navigation without losing qualifications or source evidence" do
+    data = campaign_response_data
+    answer = data.fetch("participants").first.fetch("answers").first
+    old_passage = answer.fetch("passage")
+    answer["passage"] = "#{old_passage} Only when grants cover the cost."
+    duplicate = answer.fetch("statements").first.deep_dup
+    duplicate.merge!("summary" => "Repair water lines only when grants cover the cost.",
+      "supporting_quote" => answer.fetch("passage"), "conditions" => "Only when grants cover the cost.")
+    answer.fetch("statements") << duplicate
+    @source.update!(body: @source.body.sub(old_passage, answer.fetch("passage")))
+    analyze_member_campaign(content: data.to_json)
+    stage = Campaigns::MatchTopics.prepare(@source.current_version)
+    matches = { "matches" => stage.context.fetch("statements").map do |statement|
+      ids = statement.fetch("sequence") < 2 ? [ @water.id, @related.id ] : []
+      { "sequence" => statement.fetch("sequence"), "status" => ids.any? ? "matched" : "no_match",
+        "topic_ids" => ids, "reason" => "Repeated water position in the deterministic source." }
+    end }
+    with_campaign_transport(content: matches.to_json) do
+      MatchCampaignTopicsJob.perform_now(@source.id, budget_run_id: campaign_budget(stage: stage).id)
+    end
+    activity_vote(date: Date.new(2025, 7, 7))
+    before = [ CampaignRequest.count, CampaignExtraction.count ]
+    Ai::OpenAiService.stub(:new, ->(*) { flunk "Grouping saved evidence must not generate prose" }) do
+      2.times { get member_path(@jordan) }
+    end
+    assert_select ".member-campaign-issue", count: 1
+    assert_select "#campaign-record [data-campaign-vote]", count: 0
+    assert_select "#campaign-record > .member-campaign-evidence", text: /Only when grants cover the cost/
+    assert_select "#campaign-record > .member-campaign-evidence .member-campaign-card", count: 3
+    assert_equal before, [ CampaignRequest.count, CampaignExtraction.count ]
   end
 end

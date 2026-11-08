@@ -63,9 +63,11 @@ class MemberCampaignJourneysTest < ApplicationSystemTestCase
       first("summary", text: "Read the question").click
       assert_text "Question 1: What would you prioritize?"
       all(".member-campaign-card > summary").last.click
+      assert_selector ".member-campaign-card[open]", count: 2
+      assert_text "Question 1: What would you prioritize?"
+      all(".member-campaign-card > summary").last.click
       assert_selector ".member-campaign-card[open]", count: 1
-      assert_no_text "Question 1: What would you prioritize?"
-      find(".member-campaign-card > summary", match: :first).click
+      assert_text "Question 1: What would you prioritize?"
     end
     assert_operator page.evaluate_script("document.documentElement.scrollWidth"), :<=, 390
     find("#campaign-record").scroll_to(:top)

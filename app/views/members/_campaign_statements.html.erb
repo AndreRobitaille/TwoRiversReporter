@@ -7,16 +7,29 @@
     </div>
     <% statements.group_by { |statement| statement.campaign_source_version.election_on }.each do |election, records| %>
       <h3 class="member-campaign-election"><%= election.strftime("%B %-d, %Y") %> election</h3>
-      <div class="member-campaign-list">
-        <%= render partial: "campaign_statement", collection: records.first(3), as: :record %>
-      </div>
-      <% if records.size > 3 %>
-        <details class="member-campaign-overflow">
-          <summary><%= pluralize(records.size - 3, "more campaign statement") %></summary>
-          <div class="member-campaign-list">
-            <%= render partial: "campaign_statement", collection: records.drop(3), as: :record %>
-          </div>
+      <% issues = @campaign_issues.fetch(election) %>
+      <% if issues.any? %>
+        <div class="member-campaign-list">
+          <% issues.each_with_index do |issue, index| %>
+            <%= render "campaign_issue", issue: issue, expanded: index.zero? %>
+          <% end %>
+        </div>
+        <details class="member-campaign-evidence">
+          <summary>Campaign sources and full statements (<%= records.size %>)</summary>
+          <%= render partial: "campaign_statement", collection: records, as: :record %>
         </details>
+      <% else %>
+        <div class="member-campaign-list">
+          <%= render partial: "campaign_statement", collection: records.first(3), as: :record %>
+        </div>
+        <% if records.size > 3 %>
+          <details class="member-campaign-overflow">
+            <summary><%= pluralize(records.size - 3, "more campaign statement") %></summary>
+            <div class="member-campaign-list">
+              <%= render partial: "campaign_statement", collection: records.drop(3), as: :record %>
+            </div>
+          </details>
+        <% end %>
       <% end %>
     <% end %>
   </section>

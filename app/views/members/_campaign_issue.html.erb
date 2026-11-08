@@ -1,0 +1,12 @@
+<% statement = issue.fetch(:statements).first %>
+<details class="member-campaign-issue" <%= "open" if expanded %> data-campaign-topic="<%= issue.fetch(:topic).id %>">
+  <summary class="member-campaign-summary">
+    <span><%= topic_title_case(issue.fetch(:topic).canonical_name) %></span>
+    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 5 7 7-7 7"/></svg>
+  </summary>
+  <div class="member-campaign-position">
+    <p><%= statement.data.fetch("summary") %></p>
+    <% if statement.data["conditions"].present? %><p class="member-campaign-qualification"><%= statement.data["conditions"] %></p><% end %>
+    <% if statement.data["timeframe"].present? %><p class="member-campaign-qualification"><%= statement.data["timeframe"] %></p><% end %>
+  </div>
+</details>

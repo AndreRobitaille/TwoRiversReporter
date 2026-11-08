@@ -5,7 +5,7 @@ module CampaignActivityScenario
   include MemberCampaignScenario
   include CouncilServiceSources
 
-  def setup_campaign_activity
+  def setup_campaign_activity(separate_issues: false)
     setup_member_campaign
     @source.update!(election_on: "2024-04-02", published_on: "2024-03-27")
     @council = Committee.find_or_create_by!(name: "City Council") { |committee| committee.slug = "city-council" }
@@ -20,7 +20,11 @@ module CampaignActivityScenario
     stage = Campaigns::MatchTopics.prepare(@source.current_version)
     data = { "matches" => stage.context.fetch("statements").map do |statement|
       sequence = statement.fetch("sequence")
-      ids = sequence.zero? ? [ @water.id, @related.id ] : []
+      ids = if separate_issues
+        { 0 => [ @water.id ], 1 => [ @related.id ] }.fetch(sequence, [])
+      else
+        sequence.zero? ? [ @water.id, @related.id ] : []
+      end
       { "sequence" => sequence, "status" => ids.any? ? "matched" : "no_match", "topic_ids" => ids,
         "reason" => "Deterministic issue-context fixture." }
     end }
