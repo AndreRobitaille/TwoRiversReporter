@@ -63,6 +63,28 @@ class CampaignSourceIntakeTest < ActionDispatch::IntegrationTest
     assert_equal original.id, source.reload.current_version.id
   end
 
+  test "overlapping edits retain the persisted combination for the next article read" do
+    source = CampaignSource.create!(campaign_article_attributes)
+    title_edit = CampaignSource.find(source.id)
+    body_edit = CampaignSource.find(source.id)
+
+    title_edit.update!(title: "Corrected questionnaire title")
+    body_edit.update!(body: "Corrected questionnaire-cobalt answer")
+
+    source.reload
+    assert_not_nil source.current_version, "The persisted article must have a retained version"
+    assert_equal 3, source.versions.count
+    get admin_campaign_source_path(source)
+    assert_response :success
+    assert_select "h1", text: "Corrected questionnaire title"
+    assert_select ".campaign-source-text", text: "Corrected questionnaire-cobalt answer"
+
+    get admin_campaign_source_path(source, version: title_edit.current_version.id)
+    assert_response :success
+    assert_select "h1", text: "Corrected questionnaire title"
+    assert_equal campaign_article_attributes[:body], css_select(".campaign-source-text").sole.text
+  end
+
   test "a permitted admin read comes before ordinary-account and logged-out denial" do
     source = CampaignSource.create!(campaign_article_attributes)
     get admin_campaign_source_path(source)

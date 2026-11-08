@@ -30,10 +30,14 @@ class CampaignSource < ApplicationRecord
   end
 
   def retain_version
-    versions.find_or_create_by!(version_key: version_key) do |version|
-      version.assign_attributes(attributes.slice(*SNAPSHOT_FIELDS))
-      version.content_sha256 = Digest::SHA256.hexdigest(body)
-      version.submitted_by = submitted_by
+    # Reload under the save transaction's row lock: partial updates from a stale
+    # instance must snapshot the complete persisted article, not its old fields.
+    with_lock do
+      versions.find_or_create_by!(version_key: version_key) do |version|
+        version.assign_attributes(attributes.slice(*SNAPSHOT_FIELDS))
+        version.content_sha256 = Digest::SHA256.hexdigest(body)
+        version.submitted_by = submitted_by
+      end
     end
   end
 
