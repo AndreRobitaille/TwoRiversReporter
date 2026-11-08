@@ -59,6 +59,29 @@ Artifact SHA-256 values, retrieved November 7, 2026:
 The PDFs remain at their official links; no resident addresses, private case
 notes, or full article copies belong in the committed sample.
 
+### November 8 source discovery: manager negotiations
+
+The owner supplied the [May 30, 2025 special-meeting minutes](https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-4e16f3aa9db74f8ebec3f9c20f1e58cf.pdf#page=1).
+Item 6 spans PDF pages 1–2: authorize Public Administration Associates to
+negotiate a proposed employment agreement with the top city-manager candidate,
+returning it to Council for later action. Petri moved; Bittner seconded.
+The named yes voters are Bittner, Stechmesser, Brandt, Shimulunas, Derby, and
+Petri. The roll call lists Bill LeClair, Darla LeClair, and Wachowski absent.
+Thus all three initial-profile members voted yes; Bittner also seconded.
+The six named yes votes yield a 6–0 result among the recorded participants.
+
+The candidate is unnamed and this decision authorizes negotiations. Final
+appointment, contract approval, and employment terms need a subsequent source.
+Keep this action separate from Derby's campaign position on the form of city
+government; it does not establish support for a particular person or pay package.
+
+Both pages were rendered and visually inspected on November 8, 2026. The scan
+has no usable text layer; the mover, seconder and vote list continue on page 2.
+Retrieved artifact SHA-256: `614b28c11e000fc50fcb005387bb20fc1871fb3a9a13a0952a51b63b1c23beea`.
+This is a checked source reference, not a verified automated extraction or
+production import. Add it to the hiring timeline without a campaign-performance
+grade. Follow-up source discovery can address the final agreement when needed.
+
 ## Campaign material and gaps
 
 The public [Seehafer April 1, 2026 questionnaire](https://www.seehafernews.com/2026/04/01/two-rivers-city-council-candidate-responses/)
@@ -112,7 +135,7 @@ fixture includes two candidates, a candidate who votes against a fee and loses,
 a separate incomplete roll call, and no evidence that the authorized fee was
 implemented. Expected action, Council decision and issue outcome stay separate.
 The fixture is input/reference material, not evidence of extraction accuracy.
-Concession-stand, manager-hiring and formal-case discovery remain later work;
+Concession-stand, final manager-contract and formal-case discovery remain later work;
 resident criticism and code-of-conduct receipt are not formal findings.
 
 ## Reusable code and resolved boundaries
