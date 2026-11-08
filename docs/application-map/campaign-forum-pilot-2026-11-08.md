@@ -36,7 +36,7 @@ statements and one consumed attempt. Existing complete-forum, speaker-attributio
 spending, reuse and later member-read checks remain in the focused suite.
 
 - Ruby 4.0.9, PostgreSQL; application tests use a separate synthetic test database.
-- `bin/rails test test/jobs/extract_campaign_source_job_test.rb test/integration/full_campaign_forum_test.rb test/jobs/prepared_campaign_forum_extraction_test.rb test/integration/campaign_cost_preflight_test.rb test/integration/member_campaign_record_test.rb`: 24 tests, 316 assertions, no failures/errors/skips.
+- `bin/rails test test/jobs/extract_campaign_source_job_test.rb test/integration/full_campaign_forum_test.rb test/jobs/prepared_campaign_forum_extraction_test.rb test/integration/campaign_cost_preflight_test.rb test/integration/member_campaign_record_test.rb test/integration/campaign_topic_matching_test.rb`: 34 tests, 412 assertions, no failures/errors/skips.
 - `bin/rubocop`: 788 files, no offenses.
 - Representative defect detection: removing the new answer-field guard causes
   the intended failed-versus-completed assertion to fail (one test, one failure).
@@ -74,3 +74,17 @@ the previous 100,000-character limit. The new limit is 150,000, without increasi
 the 8,000-output-token ceiling or granting spending authority. A boundary test
 checks complete input at the limit and refusal one character beyond it. Existing
 oversized-context checks continue to prove retention without a provider call.
+
+Both shared matching calls completed. Later HTTP reads contained the expected
+stored statements for all three elected members; repeated extraction/matching
+jobs and page reads made zero additional provider calls. Existing votes, people
+and offices were unchanged. Support for the city-manager form of government did
+not acquire a link to a particular manager's employment record in this sample.
+These checks establish pipeline flow and bounded reuse, not editorial approval
+of every summary or topic association. The active UI-review preview was not
+changed, and no new browser control was introduced by this patch.
+
+The larger-context defect experiment truncates provider input after the size
+check; the complete-context assertion fails. Restoring the original input returns
+the focused boundary test to green. Full source material and provider receipts
+are retained privately, not committed as public test fixtures.
