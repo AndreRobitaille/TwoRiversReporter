@@ -307,11 +307,20 @@ module PromptTemplateData
         Return JSON with exactly two arrays: participants and coverage_gaps.
         participants: one entry for EVERY supported participant, with name,
         name_quote (an exact, uniquely identifiable source passage containing that
-        name), and answers. Use null name for unresolved attribution.
-        answers: one entry for EVERY relevant answer by that participant, with the
-        exact original question, the exact full answer passage including speaker
-        label and ALL continuation paragraphs, and statements. Preserve the full
-        question/context; do not mix another person's answer into this passage.
+        name), and answers. For a forum, use the verified speaker label as name,
+        and copy that label plus adjacent words as name_quote so it appears only
+        once. Caption misspellings of spoken names must not replace verified labels.
+        Include each participant once. Use null name for unresolved attribution.
+        answers: one entry for EVERY relevant answer by that participant, with
+        exactly these keys:
+        - question: exact original question or introduction from the source
+        - passage: exact full answer including speaker label and ALL continuation
+          paragraphs, copied without correcting caption wording or punctuation
+        - statements: the array described below
+        Use these literal keys, not original_question or full_answer_passage.
+        Preserve the full question/context; do not mix another person's answer
+        into this passage. Opening and closing turns are answers even when their
+        introduction is brief; retain their supported statements.
         statements: one entry for EVERY distinct supported commitment, priority,
         policy position or retrospective claim within that answer. Do not collapse
         multiple distinct positions into one. Each entry has:

@@ -272,6 +272,14 @@ Live at `https://tworiversmatters.com` (Hetzner VPS, Kamal 2, Docker + pgvector)
 
 ## Conventions
 
+Campaign extraction requires literal `question` and `passage` fields on each
+answer; invalid response structure fails while retaining its receipt. Prepared
+forums use externally verified speaker labels, not caption spellings of spoken
+names. Source checks do not prove semantic completeness. Matching keeps one
+shared request per source, bounded at 150,000 context characters with its existing
+8,000-output-token and explicit spending limits. See
+`docs/application-map/campaign-forum-pilot-2026-11-08.md` for the real-pilot limits.
+
 - **Single Rails app** — No microservices, no SPA. Server-rendered HTML + background jobs.
 - **Thin controllers** — Business logic in services and jobs, not controllers.
 - **Jobs must be idempotent** — Safe to re-run; clear/rebuild derived rows when appropriate.

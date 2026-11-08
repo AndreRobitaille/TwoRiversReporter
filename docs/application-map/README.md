@@ -85,6 +85,9 @@ cover read-only source estimates and their limits before paid-pilot authorizatio
 The [November 8 shared issue matching checks](campaign-topic-matching-2026-11-08.md)
 cover saved statements through approved topic links and private review, with a
 real-data reference sample and deterministic provider transport.
+The [November 8 real forum evaluation](campaign-forum-pilot-2026-11-08.md)
+covers the observed response-field mismatch, its bounded fix and the limits of
+real-provider source coverage.
 The [November 8 full-forum request checks](full-campaign-forums-2026-11-08.md)
 cover bounded whole-transcript requests, matching output allowances, retained
 closing answers and zero-call preparation using both owner-supplied recordings.
