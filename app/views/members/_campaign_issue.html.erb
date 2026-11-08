@@ -10,7 +10,9 @@
     <% if statement.data["timeframe"].present? %><p class="member-campaign-qualification"><%= statement.data["timeframe"] %></p><% end %>
   </div>
   <% issue.fetch(:statements).each do |matched_statement| %>
-    <% actions = @campaign_actions.fetch(matched_statement.id, []) %>
+    <% actions = @campaign_actions.fetch(matched_statement.id, []).select do |action|
+      (action.fetch(:vote).motion.agenda_item.topics.map(&:id) & issue.fetch(:topic_ids)).any?
+    end %>
     <% if actions.any? %>
       <div class="member-campaign-position" data-campaign-actions-for="<%= matched_statement.id %>">
         <% if matched_statement != statement %>

@@ -16,6 +16,17 @@ class CampaignActionReview < ApplicationRecord
     "campaign_action/#{id}/#{attempts}"
   end
 
+  def pair_keys
+    context.fetch("pairs").map { |pair| Campaigns::ActionInput.key(pair) }
+  end
+
+  def matches_by_key
+    results = data.fetch("matches").index_by { |match| match.fetch("key") }
+    context.fetch("pairs").to_h do |pair|
+      [ Campaigns::ActionInput.key(pair), results.fetch(pair.fetch("key")) ]
+    end
+  end
+
   def claim!(budget_run)
     with_lock do
       return false unless status.in?(%w[pending failed budget_paused]) && attempts < MAX_ATTEMPTS

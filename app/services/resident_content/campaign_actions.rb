@@ -14,7 +14,9 @@ module ResidentContent
         rescue Minutes::Input::Unavailable
           next
         end
-        matches = CampaignActionReview.where(meeting: meeting, status: "completed").flat_map { |stage| stage.data.fetch("matches") }.index_by { |match| match.fetch("key") }
+        matches = CampaignActionReview.where(meeting: meeting, status: "completed").order(:id).each_with_object({}) do |stage, saved|
+          saved.merge!(stage.matches_by_key)
+        end
         votes = candidates.index_by { |candidate| [ candidate.fetch(:statement).id, candidate.fetch(:vote).motion_id ] }
         input.pairs.each do |pair|
           match = matches[pair.fetch("key")]

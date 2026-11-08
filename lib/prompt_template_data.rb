@@ -292,6 +292,7 @@ module PromptTemplateData
         The array must contain exactly as many entries as the supplied pairs array. Keep all distinct decisions, statements and qualifications.
 
         direct: The ACTUAL motion addresses the specific proposal, policy mechanism, project, or explicitly stated action in this statement. Explain that specific connection. Include an exact contiguous minutes passage supporting the actual action (20-2000 characters). Whitespace may be normalized; do not splice quotations or use ellipses to skip text.
+        Direct relevance can include advancing, rejecting, repealing or obstructing a stated proposal. Compare the documented policy effect, not matching vocabulary. Preserve alternatives presented as examples; do not turn "potentially" or "such as" into an exclusive promise. A different mechanism can be comparable when the supplied evidence establishes its effect on the stated objective.
         not_direct: The motion is merely on the same broad topic, or the statement is too general to establish a specific action connection. Explain the mismatch.
         insufficient_evidence: The supplied minutes do not establish what the motion actually does, or a material condition cannot be resolved. Explain what is missing. Do not use an agenda recommendation as proof of the motion adopted.
 

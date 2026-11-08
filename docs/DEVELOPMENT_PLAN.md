@@ -988,6 +988,14 @@ promise, relevant decisions and coverage together. Coarse statement-type labels
 or rhetorical emphasis alone do not establish importance, contradiction or
 inaction. Direct matching and these highlights remain subsequent work.
 
+For a retrospective covering the full three-year term, a specific promise with
+neither fulfillment nor measurable work toward it is a broken promise. Measurable
+work includes a proposal, documented advocacy, or voting for the promised action
+even when other members defeat it. Distinguish that effort from achieving the
+result. Establish the relevant term's coverage and review non-vote activity before
+making the absence finding; an empty match list or the current partial backfill
+does not establish it. Broad aspirations are not specific promises.
+
 The proposed page centers on **what they said → what they did → what happened**,
 with a term selector, cited overview, public-issue timelines, attendance, full
 decision history, peer/staff comparisons, formal-case history, and source coverage.

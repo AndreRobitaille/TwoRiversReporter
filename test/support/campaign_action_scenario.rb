@@ -3,7 +3,7 @@ require_relative "campaign_activity_scenario"
 module CampaignActionScenario
   include CampaignActivityScenario
 
-  def setup_campaign_actions
+  def setup_campaign_actions(multiple_issues: false)
     setup_campaign_activity
     question = "What should change about short-term rentals?"
     answers = [ [ "Jordan Example", "Require owners to live in their short-term rentals for part of each year.", "position" ],
@@ -18,9 +18,10 @@ module CampaignActionScenario
     end, "coverage_gaps" => [] }
     analyze_member_campaign(content: response.to_json)
     @specific, @broad = @source.current_version.extraction.campaign_statements.order(:sequence).to_a
+    @other_issue = Topic.create!(name: "unrelated business loans", status: "approved") if multiple_issues
     stage = Campaigns::MatchTopics.prepare(@source.current_version)
     response = { "matches" => [ @specific, @broad ].map do |statement|
-      { "sequence" => statement.sequence, "status" => "matched", "topic_ids" => [ @water.id ], "reason" => "Synthetic topic candidate." }
+      { "sequence" => statement.sequence, "status" => "matched", "topic_ids" => multiple_issues && statement == @specific ? [ @water.id, @related.id, @other_issue.id ] : [ @water.id ], "reason" => "Synthetic topic candidate." }
     end }
     budget = campaign_budget(stage: stage)
     with_campaign_transport(content: response.to_json) { MatchCampaignTopicsJob.perform_now(@source.id, budget_run_id: budget.id) }

@@ -12,17 +12,18 @@ class CampaignActionJourneysTest < ApplicationSystemTestCase
       visit member_path(@jordan)
       page.driver.browser.manage.window.resize_to(390, 844)
       click_link "Campaign priorities", exact: true
+      assert_current_path(member_path(@jordan)) { |url| url.fragment == "campaign-record" }
+      assert_no_selector "html[aria-busy='true']"
       issue = find("[data-campaign-topic='#{@water.id}']")
       issue.find(".member-campaign-summary").click
       assert_text @specific.data.fetch("summary")
-      within "[data-campaign-actions-for='#{@specific.id}']" do
-        assert_text "Jordan Example: Yes"
-        assert_text "Council: Failed"
-        assert_no_text @quote
-        find("summary", text: "Supporting minutes passage").click
-        assert_text @quote
-        click_link "Meeting and sources"
-      end
+      actions = "[data-campaign-actions-for='#{@specific.id}']"
+      assert_selector "#{actions} .member-campaign-vote-results", text: "Jordan Example: Yes"
+      assert_selector "#{actions} .member-campaign-vote-results", text: "Council: Failed"
+      assert_no_selector "#{actions} blockquote", text: @quote
+      find("#{actions} summary", text: "Supporting minutes passage").click
+      assert_selector "#{actions} blockquote", text: @quote
+      find("#{actions} a", text: "Meeting and sources").click
       assert_current_path meeting_path(@vote.motion.meeting)
       page.go_back
       assert_selector "[data-campaign-action='#{@vote.id}']"

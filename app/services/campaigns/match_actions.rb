@@ -12,7 +12,7 @@ module Campaigns
       meeting.with_lock do
         input = ActionInput.new(meeting, candidates)
         stages = CampaignActionReview.where(meeting: meeting).order(:id).to_a
-        assigned = stages.flat_map { |stage| stage.context.fetch("pairs").map { |pair| pair.fetch("key") } }
+        assigned = stages.flat_map(&:pair_keys)
         missing = input.pairs.uniq { |pair| pair.fetch("key") }.reject { |pair| assigned.include?(pair.fetch("key")) }
         missing.each_slice(MAX_PAIRS) do |pairs|
           context = input.context(pairs)
@@ -26,7 +26,7 @@ module Campaigns
           stages << CampaignActionReview.create!(attributes)
         end
         keys = input.pairs.map { |pair| pair.fetch("key") }
-        stages.select { |stage| stage.context.fetch("pairs").any? { |pair| keys.include?(pair.fetch("key")) } }
+        stages.select { |stage| (stage.pair_keys & keys).any? }
       end
     rescue Minutes::Input::Unavailable
       []

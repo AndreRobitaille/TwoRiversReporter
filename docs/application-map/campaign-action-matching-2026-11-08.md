@@ -21,6 +21,10 @@ grade, proof of motive, completed issue, or finding that the member caused the
 outcome. Empty/held results do not mean no action. Broad priorities, advocacy,
 opportunity assessments, coverage-aware inaction and contradiction highlights
 remain unfinished. The existing main voting record remains available.
+The owner clarified the retrospective standard: over a full three-year term,
+a specific promise with neither fulfillment nor measurable work is a broken
+promise. Documented advocacy, proposals and a losing yes vote count as work.
+This selected-meeting check cannot yet establish that full-term absence.
 
 The service reuses eligibility from Council service/known-meeting records and
 statement dates. Unresolved or superseded campaign statements and unavailable
@@ -34,7 +38,9 @@ native disclosures. No extra client-side generation or schedule is introduced.
 20 missing semantic pairs share one full minutes input across members/sources.
 Both direct and rejected results are cached. New pairs do not repeat completed
 pairs; identical semantic statements and metadata-only campaign corrections reuse
-their result. Actual source/motion/statement changes select a new key. Oversized
+their result. Rebuilding motion/vote projection IDs also reuses the semantic
+result, while the public page reads the current member vote. Retained requests
+and original results remain unchanged. Actual source/motion/statement changes select a new key. Oversized
 input is held intact rather than truncated. Prompt/model settings alone do not
 trigger periodic reanalysis of completed evidence.
 
@@ -65,17 +71,21 @@ CHROME_BIN=/usr/bin/chromium bin/rails test:system
 bin/rubocop --cache false
 ```
 
-Five matching HTTP/pipeline journeys / 59 assertions pass. They cover two members
+Eight matching HTTP/pipeline journeys pass. They cover two members
 in one shared request, every pair retained, correct negative exclusions, a losing
 yes vote, exact quote and meeting link, unchanged nightly replay/reads, new-pair
 only dispatch, missing allowance, malformed/invented evidence, retry ceiling,
-current-source/status changes, metadata reuse and allowed-then-gated reads.
-The new phone browser journey passes with 13 assertions: open the relevant issue,
+current-source/status changes, metadata reuse, rebuilt motion identities,
+contrary-policy decisions, multi-issue placement and allowed-then-gated reads.
+The combined matching and campaign-activity run passes 12 tests / 125 assertions.
+The new phone browser journey passes with 15 assertions: open the relevant issue,
 inspect statement/vote/result/quote, follow the meeting, return, refresh and retain
-layout without generating. Earlier browser failures were test setup errors
-(a closed issue and an overly narrow text selector), corrected before passing.
+layout without generating. CI exposed a navigation race in the test: opening the
+disclosure before Turbo finished the fragment visit could lose the open state
+or retain a stale element. The test now waits for that visit to finish and uses
+fresh scoped selectors. It does not add a sleep or alter the public controls.
 
-The full application suite passes: 2,517 tests / 17,431 assertions, no failures or
+At the initial PR head, the full application suite passed: 2,517 tests / 17,431 assertions, no failures or
 errors, one existing skip. The full browser suite passes: 37 journeys / 1,108
 assertions, no failures, errors or skips. RuboCop passes with no offenses.
 Initial broader targeted run caught old no-job assumptions; those expectations
@@ -87,7 +97,11 @@ Representative defect detection, in the isolated regression checkout:
   comparison HTTP test fail: six public comparisons instead of one (no errors).
 - Bypassing `gated_for_visitor?` made the allowed-then-anonymous test fail: the
   campaign section remained present (no errors).
-- Both mutations were restored; the full application suite then passed.
+- Including transient motion IDs in the cache key made the rebuilt-projection
+  comparison disappear and failed its intended assertion (no errors).
+- Removing issue-specific placement duplicated a real type of multi-topic
+  decision beneath an unrelated heading; the targeted assertion failed (no errors).
+- Mutations were restored before the passing regression runs.
 
 These prove the relevant regressions are detected. Deterministic provider
 responses do not prove model interpretation accuracy.
@@ -124,7 +138,30 @@ additional requests. All 94 accepted article/forum statements remained present
 across the three cohort pages. Older real decisions remained reachable through
 numbered vote pages. Live Chromium at phone width confirmed the actual Airbnb
 statement, independent open sections, no horizontal overflow and no rejected
-pair rendered. Positive display/navigation uses synthetic fixtures in tests,
-not fabricated real conclusions in the preview.
+pair rendered.
+
+## Real positive comparison
+
+The review also requested a positive control. Brandt's accepted March 12 forum
+statement supports business tools including tax increment financing. The
+[April 6, 2026 minutes](https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-92069de44a594aa6990824383b8252fd.pdf),
+page 4, record grants of up to $17,536 to Cool City Motel from TID 11 and up to
+$10,000 to Lighthouse Inn from TID 12. Brandt voted yes on both; both passed 9–0.
+The scanned page was OCRed locally and checked visually. One shared request
+returned two direct comparisons with exact supporting passages. These are now
+visible in the local preview under tax increment districts, with the matched
+statement, member vote, Council result and source. The check caught and corrected
+duplicate placement under Revolving Loan Fund; topic placement now uses the
+decision's actual issue links, including topic rows combined by shared statements.
+
+Across both checks: 11 comparisons in six requests, with an estimated $0.094536
+of provider usage against the $1 combined ceiling. Both one-use allowances were
+revoked. Replaying all selected work and HTTP reads with the provider constructor
+forced to raise made zero additional requests; all 94 accepted statements and
+2,174 local votes remained intact. Phone inspection confirmed two positive
+comparisons in the appropriate issue, independent disclosures and no overflow.
+Implementation tests use deterministic provider responses; the preview findings
+come from the real sources. A contrary-policy scenario is tested synthetically,
+not presented as a real finding about these candidates.
 
 No production operation, database sync, production backfill, merge or deployment.

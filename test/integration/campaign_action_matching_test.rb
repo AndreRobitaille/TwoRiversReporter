@@ -4,9 +4,8 @@ require_relative "../support/campaign_action_scenario"
 class CampaignActionMatchingTest < ActionDispatch::IntegrationTest
   include CampaignActionScenario
 
-  setup { setup_campaign_actions }
-
   test "shared matching publishes a specific action without turning a losing vote into a broken promise" do
+    setup_campaign_actions
     stage = review_campaign_actions
     assert_equal "completed", stage.status
     assert_equal 6, stage.context.fetch("pairs").size
@@ -41,6 +40,7 @@ class CampaignActionMatchingTest < ActionDispatch::IntegrationTest
   end
 
   test "only new pairs are prepared and no provider runs before an explicit allowance" do
+    setup_campaign_actions
     first = review_campaign_actions
     motion = @vote.motion.meeting.motions.create!(agenda_item: @vote.motion.agenda_item,
       description: "Table a proposed rental lottery", outcome: "passed")
@@ -63,6 +63,7 @@ class CampaignActionMatchingTest < ActionDispatch::IntegrationTest
   end
 
   test "incomplete and invented evidence cannot publish and retries are bounded" do
+    setup_campaign_actions
     stage = Campaigns::MatchActions.prepare(@vote.motion.meeting).sole
     budget = campaign_budget(stage: stage)
     response = action_response(stage)
@@ -84,6 +85,7 @@ class CampaignActionMatchingTest < ActionDispatch::IntegrationTest
   end
 
   test "current source eligibility and access checks remove stale matches on the next request" do
+    setup_campaign_actions
     review_campaign_actions
     get member_path(@jordan)
     assert_select "#campaign-record [data-campaign-action]", count: 1
@@ -112,6 +114,7 @@ class CampaignActionMatchingTest < ActionDispatch::IntegrationTest
   end
 
   test "metadata corrections reuse comparisons for the newly published statement identities" do
+    setup_campaign_actions
     review_campaign_actions
     previous_id = @specific.id
     Ai::OpenAiService.stub(:new, ->(*) { flunk "Metadata-only corrections must not repeat semantic analysis" }) do
@@ -127,5 +130,63 @@ class CampaignActionMatchingTest < ActionDispatch::IntegrationTest
       end
     end
     assert_equal 1, @calls.size
+  end
+
+  test "rebuilding vote projections preserves semantic matches and shows the current recorded vote" do
+    setup_campaign_actions
+    stage = review_campaign_actions
+    raw = stage.attributes.slice("context", "data", "parameters")
+    motion = @vote.motion
+    attributes = motion.attributes.except("id", "created_at", "updated_at")
+    ballots = motion.votes.map { |vote| vote.attributes.except("id", "motion_id", "created_at", "updated_at") }
+    old_id = motion.id
+    motion.destroy!
+    replacement = Motion.create!(attributes)
+    ballots.each { |ballot| replacement.votes.create!(ballot) }
+    assert_not_equal old_id, replacement.id
+    current_vote = replacement.votes.find_by!(member: @jordan)
+    current_vote.update!(value: "recused")
+    Ai::OpenAiService.stub(:new, ->(*) { flunk "A projection rebuild must reuse completed semantic evidence" }) do
+      assert_no_difference [ "CampaignActionReview.count", "CampaignActionRequest.count" ] do
+        MatchCampaignActionsJob.perform_now
+        get member_path(@jordan)
+        assert_select "[data-campaign-actions-for=?] [data-campaign-action=?]", @specific.id, current_vote.id
+        assert_select "#campaign-record .member-campaign-vote-results", text: /Jordan Example: Recused/
+      end
+    end
+    assert_equal raw, stage.reload.attributes.slice("context", "data", "parameters")
+  end
+
+  test "a contrary decision can be comparable without an automatic promise grade" do
+    setup_campaign_actions
+    @vote.motion.update!(description: "Remove the requirement that rental owners reside at the property")
+    @quote = "Motion to remove the requirement that rental owners reside at the property passed. Jordan voted yes; Taylor voted no."
+    @document.update!(extracted_text: @quote)
+    @vote.motion.update!(outcome: "passed")
+    stage = Campaigns::MatchActions.prepare(@vote.motion.meeting).sole
+    response = action_response(stage)
+    response.fetch("matches").find { |match| match["status"] == "direct" }["reason"] =
+      "The motion removes the residency condition that the campaign statement supported."
+    budget = campaign_budget(stage: stage)
+    with_campaign_transport(content: response.to_json) { Campaigns::MatchActions.call(stage, budget_run: budget) }
+    get member_path(@jordan)
+    assert_select "[data-campaign-actions-for=?]", @specific.id do
+      assert_select "p", text: "The motion removes the residency condition that the campaign statement supported."
+      assert_select ".member-campaign-vote-results", text: /Jordan Example: Yes.*Council: Passed/m
+    end
+  end
+
+  test "a multi-issue statement displays a decision only under its relevant issue including merged topic rows" do
+    setup_campaign_actions(multiple_issues: true)
+    @vote.motion.agenda_item.topics = [ @related ]
+    review_campaign_actions
+    Ai::OpenAiService.stub(:new, ->(*) { flunk "Issue placement must not generate" }) do
+      get member_path(@jordan)
+      assert_select "[data-campaign-topic=?] [data-campaign-action=?]", @water.id, @vote.id
+      assert_select "[data-campaign-topic=?]", @other_issue.id do
+        assert_select "[data-campaign-action]", count: 0
+      end
+      assert_select "#campaign-record [data-campaign-action]", count: 1
+    end
   end
 end
