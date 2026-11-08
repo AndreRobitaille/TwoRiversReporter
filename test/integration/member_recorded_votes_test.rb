@@ -121,6 +121,25 @@ class MemberRecordedVotesTest < ActionDispatch::IntegrationTest
     assert_select "#recorded-vote-#{routine.id}"
   end
 
+  test "remote participation permission stays featured when any attending member does not approve" do
+    # Wording observed in the existing local Council record.
+    routine = record_vote("Motion to allow Councilmember Bittner to participate from a remote location")
+    other_vote = routine.motion.votes.create!(member: Member.create!(name: "Other attendee"), value: "no")
+    %w[no abstain recused].each do |value|
+      other_vote.update!(value: value)
+      get member_path(@member)
+      assert_select ".member-vote-row", count: 1
+      assert_includes response.body, routine.motion.description
+    end
+
+    other_vote.update!(value: "yes")
+    get member_path(@member)
+    assert_select ".member-vote-row", count: 0
+    assert_not_includes response.body, routine.motion.description
+    get member_path(@member, votes: "all")
+    assert_select "#recorded-vote-#{routine.id}"
+  end
+
   test "gated audience changes withhold the entire recorded list and later pages" do
     vote = record_vote("Authorize the distinctive harbor assessment")
     get member_path(@member, votes: "all")

@@ -8,6 +8,7 @@ module ResidentContent
       /close.*public\s+hearing/i,
       /open.*public\s+hearing/i,
       /\b(?:enter|convene|move|go)\b.*closed\s+session/i,
+      /\b(?:allow|approve)\s+council\s*members?\b.*\bparticipate\b.*remote\s+location/i,
       /reconvene/i,
       /roll\s+call/i,
       /pledge\s+of\s+allegiance/i
