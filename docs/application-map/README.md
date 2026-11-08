@@ -73,6 +73,11 @@ cover exact prepared request estimates, shared daily and run allowances,
 concurrent reservation, budget-paused retries and retained uncertain amounts.
 Actual token/pricing preflight and paid-pilot approval remain unimplemented.
 
+The [November 8 shared campaign extraction checks](shared-campaign-extraction-2026-11-08.md)
+cover a supplied multi-candidate article through bounded shared analysis and
+private admin display. This does not yet publish member campaign positions or
+validate extraction accuracy with a real provider.
+
 The [November 7 stable decision foundation](council-decision-identities-2026-11-07.md)
 records immutable observations, conservative identity correspondence and
 withdrawal of superseded current references.

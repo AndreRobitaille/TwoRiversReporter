@@ -410,10 +410,14 @@ assertions below are candidate acceptance criteria based on the user's brief.
 - **Required outcome:** complete supplied text/context and source metadata persist
   privately. Unchanged input reuses its version; duplicate URL intake cannot undo
   an explicit correction. Source retention creates no candidate, office or claim.
-- **Next:** the saved source is ready for later shared extraction. This slice
-  queues no work, calls no AI and does not publish the article or statements.
+- **Next:** source intake queues no work and calls no AI. After a separately
+  budgeted extraction job, the source page shows all extracted participants,
+  statements, qualifications, supporting passages and reported gaps privately.
+  Neither intake nor this analysis view publishes campaign claims.
 - **Failures:** missing input, invalid publisher link, missing publication date
   versus invented date, partial coverage, lost continuation/qualification,
   unauthorized current/historical access, and an old submission replacing an edit.
 - **Evidence:** [intake contract and verification](campaign-source-intake-2026-11-08.md).
-  Extraction, forum handoff and paid-generation admission remain separate work.
+  [Shared extraction checks](shared-campaign-extraction-2026-11-08.md) cover BG-08
+  through this private view. Identity/publication, forum handoff and real paid-pilot
+  authorization remain separate work.

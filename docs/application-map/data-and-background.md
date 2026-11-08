@@ -391,6 +391,27 @@ provider diagnostics; permanent HTTP rejections bypass transient retries. See
   [Verifier](../../app/services/crawlers/verifier.rb),
   [Probe](../../app/services/crawlers/probe.rb), [crawler policy](../verified-crawler-access.md).
 
+## BG-08 — Extract a shared campaign article within a spending allowance (P1)
+
+- **Start / data:** retained CampaignSourceVersion, populated campaign prompt,
+  explicit run/day allowance and exact request estimate. No budget means paused.
+- **Action:** ExtractCampaignSourceJob analyzes the supplied article once for all
+  participants through the existing AI service and shared spending recorder.
+- **Required outcome:** original questions, full answer passages, distinct
+  statements, conditions/timeframes and gaps remain in one retained result.
+  Counts and exact text locations use code. Unresolved attribution/passages flag
+  only those statements; location is not semantic or identity validation.
+- **Next:** ADM-21 reads the private result for the selected source version.
+  Unchanged input reuses completed work; metadata-only changes with identical
+  analysis input reuse the result. Corrected text selects fresh analysis, while
+  the historical source/result remains available.
+- **Failures:** missing/exhausted allowance, malformed output (two attempts max),
+  uncertain transport (no automatic redispatch), partial provider completion,
+  oversized source, missing participant or continuation, unauthorized reads.
+- **Evidence:** [shared extraction verification](shared-campaign-extraction-2026-11-08.md).
+  Automatic scheduling/admission, real-provider accuracy, identity resolution,
+  public projection and campaign/action comparisons remain subsequent work.
+
 ## Configured recurring entry points
 
 These are strings in [config/recurring.yml](../../config/recurring.yml), not proof

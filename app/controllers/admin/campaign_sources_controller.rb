@@ -22,6 +22,7 @@ module Admin
     def show
       @versions = @source.versions.order(created_at: :desc, id: :desc)
       @version = params[:version].present? ? @versions.find(params[:version]) : @source.current_version
+      @extraction = @version.extraction
     end
 
     def edit

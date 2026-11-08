@@ -8,7 +8,8 @@ runtime behavior, test coverage and defect detection were **unverified/unknown**
 Priorities sequence future QA and are not defect severity ratings.
 
 ADM-21 was added with [campaign article intake](campaign-source-intake-2026-11-08.md)
-after the discovery baseline; the current index contains 58 application workflows.
+and BG-08 with [shared extraction](shared-campaign-extraction-2026-11-08.md)
+after the discovery baseline; the current index contains 59 application workflows.
 
 | ID | Task | Priority |
 | --- | --- | --- |
@@ -70,6 +71,7 @@ after the discovery baseline; the current index contains 58 application workflow
 | [BG-05](data-and-background.md#bg-05--reconcile-current-rosters-without-rewriting-attendance-p1) | Reconcile current rosters without rewriting attendance | P1 |
 | [BG-06](data-and-background.md#bg-06--deliver-notifications-and-retire-expired-auth-evidence-p1) | Deliver notifications and retire expired auth evidence | P1 |
 | [BG-07](data-and-background.md#bg-07--refresh-crawler-verification-and-expire-diagnostics-p1) | Refresh crawler verification and expire diagnostics | P1 |
+| [BG-08](data-and-background.md#bg-08--extract-a-shared-campaign-article-within-a-spending-allowance-p1) | Extract a shared campaign article within a spending allowance | P1 |
 
 See [maintenance and QA](maintenance-and-qa.md) for the later coverage/effectiveness
 record schema and [verification register](verification-register.md) for unresolved

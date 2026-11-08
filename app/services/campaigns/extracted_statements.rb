@@ -1,0 +1,72 @@
+module Campaigns
+  # Text occurrence checks locate evidence; they do not verify interpretation or
+  # resolve a candidate to a serving official. The whole source is analyzed once.
+  class ExtractedStatements
+    class InvalidResponse < StandardError; end
+    KINDS = %w[commitment priority position retrospective_claim].freeze
+
+    def initialize(text)
+      @text = text
+    end
+
+    def parse(response)
+      data = JSON.parse(response)
+      raise InvalidResponse unless data.is_a?(Hash)
+
+      participants = rows(data, "participants").map do |participant|
+        name = participant["name"]
+        name_quote = participant["name_quote"]
+        attribution = name.is_a?(String) && name.present? && name_quote.is_a?(String) &&
+          name_quote.include?(name) && locate(name_quote)
+        answers = rows(participant, "answers").map { |answer| check_answer(answer, attribution) }
+        participant.slice("name", "name_quote").merge("answers" => answers)
+      end
+      gaps = rows(data, "coverage_gaps").map do |gap|
+        gap.slice("description", "supporting_quote").merge("location" => locate(gap["supporting_quote"]))
+      end
+      answers = participants.flat_map { |participant| participant.fetch("answers") }
+      statements = answers.flat_map { |answer| answer.fetch("statements") }
+      { "participants" => participants, "coverage_gaps" => gaps,
+        "counts" => { "participants" => participants.size, "answers" => answers.size,
+          "statements" => statements.size, "located_statements" => statements.count { |s| s["location_status"] == "located" },
+          "unresolved_statements" => statements.count { |s| s["location_status"] == "unresolved" }, "reported_gaps" => gaps.size } }
+    end
+
+    private
+
+    def rows(object, key)
+      value = object[key]
+      raise InvalidResponse unless value.is_a?(Array) && value.all? { |row| row.is_a?(Hash) }
+      value
+    end
+
+    def check_answer(answer, attribution)
+      question_location = locate(answer["question"])
+      passage_location = locate(answer["passage"])
+      statements = rows(answer, "statements").map do |statement|
+        location = if passage_location
+          locate(statement["supporting_quote"], text: answer["passage"], offset: passage_location.fetch("start"))
+        end
+        exception = if !attribution
+          "unresolved_attribution"
+        elsif !question_location || !passage_location || !location
+          "unresolved_source_passage"
+        elsif !KINDS.include?(statement["kind"]) || !statement["summary"].is_a?(String) || statement["summary"].blank?
+          "invalid_statement"
+        end
+        statement.slice("kind", "summary", "supporting_quote", "conditions", "timeframe").merge(
+          "location_status" => exception ? "unresolved" : "located", "exception" => exception, "location" => location)
+      end
+      answer.slice("question", "passage").merge("question_location" => question_location,
+        "passage_location" => passage_location, "statements" => statements)
+    end
+
+    def locate(quote, text: @text, offset: 0)
+      return unless quote.is_a?(String) && quote.present?
+      start = text.index(quote)
+      return unless start && !text.index(quote, start + 1)
+
+      { "start" => offset + start, "end" => offset + start + quote.length }
+    end
+  end
+end

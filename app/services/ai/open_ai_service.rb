@@ -4,6 +4,8 @@ module Ai
   class OpenAiService
     MAX_MINUTES_CHARS = 50_000
     MAX_MINUTES_COMPLETION_TOKENS = 4_000
+    MAX_CAMPAIGN_CHARS = 50_000
+    MAX_CAMPAIGN_COMPLETION_TOKENS = 8_000
     class InputTooLargeError < StandardError; end
     class IncompleteResponseError < StandardError
       attr_reader :finish_reason
@@ -26,6 +28,7 @@ module Ai
     LEGACY_TEMPERATURE_UNSUPPORTED_MODELS = %w[gpt-5-mini gpt-5.4-mini].freeze
     REQUIRED_PROMPT_KEYS = %w[
       extract_votes
+      extract_campaign_statements
       extract_committee_members
       extract_topics
       refine_catchall_topic
@@ -113,6 +116,18 @@ module Ai
           temperature: kind == "votes" ? 0.1 : nil, response_format: { type: "json_object" })
           .merge(max_completion_tokens: MAX_MINUTES_COMPLETION_TOKENS)
       end
+
+      def campaign_request_parameters(version)
+        raise InputTooLargeError, "Campaign source requires partitioning" if version.body.length > MAX_CAMPAIGN_CHARS
+        template = PromptTemplate.find_by!(key: "extract_campaign_statements")
+        messages = [
+          (template.system_role.present? ? { role: "system", content: template.system_role } : nil),
+          { role: "user", content: template.interpolate(text: version.body, election_on: version.election_on,
+            coverage: version.coverage, coverage_notes: version.coverage_notes.to_s) }
+        ].compact
+        build_chat_parameters(model: model_for_tier(template.model_tier), messages: messages,
+          response_format: { type: "json_object" }).merge(max_completion_tokens: MAX_CAMPAIGN_COMPLETION_TOKENS)
+      end
     end
 
     # Experimental calls use the same parameter construction as production but
@@ -162,6 +177,15 @@ module Ai
         placeholder_values: placeholders.transform_keys(&:to_s)
       )
 
+      content
+    end
+
+    # Campaign extraction always supplies the spending recorder. The retained
+    # receipt contains the exact prompt, provider output and usage for all people.
+    def extract_campaign_source(parameters:, request_recorder:)
+      raise ArgumentError, "Campaign extraction requires a spending recorder" unless request_recorder
+
+      content, = call_api(**parameters, request_recorder: request_recorder)
       content
     end
 
