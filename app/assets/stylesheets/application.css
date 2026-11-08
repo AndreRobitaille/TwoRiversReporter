@@ -5529,6 +5529,65 @@ th.sortable-header:hover {
   text-underline-offset: 2px;
 }
 
+.member-campaign-activity {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.member-campaign-activity-heading {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.member-campaign-issues {
+  padding: 0;
+  margin: var(--space-2) 0;
+  list-style: none;
+}
+
+.member-campaign-issues a,
+.member-campaign-meeting,
+.member-campaign-motion summary,
+.member-campaign-more summary {
+  display: inline-block;
+  min-height: 44px;
+  align-content: center;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.member-campaign-vote {
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.member-campaign-vote-results {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  font-size: var(--font-size-sm);
+}
+
+.member-campaign-more summary,
+.member-campaign-motion summary {
+  display: list-item;
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.member-campaign-motion {
+  font-size: var(--font-size-sm);
+}
+
+.member-campaign-empty {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
 .member-committees {
   display: flex;
   flex-direction: column;

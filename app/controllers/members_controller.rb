@@ -16,6 +16,10 @@ class MembersController < ApplicationController
     @council_attendance = ResidentContent::CouncilAttendance.new(@member).call
     @attendance = load_attendance
     @campaign_statements = CampaignStatement.current_for(@member) unless gated_for_visitor?
+    if @campaign_statements&.any?
+      @campaign_activity = ResidentContent::CampaignActivity.new(@member,
+        statements: @campaign_statements, council_attendance: @council_attendance).call
+    end
 
     @show_all_votes = params[:votes] == "all"
     profile = ResidentContent::OfficialProfile.new(@member)
