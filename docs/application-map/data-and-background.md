@@ -439,6 +439,12 @@ provider diagnostics; permanent HTTP rejections bypass transient retries. See
   queues preparation through existing publication/recovery paths. No allowance
   means no provider transport. The first slice covers recorded votes only;
   broad-priority assessments, advocacy and coverage-aware inaction remain open.
+  [Live action admission](council-live-action-budget-2026-11-08.md) can derive
+  bounded day/run grants from an explicit monthly policy for new meetings only.
+  It uses a retained conservative estimate method; unchanged work is free, and
+  missing/exhausted/revoked allowances, uncertain requests and historical meetings
+  remain held. Existing nightly processing recovers eligible paused work; it
+  neither renews the month nor resets the two-attempt ceiling.
 
 ## Configured recurring entry points
 

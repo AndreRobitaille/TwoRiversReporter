@@ -2,6 +2,7 @@ class CouncilAiBudgetRun < ApplicationRecord
   include CouncilAiAuthorization
 
   belongs_to :council_ai_budget_day
+  belongs_to :live_budget_month, class_name: "CouncilAiBudgetMonth", optional: true
   has_many :reservations, class_name: "CouncilAiReservation", dependent: :restrict_with_exception
   validates :limit_microusd, :request_limit_microusd, :max_requests, :max_concurrent, :max_input_tokens, :max_output_tokens,
     numericality: { only_integer: true, greater_than: 0 }
