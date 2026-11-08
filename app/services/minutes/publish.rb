@@ -69,6 +69,7 @@ module Minutes
         end
       end
       Topics::UpdateContinuityJob.perform_later(meeting_id: meeting.id) if published
+      MatchCampaignActionsJob.perform_later(meeting.id) if published
       published
     rescue Input::Unavailable
       false

@@ -17,7 +17,8 @@ class ReconcileCampaignSourcesJobTest < ActiveJob::TestCase
       published = CampaignStatement.order(:id).pluck(:id, :updated_at)
       perform_enqueued_jobs(only: MatchCampaignTopicsJob)
       assert_equal "completed", @source.current_version.topic_matching.status
-      assert_no_enqueued_jobs { ReconcileCampaignSourcesJob.perform_now }
+      assert_no_enqueued_jobs(except: MatchCampaignActionsJob) { ReconcileCampaignSourcesJob.perform_now }
+      perform_enqueued_jobs(only: MatchCampaignActionsJob)
       assert_equal published, CampaignStatement.order(:id).pluck(:id, :updated_at)
     end
     assert_no_enqueued_jobs
@@ -35,7 +36,7 @@ class ReconcileCampaignSourcesJobTest < ActiveJob::TestCase
       clear_enqueued_jobs
       before = stage.reload.attributes
       Ai::OpenAiService.stub(:new, ->(*) { flunk "Nightly recovery must not dispatch paid work" }) do
-        assert_no_enqueued_jobs { ReconcileCampaignSourcesJob.perform_now }
+        assert_no_enqueued_jobs(except: MatchCampaignActionsJob) { ReconcileCampaignSourcesJob.perform_now }
       end
       assert_equal before, stage.reload.attributes
     end

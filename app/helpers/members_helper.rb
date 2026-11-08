@@ -33,4 +33,41 @@ module MembersHelper
     else "vote-value--neutral"
     end
   end
+
+  def campaign_issue_actions(issue)
+    issue.fetch(:statements).filter_map do |statement|
+      actions = @campaign_actions.fetch(statement.id, []).select do |action|
+        (action.fetch(:vote).motion.agenda_item.topics.map(&:id) & issue.fetch(:topic_ids)).any?
+      end
+      [ statement, actions ] if actions.any?
+    end
+  end
+
+  def campaign_decision_title(vote)
+    title = (vote_context(vote).presence || vote.motion.description).to_s.sub(/\A\d{2}-\d{3}\s+/, "")
+    # Application headings repeat the docket and applicant address. Keep the
+    # requested assistance and named applicant; the full title stays in details.
+    if application = title.match(/\AApplication for (.+?) by (.+?), \d.*\z/i)
+      "#{application[1]} — #{application[2]}"
+    else
+      title.presence || "Motion description unavailable."
+    end
+  end
+
+  def campaign_qualifications(statement)
+    summary = " #{normalize_campaign_qualification(statement.data.fetch("summary"))} "
+    { "conditions" => "Condition", "timeframe" => "Timing" }.filter_map do |field, label|
+      text = statement.data[field]
+      next if text.blank? || summary.include?(" #{normalize_campaign_qualification(text)} ")
+
+      "#{label}: #{text}"
+    end
+  end
+
+  private
+
+  def normalize_campaign_qualification(text)
+    text.downcase.gsub(/[[:punct:]]/, " ")
+      .gsub(/\b(?:per|every|each)(?=\s+(?:calendar\s+)?(?:year|month|week|day)\b)/, "each").squish
+  end
 end

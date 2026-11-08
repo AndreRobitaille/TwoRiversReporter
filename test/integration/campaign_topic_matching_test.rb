@@ -39,7 +39,7 @@ class CampaignTopicMatchingTest < ActionDispatch::IntegrationTest
       ReconcileCampaignSourcesJob.perform_now
     end
     assert_equal links, CampaignStatementTopic.order(:id).pluck(:id, :topic_id, :updated_at)
-    assert_no_enqueued_jobs
+    assert_no_enqueued_jobs(except: MatchCampaignActionsJob)
     assert_equal 2, @calls.size
   end
 
@@ -70,7 +70,7 @@ class CampaignTopicMatchingTest < ActionDispatch::IntegrationTest
     assert_equal 0, @stage.attempts
     assert_empty @stage.requests
     assert_empty CampaignStatementTopic.all
-    assert_no_enqueued_jobs { ReconcileCampaignSourcesJob.perform_now }
+    assert_no_enqueued_jobs(except: MatchCampaignActionsJob) { ReconcileCampaignSourcesJob.perform_now }
 
     # An allowance for the preceding extraction cannot authorize this request.
     budget = campaign_budget
@@ -106,7 +106,7 @@ class CampaignTopicMatchingTest < ActionDispatch::IntegrationTest
     end
     assert_equal "incomplete", @stage.reload.status
     assert_empty CampaignStatementTopic.all
-    assert_no_enqueued_jobs { ReconcileCampaignSourcesJob.perform_now }
+    assert_no_enqueued_jobs(except: MatchCampaignActionsJob) { ReconcileCampaignSourcesJob.perform_now }
   end
 
   test "oversized context is held in full without truncation or a provider call" do

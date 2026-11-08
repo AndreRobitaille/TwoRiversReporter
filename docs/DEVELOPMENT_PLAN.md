@@ -957,10 +957,20 @@ must not place a vote beneath a campaign position. The owner identified the
 water-user proposal versus sewer-charge ordinance as a misleading pair, even
 under the Related Council votes heading. The source sidebar therefore does not
 render automatic topic-based vote pairs or their Council results. Existing votes
-remain in the main record. A future comparison needs a supported relationship
+remain in the main record. A comparison needs a supported relationship
 between the specific statement and decision, not merely their shared topic;
 that analysis must be shared across members and reused for unchanged inputs.
-The direct comparison is unfinished. Do not fill its gap with broader topic votes.
+The initial comparison slice may display a directly relevant recorded motion
+beside the exact matched statement, with an explanation, supporting minutes
+passage, member vote and separate Council result. An opposing motion can also
+be relevant; relevance itself is not a finding of consistency or a promise grade.
+Do not fill missing comparisons with broader topic votes or infer inaction from
+an empty result. Broad priorities, advocacy, opportunity/coverage assessments,
+contradiction highlights and issue completion remain separate unfinished work.
+Cache both accepted and rejected comparisons. Share meeting text across members,
+compare only new statement/decision evidence, and reuse results after metadata-only
+corrections. New evidence queues the bounded stage; missed-work checks use existing
+nightly campaign recovery. Exact request allowances must precede paid calls.
 
 Issue navigation reuses approved topic links and existing impact scores;
 repeated campaign mentions do not increase priority. Prefer a saved written-source
@@ -968,6 +978,14 @@ summary before longer forum records for the initial position, while preserving
 distinct claims in Campaign sources. Vote history does not determine which
 campaign issues appear. This layout introduces no generation step.
 When no approved issue links exist, retain the statement-list fallback.
+When a specific decision match is available, show its actual saved statement as
+the initial position instead of repeating both it and the generic issue summary.
+Keep the open panel short: at most two decision rows with a readable title,
+member vote, separate Council result and date. Put explanations, full formal
+titles, exact motions and minutes passages behind one Supporting details
+disclosure. Additional matched positions remain available in a closed disclosure;
+all campaign statements and citations remain in the source section. Readability
+changes must reuse saved evidence without another AI call.
 
 Use the independently assessed topic importance for normal ordering. A major,
 specific campaign promise may additionally warrant a highlight when direct
@@ -977,6 +995,14 @@ rule or a conclusion about any candidate. Such highlights need the actual
 promise, relevant decisions and coverage together. Coarse statement-type labels
 or rhetorical emphasis alone do not establish importance, contradiction or
 inaction. Direct matching and these highlights remain subsequent work.
+
+For a retrospective covering the full three-year term, a specific promise with
+neither fulfillment nor measurable work toward it is a broken promise. Measurable
+work includes a proposal, documented advocacy, or voting for the promised action
+even when other members defeat it. Distinguish that effort from achieving the
+result. Establish the relevant term's coverage and review non-vote activity before
+making the absence finding; an empty match list or the current partial backfill
+does not establish it. Broad aspirations are not specific promises.
 
 The proposed page centers on **what they said → what they did → what happened**,
 with a term selector, cited overview, public-issue timelines, attendance, full

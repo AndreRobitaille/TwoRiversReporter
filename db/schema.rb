@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_08_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_08_230000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -108,6 +108,47 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_200000) do
     t.index [ "actor_id" ], name: "index_audit_events_on_actor_id"
     t.index [ "created_at" ], name: "index_audit_events_on_created_at"
     t.index [ "subject_type", "subject_id" ], name: "index_audit_events_on_subject_type_and_subject_id"
+  end
+
+  create_table "campaign_action_requests", force: :cascade do |t|
+    t.bigint "campaign_action_review_id", null: false
+    t.bigint "council_ai_reservation_id", null: false
+    t.integer "attempt", null: false
+    t.string "status", null: false
+    t.jsonb "messages", null: false
+    t.jsonb "request_parameters", null: false
+    t.string "provider_response_id"
+    t.string "response_model"
+    t.string "finish_reason"
+    t.jsonb "usage"
+    t.text "response_body"
+    t.string "error_class"
+    t.integer "duration_ms"
+    t.datetime "started_at", null: false
+    t.datetime "finished_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "campaign_action_review_id", "attempt" ], name: "idx_on_campaign_action_review_id_attempt_374008eb13", unique: true
+    t.index [ "campaign_action_review_id" ], name: "index_campaign_action_requests_on_campaign_action_review_id"
+    t.index [ "council_ai_reservation_id" ], name: "index_campaign_action_requests_on_council_ai_reservation_id", unique: true
+  end
+
+  create_table "campaign_action_reviews", force: :cascade do |t|
+    t.bigint "meeting_id"
+    t.bigint "council_ai_budget_run_id"
+    t.string "input_key", null: false
+    t.jsonb "context", default: {}, null: false
+    t.jsonb "parameters", default: {}, null: false
+    t.jsonb "data", default: {}, null: false
+    t.string "status", default: "pending", null: false
+    t.integer "attempts", default: 0, null: false
+    t.string "error_code"
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "council_ai_budget_run_id" ], name: "index_campaign_action_reviews_on_council_ai_budget_run_id"
+    t.index [ "input_key" ], name: "index_campaign_action_reviews_on_input_key", unique: true
+    t.index [ "meeting_id" ], name: "index_campaign_action_reviews_on_meeting_id"
   end
 
   create_table "campaign_extractions", force: :cascade do |t|
@@ -1199,6 +1240,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_200000) do
   add_foreign_key "agenda_items", "meetings"
   add_foreign_key "api_access_tokens", "users"
   add_foreign_key "audit_events", "users", column: "actor_id"
+  add_foreign_key "campaign_action_requests", "campaign_action_reviews"
+  add_foreign_key "campaign_action_requests", "council_ai_reservations"
+  add_foreign_key "campaign_action_reviews", "council_ai_budget_runs"
+  add_foreign_key "campaign_action_reviews", "meetings", on_delete: :nullify
   add_foreign_key "campaign_extractions", "campaign_extractions", column: "reused_from_id"
   add_foreign_key "campaign_extractions", "campaign_source_versions"
   add_foreign_key "campaign_extractions", "council_ai_budget_runs"

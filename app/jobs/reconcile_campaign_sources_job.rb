@@ -14,5 +14,6 @@ class ReconcileCampaignSourcesJob < ApplicationJob
         ExtractCampaignSourceJob.perform_later(source.id)
       end
     end
+    MatchCampaignActionsJob.perform_later
   end
 end

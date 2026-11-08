@@ -221,8 +221,15 @@ status below does not imply complete coverage of those workflows.
   bottom. Opening one issue or statement does not close another; topic scores
   and vote history do not hide issue headings. The owner rejected automatic
   topic-based vote pairs as misleading, so the campaign section no longer renders
-  them. Votes remain in the main record; direct statement/action comparisons are
-  unfinished. Reads use existing analysis with no new AI. See the
+  them. Votes remain in the main record. The subsequent bounded direct-comparison
+  slice adds only supported specific statement/decision links, preserving the
+  member vote and Council result separately; it does not grade promises or
+  infer inaction. See [matching checks](campaign-action-matching-2026-11-08.md).
+  A matched issue opens with one position and at most two compact decision rows;
+  explanations and full source passages stay behind Supporting details. Other
+  matched positions remain available in a closed disclosure, without generating
+  new summaries for presentation.
+  Reads use existing analysis with no new AI. See the
   [issue sidebar checks](member-issue-sidebar-2026-11-08.md).
 - **November 8 recorded-vote view:** switch from Featured votes to All recorded
   votes (`?votes=all`), paginate 25 saved decisions at a time in either view, and

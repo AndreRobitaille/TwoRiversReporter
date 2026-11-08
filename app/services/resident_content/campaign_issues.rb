@@ -31,7 +31,8 @@ module ResidentContent
         combined = groups.values.group_by do |group|
           group[:statements].map(&:id).sort
         end.values.map do |equivalent|
-          equivalent.min_by { |group| [ -(group[:topic].resident_impact_score || 0), group[:topic].id ] }
+          preferred = equivalent.min_by { |group| [ -(group[:topic].resident_impact_score || 0), group[:topic].id ] }
+          preferred.merge(topic_ids: equivalent.map { |group| group[:topic].id })
         end
         combined.sort_by do |group|
           [ -(group[:topic].resident_impact_score || 0), group[:topic].canonical_name.to_s.downcase ]

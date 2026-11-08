@@ -1,12 +1,17 @@
-<% statement = issue.fetch(:statements).first %>
+<% comparisons = campaign_issue_actions(issue) %>
+<% statement = comparisons.first&.first || issue.fetch(:statements).first %>
 <details class="member-campaign-issue" <%= "open" if expanded %> data-campaign-topic="<%= issue.fetch(:topic).id %>">
   <summary class="member-campaign-summary">
     <span><%= topic_title_case(issue.fetch(:topic).canonical_name) %></span>
     <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 5 7 7-7 7"/></svg>
   </summary>
-  <div class="member-campaign-position">
-    <p><%= statement.data.fetch("summary") %></p>
-    <% if statement.data["conditions"].present? %><p class="member-campaign-qualification"><%= statement.data["conditions"] %></p><% end %>
-    <% if statement.data["timeframe"].present? %><p class="member-campaign-qualification"><%= statement.data["timeframe"] %></p><% end %>
-  </div>
+  <%= render "campaign_comparison", statement: statement, actions: comparisons.first&.last || [] %>
+  <% if comparisons.size > 1 %>
+    <details class="member-campaign-context">
+      <summary>More positions and decisions (<%= comparisons.size - 1 %>)</summary>
+      <% comparisons.drop(1).each do |matched_statement, actions| %>
+        <%= render "campaign_comparison", statement: matched_statement, actions: actions %>
+      <% end %>
+    </details>
+  <% end %>
 </details>

@@ -8,12 +8,12 @@ class MemberCampaignRecordTest < ActionDispatch::IntegrationTest
 
   test "a shared article reaches all three existing profiles and source corrections replace only the current display" do
     analyze_member_campaign
-    [ [ @jordan, 2, "Repair neighborhood water lines." ], [ @taylor, 2, "If grant funding is available." ],
+    [ [ @jordan, 2, "Repair neighborhood water lines." ], [ @taylor, 2, "Improve park access if grant funding is available." ],
       [ @morgan, 1, "Before the next budget." ] ].each do |member, count, content|
       get member_path(member)
       assert_response :success
       assert_select "#campaign-record .member-campaign-card", count: count
-      assert_includes response.body, content
+      assert_match(/#{Regexp.escape(content)}/i, response.body)
       assert_select "#campaign-record a[href=?]", @source.source_url, count: count
       assert_select "#campaign-record", text: /April 6, 2027 election/
       assert_not_includes response.body, "questionnaire-cobalt"
@@ -84,7 +84,7 @@ class MemberCampaignRecordTest < ActionDispatch::IntegrationTest
     get member_path(@taylor)
     assert_response :success
     assert_select ".gated-content #campaign-record .member-campaign-card", count: 2
-    assert_includes response.body, "If grant funding is available."
+    assert_includes response.body, "Improve park access if grant funding is available."
     assert_includes response.headers["Cache-Control"], "no-store"
     delete public_session_path
     get member_path(@taylor)
@@ -102,7 +102,7 @@ class MemberCampaignRecordTest < ActionDispatch::IntegrationTest
     crawler = { "REMOTE_ADDR" => "20.171.206.12", "User-Agent" => "OAI-SearchBot/1.4; +https://openai.com/searchbot" }
     get member_path(@taylor), headers: crawler
     assert_select "#campaign-record .member-campaign-card", count: 2
-    assert_includes response.body, "If grant funding is available."
+    assert_includes response.body, "Improve park access if grant funding is available."
     get member_path(@taylor), headers: crawler.merge("REMOTE_ADDR" => "198.51.100.42")
     assert_select "#campaign-record", count: 0
     assert_not_includes response.body, "grant funding"
