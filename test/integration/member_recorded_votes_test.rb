@@ -62,6 +62,7 @@ class MemberRecordedVotesTest < ActionDispatch::IntegrationTest
 
   test "featured pages retain older substantive votes and omit unanimously approved procedural votes" do
     votes = 26.times.map { |index| record_vote("Substantive decision #{index}") }
+    votes.first.motion.update!(description: "Authorize negotiations following closed session")
     routine = record_vote("Accept consent agenda")
     routine.motion.votes.create!(member: Member.create!(name: "Absent member"), value: "absent")
 

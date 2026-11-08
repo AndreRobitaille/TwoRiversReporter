@@ -83,7 +83,7 @@ show the stored description so separate decisions under an agenda remain clear.
 
 The shared website/API selector omits a procedural motion only when it passed
 and every recorded non-absent vote is yes. A no, abstention, recusal, failed vote
-or unresolved record prevents that exclusion. Important-topic links do not bypass
+or unknown outcome prevents that exclusion. Important-topic links do not bypass
 the rule. Local saved records confirmed the closed-session wording variants
 "convene," "enter" and "move"; these and consent-agenda acceptance are covered.
 The unfiltered All recorded votes view remains available. No new AI calls or

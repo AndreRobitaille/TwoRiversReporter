@@ -7,7 +7,7 @@ module ResidentContent
       /approve.*agenda\s+as/i,
       /close.*public\s+hearing/i,
       /open.*public\s+hearing/i,
-      /(?:enter|convene|move|go).*closed\s+session/i,
+      /\b(?:enter|convene|move|go)\b.*closed\s+session/i,
       /reconvene/i,
       /roll\s+call/i,
       /pledge\s+of\s+allegiance/i
