@@ -7,6 +7,7 @@ class KnowledgeSource < ApplicationRecord
   has_many :topics, through: :knowledge_source_topics
   has_one_attached :file
   belongs_to :meeting, optional: true
+  belongs_to :source_summary, class_name: "MeetingSummary", optional: true
 
   validates :title, presence: true
   validates :source_type, presence: true, inclusion: { in: %w[note pdf] }
@@ -20,10 +21,18 @@ class KnowledgeSource < ApplicationRecord
   scope :extracted, -> { where(origin: "extracted") }
   scope :pattern_derived, -> { where(origin: "pattern") }
   scope :manual, -> { where(origin: "manual") }
+  scope :available, -> { where(evidence_withdrawn_at: nil) }
+  scope :retrievable, -> { available.approved.where(active: true) }
 
   after_save :ingest_later, if: -> { saved_change_to_body? || attachment_changes["file"].present? }
 
   def ingest_later
+    return unless available?
+
     IngestKnowledgeSourceJob.perform_later(id)
+  end
+
+  def available?
+    evidence_withdrawn_at.nil?
   end
 end

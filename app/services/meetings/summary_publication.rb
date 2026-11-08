@@ -17,7 +17,7 @@ module Meetings
     end
 
     def self.version(summary)
-      summary&.attributes&.slice("id", "updated_at")
+      summary&.attributes&.slice("id", "updated_at", "meeting_id", "summary_type", "content", "generation_data", "evidence_withdrawn_at")
     end
 
     def self.publish(meeting:, summary_type:, expected:, sources:, topic_context: nil, motion_context: nil)

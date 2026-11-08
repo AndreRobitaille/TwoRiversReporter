@@ -110,7 +110,7 @@ module Topics
     def self.knowledge_inputs(topic)
       chunks = KnowledgeChunk.joins(:knowledge_source)
         .where(knowledge_source_id: KnowledgeSourceTopic.where(topic_id: topic.id).select(:knowledge_source_id))
-        .where(knowledge_sources: { active: true, status: "approved" })
+        .merge(KnowledgeSource.retrievable)
         .includes(:knowledge_source).order(:id).to_a
       sources = chunks.map(&:knowledge_source).uniq(&:id).sort_by(&:id)
       # Include each source body once, not once per chunk of a long document.

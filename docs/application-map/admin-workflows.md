@@ -219,7 +219,11 @@ assertions below are candidate acceptance criteria based on the user's brief.
   retrieval according to governance and stays labeled separately from official record.
 - **Next:** retrieve distinctive content after completion; deletion removes source
   chunks/links and future retrieval cannot use them. Hand-editing generated body
-  changes its origin to manual in the current implementation.
+  changes its origin to manual in the current implementation. For newly extracted
+  entries with summary receipts, a withdrawn dependency remains excluded from
+  retrieval after approval or editing. The retained detail/index show Evidence
+  withdrawn separately from review status; Re-ingest refuses without queuing.
+  See [knowledge dependency verification](knowledge-summary-dependencies-2026-11-07.md).
 - **Failure variants:** invalid source/status, missing file/title, failed extraction/
   embedding, stale chunks after edit, unapproved context affecting reporting.
 - **Observed:** [KnowledgeSourcesController](../../app/controllers/admin/knowledge_sources_controller.rb),

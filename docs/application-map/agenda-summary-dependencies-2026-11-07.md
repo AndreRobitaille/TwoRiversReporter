@@ -164,6 +164,10 @@ recorded on [PR #262](https://github.com/AndreRobitaille/TwoRiversReporter/pull/
 
 ## Remaining scope and cost
 
+A [subsequent bounded slice](knowledge-summary-dependencies-2026-11-07.md) adds
+summary receipts and withdrawal for newly extracted knowledge, with later
+retrieval and admin checks. The original verification above is unchanged.
+
 Legacy previews without receipts remain unverified. Participant/roster inputs,
 knowledge inputs, already-produced knowledge and other generated projections,
 complete narrative history, and direct SQL or callback-bypassing mutations remain

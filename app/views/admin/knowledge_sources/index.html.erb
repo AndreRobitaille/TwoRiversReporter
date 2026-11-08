@@ -68,6 +68,9 @@
             <span class="badge badge--info"><%= source.origin.humanize %></span>
           </td>
           <td>
+            <% unless source.available? %>
+              <span class="badge badge--warning">Evidence withdrawn</span>
+            <% end %>
             <% case source.status %>
             <% when "approved" %>
               <span class="badge badge--success">Approved</span>
