@@ -1,44 +1,16 @@
 <% statement = issue.fetch(:statements).first %>
-<% votes = issue.fetch(:votes) %>
-<details class="member-campaign-issue" name="campaign-issues" <%= "open" if expanded %> data-campaign-topic="<%= issue.fetch(:topic).id %>" data-campaign-activity>
+<details class="member-campaign-issue" <%= "open" if expanded %> data-campaign-topic="<%= issue.fetch(:topic).id %>">
   <summary class="member-campaign-summary">
     <span><%= topic_title_case(issue.fetch(:topic).canonical_name) %></span>
     <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 5 7 7-7 7"/></svg>
   </summary>
-  <div class="member-campaign-steps">
-    <section>
-      <h4>What they said</h4>
-      <p><%= statement.data.fetch("summary") %></p>
-      <% if statement.data["conditions"].present? %><p class="member-campaign-qualification"><%= statement.data["conditions"] %></p><% end %>
-      <% if statement.data["timeframe"].present? %><p class="member-campaign-qualification"><%= statement.data["timeframe"] %></p><% end %>
-    </section>
-    <section>
-      <h4>Related Council votes</h4>
-      <% if votes.any? %>
-        <ul class="member-campaign-actions">
-          <% votes.first(2).each do |vote| %>
-            <li>
-              <p><strong><%= campaign_member_vote(vote) %></strong> — <%= campaign_action_text(vote.motion) %></p>
-              <time datetime="<%= vote.motion.meeting.starts_at.to_date.iso8601 %>"><%= vote.motion.meeting.starts_at.strftime("%b %-d, %Y") %></time>
-            </li>
-          <% end %>
-        </ul>
-      <% elsif issue.fetch(:service_window_known) %>
-        <p>No related Council votes appear in the available record.</p>
-      <% else %>
-        <p>Council service dates have not been confirmed.</p>
-      <% end %>
-    </section>
-    <% if votes.any? %>
-      <section>
-        <h4>Council result</h4>
-        <p><%= campaign_council_results(votes.first(2)) %></p>
-      </section>
-    <% end %>
+  <div class="member-campaign-position">
+    <p><%= statement.data.fetch("summary") %></p>
+    <% if statement.data["conditions"].present? %><p class="member-campaign-qualification"><%= statement.data["conditions"] %></p><% end %>
+    <% if statement.data["timeframe"].present? %><p class="member-campaign-qualification"><%= statement.data["timeframe"] %></p><% end %>
   </div>
-  <p class="member-campaign-issue-link"><%= link_to "Follow this issue", topic_path(issue.fetch(:topic)) %></p>
   <details class="member-campaign-evidence">
-    <summary>Statements and decisions</summary>
+    <summary>Campaign sources</summary>
     <% issue.fetch(:statements).each do |record| %>
       <div class="member-campaign-source-record" data-campaign-source-statement="<%= record.id %>">
         <p><%= record.data.fetch("summary") %></p>
@@ -46,10 +18,6 @@
         <% if record.data["timeframe"].present? %><p><%= record.data["timeframe"] %></p><% end %>
         <p class="member-campaign-source"><%= link_to record.campaign_source_version.publisher, record.campaign_source_version.source_url, rel: "noopener" %> · <%= record.campaign_source_version.published_on&.strftime("%b %-d, %Y") %></p>
       </div>
-    <% end %>
-    <%= render partial: "campaign_vote", collection: votes, as: :vote %>
-    <% (issue.fetch(:topics) - [ issue.fetch(:topic) ]).each do |topic| %>
-      <p><%= link_to topic_title_case(topic.canonical_name), topic_path(topic) %></p>
     <% end %>
   </details>
 </details>

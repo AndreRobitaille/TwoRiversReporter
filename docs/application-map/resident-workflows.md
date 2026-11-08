@@ -217,10 +217,11 @@ status below does not imply complete coverage of those workflows.
   decisions and links remain server-rendered for permitted readers, including
   verified Google requests. See [layout checks](member-record-layout-2026-11-08.md).
   The subsequent issue sidebar shows three issue rows per election, first open,
-  with a saved position, two recent related votes and their Council result.
-  Other issues and full evidence start closed. Distinct statements and their
-  qualifiers remain available; shared topic context does not establish promise
-  fulfillment. Reads use existing analysis with no new AI. See the
+  with a saved position and Campaign sources. Other issues and full evidence
+  start closed; opening one does not close another. The owner rejected automatic
+  topic-based vote pairs as misleading, so the campaign section no longer renders
+  them. Votes remain in the main record; direct statement/action comparisons are
+  unfinished. Reads use existing analysis with no new AI. See the
   [issue sidebar checks](member-issue-sidebar-2026-11-08.md).
 - **November 8 recorded-vote view:** switch from Featured votes to All recorded
   votes (`?votes=all`), paginate 25 saved decisions at a time in either view, and
@@ -265,12 +266,12 @@ status below does not imply complete coverage of those workflows.
   Reads and unchanged publication call no AI. RES-11 applies to the entire
   generated section. See [real-data and regression checks](member-campaign-records-2026-11-08.md).
 
-- **November 8 related issue records:** approved campaign-topic links expose existing
-  eligible Council votes beneath the statement. Agenda titles identify decisions;
-  member votes and Council results stay separate, with meeting/source navigation.
-  New accepted facts appear on the next read without AI. This is issue context,
-  not a finding of promise fulfillment or project completion. See
-  [real-data, browser and fault evidence](member-campaign-activity-2026-11-08.md).
+- **November 8 related issue records (superseded display):** the earlier slice
+  exposed eligible topic votes beneath statements. Owner review found that this
+  implied a connection the matching had not established. Those automatic pairs
+  are now omitted from campaign content; the main vote record remains available.
+  Eligibility/query coverage is retained separately. Historical evidence remains
+  in [the earlier report](member-campaign-activity-2026-11-08.md).
 
 ## RES-11 — Cross an access-mode or audience boundary (P0)
 

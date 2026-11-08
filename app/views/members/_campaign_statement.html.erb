@@ -1,5 +1,5 @@
 <% source = record.campaign_source_version %>
-<details class="member-campaign-card" name="campaign-priorities">
+<details class="member-campaign-card">
   <summary class="member-campaign-summary">
     <span>
       <%= record.data.fetch("summary") %>
@@ -18,6 +18,5 @@
       <summary>Read the question</summary>
       <p><%= record.data.fetch("question") %></p>
     </details>
-    <%= render "campaign_activity", activity: @campaign_activity.fetch(record.id) unless local_assigns[:show_activity] == false %>
   </div>
 </details>

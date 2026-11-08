@@ -89,8 +89,8 @@ The [November 8 member layout checks](member-record-layout-2026-11-08.md)
 cover secondary campaign context, collapsed Other Votes, real member navigation
 and saved content through the existing verified Google access path.
 The [November 8 issue sidebar checks](member-issue-sidebar-2026-11-08.md)
-cover compact issue navigation, distinct position/vote/result tracks, retained
-forum evidence and source-title excerpts without additional generation.
+cover compact issue navigation, independently controlled campaign sources,
+retained forum evidence and omission of unsupported topic-based vote pairings.
 
 The [November 7 stable decision foundation](council-decision-identities-2026-11-07.md)
 records immutable observations, conservative identity correspondence and

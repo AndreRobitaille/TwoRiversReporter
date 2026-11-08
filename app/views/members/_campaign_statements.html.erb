@@ -26,7 +26,7 @@
         <% end %>
         <details class="member-campaign-evidence">
           <summary>Campaign statements and sources (<%= records.size %>)</summary>
-          <%= render partial: "campaign_statement", collection: records, as: :record, locals: { show_activity: false } %>
+          <%= render partial: "campaign_statement", collection: records, as: :record %>
         </details>
       <% else %>
         <div class="member-campaign-list">

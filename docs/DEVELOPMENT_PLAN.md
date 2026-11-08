@@ -942,23 +942,28 @@ start collapsed and remain available through a native disclosure. Keep the same
 sourced reporting in the HTML for permitted readers and verified crawlers: the
 audience also receives civic information through Google Search and its AI results.
 
-The owner rejected the initial sidebar as a wall of text and selected the
-issue-based Said / did / result mockup after resident-persona review. Show three
-issue rows per election, with the first open and Other issues closed. Each issue
-shows a saved campaign position (including qualifications and deadlines), up to
-two recent related Council votes, and their Council result. Use the label
-**Related Council votes** because a shared topic alone does not establish campaign
-follow-through. A passed motion is not a completed project. Full statements,
-questions, exact motions and dated sources remain available in closed disclosures.
+Campaign sources belong in compact issue rows, with the first open and Other
+issues closed. Opening another issue or source must not close a reader's existing
+selection. Use a small white inset panel and side rule to separate the saved
+position from its dated campaign sources; these summaries are paraphrases, not
+verbatim quotations. Keep qualifications and deadlines beside the position.
+Remove the redundant Follow this issue control. Preserve all accepted statements,
+questions and source links in the permitted HTML, with full detail on demand.
 
-Build this view from accepted statements, approved topic links and eligible saved
-votes. Prefer issues with votes, then the existing topic impact score; repeated
-campaign mentions do not increase priority. Use one representative position for
-the initial scan, preserving distinct positions in the evidence. Reuse written
-source summaries before longer forum records when both describe the same issue;
-do not merge differing claims semantically. Short action excerpts retain the
-actual motion, including postponements, and give generic adoptions their agenda
-subject. This layout introduces no generation step or per-member AI calls.
+**Campaign-to-action comparison boundary:** an approved topic association alone
+must not place a vote beneath a campaign position. The owner identified the
+water-user proposal versus sewer-charge ordinance as a misleading pair, even
+under the Related Council votes heading. The source sidebar therefore does not
+render automatic topic-based vote pairs or their Council results. Existing votes
+remain in the main record. A future comparison needs a supported relationship
+between the specific statement and decision, not merely their shared topic;
+that analysis must be shared across members and reused for unchanged inputs.
+The direct comparison is unfinished. Do not fill its gap with broader topic votes.
+
+Issue navigation reuses approved topic links and existing impact/activity data;
+repeated campaign mentions do not increase priority. Prefer a saved written-source
+summary before longer forum records for the initial position, while preserving
+distinct claims in Campaign sources. This layout introduces no generation step.
 When no approved issue links exist, retain the statement-list fallback.
 
 The proposed page centers on **what they said → what they did → what happened**,

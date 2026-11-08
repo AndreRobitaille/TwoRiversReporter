@@ -72,36 +72,20 @@ class MemberProfileLayoutTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Additional campaign priority 3."
   end
 
-  test "the visible action is the actual postponement and not approval of the agenda subject" do
-    vote = activity_vote(date: Date.new(2025, 7, 7), value: "yes", outcome: "passed",
-      agenda_title: "Water service fee ordinance", description: "Motion to table the ordinance until the next meeting")
-    get member_path(@jordan)
-    assert_response :success
-    assert_select ".member-campaign-issue[open] .member-campaign-actions", text: /Voted yes.*Table the ordinance until the next meeting/m
-    assert_select ".member-campaign-issue[open] .member-campaign-steps", text: /Council result.*The motion passed/m
-    assert_select ".member-campaign-evidence [data-campaign-vote='#{vote.id}']", count: 1
-    assert_select ".member-campaign-evidence[open]", count: 0
-  end
-
-  test "a generic adoption includes its subject without claiming campaign follow-through" do
+  test "a shared topic never pairs an unrelated vote with a campaign position" do
     record = activity_vote(date: Date.new(2025, 9, 15), value: "yes", outcome: "passed",
-      agenda_title: '25-187 Ordinance to Amend Section 5-2-5 of the Municipal Code, "Amount of Sewer Service Charges"',
-      description: "Motion to waive reading and adopt the ordinance, as recommended by the Public Works Committee")
+      agenda_title: "Amount of Sewer Service Charges",
+      description: "Adopt the sewer-charge ordinance")
     get member_path(@jordan)
     assert_response :success
-    assert_select ".member-campaign-steps h4", text: "Related Council votes"
-    assert_select ".member-campaign-actions", text: /Voted yes.*Adopt.*Amount of Sewer Service Charges/m
-    assert_select ".member-campaign-actions", text: /"Amount of Sewer Service Charges"/
-    assert_select "[data-campaign-vote='#{record.id}']", text: /#{Regexp.escape(record.motion.description)}/
-  end
-
-  test "a recorded recusal stays distinct from a missing vote in the issue summary" do
-    record = activity_vote(date: Date.new(2025, 9, 15), value: "recused", outcome: "passed")
-    get member_path(@jordan)
-    assert_response :success
-    assert_select ".member-campaign-actions strong", text: "Recused"
-    assert_select ".member-campaign-actions", text: /Vote not recorded/, count: 0
-    assert_select "[data-campaign-vote='#{record.id}']", text: /Jordan Example: Recused/
+    assert_select ".member-profile-primary", text: /Adopt the sewer-charge ordinance/
+    assert_select "#campaign-record .member-campaign-position", text: /Repair neighborhood water lines/
+    assert_select "#campaign-record", text: /Adopt the sewer-charge ordinance/, count: 0
+    assert_select "#campaign-record [data-campaign-vote], #campaign-record .member-campaign-actions", count: 0
+    assert_select "#campaign-record a", text: "Follow this issue", count: 0
+    assert_select ".member-campaign-issue > .member-campaign-evidence > summary", text: "Campaign sources"
+    assert_select ".member-campaign-issue[name], .member-campaign-card[name]", count: 0
+    assert_equal "yes", record.reload.value
   end
 
   test "repeated statements share issue navigation without losing qualifications or source evidence" do
@@ -125,13 +109,13 @@ class MemberProfileLayoutTest < ActionDispatch::IntegrationTest
       MatchCampaignTopicsJob.perform_now(@source.id, budget_run_id: campaign_budget(stage: stage).id)
     end
     repeated = @source.current_version.extraction.campaign_statements.find_by!(sequence: 1)
-    record = activity_vote(date: Date.new(2025, 7, 7))
+    activity_vote(date: Date.new(2025, 7, 7))
     before = [ CampaignRequest.count, CampaignExtraction.count ]
     Ai::OpenAiService.stub(:new, ->(*) { flunk "Grouping saved evidence must not generate prose" }) do
       2.times { get member_path(@jordan) }
     end
     assert_select ".member-campaign-issue", count: 1
-    assert_select "[data-campaign-vote='#{record.id}']", count: 1
+    assert_select "#campaign-record [data-campaign-vote]", count: 0
     assert_select "[data-campaign-source-statement='#{repeated.id}']", text: /Only when grants cover the cost/
     assert_select "#campaign-record > .member-campaign-evidence .member-campaign-card", count: 3
     assert_equal before, [ CampaignRequest.count, CampaignExtraction.count ]
