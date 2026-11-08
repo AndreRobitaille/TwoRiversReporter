@@ -138,7 +138,7 @@ publication. Broader resident-prose withdrawal and cost controls remain open.
 | Document | Use |
 | --- | --- |
 | [Inventory and access model](inventory.md) | Audiences, pages, controls, navigation, permissions, representation boundaries |
-| [Workflow index](workflow-index.md) | Direct links to 57 stable workflow IDs and their QA priorities |
+| [Workflow index](workflow-index.md) | Direct links to stable workflow IDs and their QA priorities |
 | [Account workflows](account-workflows.md) | Applications, sign-in/out, session transitions, passkeys, API keys |
 | [Resident workflows](resident-workflows.md) | Topic/meeting discovery, reporting, sources, civic officials, API research |
 | [Administrative workflows](admin-workflows.md) | Membership decisions, editorial repair, records, jobs, prompts, imagery |

@@ -1,11 +1,14 @@
 # Workflow index
 
 Operational workflow [OPS-01: build and manually release a reviewed image](off-server-builds-2026-11-01.md)
-is tracked separately from the 57 application workflows below.
+is tracked separately from the application workflows below.
 
 Baseline: 2026-10-10. All 57 workflows are documented from requirements and source;
 runtime behavior, test coverage and defect detection were **unverified/unknown** at this discovery baseline. Current reviewed/unknown statuses and exact evidence are maintained separately in the [overnight audit](overnight-progress.md#all-57-workflows--coverage-and-effectiveness-kept-separate).
 Priorities sequence future QA and are not defect severity ratings.
+
+ADM-21 was added with [campaign article intake](campaign-source-intake-2026-11-08.md)
+after the discovery baseline; the current index contains 58 application workflows.
 
 | ID | Task | Priority |
 | --- | --- | --- |
@@ -59,6 +62,7 @@ Priorities sequence future QA and are not defect severity ratings.
 | [ADM-18](admin-workflows.md#adm-18--editversion-a-prompt-and-evaluate-a-retained-example-p1) | Edit/version a prompt and evaluate a retained example | P1 |
 | [ADM-19](admin-workflows.md#adm-19--change-public-access-mode-or-a-url-redirect-p0) | Change public access mode or a URL redirect | P0 |
 | [ADM-20](admin-workflows.md#adm-20--review-an-audit-event-after-a-sensitive-action-p1) | Review an audit event after a sensitive action | P1 |
+| [ADM-21](admin-workflows.md#adm-21--supply-and-correct-a-shared-campaign-article-p1) | Supply and correct a shared campaign article | P1 |
 | [BG-01](data-and-background.md#bg-01--discoverupdate-an-event-and-preserve-cancellation-p1) | Discover/update an event and preserve cancellation | P1 |
 | [BG-02](data-and-background.md#bg-02--enrich-agendapacket-content-then-supersede-with-minutes-p0) | Enrich agenda/packet content, then supersede with minutes | P0 |
 | [BG-03](data-and-background.md#bg-03--add-recording-context-without-replacing-official-evidence-p0) | Add recording context without replacing official evidence | P0 |
