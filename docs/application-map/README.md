@@ -87,6 +87,10 @@ The [November 8 recorded-action checks](council-recorded-actions-2026-11-08.md)
 extend the same shared source request with attributed proposals and requests,
 including unsuccessful work, without reopening completed historical analyses.
 
+The [November 8 combined-profile checks](council-profile-integration-2026-11-08.md)
+verify the reviewed forum branch together with subsequent profile and cost work,
+including actual intake, source, filtering and comparison browser controls.
+
 The [November 8 live action-admission checks](council-live-action-budget-2026-11-08.md)
 cover an explicit monthly opt-in for new meetings, bounded nightly recovery and
 the historical-backfill boundary. No policy is enabled by the migration.
