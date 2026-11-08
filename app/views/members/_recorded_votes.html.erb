@@ -1,12 +1,4 @@
-<p class="member-recorded-coverage">
-  These are the votes recorded by this site, including procedural decisions.
-  The list may omit meetings or votes and does not establish a complete term history.
-  Missing records do not imply absence or abstention.
-</p>
-
 <% if @recorded_votes.any? %>
-  <p class="member-recorded-count"><%= @pagy.from %>–<%= @pagy.to %> of <%= @pagy.count %> recorded votes · Newest first</p>
-  <%= render "vote_pagination" %>
   <div class="member-recorded-votes member-topic-votes">
     <% @recorded_votes.each do |vote| %>
       <% motion = vote.motion %>

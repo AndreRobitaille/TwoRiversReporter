@@ -21,13 +21,13 @@ class MemberRecordedVotesJourneysTest < ApplicationSystemTestCase
     assert_selector ".member-vote-views a[aria-current='page']", text: "All recorded votes"
     assert_selector ".member-recorded-votes .member-vote-row", count: 25
     assert_text "Approve minutes for synthetic session 24"
-    assert_text "may omit meetings or votes"
+    assert_no_selector ".member-recorded-coverage"
     assert_operator page.evaluate_script("document.querySelector('#voting-record').getBoundingClientRect().top"), :>=,
       page.evaluate_script("document.querySelector('.site-header').getBoundingClientRect().bottom")
     page.save_screenshot(Rails.root.join("tmp/screenshots/recorded-votes-desktop.png"))
 
     page.driver.browser.manage.window.resize_to(390, 844)
-    click_link "Older votes", match: :first
+    within(".member-vote-pages") { click_link "2", exact: true }
     assert_selector ".member-recorded-votes .member-vote-row", count: 1
     assert_selector "#recorded-vote-#{vote.id}", text: motion.description
     assert_selector ".member-vote-views a[aria-current='page']", text: "All recorded votes"
@@ -43,7 +43,7 @@ class MemberRecordedVotesJourneysTest < ApplicationSystemTestCase
     source_window.close
     page.go_back
     assert_selector "#recorded-vote-#{vote.id}", text: motion.description
-    click_link "Newer votes", match: :first
+    within(".member-vote-pages") { click_link "1", exact: true }
     assert_selector ".member-recorded-votes .member-vote-row", count: 25
     click_link "Featured votes"
     assert_no_selector ".member-recorded-votes"
@@ -79,18 +79,24 @@ class MemberRecordedVotesJourneysTest < ApplicationSystemTestCase
     visit member_path(member, anchor: "voting-record")
     assert_selector ".member-vote-row", count: 25
     assert_no_text "Accept consent agenda"
-    assert_selector ".member-vote-pages", count: 2
+    assert_selector ".member-vote-pages", count: 1
+    assert_selector ".member-vote-pages [aria-current=page]", text: "1"
+    assert_no_selector ".member-recorded-coverage"
+    assert page.evaluate_script("document.querySelector('.member-vote-pages').getBoundingClientRect().top >= [...document.querySelectorAll('.member-vote-row')].at(-1).getBoundingClientRect().bottom")
     assert_selector ".member-vote-views a[aria-current='page']", text: "Featured votes"
     assert_operator page.evaluate_script("document.documentElement.scrollWidth"), :<=, 390
     page.save_screenshot(Rails.root.join("tmp/screenshots/featured-votes-mobile.png"))
-    click_link "Older votes", match: :first
+    page.execute_script("document.querySelector('.member-vote-pages').scrollIntoView({block: 'center', behavior: 'instant'});")
+    page.driver.browser.execute_async_script("const done = arguments[0]; requestAnimationFrame(() => requestAnimationFrame(done));")
+    page.save_screenshot(Rails.root.join("tmp/screenshots/featured-pagination-mobile.png"))
+    within(".member-vote-pages") { click_link "2", exact: true }
     assert_text contested.description
     assert_selector ".member-vote-row", count: 1
     assert_current_path member_path(member, page: 2)
     click_link contested.description
     assert_current_path meeting_path(meeting)
     page.go_back
-    click_link "Newer votes", match: :first
+    within(".member-vote-pages") { click_link "1", exact: true }
     assert_selector ".member-vote-row", count: 25
   end
 end
