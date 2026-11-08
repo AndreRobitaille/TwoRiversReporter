@@ -1,0 +1,19 @@
+<section class="card" data-campaign-cost-preflight>
+  <h2 class="card-title">Processing cost</h2>
+  <% case preflight.fetch(:state) %>
+  <% when "reuse" %>
+    <p>Saved analysis can be reused. No additional AI call is needed.</p>
+  <% when "estimate" %>
+    <p><strong><%= number_to_currency(preflight.fetch(:cost_microusd) / 1_000_000.0, precision: 4) %></strong> per attempt with <%= preflight.fetch(:model) %>.</p>
+    <p><%= preflight.fetch(:attempts_remaining) %> attempts remaining; <%= number_to_currency(preflight.fetch(:remaining_cost_microusd) / 1_000_000.0, precision: 4) %> combined estimate for this source, shared across all participants.</p>
+    <details>
+      <summary>Estimate assumptions</summary>
+      <p><%= number_with_delimiter(preflight.fetch(:input_allowance)) %> input tokens allowed for planning, using UTF-8 text bytes plus formatting headroom; <%= number_with_delimiter(preflight.fetch(:output_allowance)) %> maximum output tokens.</p>
+      <p>Includes cache-write pricing without a cache discount. Standard direct API pricing only. Actual input token usage has not been measured.</p>
+      <p><%= link_to "Model pricing", preflight.fetch(:pricing_source), target: "_blank", rel: "noopener" %> checked <%= preflight.fetch(:pricing_checked_on) %>; recheck after <%= preflight.fetch(:pricing_valid_through) %>.</p>
+    </details>
+    <p>This is an offline planning estimate. Generation still requires a separately authorized spending allowance.</p>
+  <% else %>
+    <p><%= preflight.fetch(:reason) %>.</p>
+  <% end %>
+</section>

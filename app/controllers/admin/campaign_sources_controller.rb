@@ -23,6 +23,7 @@ module Admin
       @versions = @source.versions.order(created_at: :desc, id: :desc)
       @version = params[:version].present? ? @versions.find(params[:version]) : @source.current_version
       @extraction = @version.extraction
+      @cost_preflight = Campaigns::CostPreflight.call(@version)
     end
 
     def edit
