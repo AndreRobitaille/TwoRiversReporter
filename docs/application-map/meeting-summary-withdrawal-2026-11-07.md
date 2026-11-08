@@ -146,6 +146,10 @@ Final `bin/rubocop` inspected 697 files without offenses; `git diff --check` pas
 
 ## Remaining scope and cost
 
+Subsequent [summary fact-dependency work](meeting-summary-facts-2026-11-07.md)
+adds structured motion receipts and fact-publication withdrawal. The scope below
+records this source-withdrawal slice as originally verified.
+
 This covers **known document dependencies of saved meeting summaries**. Legacy
 summaries without catalogs stay unverified. Fact-publication changes from
 unchanged documents, previously consumed agenda topic-briefing context, knowledge

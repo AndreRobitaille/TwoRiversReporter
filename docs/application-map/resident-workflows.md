@@ -133,6 +133,9 @@ status below does not imply complete coverage of those workflows.
   [preferred summary](../../app/services/resident_content/meeting_selection.rb).
   Known source changes withdraw saved analysis and explain its absence while
   preserving official links; see [summary withdrawal journey and HTTP checks](meeting-summary-withdrawal-2026-11-07.md).
+  Corrected extracted votes also withdraw summaries with incompatible motion
+  receipts, even with unchanged minutes; later member and meeting reads are
+  covered in [summary fact-dependency checks](meeting-summary-facts-2026-11-07.md).
 - **Approved contract:** owner clarification October 11 (#171) preserves the
   conditional sections and legacy/agenda-only branches. The March 1 fixed-section
   proposal is superseded; see [behavior contracts](behavior-contracts.md).
@@ -230,6 +233,9 @@ status below does not imply complete coverage of those workflows.
   votes and attendance, original retained attribution, decision review and topic
   evidence. Fresh authorized member reads are checked; no public route or access
   change. See [scope and limits](council-member-merges-2026-11-07.md).
+- **November 7 corrected fact propagation:** a corrected extracted vote reaches
+  the same member record while known stale meeting prose is withdrawn. See
+  [later member and meeting reads](meeting-summary-facts-2026-11-07.md).
 
 ## RES-11 — Cross an access-mode or audience boundary (P0)
 

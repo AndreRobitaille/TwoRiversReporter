@@ -97,8 +97,13 @@ cached publication retry and concurrent first briefing publication.
 
 The [November 7 saved meeting-summary checks](meeting-summary-withdrawal-2026-11-07.md)
 cover known document changes through atomic summary/image withdrawal, later
-resident reads, queued consumers and concurrent first publication. Missing legacy,
-fact-publication and previously consumed topic-context dependencies remain open.
+resident reads, queued consumers and concurrent first publication.
+
+The [November 7 summary fact-dependency checks](meeting-summary-facts-2026-11-07.md)
+cover captured motion context, corrected facts from unchanged minutes, compatible
+refreshes, audit rollback, late responses and concurrent first summary publication.
+Missing legacy, participant, knowledge and previously consumed topic-context
+dependencies remain open.
 
 The [November 7 topic-generation dependency checks](council-topic-generation-2026-11-07.md)
 cover unchanged topic-stage reuse, stale-input filtering and rejected in-flight

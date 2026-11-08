@@ -128,16 +128,17 @@ class SummarizeMeetingJob < ApplicationJob
     return unless Topics::GenerationEvidence.sources_current?(catalog.sources)
 
     expected = Meetings::SummaryPublication.version(meeting.meeting_summaries.find_by(summary_type: summary_type))
+    motion_context = Meetings::MotionContext.capture(meeting.id)
     meeting_record_text = documents.select { |document| document.document_type.in?(%w[minutes_pdf minutes_html transcript]) }
       .map(&:extracted_text).join("\n\n")
     json_str = ai_service.analyze_meeting_content(catalog.text, kb_context, type,
-      source: meeting, source_catalog: catalog.sources,
+      source: motion_context.meeting, source_catalog: catalog.sources,
       meeting_record_text: meeting_record_text,
-      participant_context: participant_context_for(meeting), motion_context: motion_context_for(meeting))
+      participant_context: participant_context_for(motion_context.meeting), motion_context: motion_context.text)
     Meetings::SummaryPublication.publish(meeting: meeting, summary_type: summary_type, expected: expected,
-      sources: catalog.sources, topic_context: topic_context) do
+      sources: catalog.sources, topic_context: topic_context, motion_context: motion_context) do
       save_summary(meeting, summary_type, json_str, source_catalog: catalog.sources,
-        source_type: source_type, framing: compute_framing(meeting, type))
+        source_type: source_type, framing: compute_framing(motion_context.meeting, type), motion_context_manifest: motion_context.manifest)
     end
   end
 
@@ -192,7 +193,7 @@ class SummarizeMeetingJob < ApplicationJob
     parts.join("\n")
   end
 
-  def save_summary(meeting, type, json_str, source_catalog:, source_type: nil, framing: nil)
+  def save_summary(meeting, type, json_str, source_catalog:, source_type: nil, framing: nil, motion_context_manifest: nil)
     generation_data = begin
       JSON.parse(json_str)
     rescue JSON::ParserError => e
@@ -202,6 +203,7 @@ class SummarizeMeetingJob < ApplicationJob
     Citations::MeetingAnalysis.validate!(generation_data, meeting: meeting, catalog: source_catalog)
     generation_data["source_type"] = source_type if source_type
     generation_data["framing"] = framing if framing
+    generation_data["motion_context_manifest"] = motion_context_manifest
 
     summary = meeting.meeting_summaries.find_or_initialize_by(summary_type: type)
     summary.generation_data = generation_data
@@ -216,31 +218,6 @@ class SummarizeMeetingJob < ApplicationJob
     agenda_doc = meeting.latest_document("agenda_pdf")
     agenda_text = agenda_doc&.extracted_text
     Meetings::ParticipantsContextBuilder.new(meeting, agenda_text).build
-  end
-
-  def motion_context_for(meeting)
-    if meeting.minutes_extractions.exists? && !Minutes::Publish.current?(meeting)
-      return "Structured motion extraction is pending for the current minutes."
-    end
-    motions = meeting.motions.includes(:agenda_item, :votes).order(:id).to_a
-    return "No structured motion extraction available." if motions.empty?
-
-    lines = motions.map do |motion|
-      item = motion.agenda_item&.title || "No linked agenda item"
-      vote_counts = motion.votes.group_by(&:value).transform_values(&:count)
-      vote_text = if vote_counts.any?
-        vote_counts.sort.map { |value, count| "#{value}=#{count}" }.join(", ")
-      else
-        "no individual votes recorded"
-      end
-
-      "- #{item}: #{motion.outcome} — #{motion.description} (#{vote_text})"
-    end
-
-    <<~TEXT.strip
-      Structured motions extracted from the same meeting minutes. Use this as grounding for item decision and vote fields when it conflicts with noisy prose in the minutes.
-      #{lines.join("\n")}
-    TEXT
   end
 
   def self.summary_repair_needed?(meeting)

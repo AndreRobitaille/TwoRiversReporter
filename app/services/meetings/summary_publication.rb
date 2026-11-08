@@ -20,11 +20,12 @@ module Meetings
       summary&.attributes&.slice("id", "updated_at")
     end
 
-    def self.publish(meeting:, summary_type:, expected:, sources:, topic_context: nil)
+    def self.publish(meeting:, summary_type:, expected:, sources:, topic_context: nil, motion_context: nil)
       with_lock(meeting.id) do
         persist = lambda do
           current = meeting.meeting_summaries.where(summary_type: summary_type).lock("FOR NO KEY UPDATE").first
-          if version(current) == expected && Topics::GenerationEvidence.sources_current?(sources)
+          if version(current) == expected && Topics::GenerationEvidence.sources_current?(sources) &&
+              MotionContext.current?(motion_context&.manifest, meeting: Meeting.find(meeting.id))
             yield
           end
         end
@@ -38,7 +39,8 @@ module Meetings
         # Serialize content changes without blocking a dependent image's FK check.
         current = MeetingSummary.published.lock("FOR NO KEY UPDATE").find_by(id: summary.id)
         if current && version(current) == version(summary) &&
-            Topics::GenerationEvidence.sources_current?(current.generation_data&.dig("source_catalog"))
+            Topics::GenerationEvidence.sources_current?(current.generation_data&.dig("source_catalog")) &&
+            MotionContext.current?(current.generation_data&.dig("motion_context_manifest"), meeting: Meeting.find(summary.meeting_id))
           yield
         end
       end
