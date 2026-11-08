@@ -23,7 +23,7 @@ gem "jbuilder"
 gem "bcrypt", "~> 3.1.7"
 
 # TOTP (Authenticator apps) for admin MFA
-gem "rotp", "~> 6.3"
+gem "rotp", "~> 6.4"
 
 # WebAuthn/passkey support
 gem "webauthn"
