@@ -1,7 +1,7 @@
 require "digest"
 require "uri"
 
-# Private source intake. Saving text does not extract statements or publish it.
+# Private source intake. Processing happens after the source is committed.
 class CampaignSource < ApplicationRecord
   SNAPSHOT_FIELDS = %w[title source_url publisher published_on election_on coverage coverage_notes body].freeze
   COVERAGES = { "full_article" => "Complete article", "selected_excerpts" => "Selected excerpts" }.freeze
@@ -18,12 +18,17 @@ class CampaignSource < ApplicationRecord
   validates :body, length: { maximum: 200_000 }
   validate :publisher_url
   after_save :retain_version
+  after_commit :queue_processing, on: %i[create update]
 
   def current_version
     versions.find_by(version_key: version_key)
   end
 
   private
+
+  def queue_processing
+    ExtractCampaignSourceJob.perform_later(id) unless current_version.extraction
+  end
 
   def version_key
     Digest::SHA256.hexdigest(JSON.generate([ id, attributes.slice(*SNAPSHOT_FIELDS) ]))

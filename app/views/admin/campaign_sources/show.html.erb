@@ -4,7 +4,7 @@
 <% end %>
 <div class="page-header">
   <h1 class="page-title"><%= @version.title %></h1>
-  <p class="page-subtitle"><%= @extraction ? "Shared analysis for this source version." : "Saved source text. Analysis has not been enabled." %></p>
+  <p class="page-subtitle"><%= @extraction ? "Shared analysis for this source version." : "Saved source text. New analysis requires a spending allowance." %></p>
   <%= link_to "Edit article", edit_admin_campaign_source_path(@source), class: "btn btn--primary" %>
 </div>
 <p><%= link_to "All campaign sources", admin_campaign_sources_path %></p>

@@ -2,7 +2,37 @@ require "application_system_test_case"
 require_relative "../support/member_campaign_scenario"
 
 class MemberCampaignJourneysTest < ApplicationSystemTestCase
+  include ActiveJob::TestHelper
   include MemberCampaignScenario
+
+  test "saving a publisher correction updates the reader profile without a manual processing control" do
+    setup_member_campaign
+    analyze_member_campaign
+    clear_enqueued_jobs
+    admin = User.create!(email_address: "campaign-update-browser@example.test", admin: true, status: "active")
+    admin.passkey_credentials.create!(external_id: "campaign-update-browser-key", public_key: "public-key", sign_count: 0)
+    sign_in_by_email(admin)
+    visit member_path(@jordan)
+    assert_selector "#campaign-record .member-campaign-card", count: 2
+    assert_selector "#campaign-record a", text: "Example Newspaper", count: 2
+    visit admin_campaign_source_path(@source)
+    click_link "Edit"
+    fill_in "Publisher", with: "Corrected publisher"
+    Ai::OpenAiService.stub(:new, ->(*) { flunk "Metadata changes must reuse analysis" }) do
+      perform_enqueued_jobs(only: ExtractCampaignSourceJob) do
+        click_button "Save article"
+        assert_selector ".flash", text: "Article saved."
+      end
+      visit member_path(@jordan)
+      assert_selector "#campaign-record .member-campaign-card", count: 2
+      assert_selector "#campaign-record a", text: "Corrected publisher", count: 2
+      page.refresh
+      assert_selector "#campaign-record a", text: "Corrected publisher", count: 2
+    end
+    assert_equal "Corrected publisher", @source.reload.current_version.publisher
+    assert_equal 0, @source.current_version.extraction.attempts
+    assert_equal 1, @calls.size
+  end
 
   test "a reader follows a campaign statement to its publisher and loses reporting access after logout" do
     setup_member_campaign

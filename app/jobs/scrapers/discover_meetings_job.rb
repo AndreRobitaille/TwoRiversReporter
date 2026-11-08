@@ -13,6 +13,7 @@ module Scrapers
     end
 
     def perform(since: nil)
+      ReconcileCampaignSourcesJob.perform_later
       self.class.run_inline!(since: since)
     end
 
