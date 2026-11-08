@@ -11,11 +11,14 @@ class ExtractKnowledgeJob < ApplicationJob
     summary = meeting.meeting_summaries.published.order(updated_at: :desc).first
     return unless summary&.generation_data.present?
 
+    summary_json = summary.generation_data.to_json
+    raw_document = best_raw_document(meeting)
+    source_catalog = Knowledge::DocumentEvidence.capture(raw_document)
+    return unless Knowledge::DocumentEvidence.current?(source_catalog)
+
+    raw_text = raw_document&.extracted_text.to_s.truncate(RAW_TEXT_LIMIT)
     ai_service = Ai::OpenAiService.new
     retrieval_service = RetrievalService.new
-
-    summary_json = summary.generation_data.to_json
-    raw_text = best_raw_text(meeting)
     existing_kb = retrieve_existing_kb(meeting, retrieval_service)
 
     response = ai_service.extract_knowledge(
@@ -37,11 +40,12 @@ class ExtractKnowledgeJob < ApplicationJob
       [ name, Topic.find_by_name_or_alias(name, Topic.approved) ]
     end
     Meetings::SummaryPublication.with_current(summary, topic_ids: topics.values.compact.map(&:id)) do
+      next unless Knowledge::DocumentEvidence.current?(source_catalog)
       next unless topics.all? { |name, topic| Topic.find_by_name_or_alias(name, Topic.approved)&.id == topic&.id }
 
       created_ids = []
       parsed.each do |entry|
-        source = create_knowledge_source(entry, meeting, summary)
+        source = create_knowledge_source(entry, meeting, summary, source_catalog)
         link_topics(source, entry["topic_names"], topics)
         created_ids << source.id
       end
@@ -55,12 +59,10 @@ class ExtractKnowledgeJob < ApplicationJob
 
   private
 
-  def best_raw_text(meeting)
-    doc = meeting.meeting_documents.find_by(document_type: "minutes_pdf") ||
-          meeting.meeting_documents.find_by(document_type: "transcript") ||
-          meeting.meeting_documents.where("document_type LIKE ?", "%packet%").first
-
-    doc&.extracted_text.to_s.truncate(RAW_TEXT_LIMIT)
+  def best_raw_document(meeting)
+    meeting.meeting_documents.find_by(document_type: "minutes_pdf") ||
+      meeting.meeting_documents.find_by(document_type: "transcript") ||
+      meeting.meeting_documents.where("document_type LIKE ?", "%packet%").first
   end
 
   def retrieve_existing_kb(meeting, retrieval_service)
@@ -85,7 +87,7 @@ class ExtractKnowledgeJob < ApplicationJob
     []
   end
 
-  def create_knowledge_source(entry, meeting, summary)
+  def create_knowledge_source(entry, meeting, summary, source_catalog)
     KnowledgeSource.create!(
       title: entry["title"].to_s.truncate(255),
       body: entry["body"].to_s,
@@ -98,7 +100,8 @@ class ExtractKnowledgeJob < ApplicationJob
       stated_at: meeting.starts_at&.to_date,
       meeting: meeting,
       source_summary: summary,
-      source_summary_manifest: Knowledge::SummaryEvidence.capture(summary)
+      source_summary_manifest: Knowledge::SummaryEvidence.capture(summary),
+      source_catalog: source_catalog
     )
   end
 

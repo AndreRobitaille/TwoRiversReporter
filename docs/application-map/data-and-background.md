@@ -261,7 +261,10 @@ receipt. Summary changes/removal withdraw known dependents without erasing text,
 review state or chunks. Fresh retrieval, topic input receipts and pattern inputs
 omit withdrawn evidence; checked triage and ingestion reject late work. See
 [knowledge dependencies, browser behavior and fault evidence](knowledge-summary-dependencies-2026-11-07.md).
-Additional raw-text/participant inputs, stored patterns and other generated
+Additional raw-document inputs now retain their own catalogs and text-version
+identities; document changes/removal withdraw their known knowledge dependents.
+See [raw-source dependency checks](knowledge-source-dependencies-2026-11-07.md).
+Other retrieval/participant inputs, stored patterns and generated
 knowledge-dependent projections remain separate work.
 
 Fact publication now withdraws stored briefings with invalid motion receipts even

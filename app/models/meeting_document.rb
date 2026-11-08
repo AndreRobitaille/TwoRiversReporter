@@ -31,6 +31,7 @@ class MeetingDocument < ApplicationRecord
     Meetings::SummaryPublication.with_lock(meeting_id, meeting_id_before_last_save) do
       Topics::WithdrawSourceBriefings.call(document_id: id, meeting_id: meeting_id)
       Meetings::WithdrawSourceSummaries.call(document_id: id)
+      Knowledge::DocumentEvidence.withdraw_dependents(document_id: id)
     end
   end
 
