@@ -68,11 +68,6 @@
         <% if @show_all_votes %>
           <%= render "recorded_votes" %>
         <% else %>
-          <p class="member-recorded-coverage">Featured votes leave out routine procedural motions approved by everyone in the recorded roll call. Absences do not count as opposition. The site's record may omit meetings or votes.</p>
-          <% if @pagy.in.positive? %>
-            <p class="member-recorded-count"><%= @pagy.from %>–<%= @pagy.to %> of <%= @pagy.count %> featured decisions · Newest pages first, grouped by topic</p>
-          <% end %>
-          <%= render "vote_pagination" %>
           <% if @topic_groups.any? %>
             <% @topic_groups.each do |group| %>
               <div class="member-topic-group">

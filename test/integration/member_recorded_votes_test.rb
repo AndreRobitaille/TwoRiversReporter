@@ -32,7 +32,7 @@ class MemberRecordedVotesTest < ActionDispatch::IntegrationTest
           assert_select "a[href=?]", meeting_path(@meeting), text: "Meeting and sources"
         end
       end
-      assert_select ".member-recorded-coverage", text: /may omit meetings or votes/
+      assert_select ".member-recorded-coverage", count: 0
 
       negotiation.update!(value: "no")
       get member_path(@member, votes: "all")
@@ -44,19 +44,23 @@ class MemberRecordedVotesTest < ActionDispatch::IntegrationTest
     votes = 26.times.map { |index| record_vote("Recorded decision #{index}") }
 
     get member_path(@member, votes: "all")
+    assert_select ".member-vote-pages", count: 1
+    assert_select ".member-vote-pages [aria-current=page]", text: "1"
     first_ids = css_select(".member-recorded-votes .member-vote-row").map { |row| row["id"] }
     assert_equal votes.reverse.first(25).map { |vote| "recorded-vote-#{vote.id}" }, first_ids
-    assert_select "a[href=?]", member_path(@member, votes: "all", page: 2, anchor: "voting-record"), text: "Older votes"
+    assert_vote_page_link(2, all: true)
 
     get member_path(@member, votes: "all", page: 2)
     assert_select ".member-recorded-votes .member-vote-row", count: 1
     assert_select "#recorded-vote-#{votes.first.id}"
-    assert_select "a[href=?]", member_path(@member, votes: "all", page: 1, anchor: "voting-record"), text: "Newer votes"
-    assert_select "a", text: "Older votes", count: 0
+    assert_select ".member-vote-pages [aria-current=page]", text: "2"
+    assert_vote_page_link(1, all: true)
+    assert_select ".member-vote-pages a[href][rel=next]", count: 0
 
     get member_path(@member, votes: "all", page: 3)
     assert_response :success
     assert_select ".member-recorded-votes .member-vote-row", count: 0
+    assert_select ".member-vote-pages", count: 0
     assert_select "a[href=?]", member_path(@member, votes: "all", anchor: "voting-record"), text: "Return to the newest votes"
   end
 
@@ -70,13 +74,13 @@ class MemberRecordedVotesTest < ActionDispatch::IntegrationTest
     assert_select ".member-vote-row", count: 25
     assert_not_includes response.body, routine.motion.description
     assert_select ".member-vote-motion a", text: votes.first.motion.description, count: 0
-    assert_select ".member-vote-pages a[href=?]", member_path(@member, page: 2, anchor: "voting-record"), text: "Older votes", count: 2
+    assert_vote_page_link(2)
 
     get member_path(@member, page: 2)
     assert_select ".member-vote-row", count: 1
     assert_includes response.body, votes.first.motion.description
     assert_select ".member-vote-views a[aria-current='page']", text: "Featured votes"
-    assert_select ".member-vote-pages a[href=?]", member_path(@member, page: 1, anchor: "voting-record"), text: "Newer votes", count: 2
+    assert_vote_page_link(1)
 
     SiteSetting.create!(access_mode: "gated", singleton_guard: 0)
     get member_path(@member, page: 2)
@@ -139,11 +143,11 @@ class MemberRecordedVotesTest < ActionDispatch::IntegrationTest
     assert_match(/Sign in to keep reading/, response.body)
   end
 
-  test "a member with no recorded votes gets a coverage-aware empty state" do
+  test "a member with no recorded votes gets a clear empty state" do
     get member_path(@member, votes: "all")
     assert_response :success
     assert_select ".member-recorded-empty", text: /No votes have been recorded/
-    assert_select ".member-recorded-coverage", text: /complete term history/
+    assert_select ".member-recorded-coverage", count: 0
     assert_select ".member-vote-pages", count: 0
   end
 
@@ -165,6 +169,17 @@ class MemberRecordedVotesTest < ActionDispatch::IntegrationTest
   end
 
   private
+
+    def assert_vote_page_link(page, all: false)
+      assert_select ".member-vote-pages a[href]", text: page.to_s, count: 1 do |links|
+        target = URI.parse(links.sole["href"])
+        assert_equal member_path(@member), target.path
+        expected = { "page" => page.to_s }
+        expected["votes"] = "all" if all
+        assert_equal expected, Rack::Utils.parse_query(target.query)
+        assert_equal "voting-record", target.fragment
+      end
+    end
 
     def record_vote(description, value: "yes", agenda_item: nil)
       motion = @meeting.motions.create!(description: description, outcome: "passed", agenda_item: agenda_item)

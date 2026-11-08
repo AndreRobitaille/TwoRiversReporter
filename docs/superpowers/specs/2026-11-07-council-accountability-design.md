@@ -44,6 +44,11 @@ and sequencing of the more detailed proposals below.
   affirmative votes. Apply the rule even when a procedural motion is associated
   with an important topic. This uses recorded votes, not an inferred complete
   attendance denominator. Keep the unfiltered view available for inspection.
+- Follow `docs/AUDIENCE.md` on the reading surface: begin with the votes, without
+  a leading methodology/coverage disclaimer. Use numbered page links only below
+  the list, with a clear current page and comfortable tap targets. Accurate
+  labels such as "All recorded votes" and empty states remain; do not imply a
+  complete term denominator.
 - A correction is entered once, retained, and reflected in the affected record
   and implemented profile views. Reuse existing refresh paths for known
   dependents. Defer further generalized withdrawal cascades, speculative race
