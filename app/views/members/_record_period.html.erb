@@ -4,7 +4,10 @@
       <%= form.label :term, "Council record", class: "form-label" %>
       <%= form.select :term, @record_period.selectable.map { |period| [council_period_label(period), period.period_key] } + [["All available records", "all"]], { selected: @record_period.key }, class: "form-select" %>
     </div>
-    <%= form.hidden_field :votes, value: "all" if @show_all_votes %>
+    <%= form.hidden_field :votes, value: "all", id: nil if @show_all_votes %>
+    <% @vote_filters&.query_params&.each do |key, value| %>
+      <%= form.hidden_field key, value: value, id: nil %>
+    <% end %>
     <%= form.submit "Show record", name: nil, class: "btn btn--secondary" %>
   <% end %>
 <% end %>

@@ -5892,6 +5892,44 @@ th.sortable-header:hover {
   margin-bottom: var(--space-2);
 }
 
+.member-vote-filters {
+  margin-bottom: var(--space-5);
+}
+
+.member-vote-search {
+  display: flex;
+  align-items: end;
+  gap: var(--space-2);
+}
+
+.member-vote-search > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.member-vote-filters .form-label {
+  display: block;
+  margin-bottom: var(--space-1);
+}
+
+.member-vote-filter-options > summary {
+  color: var(--color-primary);
+  cursor: pointer;
+  padding: var(--space-3) 0;
+}
+
+.member-vote-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.member-vote-filter-result {
+  margin-top: var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
 .member-peer-comparisons,
 .member-comparison-method {
   margin: var(--space-6) 0;

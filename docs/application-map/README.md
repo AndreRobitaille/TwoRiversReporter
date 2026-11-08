@@ -75,6 +75,10 @@ concurrent reservation, budget-paused retries and retained uncertain amounts.
 The [November 8 monthly council cost checks](council-monthly-costs-2026-11-08.md)
 add an explicit monthly ceiling across runs/days and a read-only stage usage report.
 
+The [November 8 member vote-filter checks](member-vote-filters-2026-11-08.md)
+record scoped search/filtering, preserved pagination and source navigation, and
+phone/desktop verification using real concession decisions.
+
 The [November 8 shared issue-update checks](council-issue-updates-2026-11-08.md)
 record bounded official-minutes extraction, shared member projections, source
 corrections, spending holds and real concession-source evaluation for BG-09.

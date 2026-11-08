@@ -80,6 +80,8 @@
               <%= link_to "All recorded votes", member_path(@member, **@record_params, votes: "all", anchor: "voting-record"), class: "btn btn--secondary", aria: { current: ("page" if @show_all_votes) } %>
             </nav>
 
+            <%= render "vote_filters" %>
+
             <% if @show_all_votes %>
               <%= render "recorded_votes" %>
             <% else %>
@@ -131,7 +133,7 @@
 
               <% if @topic_groups.empty? && @other_votes.empty? %>
                 <% if @pagy.count.zero? %>
-                  <p class="section-empty">No featured votes found for this official. Other decisions may appear in all recorded votes.</p>
+                  <p class="section-empty"><%= @vote_filters.active? ? "No featured votes match these filters. Other decisions may appear in all recorded votes." : "No featured votes found for this official. Other decisions may appear in all recorded votes." %></p>
                 <% else %>
                   <p class="section-empty">No featured votes on this page.</p>
                   <%= link_to "Return to the newest votes", member_path(@member, **@record_params, anchor: "voting-record") %>
