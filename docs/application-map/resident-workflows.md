@@ -238,6 +238,12 @@ status below does not imply complete coverage of those workflows.
 - **November 7 corrected fact propagation:** a corrected extracted vote reaches
   the same member record while known stale meeting prose is withdrawn. See
   [later member and meeting reads](meeting-summary-facts-2026-11-07.md).
+- **November 8 campaign records:** accepted statements from the current supplied
+  source version appear on the existing member page, grouped by election, with
+  conditions, timing, original question and publisher link. Unresolved identities
+  or passages do not publish; no candidate creates a new civic person or office.
+  Reads and unchanged publication call no AI. RES-11 applies to the entire
+  generated section. See [real-data and regression checks](member-campaign-records-2026-11-08.md).
 
 ## RES-11 — Cross an access-mode or audience boundary (P0)
 

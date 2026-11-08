@@ -75,8 +75,9 @@ Actual token/pricing preflight and paid-pilot approval remain unimplemented.
 
 The [November 8 shared campaign extraction checks](shared-campaign-extraction-2026-11-08.md)
 cover a supplied multi-candidate article through bounded shared analysis and
-private admin display. This does not yet publish member campaign positions or
-validate extraction accuracy with a real provider.
+private admin display. That extraction slice does not validate accuracy with a
+real provider. The subsequent [member campaign record checks](member-campaign-records-2026-11-08.md)
+cover existing-person matching, public statements and real local cohort data.
 
 The [November 7 stable decision foundation](council-decision-identities-2026-11-07.md)
 records immutable observations, conservative identity correspondence and
