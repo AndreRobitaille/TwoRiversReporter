@@ -78,6 +78,8 @@ cover a supplied multi-candidate article through bounded shared analysis and
 private admin display. That extraction slice does not validate accuracy with a
 real provider. The subsequent [member campaign record checks](member-campaign-records-2026-11-08.md)
 cover existing-person matching, public statements and real local cohort data.
+The [November 8 automatic campaign update checks](campaign-update-triggers-2026-11-08.md)
+cover source-save triggers, cached updates and existing nightly missed-work recovery.
 
 The [November 7 stable decision foundation](council-decision-identities-2026-11-07.md)
 records immutable observations, conservative identity correspondence and
