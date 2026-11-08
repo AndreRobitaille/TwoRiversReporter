@@ -29,13 +29,18 @@ class MemberCampaignActivityJourneysTest < ApplicationSystemTestCase
       assert page.evaluate_script("document.querySelector('.member-profile-sidebar').getBoundingClientRect().top >= document.querySelector('.member-profile-primary').getBoundingClientRect().bottom"),
         "The main record should precede campaign context on a phone"
       click_link "Campaign priorities", exact: true
-      assert_no_selector ".member-campaign-card[open]"
-      assert_no_text "Water renewal decision 23"
-      find(".member-campaign-card > summary", match: :first).click
+      assert_selector ".member-campaign-issue[open]", count: 1
+      assert_no_selector ".member-campaign-evidence[open]"
+      assert_text /What they said/i
+      assert_text /Related Council votes/i
+      assert_text /Council result/i
       within "[data-campaign-activity]" do
-        assert_selector "[data-campaign-vote]", count: 3, visible: true
-        assert_no_selector "[data-campaign-vote='#{records.first.id}']", visible: true
-        find("summary", text: "Show 1 more related vote").click
+        assert_selector ".member-campaign-actions li", count: 2
+        assert_text "Water renewal decision 23"
+        assert_text "Water renewal decision 16"
+        assert_no_text "Water renewal decision 2", exact: true
+        assert_no_selector "[data-campaign-vote]", visible: true
+        find("summary", text: "Statements and decisions", exact_text: true).click
         assert_selector "[data-campaign-vote]", count: 4, visible: true
         within "[data-campaign-vote='#{records.first.id}']" do
           assert_text "Water renewal decision 2"
@@ -50,10 +55,11 @@ class MemberCampaignActivityJourneysTest < ApplicationSystemTestCase
       page.go_back
       page.refresh
       assert_no_selector ".member-other-votes[open]"
-      assert_no_selector ".member-campaign-card[open]"
-      find(".member-campaign-card > summary", match: :first).click
+      assert_selector ".member-campaign-issue[open]", count: 1
+      assert_no_selector ".member-campaign-evidence[open]"
       assert_selector "[data-campaign-activity]", count: 1
-      assert_selector "[data-campaign-vote]", count: 3, visible: true
+      assert_selector ".member-campaign-actions li", count: 2
+      assert_no_selector "[data-campaign-vote]", visible: true
       assert_operator page.evaluate_script("document.documentElement.scrollWidth"), :<=, 390
       find("[data-campaign-activity]").scroll_to(:top)
       page.save_screenshot(Rails.root.join("tmp/screenshots/member-campaign-activity-mobile.png"))

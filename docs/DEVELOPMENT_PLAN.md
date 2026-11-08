@@ -942,13 +942,24 @@ start collapsed and remain available through a native disclosure. Keep the same
 sourced reporting in the HTML for permitted readers and verified crawlers: the
 audience also receives civic information through Google Search and its AI results.
 
-The owner rejected the initial sidebar as a wall of text. Its initial view should
-be a short, unboxed list of campaign statements, with qualifications and deadlines
-kept beside the statement when present. Show three statements per election first,
-then offer the remaining statements on demand without implying an importance
-ranking. A reader opens one statement at a time to inspect its source, question
-and related Council record. Repeated classification badges and expanded evidence
-do not belong in the initial scan.
+The owner rejected the initial sidebar as a wall of text and selected the
+issue-based Said / did / result mockup after resident-persona review. Show three
+issue rows per election, with the first open and Other issues closed. Each issue
+shows a saved campaign position (including qualifications and deadlines), up to
+two recent related Council votes, and their Council result. Use the label
+**Related Council votes** because a shared topic alone does not establish campaign
+follow-through. A passed motion is not a completed project. Full statements,
+questions, exact motions and dated sources remain available in closed disclosures.
+
+Build this view from accepted statements, approved topic links and eligible saved
+votes. Prefer issues with votes, then the existing topic impact score; repeated
+campaign mentions do not increase priority. Use one representative position for
+the initial scan, preserving distinct positions in the evidence. Reuse written
+source summaries before longer forum records when both describe the same issue;
+do not merge differing claims semantically. Short action excerpts retain the
+actual motion, including postponements, and give generic adoptions their agenda
+subject. This layout introduces no generation step or per-member AI calls.
+When no approved issue links exist, retain the statement-list fallback.
 
 The proposed page centers on **what they said → what they did → what happened**,
 with a term selector, cited overview, public-issue timelines, attendance, full
