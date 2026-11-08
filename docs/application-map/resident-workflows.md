@@ -210,7 +210,8 @@ status below does not imply complete coverage of those workflows.
   only when passed with all recorded non-absent votes affirmative; All recorded
   votes keeps them. Both views retain motion descriptions and use accurate
   recorded-vote labels without a leading disclaimer. A numbered pager appears
-  only below the list, with the current page identified. No new
+  only below the list, with the current page identified. Each decision appears
+  once, under its highest-ranked featured topic or in Other Votes. No new
   term denominator or campaign comparison is implied. See
   [acceptance and evidence](member-recorded-votes-2026-11-08.md).
 - **October 24 navigation experiment:** an already visible voter name in a

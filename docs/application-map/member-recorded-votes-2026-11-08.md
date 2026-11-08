@@ -137,3 +137,26 @@ Validation, using the same isolated PostgreSQL/Ruby environment:
   assertion failed as intended (1 test, 7 assertions, 1 failure, no errors). The
   unmodified application then passed the focused 24-test suite. The live preview
   was not altered by the fault.
+
+
+## Multi-topic decision deduplication
+
+Revision `9fa0141d3faf565ba043e31d8d3ddb5d94fe7ca4` fixes an observed local-snapshot problem: each pilot
+cohort member's first Featured page selected 25 unique decisions but rendered
+26 rows. A vote attached to multiple topics could appear in more than one
+featured group, or in both a featured group and Other Votes. This is a display
+failure observed in saved data, not an assumption about changing city minutes.
+
+Each decision now appears once, under its highest-ranked featured topic, or in
+Other Votes if no displayed topic claims it. Topic-ID tie-breaking is stable;
+the stored topic associations and meeting/source links are unchanged. After the
+fix, all three checked cohort pages had 25 selected, displayed and unique votes.
+
+Verification in the same isolated environment: the focused integration/member
+controller/access/API command passed 47 tests and 906 assertions; both browser
+journeys passed 53 assertions, including a page with two topic associations per
+motion. RuboCop checked 635 files without offenses. An isolated process-local
+fault copied a featured vote into Other Votes; the expected four-row assertion
+failed with five rows (1 test, 3 assertions, 1 failure, no errors). Restored
+integration tests passed all 7 tests and 142 assertions. Documentation and
+whitespace checks passed. The preview remains on the same local service.
