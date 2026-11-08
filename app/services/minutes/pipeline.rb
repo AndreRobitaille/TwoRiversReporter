@@ -17,13 +17,22 @@ module Minutes
       false
     end
 
-    def initialize(meeting_id, kind, refresh: false)
+    def initialize(meeting_id, kind, refresh: false, budget_required: false, budget_run_id: nil)
       @meeting = Meeting.find(meeting_id)
       @kind = kind
       @refresh = refresh
+      @budget_required = budget_required
+      @budget_run_id = budget_run_id
     end
 
     def call
+      if @budget_required
+        @meeting.with_lock do
+          attributes = { council_ai_budget_required: true }
+          attributes[:council_ai_budget_run_id] = CouncilAiBudgetRun.find(@budget_run_id).id if @budget_run_id
+          @meeting.update_columns(attributes)
+        end
+      end
       return if !@refresh && Publish.call(@meeting)
       @meeting.with_lock do
         @input = Input.new(@meeting)
@@ -40,7 +49,12 @@ module Minutes
         stamp("needs_review")
         return
       end
-      return unless @stage.claim!
+      # Selection and claims serialize on the meeting. Reload its requirement
+      # here so an ordinary delivery cannot claim from an earlier snapshot.
+      claimed = @meeting.with_lock do
+        @stage.claim!(budget_required: @meeting.council_ai_budget_required?, budget_run_id: @meeting.council_ai_budget_run_id)
+      end
+      return unless claimed
 
       begin
         service = Ai::OpenAiService.new
@@ -50,6 +64,12 @@ module Minutes
         else
           service.extract_committee_members(@input.text, source: @meeting, template: @input.template(@kind), request_recorder: recorder)
         end
+      rescue CouncilProfiles::ReserveAiSpend::Paused => e
+        @stage.with_lock do
+          @stage.update!(status: "budget_paused", attempts: @stage.attempts - 1, error_code: e.message)
+        end
+        stamp("budget_paused")
+        return
       rescue Ai::OpenAiService::IncompleteResponseError => e
         @stage.update!(status: "incomplete", error_code: e.finish_reason || "missing_finish_reason")
         stamp("needs_review")

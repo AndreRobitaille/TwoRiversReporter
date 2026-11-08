@@ -355,9 +355,49 @@ transport or receipt-persistence outcomes remain held; process interruption
 leaves the durable dispatched receipt and the claimed stage. Invalid JSON from
 an otherwise finished response still uses the existing two-attempt ceiling, with
 separate receipts. Completed-input reuse and parallel stage claims continue to
-avoid duplicate requests. This is request-accounting groundwork for #238, not
-its request/run/daily dollar reservation ledger or permission to enable paid
-enrichment. Authorized paid-pilot budget remains zero.
+avoid duplicate requests. The following bounded reservation slice builds on
+these receipts; neither slice authorizes paid enrichment.
+
+Council-requested minutes work enters through
+`CouncilProfiles::ExtractMinutesJob`. Selection permanently requires budget
+admission for this meeting's pending and future minutes stages, including
+ordinary retry/nightly deliveries. Selection and stage claims share the meeting
+lock; a claim inherits the persisted requirement and run inside that transaction,
+even when an ordinary worker prepared its input before selection.
+Previously unselected meetings keep their
+existing ingestion behavior. This is a minutes integration, not app-wide billing.
+No automatic trigger selects meetings or creates spending authorization.
+
+An active administrator must explicitly record an immutable daily allowance and
+run authorization with request/run limits, request count, concurrent-request and
+declared input/output token ceilings, expiry and a prepared request-estimate
+batch. Each estimate binds the stage key and digest of the exact rendered
+provider parameters, model, supplied input token count, output cap, effective
+worst-case rates, count method, pricing reference and check time. These are
+approved preflight inputs: the application validates their shape and exact request
+binding, but does not yet compute or independently validate token counts or
+pricing. Missing or changed estimates pause dispatch. Character counts are not
+treated as token counts. Real preflight validation remains a paid-pilot prerequisite.
+
+Admission locks the daily allowance and run, reserves the full estimate using
+integer micro-USD arithmetic rounded upward, and commits the reservation with its
+request receipt before transport. Separate runs share the same daily allowance;
+retries cannot reset amounts, counts or stage attempts. Budget-paused work keeps
+its source and attempt allowance. A received response releases the run's
+concurrency slot, but the full reserved amount remains charged to the allowance,
+even when reported usage is smaller. Unknown transport/process/persistence
+outcomes retain both amount and slot. No automatic refund, settlement, recovery,
+day rollover or new budget is implemented. Authorizations/reservations remain
+retained through source or actor removal; migration rollback refuses to discard
+spending history.
+
+Completed stages and independent deterministic republication continue without
+budget admission or new calls, including after revocation. The existing nightly
+sweep can requeue budget-paused work but cannot supply a new allowance or reset
+attempt limits. Operational evidence is persisted in stages, processing state,
+reservations and receipts; aggregate displays and recovery controls remain open.
+See [reservation verification](application-map/council-spend-reservations-2026-11-07.md).
+Authorized paid-pilot budget remains zero.
 
 The existing nightly repair sweep checks missing/changed stages and recovers
 missing PDF extraction triggers. It does not reprocess untouched completed legacy

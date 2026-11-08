@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_08_050000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_08_060000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -148,6 +148,52 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_050000) do
     t.datetime "updated_at", null: false
     t.index [ "name" ], name: "index_committees_on_name", unique: true
     t.index [ "slug" ], name: "index_committees_on_slug", unique: true
+  end
+
+  create_table "council_ai_budget_days", force: :cascade do |t|
+    t.date "budget_on", null: false
+    t.bigint "limit_microusd", null: false
+    t.bigint "actor_id"
+    t.bigint "original_actor_id", null: false
+    t.datetime "authorized_at", null: false
+    t.text "authorization_basis", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "actor_id" ], name: "index_council_ai_budget_days_on_actor_id"
+    t.index [ "budget_on" ], name: "index_council_ai_budget_days_on_budget_on", unique: true
+  end
+
+  create_table "council_ai_budget_runs", force: :cascade do |t|
+    t.bigint "council_ai_budget_day_id", null: false
+    t.bigint "limit_microusd", null: false
+    t.bigint "request_limit_microusd", null: false
+    t.integer "max_requests", null: false
+    t.integer "max_concurrent", null: false
+    t.integer "max_input_tokens", null: false
+    t.integer "max_output_tokens", null: false
+    t.datetime "expires_at", null: false
+    t.bigint "actor_id"
+    t.bigint "original_actor_id", null: false
+    t.datetime "authorized_at", null: false
+    t.text "authorization_basis", null: false
+    t.jsonb "request_estimates", null: false
+    t.datetime "revoked_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "actor_id" ], name: "index_council_ai_budget_runs_on_actor_id"
+    t.index [ "council_ai_budget_day_id" ], name: "index_council_ai_budget_runs_on_council_ai_budget_day_id"
+  end
+
+  create_table "council_ai_reservations", force: :cascade do |t|
+    t.bigint "council_ai_budget_run_id", null: false
+    t.jsonb "request_estimate", null: false
+    t.string "request_key", null: false
+    t.bigint "reserved_microusd", null: false
+    t.datetime "finished_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "council_ai_budget_run_id" ], name: "index_council_ai_reservations_on_council_ai_budget_run_id"
+    t.index [ "request_key" ], name: "index_council_ai_reservations_on_request_key", unique: true
   end
 
   create_table "council_decision_assignments", force: :cascade do |t|
@@ -470,7 +516,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_050000) do
     t.string "status"
     t.datetime "updated_at", null: false
     t.bigint "minutes_publication_id"
+    t.boolean "council_ai_budget_required", default: false, null: false
+    t.bigint "council_ai_budget_run_id"
     t.index [ "committee_id" ], name: "index_meetings_on_committee_id"
+    t.index [ "council_ai_budget_run_id" ], name: "index_meetings_on_council_ai_budget_run_id"
     t.index [ "minutes_publication_id" ], name: "index_meetings_on_minutes_publication_id"
   end
 
@@ -547,6 +596,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_050000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.jsonb "evidence_locations"
+    t.boolean "budget_required", default: false, null: false
+    t.bigint "council_ai_budget_run_id"
+    t.index [ "council_ai_budget_run_id" ], name: "index_minutes_extractions_on_council_ai_budget_run_id"
     t.index [ "input_key" ], name: "index_minutes_extractions_on_input_key", unique: true
     t.index [ "meeting_document_text_version_id" ], name: "index_minutes_extractions_on_meeting_document_text_version_id"
     t.index [ "meeting_id" ], name: "index_minutes_extractions_on_meeting_id"
@@ -585,6 +637,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_050000) do
     t.datetime "finished_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "council_ai_reservation_id"
+    t.index [ "council_ai_reservation_id" ], name: "index_minutes_requests_on_council_ai_reservation_id", unique: true
     t.index [ "minutes_extraction_id", "attempt" ], name: "index_minutes_requests_on_minutes_extraction_id_and_attempt", unique: true
     t.index [ "minutes_extraction_id" ], name: "index_minutes_requests_on_minutes_extraction_id"
     t.check_constraint "attempt > 0", name: "minutes_requests_positive_attempt"
@@ -1024,6 +1078,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_050000) do
   add_foreign_key "committee_aliases", "committees"
   add_foreign_key "committee_memberships", "committees"
   add_foreign_key "committee_memberships", "members"
+  add_foreign_key "council_ai_budget_days", "users", column: "actor_id", on_delete: :nullify
+  add_foreign_key "council_ai_budget_runs", "council_ai_budget_days"
+  add_foreign_key "council_ai_budget_runs", "users", column: "actor_id", on_delete: :nullify
+  add_foreign_key "council_ai_reservations", "council_ai_budget_runs"
   add_foreign_key "council_decision_assignments", "council_decision_corrections", column: "correction_id"
   add_foreign_key "council_decision_assignments", "council_decision_observations", column: "observation_id"
   add_foreign_key "council_decision_assignments", "council_decisions"
@@ -1060,16 +1118,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_050000) do
   add_foreign_key "meeting_documents", "meetings"
   add_foreign_key "meeting_summaries", "meetings"
   add_foreign_key "meetings", "committees"
+  add_foreign_key "meetings", "council_ai_budget_runs"
   add_foreign_key "meetings", "minutes_publications"
   add_foreign_key "member_aliases", "members"
   add_foreign_key "member_positions", "members"
   add_foreign_key "membership_applications", "users"
   add_foreign_key "membership_applications", "users", column: "reviewed_by_id"
+  add_foreign_key "minutes_extractions", "council_ai_budget_runs"
   add_foreign_key "minutes_extractions", "meeting_document_text_versions"
   add_foreign_key "minutes_extractions", "meetings", on_delete: :nullify
   add_foreign_key "minutes_publications", "meetings", on_delete: :nullify
   add_foreign_key "minutes_publications", "minutes_extractions", column: "attendance_extraction_id"
   add_foreign_key "minutes_publications", "minutes_extractions", column: "votes_extraction_id"
+  add_foreign_key "minutes_requests", "council_ai_reservations"
   add_foreign_key "minutes_requests", "minutes_extractions"
   add_foreign_key "motions", "agenda_items"
   add_foreign_key "motions", "council_decision_observations", column: "decision_observation_id"

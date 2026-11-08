@@ -1,6 +1,7 @@
 class MinutesRequest < ApplicationRecord
   belongs_to :minutes_extraction
-  attr_readonly :minutes_extraction_id, :attempt, :messages, :request_parameters, :started_at
+  belongs_to :council_ai_reservation, optional: true
+  attr_readonly :minutes_extraction_id, :attempt, :messages, :request_parameters, :started_at, :council_ai_reservation_id
 
   validates :attempt, numericality: { only_integer: true, greater_than: 0 }, uniqueness: { scope: :minutes_extraction_id }
   validates :status, inclusion: { in: %w[dispatched received uncertain] }
