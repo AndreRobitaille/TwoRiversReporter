@@ -47,22 +47,25 @@ module Minutes
 
           fingerprint = fingerprint_for(meeting, votes, attendance)
           return false if meeting.minutes_publication&.fingerprint == fingerprint
-          previous_publication = meeting.minutes_publication
-          previous_motion_ids = meeting.motions.pluck(:id)
-          publication = MinutesPublication.find_by(fingerprint: fingerprint) || MinutesPublication.create!(
-            meeting: meeting, original_meeting_id: meeting.id, fingerprint: fingerprint, projection_context: context_for(meeting),
-            votes_extraction: votes, attendance_extraction: attendance
-          )
-          statuses = Projection.new(meeting, input, votes, attendance.data).call
-          state = meeting.processing_state.dup
-          statuses.each do |kind, status|
-            state[MARKERS.fetch(kind)] = true
-            state[STATUS_KEYS.fetch(kind)] = status
+          Meetings::SummaryPublication.with_lock(meeting.id) do
+            previous_publication = meeting.minutes_publication
+            previous_motion_ids = meeting.motions.pluck(:id)
+            publication = MinutesPublication.find_by(fingerprint: fingerprint) || MinutesPublication.create!(
+              meeting: meeting, original_meeting_id: meeting.id, fingerprint: fingerprint, projection_context: context_for(meeting),
+              votes_extraction: votes, attendance_extraction: attendance
+            )
+            statuses = Projection.new(meeting, input, votes, attendance.data).call
+            state = meeting.processing_state.dup
+            statuses.each do |kind, status|
+              state[MARKERS.fetch(kind)] = true
+              state[STATUS_KEYS.fetch(kind)] = status
+            end
+            meeting.update!(minutes_publication: publication, processing_state: state)
+            Topics::WithdrawFactBriefings.call(meeting: meeting, previous_publication: previous_publication,
+              publication: publication, previous_motion_ids: previous_motion_ids)
+            Meetings::WithdrawFactSummaries.call(meeting: meeting, previous_publication: previous_publication, publication: publication)
+            published = true
           end
-          meeting.update!(minutes_publication: publication, processing_state: state)
-          Topics::WithdrawFactBriefings.call(meeting: meeting, previous_publication: previous_publication,
-            publication: publication, previous_motion_ids: previous_motion_ids)
-          published = true
         end
       end
       Topics::UpdateContinuityJob.perform_later(meeting_id: meeting.id) if published

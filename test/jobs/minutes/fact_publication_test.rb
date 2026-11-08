@@ -269,11 +269,10 @@ class MinutesFactPublicationTest < ActiveJob::TestCase
   test "summary context excludes old motions until the current source is jointly published" do
     run_votes
     run_attendance
-    job = SummarizeMeetingJob.new
-    assert_includes job.send(:motion_context_for, @meeting.reload), "Final action"
+    assert_includes Meetings::MotionContext.capture(@meeting.id).text, "Final action"
     revision("replacement", "Revised closing action and roll call.")
-    assert_not_includes job.send(:motion_context_for, @meeting.reload), "Final action"
-    assert_includes job.send(:motion_context_for, @meeting), "pending"
+    assert_not_includes Meetings::MotionContext.capture(@meeting.id).text, "Final action"
+    assert_includes Meetings::MotionContext.capture(@meeting.id).text, "pending"
   end
 
   test "prompt revision is pinned and invalidates only its own stage" do
