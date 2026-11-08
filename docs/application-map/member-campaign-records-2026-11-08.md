@@ -58,6 +58,14 @@ counts, with zero paid AI calls. The local vote dates start July 7, 2025 and run
 through October 2026; these are available-record counts, not a complete term.
 Missing history is a coverage limit, not a reason to wait for the full backfill.
 
+The separate development preview combines this slice with PR #271's vote UI.
+Actual browser reads of all three real profiles at 390px showed the expected
+3/2/2 campaign cards and no horizontal overflow. Bittner's original-question
+disclosure opened; Derby's numbered page-two link navigated to a new set of
+25 real vote rows, retaining both campaign cards and one bottom-only pager.
+The three profile screenshots and selected page-two control were inspected.
+This combined preview is a local integration check, not a merged release.
+
 ## Repeatable implementation and workflow checks
 
 Ruby 4.0.9, PostgreSQL, one test worker in an isolated test database:
