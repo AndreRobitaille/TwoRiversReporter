@@ -722,6 +722,21 @@ schedule or periodic AI rewrites. Reuse source analysis across members, skip
 unchanged work, coalesce relevant changes, and enforce explicit spending/retry
 limits before paid generation. Attendance and comparison arithmetic use code.
 
+**Owner adjustment, November 8, 2026:** This is a city watchdog's reporting
+feature, not an official or legal record system. Prioritize a useful sourced
+member record, visible coverage gaps, and a practical way to correct errors.
+Preserve the existing foundation work, but defer further generalized correction
+propagation and rare-case hardening until a concrete problem justifies them.
+Published minutes and accepted votes are treated as stable in ordinary operation;
+meeting/topic prose reanalysis reuses those facts. Re-extract established facts
+only for changed source content or an explicit factual correction, within the
+existing spending controls. The next deliverable is the readable member record
+under #237/#240, followed by evidenced service periods and campaign enrichment.
+Missing campaign material does not block that first view. Completion is measured
+by a reader using the page and reaching its sources, not by infrastructure PRs.
+The [delivery priority](superpowers/specs/2026-11-07-council-accountability-design.md#delivery-priority-and-proportionality)
+governs the sequencing of the detailed proposal below.
+
 See the [member-profile planning proposal](superpowers/specs/2026-11-07-council-accountability-design.md)
 for proposed page contents, sources, update cadence, release sequence, and
 remaining decisions. [GitHub parent #234](https://github.com/AndreRobitaille/TwoRiversReporter/issues/234)

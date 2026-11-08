@@ -16,6 +16,43 @@ not shipped behavior. Publication rules and cost limits need pilot evidence
 before broad rollout. GitHub tracking links below organize implementation;
 this document does not claim the feature is implemented or deployed.
 
+## Delivery priority and proportionality
+
+Owner decision, November 8, 2026: TwoRiversReporter is an independent city
+watchdog, not the official city record or a legal records system. Ordinary site
+errors can be corrected when discovered or reported. Engineer for useful,
+sourced reporting and practical correction, without treating every possible
+mistake as a severe or irreversible outcome. This decision governs the scope
+and sequencing of the more detailed proposals below.
+
+- Preserve the existing implementation PRs. Keep stable source/decision links,
+  basic extraction validation, reuse of unchanged work, and explicit spending
+  and retry limits. No paid generation is enabled by this adjustment.
+- Treat published minutes and accepted votes as stable during ordinary operation.
+  Meeting/topic prose reanalysis reuses established votes and attendance. Changed
+  source content or an explicit factual correction can trigger fact extraction;
+  a narrative prompt/model change alone cannot. This is an operating assumption,
+  not a claim that city records never change or our extraction is always right.
+- Make the next slice a readable member record under #237/#240: recorded votes,
+  meeting/source navigation, and honest coverage, followed by evidenced service
+  periods and campaign enrichment. Show missing campaign material as a gap;
+  do not delay the first useful page for it or imply a complete term denominator.
+- A correction is entered once, retained, and reflected in the affected record
+  and implemented profile views. Reuse existing refresh paths for known
+  dependents. Defer further generalized withdrawal cascades, speculative race
+  handling, and rare correction variants until a concrete problem warrants a
+  bounded fix; they are not prerequisites for the first readable record.
+- Judge progress by the reader's source-to-page workflow. A synthetic failure
+  demonstrates a conditional defect, not its frequency in production. Identify
+  whether a problem is observed, introduced by new code, or hypothetical before
+  investing in more defenses. Apply representative behavioral checks to the
+  slice being delivered; do not expand into an exhaustive fault matrix.
+
+Source attribution, no fabricated votes or conclusions, access/privacy rules,
+and enforced spending limits remain requirements. Formal complaints and findings
+still need careful attribution. Proportionality changes delivery priorities;
+it does not turn unsupported claims into acceptable reporting.
+
 ## Purpose and first release
 
 A resident should be able to answer: What did this person say they would do?
@@ -70,7 +107,7 @@ AI-generated explanations retain citations and distinguish actions from outcomes
 | HTR or another candidate questionnaire | From one supplied source, extract each identified candidate's positions, preserve context/citations, and link topics and election/term | Locate/provide the article URL or permitted source material when discovery cannot find it |
 | Voter forum | Ingest a prepared speaker-labeled transcript or excerpts; extract positions and evidence links for all identified participants | Prepare/correct speaker attribution in a separate workflow and supply the result with recording references |
 | New topic developments | Relate new actions and outcome evidence to relevant campaign positions; refresh affected timelines and generated explanations | Resolve uncertain matches or interpretations |
-| Source, identity, or term correction | Revalidate dependent evidence, recalculate comparisons, and refresh or withdraw affected statements across representations | Supply the correction once, with its basis |
+| Source, identity, or term correction | Retain the correction, update the affected record/profile, and refresh known dependents through existing paths | Supply the correction once, with its basis |
 
 Manual onboarding is normally per source, not per candidate, statement, or page.
 No routine requirement to enter every promise, connect every vote, approve every
@@ -581,8 +618,8 @@ to running schedules or promises of immediate discovery on the city's website.
 | Validated evidence change | Mark dependent members/topics dirty; coalesce changes for about 15 minutes; recompute facts and comparisons; generate only affected explanations | Facts need not wait for an optional narrative; generated sections publish only against the current evidence manifest |
 | Daily roster/source check | Fetch registered official roster and service-event sources; validate changes against existing identities and source authority | Update current roles automatically when validation succeeds; unknown service dates remain unresolved rather than inferred from attendance |
 | Reconciliation within existing nightly processing | Compare source/evidence versions with published projections; recover missed triggers and retry eligible failed work | Check processing status without AI; enqueue only missing or changed work within the existing retry and spending limits; no separate hourly schedule |
-| Weekly historical/source reconciliation | Revisit the shared April 2024-onward Council inventory, older missing/corrected minutes, and registered campaign/project/case sources using conditional fetching | New/changed bytes re-enter the same pipeline; unchanged sources generate no AI work |
-| Source, speaker, identity, term, or editorial correction | Invalidate dependent evidence/claims, recalculate denominators, and refresh the affected pages | One correction propagates across members, topics, comparisons, caches, and permitted metadata/search outputs |
+| Historical/source reconciliation when the bounded backfill is enabled | Check the shared inventory and known missing sources within existing nightly processing; add older-source checks when a demonstrated coverage need warrants them | New/changed content uses the same pipeline; unchanged sources generate no AI work; no separate historical polling schedule is required for the first page |
+| Source, speaker, identity, term, or editorial correction | Update affected evidence and implemented profile views; recalculate any affected denominators and reuse existing refresh paths | One retained correction updates known dependents; expanding generalized cross-surface withdrawal is deferred under the November 8 delivery priority |
 
 Official packets and minutes supply most ongoing updates. Supporting project
 reports, budgets, resolutions, clerk/case records, and public official project
@@ -675,6 +712,10 @@ Ordinary failed-job retries and corrections need not wait for that nightly pass.
 - Reuse existing accepted document analysis, structured votes, and topic outcomes
   where they satisfy the evidence contract. Add missing extraction stages only
   where necessary; do not analyze the same meeting independently for nine people.
+- Ordinary meeting/topic narrative reanalysis reuses established votes and
+  attendance. Only changed source content or an explicit factual correction
+  reopens accepted facts for extraction; a narrative prompt/model/schema change
+  is not a factual correction or authorization to re-extract them.
 - Cache completed stages by source/content version, task, and relevant
   model/prompt/schema versions. Unchanged imports, repeated deliveries, and
   nightly checks produce zero new AI calls when the required result exists.
@@ -772,9 +813,14 @@ questions and formal-case records also need source discovery before their respec
 features can be evaluated. That discovery is not a production backfill, and it
 does not all need to block the first campaign/action sample.
 
-The page/source/update portion of M0 is proposed in this document. Suggested
-first implementation slice after source validation: **Connect one campaign source
-and later meeting to automatically updated member records**. Acceptance:
+The November 8 adjustment makes the next slice **a readable member record with
+recorded votes, meeting/source navigation, and explicit coverage gaps**. It can
+reuse existing accepted facts without paid generation. Add evidenced service
+periods before presenting full-term rates or comparisons. The complete M1 loop
+then connects a campaign source and later meeting to automatically updated member
+records. Missing campaign material does not block the readable record; use
+clearly synthetic fixtures for unavailable-source implementation paths.
+Acceptance for that complete M1 loop, rather than every preliminary slice:
 
 - Use independently checked people, service dates, and a bounded source sample;
   identify missing evidence and keep sample counts separate from full-term counts.
@@ -788,8 +834,9 @@ and later meeting to automatically updated member records**. Acceptance:
   issue's outcome separate. Include a losing vote and an unknown outcome in the
   evaluation; do not fabricate a resolution when the real sample lacks one.
 - An unchanged re-import makes no duplicate evidence or unnecessary AI calls.
-  One source or identity correction updates every dependent display, withdraws
-  the wrong claim, and remains correct after reprocessing and a later request.
+  One source or identity correction updates the affected implemented profile
+  displays, withdraws the wrong claim, and remains correct after reprocessing
+  and a later request. Reuse existing refresh paths for other known dependents.
 - Incomplete sources and unresolved attribution remain visible as coverage gaps;
   valid unrelated evidence publishes without routine manual approval. Preserve
   the existing source-access and reporting-authorization boundaries.
@@ -826,10 +873,14 @@ Implementation work:
 | [#244 — add sourced formal complaint and finding timelines](https://github.com/AndreRobitaille/TwoRiversReporter/issues/244) | M3 |
 | [#245 — backfill shared Council history and validate the first cohort](https://github.com/AndreRobitaille/TwoRiversReporter/issues/245) | M3 |
 
-Start with #235's bounded source/contract check, then #236's evidence foundation.
-#238's cost controls are a prerequisite for #239's campaign processing. The first
-complete resident-facing loop is #240. Dependencies and acceptance are recorded
-in each issue; the later work packages may need more than one small PR.
+The bounded source/contract work and foundation implementation PRs are available
+for review. Preserve that work and stop expanding #236 into further generalized
+correction infrastructure. The next deliverable is the readable record under
+#237/#240, followed by service periods and campaign enrichment. #238's enforced
+cost controls remain a prerequisite for paid processing, not for a read-only
+page using existing accepted facts. #240 still tracks the complete M1 loop.
+Dependencies apply to the behavior a slice uses, not every future requirement
+in a prerequisite issue.
 
 Public tracking should contain product scope and acceptance, not unpublished
 case allegations, full copyrighted source material, private correspondence,
@@ -848,7 +899,11 @@ when their contracts are approved. Do not mark them implemented in the
 application map from this proposal.
 
 Use the [behavioral QA procedure](../../application-map/maintenance-and-qa.md).
-Representative acceptance scenarios include:
+Select representative acceptance scenarios for the behavior being delivered.
+This is a catalog for the full feature, not a requirement to build or fault-test
+every downstream surface before showing the first member record. Include a
+practical correction and later read when that path is introduced; broader
+correction variants follow demonstrated need. Scenarios include:
 
 - One supplied article or prepared transcript yields the supported positions for
   multiple identified members, without per-statement entry or per-page publishing.
