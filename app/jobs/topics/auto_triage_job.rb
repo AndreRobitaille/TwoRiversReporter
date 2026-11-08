@@ -18,6 +18,7 @@ module Topics
         max_topics: 50,
         skip_unchanged: true
       )
+      ExtractCouncilIssueUpdatesJob.perform_later if CouncilProfiles::LiveSources.enabled?
     end
   end
 end

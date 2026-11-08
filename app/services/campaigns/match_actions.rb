@@ -34,7 +34,7 @@ module Campaigns
 
     def self.call(stage, budget_run: nil)
       claimed = false
-      budget_run ||= CouncilProfiles::LiveActionBudget.call(stage)
+      budget_run ||= CouncilProfiles::LiveBudget.call(stage)
       claimed = stage.claim!(budget_run)
       return stage unless claimed
       raise CouncilProfiles::ReserveAiSpend::Paused, "missing_budget" unless budget_run

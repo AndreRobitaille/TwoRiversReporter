@@ -32,9 +32,9 @@ module CouncilProfiles
             raise Paused, "budget_expired" unless day.budget_on == Date.current && run.expires_at > Time.current
             raise Paused, "budget_revoked" if run.revoked_at
             if run.live_budget_month_id
-              policy = month.live_actions
+              policy = LiveBudget.policy_for(stage, month)
               raise Paused, "live_policy_mismatch" unless run.live_budget_month_id == month.id && policy.present?
-              unless stage.is_a?(CampaignActionReview) && stage.meeting&.reload&.starts_at&.to_date&.between?(Date.iso8601(policy.fetch("starting_on")), Date.current)
+              unless LiveBudget.meeting_for(stage)&.reload&.starts_at&.to_date&.between?(Date.iso8601(policy.fetch("starting_on")), Date.current)
                 raise Paused, "outside_live_meeting_window"
               end
               daily_requests = CouncilAiReservation.joins(:council_ai_budget_run).where(council_ai_budget_runs: { council_ai_budget_day_id: day.id })

@@ -70,6 +70,7 @@ module Minutes
       end
       Topics::UpdateContinuityJob.perform_later(meeting_id: meeting.id) if published
       MatchCampaignActionsJob.perform_later(meeting.id) if published
+      ExtractCouncilIssueUpdatesJob.perform_later(meeting_id: meeting.id) if published && CouncilProfiles::LiveSources.enabled?
       published
     rescue Input::Unavailable
       false

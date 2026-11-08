@@ -459,14 +459,17 @@ and held before provider construction; no text is silently truncated.
 - **Start / data:** explicitly selected official minutes or packet document, existing
   approved agenda/topic links, populated prompt and exact month/day/run budget.
 - **Action:** `ExtractCouncilIssueUpdatesJob` retains one shared source result;
-  existing nightly campaign recovery revisits selected documents only.
+  existing nightly campaign recovery revisits selected documents and explicitly
+  registered live committee/document channels within their authorized date window.
 - **Required outcome:** distinct milestones, scope, conditions, source passages
   and event/report dates reach every relevant member without attributing credit,
   grading promises or creating votes. No budget means no transport; unchanged
   input reuses its result and source corrections remove stale projections.
 - **Failures / limits:** uncertain/incomplete responses hold; malformed responses
   have two attempts; oversized sources hold intact; changed source/topic inputs
-  cannot serve old output. No automatic source discovery or live admission yet.
+  cannot serve old output. New-source admission requires an explicit monthly
+  source policy; it does not enable a historical backfill or discover unsupported
+  project/case websites.
 - **Evidence:** [shared issue-update verification](council-issue-updates-2026-11-08.md).
   [Recorded-action verification](council-recorded-actions-2026-11-08.md) extends new
   requests with attributed actions. Completed older results reuse unchanged;
@@ -474,6 +477,10 @@ and held before provider construction; no text is silently truncated.
   [Explicit recommendation verification](council-staff-recommendations-2026-11-08.md)
   adds attributed recommendations to the same new request. Exact unchanged-proposal
   comparisons use recorded votes; changed wording and uncertain timing stay unresolved.
+  [Registered live-source verification](council-live-sources-2026-11-08.md)
+  covers source-specific scope, shared admission, new-topic/source triggers and
+  unchanged nightly recovery without an additional schedule.
+
 
 
 ## Configured recurring entry points
