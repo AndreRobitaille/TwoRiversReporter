@@ -1,0 +1,29 @@
+<% if @recorded_votes.any? %>
+  <div class="member-recorded-votes member-topic-votes">
+    <% @recorded_votes.each do |vote| %>
+      <% motion = vote.motion %>
+      <div class="member-vote-row" id="recorded-vote-<%= vote.id %>">
+        <div class="member-vote-motion">
+          <span class="member-vote-date"><%= motion.meeting.starts_at&.strftime("%b %-d, %Y") %></span>
+          <span class="member-vote-body"><%= motion.meeting.body_name %></span>
+          <% if motion.agenda_item&.title.present? %>
+            <p class="member-recorded-agenda"><%= motion.agenda_item.title %></p>
+          <% end %>
+          <p class="member-recorded-motion"><%= motion.description.presence || "Motion description unavailable." %></p>
+          <%= link_to "Meeting and sources", meeting_path(motion.meeting), class: "member-recorded-source" %>
+        </div>
+        <div class="member-vote-result">
+          <span class="vote-value <%= vote_color_class(vote.value) %>"><%= vote.value&.titleize || "Unknown" %></span>
+          <span class="member-vote-split">Recorded yes/no: <%= vote_split(motion) %> · <%= motion.outcome.presence&.titleize || "Unknown" %></span>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% elsif @pagy.count.zero? %>
+  <p class="member-recorded-empty section-empty">No votes have been recorded for this member yet.</p>
+<% else %>
+  <p class="member-recorded-empty section-empty">No recorded votes on this page.</p>
+  <%= link_to "Return to the newest votes", member_path(@member, votes: "all", anchor: "voting-record") %>
+<% end %>
+
+<%= render "vote_pagination" %>

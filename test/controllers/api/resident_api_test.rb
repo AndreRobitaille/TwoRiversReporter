@@ -201,6 +201,14 @@ class Api::ResidentApiTest < ActionDispatch::IntegrationTest
     get "/api/v1/officials/#{@official.id}/votes", headers: bearer
     assert_equal [ @vote.id ], data.map { |entry| entry["id"] }
     assert_equal "passed", data.first.dig("motion", "outcome")
+
+    procedural = @meeting.motions.create!(description: "Move into closed session", outcome: "passed")
+    procedural_vote = procedural.votes.create!(member: @official, value: "yes")
+    get "/api/v1/officials/#{@official.id}/votes", headers: bearer
+    assert_equal [ @vote.id ], data.map { |entry| entry["id"] }
+    procedural.votes.create!(member: Member.create!(name: "Dissenting official"), value: "no")
+    get "/api/v1/officials/#{@official.id}/votes", headers: bearer
+    assert_equal [ procedural_vote.id, @vote.id ], data.map { |entry| entry["id"] }
   end
 
   test "collection pagination enforces caps and gives each identity exactly once" do
