@@ -17,19 +17,31 @@ module Minutes
       false
     end
 
-    def initialize(meeting_id, kind, refresh: false)
+    def initialize(meeting_id, kind, refresh: false, budget_required: false, budget_run_id: nil)
       @meeting = Meeting.find(meeting_id)
       @kind = kind
       @refresh = refresh
+      @budget_required = budget_required
+      @budget_run_id = budget_run_id
     end
 
     def call
+      if @budget_required
+        @meeting.with_lock do
+          attributes = { council_ai_budget_required: true }
+          attributes[:council_ai_budget_run_id] = CouncilAiBudgetRun.find(@budget_run_id).id if @budget_run_id
+          @meeting.update_columns(attributes)
+        end
+      end
       return if !@refresh && Publish.call(@meeting)
       @meeting.with_lock do
         @input = Input.new(@meeting)
         @stage = MinutesExtraction.find_by(input_key: @input.key(@kind))
         @stage ||= @input.completed_stage(@kind) unless @refresh
         @stage ||= MinutesExtraction.create!(@input.stage_attributes(@meeting, @kind))
+        if @meeting.council_ai_budget_required? && @stage.status.in?(%w[pending failed budget_paused])
+          @stage.update!(budget_required: true, council_ai_budget_run_id: @meeting.council_ai_budget_run_id)
+        end
       end
       if @stage.status == "completed"
         Publish.call(@meeting)
@@ -50,6 +62,12 @@ module Minutes
         else
           service.extract_committee_members(@input.text, source: @meeting, template: @input.template(@kind), request_recorder: recorder)
         end
+      rescue CouncilProfiles::ReserveAiSpend::Paused => e
+        @stage.with_lock do
+          @stage.update!(status: "budget_paused", attempts: @stage.attempts - 1, error_code: e.message)
+        end
+        stamp("budget_paused")
+        return
       rescue Ai::OpenAiService::IncompleteResponseError => e
         @stage.update!(status: "incomplete", error_code: e.finish_reason || "missing_finish_reason")
         stamp("needs_review")

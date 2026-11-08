@@ -97,6 +97,22 @@ module Ai
           total_tokens: usage["total_tokens"]
         }
       end
+
+      # The budget preflight and real transport share these exact text-only
+      # parameters. This prepares a request; it does not count tokens or call AI.
+      def minutes_request_parameters(kind:, text:, agenda_items_text: "", template: nil)
+        raise ArgumentError, "Unknown minutes stage" unless kind.in?(%w[votes attendance])
+        raise InputTooLargeError, "Minutes require a reviewed partition" if text.length > MAX_MINUTES_CHARS
+        template ||= PromptTemplate.find_by!(key: kind == "votes" ? "extract_votes" : "extract_committee_members")
+        placeholders = kind == "votes" ? { text: text, agenda_items: agenda_items_text } : { text: text }
+        messages = [
+          (template.system_role.present? ? { role: "system", content: template.system_role } : nil),
+          { role: "user", content: template.interpolate(**placeholders) }
+        ].compact
+        build_chat_parameters(model: model_for_tier(template.model_tier), messages: messages,
+          temperature: kind == "votes" ? 0.1 : nil, response_format: { type: "json_object" })
+          .merge(max_completion_tokens: MAX_MINUTES_COMPLETION_TOKENS)
+      end
     end
 
     # Experimental calls use the same parameter construction as production but
@@ -130,26 +146,15 @@ module Ai
     end
 
     def extract_votes(text, agenda_items_text: "", source: nil, template: nil, request_recorder: nil)
-      raise InputTooLargeError, "Minutes require a reviewed partition" if text.length > MAX_MINUTES_CHARS
-      template ||= PromptTemplate.find_by!(key: "extract_votes")
-      system_role = template.system_role
       placeholders = { text: text, agenda_items: agenda_items_text }
-      prompt = template.interpolate(**placeholders)
-      model = self.class.model_for_tier(template.model_tier)
-
-      messages = [
-        (system_role.present? ? { role: "system", content: system_role } : nil),
-        { role: "user", content: prompt }
-      ].compact
-
-      content, duration_ms = call_api(model: model, messages: messages, temperature: 0.1, response_format: { type: "json_object" },
-        max_completion_tokens: MAX_MINUTES_COMPLETION_TOKENS, request_recorder: request_recorder)
+      parameters = self.class.minutes_request_parameters(kind: "votes", text: text, agenda_items_text: agenda_items_text, template: template)
+      content, duration_ms = call_api(**parameters, request_recorder: request_recorder)
 
       record_prompt_run(
         template_key: "extract_votes",
-        messages: messages,
+        messages: parameters.fetch(:messages),
         response_content: content,
-        model: model,
+        model: parameters.fetch(:model),
         response_format: "json_object",
         temperature: 0.1,
         duration_ms: duration_ms,
@@ -161,26 +166,15 @@ module Ai
     end
 
     def extract_committee_members(text, source: nil, template: nil, request_recorder: nil)
-      raise InputTooLargeError, "Minutes require a reviewed partition" if text.length > MAX_MINUTES_CHARS
-      template ||= PromptTemplate.find_by!(key: "extract_committee_members")
-      system_role = template.system_role
       placeholders = { text: text }
-      prompt = template.interpolate(**placeholders)
-      model = self.class.model_for_tier(template.model_tier)
-
-      messages = [
-        (system_role.present? ? { role: "system", content: system_role } : nil),
-        { role: "user", content: prompt }
-      ].compact
-
-      content, duration_ms = call_api(model: model, messages: messages, response_format: { type: "json_object" },
-        max_completion_tokens: MAX_MINUTES_COMPLETION_TOKENS, request_recorder: request_recorder)
+      parameters = self.class.minutes_request_parameters(kind: "attendance", text: text, template: template)
+      content, duration_ms = call_api(**parameters, request_recorder: request_recorder)
 
       record_prompt_run(
         template_key: "extract_committee_members",
-        messages: messages,
+        messages: parameters.fetch(:messages),
         response_content: content,
-        model: model,
+        model: parameters.fetch(:model),
         response_format: "json_object",
         duration_ms: duration_ms,
         source: source,

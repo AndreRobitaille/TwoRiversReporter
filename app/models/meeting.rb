@@ -15,6 +15,7 @@ class Meeting < ApplicationRecord
   has_many :council_decisions, dependent: :nullify
 
   validates :detail_page_url, presence: true
+  validate :retain_council_budget_requirement
 
   scope :upcoming, -> { where("starts_at > ?", Time.current).order(starts_at: :asc) }
   scope :recent, -> { where("starts_at <= ?", Time.current).order(starts_at: :desc) }
@@ -203,6 +204,12 @@ class Meeting < ApplicationRecord
   end
 
   private_class_method :parse_date_filter
+
+  private def retain_council_budget_requirement
+    if persisted? && council_ai_budget_required_in_database && will_save_change_to_council_ai_budget_required?
+      errors.add(:council_ai_budget_required, "cannot bypass a required council budget")
+    end
+  end
 
   private def processing_stamp_current?(marker)
     marker.to_s == "meeting_page_parsed_at" && processing_marker_set?(marker) && meeting_page_parsed_at.present?
