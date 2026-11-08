@@ -5,6 +5,7 @@ class Member < ApplicationRecord
   has_many :votes, dependent: :destroy
   has_many :committee_memberships, dependent: :destroy
   has_many :member_positions, dependent: :destroy
+  has_many :council_service_periods, dependent: :destroy
   has_many :current_member_positions, -> { current }, class_name: "MemberPosition"
   has_many :meeting_attendances, dependent: :destroy
   has_many :member_aliases, dependent: :destroy
@@ -117,6 +118,14 @@ class Member < ApplicationRecord
 
       # Preserve campaign evidence and its original source attribution.
       campaign_statements.update_all(member_id: target.id)
+
+      # Conflicting period keys fail validation and roll back the merge rather
+      # than silently discarding a sourced service history.
+      council_service_periods.each do |period|
+        unless period.update(member: target)
+          raise ArgumentError, "Council service dates could not be merged: #{period.errors.full_messages.to_sentence}"
+        end
+      end
 
       # Move aliases to target (skip if name already taken)
       member_aliases.each do |member_alias|

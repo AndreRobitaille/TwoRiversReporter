@@ -11,6 +11,8 @@
     <% end %>
   </header>
 
+  <%= render "service_periods", periods: @service_periods %>
+
   <%= render "campaign_statements", statements: @campaign_statements if @campaign_statements&.any? %>
 
   <section class="member-article-section">

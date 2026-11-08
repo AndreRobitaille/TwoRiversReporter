@@ -373,6 +373,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_200000) do
     t.index [ "public_id" ], name: "index_council_decisions_on_public_id", unique: true
   end
 
+  create_table "council_service_periods", force: :cascade do |t|
+    t.bigint "member_id", null: false
+    t.string "period_key", null: false
+    t.date "started_on", null: false
+    t.date "ended_on"
+    t.bigint "start_source_version_id", null: false
+    t.integer "start_page", null: false
+    t.bigint "end_source_version_id"
+    t.integer "end_page"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "end_source_version_id" ], name: "index_council_service_periods_on_end_source_version_id"
+    t.index [ "member_id", "period_key" ], name: "index_council_service_periods_on_member_id_and_period_key", unique: true
+    t.index [ "member_id" ], name: "index_council_service_periods_on_member_id"
+    t.index [ "start_source_version_id" ], name: "index_council_service_periods_on_start_source_version_id"
+  end
+
   create_table "entities", force: :cascade do |t|
     t.json "aliases"
     t.datetime "created_at", null: false
@@ -1214,6 +1231,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_200000) do
   add_foreign_key "council_decision_observations", "council_decisions"
   add_foreign_key "council_decision_observations", "minutes_extractions"
   add_foreign_key "council_decisions", "meetings", on_delete: :nullify
+  add_foreign_key "council_service_periods", "meeting_document_versions", column: "end_source_version_id"
+  add_foreign_key "council_service_periods", "meeting_document_versions", column: "start_source_version_id"
+  add_foreign_key "council_service_periods", "members"
   add_foreign_key "entity_facts", "entities"
   add_foreign_key "entity_mentions", "entities"
   add_foreign_key "entity_mentions", "meeting_documents"
