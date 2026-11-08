@@ -126,9 +126,39 @@ Bittner's second paragraph must remain attached to his question 3 answer.
 One source can serve all five candidates, with service eligibility applied later.
 No later action or outcome has yet been matched to these positions.
 
-The 2025 HTR/League leads and 2026 questionnaire concern other cohorts. No forum
-recording/audio or speaker labeling was verified. The sources must not be joined
-into a fictitious longitudinal claim.
+The 2025 HTR/League leads and 2026 questionnaire concern other cohorts. The
+2024 forum sources and remaining attribution gap are recorded below. Sources
+from different cohorts must not become a fictitious longitudinal claim.
+
+### November 8 source discovery: 2024 voter forums
+
+The owner supplied two recordings from the `Two_Rivers WI` YouTube channel:
+
+| Recording | Event identification | Upload date / duration |
+| --- | --- | --- |
+| [March 7 recording](https://www.youtube.com/watch?v=L7V9c2_RGWE) | League of Women Voters candidate forum | March 8, 2024 / 1:23:17 |
+| [March 12 recording](https://www.youtube.com/watch?v=L9Tlws24jm4) | Two Rivers Business Association candidate forum; uploaded title incorrectly names the League | March 13, 2024 / 1:07:11 |
+
+The [February 19 Council agenda, PDF p.1, items 9B3–4](https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Packet-fac98f71385740fb9f7e7de858f07130.pdf#page=1)
+lists the organizers on those dates. Opening automatic captions identify the
+League at about 1:11 in the first video and TRBA at about 1:16 in the second.
+This corroborates the owner's warning about a mislabeled upload. Retain the
+uploaded title alongside the corrected event label; upload dates are separate
+from event dates. The exact spoken title and names still need audio review.
+
+Automatic English VTT captions were retrieved for both on November 8, 2026;
+no manually supplied caption tracks were listed. Raw captions and source
+metadata remain in the ignored local `tmp/council-forums/2024/` intake folder,
+outside the public Git history. No paid transcription or website import ran.
+The introductions were inspected, not the full debate or audio. Candidate
+statements and speaker identities are not yet verified. Caption availability
+does not establish complete transcription coverage.
+
+The remaining manual input is a speaker-labeled, corrected transcript or selected
+excerpts with timestamp ranges, retaining moderator questions and marking
+unresolved speakers. SRT, VTT or timestamped text is sufficient; transcript
+preparation remains outside the website. This work does not block the readable
+member record or use of the independently checked HTR questionnaire.
 
 Foundation tests instead use clearly synthetic people and sources. The shared
 fixture includes two candidates, a candidate who votes against a fee and loses,
