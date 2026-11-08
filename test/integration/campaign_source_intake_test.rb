@@ -11,7 +11,7 @@ class CampaignSourceIntakeTest < ActionDispatch::IntegrationTest
 
   test "one article saves all supplied context privately without creating candidates or calling AI" do
     Ai::OpenAiService.stub(:new, ->(*) { flunk "Saving an article must not call AI" }) do
-      assert_no_enqueued_jobs do
+      assert_enqueued_jobs 1, only: ExtractCampaignSourceJob do
         assert_no_difference [ "Member.count", "MemberPosition.count", "PromptRun.count" ] do
           post admin_campaign_sources_path, params: { campaign_source: campaign_article_attributes.merge(submitted_by_id: -1) }
         end
@@ -23,7 +23,7 @@ class CampaignSourceIntakeTest < ActionDispatch::IntegrationTest
       assert_select "[data-campaign-source-text] script", count: 0
       assert_equal @admin.id, source.current_version.submitted_by_id
       assert_equal campaign_article_attributes[:body], source.current_version.body
-      assert_match "Analysis has not been enabled", response.body
+      assert_match "New analysis requires a spending allowance", response.body
 
       original = source.current_version
       assert_no_difference [ "CampaignSource.count", "CampaignSourceVersion.count" ] do

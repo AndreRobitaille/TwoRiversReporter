@@ -67,7 +67,9 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   needed processing; maintain one public canonical event without losing source
   records. A stale listing does not undo cancellation (RES-08).
 - **Next:** newly linked documents advance enrichment; unchanged discovery does
-  not misrepresent a new source publication or content update.
+  not misrepresent a new source publication or content update. The scheduled job
+  also queues BG-08 campaign recovery before fetching the city listing, using
+  the existing nightly schedule.
 - **Failure variants:** unreachable/changed HTML, unresolved body, duplicate race,
   malformed time, parse failure after discovery, missing worker.
 - **Observed:** [DiscoverMeetingsJob](../../app/jobs/scrapers/discover_meetings_job.rb),
@@ -397,6 +399,10 @@ provider diagnostics; permanent HTTP rejections bypass transient retries. See
   explicit run/day allowance and exact request estimate. No budget means paused.
 - **Action:** ExtractCampaignSourceJob analyzes the supplied article once for all
   participants through the existing AI service and shared spending recorder.
+  A committed source save queues it when extraction is missing. Nightly discovery
+  queues ReconcileCampaignSourcesJob to recover missing/pending intake and publish
+  completed cached results. Paused, running, uncertain and failed stages are not
+  automatically retried; this does not admit paid work.
 - **Required outcome:** original questions, full answer passages, distinct
   statements, conditions/timeframes and gaps remain in one retained result.
   Counts and exact text locations use code. Unresolved attribution/passages flag
@@ -413,8 +419,9 @@ provider diagnostics; permanent HTTP rejections bypass transient retries. See
   oversized source, missing participant or continuation, unauthorized reads.
 - **Evidence:** [shared extraction verification](shared-campaign-extraction-2026-11-08.md).
   [Member publication verification](member-campaign-records-2026-11-08.md) covers
-  current-source projection and cached identity repair. Automatic admission,
-  real-provider accuracy and campaign/action comparisons remain subsequent work.
+  current-source projection and cached identity repair. [Automatic update checks](campaign-update-triggers-2026-11-08.md)
+  cover source-save triggers and nightly recovery. Paid admission, real-provider
+  accuracy and campaign/action comparisons remain subsequent work.
 
 ## Configured recurring entry points
 

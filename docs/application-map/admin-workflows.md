@@ -410,10 +410,11 @@ assertions below are candidate acceptance criteria based on the user's brief.
 - **Required outcome:** complete supplied text/context and source metadata persist
   privately. Unchanged input reuses its version; duplicate URL intake cannot undo
   an explicit correction. Source retention creates no candidate, office or claim.
-- **Next:** source intake queues no work and calls no AI. After a separately
-  budgeted extraction job, the source page shows all extracted participants,
-  statements, qualifications, supporting passages and reported gaps privately.
-  Intake and page reads do not publish claims. The extraction job now publishes
+- **Next:** committed source changes queue shared processing when the current
+  version has no extraction. Identical analysis input reuses cached results;
+  new analysis pauses without a spending allowance. The source page shows all
+  extracted participants, statements, qualifications, passages and gaps privately.
+  Page reads do not publish claims. The extraction job publishes
   statements whose source passage and unique existing member identity pass the
   automatic checks; this view links matched records and identifies exceptions.
 - **Failures:** missing input, invalid publisher link, missing publication date
@@ -424,3 +425,5 @@ assertions below are candidate acceptance criteria based on the user's brief.
   through this private view. [Member publication checks](member-campaign-records-2026-11-08.md)
   cover the subsequent identity/publication boundary. Forum handoff and a real
   paid-pilot authorization remain separate work.
+  [Automatic update checks](campaign-update-triggers-2026-11-08.md) cover saved
+  corrections, cached publication and recovery during existing nightly processing.

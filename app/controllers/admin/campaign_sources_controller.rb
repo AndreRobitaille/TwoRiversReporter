@@ -46,7 +46,7 @@ module Admin
     def save_source(failure_view)
       @source.submitted_by = Current.user
       if @source.save
-        redirect_to admin_campaign_source_path(@source), notice: "Article saved. Analysis has not been enabled."
+        redirect_to admin_campaign_source_path(@source), notice: "Article saved."
       else
         render failure_view, status: :unprocessable_entity
       end
