@@ -3,7 +3,7 @@ module Campaigns
     VALIDATION_METHOD = "article_passage_and_existing_identity_v1".freeze
 
     def self.call(extraction)
-      return unless extraction.status == "completed"
+      return unless extraction.purpose == "statements" && extraction.status == "completed"
 
       extraction.with_lock do
         sequence = 0

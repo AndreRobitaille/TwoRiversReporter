@@ -12,10 +12,12 @@ class ReconcileCampaignSourcesJobTest < ActiveJob::TestCase
     assert_empty CampaignStatement.all
     clear_enqueued_jobs
     Ai::OpenAiService.stub(:new, ->(*) { flunk "Publication recovery must not repeat analysis" }) do
-      ReconcileCampaignSourcesJob.perform_now
+      assert_enqueued_with(job: MatchCampaignTopicsJob, args: [ @source.id ]) { ReconcileCampaignSourcesJob.perform_now }
       assert_equal [ 2, 2, 1 ], [ @jordan, @taylor, @morgan ].map { |member| CampaignStatement.current_for(member).size }
       published = CampaignStatement.order(:id).pluck(:id, :updated_at)
-      ReconcileCampaignSourcesJob.perform_now
+      perform_enqueued_jobs(only: MatchCampaignTopicsJob)
+      assert_equal "completed", @source.current_version.topic_matching.status
+      assert_no_enqueued_jobs { ReconcileCampaignSourcesJob.perform_now }
       assert_equal published, CampaignStatement.order(:id).pluck(:id, :updated_at)
     end
     assert_no_enqueued_jobs

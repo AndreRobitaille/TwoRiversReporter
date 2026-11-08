@@ -1,7 +1,7 @@
 module Campaigns
   class ExtractSource
     def self.prepare(version)
-      existing = CampaignExtraction.find_by(campaign_source_version: version)
+      existing = version.extraction
       return existing if existing
 
       parameters = Ai::OpenAiService.campaign_request_parameters(version)

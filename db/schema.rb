@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_08_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_08_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -123,7 +123,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_180000) do
     t.datetime "completed_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index [ "campaign_source_version_id" ], name: "index_campaign_extractions_on_campaign_source_version_id", unique: true
+    t.string "purpose", default: "statements", null: false
+    t.jsonb "context", default: {}, null: false
+    t.index [ "campaign_source_version_id", "purpose" ], name: "idx_on_campaign_source_version_id_purpose_f796b010a7", unique: true
     t.index [ "council_ai_budget_run_id" ], name: "index_campaign_extractions_on_council_ai_budget_run_id"
     t.index [ "input_key" ], name: "index_campaign_extractions_on_input_key", unique: true
     t.index [ "reused_from_id" ], name: "index_campaign_extractions_on_reused_from_id"
@@ -184,6 +186,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_180000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index [ "source_url" ], name: "index_campaign_sources_on_source_url", unique: true
+  end
+
+  create_table "campaign_statement_topics", force: :cascade do |t|
+    t.bigint "campaign_extraction_id", null: false
+    t.bigint "campaign_statement_id", null: false
+    t.bigint "topic_id", null: false
+    t.bigint "original_topic_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "campaign_extraction_id", "campaign_statement_id", "original_topic_id" ], name: "idx_campaign_statement_topics_identity", unique: true
+    t.index [ "campaign_extraction_id" ], name: "index_campaign_statement_topics_on_campaign_extraction_id"
+    t.index [ "campaign_statement_id" ], name: "index_campaign_statement_topics_on_campaign_statement_id"
+    t.index [ "topic_id" ], name: "index_campaign_statement_topics_on_topic_id"
   end
 
   create_table "campaign_statements", force: :cascade do |t|
@@ -1174,6 +1189,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_180000) do
   add_foreign_key "campaign_requests", "council_ai_reservations"
   add_foreign_key "campaign_source_versions", "campaign_sources"
   add_foreign_key "campaign_source_versions", "users", column: "submitted_by_id", on_delete: :nullify
+  add_foreign_key "campaign_statement_topics", "campaign_extractions"
+  add_foreign_key "campaign_statement_topics", "campaign_statements"
+  add_foreign_key "campaign_statement_topics", "topics"
   add_foreign_key "campaign_statements", "campaign_extractions"
   add_foreign_key "campaign_statements", "members", on_delete: :nullify
   add_foreign_key "committee_aliases", "committees"

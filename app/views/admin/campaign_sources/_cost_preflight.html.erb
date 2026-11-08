@@ -1,5 +1,5 @@
 <section class="card" data-campaign-cost-preflight>
-  <h2 class="card-title">Processing cost</h2>
+  <h2 class="card-title"><%= local_assigns.fetch(:title, "Processing cost") %></h2>
   <% case preflight.fetch(:state) %>
   <% when "reuse" %>
     <p>Saved analysis can be reused. No additional AI call is needed.</p>

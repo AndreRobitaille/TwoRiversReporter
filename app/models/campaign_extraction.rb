@@ -6,9 +6,11 @@ class CampaignExtraction < ApplicationRecord
   belongs_to :reused_from, class_name: "CampaignExtraction", optional: true
   has_many :requests, class_name: "CampaignRequest", dependent: :restrict_with_exception
   has_many :campaign_statements, dependent: :restrict_with_exception
-  attr_readonly :campaign_source_version_id, :input_key, :parameters
+  has_many :campaign_statement_topics, dependent: :restrict_with_exception
+  attr_readonly :campaign_source_version_id, :purpose, :input_key, :parameters, :context
   validates :input_key, uniqueness: true, format: { with: /\A[0-9a-f]{64}\z/ }
-  validates :campaign_source_version_id, uniqueness: true
+  validates :campaign_source_version_id, uniqueness: { scope: :purpose }
+  validates :purpose, inclusion: { in: %w[statements topic_matching] }
   validates :status, inclusion: { in: %w[pending running completed failed uncertain incomplete oversized budget_paused] }
   validate :retain_completed_output
 
@@ -23,7 +25,7 @@ class CampaignExtraction < ApplicationRecord
   def claim!(budget_run)
     with_lock do
       return false unless status.in?(%w[pending failed budget_paused])
-      if reused = self.class.find_by(status: "completed", parameters: parameters)
+      if reused = self.class.find_by(purpose: purpose, status: "completed", parameters: parameters)
         update!(status: "completed", data: reused.data, completed_at: reused.completed_at, reused_from: reused, error_code: nil)
         return false
       end
