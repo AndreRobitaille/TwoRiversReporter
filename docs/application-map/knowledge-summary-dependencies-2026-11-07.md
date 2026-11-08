@@ -158,6 +158,10 @@ was corrected and the schema diff was inspected. Five Markdown files passed
 Exact-head CI/runtime and automatic-review evidence is recorded in the pull
 request description.
 
+The subsequent [additional document-dependency slice](knowledge-source-dependencies-2026-11-07.md)
+covers raw meeting text consumed alongside the summary. This report retains
+the original scope and evidence from PR #263.
+
 ## Remaining scope and cost
 
 Legacy knowledge without a receipt remains unverified. Additional raw-text inputs

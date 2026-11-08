@@ -224,6 +224,9 @@ assertions below are candidate acceptance criteria based on the user's brief.
   retrieval after approval or editing. The retained detail/index show Evidence
   withdrawn separately from review status; Re-ingest refuses without queuing.
   See [knowledge dependency verification](knowledge-summary-dependencies-2026-11-07.md).
+  Additional consumed raw documents also have server-owned receipts; the
+  [document-dependency HTTP checks](knowledge-source-dependencies-2026-11-07.md)
+  cover retained evidence and rejected provenance edits after withdrawal.
 - **Failure variants:** invalid source/status, missing file/title, failed extraction/
   embedding, stale chunks after edit, unapproved context affecting reporting.
 - **Observed:** [KnowledgeSourcesController](../../app/controllers/admin/knowledge_sources_controller.rb),

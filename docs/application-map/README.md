@@ -112,7 +112,11 @@ The [November 7 knowledge dependency checks](knowledge-summary-dependencies-2026
 cover newly extracted knowledge's summary receipts, atomic withdrawal, later
 retrieval/search, late triage/ingestion, retained review history and the actual
 admin Re-ingest control. Legacy provenance, additional raw-text and participant
-inputs, stored patterns and other unrecorded dependencies remain open.
+inputs, stored patterns and other unrecorded dependencies remain open in that slice.
+
+The [November 7 additional knowledge-source checks](knowledge-source-dependencies-2026-11-07.md)
+cover consumed raw-document receipts, source replacement/removal, pending text,
+late publication, atomic audit rollback and concurrent first registration.
 
 The [November 7 topic-generation dependency checks](council-topic-generation-2026-11-07.md)
 cover unchanged topic-stage reuse, stale-input filtering and rejected in-flight
