@@ -7,16 +7,18 @@ module ResidentContent
     end
 
     def call
-      return [] unless @period.selected
-      start_date = @period.selected.started_on
-      end_date = @period.selected.ended_on || Date.current
+      periods = @period.selected ? [ @period.selected ] : @period.selectable
+      return [] if periods.empty?
+      ranges = periods.map { |period| period.started_on..(period.ended_on || Date.current) }
+      start_date = ranges.map(&:begin).min
+      end_date = ranges.map(&:end).max
       stages = CouncilIssueReview.where(status: "completed").where(
         "EXISTS (SELECT 1 FROM jsonb_array_elements(council_issue_reviews.data->'actions') action " \
         "WHERE action->>'occurred_on' BETWEEN ? AND ?)", start_date.iso8601, end_date.iso8601)
       rows = stages.includes(meeting_document: :meeting).flat_map do |stage|
         actions = stage.data.fetch("actions", []).select do |action|
           date = Date.iso8601(action.fetch("occurred_on"))
-          date.between?(start_date, end_date) && resolve_speaker(action.fetch("speaker")) == @member.id
+          ranges.any? { |range| range.cover?(date) } && resolve_speaker(action.fetch("speaker")) == @member.id
         end
         next [] if actions.empty?
         citation = stage.current_citation
