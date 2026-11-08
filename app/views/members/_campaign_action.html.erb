@@ -3,7 +3,7 @@
 <div class="member-campaign-action" data-campaign-action="<%= vote.id %>">
   <p class="member-campaign-action-title"><%= campaign_decision_title(vote) %></p>
   <div class="member-campaign-vote-results">
-    <strong class="<%= vote_color_class(vote.value) %>"><%= vote.value.in?(%w[yes no]) ? "Voted #{vote.value}" : vote.value.titleize %></strong>
+    <strong class="<%= vote_color_class(vote.value) %>"><%= vote.value.in?(%w[yes no]) ? "Voted #{vote.value}" : vote.value&.titleize || "Unknown" %></strong>
     <span>Council: <%= motion.outcome.presence&.titleize || "Not recorded" %> · <%= vote_split(motion) %></span>
   </div>
   <time class="member-vote-date" datetime="<%= motion.meeting.starts_at.to_date.iso8601 %>"><%= motion.meeting.starts_at.strftime("%b %-d, %Y") %></time>

@@ -44,7 +44,7 @@ module MembersHelper
   end
 
   def campaign_decision_title(vote)
-    title = vote_context(vote).to_s.sub(/\A\d{2}-\d{3}\s+/, "")
+    title = (vote_context(vote).presence || vote.motion.description).to_s.sub(/\A\d{2}-\d{3}\s+/, "")
     # Application headings repeat the docket and applicant address. Keep the
     # requested assistance and named applicant; the full title stays in details.
     if application = title.match(/\AApplication for (.+?) by (.+?), \d.*\z/i)
