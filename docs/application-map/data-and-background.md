@@ -446,6 +446,21 @@ provider diagnostics; permanent HTTP rejections bypass transient retries. See
   remain held. Existing nightly processing recovers eligible paused work; it
   neither renews the month nor resets the two-attempt ceiling.
 
+## BG-09 — Extract shared official issue milestones (P1)
+
+- **Start / data:** explicitly selected official minutes document, existing
+  approved agenda/topic links, populated prompt and exact month/day/run budget.
+- **Action:** `ExtractCouncilIssueUpdatesJob` retains one shared source result;
+  existing nightly campaign recovery revisits selected documents only.
+- **Required outcome:** distinct milestones, scope, conditions, source passages
+  and event/report dates reach every relevant member without attributing credit,
+  grading promises or creating votes. No budget means no transport; unchanged
+  input reuses its result and source corrections remove stale projections.
+- **Failures / limits:** uncertain/incomplete responses hold; malformed responses
+  have two attempts; oversized sources hold intact; changed source/topic inputs
+  cannot serve old output. No automatic source discovery or live admission yet.
+- **Evidence:** [shared issue-update verification](council-issue-updates-2026-11-08.md).
+
 ## Configured recurring entry points
 
 These are strings in [config/recurring.yml](../../config/recurring.yml), not proof

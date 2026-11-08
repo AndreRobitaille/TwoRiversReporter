@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_09_001500) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_09_002000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -429,6 +429,47 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_09_001500) do
     t.datetime "updated_at", null: false
     t.index [ "meeting_id" ], name: "index_council_decisions_on_meeting_id"
     t.index [ "public_id" ], name: "index_council_decisions_on_public_id", unique: true
+  end
+
+  create_table "council_issue_requests", force: :cascade do |t|
+    t.bigint "council_issue_review_id", null: false
+    t.bigint "council_ai_reservation_id", null: false
+    t.integer "attempt", null: false
+    t.string "status", null: false
+    t.jsonb "messages", null: false
+    t.jsonb "request_parameters", null: false
+    t.string "provider_response_id"
+    t.string "response_model"
+    t.string "finish_reason"
+    t.jsonb "usage"
+    t.text "response_body"
+    t.string "error_class"
+    t.integer "duration_ms"
+    t.datetime "started_at", null: false
+    t.datetime "finished_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "council_ai_reservation_id" ], name: "index_council_issue_requests_on_council_ai_reservation_id", unique: true
+    t.index [ "council_issue_review_id", "attempt" ], name: "idx_on_council_issue_review_id_attempt_1de8765df9", unique: true
+    t.index [ "council_issue_review_id" ], name: "index_council_issue_requests_on_council_issue_review_id"
+  end
+
+  create_table "council_issue_reviews", force: :cascade do |t|
+    t.bigint "meeting_document_id"
+    t.bigint "council_ai_budget_run_id"
+    t.string "input_key", null: false
+    t.jsonb "context", default: {}, null: false
+    t.jsonb "parameters", default: {}, null: false
+    t.jsonb "data", default: {}, null: false
+    t.string "status", default: "pending", null: false
+    t.integer "attempts", default: 0, null: false
+    t.string "error_code"
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "council_ai_budget_run_id" ], name: "index_council_issue_reviews_on_council_ai_budget_run_id"
+    t.index [ "input_key" ], name: "index_council_issue_reviews_on_input_key", unique: true
+    t.index [ "meeting_document_id" ], name: "index_council_issue_reviews_on_meeting_document_id"
   end
 
   create_table "council_service_periods", force: :cascade do |t|
@@ -1295,6 +1336,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_09_001500) do
   add_foreign_key "council_decision_observations", "council_decisions"
   add_foreign_key "council_decision_observations", "minutes_extractions"
   add_foreign_key "council_decisions", "meetings", on_delete: :nullify
+  add_foreign_key "council_issue_requests", "council_ai_reservations"
+  add_foreign_key "council_issue_requests", "council_issue_reviews"
+  add_foreign_key "council_issue_reviews", "council_ai_budget_runs"
+  add_foreign_key "council_issue_reviews", "meeting_documents", on_delete: :nullify
   add_foreign_key "council_service_periods", "meeting_document_versions", column: "end_source_version_id"
   add_foreign_key "council_service_periods", "meeting_document_versions", column: "start_source_version_id"
   add_foreign_key "council_service_periods", "members"
