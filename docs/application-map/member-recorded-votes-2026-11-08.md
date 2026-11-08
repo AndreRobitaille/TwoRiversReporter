@@ -160,3 +160,21 @@ fault copied a featured vote into Other Votes; the expected four-row assertion
 failed with five rows (1 test, 3 assertions, 1 failure, no errors). Restored
 integration tests passed all 7 tests and 142 assertions. Documentation and
 whitespace checks passed. The preview remains on the same local service.
+
+## Real-data follow-up: remote participation permissions
+
+Revision `1a717748` addresses an issue visible in the existing cohort's real
+records: passed, unanimous permission for a council member to participate from
+a remote location was still appearing in Featured. The procedural selector now
+recognizes the observed allow/approve wording. The existing unanimity rule still
+retains dissent, abstention and recusal, and All recorded votes remains unfiltered.
+
+The focused integration/controller/access/API command passed **48 tests and
+920 assertions**; RuboCop checked **635 files** without offenses. A process-local
+fault bypassing only the new procedural classification failed the intended
+exclusion assertion after the allowed variants passed (one test, ten assertions,
+one failure, no errors); restoring the code passed all fourteen assertions.
+The actual local Derby profile then displayed 25 featured rows with no unanimous
+remote permissions, retaining its campaign cards and one bottom pager. This was
+checked through HTTP and the phone browser in the combined development preview.
+No saved vote was edited, and no AI or production operation ran.
