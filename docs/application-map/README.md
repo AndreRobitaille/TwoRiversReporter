@@ -1,5 +1,9 @@
 # Application behavior map
 
+The [November 8 real cohort and cost checks](council-cohort-readiness-2026-11-08.md)
+record shared provider results, unchanged reuse, compact action ordering, the
+public historical inventory and the remaining backfill approval boundary.
+
 The [November 8 source-footer correction](council-source-quote-footers-2026-11-08.md)
 records a real-source quotation failure, exact-passage restoration and reuse of
 the retained response without another paid call.

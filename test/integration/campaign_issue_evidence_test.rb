@@ -7,6 +7,21 @@ class CampaignIssueEvidenceTest < ActionDispatch::IntegrationTest
 
   setup { setup_issue_matching }
 
+  test "same-day issue updates do not hide the member's vote or unsuccessful work" do
+    review_campaign_actions
+    match_issue_evidence
+    get member_path(@jordan)
+    position = css_select("[data-campaign-actions-for='#{@specific.id}']").first
+    preview = position.xpath("./div[@class='member-campaign-action']")
+    assert_equal 2, preview.size
+    assert_equal [ @vote.id.to_s ], preview.filter_map { |row| row["data-campaign-action"] }
+    assert_equal [ "action" ], preview.filter_map { |row| row["data-campaign-issue-evidence"] }
+    assert_match(/Voted yes/, preview.text)
+    assert_match(/Failed/, preview.text)
+    assert_equal 1, position.css("details [data-campaign-issue-evidence='outcome']").size
+    assert_match(/1 more record/, position.text)
+  end
+
   test "one shared comparison connects unsuccessful work and separate outcome without keyword matches" do
     assert_equal 1, @calls.size
     assert_equal 1, @issue_review.data.fetch("actions").size
