@@ -1,6 +1,6 @@
 # Campaign article intake: November 8, 2026
 
-Application revision: `337b0d497ce0ef38bd015056785a81d57c7d3956`, based on PR #266's
+Application revision: `a27d68094b928ba2adbbbc830714c850dd1c90e2`, based on PR #266's
 spending-control branch. This is the first intake slice of
 [#239](https://github.com/AndreRobitaille/TwoRiversReporter/issues/239), not a
 completed campaign extractor or member-page enrichment loop.
@@ -74,6 +74,11 @@ other real copyrighted article was committed or loaded by this check.
   the inspected screenshot has no horizontal overflow. Sign-in email delivery is
   captured locally by the existing browser harness; no real email is sent. Native
   passkey ceremony is not exercised by this source-intake journey.
+- CI's full application suite found undefined admin classes (`flash--warning` and
+  the source-text test selector). The page now uses the existing neutral flash
+  component and a data attribute for the test selector. The focused command above
+  plus `test/views/admin_view_hygiene_test.rb` passed **21 tests, 148 assertions**;
+  the phone journey also passed again with **29 assertions**. No checks were relaxed.
 - `bin/rubocop --cache false`: **731 files, no offenses**. `git diff --check`
   and documentation links/anchors pass. `bin/rails routes -g campaign_sources`
   lists seven dispatch rows, and the route test confirms their actions exist.
