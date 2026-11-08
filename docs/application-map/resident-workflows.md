@@ -228,6 +228,11 @@ status below does not imply complete coverage of those workflows.
   apply before pagination in both recorded and featured views. Controls preserve
   service period and view through search, paging, source navigation and clearing,
   with no AI. See [filter evidence](member-vote-filters-2026-11-08.md).
+- **November 8 saved-analysis reuse:** published minutes agenda summaries now
+  supply shared issue history through existing topic links and citations, with
+  no new extraction stage or AI request. Retained supplemental evidence takes
+  precedence for the same agenda item; generic summaries are not automatic
+  campaign matches. See [reuse checks](council-saved-history-2026-11-08.md).
 - **November 8 shared issue updates:** selected official minutes can supply a
   short project/policy update to every relevant profile without another vote.
   Source/report dates, conditions and body remain separate from member credit

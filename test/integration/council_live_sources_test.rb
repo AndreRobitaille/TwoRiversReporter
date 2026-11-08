@@ -60,6 +60,22 @@ class CouncilLiveSourcesTest < ActionDispatch::IntegrationTest
     assert_equal 2, CouncilProfiles::SpendReport.call[:stages].fetch("issue_updates").fetch(:requests)
   end
 
+  test "minutes reuse the normal meeting workflow even when an older source scope includes them" do
+    month = authorize_sources(scope: source_scope.merge("document_types" => %w[minutes_pdf packet_pdf]))
+    minutes = source_document(date: Date.current, type: "minutes_pdf")
+    assert_includes CouncilProfiles::LiveSources.documents, @document
+    assert_not_includes CouncilProfiles::LiveSources.documents, minutes
+    with_source_transport { ExtractCouncilIssueUpdatesJob.perform_now }
+    assert_equal 1, @calls.size
+    assert_not CouncilIssueReview.exists?(meeting_document: minutes)
+    # A formerly selected minutes stage cannot borrow recurring source allowance.
+    stage = CouncilProfiles::ExtractIssueUpdates.prepare(minutes)
+    with_source_transport { ExtractCouncilIssueUpdatesJob.perform_now(minutes.id) }
+    assert_equal "outside_live_source_scope", stage.reload.error_code
+    assert_equal 1, @calls.size
+    assert_equal 1, month.reservations.count
+  end
+
   test "changed source pauses when the shared monthly limit is spent without resetting counts" do
     month = authorize_sources(limit: @estimate.fetch(:cost_microusd))
     with_source_transport { ExtractCouncilIssueUpdatesJob.perform_now }

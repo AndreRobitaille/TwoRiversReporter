@@ -8,7 +8,7 @@ module Campaigns
       period = ResidentContent::CouncilPeriod.new(member, key: "all")
       actions = ResidentContent::RecordedActions.new(member, period: period).call.map { |row| row.merge(kind: "action") }
       updates = ResidentContent::IssueUpdates.new(member, attendance: nil, period: period, statements: statements).call
-        .map { |row| row.merge(kind: "outcome") }
+        .select { |row| row[:review] }.map { |row| row.merge(kind: "outcome") }
       statements.flat_map do |statement|
         topics = statement.related_topics.map(&:id)
         stated_on = statement.campaign_source_version.published_on || statement.campaign_source_version.election_on
