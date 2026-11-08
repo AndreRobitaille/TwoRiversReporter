@@ -15,6 +15,7 @@ class MembersController < ApplicationController
     @current_position = @member.primary_current_position
 
     @attendance = load_attendance
+    @campaign_statements = CampaignStatement.current_for(@member) unless gated_for_visitor?
 
     @topic_groups, @other_votes = ResidentContent::OfficialProfile.new(@member).vote_groups
   end

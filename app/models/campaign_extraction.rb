@@ -5,6 +5,7 @@ class CampaignExtraction < ApplicationRecord
   belongs_to :council_ai_budget_run, optional: true
   belongs_to :reused_from, class_name: "CampaignExtraction", optional: true
   has_many :requests, class_name: "CampaignRequest", dependent: :restrict_with_exception
+  has_many :campaign_statements, dependent: :restrict_with_exception
   attr_readonly :campaign_source_version_id, :input_key, :parameters
   validates :input_key, uniqueness: true, format: { with: /\A[0-9a-f]{64}\z/ }
   validates :campaign_source_version_id, uniqueness: true

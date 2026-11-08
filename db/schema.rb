@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_08_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_08_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -184,6 +184,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_170000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index [ "source_url" ], name: "index_campaign_sources_on_source_url", unique: true
+  end
+
+  create_table "campaign_statements", force: :cascade do |t|
+    t.bigint "campaign_extraction_id", null: false
+    t.bigint "member_id"
+    t.integer "sequence", null: false
+    t.string "status", null: false
+    t.string "exception"
+    t.string "validation_method", null: false
+    t.datetime "validated_at", null: false
+    t.jsonb "data", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "campaign_extraction_id", "sequence" ], name: "idx_on_campaign_extraction_id_sequence_3d52e6269b", unique: true
+    t.index [ "campaign_extraction_id" ], name: "index_campaign_statements_on_campaign_extraction_id"
+    t.index [ "member_id" ], name: "index_campaign_statements_on_member_id"
   end
 
   create_table "committee_aliases", force: :cascade do |t|
@@ -1158,6 +1174,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_170000) do
   add_foreign_key "campaign_requests", "council_ai_reservations"
   add_foreign_key "campaign_source_versions", "campaign_sources"
   add_foreign_key "campaign_source_versions", "users", column: "submitted_by_id", on_delete: :nullify
+  add_foreign_key "campaign_statements", "campaign_extractions"
+  add_foreign_key "campaign_statements", "members", on_delete: :nullify
   add_foreign_key "committee_aliases", "committees"
   add_foreign_key "committee_memberships", "committees"
   add_foreign_key "committee_memberships", "members"

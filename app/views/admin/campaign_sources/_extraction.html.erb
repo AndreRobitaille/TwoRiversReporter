@@ -1,11 +1,18 @@
 <section data-campaign-extraction class="card">
   <h2 class="card-title">Extracted statements</h2>
   <% if extraction.status == "completed" %>
-    <p>Draft extraction. Matching a passage does not verify its interpretation or the person's identity.</p>
+    <p>Source passages and existing member names are checked automatically. Matching a passage does not verify its interpretation.</p>
     <% counts = extraction.data.fetch("counts") %>
-    <p><%= counts.fetch("participants") %> participants · <%= counts.fetch("statements") %> statements · <%= counts.fetch("unresolved_statements") %> need checking</p>
+    <% records = extraction.campaign_statements.includes(:member).to_a %>
+    <p><%= counts.fetch("participants") %> participants · <%= counts.fetch("statements") %> statements · <%= records.any? ? records.count { |record| record.status == "unresolved" } : counts.fetch("unresolved_statements") %> need checking</p>
     <% extraction.data.fetch("participants").each do |participant| %>
       <h3><%= participant["name"].presence || "Unidentified participant" %></h3>
+      <% identity = records.find { |record| record.data["source_name"] == participant["name"] } %>
+      <% if identity&.member %>
+        <p><%= link_to "View #{identity.member.name}'s record", member_path(identity.member) %></p>
+      <% elsif identity %>
+        <p data-campaign-identity-exception><%= identity.exception.humanize %>. No statements have been assigned to a member.</p>
+      <% end %>
       <% participant.fetch("answers").each do |answer| %>
         <p><strong><%= answer["question"] %></strong></p>
         <% answer.fetch("statements").each do |statement| %>
