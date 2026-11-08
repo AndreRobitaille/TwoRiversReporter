@@ -122,6 +122,23 @@ class KnowledgeSummaryDependenciesTest < ActionDispatch::IntegrationTest
     assert_equal 2, KnowledgeSource.where(meeting: @meeting).count
   end
 
+  test "a changed summary with an unchanged timestamp rejects late knowledge output" do
+    travel_to Time.current.change(usec: 0) do
+      @summary.touch
+      response = @provider.method(:extract_knowledge)
+      summary = @summary
+      @provider.define_singleton_method(:extract_knowledge) do |**arguments|
+        result = response.call(**arguments)
+        summary.update!(generation_data: summary.generation_data.merge("headline" => "Synthetic corrected source summary"))
+        result
+      end
+      extract_knowledge
+      assert_empty @derived
+      assert_equal "Synthetic corrected source summary", @summary.reload.generation_data.fetch("headline")
+      assert_enqueued_jobs 0, only: AutoTriageKnowledgeJob
+    end
+  end
+
   test "summary timestamps and JSON ordering preserve compatible knowledge without more work" do
     extract_knowledge
     before = @derived.map(&:attributes)
@@ -136,6 +153,22 @@ class KnowledgeSummaryDependenciesTest < ActionDispatch::IntegrationTest
     assert_equal receipt, Knowledge::SummaryEvidence.capture(@summary.reload)
     assert_empty AuditEvent.where(subject: @derived, action: "knowledge_source.evidence_withdrawn")
     assert_enqueued_jobs 0
+  end
+
+  test "summary withdrawal with an unchanged timestamp rejects late summary output" do
+    travel_to Time.current.change(usec: 0) do
+      @summary.touch
+      original = @summary.generation_data
+      summary = @summary
+      @provider.define_singleton_method(:analyze_meeting_content) do |*, **|
+        summary.update!(evidence_withdrawn_at: Time.current)
+        original.merge("headline" => "Synthetic late summary output").to_json
+      end
+      withdrawal_providers { SummarizeMeetingJob.perform_now(@meeting.id, mode: :agenda_preview) }
+      assert_not_nil @summary.reload.evidence_withdrawn_at
+      assert_equal original, @summary.generation_data
+      assert_enqueued_jobs 0
+    end
   end
 
   test "failed knowledge withdrawal audit rolls back the originating correction and a retry withdraws once" do
