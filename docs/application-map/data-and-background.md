@@ -127,6 +127,14 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   Legacy HTTP 304 does not create a version without bytes. This changes the
   download boundary only; vote/attendance extraction still lacks coordinated
   source-version publication. See [scope and verification](council-evidence-2026-11-07.md).
+- **November 7 extraction foundation:** PDF/OCR results retain immutable full-text
+  and raw/cleaned page versions linked to the downloaded artifact. The source
+  identity and attachment are pinned before commands execute; stale or incomplete
+  output cannot replace pages/text. Blank pages remain numbered, and OCR image
+  count must match `pdfinfo`. Current successful extraction retries do not queue
+  downstream analysis; completed OCR takes precedence over PDF retries. This
+  does not yet version vote/attendance rows or move resident readers to archived
+  evidence. See [boundary and fault evidence](council-text-versions-2026-11-07.md).
 
 ## BG-03 — Add recording context without replacing official evidence (P0)
 

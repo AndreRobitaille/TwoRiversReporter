@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_07_190000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_07_193000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -310,6 +310,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_190000) do
     t.index [ "member_id" ], name: "index_meeting_attendances_on_member_id"
   end
 
+  create_table "meeting_document_text_versions", force: :cascade do |t|
+    t.bigint "meeting_document_version_id", null: false
+    t.string "fingerprint", null: false
+    t.string "extractor_version", null: false
+    t.string "evidence_status", default: "extracted", null: false
+    t.integer "page_count", null: false
+    t.string "text_quality", null: false
+    t.text "extracted_text", null: false
+    t.jsonb "pages", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "fingerprint" ], name: "index_meeting_document_text_versions_on_fingerprint", unique: true
+    t.index [ "meeting_document_version_id" ], name: "idx_on_meeting_document_version_id_5edfcede8a"
+  end
+
   create_table "meeting_document_versions", force: :cascade do |t|
     t.bigint "meeting_document_id"
     t.bigint "original_document_id", null: false
@@ -348,6 +363,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_190000) do
     t.integer "text_chars"
     t.string "text_quality"
     t.datetime "updated_at", null: false
+    t.bigint "latest_text_version_id"
+    t.index [ "latest_text_version_id" ], name: "index_meeting_documents_on_latest_text_version_id"
     t.index [ "meeting_id" ], name: "index_meeting_documents_on_meeting_id"
     t.index [ "search_vector" ], name: "index_meeting_documents_on_search_vector", using: :gin
   end
@@ -874,7 +891,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_190000) do
   add_foreign_key "magic_links", "users"
   add_foreign_key "meeting_attendances", "meetings"
   add_foreign_key "meeting_attendances", "members"
+  add_foreign_key "meeting_document_text_versions", "meeting_document_versions"
   add_foreign_key "meeting_document_versions", "meeting_documents", on_delete: :nullify
+  add_foreign_key "meeting_documents", "meeting_document_text_versions", column: "latest_text_version_id"
   add_foreign_key "meeting_documents", "meetings"
   add_foreign_key "meeting_summaries", "meetings"
   add_foreign_key "meetings", "committees"

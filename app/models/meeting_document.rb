@@ -1,5 +1,6 @@
 class MeetingDocument < ApplicationRecord
   belongs_to :meeting
+  belongs_to :latest_text_version, class_name: "MeetingDocumentTextVersion", optional: true
   has_many :extractions, dependent: :destroy
   has_many :transcript_imports, dependent: :nullify
   has_many :source_versions, class_name: "MeetingDocumentVersion", dependent: :nullify
@@ -13,6 +14,11 @@ class MeetingDocument < ApplicationRecord
 
   def current_source_version
     source_versions.find_by(version_key: MeetingDocumentVersion.key_for(self))
+  end
+
+  def current_text_version
+    version = latest_text_version
+    version if version && version.meeting_document_version_id == current_source_version&.id
   end
 
   private

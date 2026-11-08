@@ -5,6 +5,7 @@ require "digest"
 class MeetingDocumentVersion < ApplicationRecord
   belongs_to :meeting_document, optional: true
   has_one_attached :file
+  has_many :text_versions, class_name: "MeetingDocumentTextVersion", dependent: :restrict_with_exception
 
   attr_readonly :original_document_id, :version_key, :sha256, :source_url,
     :document_type, :original_meeting_id, :meeting_starts_at, :retrieved_at,

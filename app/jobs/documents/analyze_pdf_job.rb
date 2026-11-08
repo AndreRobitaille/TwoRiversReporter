@@ -8,73 +8,37 @@ module Documents
       document = MeetingDocument.find(document_id)
       return unless document.file.attached?
 
-      document.file.open do |file|
-        path = file.path
+      publisher = PublishText.new(document)
+      if publisher.cached?("pdf_text_v1")
+        OcrJob.perform_later(document.id) if document.text_quality == "image_scan"
+        return
+      end
 
-        # 1. Get Page Count via pdfinfo
-        pdf_info, status = Open3.capture2e("pdfinfo", path)
-        if status.success?
-          page_count = pdf_info[/^Pages:\s+(\d+)$/, 1].to_i
+      publisher.blob.open do |file|
+        pdf_info, info_status = Open3.capture2e("pdfinfo", file.path)
+        page_count = pdf_info[/^Pages:\s+(\d+)$/, 1].to_i
+        raise "pdfinfo failed" unless info_status.success? && page_count.positive?
+
+        raw_full_text, _, text_status = Open3.capture3("pdftotext", file.path, "-")
+        raise "pdftotext failed" unless text_status.success?
+
+        # Preserve blank pages and remove only the final page separator.
+        raw_pages = raw_full_text.split("\f", -1)
+        raw_pages.pop if raw_full_text.end_with?("\f")
+        raw_pages = Array.new(page_count, "") if raw_full_text.blank?
+        char_count = raw_pages.sum { |page| page.scan(/\S+/).reject { |word| word.length > 250 }.join(" ").length }
+        average = char_count.to_f / page_count
+        quality = if average >= 200
+          "text"
+        elsif average >= 20
+          "mixed"
         else
-          Rails.logger.warn "pdfinfo failed for #{document_id}"
-          page_count = 0
+          "image_scan"
         end
 
-        # 2. Extract Text via pdftotext
-        # Output to stdout (-)
-        # We split by Form Feed (\f) to separate pages
-        raw_full_text, _, _ = Open3.capture3("pdftotext", path, "-")
-
-        # Clear existing extractions to be idempotent
-        document.extractions.destroy_all
-
-        raw_pages = raw_full_text.split("\f")
-        full_clean_text_parts = []
-
-        raw_pages.each_with_index do |page_text, index|
-          page_num = index + 1
-          # Sanitize text: remove any token longer than 250 chars (likely garbage/binary)
-          clean_page_text = page_text.scan(/\S+/).reject { |w| w.length > 250 }.join(" ")
-
-          # Store granular page extraction
-          Extraction.create!(
-            meeting_document: document,
-            page_number: page_num,
-            raw_text: page_text,
-            cleaned_text: clean_page_text
-          )
-
-          full_clean_text_parts << clean_page_text
-        end
-
-        text = full_clean_text_parts.join(" ")
-
-        Rails.logger.info "Extracted #{raw_full_text.length} chars (cleaned to #{text.length}) from #{path} across #{raw_pages.size} pages"
-        char_count = text.length
-
-        # 3. Calculate Metrics
-        avg = page_count > 0 ? char_count.to_f / page_count : 0.0
-
-        quality = if page_count == 0
-                    "broken"
-        elsif avg >= 200
-                    "text"
-        elsif avg >= 20
-                    "mixed"
-        else
-                    "image_scan"
-        end
-
-        # 4. Save
-        unless document.update(
-          page_count: page_count,
-          text_chars: char_count,
-          avg_chars_per_page: avg,
-          text_quality: quality,
-          extracted_text: text
-        )
-          Rails.logger.error "Failed to save analysis for #{document_id}: #{document.errors.full_messages.join(', ')}"
-        end
+        changed = publisher.call(raw_pages: raw_pages, page_count: page_count,
+          quality: quality, extractor_version: "pdf_text_v1")
+        return unless changed
 
         # Trigger OCR if needed
         if quality == "image_scan"
@@ -117,7 +81,7 @@ module Documents
         end
       end
     rescue StandardError => e
-      document.update!(text_quality: "broken")
+      publisher&.mark!(text_quality: "broken", ocr_status: nil)
       Rails.logger.error("PDF Analysis failed for Document #{document_id}: #{e.message}")
     end
   end

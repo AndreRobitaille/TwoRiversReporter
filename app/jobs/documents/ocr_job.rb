@@ -8,57 +8,42 @@ module Documents
       document = MeetingDocument.find(document_id)
       return unless document.file.attached?
 
-      # Mark as processing
-      document.update!(ocr_status: "processing")
+      publisher = PublishText.new(document)
+      return if publisher.cached?("ocr_v1")
+      publisher.mark!(ocr_status: "processing")
 
       Dir.mktmpdir do |dir|
         # Download PDF
         pdf_path = File.join(dir, "source.pdf")
-        File.binwrite(pdf_path, document.file.download)
+        File.binwrite(pdf_path, publisher.blob.download)
+
+        pdf_info, info_status = Open3.capture2e("pdfinfo", pdf_path)
+        page_count = pdf_info[/^Pages:\s+(\d+)$/, 1].to_i
+        raise "pdfinfo failed" unless info_status.success? && page_count.positive?
 
         # Convert to images (pdftoppm)
         # -r 300 for 300 DPI (good for OCR)
         unless system("pdftoppm", "-png", "-r", "300", pdf_path, File.join(dir, "page"))
-          Rails.logger.error "pdftoppm failed for doc #{document_id}"
-          Scrapers::ParseAgendaJob.perform_later(document.meeting_id) if document.document_type == "minutes_pdf"
-          document.update!(ocr_status: "failed")
-          return
+          raise "pdftoppm failed"
         end
 
-        # Process each image with Tesseract
-        images = Dir.glob(File.join(dir, "page-*.png")).sort_by { |f| f[/\d+/].to_i }
-
-        # Clear existing extractions
-        document.extractions.destroy_all
-
-        full_text_parts = []
-
-        images.each_with_index do |image_path, index|
-          page_num = index + 1
-
-          # Run Tesseract
-          # tesseract image.png stdout
-          text, _, _ = Open3.capture3("tesseract", image_path, "stdout")
-
-          clean_text = text.scan(/\S+/).reject { |w| w.length > 250 }.join(" ")
-
-          Extraction.create!(
-            meeting_document: document,
-            page_number: page_num,
-            raw_text: text,
-            cleaned_text: clean_text
-          )
-
-          full_text_parts << clean_text
+        images = Dir.glob(File.join(dir, "page-*.png")).sort_by do |path|
+          File.basename(path)[/page-(\d+)\.png\z/, 1].to_i
         end
+        raise "OCR produced no pages" if images.empty?
+        numbers = images.map { |path| File.basename(path)[/page-(\d+)\.png\z/, 1].to_i }
+        raise "OCR page sequence is incomplete" unless numbers == (1..page_count).to_a
 
-        # Update document
-        full_text = full_text_parts.join(" ")
-        document.update!(
-          extracted_text: full_text,
-          ocr_status: "completed",
-          text_quality: "ocr"
-        )
+        raw_pages = images.map do |image_path|
+          text, _, status = Open3.capture3("tesseract", image_path, "stdout")
+          raise "tesseract failed" unless status.success?
+          text
+        end
+        raise "OCR produced no text" if raw_pages.all?(&:blank?)
+
+        changed = publisher.call(raw_pages: raw_pages, page_count: page_count,
+          quality: "ocr", extractor_version: "ocr_v1", ocr_status: "completed")
+        return unless changed
 
         trigger_downstream_jobs(document)
 
@@ -66,7 +51,7 @@ module Documents
       end
     rescue StandardError => e
       Rails.logger.error "OCR failed for Document #{document_id}: #{e.message}"
-      document.update!(ocr_status: "failed")
+      publisher&.mark!(ocr_status: "failed")
     end
 
     private
