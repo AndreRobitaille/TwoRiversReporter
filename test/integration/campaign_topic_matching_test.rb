@@ -166,6 +166,35 @@ class CampaignTopicMatchingTest < ActionDispatch::IntegrationTest
     refute_includes response.body, "Same water project canary"
   end
 
+  test "a topic merged before publication resolves for current and later repaired identities" do
+    @morgan.update!(name: "Morgan Corrected")
+    Campaigns::PublishStatements.call(@source.current_version.extraction)
+    data = response_data
+    data["matches"].last.merge!("status" => "matched", "topic_ids" => [ @water.id ])
+    budget = campaign_budget(stage: @stage)
+    with_campaign_transport(content: data.to_json) do
+      Campaigns::MatchTopics.call(@source.current_version, budget_run: budget)
+    end
+    assert_empty CampaignStatementTopic.all
+    middle = Topic.create!(name: "water main replacement", status: "approved")
+    survivor = Topic.create!(name: "water distribution renewal", status: "approved")
+    Topics::MergeService.new(source_topic: @water, target_topic: middle).call
+    Topics::MergeService.new(source_topic: middle, target_topic: survivor).call
+    Campaigns::PublishTopicMatches.call(@stage.reload)
+    assert_equal 2, CampaignStatementTopic.where(topic: survivor).count
+    assert_empty @morgan.campaign_statements
+
+    MemberAlias.create!(member: @morgan, name: "Morgan Example")
+    Ai::OpenAiService.stub(:new, ->(*) { flunk "Identity repair must reuse the saved matches" }) do
+      ReconcileCampaignSourcesJob.perform_now
+    end
+    statement = @morgan.campaign_statements.sole
+    assert_equal [ survivor.id ], statement.related_topics.pluck(:id)
+    assert_equal @water.id, statement.campaign_statement_topics.sole.original_topic_id
+    assert_equal 3, CampaignStatementTopic.where(topic: survivor).count
+    assert_equal 2, @calls.size
+  end
+
   private
 
   def response_data

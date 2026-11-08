@@ -10,11 +10,21 @@ module Campaigns
           match.fetch("topic_ids").each do |topic_id|
             link = stage.campaign_statement_topics.find_or_initialize_by(campaign_statement: statement, original_topic_id: topic_id)
             next if link.persisted? # Preserve a subsequent topic merge.
-            topic = Topic.reusable.find_by(id: topic_id)
+            topic = resolve_topic(topic_id)
             link.update!(topic: topic) if topic
           end
         end
       end
     end
+
+    def self.resolve_topic(topic_id)
+      return Topic.reusable.find_by(id: topic_id) if Topic.exists?(id: topic_id)
+
+      path = Rails.application.routes.url_helpers.topic_path(topic_id)
+      destination = Redirect.find_by(source_path: path)&.destination
+      surviving_id = destination.to_s[%r{\A/topics/(\d+)\z}, 1]
+      Topic.reusable.find_by(id: surviving_id) if surviving_id
+    end
+    private_class_method :resolve_topic
   end
 end

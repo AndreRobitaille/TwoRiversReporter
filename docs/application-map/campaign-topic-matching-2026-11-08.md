@@ -78,7 +78,8 @@ copy and local operator session are not committed.
 
 ## Execution evidence and remaining limits
 
-Application revision: `ec283d87`, based on `af99755e` (PR #277). Local execution
+Initial application revision: `ec283d87`, based on `af99755e` (PR #277); the
+subsequent review correction is recorded below. Local execution
 uses Ruby 4.0.9, PostgreSQL and separate regression/real-data
 databases. No fixture loader runs against the real-data acceptance database.
 Only the operator identity and provider/budget transport are synthetic there.
@@ -114,3 +115,20 @@ Only the operator identity and provider/budget transport are synthetic there.
 Documentation links/anchors and `git diff --check` passed. Exact-head hosted CI
 and automatic review status are recorded on the PR. No deployment, merge, paid
 generation, production backfill or automatic public promise rating is included.
+
+### Review correction: merge before publication
+
+Automatic review on `2764e8c4` identified a gap when a topic is merged before
+associations exist, including a participant whose identity is repaired later.
+Reproduction expected two links to the surviving topic but found zero. Publication
+now resolves deleted topic IDs through the existing numeric topic redirect,
+checks that the destination remains reusable, and keeps the original ID in the
+association. No new redirect or correction infrastructure was introduced.
+
+The regression covers two successive merges followed by publication and later
+identity repair through nightly recovery. All three water-topic associations
+reach the survivor without another provider call. The final focused command
+adds `test/jobs/reconcile_campaign_sources_job_test.rb` to the integration,
+topic-merge and view-hygiene command above: 21 tests, 150 assertions, no failures,
+errors or skips. RuboCop passed again. The initial hosted CI and runtime-image
+checks passed on `2764e8c4`; the PR records final-revision checks separately.
