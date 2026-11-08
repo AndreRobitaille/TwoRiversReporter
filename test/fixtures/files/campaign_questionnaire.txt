@@ -3,7 +3,7 @@ Synthetic candidate questionnaire - not a real campaign source
 Question 1: What would you prioritize?
 Jordan Example: Repair neighborhood water lines.
 Taylor Example: Improve park access if grant funding is available.
-Morgan Example: Publish clearer spending reports.
+Morgan Example: Publish clearer spending reports before the next budget.
 
 Question 2: How would you pay for it?
 Jordan Example: Start with the oldest pipes and seek grants.

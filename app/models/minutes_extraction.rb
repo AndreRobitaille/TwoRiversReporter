@@ -22,6 +22,10 @@ class MinutesExtraction < ApplicationRecord
     status.in?(%w[pending failed budget_paused]) && attempts < MAX_ATTEMPTS
   end
 
+  def budget_request_key
+    "minutes/#{id}/#{attempts}"
+  end
+
   def claim!(budget_required: false, budget_run_id: nil)
     with_lock do
       return false unless retryable?

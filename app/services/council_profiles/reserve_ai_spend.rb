@@ -41,7 +41,7 @@ module CouncilProfiles
           raise Paused, "request_count_limit" if run.reservations.count >= run.max_requests
           raise Paused, "concurrency_limit" if run.reservations.where(finished_at: nil).count >= run.max_concurrent
 
-          reservation = run.reservations.create!(request_key: "minutes/#{stage.id}/#{stage.attempts}", reserved_microusd: amount,
+          reservation = run.reservations.create!(request_key: stage.budget_request_key, reserved_microusd: amount,
             request_estimate: estimate)
           yield reservation
         end

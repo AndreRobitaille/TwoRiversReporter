@@ -1,0 +1,31 @@
+<section data-campaign-extraction class="card">
+  <h2 class="card-title">Extracted statements</h2>
+  <% if extraction.status == "completed" %>
+    <p>Draft extraction. Matching a passage does not verify its interpretation or the person's identity.</p>
+    <% counts = extraction.data.fetch("counts") %>
+    <p><%= counts.fetch("participants") %> participants · <%= counts.fetch("statements") %> statements · <%= counts.fetch("unresolved_statements") %> need checking</p>
+    <% extraction.data.fetch("participants").each do |participant| %>
+      <h3><%= participant["name"].presence || "Unidentified participant" %></h3>
+      <% participant.fetch("answers").each do |answer| %>
+        <p><strong><%= answer["question"] %></strong></p>
+        <% answer.fetch("statements").each do |statement| %>
+          <div data-campaign-statement>
+            <p><span class="badge"><%= statement["kind"].to_s.humanize %></span>
+              <%= "Needs checking" if statement["location_status"] == "unresolved" %></p>
+            <p><%= statement["summary"] %></p>
+            <% if statement["conditions"].present? %><p>Conditions: <%= statement["conditions"] %></p><% end %>
+            <% if statement["timeframe"].present? %><p>Timeframe: <%= statement["timeframe"] %></p><% end %>
+            <details><summary>Supporting passage</summary><blockquote><%= statement["supporting_quote"] %></blockquote></details>
+          </div>
+        <% end %>
+      <% end %>
+    <% end %>
+    <% if extraction.data.fetch("coverage_gaps").any? %>
+      <h3>Reported gaps</h3>
+      <ul><% extraction.data.fetch("coverage_gaps").each do |gap| %><li><%= gap["description"] %></li><% end %></ul>
+    <% end %>
+  <% else %>
+    <p><%= extraction.status.humanize %><%= ": #{extraction.error_code.humanize}" if extraction.error_code.present? %>.</p>
+    <p>The saved article remains available. No statements have been published.</p>
+  <% end %>
+</section>
