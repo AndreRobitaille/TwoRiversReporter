@@ -117,3 +117,15 @@ control opens/closes the evidence, and the 390-pixel views do not overflow.
 This verifies the implemented presentation, not resident satisfaction; the
 owner's next visual review remains the usability checkpoint. No source analysis
 or stored civic evidence was changed.
+
+Hosted CI on `6f5186d` passed the application suite and runtime image checks, but
+the campaign activity browser journey encountered a stale element immediately
+after the Turbo campaign jump. The interaction used Capybara `first`, whose
+collection result does not enable element reload. It now uses synchronized
+`find(..., match: :first)`, allowing the real control to be re-found when Turbo
+replaces the document. No assertions, access checks or navigation steps were
+removed to address that timing error.
+The focused journeys passed again (**5 / 147**), then the full local browser
+suite passed with CI's failing order: `bin/rails test test/system --seed 12829`
+(**36 journeys / 1,092 assertions**, no failures, errors or skips). RuboCop
+passed for both changed test files.

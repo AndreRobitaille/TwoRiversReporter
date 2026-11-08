@@ -27,7 +27,7 @@ class MemberCampaignJourneysTest < ApplicationSystemTestCase
       assert_selector "#campaign-record .member-campaign-card", count: 2
       assert_selector "#campaign-record a", text: "Corrected publisher", count: 2, visible: :all
       page.refresh
-      first(".member-campaign-card > summary").click
+      find(".member-campaign-card > summary", match: :first).click
       assert_selector "#campaign-record a", text: "Corrected publisher", count: 1
     end
     assert_equal "Corrected publisher", @source.reload.current_version.publisher
@@ -58,14 +58,14 @@ class MemberCampaignJourneysTest < ApplicationSystemTestCase
       assert_no_selector ".member-campaign-card[open]"
       assert_no_text "Selected excerpts"
       assert_no_link "Example Newspaper"
-      first(".member-campaign-card > summary").click
+      find(".member-campaign-card > summary", match: :first).click
       assert_text "Selected excerpts"
       first("summary", text: "Read the question").click
       assert_text "Question 1: What would you prioritize?"
       all(".member-campaign-card > summary").last.click
       assert_selector ".member-campaign-card[open]", count: 1
       assert_no_text "Question 1: What would you prioritize?"
-      first(".member-campaign-card > summary").click
+      find(".member-campaign-card > summary", match: :first).click
     end
     assert_operator page.evaluate_script("document.documentElement.scrollWidth"), :<=, 390
     find("#campaign-record").scroll_to(:top)
