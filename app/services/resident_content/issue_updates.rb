@@ -23,14 +23,8 @@ module ResidentContent
       relevant.where(topic_conditions, *topic_values).includes(meeting_document: :meeting).find_each do |stage|
         document = stage.meeting_document
         next unless document && @period.range.cover?(document.meeting.starts_at)
-        begin
-          next unless CouncilProfiles::IssueInput.new(document).key == stage.input_key
-        rescue CouncilProfiles::IssueInput::Unavailable
-          next
-        end
-        resolver = Citations::Resolver.new(meeting: document.meeting, catalog: [ stage.context.fetch("source") ])
-        citation = resolver.resolve("source_id" => stage.context.dig("source", "source_id"), "location" => { "kind" => "whole_source" })
-        next unless citation[:status] == "resolved"
+        citation = stage.current_citation
+        next unless citation
         stage.data.fetch("updates").each do |update|
           related = update.fetch("topic_ids").filter_map { |id| topics[id] }
           next if related.empty?

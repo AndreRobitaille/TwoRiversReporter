@@ -8,9 +8,12 @@ module CouncilProfiles
         # Template/model edits alone do not reopen historical sources.
         existing = CouncilIssueReview.find_by(input_key: input.key)
         return existing if existing
-        attributes = { meeting_document: document, input_key: input.key, context: input.context }
+        # The response schema is not evidence identity: extending extraction must
+        # not reopen completed historical sources or cause extra paid calls.
+        context = input.context.merge("schema_version" => 2)
+        attributes = { meeting_document: document, input_key: input.key, context: context }
         begin
-          attributes[:parameters] = Ai::OpenAiService.council_issue_parameters(input.context)
+          attributes[:parameters] = Ai::OpenAiService.council_issue_parameters(context)
         rescue Ai::OpenAiService::InputTooLargeError
           attributes.merge!(status: "oversized", error_code: "issue_source_requires_partition")
         end

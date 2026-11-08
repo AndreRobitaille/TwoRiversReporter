@@ -446,7 +446,7 @@ provider diagnostics; permanent HTTP rejections bypass transient retries. See
   remain held. Existing nightly processing recovers eligible paused work; it
   neither renews the month nor resets the two-attempt ceiling.
 
-## BG-09 — Extract shared official issue milestones (P1)
+## BG-09 — Extract shared official issue milestones and actions (P1)
 
 - **Start / data:** explicitly selected official minutes document, existing
   approved agenda/topic links, populated prompt and exact month/day/run budget.
@@ -460,6 +460,9 @@ provider diagnostics; permanent HTTP rejections bypass transient retries. See
   have two attempts; oversized sources hold intact; changed source/topic inputs
   cannot serve old output. No automatic source discovery or live admission yet.
 - **Evidence:** [shared issue-update verification](council-issue-updates-2026-11-08.md).
+  [Recorded-action verification](council-recorded-actions-2026-11-08.md) extends new
+  requests with attributed actions. Completed older results reuse unchanged;
+  actor resolution on read creates neither people nor service records.
 
 ## Configured recurring entry points
 

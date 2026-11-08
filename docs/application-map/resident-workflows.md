@@ -208,6 +208,11 @@ status below does not imply complete coverage of those workflows.
 
 ## RES-10 — Inspect an official's attendance and voting record (P1)
 
+- **November 8 work beyond votes:** shared official evidence can show attributed
+  proposals/requests even without a vote or prior campaign/topic record. Known
+  identity and service dates control the projection; short actions and closed
+  sources remain separate from issue outcomes and campaign matching. See
+  [recorded-action evidence](council-recorded-actions-2026-11-08.md).
 - **November 8 vote search:** search and approved-topic/body/type/divided filters
   apply before pagination in both recorded and featured views. Controls preserve
   service period and view through search, paging, source navigation and clearing,

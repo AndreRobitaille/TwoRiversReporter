@@ -16,7 +16,7 @@ module CouncilProfiles
         raise Unavailable unless version && version.extracted_text == document.extracted_text &&
           document.file.attached? && document.file.blob.checksum == version.meeting_document_version.file.blob.checksum
       end
-      items = meeting.agenda_items.substantive.includes(:topics).order(:id).filter_map do |item|
+      items = meeting.agenda_items.substantive.includes(:parent, :topics).order(:id).filter_map do |item|
         topics = item.topics.select(&:approved?).sort_by(&:id)
         next if topics.empty?
         { "id" => item.id, "title" => item.display_context_title,

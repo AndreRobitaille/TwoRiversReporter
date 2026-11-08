@@ -12,6 +12,17 @@ class CouncilIssueReview < ApplicationRecord
     true
   end
 
+  def current_citation
+    document = meeting_document
+    return unless document && CouncilProfiles::IssueInput.new(document).key == input_key
+
+    resolver = Citations::Resolver.new(meeting: document.meeting, catalog: [ context.fetch("source") ])
+    citation = resolver.resolve("source_id" => context.dig("source", "source_id"), "location" => { "kind" => "whole_source" })
+    citation if citation[:status] == "resolved"
+  rescue CouncilProfiles::IssueInput::Unavailable
+    nil
+  end
+
   def budget_request_key
     "council_issue/#{id}/#{attempts}"
   end
