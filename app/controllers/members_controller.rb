@@ -24,6 +24,7 @@ class MembersController < ApplicationController
       @campaign_issues = ResidentContent::CampaignIssues.new(statements: @campaign_statements).call
       @campaign_actions = ResidentContent::CampaignActions.new(@member, statements: @campaign_statements,
         council_attendance: @council_attendance || ResidentContent::CouncilAttendance.new(@member).call).call
+      @campaign_issue_evidence = ResidentContent::CampaignIssueEvidence.new(@member, statements: @campaign_statements).call
     end
 
     @show_all_votes = params[:votes] == "all"

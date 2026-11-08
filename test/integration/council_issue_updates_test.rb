@@ -180,9 +180,23 @@ class CouncilIssueUpdatesTest < ActionDispatch::IntegrationTest
     get member_path(@member)
     assert_select "#issue-updates [data-issue-update]", count: 2
     get member_path(@member, term: "all")
-    assert_select "#issue-updates", count: 0
+    assert_select "#issue-updates [data-issue-update]", count: 2
     @update_meeting.update!(status: "cancelled")
     get member_path(@member)
+    assert_select "#issue-updates", count: 0
+    assert_equal 1, @calls.size
+  end
+
+  test "all records includes earlier documented terms but not gaps between terms" do
+    extract_issue_updates
+    @period.update!(ended_on: "2025-07-31", end_source_version: @source, end_page: 5)
+    later = @member.council_service_periods.create!(period_key: "2026-return", started_on: "2026-05-01", start_source_version: @source, start_page: 5)
+    get member_path(@member, term: later.period_key)
+    assert_select "#issue-updates", count: 0
+    get member_path(@member, term: "all")
+    assert_select "#issue-updates [data-issue-update]", count: 2
+    @period.update!(ended_on: "2025-06-30")
+    get member_path(@member, term: "all")
     assert_select "#issue-updates", count: 0
     assert_equal 1, @calls.size
   end

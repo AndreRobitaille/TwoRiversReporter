@@ -4,17 +4,23 @@
     <p class="member-campaign-qualification"><%= qualification %></p>
   <% end %>
   <% if actions.any? %>
-    <h4 class="member-campaign-activity-heading">On the Council</h4>
-    <%= render partial: "campaign_action", collection: actions.first(2), as: :action %>
+    <h4 class="member-campaign-activity-heading"><%= actions.any? { |action| action[:kind] } ? "What happened next" : "On the Council" %></h4>
+    <% actions.first(2).each do |action| %>
+      <%= render(action[:vote] ? "campaign_action" : "campaign_issue_evidence", action: action) %>
+    <% end %>
     <% if actions.size > 2 %>
       <details class="member-campaign-context">
-        <summary><%= pluralize(actions.size - 2, "more decision") %></summary>
-        <%= render partial: "campaign_action", collection: actions.drop(2), as: :action %>
+        <summary><%= pluralize(actions.size - 2, actions.any? { |action| action[:kind] } ? "more record" : "more decision") %></summary>
+        <% actions.drop(2).each do |action| %>
+          <%= render(action[:vote] ? "campaign_action" : "campaign_issue_evidence", action: action) %>
+        <% end %>
       </details>
     <% end %>
     <details class="member-campaign-context member-campaign-supporting">
       <summary>Supporting details</summary>
-      <%= render partial: "campaign_action_evidence", collection: actions, as: :action %>
+      <% actions.each do |action| %>
+        <%= render(action[:vote] ? "campaign_action_evidence" : "campaign_issue_evidence_source", action: action) %>
+      <% end %>
     </details>
   <% end %>
 </div>

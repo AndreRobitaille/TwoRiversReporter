@@ -152,7 +152,8 @@ module Ai
       def campaign_action_matching_parameters(context)
         text = JSON.generate(context)
         raise InputTooLargeError, "Action matching requires partitioning" if text.length > Campaigns::MatchActions::MAX_CONTEXT_CHARS
-        template = PromptTemplate.find_by!(key: "match_campaign_actions")
+        key = context["rules"] == Campaigns::IssueEvidenceInput::RULES ? "match_campaign_issue_evidence" : "match_campaign_actions"
+        template = PromptTemplate.find_by!(key: key)
         messages = [ { role: "system", content: template.system_role },
           { role: "user", content: template.interpolate(context: text) } ]
         build_chat_parameters(model: model_for_tier(template.model_tier), messages: messages,

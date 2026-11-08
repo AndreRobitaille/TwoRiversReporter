@@ -29,6 +29,8 @@ class MemberCampaignActivityJourneysTest < ApplicationSystemTestCase
       assert page.evaluate_script("document.querySelector('.member-profile-sidebar').getBoundingClientRect().top >= document.querySelector('.member-profile-primary').getBoundingClientRect().bottom"),
         "The main record should precede campaign context on a phone"
       click_link "Campaign priorities", exact: true
+      assert_current_path(member_path(@jordan)) { |url| url.fragment == "campaign-record" }
+      assert_no_selector "html[aria-busy='true']"
       assert_selector ".member-campaign-issue[open]", count: 1
       assert_no_selector ".member-campaign-evidence[open]"
       assert_no_text "Water renewal decision 23"
@@ -46,6 +48,8 @@ class MemberCampaignActivityJourneysTest < ApplicationSystemTestCase
       assert_link "Example Newspaper"
       assert_no_selector "#campaign-record [data-campaign-vote]", visible: :all
       click_link "Voting record", exact: true
+      assert_current_path(member_path(@jordan)) { |url| url.fragment == "voting-record" }
+      assert_no_selector "html[aria-busy='true']"
       within ".member-profile-primary" do
         click_link "Motion to adopt the resolution", match: :first
       end
