@@ -1,7 +1,8 @@
 <div class="member-campaign-position" <%= tag.attributes(data: { campaign_actions_for: statement.id }) if actions.any? %>>
   <p><%= statement.data.fetch("summary") %></p>
-  <% if statement.data["conditions"].present? %><p class="member-campaign-qualification"><%= statement.data["conditions"] %></p><% end %>
-  <% if statement.data["timeframe"].present? %><p class="member-campaign-qualification"><%= statement.data["timeframe"] %></p><% end %>
+  <% campaign_qualifications(statement).each do |qualification| %>
+    <p class="member-campaign-qualification"><%= qualification %></p>
+  <% end %>
   <% if actions.any? %>
     <h4 class="member-campaign-activity-heading">On the Council</h4>
     <%= render partial: "campaign_action", collection: actions.first(2), as: :action %>

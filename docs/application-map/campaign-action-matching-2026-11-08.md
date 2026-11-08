@@ -192,4 +192,14 @@ opens, other issue sections stay open independently, and the phone layout does
 not overflow. Replaying the real-data verification still retains all 94 campaign
 statements, 2,174 votes and six provider receipts with zero added requests.
 
+The owner then reported the stray `per calendar year` line under the Airbnb
+position. It was a separately stored timeframe already expressed in the summary.
+Both issue panels and source cards now omit repeated qualification text while
+retaining distinct conditions/deadlines with Condition or Timing labels. Display
+normalization treats each/per/every calendar year alike; source fields are not
+rewritten. The actual Brandt card was checked in the phone browser: the complete
+position remains and the extra timeframe line is gone. Nineteen helper/HTTP tests
+pass with 249 assertions, and targeted RuboCop passes. Removing deduplication
+fails the intended helper assertion; restoring it passes all three assertions.
+
 No production operation, database sync, production backfill, merge or deployment.

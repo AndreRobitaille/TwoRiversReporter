@@ -53,4 +53,21 @@ module MembersHelper
       title.presence || "Motion description unavailable."
     end
   end
+
+  def campaign_qualifications(statement)
+    summary = " #{normalize_campaign_qualification(statement.data.fetch("summary"))} "
+    { "conditions" => "Condition", "timeframe" => "Timing" }.filter_map do |field, label|
+      text = statement.data[field]
+      next if text.blank? || summary.include?(" #{normalize_campaign_qualification(text)} ")
+
+      "#{label}: #{text}"
+    end
+  end
+
+  private
+
+  def normalize_campaign_qualification(text)
+    text.downcase.gsub(/[[:punct:]]/, " ")
+      .gsub(/\b(?:per|every|each)(?=\s+(?:calendar\s+)?(?:year|month|week|day)\b)/, "each").squish
+  end
 end

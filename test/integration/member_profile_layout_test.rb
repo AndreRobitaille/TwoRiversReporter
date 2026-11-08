@@ -146,7 +146,8 @@ class MemberProfileLayoutTest < ActionDispatch::IntegrationTest
     end
     assert_select ".member-campaign-issue", count: 1
     assert_select "#campaign-record [data-campaign-vote]", count: 0
-    assert_select "#campaign-record > .member-campaign-evidence", text: /Only when grants cover the cost/
+    assert_select "#campaign-record > .member-campaign-evidence", text: /Repair water lines only when grants cover the cost/
+    assert_select ".member-campaign-qualification", text: /only when grants cover the cost/i, count: 0
     assert_select "#campaign-record > .member-campaign-evidence .member-campaign-card", count: 3
     assert_equal before, [ CampaignRequest.count, CampaignExtraction.count ]
   end
