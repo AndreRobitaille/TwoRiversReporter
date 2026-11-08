@@ -216,6 +216,10 @@ status below does not imply complete coverage of those workflows.
   Jump links retain easy access to both. Other Votes starts closed but its saved
   decisions and links remain server-rendered for permitted readers, including
   verified Google requests. See [layout checks](member-record-layout-2026-11-08.md).
+  Subsequent owner feedback rejected the expanded campaign cards: the first view
+  now shows three unboxed statement summaries per election, preserves qualifiers,
+  and keeps sources/related records behind one-at-a-time native disclosures.
+  Additional statements remain available in a closed overflow disclosure.
 - **November 8 recorded-vote view:** switch from Featured votes to All recorded
   votes (`?votes=all`), paginate 25 saved decisions at a time in either view, and
   follow a motion to its meeting and sources. Featured omits procedural motions

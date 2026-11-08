@@ -2,32 +2,22 @@
   <section class="member-article-section" id="campaign-record">
     <div class="home-section-header">
       <%= render "shared/atom_marker" %>
-      <h2 class="section-label" id="campaign-record-heading">What they campaigned on</h2>
+      <h2 class="section-label" id="campaign-record-heading">What they ran on</h2>
       <span class="section-line"></span>
     </div>
     <% statements.group_by { |statement| statement.campaign_source_version.election_on }.each do |election, records| %>
       <h3 class="member-campaign-election"><%= election.strftime("%B %-d, %Y") %> election</h3>
       <div class="member-campaign-list">
-        <% records.each do |record| %>
-          <% source = record.campaign_source_version %>
-          <article class="member-campaign-card">
-            <span class="badge badge--info"><%= CampaignStatement::KINDS.fetch(record.data.fetch("kind")) %></span>
-            <p class="member-campaign-summary"><%= record.data.fetch("summary") %></p>
-            <% if record.data["conditions"].present? %><p>Conditions: <%= record.data["conditions"] %></p><% end %>
-            <% if record.data["timeframe"].present? %><p>Timing: <%= record.data["timeframe"] %></p><% end %>
-            <details class="member-campaign-context">
-              <summary>Read the question</summary>
-              <p><%= record.data.fetch("question") %></p>
-            </details>
-            <p class="member-campaign-source">
-              <%= link_to source.publisher, source.source_url, rel: "noopener" %>
-              <% if source.published_on %> · <%= source.published_on.strftime("%b %-d, %Y") %><% end %>
-              <% if source.coverage == "selected_excerpts" %> · Selected excerpts<% end %>
-            </p>
-            <%= render "campaign_activity", activity: @campaign_activity.fetch(record.id) %>
-          </article>
-        <% end %>
+        <%= render partial: "campaign_statement", collection: records.first(3), as: :record %>
       </div>
+      <% if records.size > 3 %>
+        <details class="member-campaign-overflow">
+          <summary><%= pluralize(records.size - 3, "more campaign statement") %></summary>
+          <div class="member-campaign-list">
+            <%= render partial: "campaign_statement", collection: records.drop(3), as: :record %>
+          </div>
+        </details>
+      <% end %>
     <% end %>
   </section>
 <% end %>

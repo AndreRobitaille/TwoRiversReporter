@@ -14,7 +14,7 @@ class MemberCampaignJourneysTest < ApplicationSystemTestCase
     sign_in_by_email(admin)
     visit member_path(@jordan)
     assert_selector "#campaign-record .member-campaign-card", count: 2
-    assert_selector "#campaign-record a", text: "Example Newspaper", count: 2
+    assert_selector "#campaign-record a", text: "Example Newspaper", count: 2, visible: :all
     visit admin_campaign_source_path(@source)
     click_link "Edit"
     fill_in "Publisher", with: "Corrected publisher"
@@ -25,9 +25,10 @@ class MemberCampaignJourneysTest < ApplicationSystemTestCase
       end
       visit member_path(@jordan)
       assert_selector "#campaign-record .member-campaign-card", count: 2
-      assert_selector "#campaign-record a", text: "Corrected publisher", count: 2
+      assert_selector "#campaign-record a", text: "Corrected publisher", count: 2, visible: :all
       page.refresh
-      assert_selector "#campaign-record a", text: "Corrected publisher", count: 2
+      first(".member-campaign-card > summary").click
+      assert_selector "#campaign-record a", text: "Corrected publisher", count: 1
     end
     assert_equal "Corrected publisher", @source.reload.current_version.publisher
     assert_equal 0, @source.current_version.extraction.attempts
@@ -54,9 +55,17 @@ class MemberCampaignJourneysTest < ApplicationSystemTestCase
       assert_selector ".member-campaign-card", count: 2
       assert_text "Repair neighborhood water lines."
       assert_text "Do not delay urgent repairs while waiting."
+      assert_no_selector ".member-campaign-card[open]"
+      assert_no_text "Selected excerpts"
+      assert_no_link "Example Newspaper"
+      first(".member-campaign-card > summary").click
       assert_text "Selected excerpts"
       first("summary", text: "Read the question").click
       assert_text "Question 1: What would you prioritize?"
+      all(".member-campaign-card > summary").last.click
+      assert_selector ".member-campaign-card[open]", count: 1
+      assert_no_text "Question 1: What would you prioritize?"
+      first(".member-campaign-card > summary").click
     end
     assert_operator page.evaluate_script("document.documentElement.scrollWidth"), :<=, 390
     find("#campaign-record").scroll_to(:top)
@@ -68,6 +77,7 @@ class MemberCampaignJourneysTest < ApplicationSystemTestCase
     page.go_back
     assert_selector "#campaign-record .member-campaign-card", count: 2
     page.refresh
+    assert_no_selector ".member-campaign-card[open]"
     assert_text "Do not delay urgent repairs while waiting."
     find("button[aria-label='Toggle navigation']").click
     within ".site-nav" do

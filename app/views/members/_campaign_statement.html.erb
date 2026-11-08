@@ -1,0 +1,23 @@
+<% source = record.campaign_source_version %>
+<details class="member-campaign-card" name="campaign-priorities">
+  <summary class="member-campaign-summary">
+    <span>
+      <%= record.data.fetch("summary") %>
+      <% if record.data["conditions"].present? %><span class="member-campaign-qualification"><%= record.data["conditions"] %></span><% end %>
+      <% if record.data["timeframe"].present? %><span class="member-campaign-qualification"><%= record.data["timeframe"] %></span><% end %>
+    </span>
+    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 5 7 7-7 7"/></svg>
+  </summary>
+  <div class="member-campaign-detail">
+    <p class="member-campaign-source">
+      <%= link_to source.publisher, source.source_url, rel: "noopener" %>
+      <% if source.published_on %> · <%= source.published_on.strftime("%b %-d, %Y") %><% end %>
+      <% if source.coverage == "selected_excerpts" %> · Selected excerpts<% end %>
+    </p>
+    <details class="member-campaign-context">
+      <summary>Read the question</summary>
+      <p><%= record.data.fetch("question") %></p>
+    </details>
+    <%= render "campaign_activity", activity: @campaign_activity.fetch(record.id) %>
+  </div>
+</details>

@@ -15,6 +15,8 @@ class MemberProfileLayoutTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".member-profile-primary #voting-record", count: 1
     assert_select "aside.member-profile-sidebar #campaign-record .member-campaign-card", count: 2
+    assert_select "details.member-campaign-card > summary", count: 2
+    assert_select ".member-campaign-card[open]", count: 0
     assert_select ".member-profile-primary + aside.member-profile-sidebar", count: 1
     assert_select ".member-other-votes[open]", count: 0
     assert_select ".member-other-votes a[href=?]", meeting_path(@other.motion.meeting), text: @other.motion.description
@@ -49,5 +51,24 @@ class MemberProfileLayoutTest < ActionDispatch::IntegrationTest
     end
   ensure
     Rails.cache = original_cache if original_cache
+  end
+
+  test "longer campaigns show three statements first while retaining the rest and their sources" do
+    original = @jordan.campaign_statements.first
+    3.times do |index|
+      extra = original.dup
+      extra.sequence = 20 + index
+      extra.data = original.data.merge("summary" => "Additional campaign priority #{index + 1}.")
+      extra.save!
+    end
+    get member_path(@jordan)
+    assert_response :success
+    assert_select "#campaign-record > .member-campaign-list > .member-campaign-card", count: 3
+    assert_select ".member-campaign-overflow[open]", count: 0
+    assert_select ".member-campaign-overflow > summary", text: "2 more campaign statements"
+    assert_select ".member-campaign-overflow .member-campaign-card", count: 2
+    assert_select ".member-campaign-card[open]", count: 0
+    assert_select ".member-campaign-card a[href=?]", @source.source_url, count: 5
+    assert_includes response.body, "Additional campaign priority 3."
   end
 end

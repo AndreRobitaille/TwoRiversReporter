@@ -29,6 +29,9 @@ class MemberCampaignActivityJourneysTest < ApplicationSystemTestCase
       assert page.evaluate_script("document.querySelector('.member-profile-sidebar').getBoundingClientRect().top >= document.querySelector('.member-profile-primary').getBoundingClientRect().bottom"),
         "The main record should precede campaign context on a phone"
       click_link "Campaign priorities", exact: true
+      assert_no_selector ".member-campaign-card[open]"
+      assert_no_text "Water renewal decision 23"
+      first(".member-campaign-card > summary").click
       within "[data-campaign-activity]" do
         assert_selector "[data-campaign-vote]", count: 3, visible: true
         assert_no_selector "[data-campaign-vote='#{records.first.id}']", visible: true
@@ -47,6 +50,8 @@ class MemberCampaignActivityJourneysTest < ApplicationSystemTestCase
       page.go_back
       page.refresh
       assert_no_selector ".member-other-votes[open]"
+      assert_no_selector ".member-campaign-card[open]"
+      first(".member-campaign-card > summary").click
       assert_selector "[data-campaign-activity]", count: 1
       assert_selector "[data-campaign-vote]", count: 3, visible: true
       assert_operator page.evaluate_script("document.documentElement.scrollWidth"), :<=, 390

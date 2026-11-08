@@ -80,3 +80,40 @@ No live Google visit, indexing result or AI answer inclusion was verified.
 Google documents ordinary search eligibility for
 [AI features](https://developers.google.com/search/docs/appearance/ai-features);
 the local checks establish readable permitted HTML, not a promise of inclusion.
+
+## Sidebar revision after owner feedback
+
+The owner rejected the initial sidebar as a wall of text. The earlier passing
+layout checks did not establish that the information hierarchy was useful.
+This follow-up on base `32837e210c4a1db40934c6ac0e579e9db3167801` changes the
+default reading surface to short, unboxed statement rows. Classification badges,
+publisher/date repetition, questions and related vote details no longer compete
+with the statements in the initial view. Conditions and deadlines remain visible
+because omitting a qualification could change the reader's takeaway.
+
+Each native disclosure opens its supporting source/context and related record;
+opening another closes the previous one. Three statements per election are shown
+first in existing source order, with remaining statements behind a separate
+closed disclosure. This is a presentation limit, not a claim that the first three
+are more important. All saved content and source links remain in permitted HTML.
+
+The same focused application command above now runs **34 tests / 392 assertions**;
+the browser command runs **5 journeys / 147 assertions**, all passing. RuboCop
+still passes across **779 files**. The added checks cover the three-statement
+limit separately from source retention, closed initial details, one-at-a-time
+expansion, visible qualifications, source navigation and later refresh. Existing
+verified-crawler, spoof denial and offline page-read checks remain green.
+
+A test-process fault adding `open` to the first campaign statement reproduced
+the rejected expanded default. The publisher-link journey passed first
+(**1 / 44**), failed at the intended collapsed-state assertion (**1 / 20,
+1 failure**), and passed after removing the fault (**1 / 44**).
+
+Real local Bittner, Brandt and Derby pages retain their **3 / 2 / 2** statements.
+Bittner's collapsed campaign section contains 33 visible words, including its
+heading and election date, instead of displaying its source and vote detail by
+default. Desktop and phone screenshots were inspected; the native keyboard
+control opens/closes the evidence, and the 390-pixel views do not overflow.
+This verifies the implemented presentation, not resident satisfaction; the
+owner's next visual review remains the usability checkpoint. No source analysis
+or stored civic evidence was changed.
