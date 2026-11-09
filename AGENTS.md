@@ -43,6 +43,15 @@ work starts; this is not a new planning document or routine approval step.
 - Verification proves the chosen behavior; it does not choose or enlarge product
   scope. Reuse existing evidence and test the changed boundary proportionately.
 
+Apply diminishing returns to the whole project: development time, architecture,
+testing, edge cases, presentation and data completeness, as well as API costs.
+Use [AUDIENCE.md](docs/AUDIENCE.md) to judge the result. A useful, sourced account
+of important promises, meaningful work and issue outcomes is sufficient; it need
+not reconstruct everything an official has ever done. Once residents can answer
+those questions without being materially misled, stop expanding the feature.
+Fix demonstrated problems and disclose material gaps; minor omissions and
+optional refinements are not completion blockers.
+
 Current owner direction and the parent issue's bounded acceptance supersede
 older proposal details. For council profiles, apply #234 before promoting a
 detail from the long design into required implementation work.
