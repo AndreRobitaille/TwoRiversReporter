@@ -31,6 +31,16 @@ module ResidentContent
           { evidence: action, citation: citation, meeting: stage.meeting_document.meeting, topics: related, review: stage }
         end
       end
+      covered = rows.map { |row| [ row.fetch(:meeting).id, row.dig(:evidence, "agenda_item_id") ] }.to_set
+      CouncilProfiles::SavedMotionEvidence.for_periods(periods).each do |source|
+        source.actions.each do |row|
+          action = row.fetch(:evidence)
+          next unless ranges.any? { |range| range.cover?(Date.iso8601(action.fetch("occurred_on"))) }
+          next unless resolve_speaker(action.fetch("speaker")) == @member.id
+          next if covered.include?([ row.fetch(:meeting).id, action.fetch("agenda_item_id") ])
+          rows << row
+        end
+      end
       rows.uniq { |row| row.fetch(:evidence).except("agenda_item_id", "topic_ids") }
         .sort_by { |row| [ row.dig(:evidence, "occurred_on"), row.fetch(:meeting).id ] }.reverse
     end

@@ -17,7 +17,16 @@ class CampaignActionReview < ApplicationRecord
   end
 
   def issue_review
-    CouncilIssueReview.find_by(id: context["issue_review_id"]) if issue_evidence?
+    return unless issue_evidence?
+    if context["meeting_summary_id"]
+      summary = MeetingSummary.find_by(id: context["meeting_summary_id"])
+      document = MeetingDocument.find_by(id: context["meeting_document_id"])
+      return unless summary && document
+      source = CouncilProfiles::SavedMotionEvidence.new(summary, document)
+      source if source.supports?(context)
+    else
+      CouncilIssueReview.find_by(id: context["issue_review_id"])
+    end
   end
 
   def budget_request_key

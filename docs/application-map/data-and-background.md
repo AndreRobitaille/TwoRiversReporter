@@ -460,6 +460,13 @@ and held before provider construction; no text is silently truncated.
 
 ## BG-09 — Extract shared official issue milestones and actions (P1)
 
+- **Saved motion reuse:** published minutes mover/own-amendment evidence feeds
+  recorded work and the existing shared specific-statement matcher, with no new
+  extraction request. Minutes publication queues comparison; existing nightly
+  recovery covers missed work. Prose-only changes reuse positive and negative
+  matches. Ordinary seconds and procedural motions stay outside personal-action
+  cards. See [saved-motion checks](council-saved-motion-actions-2026-11-08.md).
+
 - **Routine reuse:** profile issue history reads the existing published minutes
   agenda summaries, topic links and citations. It creates no parallel extraction
   record. Recurring source admission and budget selection exclude a second
