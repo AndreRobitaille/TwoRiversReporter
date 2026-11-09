@@ -5,9 +5,8 @@ class ReconcileCampaignSourcesJob < ApplicationJob
       if extraction&.status == "completed"
         Campaigns::PublishStatements.call(extraction)
         matching = source.current_version.topic_matching
-        if matching&.status == "completed"
-          Campaigns::PublishTopicMatches.call(matching)
-        elsif matching.nil? || matching.status == "pending"
+        Campaigns::PublishTopicMatches.call(matching)
+        if matching.nil? || matching.status == "pending"
           MatchCampaignTopicsJob.perform_later(source.id)
         end
       elsif extraction.nil? || extraction.status == "pending"
