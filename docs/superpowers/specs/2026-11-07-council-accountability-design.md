@@ -769,6 +769,10 @@ Ordinary failed-job retries and corrections need not wait for that nightly pass.
   from measured usage. Estimate recurring costs separately from campaign intake
   and historical processing. Full-term backfill requires the owner's personal
   approval of a concrete cost and run proposal.
+- An additional explicit owner approval may add a retained day/month budget
+  supplement. Keep the original authorization and reservations intact, deduplicate
+  the approval, and retain run/request/attempt limits. Supplements do not activate
+  recurring processing or restore revoked authorization.
 - An automatic live policy names its earliest eligible meeting date and cannot
   silently widen that window into historical work. Renewing a month may retain
   the approved live window. A policy must explicitly select its conservative

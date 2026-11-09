@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_09_003000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_09_005000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -349,6 +349,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_09_003000) do
     t.index [ "actor_id" ], name: "index_council_ai_budget_runs_on_actor_id"
     t.index [ "council_ai_budget_day_id" ], name: "index_council_ai_budget_runs_on_council_ai_budget_day_id"
     t.index [ "live_budget_month_id" ], name: "index_council_ai_budget_runs_on_live_budget_month_id"
+  end
+
+  create_table "council_ai_budget_supplements", force: :cascade do |t|
+    t.bigint "council_ai_budget_month_id", null: false
+    t.bigint "council_ai_budget_day_id", null: false
+    t.string "authorization_key", null: false
+    t.bigint "amount_microusd", null: false
+    t.bigint "actor_id"
+    t.bigint "original_actor_id", null: false
+    t.datetime "authorized_at", null: false
+    t.text "authorization_basis", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "actor_id" ], name: "index_council_ai_budget_supplements_on_actor_id"
+    t.index [ "authorization_key" ], name: "index_council_ai_budget_supplements_on_authorization_key", unique: true
+    t.index [ "council_ai_budget_day_id" ], name: "idx_on_council_ai_budget_day_id_4830f24cd4"
+    t.index [ "council_ai_budget_month_id" ], name: "idx_on_council_ai_budget_month_id_82ac6633d9"
   end
 
   create_table "council_ai_reservations", force: :cascade do |t|
@@ -1386,6 +1403,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_09_003000) do
   add_foreign_key "council_ai_budget_runs", "council_ai_budget_days"
   add_foreign_key "council_ai_budget_runs", "council_ai_budget_months", column: "live_budget_month_id"
   add_foreign_key "council_ai_budget_runs", "users", column: "actor_id", on_delete: :nullify
+  add_foreign_key "council_ai_budget_supplements", "council_ai_budget_days"
+  add_foreign_key "council_ai_budget_supplements", "council_ai_budget_months"
+  add_foreign_key "council_ai_budget_supplements", "users", column: "actor_id", on_delete: :nullify
   add_foreign_key "council_ai_reservations", "council_ai_budget_runs"
   add_foreign_key "council_decision_assignments", "council_decision_corrections", column: "correction_id"
   add_foreign_key "council_decision_assignments", "council_decision_observations", column: "observation_id"

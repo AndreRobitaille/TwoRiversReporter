@@ -24,8 +24,10 @@ module CouncilProfiles
 
       { budget_month: date.beginning_of_month, authorization: authorization,
         live_action_policy: month&.live_actions.presence,
-        limit_microusd: month&.limit_microusd, reserved_microusd: reserved,
-        remaining_microusd: month ? [ month.limit_microusd - reserved, 0 ].max : 0,
+        original_limit_microusd: month&.limit_microusd,
+        supplement_microusd: month&.supplements&.sum(:amount_microusd) || 0,
+        limit_microusd: month&.effective_limit_microusd, reserved_microusd: reserved,
+        remaining_microusd: month ? [ month.effective_limit_microusd - reserved, 0 ].max : 0,
         stages: groups.transform_values { |rows| summarize(rows, by_reservation) } }
     end
 
