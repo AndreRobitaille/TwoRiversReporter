@@ -208,6 +208,12 @@ status below does not imply complete coverage of those workflows.
 
 ## RES-10 — Inspect an official's attendance and voting record (P1)
 
+- **Saved motion reuse:** substantive attributed motions in published minutes
+  recaps reach compact recorded-action cards with the agenda subject and exact
+  source passage. They enter the existing cached campaign comparison path, not
+  an automatic topic-overlap match. See
+  [saved-motion checks](council-saved-motion-actions-2026-11-08.md).
+
 - **November 8 direct evidence matching:** specific campaign positions can show
   matched recorded work and separately labeled issue updates, including an
   unsuccessful proposal with no vote. Topic overlap alone cannot publish the

@@ -45,7 +45,9 @@ class MeetingMotionAttributionTest < ActiveJob::TestCase
       Ai::OpenAiService.stub(:new, ai) do
         RetrievalService.stub(:new, retrieval) do
           assert_no_difference [ "Vote.count", "Motion.count" ] do
-            SummarizeMeetingJob.perform_now(meeting.id, enqueue_followups: false)
+            assert_enqueued_with(job: MatchCampaignIssueEvidenceJob) do
+              SummarizeMeetingJob.perform_now(meeting.id, enqueue_followups: false)
+            end
           end
         end
       end

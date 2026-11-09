@@ -41,7 +41,11 @@ module ResidentContent
     end
 
     def substantive_motion?(motion)
-      motion.description.present? && PROCEDURAL_PATTERNS.none? { |pattern| motion.description.match?(pattern) }
+      self.class.substantive_description?(motion.description)
+    end
+
+    def self.substantive_description?(description)
+      description.present? && PROCEDURAL_PATTERNS.none? { |pattern| description.match?(pattern) }
     end
 
     def attendance

@@ -61,7 +61,7 @@ module CouncilProfiles
       return if policy.blank?
       return policy if stage.is_a?(CampaignActionReview) && !stage.issue_evidence?
       source = stage.is_a?(CampaignActionReview) ? stage.issue_review : stage
-      return unless source.is_a?(CouncilIssueReview)
+      return unless source.is_a?(CouncilIssueReview) || source.is_a?(SavedMotionEvidence)
       scope = policy["issue_sources"]
       document = source.meeting_document
       return if stage.is_a?(CouncilIssueReview) && !document&.document_type.in?(LiveSources::EXTRACTION_TYPES)

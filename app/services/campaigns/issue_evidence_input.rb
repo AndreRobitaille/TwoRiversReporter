@@ -17,8 +17,9 @@ module Campaigns
     end
 
     def context(pairs)
-      { "rules" => RULES, "issue_review_id" => @review.id, "source" => @review.context.fetch("source"),
-        "reported_on" => @review.context.fetch("reported_on"), "pairs" => pairs }
+      reference = @review.is_a?(CouncilProfiles::SavedMotionEvidence) ? @review.reference : { "issue_review_id" => @review.id }
+      reference.merge("rules" => RULES, "source" => @review.context.fetch("source"),
+        "reported_on" => @review.context.fetch("reported_on"), "pairs" => pairs)
     end
 
     def self.prepare(review, candidates:)
