@@ -24,6 +24,8 @@ For resident-facing work, state in one sentence before adding or expanding a
 work item: the resident question it answers, the meaningful action/outcome it
 clarifies, and the demonstrated misunderstanding or obstacle it fixes. A missing
 field, possible edge case, or sentence in an older design is not sufficient.
+Put that sentence in the progress update so scope drift is visible before the
+work starts; this is not a new planning document or routine approval step.
 
 - Prioritize what officials promised, meaningful decisions/work, practical effects
   on residents, and issue outcomes. Preserve clear sources and honest coverage gaps.
