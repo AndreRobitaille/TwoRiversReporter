@@ -400,6 +400,11 @@ provider diagnostics; permanent HTTP rejections bypass transient retries. See
 
 ## BG-08 — Extract a shared campaign source within a spending allowance (P1)
 
+The [retained quote recovery](campaign-forum-quote-recovery-2026-11-08.md) expands
+unambiguous ellipsis excerpts inside one verified speaker's answer. Explicit
+recovery reuses saved responses; unchanged statement/topic decisions remain
+available while new matching waits for its existing allowance.
+
 The [prepared forum extension](prepared-campaign-forums-2026-11-08.md) reuses this
 shared pipeline for externally labeled sources and checks returned quotes against
 verified speaker spans. The [full-forum request checks](full-campaign-forums-2026-11-08.md)

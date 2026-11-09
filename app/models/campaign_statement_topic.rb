@@ -12,9 +12,9 @@ class CampaignStatementTopic < ApplicationRecord
   def supported_by_matching
     stage = campaign_extraction
     statement = campaign_statement
-    valid = stage&.purpose == "topic_matching" && stage.status == "completed" && statement&.status == "accepted" &&
+    valid = stage&.purpose == "topic_matching" && statement&.status == "accepted" &&
       statement.campaign_source_version.id == stage.campaign_source_version_id &&
-      stage.data.fetch("matches", []).any? do |match|
+      stage.published_topic_matches.any? do |match|
         match["sequence"] == statement.sequence && match["status"] == "matched" && match["topic_ids"].include?(original_topic_id)
       end
     errors.add(:base, "requires a supported statement and topic match") unless valid

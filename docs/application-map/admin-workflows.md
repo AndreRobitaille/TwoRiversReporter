@@ -403,6 +403,10 @@ assertions below are candidate acceptance criteria based on the user's brief.
 
 ## ADM-21 — Supply and correct a shared campaign article (P1)
 
+The [forum quotation recovery command](campaign-forum-quote-recovery-2026-11-08.md)
+lets an active administrator recover exact passages from a retained result,
+without another source analysis or replacing original uploaded transcripts.
+
 - **Start / data:** eligible admin with permitted questionnaire text, its publisher
   link, election date, known publication date and complete/excerpt coverage.
 - **Action:** Members → Campaign sources → Add article; save once for all supplied

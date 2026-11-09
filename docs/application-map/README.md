@@ -340,3 +340,7 @@ checks explicit mover/seconder wording through existing meeting/topic processing
 The [November 8 saved-motion checks](council-saved-motion-actions-2026-11-08.md)
 trace existing minutes attribution into recorded work and shared campaign
 comparisons, including unchanged reuse and real local phone/desktop pages.
+
+The [November 8 forum quote recovery](campaign-forum-quote-recovery-2026-11-08.md)
+checks exact retained passages, preserved qualifications and speaker labels,
+incremental topic reuse, and real local profiles without another extraction call.

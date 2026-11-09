@@ -1,6 +1,6 @@
 module PreparedForumFixture
-  def forum_export
-    turns = [
+  def forum_export(turns: nil)
+    turns ||= [
       [ "Moderator", "What should the city prioritize?" ],
       [ "Jordan Example", "Repair water lines before expanding roads." ],
       [ nil, "Thanks." ],
