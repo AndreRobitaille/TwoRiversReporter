@@ -1,5 +1,9 @@
 # Explicit staff recommendations — November 8, 2026
 
+The subsequent [real retained-source acceptance](council-source-acceptance-2026-11-08.md#real-recommendation-and-recorded-decision)
+checks the actual Plan Commission/BID recommendations against minutes-based
+votes, with an audited local correction and explicit extraction limits.
+
 Scope: BG-09 → RES-10/11, bounded #242 work under #234. The
 [binding design](../superpowers/specs/2026-11-07-council-accountability-design.md#agreement-with-staff-or-the-city-manager)
 requires an actual attributable recommendation and comparable proposal before
