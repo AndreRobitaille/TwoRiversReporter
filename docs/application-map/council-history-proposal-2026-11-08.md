@@ -6,6 +6,10 @@ record has passed [bounded implementation acceptance](council-profile-integratio
 The owner approved the bounded $10 local catch-up below on November 8. Execution
 results are recorded separately; the broader backfill remains deferred under #245.
 
+[Executed local results](council-catchup-results-2026-11-08.md): 19 meetings added,
+one interrupted meeting held, both forum-topic stages completed, and reviewed
+campaign comparisons published. All temporary run authorizations are revoked.
+
 ## Available history and explicit gaps
 
 The [source/stage manifest](council-history-manifest-2026-11-08.json) covers the
@@ -16,7 +20,7 @@ serves every eligible member; the initial cohort is not a separate extraction.
 | Disposition | Listings | Treatment |
 | --- | ---: | --- |
 | Existing minutes/records available | 49 | Reuse accepted votes, attendance, summaries and comparisons. Some fields remain incomplete; availability is not complete coverage. |
-| Missing facts with a checked minutes URL and sized PDF | 20 | Prepared vote and attendance requests; no import or AI call yet. Eleven PDFs need local OCR, already sized without paid processing. |
+| Missing facts with a checked minutes URL and sized PDF | 20 | Initial proposal scope; the subsequent local run completed 19 and retained one interrupted meeting as a gap. |
 | City-page access unresolved | 35 | 33 challenge responses and two unsuccessful page requests. Do not interpret these as missing minutes or absent meetings. |
 | Genuine meeting pages without a minutes link | 3 | October 19, October 26 and November 2, 2026; await minutes. |
 | Joint/listening listings | 7 | Retain separately; do not infer Council attendance or votes from the title alone. |
