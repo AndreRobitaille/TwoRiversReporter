@@ -55,8 +55,8 @@ module CouncilProfiles
             end
             raise Paused, "request_budget_limit" if amount > run.request_limit_microusd
             raise Paused, "run_budget_limit" if run.reservations.sum(:reserved_microusd) + amount > run.limit_microusd
-            raise Paused, "monthly_budget_limit" if month.reserved_microusd + amount > month.limit_microusd
-            raise Paused, "daily_budget_limit" if day.reserved_microusd + amount > day.limit_microusd
+            raise Paused, "monthly_budget_limit" if month.reserved_microusd + amount > month.effective_limit_microusd
+            raise Paused, "daily_budget_limit" if day.reserved_microusd + amount > day.effective_limit_microusd
             raise Paused, "request_count_limit" if run.reservations.count >= run.max_requests
             raise Paused, "concurrency_limit" if run.reservations.where(finished_at: nil).count >= run.max_concurrent
 

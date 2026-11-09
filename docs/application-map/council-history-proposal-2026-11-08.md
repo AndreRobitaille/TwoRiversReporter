@@ -3,7 +3,8 @@
 Resident question: which parts of a member's record are missing, and what useful
 history can be added without paying to repeat accepted work? The current member
 record has passed [bounded implementation acceptance](council-profile-integration-2026-11-08.md#final-bounded-implementation-acceptance).
-This proposal is an approval point under #245, not an executed backfill.
+The owner approved the bounded $10 local catch-up below on November 8. Execution
+results are recorded separately; the broader backfill remains deferred under #245.
 
 ## Available history and explicit gaps
 
@@ -35,7 +36,7 @@ planning, not approved as a published interpretation.
 
 ## Concrete local catch-up option
 
-**Proposed one-time ceiling: $10**, in a disposable local copy, for the following
+**Approved one-time ceiling: $10**, in a disposable local copy, for the following
 prepared work only. The broader/full-term backfill stays deferred.
 
 | Work | First attempts | Ceiling with one retry each |
@@ -99,8 +100,8 @@ Further history can be priced when its source/stage scope is concrete. No second
 general minutes-analysis system or billing redesign is proposed to prepare this
 decision. The current partial record remains useful without these additions.
 
-A separate **$10/month incremental comparison ceiling** is proposed in #238 for
-new evidence after activation; existing site AI and one-time work are excluded.
-Neither the one-time nor recurring allowance is enabled by this document.
+A separate **$10/month incremental comparison ceiling** was accepted in #238 for
+new evidence after later activation; existing site AI and one-time work are excluded.
+Acceptance of that ceiling does not activate recurring processing.
 No current-term record receives a full-three-year absence/broken-promise verdict.
 Parent #234 and historical rollout #245 remain open.

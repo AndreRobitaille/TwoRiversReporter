@@ -1,6 +1,8 @@
 class CouncilAiBudgetMonth < ApplicationRecord
   include CouncilAiAuthorization
 
+  has_many :supplements, class_name: "CouncilAiBudgetSupplement", dependent: :restrict_with_exception
+
   validates :budget_month, presence: true, uniqueness: true
   validates :limit_microusd, numericality: { only_integer: true, greater_than: 0 }
   validate :first_day_of_month
@@ -14,6 +16,10 @@ class CouncilAiBudgetMonth < ApplicationRecord
 
   def reserved_microusd
     reservations.sum(:reserved_microusd)
+  end
+
+  def effective_limit_microusd
+    limit_microusd + supplements.sum(:amount_microusd)
   end
 
   private

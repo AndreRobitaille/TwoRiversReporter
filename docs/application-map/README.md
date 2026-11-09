@@ -86,6 +86,8 @@ concurrent reservation, budget-paused retries and retained uncertain amounts.
 
 The [November 8 monthly council cost checks](council-monthly-costs-2026-11-08.md)
 add an explicit monthly ceiling across runs/days and a read-only stage usage report.
+The [explicit budget supplement checks](council-budget-supplement-2026-11-08.md)
+cover additional owner approval without rewriting earlier authorizations.
 
 The [November 8 campaign/issue evidence checks](campaign-issue-evidence-2026-11-08.md)
 connect specific statements to recorded advocacy and separate issue developments
