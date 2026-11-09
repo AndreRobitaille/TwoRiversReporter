@@ -1,5 +1,9 @@
 # Retained forum quotation recovery — November 8, 2026
 
+The subsequent [bounded source review](council-source-acceptance-2026-11-08.md)
+accounts for the eight remaining passages, recovers six through explicit
+editorial corrections, and records the current inputs and spending hold.
+
 Scope: #239/#238 under #234; BG-08, ADM-21 and RES-10/11. Based on
 `394092a` (saved minutes motions). This is local implementation/verification,
 not deployment or a complete campaign-coverage assessment.

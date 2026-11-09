@@ -1,5 +1,9 @@
 # Application behavior map
 
+The [November 8 bounded source acceptance](council-source-acceptance-2026-11-08.md)
+records retained forum corrections, real recommendation/decision comparisons and
+formal-record channels, with unresolved coverage and spending limits explicit.
+
 The [November 8 real cohort and cost checks](council-cohort-readiness-2026-11-08.md)
 record shared provider results, unchanged reuse, compact action ordering, the
 public historical inventory and the remaining backfill approval boundary.

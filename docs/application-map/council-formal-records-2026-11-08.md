@@ -1,5 +1,9 @@
 # Formal complaint and finding records — November 8, 2026
 
+The subsequent [official-channel assessment](council-source-acceptance-2026-11-08.md#formal-record-channels-and-gaps)
+identifies the Clerk, Council records and notice channels using the 2026 policy
+and adoption minutes, while retaining the gap in complete case coverage.
+
 Scope: ADM-22 → BG-10 → RES-10/11, #244 under #234. The binding
 [formal-conduct contract](../superpowers/specs/2026-11-07-council-accountability-design.md#formal-conduct-proceedings)
 requires actual case records, separate allegations and findings, source-backed
