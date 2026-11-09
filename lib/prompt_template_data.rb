@@ -594,13 +594,23 @@ module PromptTemplateData
         - If someone has a title like "Recording Secretary" they are non_voting_staff.
         - Return full names as written. Do not abbreviate or alter names.
         - If no absent members are listed, return an empty array for voting_members_absent.
+        - A member explicitly arriving late, leaving early, or participating remotely
+          attended the meeting: include them in voting_members_present, even if they
+          were absent at the initial roll call. This does not establish any individual vote.
+        - Include one participation_notes entry for each distinct documented arrival,
+          departure, remote-participation or excused-absence detail; use [] when none.
+          Each quote must be a short exact excerpt (at most 500 characters) from these
+          minutes naming the attendee and preserving any stated time or qualification.
+          Do not infer a time, participation detail or reason, or paraphrase the excerpt.
+          The name must match a person in one of the attendance arrays.
 
         Schema:
         {
           "voting_members_present": ["Full Name", ...],
           "voting_members_absent": ["Full Name", ...],
           "non_voting_staff": [{"name": "Full Name", "capacity": "Title"}, ...],
-          "guests": [{"name": "Full Name"}]
+          "guests": [{"name": "Full Name"}],
+          "participation_notes": [{"name": "Full Name", "quote": "Exact minutes excerpt"}, ...]
         }
         </extraction_spec>
 

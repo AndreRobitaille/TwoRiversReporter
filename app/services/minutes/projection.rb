@@ -10,6 +10,7 @@ module Minutes
     def call
       @meeting.meeting_attendances.destroy_all
       attendance_changed = create_attendance_records(@meeting, @attendance)
+      preserve_participation_notes
       @meeting.motions.destroy_all
       motions = @votes.fetch("motions").each_with_index.reject { |data, _index| unseconded_motion?(data, @input.text) }
       motions.each do |data, index|
@@ -30,6 +31,28 @@ module Minutes
     end
 
     private
+
+    def preserve_participation_notes
+      notes = @attendance["participation_notes"]
+      return unless notes.is_a?(Array)
+
+      source = @input.text.squish
+      notes.each do |note|
+        next unless note.is_a?(Hash) && note["name"].is_a?(String) && note["quote"].is_a?(String)
+        quote = note["quote"].squish
+        next if quote.blank? || quote.length > 500 || !source.include?(quote)
+
+        # Notes describe an already recorded attendee; they cannot create people
+        # or change attendance/ballots. Unknown or unlocated notes stay in the raw stage.
+        name = Member.normalize_name(note["name"])
+        member = Member.find_by(name: name) || MemberAlias.find_by(name: name)&.member
+        next unless member
+        row = @meeting.meeting_attendances.find_by(member: member)
+        next unless row
+
+        row.update!(participation_notes: (row.participation_notes + [ quote ]).uniq)
+      end
+    end
 
     def unseconded_motion?(motion_data, minutes_text)
       description = motion_data["description"].to_s.downcase

@@ -31,10 +31,12 @@ module ResidentContent
         type = meeting_type(meeting)
         next unless type
 
-        statuses = duplicates.flat_map(&:meeting_attendances)
+        records = duplicates.flat_map(&:meeting_attendances)
           .select { |record| record.member_id == @member.id && record.attendee_type == "voting_member" }
-          .map(&:status).uniq
-        { meeting: meeting, meeting_ids: duplicates.map(&:id), type: type, status: statuses.one? ? statuses.sole : "unknown" }
+        statuses = records.map(&:status).uniq
+        notes = records.select { |record| record.meeting_id == meeting.id }.flat_map(&:participation_notes).uniq
+        { meeting: meeting, meeting_ids: duplicates.map(&:id), type: type,
+          status: statuses.one? ? statuses.sole : "unknown", participation_notes: notes }
       end.sort_by { |row| [ row[:meeting].starts_at, row[:meeting].id ] }.reverse
 
       { committee_id: council.id, period: period, rows: rows, meeting_ids: rows.flat_map { |row| row.fetch(:meeting_ids) },

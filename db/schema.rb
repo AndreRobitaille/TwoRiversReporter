@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_09_003000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_09_004000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -714,6 +714,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_09_003000) do
     t.bigint "member_id", null: false
     t.string "status", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "participation_notes", default: [], null: false
     t.index [ "meeting_id", "member_id" ], name: "index_meeting_attendances_on_meeting_id_and_member_id", unique: true
     t.index [ "meeting_id" ], name: "index_meeting_attendances_on_meeting_id"
     t.index [ "member_id" ], name: "index_meeting_attendances_on_member_id"

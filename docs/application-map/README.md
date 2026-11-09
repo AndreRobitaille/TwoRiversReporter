@@ -126,6 +126,10 @@ the historical-backfill boundary. No policy is enabled by the migration.
 The [November 8 Council period-selection checks](council-period-selection-2026-11-08.md)
 cover term-scoped attendance/votes, preserved navigation and phone controls.
 
+The [November 8 participation-note checks](council-attendance-notes-2026-11-08.md)
+cover documented arrivals through existing minutes publication and later member
+reads, with a bounded real-source replay and no historical reanalysis policy.
+
 The [November 8 peer-vote checks](council-peer-votes-2026-11-08.md) cover shared
 yes/no fractions, divided decisions, correction reads, drill-down navigation and
 reporting/crawler access without AI calls.

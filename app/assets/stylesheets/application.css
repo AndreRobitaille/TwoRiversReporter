@@ -5853,6 +5853,11 @@ th.sortable-header:hover {
   flex-shrink: 0;
 }
 
+.member-attendance-note {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-secondary);
+}
+
 @media (max-width: 600px) {
   .member-attendance-counts {
     grid-template-columns: repeat(2, minmax(0, 1fr));

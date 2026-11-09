@@ -27,7 +27,12 @@
         <% rows.each do |row| %>
           <% meeting = row.fetch(:meeting) %>
           <li>
-            <%= link_to "#{meeting.starts_at.strftime('%b %-d, %Y')} · #{row.fetch(:type)}", meeting_path(meeting) %>
+            <div>
+              <%= link_to "#{meeting.starts_at.strftime('%b %-d, %Y')} · #{row.fetch(:type)}", meeting_path(meeting) %>
+              <% row.fetch(:participation_notes).each do |note| %>
+                <p class="member-attendance-note"><%= note %></p>
+              <% end %>
+            </div>
             <span><%= ResidentContent::CouncilAttendance::LABELS.fetch(row.fetch(:status)) %></span>
           </li>
         <% end %>
