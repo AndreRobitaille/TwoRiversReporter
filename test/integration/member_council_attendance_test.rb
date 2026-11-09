@@ -11,6 +11,49 @@ class MemberCouncilAttendanceTest < ActionDispatch::IntegrationTest
 
   teardown { travel_back }
 
+  test "documented participation survives minutes publication and unchanged later reads without inferring ballots" do
+    meeting = council_meeting("2026-03-17")
+    quote = "Jordan Attendance arrived at 6:26 PM"
+    meeting.meeting_documents.create!(document_type: "minutes_pdf", extracted_text:
+      "Absent at roll call: Jordan Attendance.\nClerk note: #{quote}.\nJordan Attendance voted yes on the grant.")
+    attendance_response = {
+      voting_members_present: [ @member.name ], voting_members_absent: [], non_voting_staff: [], guests: [],
+      participation_notes: [ { name: @member.name, quote: quote } ]
+    }
+    votes_response = { motions: [
+      { description: "Opening contract", outcome: "passed", votes: [] },
+      { description: "Approve grant", outcome: "passed", votes: [ { member: @member.name, value: "yes" } ] }
+    ] }
+    provider = Object.new
+    provider.define_singleton_method(:extract_committee_members) { |*args, **kwargs| attendance_response.to_json }
+    provider.define_singleton_method(:extract_votes) { |*args, **kwargs| votes_response.to_json }
+    Ai::OpenAiService.stub(:new, provider) do
+      ExtractCommitteeMembersJob.perform_now(meeting.id)
+      ExtractVotesJob.perform_now(meeting.id)
+    end
+
+    row = meeting.meeting_attendances.sole
+    assert_equal "present", row.status
+    assert_equal [ quote ], row.participation_notes
+    assert_empty meeting.motions.find_by!(description: "Opening contract").votes
+    assert_equal [ "yes" ], meeting.motions.find_by!(description: "Approve grant").votes.pluck(:value)
+    assert_equal quote, meeting.reload.minutes_publication.attendance_extraction.data.fetch("participation_notes").sole.fetch("quote")
+
+    ids = meeting.motions.order(:id).pluck(:id)
+    Ai::OpenAiService.stub(:new, ->(*) { flunk "An attendance note must not trigger reanalysis" }) do
+      2.times do
+        ExtractCommitteeMembersJob.perform_now(meeting.id)
+        ExtractVotesJob.perform_now(meeting.id)
+        get member_path(@member)
+        assert_counts(present: 1, absent: 0, excused: 0, unknown: 0)
+        assert_select ".member-attendance-note", text: quote, count: 1
+        assert_select "#council-attendance a[href=?]", meeting_path(meeting), count: 1
+      end
+    end
+    assert_equal ids, meeting.motions.order(:id).pluck(:id)
+    assert_equal row.id, meeting.meeting_attendances.sole.id
+  end
+
   test "known Council inventory distinguishes absence from missing roll calls and excludes ineligible meetings" do
     included = [
       council_meeting("2024-04-16", attendance: "present"),

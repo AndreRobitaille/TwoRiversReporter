@@ -28,6 +28,29 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
     mock_service
   end
 
+  test "participation excerpts must occur in these minutes and belong to an existing attendee" do
+    @doc.update!(extracted_text: "Present: Smith\nSmith participated\nremotely. Smith left at 8 PM.")
+    outsider = Member.create!(name: "Unlisted Person")
+    response = {
+      "voting_members_present" => [ "Smith" ], "voting_members_absent" => [], "non_voting_staff" => [], "guests" => [],
+      "participation_notes" => [
+        { "name" => "Smith", "quote" => "Smith participated remotely." },
+        { "name" => "Unknown Person", "quote" => "Smith left at 8 PM." },
+        { "name" => outsider.name, "quote" => "Smith left at 8 PM." },
+        { "name" => "Smith", "quote" => "Smith left at 7 PM." },
+        { "name" => "Smith", "quote" => "Smith participated remotely." },
+        "malformed optional note"
+      ]
+    }
+    provider = stub_ai_response(response)
+    Ai::OpenAiService.stub(:new, provider) { run_attendance_job }
+    provider.verify
+    assert_equal [ "Smith participated remotely." ], @meeting.meeting_attendances.sole.participation_notes
+    assert_equal "present", @meeting.meeting_attendances.sole.status
+    assert_not Member.exists?(name: "Unknown Person")
+    assert_equal response["participation_notes"], @meeting.reload.minutes_publication.attendance_extraction.data["participation_notes"]
+  end
+
   test "skips meeting without minutes text" do
     @doc.update!(extracted_text: nil)
     assert_no_difference "MeetingAttendance.count" do
