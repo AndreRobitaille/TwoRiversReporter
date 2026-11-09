@@ -7,6 +7,7 @@ class CampaignActionReview < ApplicationRecord
   validates :input_key, uniqueness: true, format: { with: /\A[0-9a-f]{64}\z/ }
   validates :status, inclusion: { in: %w[pending running completed failed uncertain incomplete oversized budget_paused] }
   validate :retain_completed_output
+  validate :valid_rejected_pairs
 
   def budget_required?
     true
@@ -40,8 +41,28 @@ class CampaignActionReview < ApplicationRecord
   def matches_by_key
     results = data.fetch("matches").index_by { |match| match.fetch("key") }
     context.fetch("pairs").to_h do |pair|
-      [ Campaigns::ActionInput.key(pair), results.fetch(pair.fetch("key")) ]
+      key = Campaigns::ActionInput.key(pair)
+      match = results.fetch(pair.fetch("key"))
+      match = match.merge("status" => "not_direct", "reason" => rejected_pairs.fetch(key)) if rejected_pairs.key?(key)
+      [ key, match ]
     end
+  end
+
+  # Correct a false connection without deleting provider evidence or buying it again.
+  def reject_matches!(keys:, actor:, reason:)
+    raise ArgumentError, "Active administrator required" unless actor&.admin? && actor.active_for_authentication?
+    raise ArgumentError, "Review reason and pair keys required" if reason.blank? || keys.blank?
+
+    with_lock do
+      raise ArgumentError, "Only completed comparisons can be reviewed" unless status == "completed"
+      changes = keys.uniq.to_h { |key| [ key, reason ] }
+      return false if changes.all? { |key, value| rejected_pairs[key] == value }
+
+      update!(rejected_pairs: rejected_pairs.merge(changes))
+      AuditEvent.record!(actor: actor, action: "campaign_actions.reject_matches", subject: self,
+        label: "Campaign comparison review", metadata: { pair_keys: changes.keys, reason: reason })
+    end
+    true
   end
 
   def claim!(budget_run)
@@ -53,6 +74,14 @@ class CampaignActionReview < ApplicationRecord
   end
 
   private
+
+  def valid_rejected_pairs
+    return if rejected_pairs == {}
+    unless rejected_pairs.is_a?(Hash) && (rejected_pairs.keys - pair_keys).empty? &&
+        rejected_pairs.values.all? { |reason| reason.is_a?(String) && reason.present? && reason.length <= 1_000 }
+      errors.add(:rejected_pairs, "requires known pair keys and a short review reason")
+    end
+  end
 
   def retain_completed_output
     if persisted? && status_in_database == "completed" &&

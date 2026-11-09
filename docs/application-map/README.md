@@ -92,6 +92,8 @@ cover additional owner approval without rewriting earlier authorizations.
 The [November 8 campaign/issue evidence checks](campaign-issue-evidence-2026-11-08.md)
 connect specific statements to recorded advocacy and separate issue developments
 using shared cached comparisons, compact disclosures and scoped spending.
+The [reviewed match-rejection checks](campaign-match-rejections-2026-11-08.md)
+cover correcting false semantic connections without another paid analysis.
 
 The [November 8 formal-record checks](council-formal-records-2026-11-08.md)
 record verified source intake, shared dated events, compact case disclosures,
