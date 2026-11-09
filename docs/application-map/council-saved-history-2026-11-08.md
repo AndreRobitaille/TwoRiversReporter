@@ -112,3 +112,46 @@ summary-to-promise interpretation is not implemented by this read-only reuse.
 
 The parent and broader evidence issues remain open. No backfill, merge,
 deployment or production synchronization occurred.
+
+## Measured comparison workload and recurring proposal
+
+The final offline census uses the three real cohort members' current accepted
+statements and existing local history, through November 8, 2026. It finds **80
+distinct candidate pairs across 15 meetings**, grouped into **17 shared batches**;
+23 pairs already have completed cached results. Nine minutes texts absent from
+the smaller preview were reused from the existing local development database
+inside a rolled-back audit transaction. No production data was copied and no
+provider was called. Missing inputs were not priced as free processing.
+
+Preparing the actual request parameters and applying the existing conservative
+preflight gives **$2.568267 for all 17 first attempts**, or **$5.136534 with one
+retry for every batch**. This includes already-cached pairs to measure request
+sizes; it is neither a remaining catch-up charge nor a monthly invoice. The
+largest represented calendar month has three batches, approximately $0.50 once
+or $1.00 with a retry each. Incomplete historical and topic coverage mean that
+small observed volume is not a guarantee of future demand.
+
+A practical recurring proposal is **$10 per month for incremental profile
+comparisons**. A deliberately larger scenario of 20 shared batches per month,
+each as large as the largest measured request and each using one retry, gives
+**$7.762120**. The $10 ceiling leaves headroom and pauses work on exhaustion;
+larger inputs or workloads do not authorize overspend. This replaces the earlier
+$15 proposal, not the enforced limits: **no allowance or recurring policy was
+enabled or enlarged**. Existing request/run/day/month and attempt limits apply.
+New evidence and existing nightly recovery remain the only update triggers.
+
+Saved history, arithmetic and unchanged comparisons require no additional AI.
+The proposal excludes the app's existing meeting/topic analysis, one-time campaign
+intake or catch-up, specifically selected supplemental/formal sources and the
+historical run. The current two forum-topic catch-up requests separately have a
+$0.547581 first-attempt ceiling, or $1.095162 with a retry each; they remain paused.
+Later action comparisons are separate work, not included in that catch-up figure.
+
+Prices were checked against the official
+[Terra](https://developers.openai.com/api/docs/models/gpt-5.6-terra) and
+[Luna](https://developers.openai.com/api/docs/models/gpt-5.6-luna) pages on November
+8. The configured preflight uses the full output allowance, one input token per
+UTF-8 byte plus framing, the cache-write input rate and no assumed cache discount.
+It is a conservative planning ceiling, not measured token use or a provider bill;
+the checked pricing expires November 21. This is sufficient to propose a bounded
+operating allowance without building a separate forecasting system.

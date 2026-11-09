@@ -921,6 +921,16 @@ and does not certify the extraction or approval status of the source minutes.
 
 **Planned member-page enrichment — direction agreed November 7, 2026:**
 
+Owner scope correction, November 8: choose work by whether it helps a resident
+understand a specific promise, meaningful action, practical effect, or issue
+outcome. State the demonstrated reading obstacle or materially misleading result
+before expanding implementation. A missing detail alone is not a priority.
+Use the existing attendance record; exact arrival/departure tracking is optional
+and is not a delivery requirement. PR #306 is deferred outside the delivery stack.
+Retain source links and plain coverage limits without turning completeness into
+a new project. The [resident-value rule](../AGENTS.md#choose-work-by-resident-value)
+and #234's bounded acceptance govern the older detailed proposals below.
+
 Extend the existing `/members/:id` pages into year-round records of each
 official's priorities, actions, and progress over time. Build on current
 attendance and vote tracking with a shared, automatically maintained profile.

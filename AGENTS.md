@@ -18,6 +18,44 @@ The `.claude/skills/` files are shared repository playbooks despite their
 tool-specific directory name. Non-Claude agents should read them directly
 rather than duplicating them into another agent directory.
 
+## Choose Work by Resident Value
+
+For resident-facing work, state in one sentence before adding or expanding a
+work item: the resident question it answers, the meaningful action/outcome it
+clarifies, and the demonstrated misunderstanding or obstacle it fixes. A missing
+field, possible edge case, or sentence in an older design is not sufficient.
+Put that sentence in the progress update so scope drift is visible before the
+work starts; this is not a new planning document or routine approval step.
+
+- Prioritize what officials promised, meaningful decisions/work, practical effects
+  on residents, and issue outcomes. Preserve clear sources and honest coverage gaps.
+- Technical work qualifies when needed for that task or a concrete correctness,
+  privacy, access, reliability, or spending problem. Name the affected behavior;
+  do not invent a hypothetical severe consequence to justify expansion.
+- Reuse accepted facts and existing workflows. Correctable reporting errors do
+  not require a general records-management system. Routine arrival timestamps,
+  procedural minutiae, and exhaustive source completeness are not feature gates.
+- If the value cannot be stated concretely, defer the work. Do not add it to an
+  issue's acceptance criteria or make it block closure. Preserve useful existing
+  work; sunk effort does not make an optional branch a delivery dependency.
+- Use available resident reviewers to challenge unclear priorities or substantive
+  presentation changes. Their feedback tests usefulness, not source accuracy.
+- Verification proves the chosen behavior; it does not choose or enlarge product
+  scope. Reuse existing evidence and test the changed boundary proportionately.
+
+Apply diminishing returns to the whole project: development time, architecture,
+testing, edge cases, presentation and data completeness, as well as API costs.
+Use [AUDIENCE.md](docs/AUDIENCE.md) to judge the result. A useful, sourced account
+of important promises, meaningful work and issue outcomes is sufficient; it need
+not reconstruct everything an official has ever done. Once residents can answer
+those questions without being materially misled, stop expanding the feature.
+Fix demonstrated problems and disclose material gaps; minor omissions and
+optional refinements are not completion blockers.
+
+Current owner direction and the parent issue's bounded acceptance supersede
+older proposal details. For council profiles, apply #234 before promoting a
+detail from the long design into required implementation work.
+
 ## Mandatory Production SSH Rule
 Before **any** production SSH operation, including read-only inspection, establish
 and verify one persistent SSH tunnel using `.claude/skills/deploying/SKILL.md`.

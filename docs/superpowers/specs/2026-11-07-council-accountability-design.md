@@ -25,6 +25,15 @@ sourced reporting and practical correction, without treating every possible
 mistake as a severe or irreversible outcome. This decision governs the scope
 and sequencing of the more detailed proposals below.
 
+The subsequent owner scope correction makes this a selection rule, not merely
+a preference for smaller implementations: before starting another work item,
+name the resident question, meaningful action/outcome, and demonstrated reading
+obstacle or materially misleading conclusion being fixed. A technically missing
+detail does not pass by itself. Work that fails this test stays outside completion
+criteria. Existing reader feedback, real source examples and the parent issue's
+bounded checklist guide selection; the scenarios below are not an instruction
+to implement every possible detail. See the [agent entrypoint](../../../AGENTS.md#choose-work-by-resident-value).
+
 - Preserve the existing implementation PRs. Keep stable source/decision links,
   basic extraction validation, reuse of unchanged work, and explicit spending
   and retry limits. No paid generation is enabled by this adjustment.
@@ -159,7 +168,7 @@ that merely moves all the work into an approval queue does not satisfy the goal.
 | Resident question | Proposed feature | What supports the answer |
 | --- | --- | --- |
 | What did they campaign on? | Dated campaign positions and specific commitments, grouped by topic and election | Candidate-authored material, attributed questionnaire responses, and reviewed recording excerpts |
-| Did they show up? | Council attendance during the selected service period, with counts and missing-record coverage | Meeting roll calls, held/cancelled status, service dates, and recorded arrivals/departures |
+| Did they show up? | Council attendance during the selected service period, with counts and missing-record coverage | Existing meeting roll calls, held/cancelled status and service dates |
 | How did they vote? | Complete decision history with the motion, each member's vote, outcome, and sources | Validated minutes-based motions and individual votes |
 | Did they push for something? | Documented proposals, amendments, requests, questions, objections, and follow-up | Attributed minutes or reviewed recording segments, including attempts that never reached a vote |
 | Who did they agree with? | Pairwise comparisons and a separate view of divided votes | The same eligible decisions, named votes, explicit denominators, and exclusions |
@@ -303,9 +312,11 @@ to attend; distinguish meeting types. Show committee service separately.
 Reconcile expected held meetings against the source inventory and service dates.
 Cancelled meetings and time before/after service are excluded. Missing minutes,
 missing roll calls, and unresolved attendance are unknown, never automatic
-absence or presence. Preserve excused absence, remote participation, late arrival,
-and early departure where documented. Presence at roll call does not establish
-presence for every later motion.
+absence or presence. Reuse the app's existing attendance record. Exact arrival
+and departure tracking, including PR #306's optional prototype, is outside the
+required delivery scope. Investigate timing only when it explains a consequential
+vote/attendance discrepancy; a routinely omitted timestamp is not such a gap.
+Presence at roll call does not establish a named vote on every later motion.
 
 Show present/absent/excused/unknown counts and source coverage. If a percentage
 is used, label it as presence among meetings with known attendance and show both
@@ -501,7 +512,7 @@ older term. Losing an election or leaving office does not remove the page.
 | **The record so far** | A short cited account of the member's main priorities and documented activity, followed by up to three recent substantive changes | The validated records displayed farther down this page | Changed actions, campaign evidence, issue milestones, or corrections; no independent claims generated from an unsourced biography |
 | **Priorities and progress** | Campaign positions paired with what the member did and what happened to the issue; source date and statement type remain visible | HTR/other questionnaires, candidate-authored material, prepared forum evidence; linked actions and outcome sources | One campaign-source import can populate multiple profiles; later related meetings and outcome evidence refresh the affected cards |
 | **Work on public issues** | Featured issue rows with the member's proposals, amendments, requests, votes, follow-up, and the issue's current state; link to the shared topic history | Existing approved Topics, official decision records, attributed remarks, resident-priority evidence, and project/policy updates | A relevant action, topic link, or supported milestone changes; shared topic outcomes update every affected member |
-| **Attendance** | Present, absent, excused, and unknown Council meetings for the selected service window; meeting-type breakdown and separately labeled committee attendance | Expected meeting inventory, service eligibility, roll calls, documented arrivals/departures | Meeting added/cancelled, roll-call revision, or service-date correction; deterministic calculations |
+| **Attendance** | Present, absent, excused, and unknown Council meetings for the selected service window; meeting-type breakdown and separately labeled committee attendance | Existing meeting inventory, service eligibility and roll calls | Meeting added/cancelled, roll-call revision, or service-date correction; deterministic calculations |
 | **Decisions and votes** | Searchable, paginated full record: date, decision, member vote, Council split, result, and source. Filters for topic, body, substantive/procedural action, and divided votes | Stable motions/amendments, named votes, eligibility, agenda links, source versions | Accepted extraction/correction; every decision appears once in the full list even if it belongs to several topics |
 | **How their votes compare** | One row per colleague showing agreement on shared decisions and on divided decisions; separate manager and staff recommendation comparisons, with inspectable fractions and exclusions | Validated individual votes on the same decisions; explicit recommendations that apply to the actual motion | A relevant vote, recommendation, motion classification, eligibility, or term changes; deterministic recomputation |
 | **Formal complaints and findings** | Dated cases showing what was alleged, procedural steps, the member's documented response, and the actual disposition; source links on each event | Formal complaints, notices, published findings, decisions, appeals/corrections | A validated case event or source revision; an allegation never silently becomes a finding |
@@ -917,7 +928,10 @@ when their contracts are approved. Do not mark them implemented in the
 application map from this proposal.
 
 Use the [behavioral QA procedure](../../application-map/maintenance-and-qa.md).
-Representative acceptance scenarios include:
+Choose representative acceptance scenarios for the agreed resident task and the
+behavior actually changed. Reuse existing evidence; this list is not a new set
+of implementation projects or a requirement to exercise every hypothetical case.
+Relevant scenarios include:
 
 - One supplied article or prepared transcript yields the supported positions for
   multiple identified members, without per-statement entry or per-page publishing.
@@ -938,8 +952,8 @@ Representative acceptance scenarios include:
   prevents a recording excerpt from being published as a named campaign claim.
 - A re-import preserves approved evidence links; a changed document version
   cannot silently reuse approval; retries do not duplicate decisions or promises.
-- Cancellation, term boundaries, a late arrival, and an unknown roll call produce
-  the expected attendance and per-motion eligibility, without inventing absence.
+- Existing cancellation, term boundaries and unknown roll calls produce honest
+  attendance counts; a meeting attendance status does not invent a named ballot.
 - A tie has no majority; recusal is not dissent; a shared consent vote and a
   multi-topic motion count once; a summary tally does not manufacture individual votes.
 - A staff recommendation to reject is correctly compared with a motion to reject;
