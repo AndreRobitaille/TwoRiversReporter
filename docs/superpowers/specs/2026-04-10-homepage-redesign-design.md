@@ -41,7 +41,7 @@ The highest-impact topics with recent activity. Each story card shows:
 
 **Primary story** gets a large card with heavy shadow, 5px terra-cotta/amber gradient accent bar, starburst motif in corner (8% opacity). **Secondary story** gets a slightly smaller card with teal accent bar.
 
-**Data source:** Top 1-2 approved topics by `resident_impact_score DESC` where `last_activity_at` within 30 days. Minimum impact threshold of 4. If only one topic qualifies at 5, show one. If multiple at the same score, prefer the one with the most recent `last_activity_at`.
+**Data source:** Up to two approved, reusable topics by `resident_impact_score DESC`, with an impact score of at least 4 and `last_activity_at` newer than 21 days ago. For equal scores, prefer the most recent `last_activity_at`. The November 20, 2026 decision shortened the lead window to 21 days and kept 30 days for More Stories.
 
 **Links to:** Topic show page (`/topics/:id`).
 
@@ -138,7 +138,7 @@ Entire cards are also clickable (larger tap target), but the visible affordance 
 
 The `HomeController` needs restructured queries. Key changes from current:
 
-1. **Zone 1 (top stories):** Replace dual `build_what_happened`/`build_coming_up` with a single query: approved topics, `resident_impact_score >= 4`, `last_activity_at` within 30 days, ordered by score desc then recency, limit 2.
+1. **Zone 1 (top stories):** Select approved, reusable topics with `resident_impact_score >= 4` and `last_activity_at` newer than 21 days ago, ordered by score descending then recency, limit 2.
 
 2. **Zone 2 (the wire):** Approved topics, `resident_impact_score >= 2`, `last_activity_at` within 30 days, ordered by score desc then recency, excluding Zone 1 topic IDs. Split results: first 4 → mid-tier cards, remainder → compact rows.
 
@@ -214,7 +214,7 @@ Implementation should use a git worktree and PR workflow for isolation from the 
 
 ### Quiet period handling
 
-Between council meetings (up to 2 weeks), the content may feel static. The 30-day `last_activity_at` window ensures topics from the most recent council meeting cluster persist through the quiet period. The inverted pyramid means the most important items stay at top even if they're 10 days old. Meeting references show dates so the user understands recency.
+The 21-day lead window covers a typical two-week gap between council meetings. A lead story can move into More Stories once its activity is 21 days old, provided it still qualifies for a slot there. At 30 days it ages out of More Stories. Meeting references show the dates readers can use to assess recency.
 
 ### Future enhancements (out of scope)
 

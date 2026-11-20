@@ -4,10 +4,10 @@ module GeneratedImages
     MIN_IMPACT = 4
     LIMIT = 6
 
-    def call
+    def call(activity_window: ACTIVITY_WINDOW)
       Topic.reusable
         .where("resident_impact_score >= ?", MIN_IMPACT)
-        .where("last_activity_at > ?", ACTIVITY_WINDOW.ago)
+        .where("last_activity_at > ?", activity_window.ago)
         .order(resident_impact_score: :desc, last_activity_at: :desc, id: :desc)
         .limit(LIMIT)
         .to_a

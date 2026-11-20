@@ -90,7 +90,8 @@ Governance. Existing editorial blocks require a reviewed data repair; the
 automatic guard does not remove historical blocks or blacklist entries.
 
 The homepage uses `resident_impact_score` (1-5), with top stories requiring
-at least 4 and wire entries at least 2, ordered by impact and then recency.
+at least 4 and activity less than 21 days old. More Stories requires at least 2
+and activity less than 30 days old. Both sections order by impact and then recency.
 The separate admin `importance` field (0-10) does not control homepage ranking.
 All AI impact writers apply the sex-offender minimum through
 `Topic#update_resident_impact_from_ai`: 3 for individual cases, 4 for a

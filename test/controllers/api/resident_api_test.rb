@@ -58,6 +58,17 @@ class Api::ResidentApiTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "home returns older high impact topics in wire cards" do
+    @topic.update!(last_activity_at: 22.days.ago)
+    recent_topic = Topic.create!(name: "Council budget", status: "approved",
+      resident_impact_score: 4, last_activity_at: 1.day.ago)
+
+    get "/api/v1/home", headers: bearer
+    assert_response :success
+    assert_equal [ recent_topic.id ], data.fetch("top_stories").pluck("id")
+    assert_equal [ @topic.id ], data.fetch("wire_cards").pluck("id")
+  end
+
   test "invalid credentials cookies crawler claims head and conditional requests cannot bypass authentication" do
     sign_in_as(@user)
     [ {}, { "Authorization" => "Bearer invalid" }, { "Authorization" => "Basic #{@secret}" },
