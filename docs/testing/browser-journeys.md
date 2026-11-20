@@ -28,7 +28,9 @@ URLs are absolute and point to that same browser server's actual port. Test
 configuration, URL options and delivery capture are restored after each test.
 Failures produce screenshots in `tmp/screenshots`; GitHub retains them as a
 failure artifact. Application and browser suites run serially against the test
-database.
+database. Each journey closes its Chrome session during Capybara reset, after
+test teardown callbacks. Chrome 158 rejects Capybara 3.40's wildcard storage cleanup, and closing the
+session gives the next journey fresh cookies and storage.
 
 GitHub's downloaded Chrome for Testing gets an AppArmor profile allowing user
 namespaces for its exact executable path on the disposable Ubuntu runner. The
