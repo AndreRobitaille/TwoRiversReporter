@@ -101,6 +101,15 @@ production data copying, real email delivery, paid AI calls, and deployment
 still require their existing authorizations.
 
 ## Repo Rules
+- TwoRiversReporter is an independent city watchdog, not the official city record
+  or a legal records system. Ordinary reporting/extraction errors are generally
+  correctable editorial mistakes. Prioritize useful sourced reader workflows and
+  a practical correction path; do not build exhaustive correction machinery for
+  hypothetical severe outcomes. Keep verification proportionate to the changed
+  behavior. Source honesty, privacy/access controls, and paid-AI limits still apply.
+- For council profiles, follow the [November 8 delivery adjustment](docs/superpowers/specs/2026-11-07-council-accountability-design.md#delivery-priority-and-proportionality).
+  Reuse accepted votes during ordinary meeting/topic reanalysis; further defensive
+  infrastructure needs a concrete problem and a bounded fix.
 - Single Rails app; avoid introducing new services/frameworks.
 - Prefer server-rendered HTML; use minimal JavaScript.
 - Keep controllers thin; put business/pipeline logic in jobs and services.
