@@ -94,14 +94,16 @@ namespace :resummarize do
     end
 
     # Homepage-eligible count
+    top_story_window = ResidentContent::HomeSelection::TOP_STORY_ACTIVITY_WINDOW
+    wire_window = ResidentContent::HomeSelection::ACTIVITY_WINDOW
     top_stories = Topic.approved
       .where("resident_impact_score >= 4")
-      .where("last_activity_at > ?", 30.days.ago).count
+      .where("last_activity_at > ?", top_story_window.ago).count
     wire = Topic.approved
       .where("resident_impact_score >= 2")
-      .where("last_activity_at > ?", 30.days.ago).count
+      .where("last_activity_at > ?", wire_window.ago).count
     puts ""
-    puts "Homepage-eligible (30d window): #{top_stories} top stories (>=4), #{wire} wire (>=2)"
+    puts "Homepage-eligible: #{top_stories} top stories (>=4, #{top_story_window.in_days.to_i}d), #{wire} wire (>=2, #{wire_window.in_days.to_i}d)"
     puts ""
   end
 end

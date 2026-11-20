@@ -172,7 +172,11 @@ module Topics
 
     def homepage_selector_ids
       selector_result = GeneratedImages::HomepageTopicSelector.new
-      selector_topics = selector_result.respond_to?(:call) ? selector_result.call : selector_result
+      selector_topics = if selector_result.respond_to?(:call)
+        selector_result.call(activity_window: ResidentContent::HomeSelection::TOP_STORY_ACTIVITY_WINDOW)
+      else
+        selector_result
+      end
       selector_ids = Array(selector_topics).map(&:id)
       puts "Homepage top story candidate ids: #{selector_ids.inspect}"
       selector_ids
