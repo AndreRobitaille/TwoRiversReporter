@@ -189,6 +189,22 @@ class CouncilLiveSourcesTest < ActionDispatch::IntegrationTest
     assert_select "#staff-recommendations", count: 1
   end
 
+  test "a comparison-only packet channel cannot buy a separate packet extraction or renew it into past meetings" do
+    scope = source_scope.merge("extract_packets" => false)
+    month = authorize_sources(scope: scope)
+    assert_equal scope, CouncilProfiles::LiveSources.scope
+    assert_empty CouncilProfiles::LiveSources.documents
+    assert_not CouncilProfiles::LiveSources.enabled?
+    Ai::OpenAiService.stub(:new, ->(*) { flunk "A packet comparison cannot fund a new extraction" }) do
+      ExtractCouncilIssueUpdatesJob.perform_now(@document.id)
+    end
+    assert_equal "outside_live_source_scope", @stage.reload.error_code
+    assert_empty month.reservations
+    travel_to Time.zone.local(2026, 12, 1, 20)
+    renewed = authorize_sources(starting_on: scope.fetch("starting_on"), scope: scope)
+    assert_not renewed.update(live_actions: renewed.live_actions.deep_merge("issue_sources" => { "extract_packets" => true }))
+  end
+
   private
 
   def source_scope

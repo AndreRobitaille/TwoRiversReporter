@@ -10,7 +10,38 @@
     <% if @current_position %>
       <span class="badge badge--info"><%= "Current: " if @record_period.selected&.ended_on %><%= @current_position.title %></span>
     <% end %>
+    <% if @election_council_slug %>
+      <%= gated_content do %>
+        <p class="member-election-status">
+          <% if @election.candidates.key?(@member.name) %>
+            Confirmed candidate for spring <%= @election.election_on.year %>.
+          <% else %>
+            Council term ends in spring <%= @election.election_on.year %>. Reelection plans unconfirmed as of <%= @election.checked_on.to_fs(:long) %>.
+          <% end %>
+          <%= link_to "See the spring election", committee_path(@election_council_slug, anchor: "spring-election") %>
+        </p>
+      <% end %>
+    <% end %>
   </header>
+
+  <% if params[:statement].present? && !gated_for_visitor? %>
+    <%= gated_content do %>
+      <section id="campaign-statement" class="member-article-section">
+        <% if @selected_statement %>
+          <% source = @selected_statement.campaign_source_version %>
+          <% actions = newest_campaign_actions(@campaign_actions.fetch(@selected_statement.id, []) + @campaign_issue_evidence.fetch(@selected_statement.id, [])) %>
+          <h2>From the <%= source.election_on.year %> campaign</h2>
+          <%= render "campaign_comparison", statement: @selected_statement, actions: actions, explain: true %>
+          <% if actions.empty? %>
+            <p>We haven’t linked a later council action to this statement in the records reviewed.</p>
+          <% end %>
+          <p><%= link_to source.publisher, source.source_url %><%= " · #{source.published_on.to_fs(:long)}" if source.published_on %></p>
+        <% else %>
+          <p>This campaign statement is unavailable.</p>
+        <% end %>
+      </section>
+    <% end %>
+  <% end %>
 
   <% if has_campaign %>
     <nav class="member-profile-nav" aria-label="Member record sections">

@@ -18,12 +18,27 @@ this document does not claim the feature is implemented or deployed.
 
 ## Delivery priority and proportionality
 
+**Election-season entry, November 21, 2026.** Start with whose terms expire
+this spring, who is running, and what they are running on. The City Council
+page identifies the seats and links a dated campaign statement to its specific
+record. Readers can weigh what an incumbent said against what they did.
+Use a separate candidacy source for each confirmed campaign, including
+challengers. Earlier campaign material keeps its original year. The
+[Development Plan](../../DEVELOPMENT_PLAN.md) describes the seasonal entry to
+the year-round profiles.
+
 Owner decision, November 8, 2026: TwoRiversReporter is an independent city
 watchdog, not the official city record or a legal records system. Ordinary site
 errors can be corrected when discovered or reported. Engineer for useful,
 sourced reporting and practical correction, without treating every possible
 mistake as a severe or irreversible outcome. This decision governs the scope
 and sequencing of the more detailed proposals below.
+
+The November 21 campaign review puts distinct proposals and observable priorities
+on the member profile. Select them from campaign sources before comparing actions.
+Repeated mentions share one entry and retain their citations. Alternative policies
+and distinct outcomes can have separate entries on the same issue. Every accepted
+statement remains in the campaign sources disclosure.
 
 The subsequent owner scope correction makes this a selection rule, not merely
 a preference for smaller implementations: before starting another work item,

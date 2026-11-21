@@ -9,13 +9,13 @@ module CouncilProfiles
     EXTRACTION_TYPES = %w[packet_pdf].freeze
 
     def self.enabled?
-      scope && (scope.fetch("document_types") & EXTRACTION_TYPES).any?
+      extraction_types(scope).any?
     end
 
     def self.documents
       policy = scope
       return MeetingDocument.none unless policy
-      MeetingDocument.joins(:meeting).where(document_type: policy.fetch("document_types") & EXTRACTION_TYPES)
+      MeetingDocument.joins(:meeting).where(document_type: extraction_types(policy))
         .where(meetings: { committee_id: policy.fetch("committee_ids"),
           starts_at: Date.iso8601(policy.fetch("starting_on")).beginning_of_day..Time.current })
         .where.not(extracted_text: [ nil, "" ])
@@ -25,6 +25,10 @@ module CouncilProfiles
       month = CouncilAiBudgetMonth.find_by(budget_month: Date.current.beginning_of_month, revoked_at: nil)
       month&.live_actions&.fetch("issue_sources", nil)
     end
-    private_class_method :scope
+
+    def self.extraction_types(policy)
+      return [] unless policy && policy.fetch("extract_packets", true)
+      policy.fetch("document_types") & EXTRACTION_TYPES
+    end
   end
 end

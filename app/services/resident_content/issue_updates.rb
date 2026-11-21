@@ -2,8 +2,10 @@ module ResidentContent
   # Reuses the same saved source result on every relevant member page. These are
   # issue developments, never proof of personal credit or a campaign connection.
   class IssueUpdates
-    def initialize(member, attendance:, period:, statements: [])
+    def initialize(member, attendance:, period:, statements: [], topic_ids: [], include_recaps: true)
       @member, @attendance, @period, @statements = member, attendance, period, statements
+      @topic_ids = topic_ids
+      @include_recaps = include_recaps
     end
 
     def call
@@ -11,7 +13,8 @@ module ResidentContent
         return @period.selectable.flat_map do |service|
           period = CouncilPeriod.new(@member, key: service.period_key)
           attendance = CouncilAttendance.new(@member, period: service).call
-          self.class.new(@member, attendance: attendance, period: period, statements: @statements).call
+          self.class.new(@member, attendance: attendance, period: period, statements: @statements, topic_ids: @topic_ids,
+            include_recaps: @include_recaps).call
         end.uniq { |row| [ row[:meeting].id, row[:evidence] ] }
           .sort_by { |row| [ row[:reported_on], row[:meeting].id ] }.reverse
       end
@@ -20,6 +23,7 @@ module ResidentContent
         .select("motions.agenda_item_id")
       ids = AgendaItemTopic.where(agenda_item_id: agenda_ids).pluck(:topic_id)
       ids.concat(@statements.flat_map { |statement| statement.related_topics.map(&:id) })
+      ids.concat(@topic_ids)
       topics = Topic.approved.where(id: ids.uniq).index_by(&:id)
       return [] if topics.empty?
 
@@ -40,10 +44,12 @@ module ResidentContent
             reported_on: Date.iso8601(stage.context.fetch("reported_on")), review: stage }
         end
       end
-      covered_items = rows.map { |row| [ row[:meeting].id, row[:evidence]["agenda_item_id"] ] }.to_set
-      rows.concat(MeetingIssueHistory.call(topics: topics, during: @period.range).reject do |row|
-        covered_items.include?([ row[:meeting].id, row[:evidence]["agenda_item_id"] ])
-      end)
+      if @include_recaps
+        covered_items = rows.map { |row| [ row[:meeting].id, row[:evidence]["agenda_item_id"] ] }.to_set
+        rows.concat(MeetingIssueHistory.call(topics: topics, during: @period.range).reject do |row|
+          covered_items.include?([ row[:meeting].id, row[:evidence]["agenda_item_id"] ])
+        end)
+      end
       rows.uniq { |row| [ row[:meeting].id, row[:reported_on], row[:evidence] ] }
         .sort_by { |row| [ row[:reported_on], row[:meeting].id ] }.reverse
     end

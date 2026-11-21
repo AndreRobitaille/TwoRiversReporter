@@ -50,7 +50,8 @@ class CouncilAiBudgetMonth < ApplicationRecord
   def live_source_policy
     return unless live_actions.is_a?(Hash) && live_actions.key?("issue_sources")
     scope = live_actions["issue_sources"]
-    unless scope.is_a?(Hash) && scope.keys.sort == %w[committee_ids document_types starting_on] &&
+    unless scope.is_a?(Hash) && (scope.keys - [ "extract_packets" ]).sort == %w[committee_ids document_types starting_on] &&
+        [ true, false ].include?(scope.fetch("extract_packets", true)) &&
         scope["committee_ids"].is_a?(Array) && scope["committee_ids"].any? &&
         scope["committee_ids"].all? { |id| id.is_a?(Integer) && id.positive? } &&
         scope["document_types"].is_a?(Array) && scope["document_types"].any? &&
@@ -68,7 +69,8 @@ class CouncilAiBudgetMonth < ApplicationRecord
       .any? do |policy|
         old = policy.fetch("issue_sources")
         (scope.fetch("committee_ids") - old.fetch("committee_ids")).empty? &&
-          (scope.fetch("document_types") - old.fetch("document_types")).empty?
+          (scope.fetch("document_types") - old.fetch("document_types")).empty? &&
+          (CouncilProfiles::LiveSources.extraction_types(scope) - CouncilProfiles::LiveSources.extraction_types(old)).empty?
       end
     errors.add(:live_actions, "cannot authorize historical source channels") unless prior_scope
   rescue KeyError, ArgumentError, TypeError

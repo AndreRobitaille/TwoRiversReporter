@@ -24,7 +24,8 @@ module Campaigns
           match["reason"].is_a?(String) && match["reason"].present? && match["reason"].length <= 1_000
         if match["status"] == "direct"
           quote = match[quote_field]
-          valid &&= quote.is_a?(String) && quote.length.between?(20, 2_000) && @quotes.fetch(match.fetch("key")).include?(normalize(quote))
+          valid &&= quote.is_a?(String) && quote.length <= 2_000 && normalize(quote).length >= 20 &&
+            @quotes.fetch(match.fetch("key")).include?(normalize(quote))
         end
         raise InvalidResponse unless valid
       end

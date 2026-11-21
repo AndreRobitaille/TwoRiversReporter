@@ -10,6 +10,8 @@ class HomeController < ApplicationController
   WIRE_ROW_LIMIT = ResidentContent::HomeSelection::WIRE_ROW_LIMIT
 
   def index
+    @council_election = ResidentContent::CouncilElection.current
+    @election_council_slug = Committee.where(name: "City Council").pick(:slug) if @council_election
     selection = ResidentContent::HomeSelection.new.call
     @top_stories = selection[:top_stories]
     @wire_cards = selection[:wire_cards]

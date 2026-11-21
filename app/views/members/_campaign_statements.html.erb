@@ -7,13 +7,23 @@
     </div>
     <% statements.group_by { |statement| statement.campaign_source_version.election_on }.each do |election, records| %>
       <h3 class="member-campaign-election"><%= election.strftime("%B %-d, %Y") %> election</h3>
-      <% issues = @campaign_issues.fetch(election) %>
+      <% platform = @campaign_platforms.fetch(election) %>
+      <% issues = @campaign_issues.fetch(election, []) %>
+      <% if platform.items.any? %>
+        <div class="member-campaign-list">
+          <% platform.items.each_with_index do |item, index| %>
+            <%= render "campaign_item", item: item, election: election, expanded: index.zero? %>
+          <% end %>
+        </div>
+      <% end %>
       <% if issues.any? %>
         <div class="member-campaign-list">
           <% issues.each_with_index do |issue, index| %>
-            <%= render "campaign_issue", issue: issue, expanded: index.zero? %>
+            <%= render "campaign_issue", issue: issue, expanded: platform.items.empty? && index.zero? %>
           <% end %>
         </div>
+      <% end %>
+      <% if issues.any? || platform.unreviewed.size < records.size %>
         <details class="member-campaign-evidence">
           <summary>Campaign sources and full statements (<%= records.size %>)</summary>
           <%= render partial: "campaign_statement", collection: records, as: :record %>

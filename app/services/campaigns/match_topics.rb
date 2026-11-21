@@ -13,6 +13,7 @@ module Campaigns
 
       context = {
         "statements" => extraction.campaign_statements.order(:sequence).filter_map do |statement|
+          next if statement.data.key?("comparison_heading") && statement.data["comparison_heading"].nil?
           next unless statement.exception.nil? || statement.exception.in?(%w[unknown_person ambiguous_person])
           statement.data.slice("source_name", "question", "kind", "summary", "supporting_quote", "conditions", "timeframe")
             .merge("sequence" => statement.sequence)

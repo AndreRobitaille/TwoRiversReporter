@@ -1,0 +1,29 @@
+<article class="election-person" id="seat-<%= name.parameterize %>">
+  <h4><%= name %></h4>
+  <% if election.terms_ending[name] %>
+    <%= link_to "Council term ends in #{election.election_on.year}", election.terms_ending.fetch(name) %>
+  <% end %>
+  <% if election.candidates[name] %>
+    <%= link_to "Candidacy source", election.candidates.fetch(name) %>
+    <% unless record[:current] %>
+      <p>We haven’t documented a <%= election.election_on.year %> campaign position yet.</p>
+    <% end %>
+  <% end %>
+  <% [record[:current], record[:previous]].compact.each do |highlight| %>
+    <% statement = highlight.fetch(:statement) %>
+    <% source = statement.campaign_source_version %>
+    <p><strong>From the <%= source.election_on.year %> campaign</strong><br>
+      <%= highlight.dig(:item, :description) || statement.data.fetch("summary") %>
+      <% unless highlight[:item] %><%= campaign_qualifications(statement).join(" ") %><% end %>
+      <%= link_to source.publisher, source.source_url %>
+    </p>
+    <% if highlight[:item] %>
+      <p><%= link_to "See campaign priorities and council actions", member_path(record.fetch(:member), anchor: campaign_item_anchor(source.election_on, highlight[:item])) %></p>
+    <% else %>
+      <p><%= link_to "See this statement and its record", member_path(record.fetch(:member), statement: statement.id, anchor: "campaign-statement") %></p>
+    <% end %>
+  <% end %>
+  <% if record[:member] && election.terms_ending[name] %>
+    <%= link_to "Full council record", member_path(record[:member]) %>
+  <% end %>
+</article>

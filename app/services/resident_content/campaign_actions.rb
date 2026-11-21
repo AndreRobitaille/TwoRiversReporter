@@ -19,12 +19,12 @@ module ResidentContent
         end
         votes = candidates.index_by { |candidate| [ candidate.fetch(:statement).id, candidate.fetch(:vote).motion_id ] }
         input.pairs.each do |pair|
-          match = matches[pair.fetch("key")]
+          match = input.saved_match(pair, matches)
           next unless match && match.fetch("status") == "direct"
 
           candidate = votes.fetch(pair.values_at("statement_id", "motion_id"))
           result[candidate.fetch(:statement).id] << { vote: candidate.fetch(:vote), reason: match.fetch("reason"),
-            minutes_quote: match.fetch("minutes_quote") }
+            minutes_quote: match.fetch("minutes_quote"), focus: pair["focus"] }
         end
       end
       result.transform_values { |rows| rows.sort_by { |row| [ row.fetch(:vote).motion.meeting.starts_at, row.fetch(:vote).id ] }.reverse }

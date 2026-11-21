@@ -20,8 +20,13 @@ class MembersController < ApplicationController
       council_meeting_ids: (@record_period.selected ? meeting_ids || [] : nil), during: @record_period.range)
     @attendance = profile.recorded_attendance(excluding_committee_id: @council_attendance&.fetch(:committee_id))
     @campaign_statements = CampaignStatement.current_for(@member) unless gated_for_visitor?
+    if params[:statement].present? && @campaign_statements
+      @selected_statement = @campaign_statements.find { |statement| statement.id.to_s == params[:statement] }
+    end
+    @recorded_actions = ResidentContent::RecordedActions.new(@member, period: @record_period).call unless gated_for_visitor?
     if @campaign_statements&.any?
-      @campaign_issues = ResidentContent::CampaignIssues.new(statements: @campaign_statements).call
+      @campaign_platforms = ResidentContent::CampaignPlatform.by_election(@campaign_statements)
+      @campaign_issues = ResidentContent::CampaignIssues.new(statements: @campaign_platforms.values.flat_map(&:unreviewed)).call
       @campaign_actions = ResidentContent::CampaignActions.new(@member, statements: @campaign_statements,
         council_attendance: @council_attendance || ResidentContent::CouncilAttendance.new(@member).call).call
       @campaign_issue_evidence = ResidentContent::CampaignIssueEvidence.new(@member, statements: @campaign_statements).call
@@ -29,8 +34,12 @@ class MembersController < ApplicationController
 
     @show_all_votes = params[:votes] == "all"
     unless gated_for_visitor?
+      election = ResidentContent::CouncilElection.current
+      if election && (election.terms_ending.key?(@member.name) || election.candidates.key?(@member.name))
+        @election = election
+        @election_council_slug = Committee.where(name: "City Council").pick(:slug)
+      end
       @formal_cases = ResidentContent::FormalCases.new(@member, period: @record_period).call
-      @recorded_actions = ResidentContent::RecordedActions.new(@member, period: @record_period).call
       @issue_updates = ResidentContent::IssueUpdates.new(@member, attendance: @council_attendance,
         period: @record_period, statements: @campaign_statements || []).call
       @peer_comparisons = ResidentContent::PeerVotes.new(@member, attendance: @council_attendance).summaries

@@ -61,7 +61,12 @@ module Campaigns
         elsif !KINDS.include?(statement["kind"]) || !statement["summary"].is_a?(String) || statement["summary"].blank?
           "invalid_statement"
         end
-        statement.slice("kind", "summary", "supporting_quote", "conditions", "timeframe").merge(
+        heading = statement["comparison_heading"]
+        fields = statement.slice("kind", "summary", "supporting_quote", "conditions", "timeframe")
+        if statement.key?("comparison_heading") && (heading.nil? || (heading.is_a?(String) && heading.strip.length.between?(1, 140)))
+          fields["comparison_heading"] = heading&.strip
+        end
+        fields.merge(
           "supporting_quote" => exception ? quote : @text[location.fetch("start")...location.fetch("end")],
           "location_status" => exception ? "unresolved" : "located", "exception" => exception, "location" => location)
       end

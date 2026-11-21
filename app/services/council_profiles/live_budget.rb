@@ -61,10 +61,10 @@ module CouncilProfiles
       return if policy.blank?
       return policy if stage.is_a?(CampaignActionReview) && !stage.issue_evidence?
       source = stage.is_a?(CampaignActionReview) ? stage.issue_review : stage
-      return unless source.is_a?(CouncilIssueReview) || source.is_a?(SavedMotionEvidence)
+      return unless source.is_a?(CouncilIssueReview) || source.is_a?(SavedMeetingEvidence)
       scope = policy["issue_sources"]
       document = source.meeting_document
-      return if stage.is_a?(CouncilIssueReview) && !document&.document_type.in?(LiveSources::EXTRACTION_TYPES)
+      return if stage.is_a?(CouncilIssueReview) && !LiveSources.extraction_types(scope).include?(document&.document_type)
       return unless scope && document && scope.fetch("document_types").include?(document.document_type) &&
         scope.fetch("committee_ids").include?(document.meeting.committee_id)
       policy.merge("starting_on" => scope.fetch("starting_on"))

@@ -1,5 +1,6 @@
 class ReconcileCampaignSourcesJob < ApplicationJob
   def perform
+    Campaigns::LivePricing.refresh
     CampaignSource.find_each do |source|
       extraction = source.current_version.extraction
       if extraction&.status == "completed"
@@ -15,7 +16,7 @@ class ReconcileCampaignSourcesJob < ApplicationJob
     end
     ExtractCouncilFormalRecordsJob.perform_later if CouncilFormalSource.where(active: true).where.not(verified_at: nil).exists?
     MatchCampaignActionsJob.perform_later
-    if CouncilIssueReview.where(status: "completed").exists? || MeetingSummary.published.where(summary_type: "minutes_recap").exists?
+    if CouncilIssueReview.where(status: "completed").exists? || MeetingSummary.published.where(summary_type: CouncilProfiles::SavedRecapEvidence::SUMMARY_TYPES).exists?
       MatchCampaignIssueEvidenceJob.perform_later
     end
     ExtractCouncilIssueUpdatesJob.perform_later if CouncilIssueReview.where.not(meeting_document_id: nil).exists? || CouncilProfiles::LiveSources.enabled?

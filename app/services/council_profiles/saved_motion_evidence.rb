@@ -1,13 +1,7 @@
 module CouncilProfiles
   # Adapts existing minutes analysis to the shared comparison contract. No
   # extraction record or provider request is needed to read these actions.
-  class SavedMotionEvidence
-    attr_reader :summary, :meeting_document
-
-    def initialize(summary, meeting_document)
-      @summary, @meeting_document = summary, meeting_document
-    end
-
+  class SavedMotionEvidence < SavedMeetingEvidence
     def self.for_periods(periods)
       return [] if periods.empty?
       starts_at = periods.map(&:started_on).min.beginning_of_day
@@ -24,43 +18,12 @@ module CouncilProfiles
       end
     end
 
-    def id
-      "meeting-summary-#{summary.id}-#{meeting_document.id}"
-    end
-
-    def ==(other)
-      other.is_a?(self.class) && id == other.id
-    end
-    alias_method :eql?, :==
-
-    def hash
-      [ self.class, id ].hash
-    end
-
-    def status
-      "completed"
-    end
-
     def input_key
       Digest::SHA256.hexdigest([ "saved_minutes_motion_v1", meeting_document.id, snapshot.fetch("source_version") ].to_json)
     end
 
     def reference
       { "meeting_summary_id" => summary.id, "meeting_document_id" => meeting_document.id, "source_key" => input_key }
-    end
-
-    def context
-      { "source" => snapshot, "reported_on" => summary.meeting.starts_at.to_date.iso8601 }
-    end
-
-    def current_citation
-      return unless summary.published? && !summary.meeting.cancelled? && summary.summary_type == "minutes_recap"
-      return unless ResidentContent::MeetingSelection.preferred_summary(summary.meeting)&.id == summary.id
-      return unless meeting_document.meeting_id == summary.meeting_id && meeting_document.document_type.in?(%w[minutes_pdf minutes_html])
-
-      citation = Citations::Resolver.new(meeting: summary.meeting, catalog: [ snapshot ]).resolve(
-        { "source_id" => snapshot.fetch("source_id"), "location" => { "kind" => "whole_source" } })
-      citation if citation[:status] == "resolved"
     end
 
     def actions
@@ -96,16 +59,16 @@ module CouncilProfiles
       end
     end
 
-    def supports?(saved_context)
-      return false unless saved_context["source_key"] == input_key
-      current = actions.map { |row| row.fetch(:evidence).except("agenda_item_id", "topic_ids") }
-      saved_context.fetch("pairs").all? { |pair| current.include?(pair.fetch("evidence")) }
-    end
-
     private
 
-    def snapshot
-      @snapshot ||= Citations::SourceCatalog.snapshot(meeting_document)
+    alias_method :records, :actions
+
+    def summary_types
+      %w[minutes_recap]
+    end
+
+    def document_types
+      %w[minutes_pdf minutes_html]
     end
   end
 end

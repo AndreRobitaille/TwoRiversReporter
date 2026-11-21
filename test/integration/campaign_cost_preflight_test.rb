@@ -1,9 +1,11 @@
 require "test_helper"
 require "rake"
+require "active_support/testing/constant_stubbing"
 require_relative "../support/campaign_extraction_scenario"
 
 class CampaignCostPreflightTest < ActionDispatch::IntegrationTest
   include CampaignExtractionScenario
+  include ActiveSupport::Testing::ConstantStubbing
 
   setup do
     travel_to Time.zone.local(2026, 11, 8, 12)
@@ -81,6 +83,35 @@ class CampaignCostPreflightTest < ActionDispatch::IntegrationTest
     before = stage.reload.attributes
     assert_equal({ state: "held", reason: "Uncertain" }, Campaigns::CostPreflight.call(@source.current_version))
     assert_equal before, stage.reload.attributes
+  end
+
+  test "the nightly price check extends only identical terms for the authorized model" do
+    travel_to Time.zone.local(2026, 11, 22, 23)
+    model = Ai::OpenAiService.campaign_request_parameters(@source.current_version).fetch(:model)
+    actor = User.find_by!(email_address: "campaign-preflight@example.test")
+    CouncilAiBudgetMonth.create!(budget_month: Date.current.beginning_of_month, limit_microusd: 100_000,
+      actor: actor, authorized_at: Time.current, authorization_basis: "Synthetic pricing check", live_actions: {
+        "starting_on" => Date.current.iso8601, "estimate_method" => "utf8_bytes_plus_1024", "model" => model,
+        "daily_limit_microusd" => 100_000, "request_limit_microusd" => 20_000, "max_requests_per_day" => 2,
+        "max_concurrent" => 1, "max_input_tokens" => 20_000, "max_output_tokens" => 8_000 })
+    original = "Original test price terms."
+    body = "# Model\n## Pricing\n#{original}\n## Endpoints\nOther details"
+    http_response = Net::HTTPOK.new("1.1", "200", "OK")
+    http_response.define_singleton_method(:body) { body }
+    stub_const(Campaigns::LivePricing, :SECTIONS, { model => Digest::SHA256.hexdigest(original) }) do
+      Rails.stub(:cache, ActiveSupport::Cache::MemoryStore.new) do
+        Net::HTTP.stub(:start, ->(*, **) { http_response }) do
+          assert_equal "unavailable", Campaigns::CostPreflight.call(@source.current_version)[:state]
+          ReconcileCampaignSourcesJob.perform_now
+          assert_equal Date.current, Campaigns::CostPreflight.call(@source.current_version)[:pricing_checked_on]
+          travel 1.day
+          body.replace("# Model\n## Pricing\nThe rate or a surcharge changed.")
+          ReconcileCampaignSourcesJob.perform_now
+          assert_equal "unavailable", Campaigns::CostPreflight.call(@source.current_version)[:state]
+          assert_empty CouncilAiReservation.all
+        end
+      end
+    end
   end
 
   test "stale or unknown pricing is unavailable rather than a zero dollar quote" do

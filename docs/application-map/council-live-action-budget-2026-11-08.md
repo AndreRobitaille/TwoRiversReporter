@@ -43,8 +43,9 @@ method and pricing reference with the exact prepared-request digest.
 This extends use of the planning estimate for an explicitly configured live
 policy. It does **not** convert an estimate into measured tokenization or an
 invoice guarantee. Unknown request shapes/models, stale pricing, or requests
-above the policy's limits remain held. The current pricing table expires on
-November 21 and must be checked again before later admission. Reservations stay
+above the policy's limits remain held. The November 8 pricing snapshot expires on
+November 21. The [nightly check](data-and-background.md#bg-08--extract-a-shared-campaign-source-within-a-spending-allowance-p1)
+can subsequently confirm unchanged pricing for the authorized model. Reservations stay
 consumed even if reported usage is smaller. The read-only spend report now also
 shows the live policy, alongside usage at reserved rates and unresolved receipts.
 

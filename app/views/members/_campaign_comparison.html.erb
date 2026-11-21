@@ -1,12 +1,15 @@
 <div class="member-campaign-position" <%= tag.attributes(data: { campaign_actions_for: statement.id }) if actions.any? %>>
-  <p><%= statement.data.fetch("summary") %></p>
-  <% campaign_qualifications(statement).each do |qualification| %>
-    <p class="member-campaign-qualification"><%= qualification %></p>
+  <p><%= local_assigns.dig(:item, :description) || statement.data.fetch("summary") %></p>
+  <% if !local_assigns[:item] || item[:qualifications] %>
+    <% campaign_qualifications(statement).each do |qualification| %>
+      <p class="member-campaign-qualification"><%= qualification %></p>
+    <% end %>
   <% end %>
   <% if actions.any? %>
     <h4 class="member-campaign-activity-heading"><%= actions.any? { |action| action[:kind] } ? "What happened next" : "On the Council" %></h4>
     <% actions.first(2).each do |action| %>
       <%= render(action[:vote] ? "campaign_action" : "campaign_issue_evidence", action: action) %>
+      <% if local_assigns[:explain] %><p><%= action.fetch(:reason) %></p><% end %>
     <% end %>
     <% if actions.size > 2 %>
       <details class="member-campaign-context">

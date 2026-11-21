@@ -400,6 +400,63 @@ provider diagnostics; permanent HTTP rejections bypass transient retries. See
 
 ## BG-08 — Extract a shared campaign source within a spending allowance (P1)
 
+- Campaign intake also carries a comparison heading for a concrete council
+  position or a null heading for source-only material. The resident projection
+  groups repeat headings within the same election while keeping distinct
+  qualifications and original sources. Older extraction results remain usable.
+  See [the campaign comparison workflow](resident-workflows.md#res-10--inspect-an-officials-attendance-and-voting-record-p1).
+
+- The vote and issue-evidence jobs share those positions. They compare a repeated
+  position once per decision and keep separate verdicts for alternatives in the
+  same campaign answer. A prior rejection that explicitly addressed an alternative
+  can be reused. A new source can start comparisons with previously saved minutes
+  even while its topic matching is awaiting an allowance.
+- Project names in the [reviewed positions](../../config/campaign_platform_2024.yml)
+  can retrieve other decisions for comparison. A reviewed decision in a specific
+  meeting can be excluded for one position or cited directly from its public
+  record. Later decisions about the project remain eligible. On the local
+  regression, disabling that exclusion returned the unrelated vote to the
+  comparison job. Restoring it preserved the later vote on the same project.
+- Preview the three expiring seats using the same comparison inputs and the
+  existing pricing preflight, for example
+  `bin/rails 'council_profiles:comparison_preview[2025-04-16,2026-11-21]'`.
+  The inclusive range uses meeting dates. The command reads stored records and
+  reports reused comparisons, new work, available estimates for a single attempt,
+  held batches and missing minutes. It creates no jobs or spending allowances.
+  Refresh the campaign prompt templates from the released revision before
+  preparing new production comparisons.
+
+- **Nightly discovery of developments under a position (BG-08 → RES-10).**
+  Publishing a minutes recap or packet analysis queues a check for that meeting.
+  The existing 11 p.m. reconciliation also checks published analyses in the
+  authorized committees, source types and date window. The ordinary meeting
+  prompt retains short official passages for agenda items and public input.
+  Older recaps can locate a unique agenda heading in the original text.
+  A project name, linked topic or overlap with the candidate’s own wording can
+  retrieve a passage. The existing comparison job decides the connection and
+  requires a quotation from that passage for publication. A corrected source or
+  withdrawn recap loses the old evidence. Unchanged positive and negative
+  results survive the next nightly run. An explicit historical preview can
+  inspect older sources outside the live window.
+- New comparisons draw on the existing monthly allowance and registered
+  source channels. For comparisons from saved analyses, set
+  `live_actions.issue_sources.extract_packets` to `false`, and include the
+  intended committees and minutes/packet types. This admits comparisons of saved
+  packet evidence while keeping separate packet extraction off. Existing policies
+  that selected packets retain their authorized recommendation extraction.
+  Once the bundled pricing check expires, nightly reconciliation
+  checks the authorized model’s published pricing terms. An unchanged rate
+  schedule can be reused through the following day, subject to any promotion
+  deadline. Changed terms pause new estimates for that model.
+- Local verification on the patch based on `97cf231d` used three archived
+  meeting analyses and official minutes with the hand-entered project names
+  and council reports removed from the test edition. Retrieval surfaced Paddlers
+  Park, Sandy Bay phase three, and the Coenen-Buyeske site as candidates.
+  The [nightly integration test](../../test/integration/council_saved_issue_history_test.rb)
+  runs discovery, reconciliation, budget admission, comparison, and a later
+  member request with simulated external transport. A second run reused the
+  result. Corrected minutes published the loss of the project grant.
+
 The [retained quote recovery](campaign-forum-quote-recovery-2026-11-08.md) expands
 unambiguous ellipsis excerpts inside one verified speaker's answer. Explicit
 recovery reuses saved responses; unchanged statement/topic decisions remain

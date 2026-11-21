@@ -51,14 +51,37 @@ module MembersHelper
       actions += (@campaign_issue_evidence || {}).fetch(statement.id, []).select do |record|
         (record.fetch(:topics).map(&:id) & issue.fetch(:topic_ids)).any?
       end
-      actions.sort_by! do |row|
-        date = row[:vote] ? row.fetch(:vote).motion.meeting.starts_at.to_date.iso8601 : row.dig(:evidence, "occurred_on") || row.fetch(:reported_on).iso8601
-        # On the same date, show what this member did before general issue updates.
-        [ date, row[:kind] == "outcome" ? 0 : 1 ]
-      end
-      actions.reverse!
-      [ statement, actions ] if actions.any?
+      [ statement, newest_campaign_actions(actions) ] if actions.any?
     end
+  end
+
+  def campaign_item_anchor(election, item)
+    [ "campaign", election.iso8601, item.fetch(:kind), item.fetch(:heading), *item[:qualifications] ].compact_blank.join("-").parameterize
+  end
+
+  def campaign_item_actions(item)
+    focus = item.slice(:heading, :description).stringify_keys
+    actions = item.fetch(:statements).flat_map do |row|
+      records = @campaign_actions.fetch(row.id, []) + @campaign_issue_evidence.fetch(row.id, [])
+      records.select do |action|
+        next action[:focus] == focus if action[:focus]
+        next false unless item.fetch(:comparable).include?(row)
+        next true unless (topic = item[:comparison_topic])
+        topics = action[:topics] || action.fetch(:vote).motion.agenda_item&.topics.to_a
+        topics.any? { |t| t.canonical_name == topic }
+      end
+    end
+    newest_campaign_actions(actions.uniq do |action|
+      action[:vote]&.id || [ action[:meeting].id, action[:kind], action[:evidence] ]
+    end)
+  end
+
+  def newest_campaign_actions(actions)
+    actions.sort_by do |row|
+      date = row[:vote] ? row.fetch(:vote).motion.meeting.starts_at.to_date.iso8601 : row.dig(:evidence, "occurred_on") || row.fetch(:reported_on).iso8601
+      # On the same date, show what this member did before general issue updates.
+      [ date, row[:kind] == "outcome" ? 0 : 1 ]
+    end.reverse
   end
 
   def campaign_decision_title(vote)

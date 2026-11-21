@@ -940,8 +940,19 @@ affected records as new evidence arrives. Routine operation must not depend on
 hand-written profiles, per-page publishing, or approval of every routine update.
 Manual work supplies difficult sources, corrects errors, and resolves ambiguity.
 
-The next election cohort is the initial rollout scope. Campaign statements enrich
-the ongoing record; a separate election-season product is not required. Expected
+During election season the homepage links directly to the race on the Council
+page. A reader should see whose seats are up, who has confirmed a campaign, and
+what those candidates say they will do. Use the same treatment for challengers
+and incumbents. A term expiration establishes a seat on the ballot, not a
+candidacy. Label every campaign position by its election year.
+
+For a resident asking “Should I vote for this person?”, link a specific earlier
+position to the member’s recorded work on that position, including contrary
+action or a losing vote when documented. Show what the Council decided and what
+happened to the issue as distinct facts. When the record leaves a question open,
+say so. The reader decides what those examples mean for their vote.
+
+The next election cohort is the initial rollout scope. Expected
 manual inputs are locating the HTR candidate-profile article and preparing
 voter-forum transcripts outside the website. Source intake should extract evidence
 for all relevant members from one supplied article or prepared transcript.
@@ -954,11 +965,13 @@ start collapsed and remain available through a native disclosure. Keep the same
 sourced reporting in the HTML for permitted readers and verified crawlers: the
 audience also receives civic information through Google Search and its AI results.
 
-Show every campaign issue heading, with only the first position open. Do not hide
-potentially important proposals under Other issues based on vote history or a
-coarse topic score. Opening another issue or source must not close a reader's
-existing selection. Put citations and full source detail together at the bottom,
-not beneath each issue as well. Use a small white inset panel and side rule to separate the saved
+For campaign comparisons, start with the campaign sources. Show each distinct
+proposal or observable policy position that matters to residents once per election.
+Keep alternative rules separate, preserve conditions, and label priorities and
+positions in the candidate’s own degree of commitment. General aspirations and
+personal qualities belong in the source archive. Open the first position and let
+readers expand any others independently. Each comparison links its campaign
+sources. The complete collection of accepted statements remains available below. Use a small white inset panel and side rule to separate the saved
 position from its dated campaign sources; these summaries are paraphrases, not
 verbatim quotations. Keep qualifications and deadlines beside the position.
 Remove the redundant Follow this issue control. Preserve all accepted statements,
@@ -984,7 +997,25 @@ compare only new statement/decision evidence, and reuse results after metadata-o
 corrections. New evidence queues the bounded stage; missed-work checks use existing
 nightly campaign recovery. Exact request allowances must precede paid calls.
 
-Issue navigation reuses approved topic links and existing impact scores;
+The comparison jobs use the same consolidated positions as the member page.
+They can find several decisions on one position, reuse a saved comparison from
+any repeated mention, and check each alternative in a compound answer separately.
+A missing campaign topic tag can be recovered from a distinctive term in an
+approved topic or a specific phrase in the decision. Publication still requires
+a source-supported connection. Changes to these comparisons reuse stored votes,
+official minutes, attributed actions and issue updates. Check the cost of any
+new comparisons over the covered dates before considering a meeting backfill.
+
+The existing 11 p.m. discovery run and newly published minutes recaps or packet
+analyses also check the positions against developments reported in those sources.
+Project funding, loss of funding, resident questions and a city purchase can
+matter to a position even when the member made no motion. Use the saved analysis
+to locate the passage and the official document to substantiate the published
+finding. Label a city or committee outcome separately from the member’s own work.
+Use the authorized source dates and budgets for new comparisons. An unchanged
+passage and position reuse their comparison, including a rejected connection.
+
+For older sources awaiting consolidation, issue navigation reuses approved topic links and existing impact scores;
 repeated campaign mentions do not increase priority. Prefer a saved written-source
 summary before longer forum records for the initial position, while preserving
 distinct claims in Campaign sources. Vote history does not determine which

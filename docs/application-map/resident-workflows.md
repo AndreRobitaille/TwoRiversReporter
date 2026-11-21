@@ -190,6 +190,35 @@ status below does not imply complete coverage of those workflows.
 
 ## RES-09 — Find a governing body and current officials (P1)
 
+- **Spring election (RES-01/09/10/11).** During the published guide’s dates,
+  Home → City Council opens the election first. Term sources and candidacy
+  sources are recorded separately in the [election guide](../../config/council_election.yml).
+  When a filing or declaration is confirmed, add the name and source under
+  `candidates` and update `checked_on`. Council and member pages read the same
+  edition. A reader can open a position from a named election and see the same
+  statement, qualifications, linked actions, and sources on the member page.
+  A withdrawn or misattributed statement link gives an unavailable message.
+  Gated visitors can reach the Clerk’s public election information.
+
+- **November 21, 2026 local verification.** Patch on `97cf231d`, Ruby 4.0.9,
+  PostgreSQL 18.6. With `RAILS_ENV=test`, a separate local database and
+  `PARALLEL_WORKERS=1`, the following command passed 66 tests and 455
+  assertions with zero skips. Redirecting a statement link to a missing
+  statement failed the selected-position assertion. Bypassing the committee
+  access check exposed the term source and failed the gated-response assertion.
+  Both changes were restored. `bin/rubocop` passed (882 files).
+
+  ```sh
+  bin/rails test test/integration/{council_election,campaign_action_matching,member_profile_layout}_test.rb \
+    test/controllers/{committees_controller,home_controller,members_show_gating,committees_show_gating,home_gating}_test.rb
+  ```
+
+  A 390px Chromium preview read the existing local cohort data with a read-only
+  database connection. The three seat names were visible together. Each person’s
+  link opened their own 2024 position. The Hamilton redevelopment example
+  led through supporting details to the September 21 meeting and its minutes
+  link. Confirmed-candidate behavior was exercised with synthetic records.
+
 - **Start / data:** active/dormant committees, council/nonprofit/independent groups,
   sourced and attendance-derived memberships; staff/non-voting and ended memberships.
 - **Action:** Committees → body → roster official or recent topic.
@@ -207,6 +236,47 @@ status below does not imply complete coverage of those workflows.
   [CanonicalRosters](../../app/services/canonical_rosters/synchronizer.rb).
 
 ## RES-10 — Inspect an official's attendance and voting record (P1)
+
+- **November 21 campaign consolidation (BG-08 → RES-09/10/11).** The election
+  guide and member sidebar use the same positions for each election. The
+  [2024 source review](../../config/campaign_platform_2024.yml) groups repeated
+  proposals before looking at council activity. Sources without current review
+  keep their original issue or statement display. Qualifying new extractions
+  can supply comparison headings during normal intake. All accepted source
+  statements remain available to permitted readers.
+- On the local preview based on `97cf231d`, a 1440 × 1000 desktop browser
+  followed the citywide race to all three profiles. Bittner’s committee appeared
+  once with both forums. Brandt’s two rental alternatives were distinct, and
+  his annual pipe priority showed his existing attributed contract motion and
+  its minutes. Derby’s housing entry showed one financing vote. The three
+  source disclosures contained 49, 32 and 42 accepted statements respectively.
+  The [HTTP regressions](../../test/integration/campaign_platform_test.rb) exercise
+  separate campaign sources, an archive-only statement, gated access, and
+  correction of the minutes and campaign source. A test-only change grouping
+  by individual statement produced two rows where one was required. Restoring
+  consolidation returned the check to green. Future provider wording was
+  simulated in the intake test.
+
+- Before the corrections below, with local records from April 16, 2025 through November 21, 2026, the
+  read-only comparison preview reused 33 saved decisions about relevance and
+  identified nine new comparisons across four batches. Two older batches had
+  reached their retry limit. One meeting lacked usable minutes in this snapshot.
+  The three profile requests showed 11, 10 and 10 positions respectively.
+  Brandt’s water-main motion remained visible and the rental-fee votes stayed
+  off both rental proposals. The [job-to-profile tests](../../test/integration/campaign_platform_test.rb)
+  run the normal jobs with simulated provider responses and check the saved
+  evidence on a later member-page request. Temporarily grouping by individual
+  campaign statement produced four comparisons for two decisions and failed
+  the repeated-position test. Restoring grouping by position passed.
+
+- The local profiles show directly cited council minutes and staff reports under
+  the position they address. Bittner’s recruitment record shows his Violet Inn
+  motion. The two motel improvement votes still appear under Brandt’s broader
+  position on city financing. The park contract, subdivision paving and rental
+  licensing ordinance identify the member’s role. The Coenen purchase, concerns
+  about city notices and loss of housing tax credits are reported separately
+  from individual votes. The dated citations include records from the first
+  year of the term. The full first year has yet to be imported.
 
 - **Saved motion reuse:** substantive attributed motions in published minutes
   recaps reach compact recorded-action cards with the agenda subject and exact

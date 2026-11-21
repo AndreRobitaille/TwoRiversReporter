@@ -13,7 +13,7 @@ module Campaigns
             answer.fetch("statements").each do |statement|
               exception = identity_exception || statement_exception(statement, answer, extraction.campaign_source_version.body)
               record = extraction.campaign_statements.find_or_initialize_by(sequence: sequence)
-              data = statement.slice("kind", "summary", "supporting_quote", "conditions", "timeframe", "location").merge(
+              data = statement.slice("kind", "summary", "supporting_quote", "conditions", "timeframe", "comparison_heading", "location").merge(
                 "source_name" => participant["name"], "question" => answer["question"])
               attributes = { member_id: member&.id, status: exception ? "unresolved" : "accepted",
                 exception: exception, validation_method: VALIDATION_METHOD }

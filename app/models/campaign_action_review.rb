@@ -23,7 +23,8 @@ class CampaignActionReview < ApplicationRecord
       summary = MeetingSummary.find_by(id: context["meeting_summary_id"])
       document = MeetingDocument.find_by(id: context["meeting_document_id"])
       return unless summary && document
-      source = CouncilProfiles::SavedMotionEvidence.new(summary, document)
+      klass = context["recap_outcomes"] ? CouncilProfiles::SavedRecapEvidence : CouncilProfiles::SavedMotionEvidence
+      source = klass.new(summary, document)
       source if source.supports?(context)
     else
       CouncilIssueReview.find_by(id: context["issue_review_id"])

@@ -17,7 +17,7 @@ module Campaigns
     def self.call(version)
       stage = version.extraction
       parameters = stage ? stage.parameters.deep_symbolize_keys : Ai::OpenAiService.campaign_request_parameters(version)
-      estimate(stage, parameters)
+      estimate(stage, parameters, extraction_reuse: true)
     rescue Ai::OpenAiService::InputTooLargeError
       { state: "held", reason: "Source needs partitioning" }
     rescue ActiveRecord::RecordNotFound
@@ -28,23 +28,35 @@ module Campaigns
       estimate(stage, stage.parameters.deep_symbolize_keys)
     end
 
-    def self.estimate(stage, parameters)
+    def self.for_comparison(context)
+      estimate(nil, Ai::OpenAiService.campaign_action_matching_parameters(context))
+    rescue Ai::OpenAiService::InputTooLargeError
+      { state: "held", reason: "Comparison needs partitioning" }
+    rescue ActiveRecord::RecordNotFound
+      { state: "unavailable", reason: "Comparison prompt is missing" }
+    end
+
+    def self.estimate(stage, parameters, extraction_reuse: stage.is_a?(CampaignExtraction))
       return { state: "reuse", cost_microusd: 0 } if stage&.status == "completed"
       if stage && !stage.status.in?(%w[pending failed budget_paused])
         return { state: "held", reason: stage.status.humanize }
       end
 
-      if (stage.nil? || stage.is_a?(CampaignExtraction)) &&
+      if extraction_reuse &&
           CampaignExtraction.exists?(purpose: stage&.purpose || "statements", status: "completed", parameters: parameters)
         return { state: "reuse", cost_microusd: 0 }
       end
       attempts = CampaignExtraction::MAX_ATTEMPTS - (stage&.attempts || 0)
       return { state: "held", reason: "Attempt limit reached" } unless attempts.positive?
-      return { state: "unavailable", reason: "Pricing needs to be checked again" } unless Date.current.between?(PRICING_CHECKED_ON, PRICING_VALID_THROUGH)
-
       model = parameters.fetch(:model)
       rates = RATES[model]
       return { state: "unavailable", reason: "No checked pricing for this model" } unless rates
+      checked, through = PRICING_CHECKED_ON, PRICING_VALID_THROUGH
+      unless Date.current.between?(checked, through)
+        checked = LivePricing.checked_on(model)
+        return { state: "unavailable", reason: "Pricing needs to be checked again" } unless checked
+        through = LivePricing.valid_through(model, checked)
+      end
       return { state: "unavailable", reason: "Request format needs a separate estimate" } unless supported_request?(parameters)
 
       # One token per UTF-8 byte plus a generous formatting allowance is an
@@ -64,8 +76,8 @@ module Campaigns
         input_rate_microusd: input_rate, output_rate_microusd: output_rate,
         attempts_remaining: attempts, remaining_cost_microusd: amount * attempts,
         request_digest: CouncilProfiles::ReserveAiSpend.request_digest(parameters),
-        pricing_source: PRICING_SOURCE + model, pricing_checked_on: PRICING_CHECKED_ON,
-        pricing_valid_through: PRICING_VALID_THROUGH }
+        pricing_source: PRICING_SOURCE + model, pricing_checked_on: checked,
+        pricing_valid_through: through }
     end
     private_class_method :estimate
 

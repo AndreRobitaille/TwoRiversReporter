@@ -11,6 +11,8 @@
     <h1 class="committee-article-title"><%= @committee.name %></h1>
   </header>
 
+  <%= render "spring_election", election: @election if @election %>
+
   <% if @committee.description.present? %>
     <div class="committee-description">
       <%= render_committee_description(@committee.description) %>

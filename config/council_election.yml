@@ -1,0 +1,10 @@
+# A term source establishes whose seat is up. Add each confirmed candidate,
+# including challengers, to candidates with a separate candidacy source URL.
+opens_on: "2026-11-21"
+election_on: "2027-04-06"
+checked_on: "2026-11-21"
+terms_ending:
+  Mark Bittner: https://www.two-rivers.org/citycouncil/page/mark-bittner
+  Doug Brandt: https://www.two-rivers.org/citycouncil/page/doug-brandt
+  Shannon Derby: https://www.two-rivers.org/citycouncil/page/shannon-derby
+candidates: {}
