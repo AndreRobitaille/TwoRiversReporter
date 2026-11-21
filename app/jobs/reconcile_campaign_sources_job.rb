@@ -1,5 +1,6 @@
 class ReconcileCampaignSourcesJob < ApplicationJob
   def perform
+    CouncilAiBudgetMonth.renew_live!
     Campaigns::LivePricing.refresh
     CampaignSource.find_each do |source|
       extraction = source.current_version.extraction

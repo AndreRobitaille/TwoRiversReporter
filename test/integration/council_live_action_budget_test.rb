@@ -137,10 +137,26 @@ class CouncilLiveActionBudgetTest < ActionDispatch::IntegrationTest
     assert_empty @calls
   end
 
+  test "nightly reconciliation renews the standing ceiling without carryover and honors revocation" do
+    first = authorize_live(limit: 10_000_000, auto_renew: true)
+    with_live_transport { MatchCampaignActionsJob.perform_now(@vote.motion.meeting_id) }
+    travel_to Time.zone.local(2027, 1, 1, 23)
+    Campaigns::LivePricing.stub(:refresh, nil) do
+      assert_difference("CouncilAiBudgetMonth.count", 1) { 2.times { ReconcileCampaignSourcesJob.perform_now } }
+      renewal = CouncilAiBudgetMonth.find_by!(budget_month: Date.current)
+      assert_equal [ first.limit_microusd, 0, first.live_actions ], [ renewal.limit_microusd, renewal.reserved_microusd, renewal.live_actions ]
+      with_live_transport { MatchCampaignActionsJob.perform_now(@vote.motion.meeting_id) }
+      assert_equal 1, @calls.size
+      renewal.update!(revoked_at: Time.current)
+      travel_to Time.zone.local(2027, 2, 1, 23)
+      assert_no_difference("CouncilAiBudgetMonth.count") { ReconcileCampaignSourcesJob.perform_now }
+    end
+  end
+
   private
 
-  def authorize_live(limit: 5_000_000, policy: {})
-    CouncilAiBudgetMonth.create!(budget_month: Date.current.beginning_of_month, limit_microusd: limit,
+  def authorize_live(limit: 5_000_000, policy: {}, auto_renew: false)
+    CouncilAiBudgetMonth.create!(auto_renew: auto_renew, budget_month: Date.current.beginning_of_month, limit_microusd: limit,
       actor: @actor, authorized_at: Time.current, authorization_basis: "Synthetic live policy only",
       live_actions: { "starting_on" => Date.current.iso8601, "estimate_method" => "utf8_bytes_plus_1024",
         "model" => @stage.parameters.fetch("model"), "daily_limit_microusd" => 1_000_000,

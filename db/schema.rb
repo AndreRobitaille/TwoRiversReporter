@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_09_006000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_21_230000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -325,6 +325,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_09_006000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.jsonb "live_actions", default: {}, null: false
+    t.boolean "auto_renew", default: false, null: false
     t.index [ "actor_id" ], name: "index_council_ai_budget_months_on_actor_id"
     t.index [ "budget_month" ], name: "index_council_ai_budget_months_on_budget_month", unique: true
   end

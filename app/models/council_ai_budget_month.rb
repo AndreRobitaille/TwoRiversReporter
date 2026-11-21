@@ -9,6 +9,24 @@ class CouncilAiBudgetMonth < ApplicationRecord
   validate :live_action_policy
   validate :live_source_policy
 
+  # The newest decision controls renewal. An expired one-time allowance, a
+  # revoked decision or a disabled administrator cannot restart paid work.
+  def self.renew_live!
+    current = Date.current.beginning_of_month
+    previous = where(budget_month: ..current).order(budget_month: :desc).first
+    return unless previous
+    return previous if previous.budget_month == current
+    previous.with_lock do
+      return unless previous.auto_renew? && previous.revoked_at.nil? &&
+        previous.actor&.admin? && previous.actor.active_for_authentication?
+      find_or_create_by!(budget_month: current) do |month|
+        month.assign_attributes(actor: previous.actor, authorized_at: Time.current,
+          authorization_basis: "Renewed standing promise comparison allowance from month #{previous.id}",
+          limit_microusd: previous.limit_microusd, live_actions: previous.live_actions, auto_renew: true)
+      end
+    end
+  end
+
   def reservations
     CouncilAiReservation.joins(council_ai_budget_run: :council_ai_budget_day)
       .where(council_ai_budget_days: { budget_on: budget_month.all_month })
