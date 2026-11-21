@@ -53,7 +53,7 @@ module CouncilHistory
           next unless url.present? && row.fetch("title").match?(/City Council/i) &&
             (File.basename(URI(url).path) == PILOT[date.iso8601] || url == @pilot_reuse_url)
         end
-        next unless row.fetch("disposition").in?(%w[fetch_minutes usable no_minutes_link])
+        next unless row.fetch("disposition").in?(%w[fetch_minutes usable no_minutes_link source_unavailable ambiguous_minutes])
         result = begin
           process(row)
         rescue CouncilProfiles::ReserveAiSpend::Paused, Citations::SourceCatalog::InvalidSource, Topics::TriageResponse::Invalid, JSON::ParserError => error
@@ -89,7 +89,7 @@ module CouncilHistory
       Execution.set(meeting_id: meeting.id, pilot: @pilot) do
         # A separate operator process owns this batch. All Rails job follow-ups
         # are suppressed in this execution context; each scoped stage runs here.
-        prepare_documents(meeting, row) unless row.fetch("disposition") == "no_minutes_link"
+        prepare_documents(meeting, row) if row.fetch("disposition").in?(%w[usable fetch_minutes])
         run_stages(meeting, STAGES) if meeting.latest_document("minutes_pdf")&.extracted_text.present?
       end
       Inventory.review([ row ]).first.merge(outcome(meeting))

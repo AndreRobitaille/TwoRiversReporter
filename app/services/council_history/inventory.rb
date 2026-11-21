@@ -3,6 +3,8 @@ module CouncilHistory
   # minutes for some events whose separate detail page is no longer reachable.
   class Inventory
     CITY = Scrapers::DiscoverMeetingsJob::MEETINGS_URL
+    CANCELLED = /\bcancell?ed\b|\bno quorum\b|\bno (?:(?:#{Date::MONTHNAMES.compact.join("|")}) )?meeting\b/i
+    DOCUMENT_HOSTS = %w[mccmeetings.blob.core.usgovcloudapi.net meetings.municode.com www.two-rivers.org].freeze
     COLUMNS = { "minutes_pdf" => "minutes", "agenda_html" => "agendas", "agenda_pdf" => "agendas", "packet_pdf" => "packets" }.freeze
 
     def initialize(from:, through:, body: nil)
@@ -31,8 +33,29 @@ module CouncilHistory
         raise "Unexpected calendar pagination" unless next_page.scheme == "https" && next_page.host == "www.two-rivers.org" && next_page.path == "/meetings"
         url = next_page.to_s
       end
+      rows.each do |row|
+        check_detail(agent, row) unless row.fetch("documents")["minutes_pdf"] || row.fetch("title").match?(CANCELLED)
+      end
       rows
     end
+
+    def check_detail(agent, row)
+      page = agent.get(row.fetch("url"))
+      section = page.at_css(".related_info.meeting_info")
+      if section
+        urls = section.css(".minutes a[href]").filter_map do |link|
+          uri = URI.join(row.fetch("url"), link["href"])
+          uri.to_s if uri.scheme == "https" && DOCUMENT_HOSTS.include?(uri.host) && uri.path.downcase.end_with?(".pdf")
+        end.uniq
+        row["detail_minutes"] = urls.many? ? "multiple_files" : "checked"
+        row.fetch("documents")["minutes_pdf"] = urls.sole if urls.one?
+      else
+        row["detail_minutes"] = "unavailable"
+      end
+    rescue Mechanize::Error, Timeout::Error, IOError, SocketError, SystemCallError, OpenSSL::SSL::SSLError
+      row["detail_minutes"] = "unavailable"
+    end
+    private :check_detail
 
     def parse(page)
       page.css("table.views-table tbody tr").filter_map do |row|
@@ -46,7 +69,7 @@ module CouncilHistory
         documents = COLUMNS.filter_map do |type, column|
           links = row.css(".views-field-field-#{column} a[href]").filter_map do |anchor|
             uri = URI.join(CITY, anchor["href"])
-            uri.to_s if uri.scheme == "https" && uri.host.in?(%w[mccmeetings.blob.core.usgovcloudapi.net meetings.municode.com www.two-rivers.org])
+            uri.to_s if uri.scheme == "https" && DOCUMENT_HOSTS.include?(uri.host)
           end
           url = links.find { |href| href.downcase.include?(".pdf") == type.end_with?("_pdf") }
           [ type, url ] if url
@@ -81,7 +104,7 @@ module CouncilHistory
         meeting, conflict = destination(row)
         url = row.fetch("documents")["minutes_pdf"]
         minutes = meeting&.latest_document("minutes_pdf")
-        disposition = if row.fetch("title").match?(/\bcancell?ed\b|\bno quorum\b/i) || meeting&.cancelled?
+        disposition = if row.fetch("title").match?(CANCELLED) || meeting&.cancelled?
           "cancelled"
         elsif !seen.add?([ row.fetch("starts_at"), row.fetch("url") ]) || (meeting && !seen.add?(meeting.id))
           "duplicate"
@@ -91,6 +114,10 @@ module CouncilHistory
           url && minutes.source_url.present? && url != minutes.source_url ? "different_minutes" : "usable"
         elsif url
           "fetch_minutes"
+        elsif row["detail_minutes"] == "unavailable"
+          "source_unavailable"
+        elsif row["detail_minutes"] == "multiple_files"
+          "ambiguous_minutes"
         else
           "no_minutes_link"
         end

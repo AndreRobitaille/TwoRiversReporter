@@ -21,6 +21,8 @@ module CouncilHistory
       confirmed = rows.reject { |r| r.fetch("disposition").in?(%w[cancelled duplicate]) }
       gaps = confirmed.filter_map do |row|
         reason = case row.fetch("disposition")
+        when "source_unavailable" then "The city meeting page could not be verified"
+        when "ambiguous_minutes" then "The city lists multiple minutes files requiring review"
         when "different_minutes" then "The city lists a different minutes file. The archived version needs review."
         when "ambiguous_identity" then "Meeting identity needs review"
         when "no_minutes_link" then "Official minutes have not been located"
@@ -37,7 +39,7 @@ module CouncilHistory
       end
       snapshot = { "from" => from.iso8601, "through" => through.iso8601, "checked_on" => Date.current.iso8601,
         "meetings" => confirmed.size, "usable" => confirmed.count { |r| r.fetch("disposition") == "usable" }, "gaps" => gaps,
-        "listings" => rows.map { |r| r.slice("title", "starts_at", "url", "documents") } }
+        "listings" => rows.map { |r| r.slice("title", "starts_at", "url", "documents", "detail_minutes") } }
       setting = SiteSetting.find_or_create_by!(singleton_guard: 0)
       setting.update!(council_coverage: snapshot) unless setting.council_coverage == snapshot
       snapshot
