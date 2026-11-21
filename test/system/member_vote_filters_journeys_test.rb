@@ -9,7 +9,7 @@ class MemberVoteFiltersJourneysTest < ApplicationSystemTestCase
     page.driver.browser.manage.window.resize_to(390, 844)
     visit member_path(@member)
     click_link "All recorded votes"
-    assert_selector ".member-vote-views [aria-current=page]", text: "All recorded votes"
+    assert_selector ".member-vote-views a[aria-current=page][href*='votes=all']", text: "All recorded votes"
     fill_in "Search votes", with: "Hamilton grant agreement"
     click_button "Search", exact: true
     assert_selector ".member-vote-filter-result", text: "26 matching votes"
@@ -18,15 +18,21 @@ class MemberVoteFiltersJourneysTest < ApplicationSystemTestCase
     select "Riverfront Redevelopment", from: "Topic"
     select "Substantive", from: "Decision type"
     click_button "Apply filters"
+    # The count is identical before and after the filter form navigation.
+    # Wait for the response whose pagination actually preserves both filters.
+    assert_selector ".member-vote-pages a[href*='topic=#{@topic.id}'][href*='kind=substantive']"
     assert_selector ".member-vote-filter-result", text: "26 matching votes"
     assert_equal "voting-record", URI.parse(page.current_url).fragment
     within(".member-vote-pages") { click_link "2", exact: true }
     assert_selector ".member-recorded-votes .member-vote-row", count: 1
     assert_field "Search votes", with: "Hamilton grant agreement"
     assert_selector "select[name=topic] option:checked", text: "Riverfront Redevelopment"
+    filtered_page = page.current_url
     within("#recorded-vote-#{@grant_votes.first.id}") { click_link "Meeting and sources" }
     assert_current_path meeting_path(@meeting)
     page.go_back
+    assert_current_path filtered_page, url: true
+    assert_no_selector "html[data-turbo-preview]", visible: :all
     assert_selector ".member-vote-pages [aria-current=page]", text: "2"
     assert_operator page.evaluate_script("document.documentElement.scrollWidth"), :<=, 390
     click_link "Clear search and filters"

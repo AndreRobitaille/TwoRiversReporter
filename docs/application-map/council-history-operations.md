@@ -19,3 +19,5 @@ Populate changed prompts from the deployed revision. Supply the destination admi
 ## Behavioral verification
 
 RES-10/11 cover the voter journey. BG-01/02/08/09 cover discovery, shared meeting processing and campaign comparisons. `council_history_batch_test` exercises the PDF-backed minutes stages with simulated transport, persisted votes, scope and replay. `council_history_execution_test` checks pre-dispatch admission, uncertain attempts and both historical ceilings. `council_live_action_budget_test` checks recurring admission, renewal, revocation, new work and unchanged evidence. `member_council_attendance_test` checks the published source-gap disclosure on a subsequent resident request. Actual production receipts, dates and checks belong to the operator's run record.
+
+The mobile vote-filter journey checks the returned pagination link for the selected topic and decision type before reading the matching count. The 26 test votes match both before and after the request. It also verifies that Back returns to the same filtered page after opening the official meeting.
