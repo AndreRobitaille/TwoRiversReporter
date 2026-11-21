@@ -111,8 +111,9 @@ namespace :backfill do
     actor = User.usable_admins.find(ENV.fetch("ACTOR_ID"))
     listings = inventory.listings
     listings.reject! { |row| row.fetch("title").match?(/council/i) } if phase == "full" && ENV["SKIP_COUNCIL"] == "1"
-    CouncilHistory::Batch.new(listings, pilot: phase == "pilot", reviewed_facts: facts,
-      reviewed_comparisons: comparisons, actor: actor, pilot_reuse_url: ENV["PILOT_REUSE_URL"]).call do |result|
+    batch = CouncilHistory::Batch.new(listings, pilot: phase == "pilot", reviewed_facts: facts,
+      reviewed_comparisons: comparisons, actor: actor, pilot_reuse_url: ENV["PILOT_REUSE_URL"])
+    batch.call(stages: ENV["STAGES"]&.split(",") || CouncilHistory::Batch::STAGES) do |result|
       puts JSON.generate(result)
       $stdout.flush
     end

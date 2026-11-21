@@ -24,7 +24,7 @@ class CouncilHistoryBatchTest < ActiveJob::TestCase
     even_older = listing.merge("starts_at" => Time.zone.local(2024, 9, 1, 18).iso8601, "url" => "https://example.test/other")
     batch = CouncilHistory::Batch.new([ listing, cancelled, even_older ], pilot: true)
     assert_no_enqueued_jobs(only: ->(job) { job.is_a?(ApplicationJob) }) do
-      with_transport { batch.call }
+      with_transport { batch.call(stages: [ "facts" ]) }
     end
     assert_equal 2, @calls.size
     assert_equal %w[attendance votes], CouncilHistoryRequest.where(meeting_id: @meeting.id, pilot: true).order(:stage).pluck(:stage)

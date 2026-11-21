@@ -44,7 +44,8 @@ module CouncilHistory
       @pilot_reuse_url = pilot_reuse_url
     end
 
-    def call
+    def call(stages: STAGES)
+      raise ArgumentError, "Select the missing stages" unless stages.any? && (stages - STAGES).empty?
       @rows.sort_by { |row| [ row.fetch("title").match?(/council/i) ? 0 : 1, row.fetch("starts_at") ] }.each do |row|
         date = Time.iso8601(row.fetch("starts_at")).in_time_zone.to_date
         raise ArgumentError, "Outside historical window" unless date.between?(FIRST, LAST)
@@ -55,7 +56,7 @@ module CouncilHistory
         end
         next unless row.fetch("disposition").in?(%w[fetch_minutes usable no_minutes_link source_unavailable ambiguous_minutes])
         result = begin
-          process(row)
+          process(row, stages)
         rescue CouncilProfiles::ReserveAiSpend::Paused, Citations::SourceCatalog::InvalidSource, Topics::TriageResponse::Invalid, JSON::ParserError => error
           # Keep the source and completed stages. A later, smaller request may
           # fit the remaining allowance even when this one did not.
@@ -77,7 +78,7 @@ module CouncilHistory
 
     private
 
-    def process(row)
+    def process(row, stages)
       meeting = Meeting.transaction do
         key = ApplicationRecord.connection.quote(row.fetch("url"))
         ApplicationRecord.connection.execute("SELECT pg_advisory_xact_lock(hashtext(#{key}))")
@@ -90,7 +91,7 @@ module CouncilHistory
         # A separate operator process owns this batch. All Rails job follow-ups
         # are suppressed in this execution context; each scoped stage runs here.
         prepare_documents(meeting, row) if row.fetch("disposition").in?(%w[usable fetch_minutes])
-        run_stages(meeting, STAGES) if meeting.latest_document("minutes_pdf")&.extracted_text.present?
+        run_stages(meeting, stages) if meeting.latest_document("minutes_pdf")&.extracted_text.present?
       end
       Inventory.review([ row ]).first.merge(outcome(meeting))
     end
