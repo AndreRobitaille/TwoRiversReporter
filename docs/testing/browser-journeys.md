@@ -28,7 +28,9 @@ URLs are absolute and point to that same browser server's actual port. Test
 configuration, URL options and delivery capture are restored after each test.
 Failures produce screenshots in `tmp/screenshots`; GitHub retains them as a
 failure artifact. Application and browser suites run serially against the test
-database.
+database. The Chrome driver closes extra windows and uses Capybara's standard
+Selenium reset to clear cookies and web storage. Chrome 158 rejects the
+wildcard origin used by Capybara 3.40's Chrome-specific reset.
 
 GitHub's downloaded Chrome for Testing gets an AppArmor profile allowing user
 namespaces for its exact executable path on the disposable Ubuntu runner. The

@@ -1,6 +1,7 @@
 module ResidentContent
   class HomeSelection
     ACTIVITY_WINDOW = 30.days
+    TOP_STORY_ACTIVITY_WINDOW = 21.days
     TOP_STORY_LIMIT = 2
     WIRE_MIN_IMPACT = 2
     WIRE_CARD_COUNT = 4
@@ -14,7 +15,8 @@ module ResidentContent
     ].freeze
 
     def call
-      stories = GeneratedImages::HomepageTopicSelector.new.call.first(TOP_STORY_LIMIT)
+      story_candidates = GeneratedImages::HomepageTopicSelector.new.call(activity_window: TOP_STORY_ACTIVITY_WINDOW)
+      stories = story_candidates.first(TOP_STORY_LIMIT)
       # Meeting timestamps tie often; keep topic ordering stable across selections.
       wire = Topic.reusable.where("resident_impact_score >= ?", WIRE_MIN_IMPACT)
         .where("last_activity_at > ?", ACTIVITY_WINDOW.ago).where.not(id: stories.map(&:id))

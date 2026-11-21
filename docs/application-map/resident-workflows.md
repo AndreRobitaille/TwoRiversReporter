@@ -20,6 +20,9 @@ status below does not imply complete coverage of those workflows.
 - **Required state / visible outcome:** intelligible impact/recency-led discovery
   connects to useful topic continuity and upcoming meeting details; labels align
   with timing and allowed audience. Empty selections still allow broader navigation.
+  The [homepage design](../superpowers/specs/2026-04-10-homepage-redesign-design.md)
+  gives lead slots a 21-day activity window and More Stories a 30-day window.
+  Older high-impact topics can move from a lead slot into More Stories.
 - **Next:** destination gives the intended topic/meeting; browser Back returns
   usefully. Candidate acceptance: no duplicate story/wire selection in unchanged data.
 - **Failures to distinguish:** no briefing/activity/image, stale timestamp,
@@ -30,6 +33,46 @@ status below does not imply complete coverage of those workflows.
   these destinations; older playbook wording was reconciled. Owner clarification
   October 11 (#171) preserves the quiet message, omission of empty Wire/More
   Stories, and visible Next Up/navigation; see [reviewed contracts](behavior-contracts.md).
+
+### November 20 homepage freshness verification
+
+Local patch on `da8d25881a6ca2365fd12e3d7269f223c14ffa63`, Ruby 4.0.9 and
+PostgreSQL 18.6, in the Rails test environment with synthetic records.
+The [homepage test](../../test/controllers/home_controller_test.rb) checked
+that a 20-day-old topic leads, moves to More Stories at day 21 with its original
+topic link and no duplicate, and disappears from the homepage at day 30.
+The [API test](../../test/controllers/api/resident_api_test.rb) checked that an
+authenticated key receives a 22-day-old topic in `wire_cards` and a more recent
+topic in `top_stories` (RES-13). The checks exercised rendered HTTP responses and
+JSON. Browser and production behavior were outside this verification.
+
+```sh
+PARALLEL_WORKERS=1 bin/rails test \
+  test/controllers/home_controller_test.rb test/controllers/home_gating_test.rb \
+  test/controllers/api/resident_api_test.rb \
+  test/services/generated_images/homepage_topic_selector_test.rb \
+  test/services/generated_images/topic_eligibility_test.rb \
+  test/jobs/generated_images/refresh_homepage_topics_job_test.rb \
+  test/jobs/topics/update_topic_briefing_job_test.rb \
+  test/services/topics/meeting_reanalysis_service_test.rb \
+  test/tasks/topic_reanalysis_task_test.rb
+```
+
+The suite passed with 86 tests, 997 assertions, and zero skips. `bin/rubocop`
+reported zero offenses across 633 files. Re-running just the two freshness tests
+with the lead window temporarily reset to 30 days reproduced both ordering
+failures. Restoring 21 days passed both tests with 12 assertions and zero skips.
+
+Follow-up on November 20 used an authorized read-only production snapshot in
+development. A temporary
+`bin/rails runner -e development --skip-executor` script requested `/` through
+the development Rack stack with both lead windows and a simulated clock. Both
+windows showed the city manager search and Flock on November 20. At 6 p.m.
+Central on November 23, the 21-day window moved Flock to the first More Stories
+card, and the revolving loan fund took the second lead slot. The card's
+original topic URL returned 200. Flock dropped off the homepage at day 30.
+The manager search moved into More Stories at 6 p.m. Central on December 7 in
+the same snapshot. Those future results assume the stored activity stays fixed.
 
 ## RES-02 — Browse active topics and continue the list (P1)
 
@@ -453,6 +496,7 @@ status below does not imply complete coverage of those workflows.
 - **Required state / visible outcome:** resident JSON in both modes, fixed read-only
   scope, explicit source/AI/illustration labels, no internal prompts/accounts/credentials.
   Searches consider resident narrative/source fields, not internal generation fields.
+  `/api/v1/home` uses the same 21-day lead and 30-day More Stories windows as RES-01.
 - **Next:** inspect original sources; follow `links.next`; GET/HEAD only. An admin
   key cannot write/run jobs/open admin, and browser cookie alone yields 401.
 - **Failures to distinguish:** invalid/revoked/expired key (401), absent/unapproved

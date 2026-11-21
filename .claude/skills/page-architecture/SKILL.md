@@ -16,7 +16,7 @@ The homepage uses a newspaper-style inverted pyramid layout. Four zones, top to 
 3. **Next Up (1-2)**: Next council meeting and/or work session. Calendar-style date slabs with terra-cotta (council) or teal (work session) coloring. Uses `_next_up.html.erb`.
 4. **Escape Hatches**: "Browse All Topics →" and "All Meetings →" buttons.
 
-**Data flow**: `HomeController` builds `@top_stories` (impact ≥ 4, 30d window), `@wire_cards`/`@wire_rows` (impact ≥ 2, excludes top stories), `@next_up` (council/work session patterns via the `COUNCIL_PATTERNS` constant), `@headlines` (from `TopicBriefing`), `@meeting_refs` (most recent meeting appearance per topic).
+**Data flow**: `ResidentContent::HomeSelection` supplies the homepage and `/api/v1/home` with top stories (impact ≥ 4, activity less than 21 days old), More Stories cards and rows (impact ≥ 2, activity less than 30 days old, excludes top stories), and Next Up (council meeting patterns via `COUNCIL_PATTERNS`). `HomeController` loads headlines from `TopicBriefing` and meeting references from each topic's most recent meeting appearance.
 
 **Sort order**: Impact score descending, then recency. NOT chronological. No committee filtering — subcommittee topics surface naturally by impact.
 

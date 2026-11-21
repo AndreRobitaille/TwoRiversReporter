@@ -172,6 +172,30 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_select ".top-story", count: 0
   end
 
+  test "home moves lead stories to more stories at 21 days and removes them at 30 days" do
+    travel_to Time.zone.local(2026, 11, 20, 12)
+    @high_topic.update!(last_activity_at: 20.days.ago)
+    @mid_topic.update!(last_activity_at: Time.current)
+    older_path = topic_path(@high_topic)
+
+    get root_url
+    assert_response :success
+    assert_select ".top-story[href=?]", older_path, count: 1
+    assert_select ".wire-zone a[href=?]", older_path, count: 0
+
+    travel 1.day
+    get root_url
+    assert_response :success
+    assert_select ".top-story[href=?]", topic_path(@mid_topic), count: 1
+    assert_select ".second-story", count: 0
+    assert_select ".wire-card[href=?]", older_path, count: 1
+
+    travel 9.days
+    get root_url
+    assert_response :success
+    assert_select "a[href=?]", older_path, count: 0
+  end
+
   test "wire shows mid-impact topics excluding top stories" do
     get root_url
     assert_response :success

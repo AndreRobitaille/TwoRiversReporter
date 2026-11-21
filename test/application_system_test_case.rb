@@ -5,6 +5,21 @@ require_relative "support/transactional_email_capture"
 class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
   include TransactionalEmailCapture
 
+  module ChromeSessionReset
+    def reset!
+      return unless @browser
+
+      handles = window_handles
+      switch_to_window(handles.first)
+      handles.drop(1).each { |handle| close_window(handle) }
+
+      # Chrome 158 rejects the wildcard origin Capybara 3.40 uses to clear storage.
+      Capybara::Selenium::Driver.instance_method(:reset!).bind_call(self)
+    end
+  end
+
+  Capybara::Selenium::Driver::ChromeDriver.prepend(ChromeSessionReset)
+
   driven_by :selenium, using: :headless_chrome, screen_size: [ 1280, 900 ] do |options|
     options.binary = ENV["CHROME_BIN"] if ENV["CHROME_BIN"].present?
     options.add_argument("--disable-dev-shm-usage")
