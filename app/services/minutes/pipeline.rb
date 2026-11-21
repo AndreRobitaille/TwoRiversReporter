@@ -17,9 +17,10 @@ module Minutes
       false
     end
 
-    def initialize(meeting_id, kind, refresh: false, budget_required: false, budget_run_id: nil)
+    def initialize(meeting_id, kind, refresh: false, budget_required: false, budget_run_id: nil, publish: true)
       @meeting = Meeting.find(meeting_id)
       @kind = kind
+      @publish = publish
       @refresh = refresh
       @budget_required = budget_required
       @budget_run_id = budget_run_id
@@ -33,7 +34,7 @@ module Minutes
           @meeting.update_columns(attributes)
         end
       end
-      return if !@refresh && Publish.call(@meeting)
+      return if @publish && !@refresh && Publish.call(@meeting)
       @meeting.with_lock do
         @input = Input.new(@meeting)
         @stage = MinutesExtraction.find_by(input_key: @input.key(@kind))
@@ -41,7 +42,7 @@ module Minutes
         @stage ||= MinutesExtraction.create!(@input.stage_attributes(@meeting, @kind))
       end
       if @stage.status == "completed"
-        Publish.call(@meeting)
+        Publish.call(@meeting) if @publish
         return
       end
       if @input.text.length > Ai::OpenAiService::MAX_MINUTES_CHARS
@@ -94,7 +95,7 @@ module Minutes
       locations = LocateEvidence.new(@stage).call(data) if @kind == "votes"
       @stage.update!(data: data, evidence_locations: locations, status: "completed", completed_at: Time.current)
       stamp("staged")
-      Publish.call(@meeting)
+      Publish.call(@meeting) if @publish
     rescue Input::Unavailable
       stamp("missing_source")
       Topics::UpdateContinuityJob.perform_later(meeting_id: @meeting.id) if @kind == "votes"

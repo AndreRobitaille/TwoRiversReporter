@@ -9,7 +9,7 @@ module Minutes
 
     def call
       @meeting.meeting_attendances.destroy_all
-      attendance_changed = create_attendance_records(@meeting, @attendance)
+      attendance_changed = self.class.create_attendance_records(@meeting, @attendance)
       @meeting.motions.destroy_all
       motions = @votes.fetch("motions").each_with_index.reject { |data, _index| unseconded_motion?(data, @input.text) }
       motions.each do |data, index|
@@ -104,7 +104,7 @@ module Minutes
       nil
     end
 
-    def create_attendance_records(meeting, data)
+    def self.create_attendance_records(meeting, data)
       created = false
       (data["voting_members_present"] || []).each do |name|
         next if name.blank?

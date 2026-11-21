@@ -9,6 +9,30 @@ module CouncilHistory
 
     STAGES = %w[facts topics summaries comparisons].freeze
 
+    # Consolidate new topics once after the meeting batches. A historical
+    # appearance cannot replace a later public briefing.
+    def self.finish_briefings(from:, through:)
+      raise ArgumentError, "Outside historical window" unless FIRST <= from && from <= through && through <= LAST
+      period = from.in_time_zone...through.next_day.in_time_zone
+      topics = Topic.approved.where(id: TopicSummary.joins(:meeting).where(meetings: { starts_at: period }).select(:topic_id))
+      topics.find_each do |topic|
+        next if topic.topic_briefing&.generation_tier == "full"
+        meeting = Meeting.joins(agenda_items: :agenda_item_topics).merge(AgendaItem.substantive)
+          .where(agenda_item_topics: { topic_id: topic.id }).order(starts_at: :desc, id: :desc).first
+        next unless meeting && period.cover?(meeting.starts_at) && meeting.topic_summaries.exists?(topic: topic)
+        result = { topic_id: topic.id, meeting_id: meeting.id }
+        begin
+          Execution.set(meeting_id: meeting.id, pilot: false, stage: "topic_briefing") do
+            Topics::GenerateTopicBriefingJob.perform_now(topic_id: topic.id, meeting_id: meeting.id)
+          end
+          result[:state] = topic.reload.topic_briefing&.generation_tier
+        rescue CouncilProfiles::ReserveAiSpend::Paused, Citations::SourceCatalog::InvalidSource, JSON::ParserError => error
+          result[:hold] = error.message.truncate(250)
+        end
+        yield result if block_given?
+      end
+    end
+
     def initialize(rows, pilot: false, reviewed_facts: [], reviewed_comparisons: [], actor: nil, pilot_reuse_url: nil)
       @rows = Inventory.review(rows)
       @pilot = pilot
@@ -82,6 +106,7 @@ module CouncilHistory
       if stages.include?("summaries")
         if SummarizeMeetingJob.summary_repair_needed?(meeting.reload)
           Execution.set(stage: "meeting_and_topic_summaries") { SummarizeMeetingJob.perform_now(meeting.id, enqueue_followups: false) }
+          PruneHollowAppearancesJob.perform_now(meeting.id)
         else
           Execution.set(stage: "topic_summaries") { SummarizeMeetingJob.perform_now(meeting.id, mode: :missing_topic_summaries) }
         end
@@ -140,17 +165,46 @@ module CouncilHistory
     end
 
     def extract_facts(meeting)
-      # Keep legacy published roll calls intact. A source without compatible
-      # saved extraction stages needs individual review before replacing facts.
-      if meeting.motions.exists? || meeting.meeting_attendances.exists?
-        return unless meeting.minutes_publication_id
-      end
       rows = @reviewed_facts.fetch(meeting.latest_document("minutes_pdf").source_url, [])
-      ReviewedFacts.apply(meeting, rows) if rows.any?
+      if !meeting.minutes_publication_id && (meeting.motions.exists? || meeting.meeting_attendances.exists?)
+        if meeting.motions.exists? && !meeting.meeting_attendances.exists? &&
+            !meeting.processing_state["committee_members_extraction_status"].in?(%w[processed empty])
+          fill_legacy_attendance(meeting, rows.select { |row| row.fetch("kind") == "attendance" })
+        end
+        return
+      end
+      restore_facts(meeting, rows)
       Minutes::Publish.call(meeting) if rows.any?
       { "votes" => ExtractVotesJob, "attendance" => ExtractCommitteeMembersJob }.each do |kind, job|
         next unless Minutes::Pipeline.needed?(meeting.reload, kind)
         Execution.set(stage: kind) { job.perform_now(meeting.id) }
+      end
+    end
+
+    def restore_facts(meeting, rows)
+      return if rows.empty?
+      ReviewedFacts.apply(meeting, rows)
+      input = Minutes::Input.new(meeting)
+      missing = rows.pluck("kind").uniq.reject { |kind| input.completed_stage(kind) }
+      raise CouncilProfiles::ReserveAiSpend::Paused, "reviewed_fact_source_needs_reconciliation" if missing.any?
+    end
+
+    # Some legacy meetings contain accepted votes and no attendance. Keep
+    # their motion IDs and evidence intact while filling the missing roll call.
+    def fill_legacy_attendance(meeting, rows)
+      restore_facts(meeting, rows)
+      Execution.set(stage: "attendance") { Minutes::Pipeline.new(meeting.id, "attendance", publish: false).call }
+      meeting.with_lock do
+        return if meeting.minutes_publication_id || meeting.meeting_attendances.exists?
+        document = meeting.latest_document("minutes_pdf")
+        document.with_lock do
+          stage = Minutes::Input.new(meeting).completed_stage("attendance")
+          return unless stage
+          created = Minutes::Projection.create_attendance_records(meeting, stage.data)
+          meeting.update!(processing_state: meeting.processing_state.merge("committee_members_extracted_at" => true,
+            "committee_members_extraction_status" => created ? "processed" : "empty", "historical_attendance_input" => stage.input_key))
+          Committees::MembershipReconciler.call(meeting.committee) if meeting.committee
+        end
       end
     end
   end

@@ -118,6 +118,16 @@ namespace :backfill do
     end
   end
 
+  desc "Fill missing topic briefings after completing the selected historical meeting batches"
+  task finish_briefings: :environment do
+    from, through = %w[FROM THROUGH].map { |key| Date.iso8601(ENV.fetch(key)) }
+    Campaigns::LivePricing::SECTIONS.each_key { |model| Campaigns::LivePricing.refresh_model(model) }
+    CouncilHistory::Batch.finish_briefings(from: from, through: through) do |result|
+      puts JSON.generate(result)
+      $stdout.flush
+    end
+  end
+
   desc "Repair specific later stages using saved records for one MEETING_ID and comma-separated STAGES"
   task repair_saved: :environment do
     meeting = Meeting.find(ENV.fetch("MEETING_ID"))

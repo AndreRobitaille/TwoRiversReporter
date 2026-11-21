@@ -5,6 +5,7 @@ module CouncilHistory
       "attendance" => [ "extract_committee_members", Ai::OpenAiService::MAX_MINUTES_COMPLETION_TOKENS ],
       "topics" => [ "extract_topics", 12_000 ], "recap" => [ "analyze_meeting_content", 12_000 ],
       "topic_triage" => [ "triage_topics", 12_000 ], "topic_refinement" => [ "refine_catchall_topic", 12_000 ],
+      "topic_briefing_analysis" => [ "analyze_topic_briefing", 12_000 ], "topic_briefing_render" => [ "render_topic_briefing", 12_000 ],
       "topic_analysis" => [ "analyze_topic_summary", 12_000 ], "topic_render" => [ "render_topic_summary", 12_000 ]
     }.freeze
 
@@ -21,15 +22,24 @@ module CouncilHistory
       end
       samples = TEMPLATES.to_h do |stage, (key, output_limit)|
         template = PromptTemplate.find_by!(key: key)
+        model = Ai::OpenAiService.model_for_tier(template.model_tier)
         prices = PromptRun.where(prompt_template_key: key).order(id: :desc).limit(12).filter_map do |run|
-          parameters = { model: Ai::OpenAiService.model_for_tier(template.model_tier), messages: run.messages.map(&:symbolize_keys),
+          parameters = { model: model, messages: run.messages.map(&:symbolize_keys),
             max_completion_tokens: output_limit }
           quote = Campaigns::CostPreflight.for_parameters(parameters)
           quote[:cost_microusd] if quote[:state] == "estimate"
         end.sort
         median = prices[prices.length / 2]
         count = quantities[stage] unless stage.start_with?("topic_")
-        [ stage, { sample_count: prices.length, sample_median_request_microusd: median, candidate_count: count,
+        # A destination can lack historical prompt logs. Show explicit unit
+        # scenarios without pretending to know how many topics it will find.
+        scenarios = [ 16_000, 64_000 ].to_h do |bytes|
+          params = { model: model, messages: [ { role: "user", content: "x" * bytes } ], max_completion_tokens: output_limit }
+          quote = Campaigns::CostPreflight.for_parameters(params)
+          [ bytes, (quote[:cost_microusd] * 2 if quote[:state] == "estimate") ]
+        end
+        [ stage, { model: model, max_output_tokens: output_limit, sample_count: prices.length,
+          two_attempt_microusd_by_prompt_bytes: scenarios, sample_median_request_microusd: median, candidate_count: count,
           sample_projection_with_retry_microusd: (median * count * 2 if median && count) } ]
       end
       members = Member.where(id: CampaignStatement.where(status: "accepted").select(:member_id))

@@ -37,7 +37,7 @@ class CouncilAiBudgetMonth < ApplicationRecord
   end
 
   def effective_limit_microusd
-    limit_microusd + supplements.sum(:amount_microusd)
+    auto_renew? ? limit_microusd : limit_microusd + supplements.sum(:amount_microusd)
   end
 
   private

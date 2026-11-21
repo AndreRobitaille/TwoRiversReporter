@@ -22,6 +22,7 @@ namespace :council_profiles do
     raise "Different existing monthly authorization" unless month.actor == actor && month.auto_renew? && !month.revoked_at &&
       month.limit_microusd == 10_000_000 && month.live_actions.except("starting_on", "issue_sources") == policy.except("starting_on", "issue_sources") &&
       month.live_actions.fetch("issue_sources").except("starting_on") == policy.fetch("issue_sources").except("starting_on")
+    Campaigns::LivePricing::SECTIONS.each_key { |model| Campaigns::LivePricing.refresh_model(model) }
     puts "Standing monthly promise comparisons enabled from #{month.live_actions.fetch('starting_on')}"
   end
 

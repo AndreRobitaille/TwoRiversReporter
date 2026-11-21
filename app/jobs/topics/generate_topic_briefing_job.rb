@@ -11,6 +11,7 @@ module Topics
       return unless topic.approved?
       effective_meeting = context_meeting_for(topic, meeting)
       return unless effective_meeting
+      return if CouncilHistory::Execution.meeting_id && effective_meeting.id != CouncilHistory::Execution.meeting_id
 
       context = build_briefing_context(topic, effective_meeting)
       evidence = GenerationEvidence.capture(topic: topic, meeting: effective_meeting, context: context,

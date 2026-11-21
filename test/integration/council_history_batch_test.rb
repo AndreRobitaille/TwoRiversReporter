@@ -37,6 +37,34 @@ class CouncilHistoryBatchTest < ActiveJob::TestCase
     assert_equal 2, CouncilHistoryRequest.where(meeting_id: @meeting.id).count
   end
 
+  test "a partial legacy meeting fills the missing attendance and preserves each accepted vote on replay" do
+    @meeting.update!(starts_at: Time.zone.local(2025, 7, 8, 18))
+    member = Member.find_or_create_by!(name: "Alex Budget")
+    motion = @meeting.motions.create!(description: "Previously reviewed decision", outcome: "passed")
+    vote = motion.votes.create!(member: member, value: "no")
+    prior = vote.attributes
+    batch = CouncilHistory::Batch.new([])
+    2.times { with_transport { batch.repair_saved(@meeting.reload, stages: [ "facts" ]) } }
+    assert_equal 1, @calls.size
+    assert_equal "attendance", CouncilHistoryRequest.where(meeting_id: @meeting.id).sole.stage
+    assert_equal prior, vote.reload.attributes
+    assert_equal motion.id, @meeting.motions.sole.id
+    assert @meeting.meeting_attendances.exists?(member: member, status: "present")
+    assert_equal "processed", @meeting.reload.processing_state.fetch("committee_members_extraction_status")
+  end
+
+  test "a retained fact with different file bytes holds before buying another extraction" do
+    @meeting.update!(starts_at: Time.zone.local(2025, 7, 8, 18))
+    saved = { "url" => @document.source_url, "starts_at" => @meeting.starts_at.iso8601, "kind" => "votes", "sha256" => "f" * 64 }
+    batch = CouncilHistory::Batch.new([], reviewed_facts: [ saved ])
+    error = assert_raises(CouncilProfiles::ReserveAiSpend::Paused) do
+      with_transport { batch.repair_saved(@meeting, stages: [ "facts" ]) }
+    end
+    assert_equal "reviewed_fact_source_needs_reconciliation", error.message
+    assert_empty @calls
+    assert_empty CouncilHistoryRequest.where(meeting_id: @meeting.id)
+  end
+
   test "a later repair reuses saved facts without buying a summary or touching another stage" do
     @meeting.update!(starts_at: Time.zone.local(2025, 7, 8, 18))
     batch = CouncilHistory::Batch.new([])
