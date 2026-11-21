@@ -44,6 +44,19 @@ class Topics::TriageToolTest < ActiveSupport::TestCase
     assert_includes topic.reload.topic_aliases.pluck(:name), "alley vacation"
   end
 
+  test "historical triage confines decisions to the selected proposed topics" do
+    selected = Topic.create!(name: "urban canopy", status: "proposed")
+    outside = Topic.create!(name: "street trees", status: "proposed")
+    plan = { "merge_map" => [ { "canonical" => outside.name, "aliases" => [ selected.name ], "confidence" => 1.0, "rationale" => "shared concern" } ],
+      "approvals" => [ selected, outside ].map { |topic| { "topic" => topic.name, "approve" => true, "confidence" => 1.0, "rationale" => "public work" } },
+      "blocks" => [] }
+    ai = Object.new
+    ai.define_singleton_method(:triage_topics) { |_context| plan.to_json }
+    Ai::OpenAiService.stub(:new, ai) { Topics::TriageTool.call(apply: true, dry_run: false, topic_ids: [ selected.id ]) }
+    assert_equal "approved", selected.reload.status
+    assert_equal "proposed", outside.reload.status
+  end
+
   test "record_review_event creates event without user for automated triage" do
     topic = Topic.create!(name: "test automated audit", status: "proposed")
 

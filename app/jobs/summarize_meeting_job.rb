@@ -13,6 +13,8 @@ class SummarizeMeetingJob < ApplicationJob
     case mode
     when :full
       run_full_mode(meeting, enqueue_followups: enqueue_followups)
+    when :missing_topic_summaries
+      generate_topic_summaries(meeting, Ai::OpenAiService.new, RetrievalService.new, missing_only: true)
     when :agenda_preview
       run_agenda_preview_mode(meeting)
     else
@@ -31,7 +33,7 @@ class SummarizeMeetingJob < ApplicationJob
 
     # 2. Establish deterministic continuity before capturing topic dependencies.
     Topics::UpdateContinuityJob.perform_now(meeting_id: meeting.id)
-    generate_topic_summaries(meeting, ai_service, retrieval_service)
+    generate_topic_summaries(meeting, ai_service, retrieval_service, missing_only: CouncilHistory::Execution.meeting_id.present?)
 
     # 3. Prune hollow topic appearances based on the new summary's
     #    activity_level signal. Runs before knowledge extraction so
@@ -144,7 +146,7 @@ class SummarizeMeetingJob < ApplicationJob
     end
   end
 
-  def generate_topic_summaries(meeting, ai_service, retrieval_service)
+  def generate_topic_summaries(meeting, ai_service, retrieval_service, missing_only: false)
     # Only process approved topics to avoid noise
     # SummaryContextBuilder now filters structural rows so topic summaries
     # only see substantive agenda evidence.
@@ -153,6 +155,7 @@ class SummarizeMeetingJob < ApplicationJob
       .where(agenda_item_topics: { agenda_item_id: meeting.agenda_items.substantive.select(:id) })
       .distinct
       .each do |topic|
+      next if missing_only && meeting.topic_summaries.exists?(topic: topic, summary_type: "topic_digest")
       summary = Topics::GenerateSummary.new(topic, meeting, ai_service: ai_service, retrieval_service: retrieval_service).call
       next unless summary
 

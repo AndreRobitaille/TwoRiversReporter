@@ -4,9 +4,7 @@ namespace :council_profiles do
     date = args[:month] ? Date.strptime(args[:month], "%Y-%m") : Date.current
     puts JSON.pretty_generate(CouncilProfiles::SpendReport.call(date: date))
   end
-end
 
-namespace :council_profiles do
   desc "Activate the standing monthly promise comparison allowance for new Council records"
   task enable_nightly: :environment do
     actor = User.find(ENV.fetch("ACTOR_ID"))
@@ -25,5 +23,22 @@ namespace :council_profiles do
       month.limit_microusd == 10_000_000 && month.live_actions.except("starting_on", "issue_sources") == policy.except("starting_on", "issue_sources") &&
       month.live_actions.fetch("issue_sources").except("starting_on") == policy.fetch("issue_sources").except("starting_on")
     puts "Standing monthly promise comparisons enabled from #{month.live_actions.fetch('starting_on')}"
+  end
+
+  desc "Import the private reviewed campaign package and establish the source-backed cohort terms"
+  task import_reviewed: :environment do
+    actor = User.usable_admins.find(ENV.fetch("ACTOR_ID"))
+    sources = JSON.parse(File.read(ENV.fetch("CAMPAIGN_FILE")))
+    comparisons = JSON.parse(File.read(ENV.fetch("COMPARISON_FILE")))
+    CouncilHistory::ReviewedTerms.call
+    Campaigns::ReviewedImport.call(sources, actor: actor)
+    puts JSON.generate(Campaigns::ReviewedComparisons.call(comparisons, actor: actor))
+  end
+
+  desc "Revoke the standing allowance and stop automatic renewal"
+  task disable_nightly: :environment do
+    month = CouncilAiBudgetMonth.renew_live!
+    month.update!(revoked_at: Time.current) if month&.auto_renew? && !month.revoked_at
+    puts "Standing monthly promise comparisons disabled"
   end
 end

@@ -337,6 +337,10 @@ The [November 8 prepared forum intake](prepared-campaign-forums-2026-11-08.md)
 records the owner-verified transcript handoff, retention of all candidates,
 speaker-bound extraction checks and real-file size limits.
 
+The [Council history operating procedure](council-history-operations.md) covers
+reviewed imports, scoped historical batches, nightly renewal, and the dated
+resident coverage disclosure (RES-10/11 and BG-01/02/08/09).
+
 The [November 8 saved-analysis reuse checks](council-saved-history-2026-11-08.md)
 cover existing minutes summaries reaching member issue history without a second
 AI pass, and preventing recurring duplicate minutes extraction (RES-10/11, BG-09).

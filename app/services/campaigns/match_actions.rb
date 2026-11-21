@@ -36,10 +36,11 @@ module Campaigns
     def self.call(stage, budget_run: nil)
       return stage if stage.issue_evidence? && !stage.issue_review&.current_citation
       claimed = false
-      budget_run ||= CouncilProfiles::LiveBudget.call(stage)
+      historical = CouncilHistory::Execution.meeting_id.present? && CouncilHistory::Execution.meeting_id == stage.meeting_id
+      budget_run ||= CouncilProfiles::LiveBudget.call(stage) unless historical
       claimed = stage.claim!(budget_run)
       return stage unless claimed
-      raise CouncilProfiles::ReserveAiSpend::Paused, "missing_budget" unless budget_run
+      raise CouncilProfiles::ReserveAiSpend::Paused, "missing_budget" unless budget_run || historical
 
       response = Ai::OpenAiService.new.extract_campaign_source(parameters: stage.parameters.deep_symbolize_keys,
         request_recorder: CouncilProfiles::RequestRecorder.new(stage))

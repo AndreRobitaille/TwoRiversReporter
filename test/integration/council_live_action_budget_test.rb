@@ -147,6 +147,13 @@ class CouncilLiveActionBudgetTest < ActionDispatch::IntegrationTest
       assert_equal [ first.limit_microusd, 0, first.live_actions ], [ renewal.limit_microusd, renewal.reserved_microusd, renewal.live_actions ]
       with_live_transport { MatchCampaignActionsJob.perform_now(@vote.motion.meeting_id) }
       assert_equal 1, @calls.size
+      fresh = new_action_meeting(Date.current)
+      Campaigns::LivePricing.stub(:checked_on, Date.current) do
+        with_live_transport { 2.times { MatchCampaignActionsJob.perform_now(fresh.id) } }
+      end
+      assert_equal 2, @calls.size
+      assert_equal 1, renewal.reservations.count
+      assert_operator renewal.reload.reserved_microusd, :>, 0
       renewal.update!(revoked_at: Time.current)
       travel_to Time.zone.local(2027, 2, 1, 23)
       assert_no_difference("CouncilAiBudgetMonth.count") { ReconcileCampaignSourcesJob.perform_now }

@@ -86,4 +86,52 @@ namespace :backfill do
 
     puts ""
   end
+
+  desc "Read the city listings for FROM..THROUGH and compare with this database; optional BODY"
+  task preview: :environment do
+    inventory = CouncilHistory::Inventory.new(from: Date.iso8601(ENV.fetch("FROM")),
+      through: Date.iso8601(ENV.fetch("THROUGH")), body: ENV["BODY"])
+    rows = CouncilHistory::Inventory.review(inventory.listings)
+    facts = ENV["REVIEWED_FACTS"] ? JSON.parse(File.read(ENV.fetch("REVIEWED_FACTS"))) : []
+    estimate = CouncilHistory::Estimate.call(rows, from: Date.iso8601(ENV.fetch("FROM")),
+      through: Date.iso8601(ENV.fetch("THROUGH")), reviewed_facts: facts)
+    puts JSON.generate(listings: rows, estimate: estimate)
+  end
+
+  desc "Run or resume named historical stages for FROM..THROUGH, optional BODY, PHASE=pilot or full"
+  task scoped: :environment do
+    phase = ENV.fetch("PHASE")
+    raise ArgumentError, "Specify pilot or full" unless phase.in?(%w[pilot full])
+    from, through = %w[FROM THROUGH].map { |key| Date.iso8601(ENV.fetch(key)) }
+    raise ArgumentError, "Outside historical window" unless from >= CouncilHistory::Batch::FIRST && through <= CouncilHistory::Batch::LAST
+    Campaigns::LivePricing::SECTIONS.each_key { |model| Campaigns::LivePricing.refresh_model(model) }
+    inventory = CouncilHistory::Inventory.new(from: from, through: through, body: ENV["BODY"])
+    facts = ENV["REVIEWED_FACTS"] ? JSON.parse(File.read(ENV.fetch("REVIEWED_FACTS"))) : []
+    comparisons = JSON.parse(File.read(ENV.fetch("COMPARISON_FILE")))
+    actor = User.usable_admins.find(ENV.fetch("ACTOR_ID"))
+    listings = inventory.listings
+    listings.reject! { |row| row.fetch("title").match?(/council/i) } if phase == "full" && ENV["SKIP_COUNCIL"] == "1"
+    CouncilHistory::Batch.new(listings, pilot: phase == "pilot", reviewed_facts: facts,
+      reviewed_comparisons: comparisons, actor: actor, pilot_reuse_url: ENV["PILOT_REUSE_URL"]).call do |result|
+      puts JSON.generate(result)
+      $stdout.flush
+    end
+  end
+
+  desc "Repair specific later stages using saved records for one MEETING_ID and comma-separated STAGES"
+  task repair_saved: :environment do
+    meeting = Meeting.find(ENV.fetch("MEETING_ID"))
+    stages = ENV.fetch("STAGES").split(",")
+    facts = ENV["REVIEWED_FACTS"] ? JSON.parse(File.read(ENV.fetch("REVIEWED_FACTS"))) : []
+    comparisons = JSON.parse(File.read(ENV.fetch("COMPARISON_FILE")))
+    actor = User.usable_admins.find(ENV.fetch("ACTOR_ID"))
+    Campaigns::LivePricing::SECTIONS.each_key { |model| Campaigns::LivePricing.refresh_model(model) }
+    batch = CouncilHistory::Batch.new([], reviewed_facts: facts, reviewed_comparisons: comparisons, actor: actor)
+    puts JSON.generate(batch.repair_saved(meeting, stages: stages))
+  end
+
+  desc "Refresh the dated Council coverage disclosure from the city index and this database"
+  task publish_coverage: :environment do
+    puts JSON.generate(CouncilHistory::Coverage.refresh!(full: true).except("listings"))
+  end
 end

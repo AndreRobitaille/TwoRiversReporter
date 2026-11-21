@@ -1,4 +1,8 @@
 class ApplicationJob < ActiveJob::Base
+  # A historical batch drives its named stages inline. Ordinary queued
+  # follow-ups would escape both the meeting scope and the one-time ledger.
+  before_enqueue { throw :abort if CouncilHistory::Execution.meeting_id }
+
   # Automatically retry jobs that encountered a deadlock
   retry_on ActiveRecord::Deadlocked
 

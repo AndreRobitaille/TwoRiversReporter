@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_21_230000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_21_230200) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -512,6 +512,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_230000) do
     t.datetime "updated_at", null: false
     t.index [ "source_url" ], name: "index_council_formal_sources_on_source_url", unique: true
     t.index [ "verified_by_id" ], name: "index_council_formal_sources_on_verified_by_id"
+  end
+
+  create_table "council_history_requests", force: :cascade do |t|
+    t.bigint "meeting_id", null: false
+    t.string "stage", null: false
+    t.string "request_digest", null: false
+    t.string "model", null: false
+    t.boolean "pilot", null: false
+    t.integer "reserved_microusd", null: false
+    t.integer "charged_microusd", null: false
+    t.jsonb "usage"
+    t.string "provider_response_id"
+    t.datetime "finished_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "meeting_id", "stage", "request_digest" ], name: "idx_on_meeting_id_stage_request_digest_bb468f34a3"
   end
 
   create_table "council_issue_requests", force: :cascade do |t|
@@ -1053,6 +1069,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_230000) do
     t.datetime "created_at", null: false
     t.integer "singleton_guard", default: 0, null: false
     t.datetime "updated_at", null: false
+    t.jsonb "council_coverage", default: {}, null: false
     t.index [ "singleton_guard" ], name: "index_site_settings_on_singleton_guard", unique: true
   end
 

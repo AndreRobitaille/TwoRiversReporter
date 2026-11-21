@@ -46,6 +46,23 @@ class MemberCouncilAttendanceTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "published city inventory shows dated gaps for the matching Council term" do
+    listing = { "disposition" => "usable", "starts_at" => "2024-04-16T18:00:00-05:00", "title" => "City Council",
+      "url" => "https://example.test/first", "votes" => 0, "vote_status" => "empty", "attendance" => 3 }
+    gap = listing.merge("starts_at" => "2024-04-30T18:00:00-05:00", "disposition" => "no_minutes_link", "url" => "https://example.test/missing")
+    CouncilHistory::Coverage.publish!([ listing, gap, listing.merge("disposition" => "cancelled") ],
+      from: @period.started_on, through: Date.new(2024, 4, 30))
+    get member_path(@member)
+    assert_response :success
+    assert_select "#council-attendance details", text: /calendar lists 2 Council meetings.*readable minutes for 1/m
+    assert_select "#council-attendance details summary", text: "Coverage through April 30, 2024"
+    assert_select "#council-attendance a[href=?]", gap.fetch("url"), text: "April 30, 2024"
+    assert_select "#council-attendance li", text: /Voting record needs review/, count: 0
+    @period.update!(started_on: "2024-04-17")
+    get member_path(@member)
+    assert_select "#council-attendance a[href=?]", gap.fetch("url"), count: 0
+  end
+
   test "later roll calls cancellations and service corrections change subsequent reads without changing votes" do
     first = council_meeting("2024-04-16", attendance: "present")
     missing = council_meeting("2024-04-17")

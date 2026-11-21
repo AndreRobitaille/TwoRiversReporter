@@ -2,13 +2,13 @@ require "minitest/mock"
 require "open-uri"
 
 module CouncilSpendScenario
-  def setup_spend_scenario
+  def setup_spend_scenario(source_url: "https://example.test/spend.pdf")
     prior_template_ids = PromptTemplate.pluck(:id)
     seed_prompt_templates
     @created_template_ids = PromptTemplate.where.not(id: prior_template_ids).pluck(:id)
     @meeting = Meeting.create!(body_name: "Synthetic Council", starts_at: Time.current,
       detail_page_url: "https://example.test/spend-reservations")
-    @document = @meeting.meeting_documents.create!(document_type: "minutes_pdf", source_url: "https://example.test/spend.pdf")
+    @document = @meeting.meeting_documents.create!(document_type: "minutes_pdf", source_url: source_url)
     URI.stub(:open, ->(*) { StringIO.new("synthetic budget source") }) { Documents::DownloadJob.perform_now(@document.id) }
     Documents::PublishText.new(@document.reload).call(raw_pages: [ "Alex Budget voted no. Blair Budget voted yes. FINAL BUDGET ACTION." ],
       page_count: 1, quality: "text", extractor_version: "synthetic_v1")

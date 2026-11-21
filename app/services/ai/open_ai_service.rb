@@ -375,7 +375,7 @@ module Ai
     def triage_topics(context_json, source: nil)
       community_context = context_json.delete(:community_context) || context_json.delete("community_context") || ""
 
-      if use_gemini?
+      if use_gemini? && CouncilHistory::Execution.meeting_id.nil?
         community_section = if community_context.present?
           "\n<community_context>\nUse this context about Two Rivers residents to inform your approval and blocking decisions. Topics that matter to residents should be approved; routine institutional items should be blocked.\n#{community_context}\n</community_context>\n"
         else
@@ -947,14 +947,21 @@ module Ai
         model:, messages:, temperature:, response_format:, reasoning_effort:
       )
       params[:max_completion_tokens] = max_completion_tokens if max_completion_tokens
-      request_recorder&.start!(params)
       start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      response = @client.chat(parameters: params)
+      dispatch = lambda do
+        request_recorder&.start!(params)
+        @client.chat(parameters: params)
+      end
+      response = if CouncilHistory::Execution.meeting_id
+        CouncilHistory::Execution.chat(params, &dispatch)
+      else
+        dispatch.call
+      end
       duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
       request_recorder&.received!(response, duration_ms: duration_ms)
 
       finish_reason = response.dig("choices", 0, "finish_reason")
-      if max_completion_tokens && finish_reason != "stop"
+      if params[:max_completion_tokens] && finish_reason != "stop"
         raise IncompleteResponseError, finish_reason
       end
 

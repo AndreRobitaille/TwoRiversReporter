@@ -5,7 +5,10 @@ module CouncilProfiles
     end
 
     def start!(parameters)
-      if @stage.budget_required?
+      if CouncilHistory::Execution.meeting_id
+        raise "Historical dispatch outside selected meeting" unless @stage.respond_to?(:meeting_id) && @stage.meeting_id == CouncilHistory::Execution.meeting_id
+        create_receipt!(parameters)
+      elsif @stage.budget_required?
         CouncilProfiles::ReserveAiSpend.with_reservation(@stage, parameters) { |reservation| create_receipt!(parameters, reservation) }
       else
         create_receipt!(parameters)

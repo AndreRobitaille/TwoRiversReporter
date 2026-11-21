@@ -16,6 +16,10 @@ module Campaigns
       return if Date.current <= CostPreflight::PRICING_VALID_THROUGH
       month = CouncilAiBudgetMonth.where(revoked_at: nil).find_by(budget_month: Date.current.beginning_of_month)
       model = month&.live_actions&.dig("model")
+      refresh_model(model)
+    end
+
+    def self.refresh_model(model)
       return unless SECTIONS.key?(model) && valid_through(model, Date.current) >= Date.current
       return if checked_on(model) == Date.current
 

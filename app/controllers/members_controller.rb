@@ -15,6 +15,10 @@ class MembersController < ApplicationController
     @record_params = @service_periods.any? || params[:term].present? ? { term: @record_period.key } : {}
 
     @council_attendance = ResidentContent::CouncilAttendance.new(@member, period: @record_period.selected).call
+    if @council_attendance && (coverage = SiteSetting.instance.council_coverage).present? &&
+        @council_attendance.fetch(:period).started_on.iso8601 == coverage["from"] && @council_attendance.fetch(:period).ended_on.nil?
+      @council_coverage = coverage
+    end
     meeting_ids = @council_attendance&.fetch(:meeting_ids)
     profile = ResidentContent::OfficialProfile.new(@member,
       council_meeting_ids: (@record_period.selected ? meeting_ids || [] : nil), during: @record_period.range)

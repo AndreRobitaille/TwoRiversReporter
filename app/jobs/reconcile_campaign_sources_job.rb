@@ -21,5 +21,6 @@ class ReconcileCampaignSourcesJob < ApplicationJob
       MatchCampaignIssueEvidenceJob.perform_later
     end
     ExtractCouncilIssueUpdatesJob.perform_later if CouncilIssueReview.where.not(meeting_document_id: nil).exists? || CouncilProfiles::LiveSources.enabled?
+    CouncilHistory::RefreshCoverageJob.perform_later if SiteSetting.instance.council_coverage.present?
   end
 end

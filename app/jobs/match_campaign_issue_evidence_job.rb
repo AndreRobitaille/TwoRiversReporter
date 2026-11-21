@@ -1,6 +1,6 @@
 class MatchCampaignIssueEvidenceJob < ApplicationJob
   def perform(review_id = nil, budget_run_id: nil, meeting_id: nil)
-    candidates = Campaigns::IssueEvidenceCandidates.all(meeting_id: meeting_id, live_recaps: budget_run_id.nil?)
+    candidates = Campaigns::IssueEvidenceCandidates.all(meeting_id: meeting_id, live_recaps: budget_run_id.nil? && CouncilHistory::Execution.meeting_id.nil?)
     candidates.select! { |candidate| candidate.fetch(:review).id == review_id } if review_id
     budget = CouncilAiBudgetRun.find_by(id: budget_run_id)
     candidates.group_by { |candidate| candidate.fetch(:review) }.each do |review, records|

@@ -9,6 +9,19 @@
   <p class="member-attendance-coverage">
     Term began <%= period.started_on.strftime("%b %-d, %Y") %><%= " · Ended #{period.ended_on.strftime('%b %-d, %Y')}" if period.ended_on %>
   </p>
+  <% if @council_coverage %>
+    <details class="member-attendance-meetings">
+      <summary>Coverage through <%= Date.iso8601(@council_coverage.fetch("through")).to_fs(:long) %></summary>
+      <p>The city calendar lists <%= @council_coverage.fetch("meetings") %> Council meetings during this period after cancellations and duplicates were excluded. The archive has readable minutes for <%= @council_coverage.fetch("usable") %>.</p>
+      <% if @council_coverage.fetch("gaps").any? %>
+        <ul>
+          <% @council_coverage.fetch("gaps").each do |gap| %>
+            <li><%= link_to Date.iso8601(gap.fetch("date")).to_fs(:long), gap.fetch("url") %> · <%= gap.fetch("title") %> · <%= gap.fetch("reason") %></li>
+          <% end %>
+        </ul>
+      <% end %>
+    </details>
+  <% end %>
   <% if rows.any? %>
     <p class="member-attendance-coverage">
       Available records: <%= rows.last.fetch(:meeting).starts_at.strftime("%b %-d, %Y") %> – <%= rows.first.fetch(:meeting).starts_at.strftime("%b %-d, %Y") %>

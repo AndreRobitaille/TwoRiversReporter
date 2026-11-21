@@ -28,6 +28,16 @@ module Campaigns
       estimate(stage, stage.parameters.deep_symbolize_keys)
     end
 
+    def self.for_parameters(parameters)
+      format = parameters[:response_format]
+      return { state: "unavailable" } unless [ nil, { type: "json_object" }, Topics::TriageResponse.response_format ].include?(format)
+      # Account for the complete schema in the request's input allowance.
+      messages = parameters.fetch(:messages).map(&:dup)
+      messages.last[:content] += JSON.generate(format) if format
+      estimate(nil, parameters.merge(messages: messages, response_format: { type: "json_object" })).merge(
+        request_digest: CouncilProfiles::ReserveAiSpend.request_digest(parameters))
+    end
+
     def self.for_comparison(context)
       estimate(nil, Ai::OpenAiService.campaign_action_matching_parameters(context))
     rescue Ai::OpenAiService::InputTooLargeError
