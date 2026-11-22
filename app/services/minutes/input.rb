@@ -8,6 +8,7 @@ module Minutes
     attr_reader :document, :text_version, :text, :agenda_items, :source_manifest, :source_key
 
     def initialize(meeting)
+      @meeting = meeting
       @document = meeting.meeting_documents.where(document_type: "minutes_pdf").order(created_at: :desc, id: :desc).first
       raise Unavailable unless document&.extracted_text.present?
       @text_version = document.current_text_version
@@ -17,6 +18,7 @@ module Minutes
       end
       @text = document.extracted_text.dup.freeze
       @agenda_items = meeting.agenda_items.substantive.ordered.includes(:parent).to_a
+      @reviewed_agenda = meeting.processing_state["reviewed_supplemental_agenda"]
       @source_manifest = Citations::SourceCatalog.snapshot(document).merge(
         "text_version_id" => text_version&.id,
         "provenance" => text_version ? "retained_artifact" : "legacy_text_projection"
@@ -43,8 +45,24 @@ module Minutes
     end
 
     def matches_evidence?(stage, kind)
-      stage && stage.source_key == source_key &&
-        (kind != "votes" || stage.input_manifest["agenda"] == manifest(kind)["agenda"])
+      return false unless stage && stage.source_key == source_key
+      return true if kind != "votes" || stage.input_manifest["agenda"] == manifest(kind)["agenda"]
+
+      @reviewed_agenda.present? && @reviewed_agenda == supplemental_agenda_receipt(stage)
+    end
+
+    # The source minutes and original extraction stay immutable when an operator
+    # later supplies a reviewed agenda to a previously agenda-free publication.
+    def supplemental_agenda_receipt(stage, agenda: nil)
+      return unless stage&.kind == "votes" && stage.status == "completed" && stage.source_key == source_key &&
+        stage.input_manifest["agenda"] == [] && agenda_items.any?
+
+      agenda ||= @meeting.latest_document("agenda_pdf")
+      version = agenda&.current_source_version
+      return unless version
+
+      { "votes_input_key" => stage.input_key, "agenda_version_id" => version.id,
+        "agenda_sha256" => digest(manifest("votes").fetch("agenda")) }
     end
 
     def completed_stage(kind)

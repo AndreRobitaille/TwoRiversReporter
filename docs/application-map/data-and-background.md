@@ -102,6 +102,15 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
 
 ## BG-02 — Enrich agenda/packet content, then supersede with minutes (P0)
 
+If a historical agenda becomes readable after the minutes-based roll call was
+published, an administrator can review the new agenda against its retained PDF.
+The prior vote extraction must have had an empty agenda. The receipt pins that
+extraction, the recovered agenda items and the agenda document version. Replaying
+the facts stage preserves the publication and vote IDs. An edited heading or a
+replacement PDF requires another review. The historical batch integration test
+exercises the real stage with simulated provider transport.
+
+
 - **Start / data:** archived agenda/packet with multiple substantive items;
   later minutes containing distinct closing action and official votes/attendance;
   separately scanned/empty PDF and same SHA/HTTP 304 refetch.

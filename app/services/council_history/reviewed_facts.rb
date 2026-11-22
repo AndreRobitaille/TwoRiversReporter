@@ -34,6 +34,28 @@ module CouncilHistory
       end
     end
 
+    def self.preserve_published_votes!(meeting, actor:, agenda:)
+      raise ArgumentError, "Active administrator required" unless actor&.admin? && actor.active_for_authentication?
+      raise ArgumentError, "Outside historical window" unless meeting.starts_at.to_date.between?(Batch::FIRST, Batch::LAST)
+      meeting.with_lock do
+        document = meeting.latest_document("agenda_pdf")
+        raise ArgumentError, "Reviewed agenda source changed" unless document && document == agenda &&
+          document.current_source_version&.sha256.present? && document.current_source_version.sha256 == document.sha256
+
+        input = Minutes::Input.new(meeting)
+        stage = meeting.minutes_publication&.votes_extraction
+        receipt = input.supplemental_agenda_receipt(stage, agenda: document)
+        raise ArgumentError, "Published votes require reconciliation" unless receipt
+        return if meeting.processing_state["reviewed_supplemental_agenda"] == receipt
+        raise ArgumentError, "A different agenda was already reviewed" if meeting.processing_state["reviewed_supplemental_agenda"].present?
+
+        meeting.update!(processing_state: meeting.processing_state.merge("reviewed_supplemental_agenda" => receipt))
+        AuditEvent.record!(actor: actor, action: "council_history.review_supplemental_agenda", subject: meeting,
+          label: "Preserve minutes-based votes after reviewing a recovered agenda",
+          metadata: receipt.merge("publication_id" => meeting.minutes_publication_id))
+      end
+    end
+
     def self.portable_agenda(manifest)
       Array(manifest["agenda"]).map { |_, number, title, _, parent, display| [ number, title, parent, display ] }
     end
