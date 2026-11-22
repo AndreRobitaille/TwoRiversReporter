@@ -17,7 +17,7 @@ class ResidentNavigationJourneysTest < ApplicationSystemTestCase
 
   test "the mobile Council roster starts with a closed election guide and election links open it" do
     travel_to Date.new(2027, 2, 1) do
-      council = Committee.create!(name: "City Council")
+      council = Committee.find_or_create_by!(name: "City Council")
       member = Member.create!(name: "Mark Bittner")
       CommitteeMembership.create!(committee: council, member: member, role: "member", source: "admin_manual")
       profile = member_path(member)
