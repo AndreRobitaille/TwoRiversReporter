@@ -24,14 +24,13 @@ class CommitteesController < ApplicationController
     "Two Rivers Business Association"
   ].freeze
 
-  # Short descriptions for index cards — one sentence, no links, written for scanning.
-  # Full descriptions with statute links live on show pages.
+  # Short introductions for the directory and committee pages. Full descriptions retain source links.
   CARD_DESCRIPTIONS = {
     "City Council" => "The legislative body of Two Rivers. Sets tax levies, approves budgets, and makes final decisions on zoning, development, and city policy.",
     "Public Works Committee" => "Roads, drainage, sanitation, and city infrastructure.",
     "Personnel and Finance Committee" => "City personnel policies, budgets, and salaries.",
     "Public Utilities Committee" => "Water, sewer, and electrical services.",
-    "Plan Commission" => "Reviews zoning changes and development proposals before they reach Council.",
+    "Plan Commission" => "Reviews zoning and development proposals and makes recommendations to the City Council.",
     "Environmental Advisory Board" => "Advises on environmental policy, conservation, and sustainability.",
     "Committee on Aging" => "Advocates for the needs and well-being of older residents.",
     "Advisory Recreation Board" => "Recommends improvements for city parks and recreational programs.",
@@ -85,9 +84,7 @@ class CommitteesController < ApplicationController
   def show
     @committee = Committee.find_by!(slug: params[:slug])
     @election = ResidentContent::CouncilElection.current if @committee.name == "City Council"
-    if @election && !gated_for_visitor?
-      @election_records = (@election.candidates.keys | @election.terms_ending.keys).index_with { |name| @election.record_for(name) }
-    end
+    @election_member_ids = @election.member_ids_by_name if @election && !gated_for_visitor?
 
     @memberships = @committee.committee_memberships
       .where(ended_on: nil)

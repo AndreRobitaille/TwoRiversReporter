@@ -45,8 +45,11 @@ work starts; this is not a new planning document or routine approval step.
 
 Apply diminishing returns to the whole project: development time, architecture,
 testing, edge cases, presentation and data completeness, as well as API costs.
-Use [AUDIENCE.md](docs/AUDIENCE.md) to judge the result. A useful, sourced account
-of important promises, meaningful work and issue outcomes is sufficient; it need
+Read [AUDIENCE.md](docs/AUDIENCE.md) when planning, building, or reviewing resident-facing features.
+For election-specific features, also follow [Developing election-time features](docs/ELECTION_FEATURES.md).
+
+A useful, sourced account of important promises, meaningful work and issue
+outcomes is sufficient; it need
 not reconstruct everything an official has ever done. Once residents can answer
 those questions without being materially misled, stop expanding the feature.
 Fix demonstrated problems and disclose material gaps; minor omissions and

@@ -43,6 +43,7 @@ class CommitteesControllerTest < ActionDispatch::IntegrationTest
     CommitteeMembership.create!(
       committee: @plan_commission,
       member: @plan_member,
+      role: "member",
       source: "admin_manual"
     )
   end
@@ -108,6 +109,23 @@ class CommitteesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".committee-article-title", text: /City Council/
   end
 
+  test "a commission introduces its role above the roster and keeps its full description available" do
+    @plan_commission.update!(description: "See the [zoning ordinance](https://example.com/zoning).")
+
+    travel_to Date.new(2027, 1, 5) do
+      get committee_url(@plan_commission.slug)
+
+      assert_select ".committee-article-header p", text: /recommendations to the City Council/
+      assert_select "details.committee-description:not([open])" do
+        assert_select "summary", text: "What this group does"
+        assert_select "a[href=?]", "https://example.com/zoning", text: "zoning ordinance"
+      end
+      assert_select "#current-members a[href=?]", member_path(@plan_member), text: /Bob Jones/
+      assert_select "#recent-work h2", "Recent topics"
+      assert_select "aside, #spring-election", count: 0
+    end
+  end
+
   test "show displays current members sorted by role" do
     vice_chair = Member.create!(name: "Alice Vice")
     CommitteeMembership.create!(
@@ -130,7 +148,6 @@ class CommitteesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "show gives a current city office precedence over a generic member role" do
-    @plan_member.committee_memberships.find_by!(committee: @plan_commission).update!(role: "member")
     MemberPosition.create!(
       member: @plan_member,
       kind: "city_council",

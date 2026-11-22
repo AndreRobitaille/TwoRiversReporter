@@ -3,6 +3,8 @@ require "minitest/mock"
 
 class Scrapers::DiscoverTranscriptsJobTest < ActiveJob::TestCase
   setup do
+    # Keep both sessions inside the 48-hour lookback on separate local dates.
+    travel_to Time.zone.local(2026, 4, 8, 18)
     @council_meeting = Meeting.create!(
       body_name: "City Council Meeting",
       detail_page_url: "http://example.com/council-apr-6",
@@ -32,8 +34,8 @@ class Scrapers::DiscoverTranscriptsJobTest < ActiveJob::TestCase
   end
 
   test "parses standard council meeting title and enqueues download" do
-    date_str = @council_meeting.starts_at.strftime("%B %-d, %Y")
-    yt_output = "abc123 | City Council Meeting for Thursday, #{date_str}\n"
+    date_str = @council_meeting.starts_at.strftime("%A, %B %-d, %Y")
+    yt_output = "abc123 | City Council Meeting for #{date_str}\n"
     capture_args = nil
 
     Open3.stub :capture3, ->(*args) { capture_args = args; [ yt_output, "", stub_status(true) ] } do
@@ -48,8 +50,8 @@ class Scrapers::DiscoverTranscriptsJobTest < ActiveJob::TestCase
   end
 
   test "parses work session title and enqueues download" do
-    date_str = @work_session.starts_at.strftime("%B %-d, %Y")
-    yt_output = "def456 | City Council Work Session for Monday, #{date_str}\n"
+    date_str = @work_session.starts_at.strftime("%A, %B %-d, %Y")
+    yt_output = "def456 | City Council Work Session for #{date_str}\n"
 
     Open3.stub :capture3, [ yt_output, "", stub_status(true) ] do
       assert_enqueued_with(job: Documents::DownloadTranscriptJob, args: [ @work_session.id, "https://www.youtube.com/watch?v=def456" ]) do
@@ -75,8 +77,8 @@ class Scrapers::DiscoverTranscriptsJobTest < ActiveJob::TestCase
       source_url: "https://www.youtube.com/watch?v=existing"
     )
 
-    date_str = @council_meeting.starts_at.strftime("%B %-d, %Y")
-    yt_output = "abc123 | City Council Meeting for Thursday, #{date_str}\n"
+    date_str = @council_meeting.starts_at.strftime("%A, %B %-d, %Y")
+    yt_output = "abc123 | City Council Meeting for #{date_str}\n"
 
     Open3.stub :capture3, [ yt_output, "", stub_status(true) ] do
       assert_no_enqueued_jobs only: Documents::DownloadTranscriptJob do
