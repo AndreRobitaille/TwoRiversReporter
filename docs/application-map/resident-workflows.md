@@ -340,6 +340,8 @@ the same snapshot. Those future results assume the stored activity stays fixed.
 
 ## RES-10 — Inspect an official's attendance and voting record (P1)
 
+- **Find a committee from a member’s profile (RES-09/10/11, November 22, 2026).** The profile header links to the committee directory. Direct arrivals see City Council for a council member, the named body for a single current membership, or a link to the list for multiple memberships. A non-Council roster link carries its committee slug. The profile checks it against the member’s current memberships before showing the return link. With no current body, the most recent recorded former committee is explicitly labeled if available. Staff assignments do not establish membership. The canonical URL for the person stays the same. Development browser journeys checked direct arrivals, a Public Works round trip, a multi-committee profile and a meeting decision at 320, 390 and 1280 pixels. The [controller tests](../../test/controllers/members_controller_test.rb) cover the destination rules. Dropping the originating committee in an isolated test failed the roster-return assertion.
+
 - **Election profiles (RES-09/10/11, November 22, 2026).** The guide opens a
   saved overview with the spring term end, official contact and election dates.
   The first screen leads with the saved story. Its sentence-level sources open

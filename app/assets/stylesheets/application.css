@@ -5654,6 +5654,31 @@ th.sortable-header:hover {
   margin-bottom: var(--space-4);
 }
 
+.member-committee-nav {
+  display: grid;
+  grid-template-columns: max-content auto minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: var(--space-2);
+  margin-bottom: var(--space-2);
+  font-size: var(--font-size-sm);
+}
+.member-committee-nav > span, .member-former-label { color: var(--color-text-secondary); }
+.member-committee-nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--space-4);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.member-committee-nav a, .member-article .profile-return {
+  display: inline-block;
+  padding-block: var(--space-1);
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
 .member-article-title {
   font-family: var(--font-display);
   font-weight: 900;

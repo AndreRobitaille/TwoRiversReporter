@@ -92,20 +92,32 @@ class MembersController < ApplicationController
     respond_to { |format| format.html }
     @member = Member.find(params[:id])
 
-    @memberships = @member.committee_memberships
-      .where(ended_on: nil)
-      .where("role IS NULL OR role NOT IN (?)", %w[staff non_voting])
-      .includes(:committee)
-      .sort_by { |cm| [ cm.committee.name == "City Council" ? 0 : 1, cm.committee.name ] }
+    memberships = @member.committee_memberships.where("role IS NULL OR role NOT IN (?)", %w[staff non_voting]).includes(:committee)
+    @memberships = memberships.current.sort_by { |cm| [ cm.committee.name == "City Council" ? 0 : 1, cm.committee.name ] }
     @current_position = @member.primary_current_position
     @record_period = ResidentContent::CouncilPeriod.new(@member, key: params[:term])
     @service_periods = @record_period.periods
     @record_params = @service_periods.any? || params[:term].present? ? { term: @record_period.key } : {}
 
-    return if gated_for_visitor?
+    load_election unless gated_for_visitor?
+    load_committee_navigation(memberships)
+  end
 
-    load_election
-    @has_election_profile = @election&.terms_ending&.key?(@election_name)
+  def load_committee_navigation(memberships)
+    committees = @memberships.map(&:committee)
+    roster = committees.find { |committee| committee.slug == params[:committee] }
+    council = committees.find { |committee| committee.name == "City Council" }
+    council ||= council_committee if @current_position&.kind == "city_council" || @has_election_profile
+    @profile_committees = [ roster, council ].compact.uniq
+    @profile_committees = committees if committees.one? && @profile_committees.empty?
+    if committees.empty? && @profile_committees.empty?
+      @former_committee = memberships.where.not(ended_on: nil).order(ended_on: :desc, id: :desc).first&.committee
+    end
+  end
+
+  def council_committee
+    @council_committee ||= @memberships.find { |membership| membership.committee.name == "City Council" }&.committee ||
+      Committee.find_by(name: "City Council")
   end
 
   def load_election
@@ -116,7 +128,8 @@ class MembersController < ApplicationController
 
     @election = edition
     @election_name = name
-    @election_council_slug = Committee.where(name: "City Council").pick(:slug)
+    @has_election_profile = edition.terms_ending.key?(name)
+    @election_council_slug = council_committee&.slug
   end
 
   def campaign_statements

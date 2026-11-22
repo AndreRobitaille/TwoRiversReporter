@@ -31,6 +31,48 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", committee_path(@public_works.slug), text: /Public Works/
   end
 
+  test "a direct council profile and a committee roster visit offer the relevant parent links" do
+    nav = ".member-article-header nav[aria-label='Committee navigation']"
+    get member_path(@member)
+    assert_equal [ committees_path, committee_path(@council.slug) ], css_select("#{nav} a").map { |a| a["href"] }
+
+    get member_path(@member, committee: @public_works.slug)
+    assert_equal [ committees_path, committee_path(@public_works.slug), committee_path(@council.slug) ], css_select("#{nav} a").map { |a| a["href"] }
+
+    get member_path(@member, committee: "unrelated-roster")
+    assert_equal [ committees_path, committee_path(@council.slug) ], css_select("#{nav} a").map { |a| a["href"] }
+  end
+
+  test "profile navigation distinguishes current and former committees and excludes staff assignments" do
+    nav = ".member-article-header nav[aria-label='Committee navigation']"
+    member = Member.create!(name: "Committee Reader")
+    @council.committee_memberships.create!(member: member, role: "staff", source: "admin_manual")
+    get member_path(member)
+    assert_equal [ committees_path ], css_select("#{nav} a").map { |a| a["href"] }
+
+    former = Committee.create!(name: "Former Board", committee_type: "city")
+    former.committee_memberships.create!(member: member, role: "member", source: "admin_manual", ended_on: 1.year.ago)
+    get member_path(member)
+    assert_select "#{nav} .member-former-label", "Former committee"
+    assert_select "#{nav} a[href=?]", committee_path(former.slug), "Former Board"
+    assert_select ".member-committees a", count: 0
+
+    @public_works.committee_memberships.create!(member: member, role: "member", source: "admin_manual")
+    get member_path(member, committee: former.slug)
+    assert_select "#{nav} .member-former-label", count: 0
+    assert_select "#{nav} a[href=?]", committee_path(former.slug), count: 0
+    assert_select "#{nav} a[href=?]", committee_path(@public_works.slug), "Public Works Committee"
+
+    board = Committee.create!(name: "Plan Commission", committee_type: "city")
+    board.committee_memberships.create!(member: member, role: "member", source: "admin_manual")
+    get member_path(member)
+    assert_select "#{nav} a[href=?]", member_path(member, anchor: "current-committees"), "2 current committees"
+    assert_select "#current-committees", "Current committees"
+    assert_select ".member-committees a[href=?]", committee_path(board.slug)
+    get member_path(member, committee: board.slug)
+    assert_equal [ committees_path, committee_path(board.slug) ], css_select("#{nav} a").map { |a| a["href"] }
+  end
+
   test "show identifies the current city manager even on member-role committees" do
     MemberPosition.create!(
       member: @member,

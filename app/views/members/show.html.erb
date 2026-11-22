@@ -34,6 +34,7 @@
         </div>
 
         <div class="member-committees">
+          <% if @memberships.empty? %><p class="section-empty">No current committee membership on record.</p><% end %>
           <% @memberships.each do |cm| %>
             <%= link_to committee_path(cm.committee.slug), class: "member-committee #{"member-committee--council" if cm.committee.name == "City Council"}" do %>
               <span class="member-committee-name"><%= cm.committee.name %></span>
