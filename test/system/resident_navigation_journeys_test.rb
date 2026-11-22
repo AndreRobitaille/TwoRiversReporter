@@ -15,6 +15,39 @@ class ResidentNavigationJourneysTest < ApplicationSystemTestCase
     assert_resident_navigation
   end
 
+  test "the mobile Council roster starts with a closed election guide and election links open it" do
+    travel_to Date.new(2027, 2, 1) do
+      council = Committee.find_or_create_by!(name: "City Council")
+      member = Member.create!(name: "Mark Bittner")
+      CommitteeMembership.create!(committee: council, member: member, role: "member", source: "admin_manual")
+      profile = member_path(member)
+
+      page.driver.browser.manage.window.resize_to(390, 844)
+      visit committee_path(council.slug)
+      assert_selector "#current-members a[href='#{profile}']"
+      assert_selector "#spring-election details:not([open]) > summary", text: "Spring 2027 Council election"
+      assert_operator find("#spring-election").native.rect.y, :<, find("#current-members").native.rect.y
+      assert_no_selector "#spring-election .election-timeline"
+      find("#spring-election summary").send_keys(:enter)
+      assert_selector "#spring-election a[href='#{profile}']", text: member.name
+      find("#spring-election summary").click
+      assert_no_selector "#spring-election .election-timeline"
+
+      visit root_path
+      click_link "Spring 2027 City Council election"
+      assert_selector "#spring-election a[href='#{profile}']"
+      find("#spring-election a[href='#{profile}']").click
+      click_link "See the spring election"
+      assert_selector "#spring-election a[href='#{profile}']"
+
+      page.driver.browser.manage.window.resize_to(1280, 900)
+      visit committee_path(council.slug)
+      assert_selector "#spring-election h2", text: "Spring 2027 Council election"
+      assert_selector "#spring-election a[href='#{profile}']"
+      assert_no_selector "#spring-election summary"
+    end
+  end
+
   test "anonymous resident follows homepage topic and meeting links in gated mode" do
     SiteSetting.create!(access_mode: "gated", singleton_guard: 0)
     assert_resident_navigation

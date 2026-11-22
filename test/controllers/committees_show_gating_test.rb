@@ -15,7 +15,7 @@ class CommitteesShowGatingTest < ActionDispatch::IntegrationTest
     item.agenda_item_topics.create!(topic: topic)
   end
 
-  test "anonymous visitor sees both headings but no member or activity content, then the gate" do
+  test "anonymous visitor sees the recent topics heading and one gate" do
     set_access_mode("gated")
 
     get committee_path(@committee.slug)
@@ -23,13 +23,12 @@ class CommitteesShowGatingTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_no_match(/Current Members/, response.body)
     assert_select ".gated-content", count: 0
-    assert_match(/What They&#39;ve Been Working On|What They've Been Working On/, response.body)
+    assert_select "#recent-work h2", "Recent topics"
     assert_no_match(/#{Regexp.escape(MEMBER_NAME)}/i, response.body)
     assert_no_match(/#{Regexp.escape(WITHHELD)}/i, response.body)
     assert_select ".gate-card"
     assert_match(/Sign in to keep reading/, response.body)
 
-    # The gate renders once, after both empty headings — not one per section.
     assert_select ".gate-card", count: 1
   end
 
