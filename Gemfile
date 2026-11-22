@@ -81,7 +81,7 @@ gem "mechanize", "~> 2.14"
 
 gem "ruby-openai", "~> 8.3"
 
-gem "kramdown", "~> 2.5"
+gem "kramdown", "~> 2.6"
 gem "redcarpet", "~> 3.6"
 gem "diffy", "~> 3.4"
 

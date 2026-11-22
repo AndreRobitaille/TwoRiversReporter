@@ -1,10 +1,28 @@
-# A term source establishes whose seat is up. Add each confirmed candidate,
-# including challengers, to candidates with a separate candidacy source URL.
 opens_on: "2026-11-21"
-election_on: "2027-04-06"
-checked_on: "2026-11-21"
-terms_ending:
-  Mark Bittner: https://www.two-rivers.org/citycouncil/page/mark-bittner
-  Doug Brandt: https://www.two-rivers.org/citycouncil/page/doug-brandt
-  Shannon Derby: https://www.two-rivers.org/citycouncil/page/shannon-derby
-candidates: {}
+# The Clerk's regular filing schedule and spring election calendar:
+# https://www.two-rivers.org/clerk/page/ballot-access-procedure-and-documents-required
+# https://www.two-rivers.org/clerk/page/election-information
+# List elections in date order. Each edition ends seven days after Election Day.
+# Term sources identify seat holders. A confirmed campaign needs its own source.
+elections:
+  - election_on: "2027-04-06"
+    signatures_open_on: "2026-12-01"
+    filing_deadline: "2027-01-05"
+    terms_ending:
+      Mark Bittner: https://www.two-rivers.org/citycouncil/page/mark-bittner
+      Doug Brandt: https://www.two-rivers.org/citycouncil/page/doug-brandt
+      Shannon Derby: https://www.two-rivers.org/citycouncil/page/shannon-derby
+  - election_on: "2028-04-04"
+    signatures_open_on: "2027-12-01"
+    filing_deadline: "2028-01-04"
+    terms_ending:
+      Bill LeClair: https://www.two-rivers.org/citycouncil/page/bill-leclair
+      Tim Petri: https://www.two-rivers.org/citycouncil/page/tim-petri
+      Scott Stechmesser: https://www.two-rivers.org/citycouncil/page/scott-stechmesser
+  - election_on: "2029-04-03"
+    signatures_open_on: "2028-12-01"
+    filing_deadline: "2029-01-02"
+    terms_ending:
+      Katherine Dahlke: https://www.two-rivers.org/citycouncil/page/katherine-dahlke
+      Darla LeClair: https://www.two-rivers.org/citycouncil/page/darla-leclair
+      Adam Wachowski: https://www.two-rivers.org/citycouncil/page/adam-wachowski

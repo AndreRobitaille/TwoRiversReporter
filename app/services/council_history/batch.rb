@@ -66,10 +66,13 @@ module CouncilHistory
       end
     end
 
+    def self.later_repairable?(meeting)
+      meeting.starts_at && meeting.starts_at.to_date > LAST && meeting.starts_at <= Time.current && !meeting.cancelled?
+    end
+
     # Repair explicitly selected later meetings using their existing documents.
     def repair_saved(meeting, stages:)
-      raise ArgumentError, "Expected a later held meeting" unless meeting.starts_at && meeting.starts_at.to_date > LAST &&
-        meeting.starts_at <= Time.current && !meeting.cancelled?
+      raise ArgumentError, "Expected a later held meeting" unless self.class.later_repairable?(meeting)
       raise ArgumentError, "Select the missing stages" unless stages.any? && (stages - STAGES).empty?
       raise ArgumentError, "No readable saved minutes" unless meeting.latest_document("minutes_pdf")&.extracted_text.present?
       Execution.set(meeting_id: meeting.id, pilot: false) { run_stages(meeting, stages) }

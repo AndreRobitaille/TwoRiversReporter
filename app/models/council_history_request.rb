@@ -1,7 +1,7 @@
 # One shared historical allowance across calendar boundaries. In-flight and
 # unknown requests retain their entire reservation.
 class CouncilHistoryRequest < ApplicationRecord
-  TOTAL_LIMIT = 75_000_000
+  TOTAL_LIMIT = 76_000_000
   PILOT_LIMIT = 5_000_000
 
   def self.reserve!(meeting_id:, stage:, pilot:, parameters:)

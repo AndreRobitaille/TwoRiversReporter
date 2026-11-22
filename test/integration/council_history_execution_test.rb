@@ -14,6 +14,19 @@ class CouncilHistoryExecutionTest < ActionDispatch::IntegrationTest
 
   teardown { CouncilHistoryRequest.where(meeting_id: @meeting_id).delete_all }
 
+  test "the final historical supplement admits the last reservation up to the approved total" do
+    reserve = ->(stage) { CouncilHistoryRequest.reserve!(meeting_id: @meeting_id, stage: stage, pilot: false, parameters: @parameters).first }
+    prior = reserve.call("earlier_history")
+    prior.update!(charged_microusd: 76_000_000 - prior.reserved_microusd, finished_at: Time.current)
+
+    assert_no_difference("CouncilAiReservation.count") do
+      admitted = reserve.call("promise_comparisons")
+      assert_equal 76_000_000, prior.charged_microusd + admitted.reload.charged_microusd
+      error = assert_raises(CouncilProfiles::ReserveAiSpend::Paused) { reserve.call("topic_summaries") }
+      assert_equal "historical_total_limit", error.message
+    end
+  end
+
   test "historical comparison links its response to the committed pilot reservation and replays for free" do
     meeting = Meeting.create!(starts_at: Time.zone.local(2024, 10, 28, 18), body_name: "Synthetic Council",
       detail_page_url: "https://example.test/historical-comparison-receipt")
