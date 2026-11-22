@@ -1,4 +1,20 @@
 <header class="member-article-header">
+  <nav class="member-committee-nav" aria-label="Committee navigation">
+    <%= link_to "All committees", committees_path %>
+    <% if @profile_committees.any? || @memberships.many? || @former_committee %>
+      <span aria-hidden="true">›</span>
+      <ul>
+        <% if @former_committee %>
+          <li><span class="member-former-label">Former committee</span> <%= link_to @former_committee.name, committee_path(@former_committee.slug) %></li>
+        <% elsif @profile_committees.empty? %>
+          <li><%= link_to pluralize(@memberships.size, "current committee"), member_path(@member, anchor: "current-committees") %></li>
+        <% end %>
+        <% @profile_committees.each do |committee| %>
+          <li><%= link_to committee.name, committee_path(committee.slug) %></li>
+        <% end %>
+      </ul>
+    <% end %>
+  </nav>
   <h1 class="member-article-title"><%= @member.name %></h1>
   <% if @has_election_profile %>
     <p class="member-profile-office"><%= "Current: " if @record_period.selected&.ended_on %><%= @current_position&.title || "City Council Member" %></p>

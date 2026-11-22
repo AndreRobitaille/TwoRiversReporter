@@ -8,7 +8,7 @@
   <% if @memberships.any? %>
     <div class="committee-roster">
       <% sort_memberships(@memberships, @council_member_ids).each do |cm| %>
-        <%= link_to member_path(cm.member), class: "committee-member" do %>
+        <%= link_to member_path(cm.member, committee: (@committee.slug unless council)), class: "committee-member" do %>
           <span class="committee-member-name"><%= cm.member.name %></span>
           <span class="committee-member-badges">
             <% membership_badges(cm, council_member_ids: @council_member_ids).each do |badge| %>

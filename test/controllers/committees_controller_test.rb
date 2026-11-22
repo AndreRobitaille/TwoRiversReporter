@@ -120,7 +120,7 @@ class CommitteesControllerTest < ActionDispatch::IntegrationTest
         assert_select "summary", text: "What this group does"
         assert_select "a[href=?]", "https://example.com/zoning", text: "zoning ordinance"
       end
-      assert_select "#current-members a[href=?]", member_path(@plan_member), text: /Bob Jones/
+      assert_select "#current-members a[href=?]", member_path(@plan_member, committee: @plan_commission.slug), text: /Bob Jones/
       assert_select "#recent-work h2", "Recent topics"
       assert_select "aside, #spring-election", count: 0
     end
