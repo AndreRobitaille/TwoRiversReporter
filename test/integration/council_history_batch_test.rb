@@ -37,6 +37,40 @@ class CouncilHistoryBatchTest < ActiveJob::TestCase
     assert_equal 2, CouncilHistoryRequest.where(meeting_id: @meeting.id).count
   end
 
+  test "reviewing a supplemental agenda preserves published vote identities and prevents repeat paid calls" do
+    listing = { "title" => @meeting.body_name, "starts_at" => @meeting.starts_at.iso8601, "url" => @meeting.detail_page_url,
+      "documents" => { "minutes_pdf" => @document.source_url } }
+    batch = CouncilHistory::Batch.new([ listing ])
+    with_transport { batch.call(stages: [ "facts" ]) }
+    publication = @meeting.reload.minutes_publication
+    motion = @meeting.motions.sole
+    original_votes = motion.votes.order(:id).pluck(:id, :member_id, :value, :evidence_basis)
+    agenda = @meeting.meeting_documents.create!(document_type: "agenda_pdf", source_url: "https://example.test/recovered-agenda.pdf")
+    URI.stub(:open, ->(*) { StringIO.new("original agenda PDF") }) { Documents::DownloadJob.perform_now(agenda.id) }
+    item = @meeting.agenda_items.create!(number: "7.", title: "Harbor repair bid", kind: "item", order_index: 1)
+    refute Minutes::Publish.current?(@meeting.reload)
+    assert Minutes::Pipeline.needed?(@meeting, "votes")
+    actor = User.create!(email_address: "review-agenda@example.test", admin: true, status: "active")
+    2.times do
+      CouncilHistory::ReviewedFacts.preserve_published_votes!(@meeting, actor: actor, agenda: agenda)
+      assert Minutes::Publish.current?(@meeting.reload), "Review must preserve the accepted publication"
+      with_transport { batch.call(stages: [ "facts" ]) }
+    end
+    assert Minutes::Publish.current?(@meeting.reload)
+    assert_equal publication.id, @meeting.minutes_publication_id
+    assert_equal original_votes, motion.reload.votes.order(:id).pluck(:id, :member_id, :value, :evidence_basis)
+    assert_equal 2, @calls.size
+    assert_equal 1, AuditEvent.where(action: "council_history.review_supplemental_agenda", subject: @meeting).count
+    item.update!(title: "Different harbor bid")
+    refute Minutes::Publish.current?(@meeting.reload)
+    item.update!(title: "Harbor repair bid")
+    URI.stub(:open, ->(*) { StringIO.new("publisher corrected this agenda") }) { Documents::DownloadJob.perform_now(agenda.id) }
+    refute Minutes::Publish.current?(@meeting.reload)
+  ensure
+    AuditEvent.where(actor_id: actor.id).delete_all if actor
+    User.where(id: actor&.id).delete_all
+  end
+
   test "a partial legacy meeting fills the missing attendance and preserves each accepted vote on replay" do
     @meeting.update!(starts_at: Time.zone.local(2025, 7, 8, 18))
     member = Member.find_or_create_by!(name: "Alex Budget")
