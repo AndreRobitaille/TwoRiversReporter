@@ -71,6 +71,39 @@ class CouncilHistoryBatchTest < ActiveJob::TestCase
     User.where(id: actor&.id).delete_all
   end
 
+  test "an explicit later agenda repair preserves the existing publication and rejects unheld meetings" do
+    @meeting.update!(starts_at: Time.zone.local(2025, 7, 21, 18))
+    batch = CouncilHistory::Batch.new([])
+    with_transport { batch.repair_saved(@meeting, stages: [ "facts" ]) }
+    publication_id = @meeting.reload.minutes_publication_id
+    vote_ids = @meeting.motions.sole.votes.order(:id).ids
+    attendance_ids = @meeting.meeting_attendances.order(:id).ids
+    agenda = @meeting.meeting_documents.create!(document_type: "agenda_pdf", source_url: "https://example.test/later-agenda.pdf")
+    URI.stub(:open, ->(*) { StringIO.new("later agenda PDF") }) { Documents::DownloadJob.perform_now(agenda.id) }
+    @meeting.agenda_items.create!(number: "7.", title: "Harbor repair bid", kind: "item", order_index: 1)
+    actor = User.create!(email_address: "later-agenda@example.test", admin: true, status: "active")
+    review = -> { CouncilHistory::ReviewedFacts.preserve_published_votes!(@meeting, actor: actor, agenda: agenda, later_repair: true) }
+    refute Minutes::Publish.current?(@meeting.reload)
+    2.times do
+      review.call
+      assert Minutes::Publish.current?(@meeting.reload)
+      with_transport { batch.repair_saved(@meeting, stages: [ "facts" ]) }
+    end
+    assert_equal publication_id, @meeting.reload.minutes_publication_id
+    assert_equal vote_ids, @meeting.motions.sole.votes.order(:id).ids
+    assert_equal attendance_ids, @meeting.meeting_attendances.order(:id).ids
+    assert_equal 2, @calls.size
+    assert_equal 1, AuditEvent.where(action: "council_history.review_supplemental_agenda", subject: @meeting).count
+    assert_raises(ArgumentError) { CouncilHistory::ReviewedFacts.preserve_published_votes!(@meeting, actor: actor, agenda: agenda) }
+    @meeting.update!(status: "cancelled")
+    assert_raises(ArgumentError, &review)
+    @meeting.update!(status: "scheduled", starts_at: 1.hour.from_now)
+    assert_raises(ArgumentError, &review)
+  ensure
+    AuditEvent.where(actor_id: actor.id).delete_all if actor
+    User.where(id: actor&.id).delete_all
+  end
+
   test "a partial legacy meeting fills the missing attendance and preserves each accepted vote on replay" do
     @meeting.update!(starts_at: Time.zone.local(2025, 7, 8, 18))
     member = Member.find_or_create_by!(name: "Alex Budget")
