@@ -109,6 +109,8 @@ extraction, the recovered agenda items and the agenda document version. Replayin
 the facts stage preserves the publication and vote IDs. An edited heading or a
 replacement PDF requires another review. An operator repairing a specific later
 meeting can request the same review for a held meeting in the existing archive.
+The one-time historical ceiling includes the approved $1 completion supplement.
+The spending integration test exercises admission at the revised $76 total.
 The historical batch integration tests exercise both paths with simulated provider
 transport, including replay and the refusal of canceled or future later meetings.
 

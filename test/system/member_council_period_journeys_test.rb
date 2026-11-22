@@ -16,7 +16,7 @@ class MemberCouncilPeriodJourneysTest < ApplicationSystemTestCase
     assert_no_text "Current road project"
     click_link "All recorded votes"
     assert_selector ".member-recorded-motion", count: 25
-    assert_select_value "2021-election"
+    assert_field "Council record", with: "2021-election"
     within(".member-vote-pages") { click_link "2", exact: true }
     assert_selector ".member-recorded-motion", count: 1, text: "Earlier road project 0"
     click_link "Meeting and sources"
@@ -24,18 +24,12 @@ class MemberCouncilPeriodJourneysTest < ApplicationSystemTestCase
     page.go_back
     assert_selector ".member-recorded-motion", text: "Earlier road project 0"
     click_link "Featured votes"
-    assert_select_value "2021-election"
+    assert_field "Council record", with: "2021-election"
     assert_selector ".member-vote-motion", text: "Earlier road project 25"
     select "All available records", from: "Council record"
     click_button "Show record"
-    assert_select_value "all"
+    assert_field "Council record", with: "all"
     assert_selector ".member-vote-motion", text: "Current road project 25"
     assert_operator page.evaluate_script("document.documentElement.scrollWidth"), :<=, 390
-  end
-
-  private
-
-  def assert_select_value(value)
-    assert_equal value, find("select[name=term]").value
   end
 end
