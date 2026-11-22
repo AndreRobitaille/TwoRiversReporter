@@ -24,11 +24,12 @@
     <p class="member-term-copy score-lead"><%= score.lead %>
       <% if pace.days_left&.positive? %><%= pluralize(pace.days_left, "day") %> left.<% end %>
     </p>
-    <% if groups["contrary"] %>
-      <ul class="score-deductions">
-        <% groups.fetch("contrary").each do |item, index| %>
-          <li><%= link_to "#promise-#{index + 1}", data: { turbo: false } do %>
-            <strong>−1</strong><span>Reversal · <%= item["profile_subject"] || item["heading"].presence || item.fetch("label") %></span>
+    <% deductions = promise_deductions(groups) %>
+    <% if deductions.any? %>
+      <ul class="score-deductions" aria-label="Point deductions">
+        <% deductions.each do |points, caption, target| %>
+          <li><%= link_to target, data: { turbo: false } do %>
+            <strong><%= CouncilProfiles::PromiseFollowThrough.format_points(points) %></strong><span><%= caption %></span>
           <% end %></li>
         <% end %>
       </ul>
@@ -95,12 +96,12 @@
     <% CouncilProfiles::PromiseFollowThrough::LABELS.each do |status, label| %>
       <% group = groups[status] %>
       <% next unless group %>
-      <% points = { "met" => "1 point", "contrary" => "−1 point" }.fetch(status, "0 points") %>
-      <section class="promise-group" data-status="<%= status %>">
+      <% points = CouncilProfiles::PromiseFollowThrough.point_label(status) %>
+      <section class="promise-group" id="promise-group-<%= status %>" data-status="<%= status %>">
         <h4 class="outcome-heading">
           <span class="outcome-count"><%= group.size %></span>
           <span class="outcome-label"><%= %w[met missed].include?(status) ? label.pluralize(group.size) : label %></span>
-          <span class="outcome-points"><%= points %><%= " each" if group.many? && %w[met contrary].include?(status) %></span>
+          <span class="outcome-points"><%= points %><%= " each" if group.many? %></span>
         </h4>
         <ul class="member-promise-list">
           <% group.each do |item, index| %>
@@ -152,12 +153,13 @@
       <dl>
         <dt>One point</dt><dd>The member delivered or materially advanced what they proposed. A vote on the same issue earns credit only if it advanced that goal. Bringing a measure to a vote can fulfill a promise to introduce it.</dd>
         <dt>Minus one point</dt><dd>The member took a documented action against that campaign position. Each position can lose one point.</dd>
-        <dt>Zero points</dt><dd>A promise with no documented result counts as unfulfilled and earns zero. All such promises count in the score. An unsuccessful effort also earns zero toward a promised outcome. A missed opportunity means the records show a specific chance to act.</dd>
+        <dt>Minus half a point</dt><dd>The member missed a recorded chance to act, the original effort fell short, or the public record shows no follow-through on the promise.</dd>
+        <dt>Zero points</dt><dd>The member took a documented step and the outcome is still open, or made an effort that was outvoted.</dd>
         <% if pace.rating %>
           <dt>Term pace</dt><dd>We compare the net score with the share of the term elapsed. Green meets an even pace, amber trails by up to 10 percentage points, and red trails by more. At term end, any outstanding promise leaves the record short. Individual projects can have different deadlines.</dd>
         <% end %>
       </dl>
-      <p>The score is results minus reversals, divided by all tracked positions. It can fall below zero. Alternatives offered together count as one position. Findings reviewed <%= report.generated_at.to_date.to_fs(:long) %>.<% if pace.rating %> Term runs <%= report.term_started_on.to_fs(:long) %> – <%= pace.ends_on.to_fs(:long) %>.<% end %></p>
+      <p>We divide total points after deductions by all tracked positions. Each position counts once. The score can fall below zero. Findings reviewed <%= report.generated_at.to_date.to_fs(:long) %>.<% if pace.rating %> Term runs <%= report.term_started_on.to_fs(:long) %> – <%= pace.ends_on.to_fs(:long) %>.<% end %></p>
     </details>
     <%= link_to "Full campaign record", campaign_member_path(@member, anchor: "campaign-record"), class: "profile-campaign-link" %>
   </section>

@@ -265,6 +265,34 @@ council_sources:
     label: "Development Committee minutes, Aug. 11, 2026"
     url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-573aa7d4aba946e0ad576f6522ba1305.pdf
     passages: ["approximately $120,000", "affordable housing activities"]
+  goals_vote:
+    label: "Council vote on 2024 goals, Apr. 22, item 7"
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-0ea377910b664444bb5e3a37bada7de8.pdf#page=2
+    passages: ["adopt the revised 2024 list", "seconded by Bittner", "Voting Yea: Bittner, Brandt, Derby"]
+  goals_west:
+    label: "West River Lofts grant instruction, Apr. 22, 2024, p. 15"
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Packet-0ea377910b664444bb5e3a37bada7de8.pdf#page=15
+    passages: ["West River Lofts", "supplemental funding through a WEDC Idle Sites"]
+  confluence_vote:
+    label: "East Twin agreement vote, June 3, 2024, item 11E"
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-813dd6cd6b1746a48c84ae65ac91ec43.pdf#page=6
+    passages: ["Multi-Family Development by The Confluence", "Motion made by Wachowski, seconded by Petri"]
+  river_projects:
+    label: "City manager’s report on both river sites, July 15, 2024, p. 8"
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-746d3c9d2ce348f28f978a9ba7070fd9.pdf#page=8
+    passages: ["will not be executing the agreement", "West River Lofts on Former Eggers West Site"]
+  west_loans:
+    label: "State housing loan awards, Aug. 12, 2026"
+    url: https://www.wheda.com/developers-and-property-managers/competitive-loan-financing/2026-spring-awards
+    passages: ["West River Lofts", "$682,500.00", "$1,639,883.00"]
+  paddlers_path:
+    label: "Accessible path at Paddlers Park, Oct. 8, 2025, p. 3"
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-151c40def8104a6bb3cb580e30e73bf4.pdf#page=3
+    passages: ["Paddlers Park received initial native plantings", "ADA-accessible path"]
+  paddlers_access:
+    label: "Paddlers Park accessible launch plan, July 8, 2025, p. 10"
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-99437398f93f4c7eafc8ad654c69bf51.pdf#page=10
+    passages: ["ADA Kayaking Launch for Paddlers Park"]
   preterm_grant:
     label: "Council packet, Mar. 4, 2024"
     url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Packet-536075f907064f0ca5851febce7295fc.pdf#page=30
@@ -307,6 +335,18 @@ members:
             finding_status: pursued
             reviewed_on: "2026-11-22"
             sources: [development_board, hamilton_actions]
+      - heading: "Help the two river apartment projects clear development obstacles"
+        kind: Stated priority
+        description: "Bittner called for work on the East and West river apartment projects and help overcoming environmental obstacles. The city called the projects The Confluence and West River Lofts."
+        refs: [league.4, league.14, league.6]
+        search_terms: [West River Lofts, Eggers West, West Eggers, The Confluence, Eggers East]
+        reports:
+          - text: "Bittner seconded the goals for West River Lofts and voted to extend the East Twin deal. The eastern developer declined the agreement. The western developer gave up its original tax credits. The state later awarded $2.32 million in loans for West River Lofts. The reviewed record shows neither original deal delivered the apartments."
+            finding_status: fell_short
+            profile_subject: "West River Lofts and The Confluence"
+            profile_excerpt: "The eastern developer declined the agreement. The western developer gave up its original tax credits."
+            reviewed_on: "2026-11-22"
+            sources: [goals_vote, goals_west, confluence_vote, river_projects, west_river, west_loans]
       - heading: "Market city-owned west-side land for housing"
         kind: Proposal
         description: "He wanted the city to promote its west-side property as a potential housing development."
@@ -486,7 +526,7 @@ members:
             sources: [development_board, incubation]
             roll_call:
               title: Neshotah Beach grant application
-              caption: Brandt moved to seek a $260,000 grant for a business incubator.
+              caption: Brandt moved to apply for $260,000 for a beach business incubator. Council approved the application. Funding and opening the space were still pending at that vote.
               date: "2026-06-08"
               ayes: 6
               nays: 2
@@ -503,11 +543,11 @@ members:
         description: "He supported the city acting as a pass-through for developers seeking grants."
         refs: [business.61]
         reports:
-          - text: "The West River Lofts pass-through proposal went before Council in March 2024, before this term. During the term, the work session reported state funding for a public walkway and seawall. The minutes reviewed identify no new developer pass-through authorized by Brandt."
-            finding_status: unresolved
-            profile_excerpt: "The minutes reviewed identify no new developer pass-through authorized by Brandt."
+          - text: "Brandt backed the West River Lofts grant. The city reported a $200,000 award for the seawall and walkway, then warned it could lose the money. The March proposal named the city as the developer’s pass-through. Brandt voted in April to keep pursuing it."
+            finding_status: met
+            profile_excerpt: "Brandt backed the West River Lofts grant. The city reported a $200,000 award for the seawall and walkway, then warned it could lose the money."
             reviewed_on: "2026-11-22"
-            sources: [preterm_grant, grant_update]
+            sources: [goals_vote, goals_west, preterm_grant, grant_update, west_river]
       - heading: "Encourage housing development to attract residents"
         kind: Stated priority
         description: "He wanted the city to encourage more housing for people moving to Two Rivers."
@@ -590,13 +630,13 @@ members:
         description: "She wanted parks and green spaces to be accessible to everyone."
         refs: [league.44]
         reports:
-          - text: "Derby moved to award the $27,373.60 Paddlers Park boat-launch contract. Council approved it 9–0. In August the recreation board reported the kayak launch and sidewalk installed. In November it reported that the expanded concrete boat ramp was still to come."
+          - text: "The city planned an accessible path and kayak launch at Paddlers Park. Derby moved for the $27,373.60 boat-launch contract as part of those improvements. Council approved it 9–0. By August the kayak launch and sidewalk were installed. In November the larger concrete boat ramp was still pending."
             finding_status: met
             reviewed_on: "2026-11-22"
-            sources: [paddlers, park_installation, park_ramp]
+            sources: [paddlers, paddlers_access, paddlers_path, park_installation, park_ramp]
             roll_call:
               title: Paddlers Park boat-launch contract
-              caption: Derby moved to award up to $27,373.60. By August the kayak launch and sidewalk were in place.
+              caption: Derby moved to award up to $27,373.60. The park added a sidewalk and a kayak launch designed for people with limited mobility.
               date: "2026-05-04"
               ayes: 9
               nays: 0
@@ -625,13 +665,14 @@ members:
         kind: Position
         description: "Derby backed the proposed apartments at the west plant site during the forum. The city called the project West River Lofts."
         refs: [league.48]
-        search_terms: [West River Lofts, Eggers West]
+        search_terms: [West River Lofts, Eggers West, West Eggers]
         reports:
-          - text: "The developer surrendered its 2024 housing credits. In January 2026 the industrial committee rejected the latest West Eggers site plan. Derby did not serve on that committee. By June the developer had a lender and was pursuing financing again. The in-term records reviewed identify no decision by Derby advancing West River Lofts."
-            finding_status: unresolved
-            profile_excerpt: "The in-term records reviewed identify no decision by Derby advancing West River Lofts."
+          - text: "Derby voted to pursue site funding. West River Lofts lost its original tax credits and later received $2.32 million in state loan awards. A committee Derby did not sit on rejected a site plan in January 2026. The state announced its awards in August. The reviewed records do not show completed apartments."
+            finding_status: pursued
+            profile_subject: "West River Lofts apartments"
+            profile_excerpt: "Derby voted to pursue site funding. West River Lofts lost its original tax credits and later received $2.32 million in state loan awards."
             reviewed_on: "2026-11-22"
-            sources: [grant_update, west_river, eggers_site_vote, land_lending]
+            sources: [goals_vote, goals_west, west_river, eggers_site_vote, west_loans]
           - text: "The developer gave up the project’s reserved housing tax credits in November 2024. In April 2025 the city reported that the project was on hold and that its own site-work grant might also have to be released."
             sources: [west_river]
       - heading: "Address short-term rental concerns"

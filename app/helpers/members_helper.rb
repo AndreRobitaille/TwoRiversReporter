@@ -1,6 +1,25 @@
 module MembersHelper
   MINUTES_LOCATIONS = YAML.safe_load_file(Rails.root.join("config/council_profile_minutes_locations.yml")).freeze
 
+  def promise_deductions(groups)
+    labels = { "contrary" => "Reversal", "missed" => "Missed opportunity", "unresolved" => "Unfulfilled", "fell_short" => "Fell short" }
+    labels.flat_map do |status, label|
+      group = groups[status]
+      next [] unless group
+
+      points = CouncilProfiles::PromiseFollowThrough::POINTS.fetch(status)
+      if group.many? && status != "contrary"
+        caption = status == "missed" ? label.pluralize.downcase : label.downcase
+        [ [ points * group.size, "#{group.size} #{caption}", "#promise-group-#{status}" ] ]
+      else
+        group.map do |item, index|
+          subject = item["profile_subject"] || item["heading"].presence || item.fetch("label")
+          [ points, "#{label} · #{subject}", "#promise-#{index + 1}" ]
+        end
+      end
+    end
+  end
+
   def profile_source_link(label, url, finding: nil, agenda_title: nil, **options)
     docket = agenda_title.to_s[/\A\d{2}-\d{3}\b/]
     location = MINUTES_LOCATIONS.find do |entry|

@@ -75,13 +75,13 @@ repair, email or paid generation. See
 
 ### Publishing the November 2026 council profile review
 
-The [source audit](application-map/council-promise-record-audit-2026-11-22.md) identifies the 30 reviewed campaign positions. The three saved reports supply the overview, exact campaign words and citations displayed on the member pages. Deploy the application before syncing the three changed templates with `prompt_templates:sync_selected`. Select `match_campaign_actions`, `match_campaign_issue_evidence` and `summarize_council_term`. Inspect the dry run and apply only the reviewed changes using the expected current hashes. Run `prompt_templates:validate` afterward.
+The [source audit](application-map/council-promise-record-audit-2026-11-22.md) identifies the reviewed campaign positions. The three saved reports supply the overview, exact campaign words and citations displayed on the member pages. Deploy the application before syncing changed templates with `prompt_templates:sync_selected`. Inspect the dry run and apply the reviewed changes using the expected current hashes. Run `prompt_templates:validate` afterward.
 
 For this edition, publish the approved reports against each named member’s verified April 16, 2024 service term. Resolve their evidence references against that installation, verify the full position list and source links, and save the three reports together. Preserve any newer assessment. This publication reuses reviewed reporting and requires no provider request. The next Tuesday comparison uses the installed evidence and standing allowance. Check that the production discovery schedule is at 11 p.m. America/Chicago and inspect the current month's allowance without changing its limits.
 
-The status-heading and text-only vote update renders the saved assessments directly. It requires no report republication, prompt sync or change to the Tuesday allowance.
+The half-point rule applies to saved and future reports at render time. The accompanying source corrections require republication of the three reviewed profiles, including the newly retained Bittner position. Sync the changed `summarize_council_term` template after deployment. Verify 12, 9 and 10 distinct positions for Bittner, Brandt and Derby respectively. Check the new evidence before replacing a later assessment.
 
-Verify the public roster links and the three net scores (Bittner 4/11, Brandt 4/9, Derby 4/10). Follow Brandt’s red −1 to the April 21 hearing and minutes. On Derby’s profile search for Paddlers Park, check the 9–0 result and open item 26-088 on pages 3–4. A meeting member link should retain the selected decision. The April 2024 edition is described in the [election feature guide](ELECTION_FEATURES.md).
+Verify the public roster links and the three net scores (Bittner 1/12 or 8%, Brandt 4.5/9 or 50%, Derby 2.5/10 or 25%). Follow Brandt’s red −1 to the April 21 hearing and minutes. On Derby’s profile search for Paddlers Park, check the 9–0 result and open item 26-088 on pages 3–4. A meeting member link should retain the selected decision. The April 2024 edition is described in the [election feature guide](ELECTION_FEATURES.md).
 
 The [off-server build evidence](application-map/off-server-builds-2026-11-01.md)
 distinguishes implementation tests, transport simulations, real CI image execution
