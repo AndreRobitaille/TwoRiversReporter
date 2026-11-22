@@ -18,14 +18,12 @@ this document does not claim the feature is implemented or deployed.
 
 ## Delivery priority and proportionality
 
-**Election-season entry, November 21, 2026.** Start with whose terms expire
-this spring, who is running, and what they are running on. The City Council
-page identifies the seats and links a dated campaign statement to its specific
-record. Readers can weigh what an incumbent said against what they did.
-Use a separate candidacy source for each confirmed campaign, including
-challengers. Earlier campaign material keeps its original year. The
-[Development Plan](../../DEVELOPMENT_PLAN.md) describes the seasonal entry to
-the year-round profiles.
+**Election-season entry, November 22, 2026.** Identify the three members whose
+terms end in the featured election year. Link their dated campaign statements to their records in
+office, and direct readers seeking the official ballot to the City Clerk.
+Meeting records may never identify the full field. Any current candidacy
+requires its own source. The [election-time guidance](../../ELECTION_FEATURES.md)
+explains what to tell voters during filing and as voting approaches.
 
 Owner decision, November 8, 2026: TwoRiversReporter is an independent city
 watchdog, not the official city record or a legal records system. Ordinary site
