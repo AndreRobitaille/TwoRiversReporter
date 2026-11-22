@@ -941,11 +941,15 @@ affected records as new evidence arrives. Routine operation must not depend on
 hand-written profiles, per-page publishing, or approval of every routine update.
 Manual work supplies difficult sources, corrects errors, and resolves ambiguity.
 
-During election season the homepage links directly to the race on the Council
-page. A reader should see whose seats are up, who has confirmed a campaign, and
-what those candidates say they will do. Use the same treatment for challengers
-and incumbents. A term expiration establishes a seat on the ballot, not a
-candidacy. Label every campaign position by its election year.
+During election season the homepage links directly to the election section on
+the Council page. Show the election year, its fixed timeline and the three
+incumbents whose terms end that year. Switch to the next group one week after
+Election Day. Link to the City Clerk for the official ballot. Council agendas and minutes
+may never identify the full field. Compare each incumbent’s dated campaign
+positions with their work during the term. Any current campaign information
+needs its own source and election year, for challengers and incumbents alike.
+Follow the [election-time guidance](ELECTION_FEATURES.md) as voter questions
+change from the signature period through Election Day.
 
 For a resident asking “Should I vote for this person?”, link a specific earlier
 position to the member’s recorded work on that position, including contrary
@@ -1043,8 +1047,11 @@ inaction. Direct matching and these highlights remain subsequent work.
 For a retrospective covering the full three-year term, a specific promise with
 neither fulfillment nor measurable work toward it is a broken promise. Measurable
 work includes a proposal, documented advocacy, or voting for the promised action
-even when other members defeat it. Distinguish that effort from achieving the
-result. Establish the relevant term's coverage and review non-vote activity before
+even when other members defeat it. One motion can fulfill a promise to
+introduce a measure, while one or two minor
+votes over three years can fall short of promised sustained action. Repeated,
+substantive work can uphold a commitment to pursue a measure even if it loses.
+Establish the relevant term's coverage and review non-vote activity before
 making the absence finding; an empty match list or the current partial backfill
 does not establish it. Broad aspirations are not specific promises.
 

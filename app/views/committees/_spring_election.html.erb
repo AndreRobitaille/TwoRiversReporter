@@ -1,25 +1,29 @@
-<section class="committee-article-section council-election" id="spring-election" aria-labelledby="election-heading">
-  <h2 id="election-heading">Spring <%= election.election_on.year %> City Council election</h2>
-  <p>On <%= election.election_on.strftime("%B %-d, %Y") %>, Two Rivers voters will elect three council members citywide.</p>
-  <p><%= link_to "City Clerk’s election information", "https://www.two-rivers.org/clerk/page/election-information" %></p>
+<aside class="council-election" id="spring-election" aria-labelledby="election-heading">
+  <h2 id="election-heading">Spring <%= election.election_on.year %> Council election</h2>
+  <ul class="election-timeline">
+    <li><%= time_tag election.signatures_open_on, format: "%B %-d, %Y" %> · Candidates can start collecting signatures</li>
+    <li><%= time_tag election.filing_deadline, format: "%B %-d, %Y" %> · Regular filing deadline at 5 p.m.</li>
+    <li><%= time_tag election.election_on, format: "%B %-d, %Y" %> · Election Day</li>
+  </ul>
+  <p>Vote for up to three. You can choose just one or two.</p>
+  <p><%= link_to "Official ballot and election information", "https://www.two-rivers.org/clerk/page/election-information" %></p>
+
   <% unless gated_for_visitor? %>
     <%= gated_content do %>
-      <% if election.candidates.any? %>
-        <h3>Who’s running?</h3>
-        <p>Campaigns we’ve confirmed as of <%= election.checked_on.to_fs(:long) %>.</p>
-        <% election.candidates.each_key do |name| %>
-          <%= render "election_person", name: name, record: @election_records.fetch(name), election: election %>
-        <% end %>
+      <% if election.terms_ending.any? %>
+        <h3>Council terms ending in <%= election.election_on.year %></h3>
+        <p>Their profiles cover what they ran on and what they did in office. Meeting records may never name everyone running.</p>
+        <ul class="election-people">
+          <%= render partial: "election_person", collection: election.terms_ending.keys, as: :name, locals: { election: election } %>
+        </ul>
       <% end %>
-      <% remaining = election.terms_ending.keys - election.candidates.keys %>
-      <% if remaining.any? %>
-        <h3><%= election.candidates.empty? ? "Whose terms end this spring?" : "Other members whose terms end this spring" %></h3>
-        <p><%= safe_join(remaining.map { |name| link_to(name, "#seat-#{name.parameterize}") }, " · ") %></p>
-        <p>As of <%= election.checked_on.to_fs(:long) %>, <%= election.candidates.empty? ? "we haven’t verified who is running." : "we haven’t confirmed a new campaign for these members." %></p>
-        <% remaining.each do |name| %>
-          <%= render "election_person", name: name, record: @election_records.fetch(name), election: election %>
-        <% end %>
+      <% challengers = election.candidates.keys - election.terms_ending.keys %>
+      <% if challengers.any? %>
+        <h3>Confirmed challengers</h3>
+        <ul class="election-people">
+          <%= render partial: "election_person", collection: challengers, as: :name, locals: { election: election } %>
+        </ul>
       <% end %>
     <% end %>
   <% end %>
-</section>
+</aside>

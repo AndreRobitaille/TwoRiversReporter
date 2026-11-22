@@ -2,97 +2,38 @@
 <% content_for(:description) { @committee.description.presence || "The #{@committee.name} in Two Rivers, WI — members, meetings, and the issues they've taken up." } %>
 <% content_for(:og_type) { "article" } %>
 
-<article class="committee-article">
-  <header class="committee-article-header">
-    <span class="badge badge--default"><%= committee_type_label(@committee.committee_type) %></span>
-    <% if @committee.name == "City Council" %>
-      <span class="badge badge--primary">Elected by voters</span>
+<% council = @committee.name == "City Council" %>
+<article class="<%= class_names("committee-article", "committee-article--council": council, "committee-article--election": @election) %>">
+  <div>
+    <header class="committee-article-header">
+      <% unless council %>
+        <span class="badge badge--default"><%= committee_type_label(@committee.committee_type) %></span>
+      <% end %>
+      <h1 class="committee-article-title"><%= @committee.name %></h1>
+      <% if council %>
+        <p class="council-intro">Voters elect the Council to set the city budget and make local laws. The city manager runs day-to-day operations.</p>
+      <% end %>
+    </header>
+
+    <% if @committee.description.present? %>
+      <% if council %>
+        <details class="committee-description council-authority">
+          <summary>About the Council’s authority</summary>
+          <%= render_committee_description(@committee.description) %>
+        </details>
+      <% else %>
+        <div class="committee-description"><%= render_committee_description(@committee.description) %></div>
+      <% end %>
     <% end %>
-    <h1 class="committee-article-title"><%= @committee.name %></h1>
-  </header>
-
-  <%= render "spring_election", election: @election if @election %>
-
-  <% if @committee.description.present? %>
-    <div class="committee-description">
-      <%= render_committee_description(@committee.description) %>
-    </div>
-  <% end %>
-
-  <%# The roster is withheld from anonymous visitors. Rendering the heading
-      with nothing under it looked like a broken empty section, so the whole
-      block stays in the full-content branch. %>
-  <% unless gated_for_visitor? %>
-    <%= gated_content do %>
-      <section class="committee-article-section">
-        <div class="home-section-header">
-          <%= render "shared/atom_marker" %>
-          <h2 class="section-label">Current Members</h2>
-          <span class="section-line"></span>
-        </div>
-
-        <% if @memberships.any? %>
-          <div class="committee-roster">
-            <% sort_memberships(@memberships, @council_member_ids).each do |cm| %>
-              <%= link_to member_path(cm.member), class: "committee-member" do %>
-                <span class="committee-member-name"><%= cm.member.name %></span>
-                <span class="committee-member-badges">
-                  <% membership_badges(cm, council_member_ids: @council_member_ids).each do |badge| %>
-                    <span class="badge badge--<%= badge[:variant] %>"><%= badge[:label] %></span>
-                  <% end %>
-                </span>
-              <% end %>
-            <% end %>
-          </div>
-        <% else %>
-          <p class="section-empty">No current members on record.</p>
-        <% end %>
-      </section>
-    <% end %>
-  <% end %>
-
-  <section class="committee-article-section">
-    <div class="home-section-header">
-      <%= render "shared/atom_marker" %>
-      <h2 class="section-label">What They've Been Working On</h2>
-      <span class="section-line"></span>
-    </div>
 
     <% unless gated_for_visitor? %>
-      <%= gated_content do %>
-      <% if @recent_topics.any? %>
-        <div class="committee-activity">
-          <% @recent_topics.each do |topic| %>
-            <% headline = @headlines[topic.id] %>
-            <%= link_to topic_path(topic), class: "committee-activity-item" do %>
-              <div class="committee-activity-header">
-                <span class="committee-activity-topic"><%= topic.canonical_name %></span>
-                <% if topic.respond_to?(:latest_meeting_date) && topic.latest_meeting_date %>
-                  <span class="committee-activity-date"><%= short_meeting_date(topic.latest_meeting_date) %></span>
-                <% end %>
-              </div>
-              <% if headline.present? %>
-                <p class="committee-activity-headline"><%= truncate(headline, length: 120) %></p>
-              <% elsif topic.description.present? %>
-                <p class="committee-activity-desc"><%= truncate(topic.description, length: 120) %></p>
-              <% end %>
-              <span class="committee-activity-cta">Topic details &rarr;</span>
-            <% end %>
-          <% end %>
-        </div>
-        <div class="committee-activity-footer">
-          <%= link_to "Browse all topics →", topics_path %>
-        </div>
-      <% else %>
-        <p class="section-empty">No recent activity tracked for this committee.</p>
-      <% end %>
-      <% end %>
+      <%= gated_content { render "roster", council: council } %>
     <% end %>
-  </section>
+    <%= render "activity", council: council %>
 
-  <% if gated_for_visitor? %>
-    <%= render "shared/gate" %>
-  <% end %>
+    <%= render "shared/gate" if gated_for_visitor? %>
+  </div>
+  <%= render "spring_election", election: @election if @election %>
 
   <%= link_to committees_path, class: "back-link" do %>
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
