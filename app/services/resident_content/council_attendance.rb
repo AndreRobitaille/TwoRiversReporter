@@ -11,37 +11,43 @@ module ResidentContent
     end
 
     def call
-      period = @period
-      return unless period && period.started_on <= @now.to_date
-      # A sourced start plus an explicitly current Council position supports an
-      # ongoing window. A former member's unknown departure is not invented.
-      return unless period.ended_on || @member.member_positions.current.exists?(kind: "city_council")
-      council = Committee.find_by(name: "City Council")
+      council = eligible_council
       return unless council
 
-      through = period.ended_on ? [ period.ended_on.end_of_day, @now ].min : @now
-      meetings = Meeting.where(committee_id: [ council.id, nil ], starts_at: period.started_on.beginning_of_day..through)
-        .includes(:meeting_documents, :meeting_summaries, :meeting_attendances).to_a
-        .select { |meeting| meeting_type(meeting) }
-      # Explicit Council titles can establish the body even when an older import
-      # lacks its committee link. Group those aliases with the linked inventory.
-      rows = meetings.group_by(&:starts_at).values.filter_map do |duplicates|
-        meeting = Meeting.preferred_duplicate(duplicates)
-        next if meeting.cancelled?
+      groups = meeting_groups(council)
+      statuses_by_meeting = @member.meeting_attendances.voting_members.where(meeting_id: groups.flatten.map(&:id))
+        .pluck(:meeting_id, :status).group_by(&:first)
+      rows = groups.map do |duplicates|
+        meeting = duplicates.one? ? duplicates.first : Meeting.preferred_duplicate(duplicates)
         type = meeting_type(meeting)
-        next unless type
-
-        statuses = duplicates.flat_map(&:meeting_attendances)
-          .select { |record| record.member_id == @member.id && record.attendee_type == "voting_member" }
-          .map(&:status).uniq
+        statuses = duplicates.flat_map { |copy| statuses_by_meeting.fetch(copy.id, []).map(&:last) }.uniq
         { meeting: meeting, meeting_ids: duplicates.map(&:id), type: type, status: statuses.one? ? statuses.sole : "unknown" }
       end.sort_by { |row| [ row[:meeting].starts_at, row[:meeting].id ] }.reverse
 
-      { committee_id: council.id, period: period, rows: rows, meeting_ids: rows.flat_map { |row| row.fetch(:meeting_ids) },
+      { committee_id: council.id, period: @period, rows: rows, meeting_ids: rows.flat_map { |row| row.fetch(:meeting_ids) },
         counts: LABELS.keys.to_h { |status| [ status, rows.count { |row| row[:status] == status } ] } }
     end
 
+    # A vote lookup only needs the eligible meeting IDs, including older copies.
+    def meeting_ids
+      council = eligible_council
+      council ? meeting_groups(council).flatten.map(&:id) : []
+    end
+
     private
+
+    def eligible_council
+      return unless @period && @period.started_on <= @now.to_date
+      return unless @period.ended_on || @member.member_positions.current.exists?(kind: "city_council")
+      Committee.find_by(name: "City Council")
+    end
+
+    def meeting_groups(council)
+      through = @period.ended_on ? [ @period.ended_on.end_of_day, @now ].min : @now
+      meetings = Meeting.where(committee_id: [ council.id, nil ], starts_at: @period.started_on.beginning_of_day..through)
+      # An explicit cancellation wins for the whole set of duplicate notices.
+      meetings.select { |meeting| meeting_type(meeting) }.group_by(&:starts_at).values.reject { |copies| copies.any?(&:cancelled?) }
+    end
 
     def meeting_type(meeting)
       # The imported meeting_type currently says "regular" even for listening

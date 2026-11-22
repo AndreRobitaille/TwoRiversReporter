@@ -1,0 +1,46 @@
+<aside class="council-work" aria-label="Council work" data-controller="election-guide">
+  <details data-election-guide-target="disclosure">
+    <summary><span class="work-title">Council work</span><span class="work-contents">Votes, attendance &amp; committees</span></summary>
+    <div class="council-work-body">
+      <div class="profile-vote-finder" id="voting-record">
+        <%= form_with url: record_member_path(@member), method: :get, data: { turbo: false } do |form| %>
+          <%= form.hidden_field :votes, value: "all" %>
+          <%= form.label :q, "Find a vote or meeting" %>
+          <div class="profile-search-input">
+            <%= form.search_field :q, maxlength: 200, placeholder: "Project name", class: "form-input" %>
+            <%= form.submit "Search", name: nil, class: "btn btn--primary" %>
+          </div>
+        <% end %>
+      </div>
+      <% if @memberships.any? %>
+        <section id="current-committees">
+          <h3>Current committees</h3>
+          <ul>
+            <% @memberships.each do |membership| %>
+              <li><%= link_to membership.committee.name, committee_path(membership.committee.slug) %></li>
+            <% end %>
+          </ul>
+        </section>
+      <% end %>
+      <% if @council_attendance %>
+        <% rows = @council_attendance.fetch(:rows) %>
+        <section id="attendance">
+          <h3>Council attendance</h3>
+          <% if rows.any? %>
+            <% counts = @council_attendance.fetch(:counts) %>
+            <div class="attendance-strip" aria-hidden="true">
+              <% counts.each do |status, count| %>
+                <% if count.positive? %><i data-status="<%= status %>" style="flex-grow: <%= count %>"></i><% end %>
+              <% end %>
+            </div>
+            <p><%= recorded_attendance_summary(counts) %></p>
+            <p class="work-dates"><%= rows.last.fetch(:meeting).starts_at.to_date.to_fs(:long) %> – <%= rows.first.fetch(:meeting).starts_at.to_date.to_fs(:long) %></p>
+          <% else %>
+            <p>No Council meetings recorded for this term yet.</p>
+          <% end %>
+        </section>
+      <% end %>
+      <%= link_to "Full council record", record_member_path(@member), class: "full-record-link" %>
+    </div>
+  </details>
+</aside>

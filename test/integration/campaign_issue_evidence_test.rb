@@ -29,6 +29,9 @@ class CampaignIssueEvidenceTest < ActionDispatch::IntegrationTest
     assert_equal 8, @matching.context.fetch("pairs").size # Includes three earlier broad-priority pairs.
     match_issue_evidence
     assert_equal "completed", @matching.status
+    matched = ResidentContent::CampaignIssueEvidence.new(@jordan, statements: [ @specific ]).call.fetch(@specific.id)
+    assert_equal "advances", matched.find { |row| row[:kind] == "action" }.fetch(:action_effect)
+    assert_nil matched.find { |row| row[:kind] == "outcome" }.fetch(:action_effect)
     assert_equal 8, @matching.data.fetch("matches").size
     assert_equal 2, @matching.data.fetch("matches").count { |row| row["status"] == "direct" }
     assert_equal 2, @calls.size

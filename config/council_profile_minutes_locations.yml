@@ -1,0 +1,31 @@
+# Page directions for the cited copy of the minutes. A document alone does
+# not identify the right passage: match the finding or the agenda item too.
+- url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-bb70d09245c1401c86ded969fc7cdc35.pdf
+  finding: Make parks accessible to more residents
+  items:
+    "26-088": [3, 4]
+- url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-92069de44a594aa6990824383b8252fd.pdf
+  finding: Replace aging pipes through annual public works projects
+  items:
+    "26-056": [5]
+- url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-f79e6ec229024a6e8164140ca117f10f.pdf
+  finding: Redevelop the riverfront land across from City Hall
+  items:
+    "26-167": [2]
+    "26-168": [2, 3]
+- url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-ce914b9981514bc48ad4639bb8d2df87.pdf
+  finding: Keep homes affordable on local wages
+  items:
+    "26-126": [4]
+- url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-07581b86719e479794b5a74621e516dc.pdf
+  finding: Form a council growth committee
+  items:
+    "8, Council reports": [2]
+- url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-c2cae55b158c4c55b5dc3fd51a5222c9.pdf
+  finding: Consider expanding business incubators
+  items:
+    "26-108": [1, 2]
+- url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-aafbed31cb9749cc86ef5ad95ff3cd5c.pdf
+  finding: Use tax-increment financing to attract new businesses
+  items:
+    "4A, Violet Inn agreement": [1]

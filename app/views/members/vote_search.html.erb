@@ -1,0 +1,19 @@
+<% content_for(:title) { "Find a vote or meeting — #{@member.name}" } %>
+<article class="member-article member-vote-lookup">
+  <%= link_to "← #{@member.name}’s profile", member_path(@member), class: "profile-return" %>
+  <h1 id="voting-record">Find a vote or meeting</h1>
+  <% if gated_for_visitor? %>
+    <%= render "shared/gate" %>
+  <% else %>
+    <%= gated_content do %>
+      <p class="lookup-scope"><%= @member.name %> · <%= @record_period.selected ? council_period_label(@record_period.selected) : "All available records" %></p>
+      <%= render "vote_filters" %>
+      <%= render "recorded_votes", lookup: true %>
+      <footer class="lookup-footer">
+        <%= render "record_period" %>
+        <%= link_to "Full member record and featured votes", record_member_path(@member, **@record_params) %>
+        <p id="issue-updates"><%= link_to "Read the issue history for this period", issues_member_path(@member, term: @record_period.key) %></p>
+      </footer>
+    <% end %>
+  <% end %>
+</article>

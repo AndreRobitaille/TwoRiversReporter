@@ -4,6 +4,19 @@ module ResidentContent
 
     attr_reader :election_on, :signatures_open_on, :filing_deadline, :candidates, :terms_ending
 
+    def self.scheduled_term_end(name, period)
+      return unless period && period.period_key == "#{period.started_on.year}-election"
+
+      guide = SCHEDULE.fetch("elections").find do |edition|
+        edition.fetch("terms_ending").key?(name) && Date.iso8601(edition.fetch("election_on")).year == period.started_on.year + 3
+      end
+      return unless guide
+
+      # Regular seats turn over at the third Tuesday reorganization, two weeks after Election Day.
+      ends_on = Date.iso8601(guide.fetch("election_on")) + 14
+      ends_on unless period.ended_on && period.ended_on < ends_on - 1
+    end
+
     def self.current
       today = Date.current
       return if today < Date.iso8601(SCHEDULE.fetch("opens_on"))

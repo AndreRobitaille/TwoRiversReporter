@@ -18,7 +18,14 @@ class MembersController < ApplicationController
       if params[:decision].present?
         @linked_vote = @member.votes.includes(motion: [ :meeting, :agenda_item, :votes ]).find_by(motion_id: params[:decision])
       end
-      load_campaign_preview unless @term_summary&.sentences.present?
+      if @term_summary&.sentences.present?
+        entries = @term_summary.sentences + @term_summary.promise_assessments
+        urls = entries.flat_map { |item| item.fetch("sources").pluck("url") }.uniq
+        @campaign_source_urls = CampaignSourceVersion.where(source_url: urls).distinct.pluck(:source_url).to_set
+      else
+        load_campaign_preview
+      end
+      @council_attendance = council_attendance if @record_period.selected
       return render :election_profile
     end
 
@@ -28,6 +35,13 @@ class MembersController < ApplicationController
 
   def record
     @separate_record = true
+    if params[:votes] == "all"
+      unless gated_for_visitor?
+        ids = ResidentContent::CouncilAttendance.new(@member, period: @record_period.selected).meeting_ids if @record_period.selected
+        load_votes(ResidentContent::OfficialProfile.new(@member, council_meeting_ids: ids))
+      end
+      return render :vote_search
+    end
     load_record
     render :show
   end
@@ -163,11 +177,15 @@ class MembersController < ApplicationController
 
     load_campaign_comparisons unless @separate_record
     @recorded_actions = ResidentContent::RecordedActions.new(@member, period: @record_period).call
-    @show_all_votes = params[:votes] == "all"
     @formal_cases = ResidentContent::FormalCases.new(@member, period: @record_period).call
     @issue_updates = issue_updates unless @separate_record
     @peer_comparisons = ResidentContent::PeerVotes.new(@member, attendance: @council_attendance).summaries
     @staff_recommendations = ResidentContent::StaffRecommendations.new(@member, period: @record_period).groups
+    load_votes(profile)
+  end
+
+  def load_votes(profile)
+    @show_all_votes = params[:votes] == "all"
     @vote_filters = ResidentContent::VoteFilters.new(profile, params: params)
     @record_params.merge!(@vote_filters.query_params)
     filtered_votes = @vote_filters.call(featured: !@show_all_votes)
