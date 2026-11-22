@@ -113,6 +113,7 @@ class SummarizeMeetingJob < ApplicationJob
       return false unless summary
       meeting.meeting_summaries.where(summary_type: %w[transcript_recap packet_analysis agenda_preview]).destroy_all
       MatchCampaignIssueEvidenceJob.perform_later(meeting_id: meeting.id)
+      summary
     elsif transcript_doc&.extracted_text.present?
       summary = analyze_and_save_summary(meeting, [ background_doc, transcript_doc ].compact, ai_service, kb_context,
         type: "transcript", summary_type: "transcript_recap", source_type: "transcript")
