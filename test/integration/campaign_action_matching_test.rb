@@ -182,22 +182,33 @@ class CampaignActionMatchingTest < ActionDispatch::IntegrationTest
   end
 
   test "a contrary decision can be comparable without an automatic promise grade" do
-    setup_campaign_actions
+    heading = "Require owners to live in short-term rentals"
+    setup_campaign_actions(comparison_heading: heading)
     @vote.motion.update!(description: "Remove the requirement that rental owners reside at the property")
-    @quote = "Motion to remove the requirement that rental owners reside at the property passed. Jordan voted yes; Taylor voted no."
+    @quote = "Motion to remove the requirement that rental owners reside at the property passed."
+    @vote.motion.votes.where.not(id: @vote.id).update_all(value: "yes")
     @document.update!(extracted_text: @quote)
     @vote.motion.update!(outcome: "passed")
     stage = Campaigns::MatchActions.prepare(@vote.motion.meeting).sole
     response = action_response(stage)
-    response.fetch("matches").find { |match| match["status"] == "direct" }["reason"] =
-      "The motion removes the residency condition that the campaign statement supported."
+    response.fetch("matches").find { |match| match["status"] == "direct" }.merge!(
+      "reason" => "The motion removes the residency condition that the campaign statement supported.", "motion_effect" => "opposes")
     budget = campaign_budget(stage: stage)
     with_campaign_transport(content: response.to_json) { Campaigns::MatchActions.call(stage, budget_run: budget) }
+    assert_equal "opposes", stage.reload.data.fetch("matches").find { |match| match["status"] == "direct" }["motion_effect"]
+    evidence = CouncilProfiles::TermEvidence.new(@jordan)
+    contrary = evidence.facts.find { |fact| fact[:kind] == "Member vote" && Array(fact[:opposed_positions]).include?(heading) }
+    assert contrary, "The roll call on the reviewed repeal must reach the weekly assessment as opposing evidence"
+    assert_equal [ @document.source_url ], contrary.fetch(:sources).pluck(:url)
     get member_path(@jordan)
     assert_select "[data-campaign-actions-for=?]", @specific.id do
       assert_select "p", text: "The motion removes the residency condition that the campaign statement supported."
       assert_select ".member-campaign-vote-results", text: /Voted yes.*Council: Passed/m
     end
+    @vote.update!(value: "no")
+    supporting = CouncilProfiles::TermEvidence.new(@jordan).facts.find { |fact| Array(fact[:advanced_positions]).include?(heading) }
+    assert supporting, "A no vote on the same repeal supports the residency requirement"
+    assert_nil supporting[:opposed_positions]
   end
 
   test "a multi-issue statement displays a decision only under its relevant issue including merged topic rows" do

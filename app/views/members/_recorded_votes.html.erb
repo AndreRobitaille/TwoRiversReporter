@@ -9,16 +9,24 @@
           <% if motion.agenda_item&.title.present? %>
             <p class="member-recorded-agenda"><%= motion.agenda_item.title %></p>
           <% end %>
+          <% if local_assigns[:lookup] %>
+            <div class="recorded-ballot">
+              <span><%= @member.name.split.last %>’s vote <strong class="vote-value"><%= vote.value&.titleize || "Unknown" %></strong></span>
+              <span><%= @record_period.selected ? "Council" : "Decision" %> <strong><%= motion.outcome.presence&.titleize || "Unknown" %></strong> · <%= vote_split(motion) %> yes/no</span>
+            </div>
+          <% end %>
           <p class="member-recorded-motion"><%= motion.description.presence || "Motion description unavailable." %></p>
           <% if (minutes = ResidentContent::VoteMinutes.for(motion)) %>
-            <%= link_to minutes.fetch(:label), minutes.fetch(:source_url), class: "member-recorded-source" %> ·
+            <%= profile_source_link minutes.fetch(:label), minutes.fetch(:source_url), agenda_title: (motion.agenda_item&.title if local_assigns[:lookup]), class: "member-recorded-source" %> ·
           <% end %>
           <%= link_to "Meeting and sources", meeting_path(motion.meeting), class: "member-recorded-source" %>
         </div>
-        <div class="member-vote-result">
-          <span class="vote-value <%= vote_color_class(vote.value) %>"><%= vote.value&.titleize || "Unknown" %></span>
-          <span class="member-vote-split">Recorded yes/no: <%= vote_split(motion) %> · <%= motion.outcome.presence&.titleize || "Unknown" %></span>
-        </div>
+        <% unless local_assigns[:lookup] %>
+          <div class="member-vote-result">
+            <span class="vote-value <%= vote_color_class(vote.value) %>"><%= vote.value&.titleize || "Unknown" %></span>
+            <span class="member-vote-split">Recorded yes/no: <%= vote_split(motion) %> · <%= motion.outcome.presence&.titleize || "Unknown" %></span>
+          </div>
+        <% end %>
       </div>
     <% end %>
   </div>

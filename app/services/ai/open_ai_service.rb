@@ -693,9 +693,12 @@ module Ai
     def self.council_term_parameters(member, facts)
       template = PromptTemplate.find_by!(key: "summarize_council_term")
       numbered = facts.map.with_index(1) do |fact, id|
-        fact.slice(:kind, :text, :dates, :promise_words, :position, :identity).compact_blank.merge(id: id, sources: fact[:sources].pluck(:label))
+        fact.slice(:kind, :text, :dates, :promise_words, :position, :identity, :reviewed_status, :reviewed_on, :matched_positions, :opposed_positions, :advanced_positions, :unclear_positions).compact_blank.merge(id: id, sources: fact[:sources].pluck(:label))
       end
-      context = { member: member.name, tracked_positions: CouncilProfiles::PromiseFollowThrough.position_groups(facts), facts: numbered }.to_json
+      period = member.council_service_periods.newest_first.first
+      context = { member: member.name, reviewed_on: Date.current, term_started_on: period&.started_on,
+        scheduled_term_end: ResidentContent::CouncilElection.scheduled_term_end(member.name, period),
+        tracked_positions: CouncilProfiles::PromiseFollowThrough.position_groups(facts), facts: numbered }.compact.to_json
       messages = [ { role: "system", content: template.system_role },
         { role: "user", content: template.interpolate(context: context) } ]
       allowance = 700 + 100 * facts.count { |fact| fact[:promise_words].present? }

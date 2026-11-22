@@ -24,7 +24,7 @@ module ResidentContent
 
           candidate = votes.fetch(pair.values_at("statement_id", "motion_id"))
           result[candidate.fetch(:statement).id] << { vote: candidate.fetch(:vote), reason: match.fetch("reason"),
-            minutes_quote: match.fetch("minutes_quote"), focus: pair["focus"] }
+            minutes_quote: match.fetch("minutes_quote"), motion_effect: match["motion_effect"], focus: pair["focus"] }
         end
       end
       result.transform_values { |rows| rows.sort_by { |row| [ row.fetch(:vote).motion.meeting.starts_at, row.fetch(:vote).id ] }.reverse }

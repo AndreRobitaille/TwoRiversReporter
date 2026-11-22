@@ -332,10 +332,12 @@ module PromptTemplateData
         something, demonstrated work can fulfill it even if Council voted it down. Passing a resolution or applying for
         money is not delivering a project. Assign met or fell_short only with affirmative, directly relevant evidence
         of the member's own actions or contrary decisions. A nearby issue, an absent link, a single routine vote, or
-        other people's actions cannot establish either judgment. Use unresolved for pending work, ambiguous evidence
-        and cases where coverage is insufficient. Every unresolved promise counts in the denominator and earns zero
-        fulfillment credit. Give the latest documented step, missed opportunity, or say plainly when the supplied
-        records show no action on that promise. Only say the member did nothing if the records establish that.
+        other people's actions cannot establish either judgment. For an outcome pledge, use pursued for a directly
+        attributable step without the pledged result, or blocked for a directly attributable losing motion or vote.
+        Give the decision and vote when known. Use missed when a cited, position-specific Public record carries
+        reviewed_status "missed" and no newer evidence changes it. Name the opportunity and the action missing from
+        the minutes. Use unresolved when records cannot settle attribution, opportunity or outcome. A documented result earns +1. Use contrary (−1) only for a verified, personally attributable action materially against the campaign position. Cite the opposing action, what the member backed and what happened. A cited dated editorial review or a verified member vote or personal action with this heading in opposed_positions can support a deduction. Consider later actions on both sides. An unsuccessful effort to advance the promise, silence, a procedural delay, or unrelated regulation earns no deduction. Use the supplied term dates to describe how much of the term the review covers. A deadline alone
+        cannot prove inaction. Write the concrete result or shortfall directly; omit generic hedges.
         Weigh the full term. One or two actions over years earn credit only if they materially advanced the
         actual undertaking or achieved its goal. For each met finding set "material_effect" to one of
         "binding_decision", "committed_resources", "operating_program", or "documented_result". Explain what
@@ -343,14 +345,16 @@ module PromptTemplateData
         dated source when later evidence supersedes an older report. State the concrete change. A suggestion, ordinary vote,
         adjacent program or hoped-for side benefit is insufficient. Preserve the distinction between adopting
         a policy, awarding a contract and opening a facility. Look for contrary decisions and later outcomes.
+        For a member vote or recorded member action, matched_positions lists the campaign comparisons verified for that action. Unmatched actions can inform the term narrative. To change a dated reviewed judgment, cite a later directly matched action for the same position. Check the direction: who proposed which change, which way the member voted, and which outcome prevailed. A vote permitting a use earns no credit for a promised restriction on that use.
         Minutes excerpts are search leads. Check that the decision and named action concern the same agenda
         item, body, parcel and person. A roster or adjacent roll call is insufficient. To use an excerpt as
         personal evidence supply "attribution", an exact contiguous quote identifying their action in that
         excerpt. Explain the outcome and any remaining gap in the reason.
         Alongside sentences, return "promises": one object per distinct candidate commitment, zero when none.
         Each object has "positions" (one or more IDs with promise_words, each ID used exactly once across the array),
-        "status" (met, fell_short, or unresolved), "record" (0 to 4 non-campaign evidence IDs;
-        at least one personal action required for met or fell_short), and "reason" (one short sourced explanation).
+        "status" (met, contrary, pursued, blocked, missed, fell_short, or unresolved), "record" (0 to 4 non-campaign evidence IDs;
+        at least one personal action for met, pursued, blocked or fell_short, or the reviewed opportunity for missed),
+        and "reason" (one short sourced explanation).
         The app calculates the follow-through percentage and writes the overall judgment. Keep the accompanying narrative factual.
         Return one JSON object with both "promises" and "sentences". Each sentence has "text" and "evidence" (fact IDs). Write 3 or 4 short sentences, or 1 or 2
         if the evidence is thin. Each must cite 1 to 8 numbered facts that support its entire wording.
@@ -363,6 +367,7 @@ module PromptTemplateData
       instructions: <<~PROMPT
         Review each supplied pair independently. Retrieval by topic or wording does not establish a direct connection. If a pair contains a focus, compare only that proposal. Preserve which alternative the evidence addresses. The shared source has already been analyzed; use the supplied exact passages, preserving limitations. Do not re-extract statements, invent evidence or require another source lookup.
         Return {"matches":[{"key":"exact supplied key","status":"direct|not_direct|insufficient_evidence","reason":"one or two neutral sentences","source_quote":"exact supporting passage or null"}]}.
+        For direct personal actions include action_effect: "advances", "opposes", or "unclear", relative to the precise campaign position. Use unclear for a procedural or mixed action. Preserve the attributed speaker and the decision at issue. An issue outcome alone establishes no personal position.
         The matches array contains exactly ONE entry for EVERY supplied pair key, with no omissions, additions or duplicates. A direct result needs an exact contiguous 20-2000-character source_quote from THAT pair's evidence.quote (whitespace normalization only). Keep qualifications and do not borrow another pair's passage.
         direct means the recorded action or development addresses the statement's specific proposal, mechanism, project or explicitly stated action. Advancing, opposing, modifying or abandoning that proposal can all be directly relevant; explain the actual relationship neutrally. A broad desire to be proactive is not a measurable promise. Merely sharing an issue, location, department or keyword is not_direct. Missing essential scope, timing or conditions is insufficient_evidence. Preserve alternatives and examples rather than turning them into exclusive promises.
         evidence_kind action is the member's documented proposal, amendment, request, opposition or follow-up. A request for a study is effort, not enactment; a proposal without a second can be directly relevant despite producing no vote or result. Do not infer advocacy from a person's attendance, routine second, silence or group discussion.
@@ -423,6 +428,7 @@ module PromptTemplateData
         Return exactly one matches entry for EVERY supplied pair key, no omissions, additions or duplicates:
         {"matches":[{"key":"the exact supplied key","status":"direct|not_direct|insufficient_evidence","reason":"one or two neutral sentences","minutes_quote":"exact contiguous supporting passage, or null"}]}
         The array must contain exactly as many entries as the supplied pairs array. Keep all distinct decisions, statements and qualifications.
+        For each direct pair, include motion_effect: "advances" when adopting the actual motion would materially advance this specific position, "opposes" when it would materially work against it, or "unclear" for mixed, procedural or indeterminate effects. Evaluate the motion as worded, including motions to deny or repeal. The application separately identifies how each member voted.
 
         direct: The ACTUAL motion addresses the specific proposal, policy mechanism, project, or explicitly stated action in this statement. Explain that specific connection. Include an exact contiguous minutes passage supporting the actual action (20-2000 characters). Whitespace may be normalized; do not splice quotations or use ellipses to skip text.
         Direct relevance can include advancing, rejecting, repealing or obstructing a stated proposal. Compare the documented policy effect, not matching vocabulary. Preserve alternatives presented as examples; do not turn "potentially" or "such as" into an exclusive promise. A different mechanism can be comparable when the supplied evidence establishes its effect on the stated objective.

@@ -1,4 +1,22 @@
 module MembersHelper
+  MINUTES_LOCATIONS = YAML.safe_load_file(Rails.root.join("config/council_profile_minutes_locations.yml")).freeze
+
+  def profile_source_link(label, url, finding: nil, agenda_title: nil, **options)
+    docket = agenda_title.to_s[/\A\d{2}-\d{3}\b/]
+    location = MINUTES_LOCATIONS.find do |entry|
+      entry.fetch("url") == url && (entry.fetch("finding") == finding || entry.fetch("items").key?(docket))
+    end
+    return link_to(label, url, **options) unless location
+
+    items = location.fetch("items")
+    items = items.slice(docket) if docket
+    pages = items.values.flatten.uniq.sort
+    locator = "#{"item".pluralize(items.size)} #{items.keys.to_sentence}, #{pages.one? ? 'p.' : 'pp.'} #{pages.join('–')}"
+    link_to("#{url}#page=#{pages.first}", **options) do
+      safe_join([ label, tag.span(locator, class: "minutes-locator") ], " · ")
+    end
+  end
+
   # Use the same current-office priority and committee ordering as the page.
   def member_profile_role(current_position, memberships)
     return current_position.title if current_position

@@ -35,7 +35,9 @@ module CampaignIssueEvidenceScenario
       direct = pair.fetch("statement_id") == @specific.id && pair.dig("evidence", "subject") != "License fee portal"
       { key: pair.fetch("key"), status: direct ? "direct" : "not_direct",
         reason: direct ? "The record addresses the stated owner-occupancy proposal, without establishing enactment." : "A shared rental topic does not establish the specific proposal.",
-        source_quote: direct ? pair.dig("evidence", "quote") : nil }
+        source_quote: direct ? pair.dig("evidence", "quote") : nil }.tap do |match|
+        match[:action_effect] = "advances" if direct && pair["evidence_kind"] == "action"
+      end
     end }
   end
 

@@ -3,7 +3,7 @@ require_relative "campaign_activity_scenario"
 module CampaignActionScenario
   include CampaignActivityScenario
 
-  def setup_campaign_actions(multiple_issues: false)
+  def setup_campaign_actions(multiple_issues: false, comparison_heading: nil)
     setup_campaign_activity
     question = "What should change about short-term rentals?"
     answers = [ [ "Jordan Example", "Require owners to live in their short-term rentals for part of each year.", "position" ],
@@ -13,8 +13,10 @@ module CampaignActionScenario
       body: body, election_on: "2024-04-02", published_on: "2024-03-27"))
     response = { "participants" => answers.map do |name, answer, kind|
       passage = "#{name}: #{answer}"
+      statement = { "kind" => kind, "summary" => answer, "supporting_quote" => answer, "conditions" => nil, "timeframe" => nil }
+      statement["comparison_heading"] = comparison_heading if comparison_heading && name == @jordan.name
       { "name" => name, "name_quote" => passage, "answers" => [ { "question" => question, "passage" => passage,
-        "statements" => [ { "kind" => kind, "summary" => answer, "supporting_quote" => answer, "conditions" => nil, "timeframe" => nil } ] } ] }
+        "statements" => [ statement ] } ] }
     end, "coverage_gaps" => [] }
     analyze_member_campaign(content: response.to_json)
     @specific, @broad = @source.current_version.extraction.campaign_statements.order(:sequence).to_a

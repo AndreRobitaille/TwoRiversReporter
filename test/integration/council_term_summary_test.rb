@@ -75,16 +75,17 @@ class CouncilTermSummaryTest < ActionDispatch::IntegrationTest
       assert_equal 1, @calls.size
       assert_equal 1, CouncilAiReservation.where("request_key LIKE ?", "term-summary/%").count
       assert_equal [ @bittner.id ], CouncilTermSummary.where.not(generated_at: nil).pluck(:member_id)
-      assert_no_queries_match(/FROM "(?:votes|campaign_statements|meeting_attendances|campaign_action_reviews)"/) do
+      assert_no_queries_match(/FROM "(?:votes|campaign_statements|campaign_action_reviews)"/) do
         get member_path(@bittner)
       end
-      assert_select ".member-term-copy", text: /#{Regexp.escape(@sentence)}/
+      assert_select ".term-digest .member-term-copy", text: @sentence
+      assert_select "details .term-digest", count: 0
       assert_select ".member-term-sources a[href=?]", @document.source_url
       assert_select ".member-election-status a", text: "Contact Mark Bittner"
-      get css_select(".member-term-links a").last["href"]
+      get css_select(".profile-vote-finder form").sole["action"], params: { votes: "all", q: "Hamilton" }
       assert_select "form input[name=q]"
       assert_select ".member-recorded-agenda", text: /Hamilton/
-      assert_select ".member-vote-row a[href=?]", @document.source_url, text: "Meeting minutes"
+      assert_select ".member-vote-row a[href=?]", "#{@document.source_url}#page=2", text: "Meeting minutes · item 26-167, p. 2"
       @vote.motion.meeting.meeting_summaries.create!(summary_type: "minutes_recap", generation_data: {
         "headline" => "Council considered the Hamilton property", "item_details" => [
           { "agenda_item_id" => @vote.motion.agenda_item_id, "agenda_item_title" => @vote.motion.agenda_item.title, "summary" => "Council voted on the requirement." }
@@ -93,9 +94,11 @@ class CouncilTermSummaryTest < ActionDispatch::IntegrationTest
       get meeting_path(@vote.motion.meeting)
       destination = member_path(@bittner, decision: @vote.motion_id, anchor: "profile-decision")
       assert_select ".meeting-vote-list a[href=?]", destination
+      get record_member_path(@bittner)
+      assert_select ".member-vote-motion a[href=?]", destination
       get destination
       assert_select "#profile-decision", text: /recorded vote: Yes.*Passed/m
-      assert_select "#profile-decision a[href=?]", @document.source_url
+      assert_select "#profile-decision a[href=?]", "#{@document.source_url}#page=2", text: /item 26-167/
       SiteSetting.instance.update!(access_mode: "gated")
       get member_path(@bittner)
       assert_not_includes response.body, @sentence
@@ -142,7 +145,7 @@ class CouncilTermSummaryTest < ActionDispatch::IntegrationTest
         end
         assert_equal 1, @calls.size
         assert_no_queries_match(/FROM "(?:votes|campaign_statements|meeting_documents)"/) { get member_path(@bittner) }
-        assert_select ".member-promise-list h4", "Form a council growth committee"
+        assert_select ".member-promise-list .promise-title", "Form a council growth committee"
         assert_select ".member-election-status", count: 0
         travel_to @tuesday + 1.week
         refresh
@@ -180,6 +183,25 @@ class CouncilTermSummaryTest < ActionDispatch::IntegrationTest
     assert_raises(ArgumentError) { assess.call(finding.merge("attribution" => "Doug Brandt introduced the motion")) }
   end
 
+  test "a work-session objection survives a higher-ranked positive excerpt on an already reviewed position" do
+    body = Committee.create!(name: "Development Committee")
+    term = Time.zone.local(2024, 4, 16)..Time.current
+    position = { heading: "Expand small business incubators", description: "Expand small business incubators",
+      reports: [ { "text" => "An earlier reviewed grant advanced the expansion." } ] }
+    records = {
+      "approval" => "Mark Bittner moved to expand small business incubators and Council awarded $50,000 for small business incubator expansion.",
+      "objection" => "Mark Bittner opposed expanding the small business incubators during the work session."
+    }
+    records.each_with_index do |(key, passage), i|
+      url = "https://example.test/#{key}"
+      meeting = body.meetings.create!(body_name: body.name, starts_at: term.begin + i.days, detail_page_url: url)
+      meeting.meeting_documents.create!(document_type: "minutes_pdf", extracted_text: passage, source_url: "#{url}.pdf")
+    end
+    excerpts = CouncilProfiles::PromiseMinutes.new(@bittner, term).for_position(position)
+    assert_equal records.values.sort, excerpts.pluck(:text).sort
+    assert excerpts.none? { |f| f[:opposed_positions] }
+  end
+
   test "invalid citations cannot publish or spend a second call during the same cycle" do
     with_campaign_transport(content: @result) { refresh }
     travel_to @tuesday + 1.week
@@ -192,6 +214,19 @@ class CouncilTermSummaryTest < ActionDispatch::IntegrationTest
       get member_path(@bittner)
       assert_not_includes response.body, "fabricated citation"
     end
+  end
+
+  test "the campaign and in-office passages are readable together before opening any disclosure" do
+    promise = "Bittner proposed a council growth committee."
+    result = JSON.parse(@result)
+    result.fetch("sentences").unshift({ "text" => promise, "evidence" => [ @position ] })
+    with_campaign_transport(content: result.to_json) { refresh }
+
+    get member_path(@bittner)
+    assert_equal [ "Ran on", "In office" ], css_select(".term-digest dt").map(&:text)
+    assert_equal [ promise, @sentence ], css_select(".term-digest .member-term-copy").map(&:text)
+    assert_select "details .term-digest, .term-digest details", count: 0
+    assert_select "details .promise-group", count: 0
   end
 
   test "the approved platform supplies the full denominator and excludes removed statements at every public entry" do
@@ -208,16 +243,29 @@ class CouncilTermSummaryTest < ActionDispatch::IntegrationTest
     assert_equal 1, @calls.size
     assert_not_includes @calls.sole.fetch(:messages).last.fetch(:content), @excluded.data.fetch("summary")
     get member_path(@bittner)
-    assert_select ".member-term-copy", text: /0 of 1 tracked campaign promise/
-    assert_select ".member-term-score", text: "0% fulfilled. Unresolved promises earn zero credit."
-    assert_select ".member-promise-list > li > p", text: /no action to form the proposed committee/
-    assert_select "details .member-promise-list", count: 0
-    assert_select ".member-promise-list li q", text: "I'd like to add a new committee"
-    assert_select ".member-promise-list li a[href=?]", @source.source_url
+    assert_select ".score-lead", text: /Results on 0 of 1 campaign position/
+    assert_select ".promise-report[data-pace=red] .term-clock", text: /87% of term elapsed/
+    assert_select ".member-term-score", text: /0%/
+    assert_select ".term-digest a", count: 0
+    assert_select "meter[min='0'][max='100'][value='0']"
+    assert_select "#promise-index section.promise-group[data-status=unresolved]" do
+      assert_select "h4 .outcome-count", "1"
+      assert_select "h4 .outcome-label", "Insufficient evidence"
+      assert_select ".outcome-marks i", count: 1
+      assert_select "details#promise-1:not([open])" do
+        assert_select "summary .promise-title", text: "Form a council growth committee"
+        assert_select "summary .promise-excerpt", text: /no action to form the proposed committee/
+        assert_select ".promise-reason", text: /no action to form the proposed committee/
+        assert_select "q", text: "I'd like to add a new committee"
+        assert_select "a[href=?]", @source.source_url
+      end
+    end
+    assert_select ".council-work a[href=?]", record_member_path(@bittner)
     assert_equal 1, CouncilTermSummary.sole.promise_assessments.size
     SiteSetting.instance.update!(access_mode: "gated")
     get member_path(@bittner)
-    assert_not_includes response.body, "0 of 1 campaign promise"
+    assert_not_includes response.body, "Results on 0 of 1 campaign position"
+    assert_select ".term-clock", count: 0
     assert_not_includes response.body, @specific.data.fetch("supporting_quote")
     assert_select ".gate-card"
 
@@ -229,17 +277,20 @@ class CouncilTermSummaryTest < ActionDispatch::IntegrationTest
   end
 
   test "the campaign and full record links work before publication and respect private access on every route" do
-    assert_no_queries_match(/FROM "(?:votes|meeting_attendances|meeting_documents|campaign_action_reviews|council_issue_reviews)"/) do
+    assert_no_queries_match(/FROM "(?:votes|meeting_documents|campaign_action_reviews|council_issue_reviews)"/) do
       get member_path(@bittner)
     end
-    campaign = css_select(".member-term-links a").first["href"]
-    record = css_select(".member-term-links a").last["href"]
+    campaign = css_select(".profile-campaign-link").sole["href"]
+    form = css_select(".profile-vote-finder form").sole
+    assert_select ".profile-vote-finder input[name=votes][value=all]"
+    record = "#{form['action']}?votes=all"
     get css_select(".member-term-copy a").sole["href"]
     assert_select "#campaign-statement a[href=?]", @source.source_url
     get campaign
     assert_select "#campaign-record", text: /growth committee/
-    get record
-    assert_select "#voting-record", text: "Voting Record"
+    assert_no_queries_match(/FROM "(?:council_issue_reviews|council_formal_reviews|meeting_attendances)"/) { get record }
+    assert_select "#voting-record", text: /vote or meeting/i
+    assert_select ".member-recorded-motion", text: @motion.description
     get css_select("#issue-updates a").sole["href"]
     assert_select "#issue-updates h2", "Issue history"
     get member_path(@bittner, format: :json)
@@ -249,7 +300,7 @@ class CouncilTermSummaryTest < ActionDispatch::IntegrationTest
 
     SiteSetting.instance.update!(access_mode: "gated")
     pages = [ [ member_path(@bittner), ".member-term-overview" ], [ campaign, "[data-campaign-proposal]" ],
-      [ record, ".member-vote-views" ], [ issues_member_path(@bittner), "#issue-updates" ] ]
+      [ record, ".member-vote-filters" ], [ issues_member_path(@bittner), "#issue-updates" ] ]
     cache = ActiveSupport::Cache::MemoryStore.new
     cache.write(Crawlers::IpRanges.new.cache_key(:google), { prefixes: [ "66.249.66.0/27" ], fetched_at: Time.current.to_i })
     Rails.stub(:cache, cache) do
@@ -261,23 +312,162 @@ class CouncilTermSummaryTest < ActionDispatch::IntegrationTest
         assert_select ".gate-card", count: 1
         assert_not_includes response.body, @specific.data.fetch("summary")
         assert_not_includes response.body, @sentence
+        assert_not_includes response.body, @motion.description if url == record
       end
     end
   end
 
-  test "all unresolved promises count and the unrounded share determines the tone" do
-    score = lambda do |met, missed, unresolved|
-      rows = ([ "met" ] * met + [ "fell_short" ] * missed + [ "unresolved" ] * unresolved).map { |value| { "status" => value } }
-      CouncilProfiles::PromiseFollowThrough.new(rows)
+  test "pace changes over the term while a documented result always earns the same credit" do
+    rows = (%w[met] * 4 + %w[pursued blocked missed fell_short unresolved unresolved]).map { |status| { "status" => status } }
+    result = CouncilProfiles::PromiseFollowThrough.new(rows)
+    start = Date.new(2024, 4, 16)
+    finish = Date.new(2027, 4, 20)
+    pace = ->(as_of) { CouncilProfiles::PromisePace.new(result, started_on: start, ends_on: finish, as_of: as_of) }
+
+    assert_equal 40, result.percentage
+    assert_equal "green", pace.call(start + 400).rating
+    assert_equal "amber", pace.call(start + 530).rating
+    late = pace.call(Date.new(2026, 11, 22))
+    assert_equal 86, late.elapsed_percent
+    assert_equal 149, late.days_left
+    assert_equal "red", late.rating
+    assert_equal 0, pace.call(finish + 30).days_left
+    assert_equal "red", pace.call(finish).rating
+    assert_nil CouncilProfiles::PromisePace.new(result, started_on: start, ends_on: nil).rating
+    assert_nil CouncilProfiles::PromiseFollowThrough.new([]).percentage
+  end
+
+  test "one reversal costs a full point even below zero and changes term pace" do
+    score = ->(*statuses) { CouncilProfiles::PromiseFollowThrough.new(statuses.map { |status| { "status" => status } }) }
+    record = score.call(*%w[met met met met met contrary missed pursued unresolved])
+    assert_equal 44, record.percentage
+    assert_equal 4, record.net_points
+    assert_equal(-100, score.call("contrary").percentage)
+    assert_nil score.call.percentage
+    start = Date.new(2026, 1, 1)
+    assert_equal "amber", CouncilProfiles::PromisePace.new(record, started_on: start, ends_on: start + 100, as_of: start + 50).rating
+  end
+
+  test "the weekly assessment must consider a directly opposing vote even if an older review credited the promise" do
+    heading = "Keep the shoreline public"
+    campaign = { kind: "2024 campaign", position: heading, promise_words: [ { "supporting_quote" => heading } ], text: heading, sources: [] }
+    review = { kind: "Public record", reviewed_status: "met", reviewed_on: "2026-01-01", position: heading,
+      text: "Bittner moved to secure public access.", sources: [ { label: "January", url: "/original" } ] }
+    vote = { kind: "Member vote", matched_positions: [ heading ], opposed_positions: [ heading ],
+      text: "Member voted yes. Council repealed the public-access requirement.", dates: [ Date.new(2026, 2, 1) ], sources: [ { label: "February", url: "/repeal" } ] }
+    evidence = Struct.new(:facts, :fact_keys).new([ campaign, review, vote ], %w[campaign review vote])
+    assess = lambda do |status, ids|
+      row = { "positions" => [ 1 ], "status" => status, "record" => ids, "reason" => evidence.facts.fetch(ids.last - 1).fetch(:text), "material_effect" => "binding_decision" }
+      CouncilProfiles::PromiseFollowThrough.from_response({ "promises" => [ row ] }, evidence, @bittner).sole
     end
-    assert_equal 25, score.call(1, 0, 3).percentage
-    assert_match(/only 1 of 4/, score.call(1, 0, 3).lead("The member"))
-    assert_match(/only 0 of 3/, score.call(0, 0, 3).lead("The member"))
-    assert_match(/mixed/, score.call(1, 0, 2).lead("The member"))
-    assert_match(/mixed/, score.call(2, 0, 1).lead("The member"))
-    assert_match(/followed through on 3 of 4/, score.call(3, 0, 1).lead("The member"))
-    assert_equal 0, score.call(0, 0, 1).percentage
-    assert_nil score.call(0, 0, 0).percentage
+    assert_raises(ArgumentError) { assess.call("met", [ 2 ]) }
+    assert_raises(ArgumentError) { assess.call("met", [ 3 ]) }
+    assert_raises(ArgumentError) { assess.call("unresolved", [ 3 ]) }
+    assert_equal "contrary", assess.call("contrary", [ 2, 3 ]).fetch("status")
+    vote[:dates] = [ Date.new(2025, 12, 1) ] # Newly matched, before the editorial review.
+    assert_raises(ArgumentError) { assess.call("met", [ 2 ]) }
+    assert_equal "contrary", assess.call("contrary", [ 2, 3 ]).fetch("status")
+    vote[:dates] = [ Date.new(2026, 2, 1) ]
+    vote.delete(:opposed_positions)
+    assert_raises(ArgumentError) { assess.call("contrary", [ 3 ]) }
+    vote[:unclear_positions] = [ heading ]
+    assert_equal %w[campaign review], assess.call("met", [ 3 ]).fetch("facts")
+    review.delete(:reviewed_status)
+    assert_raises(ArgumentError) { assess.call("met", [ 3 ]) }
+
+    review.merge!(reviewed_status: "contrary", text: "Bittner moved to repeal the shoreline access requirement.")
+    vote[:text] = "Member voted yes. Council restored the public-access requirement."
+    vote.delete(:unclear_positions)
+    vote[:advanced_positions] = [ heading ]
+    assert_raises(ArgumentError) { assess.call("contrary", [ 2 ]) }
+    assert_raises(ArgumentError) { assess.call("met", [ 3 ]) }
+    assert_equal "met", assess.call("met", [ 2, 3 ]).fetch("status")
+  end
+
+  test "an outvoted attempt, an audited missed opportunity and a gap receive distinct findings" do
+    proposal = { kind: "2024 campaign", position: "Create a committee", text: "Create a committee",
+      promise_words: [ { "supporting_quote" => "Create a committee" } ], sources: [] }
+    vote = { kind: "Member vote", matched_positions: [ "Create a committee" ], text: "Member voted yes. Council result: failed (3 yes, 6 no). Create a committee.", sources: [] }
+    review = { kind: "Public record", position: "Create a committee", reviewed_status: "missed",
+      text: "Council considered its committee structure. The reviewed minutes record no proposal.", sources: [] }
+    evidence = Struct.new(:facts, :fact_keys).new([ proposal, vote, review ], %w[promise vote review])
+    assess = lambda do |status, records|
+      row = { "positions" => [ 1 ], "status" => status, "record" => records, "reason" => "The cited record explains the decision." }
+      CouncilProfiles::PromiseFollowThrough.from_response({ "promises" => [ row ] }, evidence, @bittner).sole.fetch("status")
+    end
+    assert_equal "blocked", assess.call("blocked", [ 2 ])
+    assert_equal "pursued", assess.call("pursued", [ 2 ])
+    assert_equal "missed", assess.call("missed", [ 3 ])
+    assert_equal "unresolved", assess.call("unresolved", [])
+    assert_raises(ArgumentError) { assess.call("missed", []) }
+    assert_raises(ArgumentError) { assess.call("pursued", [ 3 ]) }
+    review[:position] = "Expand housing"
+    assert_raises(ArgumentError) { assess.call("missed", [ 3 ]) }
+    vote[:text] = "Member voted yes. Council result: passed (6 yes, 3 no). Create a committee."
+    assert_raises(ArgumentError) { assess.call("blocked", [ 2 ]) }
+  end
+
+  test "a rental zoning vote and a named action in a reviewed miss cannot earn credit for a permit lottery" do
+    heading = "Consider a lottery for short-term rentals"
+    campaign = { kind: "2024 campaign", position: heading, promise_words: [ { "supporting_quote" => "a lottery" } ], text: heading, sources: [] }
+    review = { kind: "Public record", position: heading, reviewed_status: "missed", reviewed_on: "2026-11-22",
+      text: "Brandt moved to permit rentals in R-1. The minutes record no lottery proposal from him.", sources: [] }
+    vote = { kind: "Member vote", dates: [ Date.new(2025, 4, 21) ],
+      text: "Member voted yes. Council result: passed (9 yes, 0 no). Permit rentals in R-1.", sources: [] }
+    evidence = Struct.new(:facts, :fact_keys).new([ campaign, review, vote ], %w[campaign review vote])
+    brandt = Member.find_or_create_by!(name: "Doug Brandt")
+    assess = lambda do |status, records|
+      row = { "positions" => [ 1 ], "status" => status, "record" => records, "reason" => "Council adopted the zoning motion.",
+        "material_effect" => "binding_decision" }
+      CouncilProfiles::PromiseFollowThrough.from_response({ "promises" => [ row ] }, evidence, brandt).sole.fetch("status")
+    end
+    assert_equal "missed", assess.call("missed", [ 2 ])
+    assert_equal "missed", assess.call("met", [ 2 ])
+    assert_equal "missed", assess.call("pursued", [ 3 ])
+    assert_equal "missed", assess.call("unresolved", [])
+    review.delete(:reviewed_on)
+    assert_raises(ArgumentError) { assess.call("met", [ 2 ]) }
+    assert_raises(ArgumentError) { assess.call("pursued", [ 3 ]) }
+    vote[:matched_positions] = [ "Permit rentals in single-family districts" ]
+    assert_raises(ArgumentError) { assess.call("met", [ 3 ]) }
+
+    review[:reviewed_on] = "2026-11-22"
+    vote.merge!(matched_positions: [ heading ], text: "Member voted yes. Council adopted Brandt's rental permit lottery.")
+    assert_equal "missed", assess.call("met", [ 3 ])
+    vote[:dates] = [ Date.new(2026, 12, 7) ]
+    assert_equal "met", assess.call("met", [ 3 ])
+  end
+
+  test "a saved unresolved finding takes a reviewed status only with the matching explanation and sources" do
+    edition = ResidentContent::CampaignPlatform::EDITION
+    item = edition.fetch("members").fetch("Mark Bittner").fetch("items").find { |entry| entry.fetch("heading") == "Form a council growth committee" }
+    note = item.fetch("reports").first
+    sources = note.fetch("sources").map { |key| edition.fetch("council_sources").fetch(key).slice("url", "label") }
+    row = { "heading" => item.fetch("heading"), "status" => "unresolved", "reason" => note.fetch("text"), "sources" => sources }
+    report = CouncilTermSummary.new(term_started_on: Date.new(2024, 4, 16), promise_assessments: [ row ])
+    status = -> { ResidentContent::CampaignPlatform.reviewed_findings(report, "Mark Bittner").sole.fetch("status") }
+    assert_equal "missed", status.call
+    report.promise_assessments = [ row.merge("reason" => "The later vote settled this question.") ]
+    assert_equal "unresolved", status.call
+    report.promise_assessments = [ row.merge("sources" => []) ]
+    assert_equal "unresolved", status.call
+    report.promise_assessments = [ row.merge("status" => "met") ]
+    assert_equal "missed", status.call
+  end
+
+  test "the featured Council vote belongs to a credited finding with the reviewed wording and minutes" do
+    edition = ResidentContent::CampaignPlatform::EDITION
+    item = edition.dig("members", "Doug Brandt", "items").find { |entry| entry["heading"] == "Consider expanding business incubators" }
+    note = item.fetch("reports").first
+    sources = note.fetch("sources").map { |key| edition.fetch("council_sources").fetch(key).slice("url", "label") }
+    row = { "heading" => item.fetch("heading"), "status" => "met", "reason" => note.fetch("text"), "sources" => sources }
+    report = CouncilTermSummary.new(term_started_on: Date.new(2024, 4, 16), promise_assessments: [ row ])
+    feature = -> { ResidentContent::CampaignPlatform.reviewed_findings(report, "Doug Brandt").sole["roll_call"] }
+    assert_equal [ 6, 2 ], feature.call&.values_at("ayes", "nays")
+    [ { "sources" => [] }, { "reason" => "Later records updated this finding." } ].each do |change|
+      report.promise_assessments = [ row.merge(change) ]
+      assert_nil feature.call
+    end
   end
 
   test "a busy shared allowance defers a seat holder without spending their weekly request" do

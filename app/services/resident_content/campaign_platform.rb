@@ -16,6 +16,29 @@ module ResidentContent
       Digest::SHA256.hexdigest(evidence.to_json)
     end
 
+    # Tie status refinements and illustrations to the exact saved finding and its citations.
+    def self.reviewed_findings(report, name)
+      rows = report.promise_assessments
+      edition_on = Date.iso8601(EDITION.fetch("election"))
+      return rows unless report.term_started_on == edition_on + 14
+
+      items = EDITION.fetch("members").dig(name, "items") || []
+      rows.map do |row|
+        headings = row["heading"].to_s.split(" / ")
+        notes = items.select { |item| headings.include?(item.fetch("heading")) }.flat_map { |item| item.fetch("reports", []) }
+        note = notes.find { |entry| entry.fetch("text") == row.fetch("reason") }
+        next row unless note
+
+        cited = row.fetch("sources").pluck("url")
+        urls = note.fetch("sources").map { |key| EDITION.fetch("council_sources").fetch(key).fetch("url") }
+        next row unless (urls - cited).empty?
+
+        row = row.merge(note.slice("profile_excerpt", "profile_subject", "finding_detail"))
+        row["status"] = note.fetch("finding_status") if note["finding_status"]
+        row.fetch("status") == "met" ? row.merge(note.slice("roll_call")) : row
+      end
+    end
+
     def initialize(records, edition: EDITION, include_council_records: true)
       @unreviewed = []
       @record_sources = CampaignRecordSources.new(edition.fetch("council_sources", {})) if include_council_records

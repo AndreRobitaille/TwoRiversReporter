@@ -36,14 +36,28 @@ module CouncilProfiles
         strength *= 1.2 if passage[:result]
         [ strength, passage ]
       end
-      candidates.sort_by { |score, p| [ -score, -p[:date].jd, p[:url], p[:text] ] }
-        .uniq { |_score, p| p[:url] }.first(limit).map do |_score, p|
-          { kind: "Minutes excerpt", text: p[:text], dates: [ p[:date] ], position: item[:heading],
-            identity: p[:identity], sources: [ { label: "#{p[:date]} · #{p[:body]}", url: p[:url] } ] }
-        end
+      ranked = candidates.sort_by { |score, p| [ -score, -p[:date].jd, p[:url], p[:text] ] }.map(&:last)
+      selected = ranked.uniq { |passage| passage[:url] }.first(limit)
+      # A named objection or dissent is a lead, never a finding. Keep it beside
+      # the best ordinary passage even when this position already has a review.
+      objection = ranked.find { |p| p[:objection] }
+      if objection
+        ordinary = ranked.find { |p| !p[:objection] }
+        selected = [ ordinary || selected.first, objection ].uniq if ordinary || !selected.include?(objection)
+      end
+      selected.map do |p|
+        { kind: "Minutes excerpt", text: p[:text], dates: [ p[:date] ], position: item[:heading],
+          identity: p[:identity], sources: [ { label: "#{p[:date]} · #{p[:body]}", url: p[:url] } ] }
+      end
     end
 
     private
+
+    def named_objection?(text, names)
+      name = Regexp.union(names)
+      text.match?(/\b(?:#{name})\s+(?:opposed|objected|voted against|moved to (?:reject|repeal|rescind|deny))\b/i) ||
+        text.match?(/\bVoting (?:Nay|No):\s*(?:[[:alpha:].’'-]+(?: [[:alpha:].’'-]+)?,\s*)*(?:#{name})\b/i)
+    end
 
     def prepare
       @passages = []
@@ -68,8 +82,9 @@ module CouncilProfiles
         stems = Campaigns::ComparisonTargets.lexemes(spans)
         stems.reduce(Set.new, :|).each { |term| frequency[term] += 1 }
         spans.zip(stems).each do |span, terms|
-          next unless span.match?(/\b(?:adopted?|approv(?:al|ed)|awarded?|granted|contract|authorize[ds]?|motion|moved|vot(?:ed|ing)|funded|opened|closed|purchased|amended|withdrew|withdrawn|reported|secured|completed|recommended|asked|requested)\b/i)
+          next unless span.match?(/\b(?:opposed|objected|rejected|repealed|rescinded|adopted?|approv(?:al|ed)|awarded?|granted|contract|authorize[ds]?|motion|moved|vot(?:ed|ing)|funded|opened|closed|purchased|amended|withdrew|withdrawn|reported|secured|completed|recommended|asked|requested)\b/i)
           @passages << { text: span, terms: terms, url: url, body: body, date: time.in_time_zone.to_date, identity: identity,
+            objection: named_objection?(span, identity),
             personal: PromiseFollowThrough.named_action?(span, identity),
             result: span.match?(/\$[\d,]+|\b(?:adopted|awarded|completed|closed|opened|executed|funded|purchased|enrolled|attended)\b/i) }
         end

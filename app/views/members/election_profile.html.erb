@@ -2,7 +2,8 @@
 <% content_for(:description) { "#{@member.name}’s campaign priorities, work on the Two Rivers City Council and public meeting records." } %>
 <% content_for(:og_type) { "article" } %>
 
-<article class="member-article election-profile">
+<article class="member-article election-profile" data-controller="profile-disclosures"
+         data-action="hashchange@window->profile-disclosures#reveal">
   <%= render "profile_header" %>
   <%= gated_content do %>
     <% if params[:decision].present? %>
@@ -16,7 +17,7 @@
           <p><%= @member.name %>’s recorded vote: <strong><%= @linked_vote.value&.humanize || "Unrecorded" %></strong>.
             Decision: <%= motion.outcome&.humanize || "Unrecorded" %> (<%= vote_split(motion) %>).</p>
           <% if (minutes = ResidentContent::VoteMinutes.for(motion)) %>
-            <%= link_to minutes.fetch(:label), minutes.fetch(:source_url) %> ·
+            <%= profile_source_link minutes.fetch(:label), minutes.fetch(:source_url), agenda_title: motion.agenda_item&.title %> ·
           <% end %>
           <%= link_to "#{motion.meeting.starts_at.to_date.to_fs(:long)} meeting and sources", meeting_path(motion.meeting) %>
         <% else %>
@@ -24,65 +25,24 @@
         <% end %>
       </section>
     <% end %>
-    <nav class="member-term-links" aria-label="Explore this member’s record">
-      <%= link_to "What #{@member.name.split.last} ran on", campaign_member_path(@member, anchor: "campaign-record") %>
-      <%= link_to "Find a vote or meeting", record_member_path(@member, votes: "all", anchor: "voting-record"), id: "voting-record" %>
-    </nav>
-    <section class="member-term-overview" id="campaign-record" aria-labelledby="term-heading">
-      <div class="home-section-header">
-        <%= render "shared/atom_marker" %>
-        <h2 id="term-heading" class="section-label"><%= @term_summary&.sentences.present? ? "The term so far" : "Last campaign" %></h2>
-        <span class="section-line"></span>
-      </div>
-      <% if @term_summary&.sentences.present? %>
-        <% sources = @term_summary.sentences.flat_map { |row| row.fetch("sources") }.uniq %>
-        <% follow_through = CouncilProfiles::PromiseFollowThrough.new(@term_summary.promise_assessments) %>
-        <% if (lead = follow_through.lead(@member.name.split.last)) %>
-          <p class="member-term-copy"><strong><%= lead %></strong></p>
-          <p class="member-term-score"><%= follow_through.percentage %>% fulfilled. Unresolved promises earn zero credit.</p>
+    <div class="profile-reading-layout">
+      <%= render "council_work" %>
+      <section class="member-term-overview" id="campaign-record" aria-labelledby="term-heading">
+        <h2 id="term-heading"><%= @term_summary&.sentences.present? ? "The term so far" : "Last campaign" %></h2>
+        <% if @term_summary&.sentences.present? %>
+          <%= render "term_report", report: @term_summary %>
+        <% elsif @campaign_preview.present? %>
+          <p class="member-term-date"><%= @campaign_date.year %> Council campaign</p>
+          <% @campaign_preview.each do |description, statement| %>
+            <p class="member-term-copy"><%= description %> <%= link_to "Source", campaign_member_path(@member, statement: statement.id, anchor: "campaign-statement"), class: "member-term-source" %></p>
+          <% end %>
+        <% else %>
+          <p>We don’t have a sourced statement from this member’s last campaign yet.</p>
         <% end %>
-        <% @term_summary.sentences.each do |row| %>
-          <p class="member-term-copy">
-            <%= row.fetch("text") %><sup><%= safe_join(row.fetch("sources").map { |source|
-              link_to sources.index(source) + 1, source.fetch("url"), aria: { label: "Source: #{source.fetch("label")}" }
-            }, ", ") %></sup>
-          </p>
+        <% unless @term_summary&.sentences.present? %>
+          <%= link_to "Read the full campaign record", campaign_member_path(@member, anchor: "campaign-record"), class: "profile-campaign-link" %>
         <% end %>
-        <details class="member-term-sources">
-          <summary>Sources · <%= @term_summary.generated_at.to_date.to_fs(:long) %></summary>
-          <ol><% sources.each do |source| %>
-            <li><%= link_to source.fetch("label"), source.fetch("url") %></li>
-          <% end %></ol>
-        </details>
-        <% if follow_through.total.positive? %>
-          <section class="member-promises" aria-labelledby="promise-heading">
-            <h3 id="promise-heading">Campaign promises and results</h3>
-            <p>Reviewed <%= @term_summary.generated_at.to_date.to_fs(:long) %>.</p>
-            <ul class="member-promise-list">
-              <% @term_summary.promise_assessments.each do |item| %>
-                <li>
-                  <h4><%= item["heading"].presence || item.fetch("label") %></h4>
-                  <p><strong><%= CouncilProfiles::PromiseFollowThrough::LABELS.fetch(item.fetch("status")) %>.</strong>
-                    <%= item.fetch("reason") %></p>
-                  <% if item.fetch("sources").any? %>
-                    <p class="member-promise-citations"><%= safe_join(item.fetch("sources").map { |s| link_to s.fetch("label"), s.fetch("url") }, " · ") %></p>
-                  <% end %>
-                  <% if item["quote"].present? %>
-                    <details class="member-term-sources"><summary>Campaign wording</summary><p><q><%= item["quote"] %></q></p></details>
-                  <% end %>
-                </li>
-              <% end %>
-            </ul>
-          </section>
-        <% end %>
-      <% elsif @campaign_preview.present? %>
-        <p class="member-term-date"><%= @campaign_date.year %> Council campaign</p>
-        <% @campaign_preview.each do |description, statement| %>
-          <p class="member-term-copy"><%= description %> <%= link_to "Source", campaign_member_path(@member, statement: statement.id, anchor: "campaign-statement"), class: "member-term-source" %></p>
-        <% end %>
-      <% else %>
-        <p>We don’t have a sourced statement from this member’s last campaign yet.</p>
-      <% end %>
-    </section>
+      </section>
+    </div>
   <% end %>
 </article>

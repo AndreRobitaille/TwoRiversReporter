@@ -33,13 +33,18 @@ module CouncilProfiles
     end
 
     def digest
-      Digest::SHA256.hexdigest(fact_keys.uniq.sort.to_json)
+      judgments = @facts.zip(fact_keys).filter_map do |fact, key|
+        scope = fact.slice(:matched_positions, :opposed_positions, :advanced_positions, :unclear_positions, :reviewed_status, :reviewed_on).compact_blank
+        [ key, scope ] if scope.any?
+      end
+      Digest::SHA256.hexdigest([ fact_keys.uniq.sort, judgments.sort_by(&:first) ].to_json)
     end
 
     private
 
     def campaign_facts
       platform = ResidentContent::CampaignPlatform.new(@statements)
+      @platform_items = platform.items
       @tracked_statements = platform.items.flat_map { |item| item.fetch(:statements) }.uniq
       ActiveRecord::Associations::Preloader.new(records: @tracked_statements, associations: :related_topics).call
       positions = platform.items.map do |item|
@@ -49,7 +54,9 @@ module CouncilProfiles
       end
       reports = platform.items.flat_map do |item|
         item.fetch(:reports, []).map do |report|
-          { kind: "Public record", position: item.fetch(:heading), dates: Array(report["reviewed_on"]).presence, text: report.fetch("text"), sources: report.fetch("sources").map { |s| source(s.fetch("label"), s.fetch("url")) } }
+          reviewed_on = report["reviewed_on"] || ResidentContent::CampaignPlatform::EDITION["findings_reviewed_on"] if report["finding_status"]
+          { kind: "Public record", position: item.fetch(:heading), dates: Array(report["reviewed_on"]).presence,
+            reviewed_status: report["finding_status"], reviewed_on: reviewed_on, text: report.fetch("text"), sources: report.fetch("sources").map { |s| source(s.fetch("label"), s.fetch("url")) } }
         end
       end
       excerpts = @minutes ? platform.items.flat_map { |item| @minutes.for_position(item) } : []
@@ -76,7 +83,9 @@ module CouncilProfiles
       relevant_topics = Set.new
       votes = vote_facts(relevant_topics)
       actions = member_actions(relevant_topics)
-      votes + newest(actions) + newest(issue_outcomes(relevant_topics)) + newest(direct_issue_comparisons)
+      comparisons = direct_issue_comparisons.uniq.sort_by { |fact| [ fact.fetch(:dates), fact.fetch(:text) ] }.reverse
+      contested = (votes + comparisons).flat_map { |fact| Array(fact[:opposed_positions]) }.uniq
+      include_conflicting_actions(votes, contested) + newest(actions) + newest(issue_outcomes(relevant_topics)) + include_conflicting_actions(comparisons, contested)
     end
 
     def direct_votes
@@ -84,10 +93,18 @@ module CouncilProfiles
       result = Hash.new { |h, k| h[k] = [] }
       @tracked_statements.each do |statement|
         matches.fetch(statement.id, []).each do |row|
-          result[row.fetch(:vote).id] << [ row.dig(:focus, "heading") || statement.data["summary"], row.fetch(:reason) ].join(" — ")
+          label = row.dig(:focus, "heading") || statement.data["summary"]
+          result[row.fetch(:vote).id] << { heading: comparison_heading(statement, row), effect: row[:motion_effect], text: [ label, row.fetch(:reason) ].compact_blank.join(" — ") }
         end
       end
       result
+    end
+
+    def comparison_heading(statement, row)
+      return row.dig(:focus, "heading") if row.dig(:focus, "heading").present?
+
+      headings = @platform_items.select { |item| item.fetch(:comparable).include?(statement) }.pluck(:heading).uniq
+      headings.sole if headings.one?
     end
 
     def vote_facts(relevant_topics)
@@ -107,12 +124,33 @@ module CouncilProfiles
         next unless comparison.any? || divided || impact >= 4
         relevant_topics.merge(topics.map(&:id))
         result = "Member voted #{vote.value}. Council result: #{motion.outcome.presence || "unrecorded"} (#{counts.fetch("yes", 0)} yes, #{counts.fetch("no", 0)} no)."
-        detail = [ result, motion.description, motion.agenda_item&.display_context_title, *comparison.uniq.sort ].compact_blank.uniq.join(" ")
+        detail = [ result, motion.description, motion.agenda_item&.display_context_title, *comparison.pluck(:text).uniq.sort ].compact_blank.uniq.join(" ")
         minutes = ResidentContent::VoteMinutes.for(motion)
-        [ [ comparison.any? ? 1 : 0, divided ? 1 : 0, impact, motion.meeting.starts_at, detail ],
-          meeting_fact("Member vote", motion.meeting, detail, minutes&.fetch(:source_url), minutes&.fetch(:label)) ]
+        fact = meeting_fact("Member vote", motion.meeting, detail, minutes&.fetch(:source_url), minutes&.fetch(:label))
+        headings = comparison.pluck(:heading).compact.uniq.sort
+        fact[:matched_positions] = headings if headings.any?
+        unclear = comparison.reject { |entry| %w[advances opposes].include?(entry[:effect]) }.pluck(:heading).compact.uniq.sort
+        fact[:unclear_positions] = unclear if unclear.any?
+        %w[advances opposes].each do |effect|
+          positions = comparison.select { |entry| entry[:effect] == effect }.pluck(:heading).compact.uniq.sort
+          next if positions.empty?
+          supports = (effect == "advances") == (vote.value == "yes")
+          key = supports ? :advanced_positions : :opposed_positions
+          fact[key] = positions
+        end
+        [ [ comparison.any? ? 1 : 0, divided ? 1 : 0, impact, motion.meeting.starts_at, detail ], fact ]
       end
-      ranked.sort_by(&:first).reverse.map(&:last).uniq.first(MAX_FACTS_PER_SECTION)
+      ranked.sort_by(&:first).reverse.map(&:last).uniq
+    end
+
+    def include_conflicting_actions(ranked, contested)
+      # Keep both sides of a contested position even when unrelated divided
+      # votes outrank it. One vote may cover several positions.
+      dated = ranked.sort_by { |fact| fact.fetch(:dates).max }.reverse
+      sides = contested.flat_map do |heading|
+        %i[opposed_positions advanced_positions].filter_map { |key| dated.find { |fact| Array(fact[key]).include?(heading) } }
+      end.uniq
+      sides + (ranked - sides).first([ MAX_FACTS_PER_SECTION - sides.size, 0 ].max)
     end
 
     def member_actions(relevant_topics)
@@ -121,7 +159,14 @@ module CouncilProfiles
         evidence = row.fetch(:evidence)
         next unless ResidentContent::OfficialProfile.substantive_description?(evidence.fetch("summary"))
         relevant_topics.merge(row.fetch(:topics).map(&:id))
-        meeting_fact("Member action", row.fetch(:meeting), evidence.values_at("summary", "quote").compact.join(" "), row.dig(:citation, :source_url))
+        url = row.dig(:citation, :source_url)
+        fact = meeting_fact("Member action", row.fetch(:meeting), evidence.values_at("summary", "quote").compact.join(" "), url)
+        headings = @platform_items.filter_map do |item|
+          review = item[:reviewed_action]
+          item[:heading] if review && review["minutes_url"] == url && review["quote"] == evidence["quote"]
+        end
+        fact[:matched_positions] = headings.uniq.sort if headings.any?
+        fact
       end
     end
 
@@ -143,10 +188,19 @@ module CouncilProfiles
         matches.fetch(statement.id, []).filter_map do |row|
           meeting = row.fetch(:meeting)
           next unless @period.range.cover?(meeting.starts_at)
-          position = row.dig(:focus, "heading") || statement.data.fetch("summary")
-          detail = [ position, row.fetch(:reason), row.dig(:evidence, "summary"), row.dig(:evidence, "conditions") ].compact_blank.uniq.join(" ")
+          position = comparison_heading(statement, row)
+          label = row.dig(:focus, "heading") || statement.data.fetch("summary")
+          detail = [ label, row.fetch(:reason), row.dig(:evidence, "summary"), row.dig(:evidence, "conditions") ].compact_blank.uniq.join(" ")
           kind = row[:kind] == "action" ? "Member work on campaign position" : "Outcome on campaign position, no personal credit"
-          meeting_fact(kind, meeting, detail, row.dig(:citation, :source_url))
+          fact = meeting_fact(kind, meeting, detail, row.dig(:citation, :source_url))
+          if position
+            fact[:matched_positions] = [ position ]
+            if row[:kind] == "action"
+              field = { "advances" => :advanced_positions, "opposes" => :opposed_positions }.fetch(row[:action_effect], :unclear_positions)
+              fact[field] = [ position ]
+            end
+          end
+          fact
         end
       end
     end

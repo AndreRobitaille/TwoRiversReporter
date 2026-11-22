@@ -1,7 +1,9 @@
 # Reviewed 2024 campaign sources. References are source-local statement sequences.
 # Digests bind those sequences to the exact attributed statements, quotes and qualifications.
 # The first reference supports the description. compare can narrow which records supply actions.
+# A profile_excerpt is a verbatim passage from its reviewed finding.
 election: "2024-04-02"
+findings_reviewed_on: "2026-11-22"
 sources:
   business: https://www.youtube.com/watch?v=L9Tlws24jm4
   league: https://www.youtube.com/watch?v=L7V9c2_RGWE
@@ -79,10 +81,36 @@ council_sources:
     label: Council packet, Apr. 7, 2025, p. 79
     url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Packet-07581b86719e479794b5a74621e516dc.pdf#page=79
     passages: ["relinquished the tax credits", "project is not progressing"]
+  park_installation:
+    label: "Park installation report, Aug. 12, 2026, p. 2"
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-173feff043144f368e5bb0618ac8294f.pdf#page=2
+    passages: ["a kayak launch, sidewalk, and fencing were installed at Paddlers Park"]
+  park_ramp:
+    label: "Boat-ramp update, Nov. 11, 2026, p. 2"
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-914ad6f6b31f4a7a9f92ba6d23300587.pdf#page=2
+    passages: ["The expanded concrete boat ramp is expected to be completed by the first week of December"]
   rental_hearing:
     label: Council work session, Oct. 28, 2024
     url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-aafbed31cb9749cc86ef5ad95ff3cd5c.pdf#page=3
     passages: ["Consider owner-occupancy requirements", "no consensus was expressed"]
+  rental_caps:
+    label: Rental caps discussion, Jan. 27, 2025, p. 3
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-551e1e323f20498da3a8904ab53cb3d1.pdf#page=3
+    docket: 25-020
+    passages: ["Potential caps on the number of STRs citywide or by neighborhood", "requested more information"]
+  rental_market:
+    label: "Hear Brandt on rental numbers, Jan. 27, 2025 · 2:02:53"
+    url: https://www.youtube.com/watch?v=rHV9kQR3tt4&t=7373s
+    passages: ["the free market will decide", "Doug's got a really good point"]
+  rental_residency_debate:
+    label: "R-1 owner residency discussed, Apr. 21, 2025 · 40:21"
+    url: https://www.youtube.com/watch?v=9xTqm-AjE4A&t=2421s
+    passages: ["they do have to be owner occupied", "differentiate based on R1"]
+  rental_zoning:
+    label: "Brandt’s R-1 motion and vote, Apr. 21, 2025, p. 2"
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-d1ea69819ec54f9a864b011dabf94e58.pdf#page=2
+    docket: 25-072
+    passages: ["to add Short Term Rentals as a Permitted Use", "Motion made by Brandt seconded by Bittner", "Voting Yea: Bittner, Brandt, Derby"]
   rental_ordinance:
     label: Council minutes, May 5, 2025
     url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-0a069b395b7b4040b2b46a2a7190f8f0.pdf
@@ -160,6 +188,31 @@ council_sources:
     label: "Council minutes, Nov. 18, 2024"
     url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-238acda4816e4464ade70c10466cdf0b.pdf
     passages: ["mayor-council form of government", "Motion made by Brandt seconded by Petri"]
+  eggers_site_vote:
+    label: "West Eggers site-plan decision, Jan. 27, 2026, p. 2"
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-c1294303edf94e21b90a9f5d6968d710.pdf#page=2
+    passages: ["Keith Lyons, Doug Brandt", "proposed site plan for former West Eggers", "reject the latest proposal made by Koach, seconded by Lyons. All in favor."]
+  cool_city_facade:
+    label: "Cool City Motel grant, Apr. 6, 2026, item 26-042, p. 4"
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-92069de44a594aa6990824383b8252fd.pdf#page=4
+    passages: ["not-to-exceed $17,536 for replacing 28 exterior doors", "will come from TID #11", "Motion made by Wachowski, seconded by Brandt"]
+  lincoln_main:
+    label: "Lincoln Avenue water main, Apr. 6, 2026, item 26-056, p. 5"
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-92069de44a594aa6990824383b8252fd.pdf#page=5
+    passages: ["replacement of approximately 2,200 feet of main", "$349,985.00 Motion made by Brandt, seconded by Bittner"]
+  manager_negotiations:
+    label: "Manager contract negotiations, May 30, 2025"
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-4e16f3aa9db74f8ebec3f9c20f1e58cf.pdf
+    passages: ["negotiate terms for a proposed employment agreement", "Brandt, Shimulunas, Derby, Petri"]
+  manager_contract:
+    label: "Manager contract vote, June 6, 2025, p. 2"
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-31870cee58464722b4008941872df7d4.pdf#page=2
+    docket: 25-110
+    passages: ["seconded by D. LeClair to approve the agreement", "Voting Yea: Bittner, Brandt, Derby", "Voting Nay: Wachowski"]
+  hawthorne_negotiations:
+    label: "Industrial committee, Jan. 27, 2026, p. 2"
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-c1294303edf94e21b90a9f5d6968d710.pdf#page=2
+    passages: ["possible relocation of Renee's Popcorn", "Hawthorne Avenue lot made by Coenen, seconded by Koach"]
   manager_feedback:
     label: "Council minutes, Dec. 23, 2024"
     url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-a89b7d4b8bae470cac88a52c2c72c8fa.pdf
@@ -218,6 +271,7 @@ council_sources:
     passages: ["municipality as a pass-through entity"]
 members:
   Mark Bittner:
+    story_emphasis: [Hamilton, family beach campout, growth committee]
     digests:
       business: 57803fbdf60a1420e114aa858aa62678113353e61e8a89fb7accfbe63477c77f
       league: fe36bc3ba10a58e752f3b640b46aab2a0b9ba2e1a4616e0353813fa518d5e80b
@@ -229,6 +283,9 @@ members:
         refs: [league.8, league.15, business.97]
         reports:
           - text: "Bittner reported on the existing finance committee’s review of city goals in April 2025. The meeting records reviewed show no motion creating his proposed growth committee or regular reports from it."
+            profile_subject: "Council growth committee"
+            profile_excerpt: "The meeting records reviewed show no motion creating his proposed growth committee or regular reports from it."
+            finding_status: missed
             reviewed_on: "2026-11-22"
             sources: [strategy]
       - heading: "Redevelop the riverfront land across from City Hall"
@@ -237,6 +294,8 @@ members:
         refs: [league.9, htr.1, league.11]
         reports:
           - text: "Bittner voted in March 2026 to rezone Hamilton for shops and upper-floor housing. In September he moved to authorize acquisition negotiations and cleanup protections. Those decisions advanced his pledge to pursue redevelopment. A final site plan and construction remain open."
+            finding_status: met
+            profile_excerpt: "Bittner voted in March 2026 to rezone Hamilton for shops and upper-floor housing. In September he moved to authorize acquisition negotiations and cleanup protections."
             reviewed_on: "2026-11-22"
             sources: [hamilton_zoning, hamilton_actions]
       - heading: "Keep the riverfront shoreline public"
@@ -245,6 +304,7 @@ members:
         refs: [htr.2]
         reports:
           - text: "Bittner voted for the Hamilton vision. Its planning process included a riverwalk and dockage. The September resolution left acquisition and land-use approvals open. A permanent right of public access is still unconfirmed."
+            finding_status: pursued
             reviewed_on: "2026-11-22"
             sources: [development_board, hamilton_actions]
       - heading: "Market city-owned west-side land for housing"
@@ -252,9 +312,10 @@ members:
         description: "He wanted the city to promote its west-side property as a potential housing development."
         refs: [league.2]
         reports:
-          - text: "In May 2025 Bittner moved to explore marketing the city lot at 18th and Hawthorne for housing. In October he voted for the listing contract. He gave no address during the campaign, so the parcel identification remains uncertain."
+          - text: "Bittner moved to market 18th and Hawthorne for housing and voted for the listing contract. A January 2026 industrial committee motion opened negotiations over the lot for a business. Mark Bittner was not a member of that committee. His campaign remarks did not identify the parcel by address."
+            finding_status: unresolved
             reviewed_on: "2026-11-22"
-            sources: [hawthorne_motion, hawthorne_listing]
+            sources: [hawthorne_motion, hawthorne_listing, hawthorne_negotiations]
       - heading: "Use tax-increment financing to attract new businesses"
         kind: Position
         description: "Bittner wanted the city to use tax-increment financing more often to help new businesses open in Two Rivers."
@@ -264,13 +325,22 @@ members:
         unrelated_records: [cool_city_grant, lighthouse_grant]
         reports:
           - text: "Bittner moved to approve up to $130,000 to help open the Violet Inn in the former Elks Club. Council approved the agreement 8–0 on Oct. 28, 2024. The grant was payable from additional property taxes generated by that site."
+            finding_status: met
             sources: [violet_vote, violet_terms]
+            roll_call:
+              title: Violet Inn grant agreement
+              caption: Bittner moved to approve up to $130,000 for the former Elks Club.
+              date: "2024-10-28"
+              ayes: 8
+              nays: 0
       - heading: "Promote city grants and loans for businesses"
         kind: Stated priority
         description: "He wanted more businesses to know about available grants and the revolving loan fund."
         refs: [business.81, business.93]
         reports:
           - text: "Bittner moved for the Violet Inn grant. The development committee also worked on revolving loans for small employers. The records reviewed identify no outreach by Bittner telling businesses how to use those programs."
+            finding_status: unresolved
+            profile_excerpt: "The records reviewed identify no outreach by Bittner telling businesses how to use those programs."
             reviewed_on: "2026-11-22"
             sources: [violet_vote, development_board]
       - heading: "Find occupants for vacant commercial buildings"
@@ -279,6 +349,7 @@ members:
         refs: [business.86]
         reports:
           - text: "The former M&M building sold, and the development committee later reported that The Spices was preparing to open. The minutes do not link Bittner to recruiting its operator or contacting outside agencies about vacancies."
+            finding_status: unresolved
             reviewed_on: "2026-11-22"
             sources: [vacant_building, spices]
       - heading: "Connect downtown festivals with local shops"
@@ -287,6 +358,8 @@ members:
         refs: [business.80, business.87]
         reports:
           - text: "Council approved a permit for Main Street’s downtown wine and beer walk. Main Street also organized Ethnic Fest. The minutes reviewed identify no work by Bittner bringing festival organizers and merchants together."
+            finding_status: unresolved
+            profile_excerpt: "The minutes reviewed identify no work by Bittner bringing festival organizers and merchants together."
             reviewed_on: "2026-11-22"
             sources: [wine_walk, festival]
       - heading: "Connect high-school students with local employers"
@@ -295,6 +368,8 @@ members:
         refs: [business.89]
         reports:
           - text: "Bittner moved for the forestry grant in September 2024. The city won $25,000, including support for a youth apprenticeship. In April 2025 the recreation board reported that a Two Rivers High School senior was due to start in June. This created a local training opportunity."
+            finding_status: met
+            profile_excerpt: "Bittner moved for the forestry grant in September 2024. The city won $25,000, including support for a youth apprenticeship."
             reviewed_on: "2026-11-22"
             sources: [forest_motion, forest_award, forest_place]
       - heading: "Expand affordable housing for young residents"
@@ -303,6 +378,8 @@ members:
         refs: [business.92]
         reports:
           - text: "Bittner voted to extend the housing tax district. Staff projected that at least $120,000 would go toward affordable housing if revenues met projections. The records do not yet establish homes made affordable to young residents."
+            finding_status: pursued
+            finding_detail: "Council approved the extension 6–3 on July 6, 2026."
             reviewed_on: "2026-11-22"
             sources: [housing_funding, housing_plan]
       - heading: "Create outdoor programs for local youth"
@@ -312,6 +389,8 @@ members:
         search_terms: [Paddlers Park, Riverside Park, kayak launch]
         reports:
           - text: "Bittner moved to allow the first family beach campout in 2025. The city reported 243 attendees. He moved to allow it again in 2026. The minutes document a new outdoor activity for families. They do not identify a youth paddling class he started."
+            finding_status: met
+            profile_excerpt: "Bittner moved to allow the first family beach campout in 2025. The city reported 243 attendees."
             reviewed_on: "2026-11-22"
             sources: [campout, campout_result, campout_return]
           - text: "On May 4, 2026, Bittner seconded and voted for the $27,373.60 Paddlers Park boat-launch contract. The park project included a walkway to the kayak launch. The vote was 9–0. We haven’t linked a youth paddling program to his work."
@@ -319,6 +398,7 @@ members:
           - text: "On Apr. 20, 2026, Bittner voted to apply for a state outdoor recreation grant for the second phase of Riverside Park improvements. Council approved the application 7–0."
             sources: [riverside]
   Doug Brandt:
+    story_emphasis: [housing site, industrial property sale proceeds, owner-residency rule]
     digests:
       business: f6aeaa9f916ba7ca62f60e288f126dffaed3c14592c69713db03fa133cc6f05e
       league: fa9a40fd6e15ef4d413495714b760641451a3fb3a5fab32506bfc3b5a260f394
@@ -328,6 +408,10 @@ members:
         kind: Stated priority
         description: "Brandt supported continuing the city’s practice of improving pipes and other infrastructure a little each year."
         refs: [htr.4]
+        reports:
+          - text: "Brandt moved for a $349,985 contract to replace about 2,200 feet of water main on Lincoln Avenue. Council awarded the work in April 2026."
+            finding_status: met
+            sources: [lincoln_main]
         reviewed_action:
           minutes_url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-92069de44a594aa6990824383b8252fd.pdf
           quote: "Recommended Action: Motion to award the contract to Vinton Construction Company of Manitowoc, based on its lowest qualified bid, in the amount of $349,985.00 Motion made by Brandt, seconded by Bittner Motion carried with a roll call vote."
@@ -339,9 +423,13 @@ members:
         compare: []
         prior_review_terms: [lottery]
         reports:
-          - text: "Brandt offered two alternatives. Residents asked for owner occupancy in October 2024. Council reached no consensus. The May 2025 rules covered guest limits and lighting. Brandt was not on that roll call. The minutes reviewed identify no proposal by him for either option."
+          - text: "Brandt suggested a rental lottery or part-year owner residency. When Council discussed caps, he argued demand would limit rentals. At the April hearing, Council discussed requiring owners to live in R-1 rentals. Brandt voted for his motion to permit rentals there without that condition. It passed 9–0."
+            profile_subject: "Short-term rental controls"
+            profile_excerpt: "At the April hearing, Council discussed requiring owners to live in R-1 rentals. Brandt voted for his motion to permit rentals there without that condition. It passed 9–0."
+            finding_status: contrary
+            finding_detail: "R-1 is the city’s single-family residential district. Council took no separate vote on a lottery."
             reviewed_on: "2026-11-22"
-            sources: [rental_hearing, rental_ordinance]
+            sources: [rental_hearing, rental_market, rental_residency_debate, rental_zoning]
       - heading: "Consider an owner-residency rule for short-term rentals"
         kind: Proposal
         description: "As an alternative to a lottery, he suggested requiring owners to live in their rental for part of each calendar year."
@@ -349,16 +437,17 @@ members:
         compare: []
         prior_review_terms: [owner occupancy, owner residency]
         reports:
-          - text: "At the Oct. 28, 2024 work session, residents presented a petition signed by 75 people and asked Council to consider owner occupancy. Council reached no consensus and took no action that night."
-            sources: [rental_hearing]
+          - text: "At the Oct. 28, 2024 work session, residents presented a petition signed by 75 people and asked Council to consider owner occupancy. Council reached no consensus. In April, after a resident objected to nonresident owners operating rentals in single-family neighborhoods, Brandt moved to permit rentals there. His motion carried 9–0 without an owner-residency requirement."
+            sources: [rental_hearing, rental_zoning]
       - heading: "Keep the city-manager form of government"
         kind: Position
         description: "He said he would work to preserve the city-manager system."
         refs: [league.17]
         reports:
-          - text: "Brandt moved to hire a search consultant for the next manager and relayed residents’ support for the system. Residents also requested a referendum. The meeting records reviewed show no vote deciding between a manager and a mayor."
+          - text: "Brandt moved to hire a search consultant when residents were asking for a mayoral referendum. He later moved to approve the new city manager’s employment agreement. It passed 8–1. Council filled the office without holding a vote on changing the form of government."
+            finding_status: pursued
             reviewed_on: "2026-11-22"
-            sources: [manager_search, manager_feedback, referendum]
+            sources: [manager_search, referendum, manager_contract]
       - heading: "Consider a city-developed subdivision"
         kind: Proposal
         description: "He suggested the city could develop a subdivision to add housing. He hoped a larger tax base would help with utility costs."
@@ -367,6 +456,8 @@ members:
         search_terms: [Sandy Bay Highlands, Coenen Buyeske]
         reports:
           - text: "Brandt voted for the $342,594 Sandy Bay street contract. In June 2026 he moved to buy and annex 24.6 acres for another housing site. The city closed the purchase in September. Lower utility bills were a hope he expressed."
+            finding_status: met
+            profile_excerpt: "In June 2026 he moved to buy and annex 24.6 acres for another housing site. The city closed the purchase in September."
             reviewed_on: "2026-11-22"
             sources: [sandy_bay, land_lending, coenen_plan, coenen_closing]
           - text: "Brandt voted to spend $342,593.90 on paving, curbs and gutters for phase three of the city’s Sandy Bay Highlands subdivision. Council approved the contract 8–0 on Sept. 2, 2025."
@@ -379,6 +470,8 @@ members:
         refs: [league.27, business.63]
         reports:
           - text: "Staff discussed expanding Woodland Industrial Park. The committee agreed to start land negotiations in February 2026. In June it heard that Flavor Hut had a contract to build there. The minutes do not identify Brandt as securing additional park acreage or recruiting several employers."
+            finding_status: unresolved
+            profile_excerpt: "The minutes do not identify Brandt as securing additional park acreage or recruiting several employers."
             reviewed_on: "2026-11-22"
             sources: [industrial_review, land_lending]
       - heading: "Consider expanding business incubators"
@@ -388,18 +481,31 @@ members:
         compare: []
         reports:
           - text: "In April 2026 Brandt seconded negotiations to sell two industrial properties and dedicate all proceeds to future incubator space. In June his motion carried 6–2 to seek $260,000 for a beach concession incubator. Funding and opening the new space remain separate steps."
+            finding_status: met
             reviewed_on: "2026-11-22"
             sources: [development_board, incubation]
+            roll_call:
+              title: Neshotah Beach grant application
+              caption: Brandt moved to seek a $260,000 grant for a business incubator.
+              date: "2026-06-08"
+              ayes: 6
+              nays: 2
       - heading: "Help businesses with city financing tools"
         kind: Position
         description: "He supported using the business improvement district, tax-increment financing and the revolving loan fund to help businesses."
         refs: [business.60, business.65, league.26]
+        reports:
+          - text: "Brandt seconded the Cool City Motel grant and voted to approve it. Council awarded up to $17,536 from the tax district to replace 28 exterior doors and locks."
+            finding_status: met
+            sources: [cool_city_facade]
       - heading: "Let developers apply for grants through the city"
         kind: Position
         description: "He supported the city acting as a pass-through for developers seeking grants."
         refs: [business.61]
         reports:
           - text: "The West River Lofts pass-through proposal went before Council in March 2024, before this term. During the term, the work session reported state funding for a public walkway and seawall. The minutes reviewed identify no new developer pass-through authorized by Brandt."
+            finding_status: unresolved
+            profile_excerpt: "The minutes reviewed identify no new developer pass-through authorized by Brandt."
             reviewed_on: "2026-11-22"
             sources: [preterm_grant, grant_update]
       - heading: "Encourage housing development to attract residents"
@@ -408,9 +514,11 @@ members:
         refs: [htr.3, business.59]
         search_terms: [Hansen’s Florist, Hansen Florist, 3000 Forest Avenue]
         reports:
-          - text: "On May 4, 2026, Brandt voted to approve a plan for two 26-unit apartment buildings at the former Hansen’s Florist site on Forest Avenue. The plan amendment passed 8–0."
-            sources: [hansen]
+          - text: "In January, Brandt was on the industrial committee that voted unanimously to reject the latest West Eggers site plan. In May, he voted for two 26-unit apartment buildings at the former Hansen’s Florist site. That amendment passed 8–0. His campaign called for encouraging housing development citywide."
+            finding_status: met
+            sources: [hansen, eggers_site_vote]
   Shannon Derby:
+    story_emphasis: [Paddlers Park, Violet Inn, city newsletter]
     digests:
       business: 5a2333852067bc15cccaf4975f79ac393adb909fc77feff9e137fd69b66d583a
       league: 14c1d78dae237f11e9fe366a99314d497bfa9850cad2191bc0f33441e2949ad6
@@ -423,6 +531,10 @@ members:
         search_terms: [BID expansion, public notice, public feedback survey, lead lateral]
         reports:
           - text: "At the September 2025 library meeting Derby asked about bilingual collections. Shimulunas asked whether residents could print the city newsletter. The meeting records reviewed show no change to city notices or their translations attributable to Derby."
+            profile_subject: "Access to city notices"
+            profile_excerpt: "The meeting records reviewed show no change to city notices or their translations attributable to Derby."
+            finding_status: missed
+            finding_detail: "The newsletter discussion gave Derby a chance to propose another way to reach residents. The minutes record no such proposal from her."
             reviewed_on: "2026-11-22"
             sources: [library_access]
           - text: "In December 2025, Derby told Council that residents at a community meal had questions about the Neshotah Beach concession stand. In January, a resident asked for a place to write comments on the survey."
@@ -437,6 +549,8 @@ members:
         refs: [league.52]
         reports:
           - text: "Derby voted for the Sandy Bay infrastructure contract in 2024 with $220,000 in stormwater treatment funding. In 2026 she also voted to seek pollution-control funding along Mariners Trail. The decisions funded treatment work. Water-quality results remain unmeasured here."
+            finding_status: met
+            profile_excerpt: "Derby voted for the Sandy Bay infrastructure contract in 2024 with $220,000 in stormwater treatment funding."
             reviewed_on: "2026-11-22"
             sources: [business_grants, stormwater_grant]
       - heading: "Keep homes affordable on local wages"
@@ -447,6 +561,8 @@ members:
         refs: [league.47, league.57, business.23, business.31, business.32, business.33]
         reports:
           - text: "Derby voted for an affordable-housing tax district extension. Staff projected that at least $120,000 could support affordable housing. The records do not establish a rent or home price within reach of residents on local wages."
+            finding_status: pursued
+            finding_detail: "Council approved the extension 6–3 on July 6, 2026."
             reviewed_on: "2026-11-22"
             sources: [housing_funding, housing_plan]
       - heading: "Keep the city-manager form of government"
@@ -454,15 +570,19 @@ members:
         description: "She supported keeping the city manager when asked about switching to a mayor."
         refs: [htr.7, league.43]
         reports:
-          - text: "Residents requested a referendum on the form of government in December 2024. The search for a new manager proceeded. The minutes reviewed identify no motion, vote or advocacy by Derby on whether Two Rivers should switch to a mayor."
+          - text: "After residents asked for a mayoral referendum, Derby voted to negotiate with the finalist for city manager. Derby voted for the new manager’s contract, which passed 8–1. Council did not vote on switching to a mayor."
+            finding_status: pursued
+            profile_excerpt: "Derby voted for the new manager’s contract, which passed 8–1. Council did not vote on switching to a mayor."
             reviewed_on: "2026-11-22"
-            sources: [referendum, manager_search]
+            sources: [referendum, manager_negotiations, manager_contract]
       - heading: "Give ethnic restaurants a role in planning Ethnic Fest"
         kind: Proposal
         description: "She suggested involving ethnic restaurants more directly on the board that organizes the festival."
         refs: [business.30]
         reports:
           - text: "The recreation board credited Two Rivers Main Street with organizing Ethnic Fest. Public event approvals and reports list vendors and activities. The minutes reviewed identify no appointment or proposal by Derby giving ethnic restaurants a planning role."
+            finding_status: unresolved
+            profile_excerpt: "Public event approvals and reports list vendors and activities. The minutes reviewed identify no appointment or proposal by Derby giving ethnic restaurants a planning role."
             reviewed_on: "2026-11-22"
             sources: [festival]
       - heading: "Make parks accessible to more residents"
@@ -470,15 +590,26 @@ members:
         description: "She wanted parks and green spaces to be accessible to everyone."
         refs: [league.44]
         reports:
-          - text: "Derby moved to award the $27,373.60 Paddlers Park boat-launch contract in May 2026. The recreation board had identified an accessible path as part of the project. Council approved the contract 9–0. The vote committed money to a specific access improvement."
+          - text: "Derby moved to award the $27,373.60 Paddlers Park boat-launch contract. Council approved it 9–0. In August the recreation board reported the kayak launch and sidewalk installed. In November it reported that the expanded concrete boat ramp was still to come."
+            finding_status: met
             reviewed_on: "2026-11-22"
-            sources: [paddlers, festival]
+            sources: [paddlers, park_installation, park_ramp]
+            roll_call:
+              title: Paddlers Park boat-launch contract
+              caption: Derby moved to award up to $27,373.60. By August the kayak launch and sidewalk were in place.
+              date: "2026-05-04"
+              ayes: 9
+              nays: 0
       - heading: "Give economic-development staff resources to recruit employers"
         kind: Proposal
         description: "She supported more resources for recruitment and raised the possibility of a position dedicated to finding employers."
         refs: [league.54]
         reports:
           - text: "The city advertised the community development director vacancy. Derby later referred a resident’s permit question to the director. The records reviewed identify no proposal or appropriation by Derby adding recruitment staff or resources."
+            profile_subject: "Business recruitment staff and funding"
+            profile_excerpt: "The records reviewed identify no proposal or appropriation by Derby adding recruitment staff or resources."
+            finding_status: missed
+            finding_detail: "Council heard the staffing update while the director’s job was open. Derby could have asked for recruitment duties or funding then."
             reviewed_on: "2026-11-22"
             sources: [recruiting, permits]
       - heading: "Consider development financing for jobs case by case"
@@ -487,6 +618,7 @@ members:
         refs: [league.55]
         reports:
           - text: "Derby voted separately on two local businesses’ $10,000 grants in August 2024. In October she seconded the Violet Inn agreement for up to $130,000, payable from additional property taxes. Those decisions establish individual project review. The votes do not establish a count of jobs created."
+            finding_status: met
             reviewed_on: "2026-11-22"
             sources: [business_grants, violet_vote, violet_terms]
       - heading: "Support apartments at the former Eggers West site"
@@ -495,9 +627,11 @@ members:
         refs: [league.48]
         search_terms: [West River Lofts, Eggers West]
         reports:
-          - text: "The developer surrendered its original housing credits in 2024. By June 2026 it had secured a primary lender and was pursuing housing financing again. The in-term records reviewed identify no decision by Derby advancing West River Lofts."
+          - text: "The developer surrendered its 2024 housing credits. In January 2026 the industrial committee rejected the latest West Eggers site plan. Derby did not serve on that committee. By June the developer had a lender and was pursuing financing again. The in-term records reviewed identify no decision by Derby advancing West River Lofts."
+            finding_status: unresolved
+            profile_excerpt: "The in-term records reviewed identify no decision by Derby advancing West River Lofts."
             reviewed_on: "2026-11-22"
-            sources: [grant_update, west_river, land_lending]
+            sources: [grant_update, west_river, eggers_site_vote, land_lending]
           - text: "The developer gave up the project’s reserved housing tax credits in November 2024. In April 2025 the city reported that the project was on hold and that its own site-work grant might also have to be released."
             sources: [west_river]
       - heading: "Address short-term rental concerns"
@@ -506,4 +640,5 @@ members:
         refs: [htr.8]
         reports:
           - text: "On May 5, 2025, Derby seconded Bittner’s motion and voted to change short-term rental licensing. The ordinance capped the number of guests and restricted outdoor lighting. It passed 7–1."
+            finding_status: met
             sources: [rental_ordinance, rental_terms]
