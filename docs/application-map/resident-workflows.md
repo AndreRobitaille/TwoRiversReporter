@@ -233,15 +233,50 @@ the same snapshot. Those future results assume the stored activity stays fixed.
 
 ## RES-09 — Find a governing body and current officials (P1)
 
+- **November 22, 2026 Council page (RES-01/09/11).** The ordinary Council
+  entry leads with its role, roster and work. Wide screens show the guide
+  beside the roster. The homepage election link opens `#spring-election`
+  directly on a phone. Each name with a profile links straight to that
+  person’s record. The Clerk link is public, including in gated mode.
+
+  In the initial layout review on `ca449a42` with local changes, Ruby 4.0.9 and isolated PostgreSQL,
+  `bin/rails test test/integration/council_election_test.rb test/controllers/committees_controller_test.rb test/controllers/committees_show_gating_test.rb test/controllers/home_controller_test.rb`
+  passed 43 tests and 254 assertions with zero skips. Keeping the signature
+  reminder after filing closed failed the February assertion. Restoring the
+  deadline check passed. Chromium at 320, 390 and 1366 pixels reached all
+  three section links and opened the dated Brandt statement with the keyboard.
+  On a 390 × 844 phone the Council-work heading began at 2,204 pixels on the
+  live page and 643 pixels on the local preview. Both simulated reviewers
+  found the roster and work on their return visit. Local topic descriptions
+  exercised the fallback for missing briefing headlines.
+
+  The follow-up removed the three header shortcuts and replaced the election
+  disclosures with direct profile links. On the same local revision, the
+  command above plus `test/integration/campaign_platform_test.rb` passed
+  48 tests and 332 assertions with zero skips. A test-only view that sent
+  Shannon Derby’s link to another member failed the profile URL assertion.
+  Chromium checked all three destinations against the roster at 390 and 1366
+  pixels and followed links to Brandt and Bittner. The phone check started
+  from the homepage election link. `bin/rubocop` passed.
+
 - **Spring election (RES-01/09/10/11).** During the published guide’s dates,
   Home → City Council opens the election first. Term sources and candidacy
   sources are recorded separately in the [election guide](../../config/council_election.yml).
-  When a filing or declaration is confirmed, add the name and source under
-  `candidates` and update `checked_on`. Council and member pages read the same
-  edition. A reader can open a position from a named election and see the same
-  statement, qualifications, linked actions, and sources on the member page.
+  Each edition has a fixed timeline and three sourced seat holders. Home,
+  Council and member pages select the next edition one week after the first
+  Tuesday in April, using the local calendar date. The schedule contains the
+  elections through spring 2029. Add a sourced edition for later terms.
+  A reader can open a member’s profile to see dated campaign
+  statements, qualifications, linked actions, and sources.
   A withdrawn or misattributed statement link gives an unavailable message.
   Gated visitors can reach the Clerk’s public election information.
+
+  On November 22, the local suite above plus the platform and member-gating
+  tests passed 51 tests and 402 assertions with zero skips on `ca449a42` with
+  working changes. A test-only one-day delay still showed 2027 on April 13
+  and failed the homepage assertion. Restoring the seven-day cutoff passed.
+  With a simulated Central clock, 390px Chromium displayed the three expected
+  member links and filing and election dates for each of the three editions.
 
 - **November 21, 2026 local verification.** Patch on `97cf231d`, Ruby 4.0.9,
   PostgreSQL 18.6. With `RAILS_ENV=test`, a separate local database and
