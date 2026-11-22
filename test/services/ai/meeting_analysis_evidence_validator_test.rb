@@ -96,6 +96,37 @@ class MeetingAnalysisEvidenceValidatorTest < ActiveSupport::TestCase
     assert_equal item["motion"], result["motion"]
   end
 
+  test "preserves the passive mover and seconder wording used in official minutes" do
+    source = "Motion made by Bittner, seconded by Brandt to approve the contract extension and move forward with the agreement."
+    item = { "motion" => { "mover" => "Mark Bittner", "seconder" => "Doug Brandt" },
+      "motion_evidence" => { "mover" => source, "seconder" => source } }
+    roster = "Mark Bittner, Doug Brandt, Bill LeClair, Darla LeClair."
+
+    assert_equal item["motion"], validate(item, source, participant_context: roster)["motion"]
+    item["motion"] = { "mover" => "Doug Brandt", "seconder" => "Mark Bittner" }
+    assert_equal({ "mover" => nil, "seconder" => nil }, validate(item, source, participant_context: roster)["motion"])
+  end
+
+  test "distinct initials identify shared surnames in an amended motion and its second" do
+    source = "D. LeClair amended her motion to table the ordinance to October 19, 2026 Council Meeting; the motion was seconded by B. LeClair."
+    item = { "motion" => { "mover" => "Darla LeClair", "seconder" => "Bill LeClair" },
+      "motion_evidence" => { "mover" => source, "seconder" => source } }
+    roster = "Canonical roster: Bill LeClair, Darla LeClair. Meeting roll call: Bill LeClair, Darla LeClair."
+
+    assert_equal item["motion"], validate(item, source, participant_context: roster)["motion"]
+    item["motion"] = { "mover" => "Bill LeClair", "seconder" => "Darla LeClair" }
+    assert_equal({ "mover" => nil, "seconder" => nil }, validate(item, source, participant_context: roster)["motion"])
+  end
+
+  test "an initial or surname shared by multiple participants cannot identify the person" do
+    source = "Motion made by D. LeClair, seconded by LeClair."
+    item = { "motion" => { "mover" => "Darla LeClair", "seconder" => "Bill LeClair" },
+      "motion_evidence" => { "mover" => source, "seconder" => source } }
+    roster = "Bill LeClair, Darla LeClair, Dave LeClair."
+
+    assert_equal({ "mover" => nil, "seconder" => nil }, validate(item, source, participant_context: roster)["motion"])
+  end
+
   test "rejects nonexistent source quotes and evidence from another person's motion" do
     source = "Mark Bittner moved approval. The motion passed 6-2."
     item = { "vote" => "6-2", "vote_evidence" => "The motion passed 6-2 unanimously.",

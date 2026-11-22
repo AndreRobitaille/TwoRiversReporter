@@ -3,34 +3,49 @@ module ResidentContent
     PROCEDURAL_PATTERNS = [
       /adjourn/i,
       /approve.*minutes/i,
-      /approve.*consent\s+agenda/i,
+      /(?:approv|accept|adopt).*consent\s+agenda/i,
       /approve.*agenda\s+as/i,
       /close.*public\s+hearing/i,
       /open.*public\s+hearing/i,
-      /enter.*closed\s+session/i,
+      /\b(?:enter|convene|move|go)\b.*closed\s+session/i,
+      /\b(?:allow|approve)\s+council\s*members?\b.*\bparticipate\b.*remote\s+location/i,
       /reconvene/i,
       /roll\s+call/i,
       /pledge\s+of\s+allegiance/i
     ].freeze
 
-    def initialize(member)
+    def initialize(member, council_meeting_ids: nil, during: nil)
       @member = member
+      @council_meeting_ids = council_meeting_ids
+      @during = during
     end
 
     def votes
-      @member.votes.joins(motion: :meeting)
-        .includes(motion: [ :meeting, :votes, { agenda_item: { agenda_item_topics: :topic } } ])
+      records = @member.votes.joins(motion: :meeting)
+        .includes(motion: [ :meeting, :votes, { agenda_item: [ :parent, { agenda_item_topics: :topic } ] } ])
         .order("meetings.starts_at DESC", id: :desc)
+      records = records.where(motions: { meeting_id: @council_meeting_ids }) unless @council_meeting_ids.nil?
+      records
     end
 
-    def vote_groups
-      build_vote_groups(votes)
+    def vote_groups(records = resident_votes)
+      build_vote_groups(records)
     end
 
     def resident_votes
-      groups, other = vote_groups
-      (groups.flat_map { |group| group[:votes] } + other).uniq
-        .sort_by { |vote| [ -(vote.motion.meeting.starts_at || Time.at(0)).to_i, -vote.id ] }
+      votes.select { |vote| featured_vote?(vote) }
+    end
+
+    def featured_vote?(vote)
+      !(procedural_vote?(vote) && unanimously_approved?(vote.motion))
+    end
+
+    def substantive_motion?(motion)
+      self.class.substantive_description?(motion.description)
+    end
+
+    def self.substantive_description?(description)
+      description.present? && PROCEDURAL_PATTERNS.none? { |pattern| description.match?(pattern) }
     end
 
     def attendance
@@ -69,19 +84,41 @@ module ResidentContent
       by_committee.sort_by { |c, _| [ c.name == "City Council" ? 0 : 1, c.name ] }
     end
 
+    # Recorded rows only; these are not complete-term denominators or comparable
+    # peer rates. The separate Council projection reconciles its known inventory.
+    def recorded_attendance(excluding_committee_id: nil)
+      records = @member.meeting_attendances.voting_members.joins(:meeting)
+        .where("meetings.starts_at <= ?", Time.current).includes(meeting: :committee)
+      records = records.where(meetings: { starts_at: @during }) if @during
+      records = records.where.not(meetings: { committee_id: excluding_committee_id }) if excluding_committee_id
+      groups = records.reject { |record| record.meeting.cancelled? }.group_by { |record| record.meeting.committee }
+      result = groups.filter_map do |committee, attendances|
+        next unless committee
+        statuses = attendances.group_by { |record| record.meeting.duplicate_identity_key }.values.map do |duplicates|
+          values = duplicates.map(&:status).uniq
+          values.one? ? values.sole : "unknown"
+        end
+        counts = CouncilAttendance::LABELS.keys.to_h { |status| [ status, statuses.count(status) ] }
+        [ committee, counts ]
+      end
+      result.sort_by! { |committee, _| [ committee.name == "City Council" ? 0 : 1, committee.name ] }
+      result.presence
+    end
+
     private
+
+    def unanimously_approved?(motion)
+      attending_votes = motion.votes.reject { |vote| vote.value == "absent" }
+      motion.outcome == "passed" && attending_votes.any? && attending_votes.all? { |vote| vote.value == "yes" }
+    end
 
     def build_vote_groups(votes)
       topic_votes = Hash.new { |h, k| h[k] = { topic: nil, votes: [], latest_date: nil, qualifies: false } }
-      other_votes = []
 
       votes.each do |vote|
         topics = vote.motion.agenda_item&.agenda_item_topics&.map(&:topic)&.select { |t| t.status == "approved" }
 
-        if topics.blank?
-          other_votes << vote
-          next
-        end
+        next if topics.blank?
 
         topics.each do |topic|
           group = topic_votes[topic.id]
@@ -109,28 +146,22 @@ module ResidentContent
       # Sort by impact score then recency
       qualified = topic_votes.values
         .select { |g| g[:qualifies] }
-        .sort_by { |g| [ -(g[:topic].resident_impact_score || 0), g[:latest_date] ? -g[:latest_date].to_i : 0 ] }
+        .sort_by { |g| [ -(g[:topic].resident_impact_score || 0), g[:latest_date] ? -g[:latest_date].to_i : 0, g[:topic].id ] }
         .first(5)
 
-      # Move non-qualifying topic votes into other_votes
-      qualified_topic_ids = qualified.map { |g| g[:topic].id }.to_set
-      topic_votes.each do |_topic_id, group|
-        unless qualified_topic_ids.include?(group[:topic].id)
-          other_votes.concat(group[:votes])
-        end
+      # Display a decision once, under its highest-ranked featured topic.
+      displayed_vote_ids = Set.new
+      qualified.each do |group|
+        group[:votes].select! { |vote| displayed_vote_ids.add?(vote.id) }
       end
+      qualified.reject! { |group| group[:votes].empty? }
 
-      # Filter out procedural votes from other_votes
-      other_votes.reject! { |v| procedural_vote?(v) }
-      other_votes.sort_by! { |v| v.motion.meeting.starts_at }.reverse!
-
+      other_votes = votes.reject { |vote| displayed_vote_ids.include?(vote.id) }
       [ qualified, other_votes ]
     end
 
     def procedural_vote?(vote)
-      desc = vote.motion.description
-      return true if desc.blank?
-      PROCEDURAL_PATTERNS.any? { |pattern| desc.match?(pattern) }
+      !substantive_motion?(vote.motion)
     end
   end
 end

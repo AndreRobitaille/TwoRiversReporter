@@ -9,7 +9,7 @@
     card), so there's no real mount point to update anyway. %>
 <% unless gated_for_visitor? %>
   <%= turbo_stream.append "all-topics-cards" do %>
-    <% @topics.each do |topic| %>
+    <% (@search_results || @topics).each do |topic| %>
       <%= render "topics/topic_card", topic: topic, highlight_signals: {} %>
     <% end %>
   <% end %>
@@ -18,7 +18,7 @@
     <div id="all-topics-page">
       <% if @pagy.next %>
         <div class="topics-show-more">
-          <%= link_to topics_path(page: @pagy.next, format: :turbo_stream),
+          <%= link_to topics_path(q: @search_query, page: @pagy.next, format: :turbo_stream),
                 class: "btn btn--secondary" do %>
             Show more
           <% end %>

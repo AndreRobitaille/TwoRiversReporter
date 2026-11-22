@@ -1,0 +1,12 @@
+<% evidence = action.fetch(:evidence) %>
+<div class="member-campaign-position" data-recorded-action="<%= evidence.fetch("kind") %>">
+  <p><%= evidence.fetch("summary") %></p>
+  <details class="member-campaign-context">
+    <summary><%= Date.iso8601(evidence.fetch("occurred_on")).strftime("%b %-d, %Y") %> · Source</summary>
+    <blockquote><%= evidence.fetch("quote") %></blockquote>
+    <p><%= action.fetch(:meeting).body_name %> · <%= link_to action.fetch(:citation).fetch(:label), action.fetch(:citation).fetch(:source_url) || meeting_path(action.fetch(:meeting)) %></p>
+    <% action.fetch(:topics).each do |topic| %>
+      <%= link_to topic_title_case(topic.canonical_name), topic_path(topic) %>
+    <% end %>
+  </details>
+</div>

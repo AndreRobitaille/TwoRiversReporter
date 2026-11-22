@@ -84,6 +84,10 @@ class CommitteesController < ApplicationController
 
   def show
     @committee = Committee.find_by!(slug: params[:slug])
+    @election = ResidentContent::CouncilElection.current if @committee.name == "City Council"
+    if @election && !gated_for_visitor?
+      @election_records = (@election.candidates.keys | @election.terms_ending.keys).index_with { |name| @election.record_for(name) }
+    end
 
     @memberships = @committee.committee_memberships
       .where(ended_on: nil)
@@ -102,7 +106,7 @@ class CommitteesController < ApplicationController
     end
 
     @recent_topics = load_recent_topics
-    @headlines = TopicBriefing.where(topic_id: @recent_topics.map(&:id))
+    @headlines = TopicBriefing.published.where(topic_id: @recent_topics.map(&:id))
                               .pluck(:topic_id, :headline)
                               .to_h
   end

@@ -1,7 +1,9 @@
 require "test_helper"
 require "minitest/mock"
+require_relative "../support/minutes_fact_helpers"
 
 class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
+  include MinutesFactHelpers
   setup do
     @committee = Committee.create!(name: "City Council")
     @meeting = Meeting.create!(
@@ -29,7 +31,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
   test "skips meeting without minutes text" do
     @doc.update!(extracted_text: nil)
     assert_no_difference "MeetingAttendance.count" do
-      ExtractCommitteeMembersJob.perform_now(@meeting.id)
+      run_attendance_job
     end
   end
 
@@ -45,7 +47,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
     Member.stub :resolve, ->(name) { raise ActiveRecord::RecordInvalid.new(Member.new) if name == "Johnson"; Member.find_or_create_by!(name: name) } do
       Ai::OpenAiService.stub :new, mock_service do
         assert_raises ActiveRecord::RecordInvalid do
-          ExtractCommitteeMembersJob.perform_now(@meeting.id)
+          run_attendance_job
         end
       end
     end
@@ -64,7 +66,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
 
     Ai::OpenAiService.stub :new, mock_service do
       assert_difference "MeetingAttendance.count", 4 do
-        ExtractCommitteeMembersJob.perform_now(@meeting.id)
+        run_attendance_job
       end
     end
 
@@ -88,7 +90,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
 
     Ai::OpenAiService.stub :new, mock_service do
       assert_difference "Member.count", 1 do
-        ExtractCommitteeMembersJob.perform_now(@meeting.id)
+        run_attendance_job
       end
     end
 
@@ -106,7 +108,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
     mock_service = stub_ai_response(ai_response)
 
     Ai::OpenAiService.stub :new, mock_service do
-      ExtractCommitteeMembersJob.perform_now(@meeting.id)
+      run_attendance_job
     end
 
     assert Member.find_by(name: "Smith")
@@ -125,7 +127,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
 
     Ai::OpenAiService.stub :new, mock_service do
       assert_difference "CommitteeMembership.count", 1 do
-        ExtractCommitteeMembersJob.perform_now(@meeting.id)
+        run_attendance_job
       end
     end
 
@@ -149,7 +151,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
 
     Ai::OpenAiService.stub :new, mock_service do
       assert_difference "CommitteeMembership.count", 1 do
-        ExtractCommitteeMembersJob.perform_now(@meeting.id)
+        run_attendance_job
       end
     end
 
@@ -171,7 +173,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
 
     Ai::OpenAiService.stub :new, mock_service do
       assert_no_difference "CommitteeMembership.count" do
-        ExtractCommitteeMembersJob.perform_now(@meeting.id)
+        run_attendance_job
       end
     end
 
@@ -196,7 +198,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
 
     Ai::OpenAiService.stub :new, mock_service do
       assert_no_difference "CommitteeMembership.count" do
-        ExtractCommitteeMembersJob.perform_now(@meeting.id)
+        run_attendance_job
       end
     end
 
@@ -221,7 +223,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
     })
 
     Ai::OpenAiService.stub :new, mock_service do
-      ExtractCommitteeMembersJob.perform_now(@meeting.id)
+      run_attendance_job
     end
 
     minutes_only = Member.find_by!(name: "Minutes Only Person")
@@ -244,7 +246,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
     })
 
     Ai::OpenAiService.stub :new, mock_service do
-      ExtractCommitteeMembersJob.perform_now(@meeting.id)
+      run_attendance_job
     end
 
     assert_equal "member", membership.reload.role
@@ -269,7 +271,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
 
     Ai::OpenAiService.stub :new, mock_service do
       assert_no_difference "CommitteeMembership.count" do
-        ExtractCommitteeMembersJob.perform_now(@meeting.id)
+        run_attendance_job
       end
     end
     mock_service.verify
@@ -290,7 +292,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
     })
 
     Ai::OpenAiService.stub :new, mock_service do
-      ExtractCommitteeMembersJob.perform_now(@meeting.id)
+      run_attendance_job
     end
 
     assert_equal "member", membership.reload.role
@@ -312,7 +314,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
     })
 
     Ai::OpenAiService.stub :new, mock_service do
-      ExtractCommitteeMembersJob.perform_now(@meeting.id)
+      run_attendance_job
     end
 
     assert_equal "staff", membership.reload.role
@@ -344,7 +346,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
     })
 
     Ai::OpenAiService.stub :new, mock_service do
-      ExtractCommitteeMembersJob.perform_now(@meeting.id)
+      run_attendance_job
     end
 
     assert_equal "member", membership.reload.role
@@ -375,7 +377,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
     })
 
     Ai::OpenAiService.stub :new, mock_service do
-      ExtractCommitteeMembersJob.perform_now(@meeting.id)
+      run_attendance_job
     end
 
     assert_not CommitteeMembership.current.exists?(committee: @committee, member: former_member)
@@ -383,7 +385,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
     mock_service.verify
   end
 
-  test "is idempotent — destroys and recreates attendance on re-run" do
+  test "is idempotent and reuses attendance on re-run" do
     ai_response = {
       "voting_members_present" => [ "Smith" ],
       "voting_members_absent" => [],
@@ -394,7 +396,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
     2.times do
       mock_service = stub_ai_response(ai_response)
       Ai::OpenAiService.stub :new, mock_service do
-        ExtractCommitteeMembersJob.perform_now(@meeting.id)
+        run_attendance_job
       end
     end
 
@@ -416,7 +418,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
     Ai::OpenAiService.stub :new, mock_service do
       assert_difference "MeetingAttendance.count", 1 do
         assert_no_difference "CommitteeMembership.count" do
-          ExtractCommitteeMembersJob.perform_now(@meeting.id)
+          run_attendance_job
         end
       end
     end
@@ -467,7 +469,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
     mock_service = stub_ai_response(ai_response)
 
     Ai::OpenAiService.stub :new, mock_service do
-      ExtractCommitteeMembersJob.perform_now(@meeting.id)
+      run_attendance_job
     end
 
     membership.reload
@@ -503,7 +505,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
     mock_service = stub_ai_response(ai_response)
 
     Ai::OpenAiService.stub :new, mock_service do
-      ExtractCommitteeMembersJob.perform_now(@meeting.id)
+      run_attendance_job
     end
 
     membership.reload
@@ -539,7 +541,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
     mock_service = stub_ai_response(ai_response)
 
     Ai::OpenAiService.stub :new, mock_service do
-      ExtractCommitteeMembersJob.perform_now(@meeting.id)
+      run_attendance_job
     end
 
     membership = CommitteeMembership.find_by!(member: member, committee: @committee, ended_on: nil)
@@ -561,7 +563,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
 
     Ai::OpenAiService.stub :new, mock_service do
       assert_difference "MeetingAttendance.count", 1 do
-        ExtractCommitteeMembersJob.perform_now(@meeting.id)
+        run_attendance_job
       end
     end
     mock_service.verify
@@ -580,7 +582,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
 
     Ai::OpenAiService.stub :new, mock_service do
       assert_difference "MeetingAttendance.count", 1 do
-        ExtractCommitteeMembersJob.perform_now(@meeting.id)
+        run_attendance_job
       end
     end
 
@@ -597,7 +599,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
 
     Ai::OpenAiService.stub :new, mock_service do
       assert_nothing_raised do
-        ExtractCommitteeMembersJob.perform_now(@meeting.id)
+        run_attendance_job
       end
     end
 
@@ -615,7 +617,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
     mock_service = stub_ai_response(ai_response)
 
     Ai::OpenAiService.stub :new, mock_service do
-      ExtractCommitteeMembersJob.perform_now(@meeting.id)
+      run_attendance_job
     end
 
     state = @meeting.reload.processing_state
@@ -627,7 +629,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
   test "retries missing_source once minutes text becomes available" do
     @doc.update!(extracted_text: nil)
 
-    ExtractCommitteeMembersJob.perform_now(@meeting.id)
+    run_attendance_job
     assert_equal "missing_source", @meeting.reload.processing_state["committee_members_extraction_status"]
 
     @doc.update!(extracted_text: "ROLL CALL\nPresent: Smith, Johnson")
@@ -639,7 +641,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
     })
 
     Ai::OpenAiService.stub :new, mock_service do
-      ExtractCommitteeMembersJob.perform_now(@meeting.id)
+      run_attendance_job
     end
 
     assert_equal "processed", @meeting.reload.processing_state["committee_members_extraction_status"]
@@ -656,7 +658,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
     mock_service = stub_ai_response(ai_response)
 
     Ai::OpenAiService.stub :new, mock_service do
-      ExtractCommitteeMembersJob.perform_now(@meeting.id)
+      run_attendance_job
     end
 
     state = @meeting.reload.processing_state
@@ -668,7 +670,7 @@ class ExtractCommitteeMembersJobTest < ActiveSupport::TestCase
   test "records committee member extraction missing_source when minutes text is absent" do
     @doc.update!(extracted_text: nil)
 
-    ExtractCommitteeMembersJob.perform_now(@meeting.id)
+    run_attendance_job
 
     state = @meeting.reload.processing_state
     assert_equal "missing_source", state["committee_members_extraction_status"]

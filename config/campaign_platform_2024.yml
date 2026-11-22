@@ -1,0 +1,289 @@
+# Reviewed 2024 campaign sources. References are source-local statement sequences.
+# Digests bind those sequences to the exact attributed statements, quotes and qualifications.
+# The first reference supports the description. compare can narrow which records supply actions.
+election: "2024-04-02"
+sources:
+  business: https://www.youtube.com/watch?v=L9Tlws24jm4
+  league: https://www.youtube.com/watch?v=L7V9c2_RGWE
+  htr: https://www.htrnews.com/story/news/politics/elections/2024/03/27/two-rivers-council-candidates-talk-about-the-citys-potential-as-the-april-2-election-nears/73099320007/
+# Dated primary records checked for this edition. A docket identifies only
+# that decision in that document. Other decisions on the same project remain eligible.
+council_sources:
+  violet_vote:
+    label: Council minutes, Oct. 28, 2024
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-aafbed31cb9749cc86ef5ad95ff3cd5c.pdf
+    passages: ["Developer Grant to Assist With Development of the Violet Inn", "Motion made by Bittner, seconded by Derby"]
+  violet_terms:
+    label: Developer grant terms
+    url: https://mccmeetingspublic.blob.core.usgovcloudapi.net/tworivrswi-meet-106495e465644446b65f1627224032d0/ITEM-Attachment-001-c62d72cd3f4448ef9b005b30d21e3961.pdf
+    passages: ["$130,000", "additional property taxes"]
+  cool_city_grant:
+    label: Cool City façade grant
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-92069de44a594aa6990824383b8252fd.pdf
+    docket: 26-042
+    passages: ["replacing 28 exterior doors", "TID #11"]
+  lighthouse_grant:
+    label: Lighthouse Inn façade grant
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-92069de44a594aa6990824383b8252fd.pdf
+    docket: 26-054
+    passages: ["upgrading exterior lighting and signage", "TID #12"]
+  paddlers:
+    label: Council minutes, May 4, 2026
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-bb70d09245c1401c86ded969fc7cdc35.pdf
+    docket: 26-088
+    passages: ["concrete walkway to the kayak launch", "Motion made by Derby seconded by Bittner Voting Yea: Bittner", "$27,373.60"]
+  riverside:
+    label: Council minutes, Apr. 20, 2026
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-8b3551cf06b040c9a7496d60a1448ba1.pdf
+    docket: 26-066
+    passages: ["Phase 2 of Riverside Park improvements", "seconded by Brandt to adopt the resolution Voting Yea: Bittner"]
+  sandy_bay:
+    label: Council minutes, Sept. 2, 2025
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-681e67b4bfc24c809e0132b6499aaf42.pdf
+    docket: 25-175
+    passages: ["Sandy Bay Highlands Subdivision No. 3", "$342,593.90", "seconded by Bittner Voting Yea: Derby, B. LeClair, Brandt"]
+  coenen_plan:
+    label: Development Authority minutes, Aug. 11, 2026
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-573aa7d4aba946e0ad576f6522ba1305.pdf
+    passages: ["Coenen-Buyeske property", "single-family residential lots"]
+  coenen_closing:
+    label: City staff report, Oct. 19, 2026
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Packet-095115218b2c4007a69b6408f977958a.pdf
+    passages: ["Coenen-Buyeske property closed September 15"]
+  hansen:
+    label: Council minutes, May 4, 2026
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-bb70d09245c1401c86ded969fc7cdc35.pdf
+    docket: 26-077
+    passages: ["26-unit apartment buildings", "Motion made by Petri seconded by Dahlke Voting Yea: Bittner, Brandt"]
+  bid_questions:
+    label: Council minutes, Aug. 3, 2026
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-5494ca6891a14b47bb1d08256ee552ce.pdf
+    passages: ["addressing questions raised about the BID's operations and proposed expansion"]
+  bid_hearing:
+    label: Plan Commission minutes, Oct. 12, 2026
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-116e0f3fe50c4d8e930481f295c069a4.pdf
+    passages: ["withdrawn their petition for the BID Expansion"]
+  lateral:
+    label: Council minutes, Feb. 16, 2026
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-08b895c8aa4348a29681c62f701334a4.pdf
+    passages: ["when contact was made with the City, no help was received", "whether roadways would be torn up"]
+  neshotah_questions:
+    label: Council minutes, Dec. 1, 2025
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-7f330ca5db25423e8ee9dbcbc77975e9.pdf
+    passages: ["Councilmember Derby mentioned", "had questions about the concession stand"]
+  neshotah_survey:
+    label: Council minutes, Jan. 19, 2026
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-e69ea661d46f449b9b739734aa5b1826.pdf
+    passages: ["comments section", "make the survey available to the public"]
+  west_river:
+    label: Council packet, Apr. 7, 2025, p. 79
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Packet-07581b86719e479794b5a74621e516dc.pdf#page=79
+    passages: ["relinquished the tax credits", "project is not progressing"]
+  rental_hearing:
+    label: Council work session, Oct. 28, 2024
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-aafbed31cb9749cc86ef5ad95ff3cd5c.pdf#page=3
+    passages: ["Consider owner-occupancy requirements", "no consensus was expressed"]
+  rental_ordinance:
+    label: Council minutes, May 5, 2025
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-0a069b395b7b4040b2b46a2a7190f8f0.pdf
+    docket: 25-085
+    passages: ["Motion made by Bittner, seconded by Derby", "lighting restriction times"]
+  rental_terms:
+    label: Rental ordinance, pp. 26–28
+    url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Packet-0a069b395b7b4040b2b46a2a7190f8f0.pdf#page=26
+    passages: ["two persons for every bedroom", "guest register for two years"]
+members:
+  Mark Bittner:
+    digests:
+      business: 57803fbdf60a1420e114aa858aa62678113353e61e8a89fb7accfbe63477c77f
+      league: fe36bc3ba10a58e752f3b640b46aab2a0b9ba2e1a4616e0353813fa518d5e80b
+      htr: fc9749d9a9d65b008b39609665f4881a5497fa28c7bd6e712bec066b5f4eb503
+    items:
+      - heading: "Form a council growth committee"
+        kind: Proposal
+        description: "Bittner proposed a committee of council members that would meet regularly and report on residents’ growth priorities at council work sessions."
+        refs: [league.8, league.15, business.97]
+      - heading: "Redevelop the riverfront land across from City Hall"
+        kind: Stated priority
+        description: "He wanted housing, shops and small industries on the site. At the March 7 forum he said the city first had to overcome obstacles to acquiring it."
+        refs: [league.9, htr.1, league.11]
+      - heading: "Keep the riverfront shoreline public"
+        kind: Position
+        description: "He supported public access for boating, walking, biking and events alongside private development."
+        refs: [htr.2]
+      - heading: "Market city-owned west-side land for housing"
+        kind: Proposal
+        description: "He wanted the city to promote its west-side property as a potential housing development."
+        refs: [league.2]
+      - heading: "Use tax-increment financing to attract new businesses"
+        kind: Position
+        description: "Bittner wanted the city to use tax-increment financing more often to help new businesses open in Two Rivers."
+        refs: [business.73, league.12, business.82]
+        compare: []
+        search_terms: [Violet Inn, developer grant, pay as you go]
+        unrelated_records: [cool_city_grant, lighthouse_grant]
+        reports:
+          - text: "Bittner moved to approve up to $130,000 to help open the Violet Inn in the former Elks Club. Council approved the agreement 8–0 on Oct. 28, 2024. The grant was payable from additional property taxes generated by that site."
+            sources: [violet_vote, violet_terms]
+      - heading: "Promote city grants and loans for businesses"
+        kind: Stated priority
+        description: "He wanted more businesses to know about available grants and the revolving loan fund."
+        refs: [business.81, business.93]
+      - heading: "Find occupants for vacant commercial buildings"
+        kind: Proposal
+        description: "He wanted the city to tell property owners and outside agencies about vacant sites and the tools available to reuse them."
+        refs: [business.86]
+      - heading: "Connect downtown festivals with local shops"
+        kind: Stated priority
+        description: "He wanted to coordinate festivals with downtown businesses so visitors would shop there."
+        refs: [business.80, business.87]
+      - heading: "Connect high-school students with local employers"
+        kind: Stated priority
+        description: "He favored giving students access to technical training and local companies as a route into work after graduation."
+        refs: [business.89]
+      - heading: "Expand affordable housing for young residents"
+        kind: Stated priority
+        description: "He wanted housing that younger residents could afford as they started out in Two Rivers."
+        refs: [business.92]
+      - heading: "Create outdoor programs for local youth"
+        kind: Stated priority
+        description: "He favored programs that would get young people involved in activities such as canoeing and kayaking."
+        refs: [business.90]
+        search_terms: [Paddlers Park, Riverside Park, kayak launch]
+        reports:
+          - text: "On May 4, 2026, Bittner seconded and voted for the $27,373.60 Paddlers Park boat-launch contract. The park project included a walkway to the kayak launch. The vote was 9–0. We haven’t linked a youth paddling program to his work."
+            sources: [paddlers]
+          - text: "On Apr. 20, 2026, Bittner voted to apply for a state outdoor recreation grant for the second phase of Riverside Park improvements. Council approved the application 7–0."
+            sources: [riverside]
+  Doug Brandt:
+    digests:
+      business: f6aeaa9f916ba7ca62f60e288f126dffaed3c14592c69713db03fa133cc6f05e
+      league: fa9a40fd6e15ef4d413495714b760641451a3fb3a5fab32506bfc3b5a260f394
+      htr: 6c7e13d4ad944db98e54b9d23d836d035ec7f9d12f76cea8de5952825740726f
+    items:
+      - heading: "Replace aging pipes through annual public works projects"
+        kind: Stated priority
+        description: "Brandt supported continuing the city’s practice of improving pipes and other infrastructure a little each year."
+        refs: [htr.4]
+        reviewed_action:
+          minutes_url: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-92069de44a594aa6990824383b8252fd.pdf
+          quote: "Recommended Action: Motion to award the contract to Vinton Construction Company of Manitowoc, based on its lowest qualified bid, in the amount of $349,985.00 Motion made by Brandt, seconded by Bittner Motion carried with a roll call vote."
+          reason: Moving to replace a water main is an example of the annual infrastructure work he supported.
+      - heading: "Consider a lottery for short-term rentals"
+        kind: Proposal
+        description: "He offered a lottery as one possible way to regulate short-term rentals. An owner-residency rule was his other suggestion."
+        refs: [league.20]
+        compare: []
+        prior_review_terms: [lottery]
+      - heading: "Consider an owner-residency rule for short-term rentals"
+        kind: Proposal
+        description: "As an alternative to a lottery, he suggested requiring owners to live in their rental for part of each calendar year."
+        refs: [league.20]
+        compare: []
+        prior_review_terms: [owner occupancy, owner residency]
+        reports:
+          - text: "At the Oct. 28, 2024 work session, residents presented a petition signed by 75 people and asked Council to consider owner occupancy. Council reached no consensus and took no action that night."
+            sources: [rental_hearing]
+      - heading: "Keep the city-manager form of government"
+        kind: Position
+        description: "He said he would work to preserve the city-manager system."
+        refs: [league.17]
+      - heading: "Consider a city-developed subdivision"
+        kind: Proposal
+        description: "He suggested the city could develop a subdivision to add housing. He hoped a larger tax base would help with utility costs."
+        refs: [league.25]
+        compare: []
+        search_terms: [Sandy Bay Highlands, Coenen Buyeske]
+        reports:
+          - text: "Brandt voted to spend $342,593.90 on paving, curbs and gutters for phase three of the city’s Sandy Bay Highlands subdivision. Council approved the contract 8–0 on Sept. 2, 2025."
+            sources: [sandy_bay]
+          - text: "The city bought the former Coenen-Buyeske property on Sept. 15, 2026. Staff estimated the site could hold 36–40 single-family lots and about 100 apartments."
+            sources: [coenen_plan, coenen_closing]
+      - heading: "Expand the industrial park for smaller employers"
+        kind: Stated priority
+        description: "He favored expanding the park and recruiting several smaller employers. He preferred that approach to relying on one large company."
+        refs: [league.27, business.63]
+      - heading: "Consider expanding business incubators"
+        kind: Proposal
+        description: "He said the existing incubators were full and suggested the city could expand them."
+        refs: [business.62]
+        compare: []
+      - heading: "Help businesses with city financing tools"
+        kind: Position
+        description: "He supported using the business improvement district, tax-increment financing and the revolving loan fund to help businesses."
+        refs: [business.60, business.65, league.26]
+      - heading: "Let developers apply for grants through the city"
+        kind: Position
+        description: "He supported the city acting as a pass-through for developers seeking grants."
+        refs: [business.61]
+      - heading: "Encourage housing development to attract residents"
+        kind: Stated priority
+        description: "He wanted the city to encourage more housing for people moving to Two Rivers."
+        refs: [htr.3, business.59]
+        search_terms: [Hansen’s Florist, Hansen Florist, 3000 Forest Avenue]
+        reports:
+          - text: "On May 4, 2026, Brandt voted to approve a plan for two 26-unit apartment buildings at the former Hansen’s Florist site on Forest Avenue. The plan amendment passed 8–0."
+            sources: [hansen]
+  Shannon Derby:
+    digests:
+      business: 5a2333852067bc15cccaf4975f79ac393adb909fc77feff9e137fd69b66d583a
+      league: 14c1d78dae237f11e9fe366a99314d497bfa9850cad2191bc0f33441e2949ad6
+      htr: beae493be3676175d6ec35bf1f2c073b5ef1a42f94a996c02ec88e9c613c9b9d
+    items:
+      - heading: "Make city notices easier for residents to get"
+        kind: Proposal
+        description: "Derby wanted city news to reach residents beyond Facebook and utility bills, including people who read other languages."
+        refs: [business.19]
+        search_terms: [BID expansion, public notice, public feedback survey, lead lateral]
+        reports:
+          - text: "In December 2025, Derby told Council that residents at a community meal had questions about the Neshotah Beach concession stand. In January, a resident asked for a place to write comments on the survey."
+            sources: [neshotah_questions, neshotah_survey]
+          - text: "On Feb. 16, 2026, Councilmember Shimulunas reported that residents who contacted the city about lead lateral work had received no help. She asked what repairs were planned and whether roads would be torn up."
+            sources: [lateral]
+          - text: "Residents asked for answers about the proposed downtown business district expansion. The Plan Commission cancelled its Oct. 12, 2026 hearing after the property owners withdrew their petition."
+            sources: [bid_questions, bid_hearing]
+      - heading: "Protect waterways and manage stormwater"
+        kind: Stated priority
+        description: "She described clean waterways and manageable stormwater as priorities for decisions made during her term, looking ahead ten years."
+        refs: [league.52]
+      - heading: "Keep homes affordable on local wages"
+        kind: Stated priority
+        description: "She wanted the cost of housing in Two Rivers to be within reach of people earning local wages."
+        # Several answers also discuss wages or child care. Only housing comparisons belong here.
+        comparison_topic: affordable housing development
+        refs: [league.47, league.57, business.23, business.31, business.32, business.33]
+      - heading: "Keep the city-manager form of government"
+        kind: Position
+        description: "She supported keeping the city manager when asked about switching to a mayor."
+        refs: [htr.7, league.43]
+      - heading: "Give ethnic restaurants a role in planning Ethnic Fest"
+        kind: Proposal
+        description: "She suggested involving ethnic restaurants more directly on the board that organizes the festival."
+        refs: [business.30]
+      - heading: "Make parks accessible to more residents"
+        kind: Stated priority
+        description: "She wanted parks and green spaces to be accessible to everyone."
+        refs: [league.44]
+      - heading: "Give economic-development staff resources to recruit employers"
+        kind: Proposal
+        description: "She supported more resources for recruitment and raised the possibility of a position dedicated to finding employers."
+        refs: [league.54]
+      - heading: "Consider development financing for jobs case by case"
+        kind: Position
+        description: "She supported considering tax-increment financing for employers and weighing each proposal individually."
+        refs: [league.55]
+      - heading: "Support apartments at the former Eggers West site"
+        kind: Position
+        description: "Derby backed the proposed apartments at the west plant site during the forum. The city called the project West River Lofts."
+        refs: [league.48]
+        search_terms: [West River Lofts, Eggers West]
+        reports:
+          - text: "The developer gave up the project’s reserved housing tax credits in November 2024. In April 2025 the city reported that the project was on hold and that its own site-work grant might also have to be released."
+            sources: [west_river]
+      - heading: "Address short-term rental concerns"
+        kind: Stated priority
+        description: "She called for a proactive response to short-term rentals. Her written answer left the choice of rule open."
+        refs: [htr.8]
+        reports:
+          - text: "On May 5, 2025, Derby seconded Bittner’s motion and voted to change short-term rental licensing. The ordinance capped the number of guests and restricted outdoor lighting. It passed 7–1."
+            sources: [rental_ordinance, rental_terms]

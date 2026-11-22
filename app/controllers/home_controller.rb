@@ -10,6 +10,8 @@ class HomeController < ApplicationController
   WIRE_ROW_LIMIT = ResidentContent::HomeSelection::WIRE_ROW_LIMIT
 
   def index
+    @council_election = ResidentContent::CouncilElection.current
+    @election_council_slug = Committee.where(name: "City Council").pick(:slug) if @council_election
     selection = ResidentContent::HomeSelection.new.call
     @top_stories = selection[:top_stories]
     @wire_cards = selection[:wire_cards]
@@ -25,7 +27,7 @@ class HomeController < ApplicationController
   def load_headlines(topics)
     return if topics.empty?
 
-    @headlines = TopicBriefing
+    @headlines = TopicBriefing.published
       .where(topic_id: topics.map(&:id))
       .each_with_object({}) { |b, h| h[b.topic_id] = b.headline if b.headline.present? }
   end

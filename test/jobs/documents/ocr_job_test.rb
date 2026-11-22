@@ -27,7 +27,11 @@ module Documents
       Open3.stub :capture3, [ "OCR minutes text", "", OpenStruct.new(success?: true) ] do
         Documents::OcrJob.class_eval { define_method(:system) { |*| true } }
         begin
-          Documents::OcrJob.perform_now(doc.id)
+          Open3.stub :capture2e, [ "Pages: 1\n", OpenStruct.new(success?: true) ] do
+            Dir.stub :glob, [ "/tmp/synthetic/page-1.png" ] do
+              Documents::OcrJob.perform_now(doc.id)
+            end
+          end
         ensure
           Documents::OcrJob.class_eval { remove_method(:system) }
         end

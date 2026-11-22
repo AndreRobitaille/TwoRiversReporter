@@ -2,7 +2,7 @@ class AutoTriageKnowledgeJob < ApplicationJob
   queue_as :default
 
   def perform
-    proposed = KnowledgeSource.proposed.where(origin: %w[extracted pattern])
+    proposed = KnowledgeSource.available.proposed.where(origin: %w[extracted pattern])
     if proposed.none?
       Rails.logger.info "AutoTriageKnowledgeJob: No proposed knowledge entries to triage."
       return
@@ -13,17 +13,8 @@ class AutoTriageKnowledgeJob < ApplicationJob
     ai_service = Ai::OpenAiService.new
     retrieval_service = RetrievalService.new
 
-    entries_payload = proposed.map do |entry|
-      {
-        id: entry.id,
-        title: entry.title,
-        body: entry.body,
-        reasoning: entry.reasoning,
-        confidence: entry.confidence,
-        origin: entry.origin,
-        topic_names: entry.topics.pluck(:name)
-      }
-    end
+    entries_payload = proposed.map { |entry| entry_payload(entry) }
+    captured = entries_payload.index_by { |entry| entry.fetch(:id) }
 
     # Retrieve existing approved KB for duplicate checking
     existing_kb = retrieval_service.format_context(
@@ -45,17 +36,25 @@ class AutoTriageKnowledgeJob < ApplicationJob
       entry = proposed.find { |e| e.id == decision["knowledge_source_id"] }
       next unless entry
 
-      action = decision["action"].to_s
-      case action
-      when "approve"
-        entry.update!(status: "approved")
-        Rails.logger.info "AutoTriageKnowledgeJob: Approved '#{entry.title}' — #{decision["rationale"]}"
-      when "block"
-        entry.update!(status: "blocked")
-        Rails.logger.info "AutoTriageKnowledgeJob: Blocked '#{entry.title}' — #{decision["rationale"]}"
+      status = { "approve" => "approved", "block" => "blocked" }[decision["action"].to_s]
+      next unless status
+
+      KnowledgeSource.transaction do
+        current = KnowledgeSource.available.proposed.lock("FOR NO KEY UPDATE").find_by(id: entry.id)
+        next unless current && current.updated_at == entry.updated_at && entry_payload(current) == captured.fetch(entry.id)
+
+        current.update!(status: status)
+        Rails.logger.info "AutoTriageKnowledgeJob: #{status.capitalize} '#{current.title}' — #{decision["rationale"]}"
       end
     end
   rescue JSON::ParserError => e
     Rails.logger.error("AutoTriageKnowledgeJob: Failed to parse AI response: #{e.message}")
+  end
+
+  private
+
+  def entry_payload(entry)
+    { id: entry.id, title: entry.title, body: entry.body, reasoning: entry.reasoning,
+      confidence: entry.confidence, origin: entry.origin, topic_names: entry.topics.order(:name).pluck(:name) }
   end
 end

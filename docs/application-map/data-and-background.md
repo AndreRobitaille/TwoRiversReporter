@@ -67,7 +67,9 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   needed processing; maintain one public canonical event without losing source
   records. A stale listing does not undo cancellation (RES-08).
 - **Next:** newly linked documents advance enrichment; unchanged discovery does
-  not misrepresent a new source publication or content update.
+  not misrepresent a new source publication or content update. The scheduled job
+  also queues BG-08 campaign recovery before fetching the city listing, using
+  the existing nightly schedule.
 - **Failure variants:** unreachable/changed HTML, unresolved body, duplicate race,
   malformed time, parse failure after discovery, missing worker.
 - **Observed:** [DiscoverMeetingsJob](../../app/jobs/scrapers/discover_meetings_job.rb),
@@ -93,6 +95,10 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   daily at 11pm. The older unscheduled/six-hour suggestion is historical.
   Configuration and a passing local enqueue test do not prove production
   execution or the city's publication time; see [behavior contracts](behavior-contracts.md).
+- **Council budget boundary:** the existing nightly repair sweep may requeue
+  budget-paused minutes work, but admission supplies no new budget, attempt or
+  provider call when limits still hold. Source collection and deterministic
+  publication remain independent. See [budget checks](council-spend-reservations-2026-11-07.md).
 
 ## BG-02 — Enrich agenda/packet content, then supersede with minutes (P0)
 
@@ -107,6 +113,10 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
 - **Next:** verify source characters/pages and distinctive events → parsed agenda
   IDs → topic appearances → recap item details/highlights → topic context/briefing →
   HTML/API. Compare counts AND distinct identities/content at each major boundary.
+- **Minutes attribution correction:** the existing validator accepts explicit
+  passive motion wording and roster-unique initials. Verified roles survive
+  meeting publication and shared topic inputs; accepted votes are unchanged.
+  See [source and workflow checks](minutes-motion-attribution-2026-11-08.md).
 - **Failure variants:** download failure, OCR poor/no text, missing prompt,
   unsupported motion excerpt/tally, context overflow, stale lower-tier recap,
   partial enqueue races. Delay is not completion evidence.
@@ -118,6 +128,81 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   [SummarizeMeetingJob](../../app/jobs/summarize_meeting_job.rb).
   Source branches queue packet recap immediately, agenda preview after 5 minutes,
   and minutes recap after 10 minutes. None was run for the map.
+
+- **November 7 artifact foundation:** full-byte downloads retain immutable
+  `MeetingDocumentVersion` records and archived blobs, atomically with replacement.
+  Same-source identical bytes reuse a version without queuing analysis; delayed
+  responses are rejected after another fetch/source edit. Ordinary document
+  deletion unlinks retained versions instead of deleting their evidence.
+  Legacy HTTP 304 does not create a version without bytes. This changes the
+  download boundary only; vote/attendance extraction still lacks coordinated
+  source-version publication. See [scope and verification](council-evidence-2026-11-07.md).
+- **November 7 extraction foundation:** PDF/OCR results retain immutable full-text
+  and raw/cleaned page versions linked to the downloaded artifact. The source
+  identity and attachment are pinned before commands execute; stale or incomplete
+  output cannot replace pages/text. Blank pages remain numbered, and OCR image
+  count must match `pdfinfo`. Current successful extraction retries do not queue
+  downstream analysis; completed OCR takes precedence over PDF retries. This
+  does not yet version vote/attendance rows or move resident readers to archived
+  evidence. See [boundary and fault evidence](council-text-versions-2026-11-07.md).
+- **November 7 fact publication:** vote/attendance jobs retain separate
+  `MinutesExtraction` outputs and publish a source-matched pair through
+  `MinutesPublication`. Completed stages are independently inspectable; a missing
+  counterpart leaves the prior display pair intact. Claims and stage keys avoid
+  duplicate calls, while deterministic context changes reuse extraction. The
+  existing nightly sweep recovers missing/changed work, respecting stage attempt
+  limits and uncertain outcomes. Oversized inputs are held before provider
+  transport. See [parallel, HTTP and fault evidence](council-fact-publication-2026-11-07.md).
+  Decision identities are covered by the later slice below; explicit corrections
+  and #238's dollar ledger remain open.
+- **November 7 minutes request accounting:** the actual vote/attendance transport
+  now receives a 4,000 completion-token limit and a durable per-attempt receipt
+  committed before dispatch. Usage, response model/ID, finish reason and partial
+  output remain inspectable independently of PromptRun pruning. Non-stop responses
+  are held without automatic retry or fact publication; unknown outcomes retain
+  their receipt. See [request boundaries and fault evidence](minutes-request-receipts-2026-11-07.md).
+  The following slice adds reservations against approved estimates; real
+  token/pricing validation and paid-pilot authorization remain open.
+- **November 7 council minutes reservations:** selected meetings retain a budget
+  requirement across ordinary deliveries and source changes. An internal job
+  binds pending work to an explicitly authorized run/day and exact prepared
+  request estimates. Selection and claims serialize on the meeting lock so an
+  ordinary worker cannot claim from an earlier unbudgeted snapshot.
+  Admission now locks month then day then run, enforces request/run/day/month,
+  request-count, concurrency and declared-token limits, and commits the full
+  integer micro-USD reservation with the receipt before transport. Completed
+  responses release only concurrency; unknown outcomes retain amount and slot.
+  Budget pauses preserve attempts; completed facts and deterministic correction
+  still reuse without calls. No other AI paths or new schedule are enrolled.
+  Token counts/rates are supplied approved preflight inputs, not automatically
+  verified prices or measured tokenization. See [real database contention and
+  fault evidence](council-spend-reservations-2026-11-07.md) and the subsequent
+  [monthly cap and cost report](council-monthly-costs-2026-11-08.md).
+- **November 7 passage locations:** new vote stages check model-supplied excerpts
+  against retained pages with code. Unique passages retain exact character ranges
+  and page hashes, including across page breaks; unavailable/ambiguous evidence
+  stays unresolved. A location match is not approval of a vote or interpretation.
+  Old stages are not automatically re-extracted. See [source revision and fault
+  evidence](council-evidence-locations-2026-11-07.md).
+- **November 7 decision identity:** publication now records immutable observations
+  and stable opaque decision IDs, using exact excerpt/sequence/agenda context
+  correspondence and independent retained-passage ordering. The first supported
+  evidence can establish a baseline without assigning older unresolved records.
+  Unresolved changes retain candidates and withdraw the old
+  current identity reference; unrelated matches continue. No semantic approval
+  is inferred. See [replay, revision and concurrency evidence](council-decision-identities-2026-11-07.md).
+  Identity correction persistence follows below. Topic motion-evidence references
+  follow in BG-04; broader lifecycle dependencies remain open.
+- **November 7 identity corrections:** an internal service records append-only
+  identity reviews and changes the effective assignment without overwriting raw
+  extraction. Identical requests replay once; stale reviews fail. Same-source,
+  unchanged observations retain applicable review; changed/conflicting evidence
+  retains the review references while withdrawing its current identity link.
+  Lost correspondence and an intervening empty publication retain possible review
+  dependencies; unchanged unrelated decisions can still advance.
+  See [correction, retention and concurrency
+  evidence](council-identity-corrections-2026-11-07.md). Operator UI, factual-value
+  corrections and dependent narrative withdrawal remain follow-on work.
 
 ## BG-03 — Add recording context without replacing official evidence (P0)
 
@@ -138,6 +223,11 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   [UploadedTranscriptImporter](../../app/services/documents/uploaded_transcript_importer.rb),
   [workflow job](../../app/jobs/admin/transcript_import_workflow_job.rb),
   [meeting summarizer](../../app/jobs/summarize_meeting_job.rb).
+  Identical uploaded SRT content/URL/provenance now reuses its document and
+  dependent briefing receipt. Replacement and withdrawal share a transaction;
+  [source-withdrawal checks](council-source-withdrawal-2026-11-07.md) cover concurrent
+  first publication and failed replacement. General meeting-stage paid-call
+  idempotence remains separate.
 
 ## BG-04 — Update topic continuity and resident priorities (P1)
 
@@ -163,6 +253,57 @@ Jobs can be queued/delayed, skipped, retried, or fail between these boundaries.
   [briefing job](../../app/jobs/topics/generate_topic_briefing_job.rb),
   [description job](../../app/jobs/topics/generate_description_job.rb),
   [Topic Governance](../topics/TOPIC_GOVERNANCE.md).
+
+November 7 motion-evidence update: continuity events pin retained decision
+observations, keep distinct same-day decisions and reuse events on reprojection.
+Current summary/briefing inputs exclude superseded, orphaned and unlinked motion
+events, while historical records remain inspectable. Topic merges retain both
+histories and expose each current motion once. See [source-to-context, concurrency
+and fault evidence](council-topic-evidence-2026-11-07.md). This does not withdraw
+already generated narratives or validate extracted factual interpretations.
+
+November 7 generation dependency update: shared topic-summary and full-briefing
+stages retain dependency receipts, reuse identical completed inputs and reject
+changed inputs or delayed output before publication. Future briefing/description
+inputs omit known-stale prior analyses; topic context omits known-stale meeting
+item details. Both ordinary meeting processing (BG-02) and operator reanalysis
+use the same topic-summary guard. See [behavior, cost limits and fault evidence](council-topic-generation-2026-11-07.md).
+Known decision-identity corrections now withdraw dependent stored briefings and
+illustrations in the review transaction; resident reads omit them until checked
+full generation replaces them. See the bounded [withdrawal contract and QA](council-briefing-withdrawal-2026-11-07.md).
+Ordinary document save/destroy/touch transactions now also withdraw known catalog
+and motion-dependent briefings; see [source-change QA and its limits](council-source-withdrawal-2026-11-07.md).
+Knowledge changes and other generated projections remain separate work.
+Other stored resident prose and all-writer atomic invalidation remain separate.
+
+Agenda previews now consume only published briefing context and recheck consumed
+identities, content and eligibility under topic locks before saving a provider
+response. See [agenda-preview transition and concurrency checks](agenda-briefing-context-2026-11-07.md).
+Saved meeting summaries now withdraw on changes to recorded document dependencies;
+see [summary publication, consumers and QA](meeting-summary-withdrawal-2026-11-07.md).
+Saved summaries also retain their consumed structured motion context. Fact
+republication withdraws incompatible known summaries and illustrations atomically;
+compatible context survives. Final summary publication and consumers recheck the
+receipt. See [summary fact dependencies and verification](meeting-summary-facts-2026-11-07.md).
+Saved previews now retain consumed topic-briefing sections. Normal briefing,
+topic and alias changes withdraw invalid known dependents; checked consumers use
+topic-before-summary locks, and API freshness includes withdrawal. See
+[saved agenda dependencies and concurrency evidence](agenda-summary-dependencies-2026-11-07.md).
+Newly extracted knowledge now retains its supporting summary identity and payload
+receipt. Summary changes/removal withdraw known dependents without erasing text,
+review state or chunks. Fresh retrieval, topic input receipts and pattern inputs
+omit withdrawn evidence; checked triage and ingestion reject late work. See
+[knowledge dependencies, browser behavior and fault evidence](knowledge-summary-dependencies-2026-11-07.md).
+Additional raw-document inputs now retain their own catalogs and text-version
+identities; document changes/removal withdraw their known knowledge dependents.
+See [raw-source dependency checks](knowledge-source-dependencies-2026-11-07.md).
+Other retrieval/participant inputs, stored patterns and generated
+knowledge-dependent projections remain separate work.
+
+Fact publication now withdraws stored briefings with invalid motion receipts even
+when the source document is unchanged. Fact projection, automated audit and image
+invalidation share one transaction; valid motion context survives a compatible
+attendance refresh. See [fact-publication withdrawal evidence and limits](council-fact-withdrawal-2026-11-07.md).
 
 October 24 leadership-context update: extraction carries administrator notes
 from approved topics' existing appearances into the matching agenda item, so
@@ -256,6 +397,193 @@ provider diagnostics; permanent HTTP rejections bypass transient retries. See
   [IpRanges](../../app/services/crawlers/ip_ranges.rb),
   [Verifier](../../app/services/crawlers/verifier.rb),
   [Probe](../../app/services/crawlers/probe.rb), [crawler policy](../verified-crawler-access.md).
+
+## BG-08 — Extract a shared campaign source within a spending allowance (P1)
+
+- Campaign intake also carries a comparison heading for a concrete council
+  position or a null heading for source-only material. The resident projection
+  groups repeat headings within the same election while keeping distinct
+  qualifications and original sources. Older extraction results remain usable.
+  See [the campaign comparison workflow](resident-workflows.md#res-10--inspect-an-officials-attendance-and-voting-record-p1).
+
+- The vote and issue-evidence jobs share those positions. They compare a repeated
+  position once per decision and keep separate verdicts for alternatives in the
+  same campaign answer. A prior rejection that explicitly addressed an alternative
+  can be reused. A new source can start comparisons with previously saved minutes
+  even while its topic matching is awaiting an allowance.
+- Project names in the [reviewed positions](../../config/campaign_platform_2024.yml)
+  can retrieve other decisions for comparison. A reviewed decision in a specific
+  meeting can be excluded for one position or cited directly from its public
+  record. Later decisions about the project remain eligible. On the local
+  regression, disabling that exclusion returned the unrelated vote to the
+  comparison job. Restoring it preserved the later vote on the same project.
+- Preview the three expiring seats using the same comparison inputs and the
+  existing pricing preflight, for example
+  `bin/rails 'council_profiles:comparison_preview[2025-04-16,2026-11-21]'`.
+  The inclusive range uses meeting dates. The command reads stored records and
+  reports reused comparisons, new work, available estimates for a single attempt,
+  held batches and missing minutes. It creates no jobs or spending allowances.
+  Refresh the campaign prompt templates from the released revision before
+  preparing new production comparisons.
+
+- **Nightly discovery of developments under a position (BG-08 → RES-10).**
+  Publishing a minutes recap or packet analysis queues a check for that meeting.
+  The existing 11 p.m. reconciliation also checks published analyses in the
+  authorized committees, source types and date window. The ordinary meeting
+  prompt retains short official passages for agenda items and public input.
+  Older recaps can locate a unique agenda heading in the original text.
+  A project name, linked topic or overlap with the candidate’s own wording can
+  retrieve a passage. The existing comparison job decides the connection and
+  requires a quotation from that passage for publication. A corrected source or
+  withdrawn recap loses the old evidence. Unchanged positive and negative
+  results survive the next nightly run. An explicit historical preview can
+  inspect older sources outside the live window.
+- New comparisons draw on the existing monthly allowance and registered
+  source channels. For comparisons from saved analyses, set
+  `live_actions.issue_sources.extract_packets` to `false`, and include the
+  intended committees and minutes/packet types. This admits comparisons of saved
+  packet evidence while keeping separate packet extraction off. Existing policies
+  that selected packets retain their authorized recommendation extraction.
+  Once the bundled pricing check expires, nightly reconciliation
+  checks the authorized model’s published pricing terms. An unchanged rate
+  schedule can be reused through the following day, subject to any promotion
+  deadline. Changed terms pause new estimates for that model.
+- Local verification on the patch based on `97cf231d` used three archived
+  meeting analyses and official minutes with the hand-entered project names
+  and council reports removed from the test edition. Retrieval surfaced Paddlers
+  Park, Sandy Bay phase three, and the Coenen-Buyeske site as candidates.
+  The [nightly integration test](../../test/integration/council_saved_issue_history_test.rb)
+  runs discovery, reconciliation, budget admission, comparison, and a later
+  member request with simulated external transport. A second run reused the
+  result. Corrected minutes published the loss of the project grant.
+
+The [retained quote recovery](campaign-forum-quote-recovery-2026-11-08.md) expands
+unambiguous ellipsis excerpts inside one verified speaker's answer. Explicit
+recovery reuses saved responses; unchanged statement/topic decisions remain
+available while new matching waits for its existing allowance.
+
+The [prepared forum extension](prepared-campaign-forums-2026-11-08.md) reuses this
+shared pipeline for externally labeled sources and checks returned quotes against
+verified speaker spans. The [full-forum request checks](full-campaign-forums-2026-11-08.md)
+extend new prepared requests to 100,000 source characters, with an explicit
+32,000-token response ceiling above 50,000 characters. Article limits and the
+required spending authorization remain unchanged. Larger sources are retained
+and held before provider construction; no text is silently truncated.
+
+- **Start / data:** retained CampaignSourceVersion, populated campaign prompt,
+  explicit month/day/run allowances and exact request estimate. No budget means paused.
+- **Action:** ExtractCampaignSourceJob analyzes the supplied source once for all
+  participants through the existing AI service and shared spending recorder.
+  A committed source save queues it when extraction is missing. Nightly discovery
+  queues ReconcileCampaignSourcesJob to recover missing/pending intake and publish
+  completed cached results. Paused, running, uncertain and failed stages are not
+  automatically retried; this does not admit paid work.
+- **Required outcome:** original questions, full answer passages, distinct
+  statements, conditions/timeframes and gaps remain in one retained result.
+  Counts and exact text locations use code. Unresolved attribution/passages flag
+  only those statements; location is not semantic or identity validation.
+- **Next:** ADM-21 reads the private result for the selected source version.
+  The job then validates exact passage locations and unique existing member/name
+  aliases, publishing accepted statements for RES-10. Unknown or ambiguous people
+  remain exceptions; no member, office or service period is inferred or created.
+  Unchanged input reuses completed work; metadata-only changes with identical
+  analysis input reuse the result. Corrected text selects fresh analysis, while
+  the historical source/result remains available.
+- **Failures:** missing/exhausted allowance, malformed output (two attempts max),
+  uncertain transport (no automatic redispatch), partial provider completion,
+  oversized source, missing participant or continuation, unauthorized reads.
+- **Evidence:** [shared extraction verification](shared-campaign-extraction-2026-11-08.md).
+  [Member publication verification](member-campaign-records-2026-11-08.md) covers
+  current-source projection and cached identity repair. [Automatic update checks](campaign-update-triggers-2026-11-08.md)
+  cover source-save triggers and nightly recovery. Paid admission, real-provider
+  accuracy and campaign/action comparisons remain subsequent work.
+  [Cost planning](campaign-cost-preflight-2026-11-08.md) supplies a read-only
+  admin/CLI estimate; actual input-token verification and owner authorization
+  remain prerequisites to treating it as a dispatch allowance.
+  [Shared issue matching](campaign-topic-matching-2026-11-08.md) adds a separate,
+  bounded source-level stage after statement publication. It reuses saved
+  statements and approved reusable topics, retains every match or uncertainty,
+  and publishes associations only for accepted member statements. The existing
+  nightly recovery handles missing/pending matching and cached publication.
+  Topic links are not action alignment or outcome findings. The initial topic
+  catalog is pinned; new-topic rematching remains unfinished.
+  [Direct decision matching](campaign-action-matching-2026-11-08.md) shares each
+  meeting's source across unreviewed statement/motion pairs. Negative results
+  are cached too. Metadata corrections reuse semantic results; new evidence
+  queues preparation through existing publication/recovery paths. No allowance
+  means no provider transport. The first slice covers recorded votes only;
+  broad-priority assessments, advocacy and coverage-aware inaction remain open.
+  [Live action admission](council-live-action-budget-2026-11-08.md) can derive
+  bounded day/run grants from an explicit monthly policy for new meetings only.
+  It uses a retained conservative estimate method; unchanged work is free, and
+  missing/exhausted/revoked allowances, uncertain requests and historical meetings
+  remain held. Existing nightly processing recovers eligible paused work; it
+  neither renews the month nor resets the two-attempt ceiling.
+
+## BG-09 — Extract shared official issue milestones and actions (P1)
+
+- **Saved motion reuse:** published minutes mover/own-amendment evidence feeds
+  recorded work and the existing shared specific-statement matcher, with no new
+  extraction request. Minutes publication queues comparison; existing nightly
+  recovery covers missed work. Prose-only changes reuse positive and negative
+  matches. Ordinary seconds and procedural motions stay outside personal-action
+  cards. See [saved-motion checks](council-saved-motion-actions-2026-11-08.md).
+
+- **Routine reuse:** profile issue history reads the existing published minutes
+  agenda summaries, topic links and citations. It creates no parallel extraction
+  record. Recurring source admission and budget selection exclude a second
+  general minutes pass, even under an older minutes-enabled policy. Retained
+  supplemental evidence/comparisons remain usable; new missing-fact extraction
+  requires a separately bounded run. Selected packet recommendations remain
+  separate. See [saved-analysis checks](council-saved-history-2026-11-08.md).
+
+- **Statement comparison extension:** after shared evidence or campaign-topic
+  publication, and during existing nightly recovery, new statement/evidence pairs
+  enter the existing cached comparison pipeline. Exact retained passages supply
+  context; direct and negative results are reused. Source-channel scope and its
+  date window apply in addition to shared spending limits. See
+  [campaign/issue evidence verification](campaign-issue-evidence-2026-11-08.md).
+- **Supplemental start / data:** explicitly selected official minutes or packet document, existing
+  approved agenda/topic links, populated prompt and exact month/day/run budget.
+- **Action:** `ExtractCouncilIssueUpdatesJob` retains one shared source result;
+  existing nightly campaign recovery revisits selected documents and explicitly
+  registered live committee/document channels within their authorized date window.
+- **Required outcome:** distinct milestones, scope, conditions, source passages
+  and event/report dates reach every relevant member without attributing credit,
+  grading promises or creating votes. No budget means no transport; unchanged
+  input reuses its result and source corrections remove stale projections.
+- **Failures / limits:** uncertain/incomplete responses hold; malformed responses
+  have two attempts; oversized sources hold intact; changed source/topic inputs
+  cannot serve old output. New-source admission requires an explicit monthly
+  source policy; it does not enable a historical backfill or discover unsupported
+  project/case websites.
+- **Evidence:** [shared issue-update verification](council-issue-updates-2026-11-08.md).
+  [Recorded-action verification](council-recorded-actions-2026-11-08.md) extends new
+  requests with attributed actions. Completed older results reuse unchanged;
+  actor resolution on read creates neither people nor service records.
+  [Explicit recommendation verification](council-staff-recommendations-2026-11-08.md)
+  adds attributed recommendations to the same new request. Exact unchanged-proposal
+  comparisons use recorded votes; changed wording and uncertain timing stay unresolved.
+  [Registered live-source verification](council-live-sources-2026-11-08.md)
+  covers source-specific scope, shared admission, new-topic/source triggers and
+  unchanged nightly recovery without an additional schedule.
+
+
+
+## BG-10 — Extract shared formal case events (P1)
+
+- **Start / data:** verified formal source with publication-cleared text, known
+  subject labels, populated prompt and an explicit exact-request spending run.
+- **Action:** source-save or existing nightly recovery prepares one retained
+  request for all subjects. Missing/expired allowance holds before transport.
+- **Required outcome:** dated procedural events carry exact passages; record type
+  constrains possible events. Policy text and ordinary criticism produce no case.
+  Identity/service checks apply on every read; unchanged input buys no new analysis.
+- **Failures / limits:** two malformed-response attempts; incomplete, uncertain
+  or oversized work holds. No automatic discovery of unsupported case websites,
+  no default live allowance and no conduct grade. Real-provider interpretation
+  accuracy is separate from deterministic contract tests.
+- **Evidence:** [formal-record verification](council-formal-records-2026-11-08.md).
 
 ## Configured recurring entry points
 

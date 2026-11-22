@@ -117,6 +117,8 @@ class ExtractTopicsJob < ApplicationJob
       Topics::AutoTriageJob.set(wait: 3.minutes).perform_later
       stamp_processing_state(meeting, extraction_status)
 
+      ExtractCouncilIssueUpdatesJob.perform_later(meeting_id: meeting.id) if CouncilProfiles::LiveSources.enabled?
+
     rescue JSON::ParserError => e
       Rails.logger.error "Failed to parse topics JSON for Meeting #{meeting_id}: #{e.message}"
       stamp_processing_state(meeting, "parse_error")

@@ -9,6 +9,11 @@ module Topics
       raise ArgumentError, "Cannot merge a topic into itself" if source_topic.id == target_topic.id
 
       ActiveRecord::Base.transaction do
+        # Continuity creates evidence under the topic lock. Acquire both topics
+        # in a fixed order before transferring history or deleting the source.
+        Topic.where(id: [ source_topic.id, target_topic.id ]).order(:id).lock.load
+        source_topic.reload
+        target_topic.reload
         attach_source_name_as_alias!
         move_aliases!
 
@@ -25,6 +30,7 @@ module Topics
         source_topic.topic_review_events.update_all(topic_id: target_topic.id)
         move_topic_summaries!
         move_knowledge_source_topics!
+        source_topic.campaign_statement_topics.update_all(topic_id: target_topic.id)
 
         if source_topic.topic_briefing && !target_topic.topic_briefing
           source_topic.topic_briefing.update!(topic: target_topic)

@@ -157,6 +157,10 @@ assertions below are candidate acceptance criteria based on the user's brief.
   cannot become overriding canonical topics/names.
 - **Next:** normalized lookup and resident/admin search recover intended identity;
   alias removal affects lookup but does not erase its topic's official history.
+  The admin alias-move action uses checked model callbacks: saved previews that
+  relied on its former ownership withdraw with their images and retain the consumed
+  context. Independent previews stay published; later public/API reads reflect the
+  withdrawal (see [saved agenda checks](agenda-summary-dependencies-2026-11-07.md)).
 - **Failure variants:** alias disappeared, wrong topic, target missing, collision,
   invalid promotion/flip, interrupted modal/select flow.
 - **Observed:** [repair controller](../../app/controllers/admin/topic_repairs_controller.rb),
@@ -196,6 +200,13 @@ assertions below are candidate acceptance criteria based on the user's brief.
 - **Observed:** [CommitteesController](../../app/controllers/admin/committees_controller.rb),
   [MembersController](../../app/controllers/admin/members_controller.rb),
   [Committee](../../app/models/committee.rb), [Member](../../app/models/member.rb).
+- **November 7 person-merge evidence:** differing vote values/evidence bases or
+  attendance statuses/types/capacities refuse the whole merge without losing either
+  record. Matching duplicates still merge. The member page renders the result;
+  browser confirmation, HTTP rollback, cached reconstruction and later member
+  reads are covered in [execution evidence](council-member-merges-2026-11-07.md).
+  Membership/office collisions and concurrent person merges are not covered by
+  this change.
 
 ## ADM-11 — Add or curate knowledge context (P1)
 
@@ -208,7 +219,14 @@ assertions below are candidate acceptance criteria based on the user's brief.
   retrieval according to governance and stays labeled separately from official record.
 - **Next:** retrieve distinctive content after completion; deletion removes source
   chunks/links and future retrieval cannot use them. Hand-editing generated body
-  changes its origin to manual in the current implementation.
+  changes its origin to manual in the current implementation. For newly extracted
+  entries with summary receipts, a withdrawn dependency remains excluded from
+  retrieval after approval or editing. The retained detail/index show Evidence
+  withdrawn separately from review status; Re-ingest refuses without queuing.
+  See [knowledge dependency verification](knowledge-summary-dependencies-2026-11-07.md).
+  Additional consumed raw documents also have server-owned receipts; the
+  [document-dependency HTTP checks](knowledge-source-dependencies-2026-11-07.md)
+  cover retained evidence and rejected provenance edits after withdrawal.
 - **Failure variants:** invalid source/status, missing file/title, failed extraction/
   embedding, stale chunks after edit, unapproved context affecting reporting.
 - **Observed:** [KnowledgeSourcesController](../../app/controllers/admin/knowledge_sources_controller.rb),
@@ -371,3 +389,71 @@ assertions below are candidate acceptance criteria based on the user's brief.
 - **Observed:** [AuditEventsController](../../app/controllers/admin/audit_events_controller.rb),
   [AuditEvent](../../app/models/audit_event.rb),
   [audit view](../../app/views/admin/audit_events/index.html.erb).
+  Automated document-dependent briefing withdrawals retain source receipts in
+  the audit metadata and display an Automated actor with the topic label. See
+  [source-withdrawal verification](council-source-withdrawal-2026-11-07.md).
+  Fact-publication withdrawal also records before/after snapshots and an Automated
+  actor; see [fact-publication audit checks](council-fact-withdrawal-2026-11-07.md).
+  Known document changes also withdraw saved meeting summaries, with the meeting
+  identity and retained source snapshots; see [summary audit checks](meeting-summary-withdrawal-2026-11-07.md).
+  Fact-dependent summary withdrawal records old/current motion receipts and
+  publication snapshots in the same fact transaction; see [rollback and audit checks](meeting-summary-facts-2026-11-07.md).
+  Saved agenda-context withdrawals retain consumed and current topic sections with
+  an Automated actor; see [transaction and retained-context checks](agenda-summary-dependencies-2026-11-07.md).
+
+## ADM-21 — Supply and correct a shared campaign article (P1)
+
+The [forum quotation recovery command](campaign-forum-quote-recovery-2026-11-08.md)
+lets an active administrator recover exact passages from a retained result,
+without another source analysis or replacing original uploaded transcripts.
+
+- **Start / data:** eligible admin with permitted questionnaire text, its publisher
+  link, election date, known publication date and complete/excerpt coverage.
+- **Action:** Members → Campaign sources → Add article; save once for all supplied
+  participants; Edit article to correct it; open a retained version.
+- **Required outcome:** complete supplied text/context and source metadata persist
+  privately. Unchanged input reuses its version; duplicate URL intake cannot undo
+  an explicit correction. Source retention creates no candidate, office or claim.
+- **Next:** committed source changes queue shared processing when the current
+  version has no extraction. Identical analysis input reuses cached results;
+  new analysis pauses without a spending allowance. The source page shows all
+  extracted participants, statements, qualifications, passages and gaps privately.
+  Page reads do not publish claims. The extraction job publishes
+  statements whose source passage and unique existing member identity pass the
+  automatic checks; this view links matched records and identifies exceptions.
+- **Failures:** missing input, invalid publisher link, missing publication date
+  versus invented date, partial coverage, lost continuation/qualification,
+  unauthorized current/historical access, and an old submission replacing an edit.
+- **Evidence:** [intake contract and verification](campaign-source-intake-2026-11-08.md).
+  [Shared extraction checks](shared-campaign-extraction-2026-11-08.md) cover BG-08
+  through this private view. [Member publication checks](member-campaign-records-2026-11-08.md)
+  cover the subsequent identity/publication boundary. The
+  [prepared forum extension](prepared-campaign-forums-2026-11-08.md) accepts
+  owner-verified speaker files, preserves every candidate and original source,
+  retains corrections, and bounds generated quotations to the verified speaker.
+  Larger full transcripts remain retained and held at the existing analysis limit;
+  bounded long-source processing and paid evaluation remain separate work.
+  [Automatic update checks](campaign-update-triggers-2026-11-08.md) cover saved
+  corrections, cached publication and recovery during existing nightly processing.
+  [Cost planning checks](campaign-cost-preflight-2026-11-08.md) cover offline
+  source-level estimates, saved-analysis reuse and unavailable/held states.
+  Reading an estimate creates no processing or spending authorization.
+  [Shared issue matching checks](campaign-topic-matching-2026-11-08.md) cover the
+  subsequent private match status, reasons, topic navigation and separate cost
+  estimate. Reading these results does not enqueue work or authorize generation.
+
+## ADM-22 — Supply and correct a formal case record (P1)
+
+- **Start / role:** active administrator with a passkey and matching or recently
+  reauthenticated context; an actual underlying case record and publication extract.
+- **Action:** The Record → Formal Case Records → Add record or Correct record.
+  Verify the officials whose conduct is at issue, documented service concerned,
+  and text cleared for publication. Keep private editorial notes separate.
+- **Required outcome:** intake persists the editor's verification; routine source
+  processing still needs an explicit exact-request allowance. Unsupported record
+  types and unverified sources remain private. Prior completed analysis and its
+  source text remain inspectable; versions are scoped to their source.
+- **Next:** BG-10 → RES-10 publishes only known, unambiguous subjects. Correcting
+  source text removes stale events on later reads; title, private-note and service
+  attribution corrections reuse analysis. No ordinary reader can view or edit intake.
+- **Evidence:** [formal-record verification](council-formal-records-2026-11-08.md).

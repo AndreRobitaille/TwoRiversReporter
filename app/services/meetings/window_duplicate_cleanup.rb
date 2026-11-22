@@ -9,6 +9,9 @@ module Meetings
       topic_summaries
       motions
       meeting_attendances
+      minutes_extractions
+      minutes_publications
+      council_decisions
       knowledge_sources
       generated_images
     ].freeze

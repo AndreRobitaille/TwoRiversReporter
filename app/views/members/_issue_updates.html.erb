@@ -1,0 +1,20 @@
+<% if @issue_updates.any? %>
+  <section class="member-article-section" id="issue-updates">
+    <div class="home-section-header">
+      <%= render "shared/atom_marker" %>
+      <h2 class="section-label">Issue updates</h2>
+      <span class="section-line"></span>
+    </div>
+    <%= render partial: "issue_update", collection: @issue_updates.first(3), as: :update %>
+    <% if @issue_updates.size > 3 %>
+      <details class="member-other-votes">
+        <summary><%= pluralize(@issue_updates.size - 3, "more update") %></summary>
+        <%= render partial: "issue_update", collection: @issue_updates.drop(3), as: :update %>
+      </details>
+    <% end %>
+    <details class="member-campaign-context">
+      <summary>About these updates</summary>
+      <p>The same issue history appears on relevant member pages. It covers the sources collected so far; project completion needs its own evidence.</p>
+    </details>
+  </section>
+<% end %>

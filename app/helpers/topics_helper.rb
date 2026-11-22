@@ -152,7 +152,7 @@ module TopicsHelper
   # would invent a leak surface with no on-page counterpart. Use the public
   # topic description for that audience; allowed readers keep the headline.
   def topic_share_description(topic)
-    headline = topic.topic_briefing&.headline
+    headline = topic.published_topic_briefing&.headline
     return headline if headline.present? && !gated_for_visitor?
 
     name = topic_title_case(topic.name)
@@ -225,6 +225,8 @@ module TopicsHelper
     return agenda_item&.title unless meeting
 
     meeting.meeting_summaries.each do |summary|
+      next unless summary.published?
+
       items = summary.generation_data&.dig("item_details")
       next unless items.is_a?(Array)
 

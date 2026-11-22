@@ -17,7 +17,7 @@ module ResidentContent
     def self.preferred_summary(meeting)
       return if meeting.cancelled?
 
-      meeting.meeting_summaries.select { |summary| summary.content.present? || summary.generation_data.present? }
+      meeting.meeting_summaries.select { |summary| summary.published? && (summary.content.present? || summary.generation_data.present?) }
         .min_by { |summary| [ MeetingSummary::SUMMARY_TYPES.index(summary.summary_type) || 99,
           -(summary.updated_at || summary.created_at || Time.at(0)).to_r, summary.id ] }
     end

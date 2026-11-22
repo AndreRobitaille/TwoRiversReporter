@@ -8,6 +8,7 @@ module Documents
     def perform(document_id)
       document = MeetingDocument.find(document_id)
       return unless document.source_url.present?
+      requested_state = download_state(document)
 
       # Prepare conditional GET headers
       headers = {}
@@ -30,34 +31,37 @@ module Documents
         # Rewind for subsequent use
         downloaded_io.rewind
 
-        # Matching bytes are not a content change. Record last-checked time and
-        # any cache headers without moving updated_at.
-        if document.sha256 == sha
-          Rails.logger.info "Document #{document_id} unchanged (SHA match)"
-          record_unchanged_check!(document, **metadata)
-          return
+        version_key = MeetingDocumentVersion.key_for(document, sha256: sha)
+        retained_version = MeetingDocumentVersion.find_by(version_key: version_key)
+        unless retained_version
+          # Upload before publishing the version/current metadata. Attaching an
+          # IO inside the transaction would defer upload until after commit.
+          filename = File.basename(URI.parse(document.source_url).path).presence || "document.pdf"
+          uploaded_blob = ActiveStorage::Blob.create_and_upload!(io: downloaded_io, filename: filename)
         end
 
-        # Content changed
-        Rails.logger.info "Document #{document_id} updated/replaced (new SHA: #{sha})"
+        changed = false
+        document.with_lock do
+          # Another fetch or source edit won while this request was in flight.
+          return unless download_state(document) == requested_state
 
-        # Filename
-        filename = File.basename(URI.parse(document.source_url).path)
-        filename = "document.pdf" if filename.blank?
+          changed = document.sha256 != sha
+          if changed
+            document.update!(sha256: sha, **metadata, fetched_at: Time.current)
+          else
+            record_unchanged_check!(document, **metadata)
+          end
 
-        # Attach
-        document.file.attach(
-          io: downloaded_io,
-          filename: filename
-        )
+          # Reuse retained bytes, including when a publisher restores a prior
+          # version. A legacy unchanged response gains an archive only.
+          blob = retained_version ? retained_version.file.blob : uploaded_blob
+          document.file.attach(blob) if changed
+          MeetingDocumentVersion.capture!(document, file: blob)
+        end
 
-        document.update!(
-          sha256: sha,
-          etag: metadata[:etag],
-          last_modified: metadata[:last_modified],
-          content_length: metadata[:content_length],
-          fetched_at: Time.current
-        )
+        # Retaining a previously unversioned artifact is deterministic work.
+        # Only changed bytes enqueue the existing analysis pipeline.
+        return unless changed
 
         # Trigger Analysis for PDFs or Agenda parsing
         if document.document_type.to_s.end_with?("pdf")
@@ -72,16 +76,33 @@ module Documents
           # time and whatever cache headers the response includes, without
           # moving updated_at.
           Rails.logger.info "Document #{document_id} unchanged (304 Not Modified)"
-          record_unchanged_check!(document, **fetch_metadata(e.io))
+          document.with_lock do
+            if download_state(document) == requested_state
+              record_unchanged_check!(document, **fetch_metadata(e.io))
+            end
+          end
         else
           Rails.logger.error "Failed to download document #{document_id}: #{e.message} (status: #{e.io&.status.inspect})"
         end
       rescue StandardError => e
         Rails.logger.error "Error processing document #{document_id}: #{e.message}"
+      ensure
+        downloaded_io.close if downloaded_io.respond_to?(:close)
+        purge_unused_upload(uploaded_blob) if uploaded_blob
       end
     end
 
     private
+
+    def purge_unused_upload(blob)
+      blob.purge unless blob.attachments.exists?
+    rescue StandardError => e
+      Rails.logger.error "Could not purge unused download blob #{blob.id}: #{e.message}"
+    end
+
+    def download_state(document)
+      document.attributes.slice("source_url", "document_type", "sha256", "fetched_at", "updated_at")
+    end
 
     def fetch_metadata(io)
       meta = io.respond_to?(:meta) ? io.meta : nil

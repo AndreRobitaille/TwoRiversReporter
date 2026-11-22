@@ -35,8 +35,8 @@ module Topics
       removed_topic_ids = before_topic_ids - after_topic_ids
       remove_stale_topic_summaries!(meeting, removed_topic_ids)
       remove_stale_topic_status_events!(removed_link_pairs, removed_appearance_ids)
-      regenerate_topic_summaries(meeting, after_topic_ids)
       regenerate_continuity(affected_topic_ids)
+      regenerate_topic_summaries(meeting, after_topic_ids)
       regenerate_briefings(meeting, affected_topic_ids)
 
       selector_ids = homepage_selector_ids
@@ -131,26 +131,7 @@ module Topics
       retrieval_service = RetrievalService.new
 
       Topic.approved.where(id: after_topic_ids).find_each do |topic|
-        query = Topics::RetrievalQueryBuilder.new(topic, meeting).build_query
-        chunks = retrieval_service.retrieve_topic_context(topic: topic, query_text: query, limit: 5, max_chars: 6000)
-        formatted_context = retrieval_service.format_topic_context(chunks)
-        context_json = Topics::SummaryContextBuilder.new(topic, meeting).build_context_json(kb_context_chunks: formatted_context)
-        analysis_json_str = ai_service.analyze_topic_summary(context_json, source: topic)
-        analysis_json = JSON.parse(analysis_json_str)
-        Citations::TopicAnalysis.copy_references!(analysis_json,
-          references: context_json[:citation_references],
-          require_citations: %w[factual_record institutional_framing])
-        analysis_json["source_catalog"] = context_json[:source_catalog].deep_dup
-        markdown = ai_service.render_topic_summary(analysis_json.to_json, source: topic)
-
-        summary = TopicSummary.find_or_initialize_by(topic: topic, meeting: meeting, summary_type: "topic_digest")
-        summary.content = markdown
-        summary.generation_data = analysis_json
-        summary.save!
-
-        impact = analysis_json["resident_impact"]
-        score = impact["score"].to_i if impact.is_a?(Hash)
-        topic.update_resident_impact_from_ai(score) if score&.between?(1, 5)
+        Topics::GenerateSummary.new(topic, meeting, ai_service: ai_service, retrieval_service: retrieval_service).call
       end
     end
 

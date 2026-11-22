@@ -4,6 +4,13 @@ The original discovery deliverable is the application map. The [overnight audit]
 change CI, run paid providers, or declare existing tests inadequate by count.
 Ordinary TDD continues throughout development.
 
+Choose the work before applying this verification procedure. Follow
+[resident value](../../AGENTS.md#choose-work-by-resident-value): identify the
+actual resident task or concrete correctness/access/spending problem. This map
+and its scenario lists describe how to verify relevant changes; they do not
+authorize adding features, infrastructure, or closure blockers. An untested
+optional detail is not automatically unfinished product work.
+
 ## Maintain behavioral documentation
 
 1. Record the revision/environment and start from product/specialized requirements.

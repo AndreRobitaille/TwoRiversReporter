@@ -2,6 +2,22 @@ require "base64"
 
 module Ai
   class OpenAiService
+    MAX_MINUTES_CHARS = 50_000
+    MAX_MINUTES_COMPLETION_TOKENS = 4_000
+    MAX_CAMPAIGN_CHARS = 50_000
+    MAX_CAMPAIGN_COMPLETION_TOKENS = 8_000
+    MAX_CAMPAIGN_FORUM_CHARS = 100_000
+    MAX_CAMPAIGN_FORUM_COMPLETION_TOKENS = 32_000
+    class InputTooLargeError < StandardError; end
+    class IncompleteResponseError < StandardError
+      attr_reader :finish_reason
+
+      def initialize(finish_reason)
+        @finish_reason = finish_reason
+        super("Minutes response did not finish normally: #{finish_reason || 'missing finish reason'}")
+      end
+    end
+
     MODEL_TIERS = %w[heavy default lightweight].freeze
     REASONING_EFFORTS = %w[none low].freeze
 
@@ -14,6 +30,7 @@ module Ai
     LEGACY_TEMPERATURE_UNSUPPORTED_MODELS = %w[gpt-5-mini gpt-5.4-mini].freeze
     REQUIRED_PROMPT_KEYS = %w[
       extract_votes
+      extract_campaign_statements
       extract_committee_members
       extract_topics
       refine_catchall_topic
@@ -85,6 +102,88 @@ module Ai
           total_tokens: usage["total_tokens"]
         }
       end
+
+      # The budget preflight and real transport share these exact text-only
+      # parameters. This prepares a request; it does not count tokens or call AI.
+      def minutes_request_parameters(kind:, text:, agenda_items_text: "", template: nil)
+        raise ArgumentError, "Unknown minutes stage" unless kind.in?(%w[votes attendance])
+        raise InputTooLargeError, "Minutes require a reviewed partition" if text.length > MAX_MINUTES_CHARS
+        template ||= PromptTemplate.find_by!(key: kind == "votes" ? "extract_votes" : "extract_committee_members")
+        placeholders = kind == "votes" ? { text: text, agenda_items: agenda_items_text } : { text: text }
+        messages = [
+          (template.system_role.present? ? { role: "system", content: template.system_role } : nil),
+          { role: "user", content: template.interpolate(**placeholders) }
+        ].compact
+        build_chat_parameters(model: model_for_tier(template.model_tier), messages: messages,
+          temperature: kind == "votes" ? 0.1 : nil, response_format: { type: "json_object" })
+          .merge(max_completion_tokens: MAX_MINUTES_COMPLETION_TOKENS)
+      end
+
+      def campaign_request_parameters(version)
+        input_limit = version.forum? ? MAX_CAMPAIGN_FORUM_CHARS : MAX_CAMPAIGN_CHARS
+        raise InputTooLargeError, "Campaign source requires partitioning" if version.body.length > input_limit
+        output_limit = if version.body.length > MAX_CAMPAIGN_CHARS
+          MAX_CAMPAIGN_FORUM_COMPLETION_TOKENS
+        else
+          MAX_CAMPAIGN_COMPLETION_TOKENS
+        end
+        template = PromptTemplate.find_by!(key: "extract_campaign_statements")
+        messages = [
+          (template.system_role.present? ? { role: "system", content: template.system_role } : nil),
+          { role: "user", content: template.interpolate(text: version.body, election_on: version.election_on,
+            coverage: version.coverage, coverage_notes: version.coverage_notes.to_s) }
+        ].compact
+        build_chat_parameters(model: model_for_tier(template.model_tier), messages: messages,
+          response_format: { type: "json_object" }).merge(max_completion_tokens: output_limit)
+      end
+
+      def campaign_topic_matching_parameters(context)
+        text = JSON.generate(context)
+        raise InputTooLargeError, "Topic matching requires partitioning" if text.length > Campaigns::MatchTopics::MAX_CONTEXT_CHARS
+        template = PromptTemplate.find_by!(key: "match_campaign_topics")
+        messages = [
+          { role: "system", content: template.system_role },
+          { role: "user", content: template.interpolate(context: text) }
+        ]
+        build_chat_parameters(model: model_for_tier(template.model_tier), messages: messages,
+          response_format: { type: "json_object" }).merge(max_completion_tokens: MAX_CAMPAIGN_COMPLETION_TOKENS)
+      end
+
+      def campaign_action_matching_parameters(context)
+        text = JSON.generate(context)
+        raise InputTooLargeError, "Action matching requires partitioning" if text.length > Campaigns::MatchActions::MAX_CONTEXT_CHARS
+        key = context["rules"] == Campaigns::IssueEvidenceInput::RULES ? "match_campaign_issue_evidence" : "match_campaign_actions"
+        template = PromptTemplate.find_by!(key: key)
+        messages = [ { role: "system", content: template.system_role },
+          { role: "user", content: template.interpolate(context: text) } ]
+        build_chat_parameters(model: model_for_tier(template.model_tier), messages: messages,
+          response_format: { type: "json_object" }).merge(max_completion_tokens: MAX_CAMPAIGN_COMPLETION_TOKENS)
+      end
+
+      def council_formal_parameters(context)
+        text = JSON.generate(context)
+        raise InputTooLargeError, "Formal source requires a bounded publication extract" if text.length > 60_000
+        template = PromptTemplate.find_by!(key: "extract_council_formal_records")
+        messages = [ { role: "system", content: template.system_role },
+          { role: "user", content: template.interpolate(context: text) } ]
+        build_chat_parameters(model: model_for_tier(template.model_tier), messages: messages,
+          response_format: { type: "json_object" }).merge(max_completion_tokens: MAX_CAMPAIGN_COMPLETION_TOKENS)
+      end
+
+      def council_issue_parameters(context)
+        text = JSON.generate(context)
+        limit = if context.dig("source", "document_type") == "packet_pdf"
+          CouncilProfiles::ExtractIssueUpdates::MAX_PACKET_CONTEXT_CHARS
+        else
+          CouncilProfiles::ExtractIssueUpdates::MAX_CONTEXT_CHARS
+        end
+        raise InputTooLargeError, "Issue source requires partitioning" if text.length > limit
+        template = PromptTemplate.find_by!(key: "extract_council_issue_updates")
+        messages = [ { role: "system", content: template.system_role },
+          { role: "user", content: template.interpolate(context: text) } ]
+        build_chat_parameters(model: model_for_tier(template.model_tier), messages: messages,
+          response_format: { type: "json_object" }).merge(max_completion_tokens: MAX_CAMPAIGN_COMPLETION_TOKENS)
+      end
     end
 
     # Experimental calls use the same parameter construction as production but
@@ -117,25 +216,16 @@ module Ai
       render_meeting_summary(text, plan_json, "minutes")
     end
 
-    def extract_votes(text, agenda_items_text: "", source: nil)
-      template = PromptTemplate.find_by!(key: "extract_votes")
-      system_role = template.system_role
-      placeholders = { text: text.truncate(50_000), agenda_items: agenda_items_text }
-      prompt = template.interpolate(**placeholders)
-      model = self.class.model_for_tier(template.model_tier)
-
-      messages = [
-        (system_role.present? ? { role: "system", content: system_role } : nil),
-        { role: "user", content: prompt }
-      ].compact
-
-      content, duration_ms = call_api(model: model, messages: messages, temperature: 0.1, response_format: { type: "json_object" })
+    def extract_votes(text, agenda_items_text: "", source: nil, template: nil, request_recorder: nil)
+      placeholders = { text: text, agenda_items: agenda_items_text }
+      parameters = self.class.minutes_request_parameters(kind: "votes", text: text, agenda_items_text: agenda_items_text, template: template)
+      content, duration_ms = call_api(**parameters, request_recorder: request_recorder)
 
       record_prompt_run(
         template_key: "extract_votes",
-        messages: messages,
+        messages: parameters.fetch(:messages),
         response_content: content,
-        model: model,
+        model: parameters.fetch(:model),
         response_format: "json_object",
         temperature: 0.1,
         duration_ms: duration_ms,
@@ -146,25 +236,26 @@ module Ai
       content
     end
 
-    def extract_committee_members(text, source: nil)
-      template = PromptTemplate.find_by!(key: "extract_committee_members")
-      system_role = template.system_role
-      placeholders = { text: text.truncate(50_000) }
-      prompt = template.interpolate(**placeholders)
-      model = self.class.model_for_tier(template.model_tier)
+    # Shared council extraction retains exact requests, responses and spending.
+    def extract_council_evidence(parameters:, request_recorder:)
+      raise ArgumentError, "Council extraction requires a spending recorder" unless request_recorder
 
-      messages = [
-        (system_role.present? ? { role: "system", content: system_role } : nil),
-        { role: "user", content: prompt }
-      ].compact
+      content, = call_api(**parameters, request_recorder: request_recorder)
+      content
+    end
 
-      content, duration_ms = call_api(model: model, messages: messages, response_format: { type: "json_object" })
+    alias_method :extract_campaign_source, :extract_council_evidence
+
+    def extract_committee_members(text, source: nil, template: nil, request_recorder: nil)
+      placeholders = { text: text }
+      parameters = self.class.minutes_request_parameters(kind: "attendance", text: text, template: template)
+      content, duration_ms = call_api(**parameters, request_recorder: request_recorder)
 
       record_prompt_run(
         template_key: "extract_committee_members",
-        messages: messages,
+        messages: parameters.fetch(:messages),
         response_content: content,
-        model: model,
+        model: parameters.fetch(:model),
         response_format: "json_object",
         duration_ms: duration_ms,
         source: source,
@@ -284,7 +375,7 @@ module Ai
     def triage_topics(context_json, source: nil)
       community_context = context_json.delete(:community_context) || context_json.delete("community_context") || ""
 
-      if use_gemini?
+      if use_gemini? && CouncilHistory::Execution.meeting_id.nil?
         community_section = if community_context.present?
           "\n<community_context>\nUse this context about Two Rivers residents to inform your approval and blocking decisions. Topics that matter to residents should be approved; routine institutional items should be blocked.\n#{community_context}\n</community_context>\n"
         else
@@ -846,22 +937,36 @@ module Ai
 
     # Production and evaluator calls share the same effective parameter rules,
     # including suppression of unsupported temperature values.
-    def call_api(model:, messages:, temperature: nil, response_format: nil, reasoning_effort: nil)
-      result = perform_chat(model:, messages:, temperature:, response_format:, reasoning_effort:)
+    def call_api(model:, messages:, temperature: nil, response_format: nil, reasoning_effort: nil, max_completion_tokens: nil, request_recorder: nil)
+      result = perform_chat(model:, messages:, temperature:, response_format:, reasoning_effort:, max_completion_tokens:, request_recorder:)
       [ result.fetch(:content), result.fetch(:duration_ms) ]
     end
 
-    def perform_chat(model:, messages:, temperature: nil, response_format: nil, reasoning_effort: nil)
+    def perform_chat(model:, messages:, temperature: nil, response_format: nil, reasoning_effort: nil, max_completion_tokens: nil, request_recorder: nil)
       params = self.class.build_chat_parameters(
         model:, messages:, temperature:, response_format:, reasoning_effort:
       )
+      params[:max_completion_tokens] = max_completion_tokens if max_completion_tokens
       start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      response = @client.chat(parameters: params)
+      dispatch = lambda do
+        request_recorder&.start!(params)
+        @client.chat(parameters: params)
+      end
+      response = if CouncilHistory::Execution.meeting_id
+        CouncilHistory::Execution.chat(params, &dispatch)
+      else
+        dispatch.call
+      end
       duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000).round
+      request_recorder&.received!(response, duration_ms: duration_ms)
+
+      finish_reason = response.dig("choices", 0, "finish_reason")
+      if params[:max_completion_tokens] && finish_reason != "stop"
+        raise IncompleteResponseError, finish_reason
+      end
 
       content = response.dig("choices", 0, "message", "content")
       if content.nil?
-        finish_reason = response.dig("choices", 0, "finish_reason")
         raise EmptyResponseError, "OpenAI returned empty content (finish_reason: #{finish_reason})"
       end
 
@@ -873,8 +978,9 @@ module Ai
         usage: self.class.usage_from(response),
         request_parameters: params.except(:messages)
       }
-    rescue Faraday::Error => e
-      Rails.logger.error("OpenAI API error: #{e.class} — #{e.message}")
+    rescue StandardError => e
+      request_recorder&.uncertain!(e)
+      Rails.logger.error("OpenAI API error: #{e.class} — #{e.message}") if e.is_a?(Faraday::Error)
       raise
     end
 

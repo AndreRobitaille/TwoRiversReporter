@@ -40,8 +40,9 @@ module Topics
         .map { |ai| { title: ai.title, summary: ai.summary } }
 
       headlines = topic.topic_summaries
-        .order(created_at: :desc)
-        .limit(5)
+        .order(created_at: :desc, id: :desc)
+        .select { |summary| GenerationEvidence.summary_current?(summary) }
+        .first(5)
         .filter_map { |ts| ts.generation_data&.dig("headline") }
 
       {

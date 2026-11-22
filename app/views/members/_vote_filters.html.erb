@@ -1,0 +1,41 @@
+<%= form_with url: member_path(@member, anchor: "voting-record"), method: :get, data: { turbo: false }, class: "member-vote-filters" do |form| %>
+  <%= form.hidden_field :term, value: @record_period.key, id: nil if @record_period.selectable.any? || params[:term].present? %>
+  <%= form.hidden_field :votes, value: "all", id: nil if @show_all_votes %>
+  <div class="member-vote-search">
+    <div>
+      <%= form.label :q, "Search votes", class: "form-label" %>
+      <%= form.search_field :q, value: @vote_filters.query_params[:q], placeholder: "Motion or agenda title", maxlength: 200, class: "form-input" %>
+    </div>
+    <%= form.submit "Search", name: nil, class: "btn btn--secondary" %>
+  </div>
+  <details class="member-vote-filter-options" <%= "open" if @vote_filters.query_params.except(:q).any? %>>
+    <summary>Filter votes</summary>
+    <div class="member-vote-filter-grid">
+      <div>
+        <%= form.label :topic, "Topic", class: "form-label" %>
+        <%= form.select :topic, [["All topics", ""]] + @vote_filters.topics.map { |topic| [topic_title_case(topic.canonical_name), topic.id] }, { selected: @vote_filters.query_params[:topic] }, class: "form-select" %>
+      </div>
+      <% if @vote_filters.bodies.size > 1 %>
+        <div>
+          <%= form.label :body, "Meeting body", class: "form-label" %>
+          <%= form.select :body, [["All bodies", ""]] + @vote_filters.bodies.map { |body| [body, body] }, { selected: @vote_filters.query_params[:body] }, class: "form-select" %>
+        </div>
+      <% end %>
+      <div>
+        <%= form.label :kind, "Decision type", class: "form-label" %>
+        <%= form.select :kind, [["All types", ""], ["Substantive", "substantive"], ["Procedural", "procedural"]], { selected: @vote_filters.query_params[:kind] }, class: "form-select" %>
+      </div>
+      <div>
+        <%= form.label :split, "Vote split", class: "form-label" %>
+        <%= form.select :split, [["Any split", ""], ["Yes and no votes", "divided"]], { selected: @vote_filters.query_params[:split] }, class: "form-select" %>
+      </div>
+    </div>
+    <%= form.submit "Apply filters", name: nil, class: "btn btn--secondary" %>
+  </details>
+  <% if @vote_filters.active? %>
+    <p class="member-vote-filter-result">
+      <%= pluralize(@pagy.count, "matching vote") %> ·
+      <%= link_to "Clear search and filters", member_path(@member, **@record_params.slice(:term), votes: ("all" if @show_all_votes), anchor: "voting-record") %>
+    </p>
+  <% end %>
+<% end %>

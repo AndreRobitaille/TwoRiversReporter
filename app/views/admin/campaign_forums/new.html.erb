@@ -1,0 +1,44 @@
+<% content_for(:title) { "Import candidate forum - Admin" } %>
+<div class="page-header">
+  <h1 class="page-title"><%= @replacement ? "Replace prepared transcript" : "Import candidate forum" %></h1>
+  <p class="page-subtitle">Supply the speaker-labeled file once for all candidates, including those who did not win.</p>
+</div>
+<% if @error %><div class="flash flash--danger" role="alert"><%= @error %></div><% end %>
+<%= form_with url: admin_campaign_forum_path, scope: :forum, multipart: true do |form| %>
+  <%= form.hidden_field :source_id, value: @replacement.id if @replacement %>
+  <div class="form-group">
+    <%= form.label :file, "Speaker-labeled JSON", class: "form-label" %>
+    <%= form.file_field :file, accept: ".json,application/json", required: true, class: "form-input" %>
+    <p class="text-sm text-muted">Upload the forum-speaker-desk export containing captions and speaker labels. Prepare or correct it outside this website.</p>
+  </div>
+  <div class="form-group">
+    <%= form.label :publisher, "Organizer", class: "form-label" %>
+    <%= form.text_field :publisher, value: @values["publisher"], required: true, class: "form-input" %>
+  </div>
+  <div class="form-group">
+    <%= form.label :published_on, "Forum date", class: "form-label" %>
+    <%= form.date_field :published_on, value: @values["published_on"], required: true, class: "form-input" %>
+  </div>
+  <div class="form-group">
+    <%= form.label :election_on, "Election date", class: "form-label" %>
+    <%= form.date_field :election_on, value: @values["election_on"], required: true, class: "form-input" %>
+  </div>
+  <div class="form-group">
+    <%= form.label :coverage_notes, "Source context", class: "form-label" %>
+    <%= form.text_area :coverage_notes, value: @values["coverage_notes"], rows: 2, class: "form-textarea" %>
+  </div>
+  <div class="form-group">
+    <%= form.label :speaker_verified do %>
+      <%= form.check_box :speaker_verified, required: true %> Speaker labels were verified against the recording.
+    <% end %>
+  </div>
+  <div class="form-group">
+    <%= form.label :gaps_are_moderator do %>
+      <%= form.check_box :gaps_are_moderator %> Any unlabeled words are moderator filler.
+    <% end %>
+    <p class="text-sm text-muted">Otherwise, unlabeled words remain unattributed.</p>
+  </div>
+  <p class="text-sm text-muted">The original file and prepared text stay private. Saving queues existing campaign processing; paid analysis still requires a spending allowance.</p>
+  <%= form.submit "Save forum", class: "btn btn--primary" %>
+  <%= link_to "Cancel", admin_campaign_sources_path, class: "btn btn--secondary" %>
+<% end %>

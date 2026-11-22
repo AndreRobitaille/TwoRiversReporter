@@ -5,9 +5,11 @@ class Member < ApplicationRecord
   has_many :votes, dependent: :destroy
   has_many :committee_memberships, dependent: :destroy
   has_many :member_positions, dependent: :destroy
+  has_many :council_service_periods, dependent: :destroy
   has_many :current_member_positions, -> { current }, class_name: "MemberPosition"
   has_many :meeting_attendances, dependent: :destroy
   has_many :member_aliases, dependent: :destroy
+  has_many :campaign_statements, dependent: :nullify
   has_many :committees, through: :committee_memberships
   validates :name, presence: true, uniqueness: true
 
@@ -65,18 +67,26 @@ class Member < ApplicationRecord
     raise ArgumentError, "Cannot merge member into itself" if target.id == id
 
     ActiveRecord::Base.transaction do
-      # Move votes (skip if target already voted on same motion)
+      reload
+      # Only identical evidence may be deduplicated. A person merge does not
+      # decide which conflicting vote or attendance record is correct.
       votes.each do |vote|
-        if Vote.exists?(member_id: target.id, motion_id: vote.motion_id)
+        if (duplicate = Vote.find_by(member_id: target.id, motion_id: vote.motion_id))
+          unless duplicate.attributes.slice("value", "evidence_basis") == vote.attributes.slice("value", "evidence_basis")
+            raise ArgumentError, "Conflicting votes for motion #{vote.motion_id}; resolve the records before merging."
+          end
           vote.destroy!
         else
           vote.update!(member_id: target.id)
         end
       end
 
-      # Move meeting attendances (skip if target already recorded for same meeting)
       meeting_attendances.each do |attendance|
-        if MeetingAttendance.exists?(member_id: target.id, meeting_id: attendance.meeting_id)
+        if (duplicate = MeetingAttendance.find_by(member_id: target.id, meeting_id: attendance.meeting_id))
+          fields = %w[status attendee_type capacity]
+          unless duplicate.attributes.slice(*fields) == attendance.attributes.slice(*fields)
+            raise ArgumentError, "Conflicting attendance for meeting #{attendance.meeting_id}; resolve the records before merging."
+          end
           attendance.destroy!
         else
           attendance.update!(member_id: target.id)
@@ -103,6 +113,17 @@ class Member < ApplicationRecord
           position.destroy!
         else
           position.update!(member_id: target.id)
+        end
+      end
+
+      # Preserve campaign evidence and its original source attribution.
+      campaign_statements.update_all(member_id: target.id)
+
+      # Conflicting period keys fail validation and roll back the merge rather
+      # than silently discarding a sourced service history.
+      council_service_periods.each do |period|
+        unless period.update(member: target)
+          raise ArgumentError, "Council service dates could not be merged: #{period.errors.full_messages.to_sentence}"
         end
       end
 

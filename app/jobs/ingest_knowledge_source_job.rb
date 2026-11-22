@@ -5,6 +5,8 @@ class IngestKnowledgeSourceJob < ApplicationJob
 
   def perform(source_id)
     source = KnowledgeSource.find(source_id)
+    return unless source.available?
+    expected = input_version(source)
 
     # 1. Extract text based on type
     full_text = case source.source_type
@@ -21,24 +23,32 @@ class IngestKnowledgeSourceJob < ApplicationJob
     # 2. Chunk text (simple sliding window for now)
     chunks = chunk_text(full_text)
 
-    # 3. Embed and save chunks
-    source.knowledge_chunks.destroy_all # Re-ingest (idempotent)
-
+    # Providers run outside locks. Preserve the existing chunks on a failure or
+    # stale response, and publish the complete replacement only if still current.
     embedding_service = ::Ai::EmbeddingService.new
-
-    chunks.each_with_index do |chunk_content, index|
-      embedding = embedding_service.embed(chunk_content)
-
-      source.knowledge_chunks.create!(
+    values = chunks.map.with_index do |chunk_content, index|
+      {
         chunk_index: index,
         content: chunk_content,
-        embedding: embedding,
+        embedding: embedding_service.embed(chunk_content),
         metadata: { char_length: chunk_content.length }
-      )
+      }
+    end
+
+    KnowledgeSource.transaction do
+      current = KnowledgeSource.available.lock("FOR NO KEY UPDATE").find_by(id: source_id)
+      next unless current && input_version(current) == expected
+
+      current.knowledge_chunks.destroy_all
+      values.each { |attributes| current.knowledge_chunks.create!(attributes) }
     end
   end
 
   private
+
+  def input_version(source)
+    source.attributes.slice("source_type", "body").merge("blob_id" => source.file_attachment&.blob_id)
+  end
 
   def extract_pdf_text(source)
     return unless source.file.attached?

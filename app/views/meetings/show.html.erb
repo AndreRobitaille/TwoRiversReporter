@@ -346,7 +346,11 @@
     <% end %>
 
   <% elsif !@meeting.cancelled? %>
-    <p class="section-empty">No summary available for this meeting yet.</p>
+    <% if @meeting.meeting_summaries.any? { |summary| !summary.published? } %>
+      <p class="section-empty">Generated analysis was withdrawn because its supporting evidence changed.</p>
+    <% else %>
+      <p class="section-empty">No summary available for this meeting yet.</p>
+    <% end %>
   <% end %>
 
   <div class="meeting-article-footer">

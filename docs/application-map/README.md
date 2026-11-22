@@ -1,5 +1,17 @@
 # Application behavior map
 
+The [November 8 bounded source acceptance](council-source-acceptance-2026-11-08.md)
+records retained forum corrections, real recommendation/decision comparisons and
+formal-record channels, with unresolved coverage and spending limits explicit.
+
+The [November 8 real cohort and cost checks](council-cohort-readiness-2026-11-08.md)
+record shared provider results, unchanged reuse, compact action ordering, the
+public historical inventory and the remaining backfill approval boundary.
+
+The [November 8 source-footer correction](council-source-quote-footers-2026-11-08.md)
+records a real-source quotation failure, exact-passage restoration and reuse of
+the retained response without another paid call.
+
 Baseline: **2026-10-10**, checkout `0849dfc34fdb9db0a3fdd22640ee87a2d4f298cb`.
 
 This map describes Two Rivers Reporter's resident website, account system,
@@ -46,12 +58,177 @@ The [November 7 maintenance verification](maintenance-2026-11-07.md) records the
 Rails security patch, the date-independent BG-01 fixture correction, local
 checks, and maintenance pull requests awaiting integration.
 
+The [November 7 council evidence foundation](council-evidence-2026-11-07.md)
+records the bounded source check, retained download versions, citation
+compatibility, and isolated retention/stale-response fault experiments.
+
+The [November 7 council text-version foundation](council-text-versions-2026-11-07.md)
+records PDF/OCR provenance, complete-page retention, atomic publication,
+unchanged-input reuse, and real local parser plus bounded fault checks.
+
+The [November 7 minutes fact-publication foundation](council-fact-publication-2026-11-07.md)
+records coordinated vote/attendance staging, same-source publication, real
+parallel database execution, member-page HTTP transitions and source/cache guards.
+
+The [November 7 minutes passage-location checks](council-evidence-locations-2026-11-07.md)
+record pinned source passages, ambiguity handling and the boundary between
+locating an excerpt and validating its interpretation.
+
+The [November 7 minutes request-receipt checks](minutes-request-receipts-2026-11-07.md)
+cover bounded provider output, durable attempt/usage records, partial-response
+holds, process/transport interruption and duplicate concurrent dispatch prevention.
+That slice's dollar-reservation gap is addressed in part by the following work;
+paid-pilot authorization remains separate.
+
+The [November 7 council spending-reservation checks](council-spend-reservations-2026-11-07.md)
+cover exact prepared request estimates, shared daily and run allowances,
+concurrent reservation, budget-paused retries and retained uncertain amounts.
+
+The [November 8 monthly council cost checks](council-monthly-costs-2026-11-08.md)
+add an explicit monthly ceiling across runs/days and a read-only stage usage report.
+The [explicit budget supplement checks](council-budget-supplement-2026-11-08.md)
+cover additional owner approval without rewriting earlier authorizations.
+
+The [November 8 campaign/issue evidence checks](campaign-issue-evidence-2026-11-08.md)
+connect specific statements to recorded advocacy and separate issue developments
+using shared cached comparisons, compact disclosures and scoped spending.
+The [reviewed match-rejection checks](campaign-match-rejections-2026-11-08.md)
+cover correcting false semantic connections without another paid analysis.
+
+The [November 8 formal-record checks](council-formal-records-2026-11-08.md)
+record verified source intake, shared dated events, compact case disclosures,
+private-note exclusion, service attribution and bounded spending.
+
+The [November 8 registered live-source checks](council-live-sources-2026-11-08.md)
+record new-source triggers, existing nightly recovery and explicitly scoped
+future processing under shared monthly spending limits.
+
+The [November 8 explicit recommendation checks](council-staff-recommendations-2026-11-08.md)
+record shared packet/minutes extraction, unchanged-proposal comparisons, inspectable
+fractions, mobile navigation, access controls and offline cost ceilings.
+
+The [November 8 member vote-filter checks](member-vote-filters-2026-11-08.md)
+record scoped search/filtering, preserved pagination and source navigation, and
+phone/desktop verification using real concession decisions.
+
+The [November 8 shared issue-update checks](council-issue-updates-2026-11-08.md)
+record bounded official-minutes extraction, shared member projections, source
+corrections, spending holds and real concession-source evaluation for BG-09.
+
+The [November 8 recorded-action checks](council-recorded-actions-2026-11-08.md)
+extend the same shared source request with attributed proposals and requests,
+including unsuccessful work, without reopening completed historical analyses.
+
+The [November 8 combined-profile checks](council-profile-integration-2026-11-08.md)
+verify the reviewed forum branch together with subsequent profile and cost work,
+including actual intake, source, filtering and comparison browser controls.
+
+The [November 8 live action-admission checks](council-live-action-budget-2026-11-08.md)
+cover an explicit monthly opt-in for new meetings, bounded nightly recovery and
+the historical-backfill boundary. No policy is enabled by the migration.
+
+The [November 8 Council period-selection checks](council-period-selection-2026-11-08.md)
+cover term-scoped attendance/votes, preserved navigation and phone controls.
+
+The [November 8 peer-vote checks](council-peer-votes-2026-11-08.md) cover shared
+yes/no fractions, divided decisions, correction reads, drill-down navigation and
+reporting/crawler access without AI calls.
+
+The [November 8 shared campaign extraction checks](shared-campaign-extraction-2026-11-08.md)
+cover a supplied multi-candidate article through bounded shared analysis and
+private admin display. That extraction slice does not validate accuracy with a
+real provider. The subsequent [member campaign record checks](member-campaign-records-2026-11-08.md)
+cover existing-person matching, public statements and real local cohort data.
+The [November 8 automatic campaign update checks](campaign-update-triggers-2026-11-08.md)
+cover source-save triggers, cached updates and existing nightly missed-work recovery.
+The [November 8 campaign cost planning checks](campaign-cost-preflight-2026-11-08.md)
+cover read-only source estimates and their limits before paid-pilot authorization.
+The [November 8 shared issue matching checks](campaign-topic-matching-2026-11-08.md)
+cover saved statements through approved topic links and private review, with a
+real-data reference sample and deterministic provider transport.
+The [November 8 member layout checks](member-record-layout-2026-11-08.md)
+cover secondary campaign context, collapsed Other Votes, real member navigation
+and saved content through the existing verified Google access path.
+The [November 8 issue sidebar checks](member-issue-sidebar-2026-11-08.md)
+cover compact issue navigation, independently controlled campaign sources,
+retained forum evidence and omission of unsupported topic-based vote pairings.
+The [November 8 direct matching checks](campaign-action-matching-2026-11-08.md)
+cover shared cached statement/decision comparisons, exact spending admission,
+source-backed display and the bounded real Airbnb test.
+
+The [November 8 real forum evaluation](campaign-forum-pilot-2026-11-08.md)
+covers the observed response-field mismatch, its bounded fix and the limits of
+real-provider source coverage.
+The [November 8 full-forum request checks](full-campaign-forums-2026-11-08.md)
+cover bounded whole-transcript requests, matching output allowances, retained
+closing answers and zero-call preparation using both owner-supplied recordings.
+
+The [November 7 stable decision foundation](council-decision-identities-2026-11-07.md)
+records immutable observations, conservative identity correspondence and
+withdrawal of superseded current references.
+
+The [November 7 identity-correction foundation](council-identity-corrections-2026-11-07.md)
+records audited identity overrides, replay/conflict handling, actor retention
+and concurrent review checks at the internal service boundary.
+
+The [November 7 topic motion-evidence foundation](council-topic-evidence-2026-11-07.md)
+records retained event references, distinct decisions, current-context filtering,
+topic merges and concurrent continuity checks.
+
+The [November 7 person-merge evidence checks](council-member-merges-2026-11-07.md)
+record conflict refusal, transaction rollback, visible admin feedback and retained
+evidence through compatible person merges and cached minutes reconstruction.
+
+The [November 7 briefing-withdrawal checks](council-briefing-withdrawal-2026-11-07.md)
+cover decision-identity correction through stored briefing publication, resident
+representations, API freshness, delayed jobs and concurrent first publication.
+Subsequent slices cover additional generated dependencies; the original limits
+remain recorded in that report.
+
+The [November 7 document-source withdrawal checks](council-source-withdrawal-2026-11-07.md)
+cover source changes/removal through retained catalog and motion dependencies,
+atomic withdrawal, later resident reads, unchanged reuse and concurrent first publication.
+
+The [November 7 agenda-preview context checks](agenda-briefing-context-2026-11-07.md)
+cover withdrawn briefing inputs, changed context during generation, publication
+locking and later meeting reads.
+
+The [November 7 fact-publication withdrawal checks](council-fact-withdrawal-2026-11-07.md)
+cover changed extractions from an unchanged document, atomic withdrawal/audit,
+cached publication retry and concurrent first briefing publication.
+
+The [November 7 saved meeting-summary checks](meeting-summary-withdrawal-2026-11-07.md)
+cover known document changes through atomic summary/image withdrawal, later
+resident reads, queued consumers and concurrent first publication.
+
+The [November 7 summary fact-dependency checks](meeting-summary-facts-2026-11-07.md)
+cover captured motion context, corrected facts from unchanged minutes, compatible
+refreshes, audit rollback, late responses and concurrent first summary publication.
+
+The [November 7 saved agenda dependency checks](agenda-summary-dependencies-2026-11-07.md)
+cover later topic-context changes through atomic preview/image withdrawal,
+cross-meeting API freshness, checked knowledge links and actual database races.
+
+The [November 7 knowledge dependency checks](knowledge-summary-dependencies-2026-11-07.md)
+cover newly extracted knowledge's summary receipts, atomic withdrawal, later
+retrieval/search, late triage/ingestion, retained review history and the actual
+admin Re-ingest control. Legacy provenance, additional raw-text and participant
+inputs, stored patterns and other unrecorded dependencies remain open in that slice.
+
+The [November 7 additional knowledge-source checks](knowledge-source-dependencies-2026-11-07.md)
+cover consumed raw-document receipts, source replacement/removal, pending text,
+late publication, atomic audit rollback and concurrent first registration.
+
+The [November 7 topic-generation dependency checks](council-topic-generation-2026-11-07.md)
+cover unchanged topic-stage reuse, stale-input filtering and rejected in-flight
+publication. Broader resident-prose withdrawal and cost controls remain open.
+
 ## Read the map
 
 | Document | Use |
 | --- | --- |
 | [Inventory and access model](inventory.md) | Audiences, pages, controls, navigation, permissions, representation boundaries |
-| [Workflow index](workflow-index.md) | Direct links to 57 stable workflow IDs and their QA priorities |
+| [Workflow index](workflow-index.md) | Direct links to stable workflow IDs and their QA priorities |
 | [Account workflows](account-workflows.md) | Applications, sign-in/out, session transitions, passkeys, API keys |
 | [Resident workflows](resident-workflows.md) | Topic/meeting discovery, reporting, sources, civic officials, API research |
 | [Administrative workflows](admin-workflows.md) | Membership decisions, editorial repair, records, jobs, prompts, imagery |
@@ -151,3 +328,31 @@ The subsequent test review, prioritized behavioral suite, and defect-detection
 evidence are recorded in the [October 10–11 audit](overnight-progress.md).
 Remaining workflow gaps, recurring QA scheduling, and independent reviewer
 assignment are described in [maintenance-and-qa.md](maintenance-and-qa.md).
+
+The [November 8 campaign-related issue record](member-campaign-activity-2026-11-08.md)
+records real cohort votes, source navigation, separate member/Council results and
+representative eligibility/access defect checks for RES-10/11.
+
+The [November 8 prepared forum intake](prepared-campaign-forums-2026-11-08.md)
+records the owner-verified transcript handoff, retention of all candidates,
+speaker-bound extraction checks and real-file size limits.
+
+The [Council history operating procedure](council-history-operations.md) covers
+reviewed imports, scoped historical batches, nightly renewal, and the dated
+resident coverage disclosure (RES-10/11 and BG-01/02/08/09).
+
+The [November 8 saved-analysis reuse checks](council-saved-history-2026-11-08.md)
+cover existing minutes summaries reaching member issue history without a second
+AI pass, and preventing recurring duplicate minutes extraction (RES-10/11, BG-09).
+
+The [November 8 minutes-attribution correction](minutes-motion-attribution-2026-11-08.md)
+checks explicit mover/seconder wording through existing meeting/topic processing
+(BG-02), without another extraction or changes to accepted votes.
+
+The [November 8 saved-motion checks](council-saved-motion-actions-2026-11-08.md)
+trace existing minutes attribution into recorded work and shared campaign
+comparisons, including unchanged reuse and real local phone/desktop pages.
+
+The [November 8 forum quote recovery](campaign-forum-quote-recovery-2026-11-08.md)
+checks exact retained passages, preserved qualifications and speaker labels,
+incremental topic reuse, and real local profiles without another extraction call.

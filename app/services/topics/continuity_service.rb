@@ -31,10 +31,12 @@ module Topics
     end
 
     def call
-      load_context
-      derive_lifecycle_status
-      detect_signals
-      persist_results
+      @topic.with_lock do
+        load_context
+        derive_lifecycle_status
+        detect_signals
+        persist_results
+      end
     end
 
     private
@@ -85,6 +87,7 @@ module Topics
          add_event(
            lifecycle_status: "resolved",
            evidence_type: "motion_outcome",
+           decision_observation_id: motion.decision_observation_id,
            occurred_at: motion.meeting.starts_at,
            source_ref: {
              motion_id: motion.id,
@@ -195,6 +198,10 @@ module Topics
 
         # Create Events (Idempotent)
         @events_to_log.each do |attrs|
+          if attrs[:evidence_type] == "motion_outcome"
+            persist_motion_event(attrs)
+            next
+          end
           # Use a loose uniqueness check: same topic, type, date, and status
           # We don't want to spam events every time the job runs
 
@@ -222,6 +229,20 @@ module Topics
         end
 
         @topic.update!(updates) if updates.any?
+      end
+    end
+
+    def persist_motion_event(attrs)
+      events = @topic.topic_status_events.where(evidence_type: "motion_outcome")
+      event = events.find_by(decision_observation_id: attrs[:decision_observation_id]) if attrs[:decision_observation_id]
+      # Adopt an existing live legacy reference only when it identifies this
+      # exact motion/outcome. Missing old rows never acquire guessed evidence.
+      event ||= events.where(decision_observation_id: nil)
+        .where("source_ref->>'motion_id' = ? AND source_ref->>'outcome' = ?", attrs[:source_ref][:motion_id].to_s, attrs[:source_ref][:outcome]).first
+      if event
+        event.update!(occurred_at: attrs[:occurred_at], decision_observation_id: attrs[:decision_observation_id])
+      else
+        @topic.topic_status_events.create!(attrs)
       end
     end
   end

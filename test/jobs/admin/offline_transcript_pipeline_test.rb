@@ -19,16 +19,16 @@ module Admin
       history = @import.dup
       history.save!
       history.srt_file.attach(@import.srt_file.blob)
-      history_state = history.reload.attributes.except("meeting_document_id")
+      history_state = history.reload.attributes
       first_appearance_state = TopicAppearance.where(meeting: @meeting).order(:id).map(&:attributes)
 
       @boundaries.clear
       run_pipeline
-      assert_complete_state
-      assert_not MeetingDocument.exists?(first_document.id), "rerun replaces the uploaded artifact, not topic identities"
-      assert_not_equal first_document.id, @import.reload.meeting_document_id
-      assert_nil history.reload.meeting_document_id
-      assert_equal history_state, history.attributes.except("meeting_document_id")
+      assert_complete_state(topic_calls: 0, briefing_calls: 0)
+      assert MeetingDocument.exists?(first_document.id), "identical rerun retains the uploaded artifact and its references"
+      assert_equal first_document.id, @import.reload.meeting_document_id
+      assert_equal first_document.id, history.reload.meeting_document_id
+      assert_equal history_state, history.attributes
       assert_equal @srt.b, history.srt_file.download.b
       assert_equal stable_ids, persistent_ids
       assert_equal first_appearance_state, TopicAppearance.where(meeting: @meeting).order(:id).map(&:attributes)
@@ -60,7 +60,7 @@ module Admin
       @broken_replacement = nil
       @boundaries.clear
       run_pipeline
-      assert_complete_state
+      assert_complete_state(topic_calls: 0)
       assert_nil @import.reload.error_class
       assert_not TopicAppearance.exists?(meeting: @meeting, topic: replacement)
     end

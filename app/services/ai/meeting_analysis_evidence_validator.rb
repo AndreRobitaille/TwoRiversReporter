@@ -2,7 +2,7 @@ module Ai
   class MeetingAnalysisEvidenceValidator
     def initialize(document_text:, motion_context:, participant_context: nil)
       @sources = [ document_text, motion_context ].map { |text| normalize(text) }
-      @participant_names = participant_context.to_s.scan(/\b\p{Lu}[\p{L}'’-]+(?:\s+\p{Lu}[\p{L}'’-]+)+\b/)
+      @participant_names = participant_context.to_s.scan(/\b\p{Lu}[\p{L}'’-]+(?:\s+\p{Lu}[\p{L}'’-]+)+\b/).uniq(&:downcase)
       @name_tokens = @participant_names.flat_map(&:split).map(&:downcase).select { |part| part.length >= 4 }.uniq
       @vote_sources = @sources.map { |text| canonical_vote_text(text) }
     end
@@ -68,19 +68,30 @@ module Ai
       # A unique surname can survive a garbled first name in captions.
       # Shared surnames cannot distinguish participants from one another.
       surname_matches = @participant_names.count { |participant| participant.split.last.casecmp?(last_name) }
-      identifiers = [ first_name ]
+      identifiers = [ name, first_name ]
       identifiers << last_name if surname_matches <= 1
+      initial_matches = @participant_names.select do |participant|
+        parts = participant.split
+        parts.last.casecmp?(last_name) && parts.first[0].casecmp?(first_name[0])
+      end
+      if initial_matches.one? && initial_matches.first.casecmp?(name)
+        identifiers << "#{first_name[0]}. #{last_name}"
+      end
       identity = "\\b(?:#{identifiers.uniq.map { |part| Regexp.escape(part.downcase) }.join('|')})\\b"
       text = normalize(quote)
 
       case role
       when "mover"
-        text.match?(/#{identity}.{0,40}\bmoved\b/) ||
-          text.match?(/#{identity}.{0,40}\b(?:made|make)\b.{0,30}\bmotion\b/) ||
+        text.match?(/#{identity}[^,.;:!?]{0,40}\bmoved\b/) ||
+          text.match?(/#{identity}[^,.;:!?]{0,40}\b(?:made|make)\b[^,.;:!?]{0,30}\bmotion\b/) ||
+          text.match?(/\bmotion(?:\s+was)?\s+made\s+by\s+#{identity}/) ||
+          text.match?(/#{identity}\s+amended\s+(?:his|her|their)\s+motion\b/) ||
           text.match?(/\bmotion\b.{0,180}\bthank you[\s,]+#{identity}/)
       when "seconder"
         # "I'll second Mark" addresses the mover; it does not name the speaker.
-        text.match?(/#{identity}.{0,40}\bseconded\b/) ||
+        # A comma in "Bittner, seconded by Brandt" separates two attributions.
+        text.match?(/#{identity}[^,.;:!?]{0,40}\bseconded\b/) ||
+          text.match?(/\bseconded\s+by\s+#{identity}/) ||
           text.match?(/\bsecond\b.{0,180}\bthank you[\s,]+#{identity}/)
       when "no_votes"
         match = text.match(/#{identity}(.{0,100}?)\b(?:no|nay|against)\b/)

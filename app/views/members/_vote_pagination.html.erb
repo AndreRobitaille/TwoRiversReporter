@@ -1,0 +1,6 @@
+<% if @pagy.last > 1 && @pagy.page <= @pagy.last %>
+  <div class="member-vote-pages">
+    <p class="member-vote-page-status">Page <%= @pagy.page %> of <%= @pagy.last %></p>
+    <%= @pagy.series_nav(slots: 5, fragment: "voting-record", aria_label: "Voting record pages").html_safe %>
+  </div>
+<% end %>

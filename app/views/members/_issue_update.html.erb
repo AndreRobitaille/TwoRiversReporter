@@ -1,0 +1,21 @@
+<% evidence = update.fetch(:evidence) %>
+<div class="member-campaign-position" data-issue-update="<%= evidence.fetch("status") %>">
+  <strong><%= evidence.fetch("subject") %></strong>
+  <p><%= evidence.fetch("summary") %></p>
+  <details class="member-campaign-context">
+    <summary>Reported <%= update.fetch(:reported_on).strftime("%b %-d, %Y") %> · Source</summary>
+    <% if evidence["occurred_on"].present? %>
+      <p>Event date: <%= Date.iso8601(evidence.fetch("occurred_on")).strftime("%b %-d, %Y") %></p>
+    <% end %>
+    <% if evidence["conditions"].present? %><p><%= evidence.fetch("conditions") %></p><% end %>
+    <% if evidence["quote"].present? %><blockquote><%= evidence.fetch("quote") %></blockquote><% end %>
+    <p><%= link_to update.fetch(:meeting).body_name, meeting_path(update.fetch(:meeting)) %>
+      <% (update[:citations] || [ update.fetch(:citation) ]).each do |citation| %>
+        · <%= link_to citation.fetch(:label), citation.fetch(:source_url) || meeting_path(update.fetch(:meeting)) %>
+      <% end %>
+    </p>
+    <% update.fetch(:topics).each do |topic| %>
+      <%= link_to topic_title_case(topic.canonical_name), topic_path(topic) %>
+    <% end %>
+  </details>
+</div>

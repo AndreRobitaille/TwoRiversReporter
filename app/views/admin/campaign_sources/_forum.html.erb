@@ -1,0 +1,17 @@
+<% transcript = version.prepared_transcript %>
+<section class="card" data-prepared-forum>
+  <h2 class="card-title">Speaker attribution</h2>
+  <p>Speaker labels verified by the source reviewer. <%= number_with_delimiter(transcript["word_count"]) %> caption words retained.</p>
+  <p><%= transcript["transcription_verified"] ? "Transcript wording marked verified in the supplied file." : "Transcript wording comes from the supplied captions." %></p>
+  <% if transcript["timing_basis"].present? %><p><%= transcript["timing_basis"] %></p><% end %>
+  <% if transcript["gaps_are_moderator"] %><p>The reviewer identified unlabeled passages as moderator filler.</p><% end %>
+  <ul>
+    <% transcript.fetch("segments").filter_map { |segment| segment["speaker"] }.uniq.each do |speaker| %>
+      <li><%= speaker %></li>
+    <% end %>
+  </ul>
+  <details>
+    <summary>Original speaker file</summary>
+    <pre class="detail-value detail-value--preserve" data-forum-original><%= transcript.fetch("original_json") %></pre>
+  </details>
+</section>

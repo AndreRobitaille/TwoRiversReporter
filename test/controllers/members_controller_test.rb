@@ -72,7 +72,7 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
 
     assert_select ".member-attendance-row", minimum: 1
     assert_select ".member-attendance-committee", text: /City Council/
-    assert_select ".member-attendance-stat", text: /100%/
+    assert_select ".member-attendance-stat", text: "1 present"
   end
 
   test "show omits attendance section when no data" do
@@ -118,7 +118,7 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
     assert_select ".member-attendance-list", count: 0
   end
 
-  test "show attendance comparison ignores non-voting attendees" do
+  test "show recorded counts without an unscoped peer comparison" do
     meeting_one = Meeting.create!(
       body_name: "City Council", meeting_type: "Regular",
       starts_at: 3.days.ago, status: "minutes_posted",
@@ -185,7 +185,8 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
     get member_url(@member)
     assert_response :success
 
-    assert_select ".member-attendance-stat", text: /3 of 3 \(100%\) — above 67% avg/
+    assert_select ".member-attendance-stat", text: "3 present"
+    assert_select ".member-attendance-stat", text: /%|avg/, count: 0
   end
 
   test "show groups votes by topic for high-impact topics" do

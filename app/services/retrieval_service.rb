@@ -4,13 +4,15 @@ class RetrievalService
   end
 
   def retrieve_context(query_text, limit: 10, candidate_scope: nil)
-    return [] if query_text.blank?
+    # Historical recap and topic work uses official meeting documents. The
+    # one-time authorization does not buy optional knowledge-base embeddings.
+    return [] if query_text.blank? || CouncilHistory::Execution.meeting_id
 
     query_embedding = @embedding_service.embed(query_text)
 
     # Base scope: Active knowledge chunks
     scope = KnowledgeChunk.joins(:knowledge_source)
-                        .where(knowledge_sources: { active: true, status: "approved" })
+                        .merge(KnowledgeSource.retrievable)
 
     # Apply candidate scope if provided (e.g. topic filter)
     scope = scope.merge(candidate_scope) if candidate_scope

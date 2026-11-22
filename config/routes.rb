@@ -39,7 +39,10 @@ Rails.application.routes.draw do
   resources :meetings, only: %i[index show]
   resources :committees, only: %i[index show], param: :slug
   get "members", to: redirect("/committees", status: 301), as: nil
-  resources :members, only: %i[show]
+  resources :members, only: %i[show] do
+    get "compare/:peer_id", action: :compare, on: :member, as: :compare
+    get "recommendations", on: :member
+  end
   get "topics/explore", to: "topics#explore", as: :topics_explore
   resources :topics, only: %i[index show]
   resources :applications, only: %i[new create edit update] do
@@ -81,6 +84,10 @@ Rails.application.routes.draw do
   get "admin" => "admin/dashboard#show", as: :admin_root
 
   scope :admin do
+    resources :council_formal_sources, only: %i[index show new create edit update], controller: "admin/council_formal_sources", as: :admin_council_formal_sources
+    resources :campaign_sources, only: %i[index show new create edit update], controller: "admin/campaign_sources", as: :admin_campaign_sources
+    resource :campaign_forum, only: %i[new create], controller: "admin/campaign_forums", as: :admin_campaign_forum
+
     resource :site_settings, only: %i[show update], controller: "admin/site_settings", as: :admin_site_settings
 
     resources :users, only: %i[index show new create destroy], controller: "admin/users" do

@@ -280,6 +280,231 @@ Represents any document associated with a meeting.
 Key fields: - meeting_id - document_type - source_url - sha256 -
 page_count - text_quality - extracted_text
 
+`MeetingDocumentVersion` retains downloaded artifact bytes and their source
+URL/type, SHA-256, original document/meeting identity, meeting timestamp,
+retrieval timestamp and HTTP Last-Modified value. Publication time remains
+unknown unless separately established; HTTP metadata does not establish it.
+Versions are collected evidence, not validation of extracted claims. Same-source
+identical bytes reuse the retained version; replacement and ordinary document
+removal preserve earlier artifacts. Delayed downloads cannot overwrite a newer
+fetch or source edit. New bytes upload before the metadata transaction, so a
+storage failure cannot publish a missing artifact. A legacy document gains a
+version on its next full-byte response; HTTP 304 alone cannot reconstruct
+missing historical bytes.
+
+`MeetingDocumentTextVersion` retains each successful PDF/OCR extraction against
+its exact retained artifact, including every raw/cleaned page, complete text,
+extractor version, quality and extraction timestamp. It records the `extracted`
+stage, not reviewed or approved claims. Text versions are immutable and survive
+ordinary document removal. The current text pointer is valid only for the current
+source version. Pages, full text and pointer publish together; incomplete,
+failed or superseded parser work cannot replace a completed extraction.
+Unchanged successful inputs reuse the current extraction without another
+downstream enqueue; PDF retries preserve completed OCR. Legacy attachments
+without retained download provenance remain unversioned until a full-byte fetch
+and extraction establish it. No historical text is attributed to new bytes.
+
+`MinutesExtraction` retains source-keyed vote/attendance stages, exact text,
+input/prompt/model/rule provenance and complete parsed responses. A stage is
+completed extraction, not semantic or human validation. `MinutesPublication`
+selects compatible completed stages; a meeting/source lock protects atomic
+replacement of the display rows, membership reconciliation and current pointer.
+Known votes remain inspectable in a completed stage while attendance is pending.
+New vote stages also retain a deterministic `evidence_locations` check against
+their pinned `MeetingDocumentTextVersion`. Each motion has an extraction-array sequence
+and either exact page/character ranges or an unresolved reason. Excerpts must
+occur uniquely after whitespace normalization; missing/repeated passages and
+unretained legacy sources acquire no invented location. `located` proves text
+occurrence only, not semantic accuracy, identity, eligibility or approval.
+Completed checks are immutable with their extraction; preexisting stages remain
+unchecked and are not reprocessed merely to fill this field. Stable decision
+reconciliation uses retained passages rather than rewritten descriptions.
+Explicit votes and absences derived from the matching roll call have different
+`Vote#evidence_basis` values; old rows remain `legacy`. Unsupported vote values
+are held rather than converted to abstentions.
+
+Stage claims prevent concurrent duplicate dispatch. Completed stages are reused;
+changed agenda context invalidates only votes. Global prompt/model changes alone
+do not schedule historical extraction. An explicit job with `refresh: true` can
+request extraction for changed settings, while retaining completed-input caching
+and retry guards. Meeting date/committee context is projected with code without
+repeating source extraction, even after global settings change. Invalid
+responses allow at most two attempts; uncertain transport outcomes and unfinished
+claims are not automatically redispatched. Oversized minutes stop before dispatch
+at the existing 50,000-character boundary instead of silently losing the ending.
+These are conservative extraction guards, not #238's request/batch/daily spending
+ledger. Campaign paid dispatch still requires that full cost contract.
+
+Minutes vote/attendance requests now send the pilot contract's 4,000-token
+completion ceiling through the existing AI client. This covers generated output,
+including reasoning tokens; it does not count or bound the fully rendered input
+prompt or establish a dollar allowance. Each actual job dispatch first retains a
+`MinutesRequest` against its extraction and attempt, with the exact messages and
+effective parameters. The provider response ID/model, finish reason, available
+usage and response body are saved before interpreting the response. Missing usage
+remains unknown. These receipts survive PromptRun pruning and source/meeting
+removal; finished receipts cannot be edited or removed through the model, and
+migration rollback refuses to discard them.
+The ceiling is recorded as a request constraint without changing the existing
+extraction identity, so introducing it cannot reset old uncertain/claimed work
+or completed-input reuse.
+
+A length-limited, filtered or missing-finish response is held as `incomplete`,
+even when its partial text parses as valid JSON. It cannot replace published facts
+or acquire another automatic attempt from a retry/nightly check. Uncertain
+transport or receipt-persistence outcomes remain held; process interruption
+leaves the durable dispatched receipt and the claimed stage. Invalid JSON from
+an otherwise finished response still uses the existing two-attempt ceiling, with
+separate receipts. Completed-input reuse and parallel stage claims continue to
+avoid duplicate requests. The following bounded reservation slice builds on
+these receipts; neither slice authorizes paid enrichment.
+
+Council-requested minutes work enters through
+`CouncilProfiles::ExtractMinutesJob`. Selection permanently requires budget
+admission for this meeting's pending and future minutes stages, including
+ordinary retry/nightly deliveries. Selection and stage claims share the meeting
+lock; a claim inherits the persisted requirement and run inside that transaction,
+even when an ordinary worker prepared its input before selection.
+Previously unselected meetings keep their
+existing ingestion behavior. This is a minutes integration, not app-wide billing.
+No automatic trigger selects meetings or creates spending authorization.
+
+An active administrator must explicitly record an immutable daily allowance and
+run authorization with request/run limits, request count, concurrent-request and
+declared input/output token ceilings, expiry and a prepared request-estimate
+batch. Each estimate binds the stage key and digest of the exact rendered
+provider parameters, model, supplied input token count, output cap, effective
+worst-case rates, count method, pricing reference and check time. These are
+approved preflight inputs: the application validates their shape and exact request
+binding, but does not yet compute or independently validate token counts or
+pricing. Missing or changed estimates pause dispatch. Character counts are not
+treated as token counts. Real preflight validation remains a paid-pilot prerequisite.
+
+Admission locks the daily allowance and run, reserves the full estimate using
+integer micro-USD arithmetic rounded upward, and commits the reservation with its
+request receipt before transport. Separate runs share the same daily allowance;
+retries cannot reset amounts, counts or stage attempts. Budget-paused work keeps
+its source and attempt allowance. A received response releases the run's
+concurrency slot, but the full reserved amount remains charged to the allowance,
+even when reported usage is smaller. Unknown transport/process/persistence
+outcomes retain both amount and slot. No automatic refund, settlement, recovery,
+day rollover or new budget is implemented. Authorizations/reservations remain
+retained through source or actor removal; migration rollback refuses to discard
+spending history.
+
+Completed stages and independent deterministic republication continue without
+budget admission or new calls, including after revocation. The existing nightly
+sweep can requeue budget-paused work but cannot supply a new allowance or reset
+attempt limits. Operational evidence is persisted in stages, processing state,
+reservations and receipts; aggregate displays and recovery controls remain open.
+See [reservation verification](application-map/council-spend-reservations-2026-11-07.md).
+Authorized paid-pilot budget remains zero.
+
+The existing nightly repair sweep checks missing/changed stages and recovers
+missing PDF extraction triggers. It does not reprocess untouched completed legacy
+rows merely because this change is deployed. No new schedule is introduced.
+Legacy text can be staged coherently with explicit `legacy_text_projection`
+provenance; it is never relabeled as a retained original artifact. Existing
+summary grounding omits old structured motions while current facts are pending.
+
+`CouncilDecision` now provides an opaque durable ID independent of replaceable
+`Motion` rows. Immutable `CouncilDecisionObservation` rows retain each projected
+motion's raw extraction, original sequence, exact agenda context, checked passage
+and identity-rule version. Both tables participate in the existing publication
+transaction. Exact unique excerpt/sequence/context correspondence can reuse an
+identity; changed ordering, ambiguous passages, unknown locations or unmatched
+revisions retain an unresolved observation and possible prior identities instead
+of guessing. Relative page/character locations are compared independently of the
+provider's array order, so unchanged output ordering cannot hide reordered source
+passages. The first supported evidence can establish identities when older
+publications had none; those older unresolved observations remain unmapped.
+The initial identity and later correspondence are not fact approval:
+all observations remain `extracted`. Replaced agenda row IDs do not change the
+captured textual context. Member aliases remain the one person-identity system.
+
+Person merges deduplicate votes only when their value and evidence basis agree,
+and attendance only when status, attendee type and capacity agree. A disagreement
+refuses the whole merge and preserves both records; it is not resolved by choosing
+the target person's value. Source associations reload before comparison so a
+previously loaded member cannot conceal a newer conflict. The existing admin
+member page displays the refusal.
+Compatible merges retain the source name as an alias, so cached minutes
+reprojection keeps the surviving person while retaining original raw names,
+decision observations, identity reviews and topic evidence. This does not approve
+the facts or add vote/attendance correction controls. Membership/office conflict
+rules and concurrent person-merge/publication coordination remain separate work.
+
+A decision's current observation comes through `CouncilDecisionAssignment` for
+the meeting's current published vote stage; it never falls back to a superseded observation. An unresolved change
+can therefore withdraw that current reference while unrelated decisions advance.
+Original observations and opaque IDs survive source/meeting removal. Existing
+Motion rows link to their observations; public routes/API fields remain unchanged.
+Topic motion-evidence references are described below. Cached projection upgrades
+run with code through the existing nightly/job paths, without re-extraction.
+
+`CouncilDecisions::ResolveIdentity` is the internal correction entrypoint. An
+active administrator can assign a retained observation to an existing decision,
+introduce a new identity, or withdraw an assignment. `CouncilDecisionCorrection`
+keeps the actor snapshot, timestamp, reason, before/after identities, prior review,
+request key and retained source/basis references. The raw extraction is immutable;
+identity review does not validate its factual interpretation. No browser control
+or HTTP endpoint for this service is introduced by the foundation.
+
+Reviews and publication serialize on the meeting/source locks. A request key is
+idempotent, an expected prior correction rejects stale edits, and stage/decision
+uniqueness prevents two observations sharing one current identity. Reprocessing
+the same retained source and raw observation carries an applicable correction.
+Review updates equivalent retained observations together, including cached stages,
+and audits their before/after mappings. Restoring an older extraction cannot
+revive a superseded mapping for the same evidence. A historical identity collision
+holds both affected assignments instead of selecting one silently.
+Changed source, changed extraction, or ambiguous correspondence retains explicit
+conflicting review references and no current identity until resolved. Those
+conflicts survive later versions; a subsequent review records which conflicts it
+resolves. Supported unrelated evidence continues. All reconciliation uses code.
+
+`Motion#council_decision` and `CouncilDecision#current_observation` read effective
+assignments. An observation's original `council_decision` remains its extracted
+identity basis; it must not be treated as the current reviewed assignment.
+`CouncilDecision#extracted_observations` preserves that original history separately
+from its effective observation history. Future claim manifests must include the
+assignment's correction/conflict references as well as the extraction version.
+Audit records survive actor/source/meeting removal. Migration rollback refuses
+to drop tables containing reviewed identity history.
+
+Topic motion-outcome events now pin their retained decision observation instead
+of relying on a replaceable Motion ID. Distinct decisions at the same meeting
+remain separate events, including when their outcomes agree. Code-only replay
+and projection repairs reuse the event and update its canonical meeting date;
+new extraction observations create separate historical events. The event's
+effective decision follows the observation's audited identity assignment while
+its original extracted source remains unchanged.
+
+Summary inputs carry each event's ID and its observation, opaque decision,
+source/text version and extraction-provenance references. Review actors and
+private reasons are excluded. These identifiers are internal provenance, not
+public citations or a claim of factual validation.
+
+Per-meeting summary and rolling briefing inputs select only motion events whose
+observation still has a current published motion, matching outcome/date and a
+current link to that topic. Topic merges retain both histories and include each
+current motion once. Exact live legacy references can acquire an observation
+link during ordinary continuity work; missing legacy motions are not guessed or
+backfilled. Topic locking serializes event creation; merges lock both topics in
+a fixed order before moving history, so an in-flight event cannot be missed.
+These are reference and
+projection checks, not factual validation or proof that a project was completed.
+Existing stored narrative withdrawal and dependencies of other lifecycle signals
+remain follow-on work. No new generation trigger or schedule is added.
+
+These are bounded evidence-foundation slices of #236. The correction review UI,
+vote/attendance value corrections, dependent-claim migration, explicit motion/amendment
+relationships and budgeted incremental generation remain follow-on work.
+Public full-record readers still use the mutable display rows; migrating full record
+queries to retained evidence and complete service-period denominators remains
+separate work. Existing citation resolution still rejects changed source versions.
+See the [bounded pilot source check and contract](superpowers/plans/2026-11-07-council-evidence-pilot.md).
+
 ### Topic (Foundational)
 
 Represents a long-lived civic concern.
@@ -447,7 +672,9 @@ contextual titles. Each item detail carries its matching `agenda_item_id`.
 Structured `motion` details preserve verified mover, seconder, named no
 votes, and recorded absences through the topic pipeline.
 Motion identities and numeric tallies carry supporting source excerpts;
-validate those excerpts before passing the fields downstream. Participant
+validate those excerpts before passing the fields downstream. Accept the city's
+explicit "motion made by" / "seconded by" wording and uniquely identifying
+initials, keeping adjacent mover/seconder clauses separate. Participant
 rosters provide spelling, not an unnamed speaker's role. A collective
 voice vote does not establish a numeric tally. Item summaries remain
 factual, with attributed arguments rather than inferred vote motives.
@@ -692,6 +919,195 @@ voter's name, the name links to that stored member's profile. Links use the
 vote's member identity and inherit the existing reporting access boundary.
 This navigation is generated from records; it needs no per-page publishing
 and does not certify the extraction or approval status of the source minutes.
+
+**Planned member-page enrichment — direction agreed November 7, 2026:**
+
+Owner scope correction, November 8: choose work by whether it helps a resident
+understand a specific promise, meaningful action, practical effect, or issue
+outcome. State the demonstrated reading obstacle or materially misleading result
+before expanding implementation. A missing detail alone is not a priority.
+Use the existing attendance record; exact arrival/departure tracking is optional
+and is not a delivery requirement. PR #306 is deferred outside the delivery stack.
+Retain source links and plain coverage limits without turning completeness into
+a new project. The [resident-value rule](../AGENTS.md#choose-work-by-resident-value)
+and #234's bounded acceptance govern the older detailed proposals below.
+
+Extend the existing `/members/:id` pages into year-round records of each
+official's priorities, actions, and progress over time. Build on current
+attendance and vote tracking with a shared, automatically maintained profile.
+AI extracts and relates sourced evidence and generates cited explanations;
+deterministic jobs validate identities/references, calculate metrics, and refresh
+affected records as new evidence arrives. Routine operation must not depend on
+hand-written profiles, per-page publishing, or approval of every routine update.
+Manual work supplies difficult sources, corrects errors, and resolves ambiguity.
+
+During election season the homepage links directly to the race on the Council
+page. A reader should see whose seats are up, who has confirmed a campaign, and
+what those candidates say they will do. Use the same treatment for challengers
+and incumbents. A term expiration establishes a seat on the ballot, not a
+candidacy. Label every campaign position by its election year.
+
+For a resident asking “Should I vote for this person?”, link a specific earlier
+position to the member’s recorded work on that position, including contrary
+action or a losing vote when documented. Show what the Council decided and what
+happened to the issue as distinct facts. When the record leaves a question open,
+say so. The reader decides what those examples mean for their vote.
+
+The next election cohort is the initial rollout scope. Expected
+manual inputs are locating the HTR candidate-profile article and preparing
+voter-forum transcripts outside the website. Source intake should extract evidence
+for all relevant members from one supplied article or prepared transcript.
+Formal-conduct coverage is limited to documented complaints and findings.
+
+Owner layout direction (November 8, 2026): the ongoing service, attendance and
+voting record is primary. Campaign context belongs in a secondary desktop column
+and follows the main record on phones, with a direct jump link. Additional votes
+start collapsed and remain available through a native disclosure. Keep the same
+sourced reporting in the HTML for permitted readers and verified crawlers: the
+audience also receives civic information through Google Search and its AI results.
+
+For campaign comparisons, start with the campaign sources. Show each distinct
+proposal or observable policy position that matters to residents once per election.
+Keep alternative rules separate, preserve conditions, and label priorities and
+positions in the candidate’s own degree of commitment. General aspirations and
+personal qualities belong in the source archive. Open the first position and let
+readers expand any others independently. Each comparison links its campaign
+sources. The complete collection of accepted statements remains available below. Use a small white inset panel and side rule to separate the saved
+position from its dated campaign sources; these summaries are paraphrases, not
+verbatim quotations. Keep qualifications and deadlines beside the position.
+Remove the redundant Follow this issue control. Preserve all accepted statements,
+questions and source links in the permitted HTML, with full detail on demand.
+
+**Campaign-to-action comparison boundary:** an approved topic association alone
+must not place a vote beneath a campaign position. The owner identified the
+water-user proposal versus sewer-charge ordinance as a misleading pair, even
+under the Related Council votes heading. The source sidebar therefore does not
+render automatic topic-based vote pairs or their Council results. Existing votes
+remain in the main record. A comparison needs a supported relationship
+between the specific statement and decision, not merely their shared topic;
+that analysis must be shared across members and reused for unchanged inputs.
+The initial comparison slice may display a directly relevant recorded motion
+beside the exact matched statement, with an explanation, supporting minutes
+passage, member vote and separate Council result. An opposing motion can also
+be relevant; relevance itself is not a finding of consistency or a promise grade.
+Do not fill missing comparisons with broader topic votes or infer inaction from
+an empty result. Broad priorities, advocacy, opportunity/coverage assessments,
+contradiction highlights and issue completion remain separate unfinished work.
+Cache both accepted and rejected comparisons. Share meeting text across members,
+compare only new statement/decision evidence, and reuse results after metadata-only
+corrections. New evidence queues the bounded stage; missed-work checks use existing
+nightly campaign recovery. Exact request allowances must precede paid calls.
+
+The comparison jobs use the same consolidated positions as the member page.
+They can find several decisions on one position, reuse a saved comparison from
+any repeated mention, and check each alternative in a compound answer separately.
+A missing campaign topic tag can be recovered from a distinctive term in an
+approved topic or a specific phrase in the decision. Publication still requires
+a source-supported connection. Changes to these comparisons reuse stored votes,
+official minutes, attributed actions and issue updates. Check the cost of any
+new comparisons over the covered dates before considering a meeting backfill.
+
+The existing 11 p.m. discovery run and newly published minutes recaps or packet
+analyses also check the positions against developments reported in those sources.
+Project funding, loss of funding, resident questions and a city purchase can
+matter to a position even when the member made no motion. Use the saved analysis
+to locate the passage and the official document to substantiate the published
+finding. Label a city or committee outcome separately from the member’s own work.
+Use the authorized source dates and budgets for new comparisons. An unchanged
+passage and position reuse their comparison, including a rejected connection.
+
+For older sources awaiting consolidation, issue navigation reuses approved topic links and existing impact scores;
+repeated campaign mentions do not increase priority. Prefer a saved written-source
+summary before longer forum records for the initial position, while preserving
+distinct claims in Campaign sources. Vote history does not determine which
+campaign issues appear. This layout introduces no generation step.
+When no approved issue links exist, retain the statement-list fallback.
+When a specific decision match is available, show its actual saved statement as
+the initial position instead of repeating both it and the generic issue summary.
+Keep the open panel short: at most two decision rows with a readable title,
+member vote, separate Council result and date. Put explanations, full formal
+titles, exact motions and minutes passages behind one Supporting details
+disclosure. Additional matched positions remain available in a closed disclosure;
+all campaign statements and citations remain in the source section. Readability
+changes must reuse saved evidence without another AI call.
+
+Use the independently assessed topic importance for normal ordering. A major,
+specific campaign promise may additionally warrant a highlight when direct
+evidence shows a contrary action or no matching action in the available record.
+The Airbnb-regulation example illustrates this exception; it is not a keyword
+rule or a conclusion about any candidate. Such highlights need the actual
+promise, relevant decisions and coverage together. Coarse statement-type labels
+or rhetorical emphasis alone do not establish importance, contradiction or
+inaction. Direct matching and these highlights remain subsequent work.
+
+For a retrospective covering the full three-year term, a specific promise with
+neither fulfillment nor measurable work toward it is a broken promise. Measurable
+work includes a proposal, documented advocacy, or voting for the promised action
+even when other members defeat it. Distinguish that effort from achieving the
+result. Establish the relevant term's coverage and review non-vote activity before
+making the absence finding; an empty match list or the current partial backfill
+does not establish it. Broad aspirations are not specific promises.
+
+Prepared forum requests retain the complete supplied transcript in one shared
+analysis for all candidates. The initial whole-source boundary is 100,000
+characters; forums over 50,000 characters declare a 32,000-token response ceiling
+to preserve full answers and their conditions. Articles retain their 50,000/8,000
+limits. These are request boundaries, not spending authorization or proof of
+provider accuracy: each paid request still needs an exact estimate and approved
+allowance covering its actual output ceiling. Oversized sources and incomplete
+responses remain retained without publishing partial results. See
+[full-forum verification](application-map/full-campaign-forums-2026-11-08.md).
+
+The real forum pilot also fixes the campaign response contract: answers require
+literal `question`, `passage`, and `statements` keys, with reviewed speaker labels
+used for attribution. Invalid response structure is retained as failed work,
+not a completed extraction. Shared issue-matching context is bounded at 150,000
+characters to accommodate a complete forum's statements and the existing topic
+catalog; the separate request budget and 8,000-token response ceiling still apply.
+See [pilot validation](application-map/campaign-forum-pilot-2026-11-08.md).
+
+The proposed page centers on **what they said → what they did → what happened**,
+with a term selector, cited overview, public-issue timelines, attendance, full
+decision history, peer/staff comparisons, formal-case history, and source coverage.
+Reuse nightly meeting discovery and document-change detection; refresh affected
+profiles from validated evidence changes, with scheduled reconciliation for
+missed updates and older records. Prove this loop on one multi-candidate campaign
+source and a small meeting sample before expanding the shared April 2024 backfill.
+Reconciliation belongs in existing nightly processing; do not add an hourly
+schedule or periodic AI rewrites. Reuse source analysis across members, skip
+unchanged work, coalesce relevant changes, and enforce explicit spending/retry
+limits before paid generation. Attendance and comparison arithmetic use code.
+Profile issue history reads the existing published minutes agenda summaries,
+topic links and source citations. This adds no AI requests or copied extraction
+records. Recurring profile source extraction does not admit minutes, including
+under an older allowance that listed them. Retained supplemental evidence and
+its specific campaign comparisons remain usable; saved generic summaries do not
+automatically become statement/action matches. Explicitly selected packet
+recommendations and bounded manual missing-fact work remain separate. See
+[saved-analysis reuse checks](application-map/council-saved-history-2026-11-08.md).
+
+Live source admission must explicitly identify committees, document types and a
+source-specific start date; an older campaign-comparison allowance cannot enable
+historical packet or minutes processing. These sources use the same monthly,
+daily, request, concurrency and retry limits, with no default allowance. Existing
+nightly processing recovers missed updates. See [registered live-source checks](application-map/council-live-sources-2026-11-08.md).
+
+
+The bounded recommendation implementation compares independently recorded yes/no
+votes only against the same full unchanged proposal and an explicitly attributed
+pre-decision recommendation. It keeps named managers, staff and advisory bodies
+separate; changed wording, extra conditions, amendments and uncertain timing stay
+unresolved. New recommendations share the issue/action source request, while old
+completed analyses remain cached. See [implementation and verification limits](application-map/council-staff-recommendations-2026-11-08.md).
+
+
+See the [member-profile planning proposal](superpowers/specs/2026-11-07-council-accountability-design.md)
+for proposed page contents, sources, update cadence, release sequence, and
+remaining decisions. [GitHub parent #234](https://github.com/AndreRobitaille/TwoRiversReporter/issues/234)
+links the milestones, implementation issues, and documentation review.
+This records product direction, not shipped behavior;
+detailed metrics, validation rules, and implementation still need pilot validation
+and verification under the existing source and governance contracts.
 
 **Layout:**
 

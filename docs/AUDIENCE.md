@@ -32,6 +32,10 @@ prioritization decisions.
   to them or when they hear about something — not daily.
 - **Mobile-heavy.** Many access on phones. UI must work well at small
   screen sizes.
+- **Search and AI answers.** These same residents also get civic information
+  through Google Search and its AI results. Keep reporting clear, sourced and
+  readable by verified crawlers; reaching voters is not limited to our own
+  page navigation.
 - **Scanners, not studiers.** They want the gist fast. Short
   descriptions, clear labels, obvious next steps.
 - **They follow topics, not meetings.** A resident does not care about

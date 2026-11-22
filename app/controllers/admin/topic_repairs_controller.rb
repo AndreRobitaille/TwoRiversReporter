@@ -50,8 +50,10 @@ module Admin
       move_params = params.permit(:alias_id, :target_topic_id, :reason)
       topic_alias = @topic.topic_aliases.find(move_params[:alias_id])
       target_topic = Topic.find(move_params[:target_topic_id])
-      TopicAlias.where(id: topic_alias.id).update_all(topic_id: target_topic.id)
-      record_review_event(target_topic, "alias_moved", move_params[:reason].presence)
+      TopicAlias.transaction do
+        topic_alias.update!(topic: target_topic)
+        record_review_event(target_topic, "alias_moved", move_params[:reason].presence)
+      end
 
       redirect_to admin_topic_url(@topic, detail_workspace_context), notice: "Alias moved."
     rescue ActiveRecord::RecordNotFound

@@ -28,7 +28,7 @@ module Topics
 
     def self.call(apply: false, dry_run: true, min_confidence: DEFAULT_MIN_CONFIDENCE, max_topics: DEFAULT_MAX_TOPICS,
                   similarity_threshold: DEFAULT_SIMILARITY_THRESHOLD, agenda_item_limit: DEFAULT_AGENDA_ITEM_LIMIT,
-                  user_id: nil, user_email: nil, skip_unchanged: false)
+                  user_id: nil, user_email: nil, skip_unchanged: false, topic_ids: nil)
       new(
         apply: apply,
         dry_run: dry_run,
@@ -38,11 +38,11 @@ module Topics
         agenda_item_limit: agenda_item_limit,
         user_id: user_id,
         user_email: user_email,
-        skip_unchanged: skip_unchanged
+        skip_unchanged: skip_unchanged, topic_ids: topic_ids
       ).call
     end
 
-    def initialize(apply:, dry_run:, min_confidence:, max_topics:, similarity_threshold:, agenda_item_limit:, user_id:, user_email:, skip_unchanged: false)
+    def initialize(apply:, dry_run:, min_confidence:, max_topics:, similarity_threshold:, agenda_item_limit:, user_id:, user_email:, skip_unchanged: false, topic_ids: nil)
       @apply = apply
       @dry_run = dry_run
       @min_confidence = normalize_confidence(min_confidence)
@@ -53,6 +53,7 @@ module Topics
       @user_email = user_email
       @log_path = DEFAULT_LOG_PATH
       @skip_unchanged = skip_unchanged
+      @topic_ids = topic_ids&.to_set
     end
 
     def call
@@ -106,6 +107,7 @@ module Topics
                     .limit(@max_topics)
                     .includes(:agenda_items)
 
+      topics = topics.where(id: @topic_ids.to_a) if @topic_ids
       topic_payloads = topics.map do |topic|
         agenda_items = topic.agenda_items.first(@agenda_item_limit)
         {
@@ -200,10 +202,12 @@ module Topics
 
         target_topic = find_topic_by_name(canonical)
         next unless target_topic
+        next if @topic_ids && !@topic_ids.include?(target_topic.id) && target_topic.status != "approved"
 
         aliases.each do |alias_name|
           source_topic = find_topic_by_name(alias_name)
           next unless source_topic
+          next if @topic_ids && (!@topic_ids.include?(source_topic.id) || source_topic.status != "proposed")
           next if source_topic.id == target_topic.id
 
           merge_topics!(source_topic, target_topic)
@@ -223,6 +227,7 @@ module Topics
 
         topic = find_topic_by_name(topic_name)
         next unless topic
+        next if @topic_ids && (!@topic_ids.include?(topic.id) || topic.status != "proposed")
         next if topic.status == "approved"
 
         topic.update!(status: "approved", review_status: "approved")
@@ -242,6 +247,7 @@ module Topics
 
         topic = find_topic_by_name(topic_name)
         next unless topic
+        next if @topic_ids && (!@topic_ids.include?(topic.id) || topic.status != "proposed")
         next if topic.status == "blocked"
         next if Topics::ResidentImpactPolicy.new(topic).sex_offender_topic?
 

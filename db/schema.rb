@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_30_124500) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_21_230200) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -110,6 +110,157 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_30_124500) do
     t.index [ "subject_type", "subject_id" ], name: "index_audit_events_on_subject_type_and_subject_id"
   end
 
+  create_table "campaign_action_requests", force: :cascade do |t|
+    t.bigint "campaign_action_review_id", null: false
+    t.bigint "council_ai_reservation_id", null: false
+    t.integer "attempt", null: false
+    t.string "status", null: false
+    t.jsonb "messages", null: false
+    t.jsonb "request_parameters", null: false
+    t.string "provider_response_id"
+    t.string "response_model"
+    t.string "finish_reason"
+    t.jsonb "usage"
+    t.text "response_body"
+    t.string "error_class"
+    t.integer "duration_ms"
+    t.datetime "started_at", null: false
+    t.datetime "finished_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "campaign_action_review_id", "attempt" ], name: "idx_on_campaign_action_review_id_attempt_374008eb13", unique: true
+    t.index [ "campaign_action_review_id" ], name: "index_campaign_action_requests_on_campaign_action_review_id"
+    t.index [ "council_ai_reservation_id" ], name: "index_campaign_action_requests_on_council_ai_reservation_id", unique: true
+  end
+
+  create_table "campaign_action_reviews", force: :cascade do |t|
+    t.bigint "meeting_id"
+    t.bigint "council_ai_budget_run_id"
+    t.string "input_key", null: false
+    t.jsonb "context", default: {}, null: false
+    t.jsonb "parameters", default: {}, null: false
+    t.jsonb "data", default: {}, null: false
+    t.string "status", default: "pending", null: false
+    t.integer "attempts", default: 0, null: false
+    t.string "error_code"
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.jsonb "rejected_pairs", default: {}, null: false
+    t.index [ "council_ai_budget_run_id" ], name: "index_campaign_action_reviews_on_council_ai_budget_run_id"
+    t.index [ "input_key" ], name: "index_campaign_action_reviews_on_input_key", unique: true
+    t.index [ "meeting_id" ], name: "index_campaign_action_reviews_on_meeting_id"
+  end
+
+  create_table "campaign_extractions", force: :cascade do |t|
+    t.bigint "campaign_source_version_id", null: false
+    t.bigint "council_ai_budget_run_id"
+    t.bigint "reused_from_id"
+    t.string "input_key", null: false
+    t.jsonb "parameters", default: {}, null: false
+    t.string "status", default: "pending", null: false
+    t.integer "attempts", default: 0, null: false
+    t.jsonb "data", default: {}, null: false
+    t.string "error_code"
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "purpose", default: "statements", null: false
+    t.jsonb "context", default: {}, null: false
+    t.index [ "campaign_source_version_id", "purpose" ], name: "idx_on_campaign_source_version_id_purpose_f796b010a7", unique: true
+    t.index [ "council_ai_budget_run_id" ], name: "index_campaign_extractions_on_council_ai_budget_run_id"
+    t.index [ "input_key" ], name: "index_campaign_extractions_on_input_key", unique: true
+    t.index [ "reused_from_id" ], name: "index_campaign_extractions_on_reused_from_id"
+  end
+
+  create_table "campaign_requests", force: :cascade do |t|
+    t.bigint "campaign_extraction_id", null: false
+    t.bigint "council_ai_reservation_id", null: false
+    t.integer "attempt", null: false
+    t.string "status", null: false
+    t.jsonb "messages", null: false
+    t.jsonb "request_parameters", null: false
+    t.string "provider_response_id"
+    t.string "response_model"
+    t.string "finish_reason"
+    t.jsonb "usage"
+    t.text "response_body"
+    t.string "error_class"
+    t.integer "duration_ms"
+    t.datetime "started_at", null: false
+    t.datetime "finished_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "campaign_extraction_id", "attempt" ], name: "index_campaign_requests_on_campaign_extraction_id_and_attempt", unique: true
+    t.index [ "campaign_extraction_id" ], name: "index_campaign_requests_on_campaign_extraction_id"
+    t.index [ "council_ai_reservation_id" ], name: "index_campaign_requests_on_council_ai_reservation_id", unique: true
+  end
+
+  create_table "campaign_source_versions", force: :cascade do |t|
+    t.bigint "campaign_source_id", null: false
+    t.string "title", null: false
+    t.string "source_url", null: false
+    t.string "publisher", null: false
+    t.date "published_on"
+    t.date "election_on", null: false
+    t.string "coverage", default: "full_article", null: false
+    t.text "coverage_notes"
+    t.text "body", null: false
+    t.string "version_key", null: false
+    t.string "content_sha256", null: false
+    t.bigint "submitted_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.jsonb "prepared_transcript", default: {}, null: false
+    t.index [ "campaign_source_id" ], name: "index_campaign_source_versions_on_campaign_source_id"
+    t.index [ "submitted_by_id" ], name: "index_campaign_source_versions_on_submitted_by_id"
+    t.index [ "version_key" ], name: "index_campaign_source_versions_on_version_key", unique: true
+  end
+
+  create_table "campaign_sources", force: :cascade do |t|
+    t.string "title", null: false
+    t.string "source_url", null: false
+    t.string "publisher", null: false
+    t.date "published_on"
+    t.date "election_on", null: false
+    t.string "coverage", default: "full_article", null: false
+    t.text "coverage_notes"
+    t.text "body", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.jsonb "prepared_transcript", default: {}, null: false
+    t.index [ "source_url" ], name: "index_campaign_sources_on_source_url", unique: true
+  end
+
+  create_table "campaign_statement_topics", force: :cascade do |t|
+    t.bigint "campaign_extraction_id", null: false
+    t.bigint "campaign_statement_id", null: false
+    t.bigint "topic_id", null: false
+    t.bigint "original_topic_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "campaign_extraction_id", "campaign_statement_id", "original_topic_id" ], name: "idx_campaign_statement_topics_identity", unique: true
+    t.index [ "campaign_extraction_id" ], name: "index_campaign_statement_topics_on_campaign_extraction_id"
+    t.index [ "campaign_statement_id" ], name: "index_campaign_statement_topics_on_campaign_statement_id"
+    t.index [ "topic_id" ], name: "index_campaign_statement_topics_on_topic_id"
+  end
+
+  create_table "campaign_statements", force: :cascade do |t|
+    t.bigint "campaign_extraction_id", null: false
+    t.bigint "member_id"
+    t.integer "sequence", null: false
+    t.string "status", null: false
+    t.string "exception"
+    t.string "validation_method", null: false
+    t.datetime "validated_at", null: false
+    t.jsonb "data", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "campaign_extraction_id", "sequence" ], name: "idx_on_campaign_extraction_id_sequence_3d52e6269b", unique: true
+    t.index [ "campaign_extraction_id" ], name: "index_campaign_statements_on_campaign_extraction_id"
+    t.index [ "member_id" ], name: "index_campaign_statements_on_member_id"
+  end
+
   create_table "committee_aliases", force: :cascade do |t|
     t.bigint "committee_id", null: false
     t.datetime "created_at", null: false
@@ -148,6 +299,293 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_30_124500) do
     t.datetime "updated_at", null: false
     t.index [ "name" ], name: "index_committees_on_name", unique: true
     t.index [ "slug" ], name: "index_committees_on_slug", unique: true
+  end
+
+  create_table "council_ai_budget_days", force: :cascade do |t|
+    t.date "budget_on", null: false
+    t.bigint "limit_microusd", null: false
+    t.bigint "actor_id"
+    t.bigint "original_actor_id", null: false
+    t.datetime "authorized_at", null: false
+    t.text "authorization_basis", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "actor_id" ], name: "index_council_ai_budget_days_on_actor_id"
+    t.index [ "budget_on" ], name: "index_council_ai_budget_days_on_budget_on", unique: true
+  end
+
+  create_table "council_ai_budget_months", force: :cascade do |t|
+    t.date "budget_month", null: false
+    t.bigint "limit_microusd", null: false
+    t.bigint "actor_id"
+    t.bigint "original_actor_id", null: false
+    t.datetime "authorized_at", null: false
+    t.text "authorization_basis", null: false
+    t.datetime "revoked_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.jsonb "live_actions", default: {}, null: false
+    t.boolean "auto_renew", default: false, null: false
+    t.index [ "actor_id" ], name: "index_council_ai_budget_months_on_actor_id"
+    t.index [ "budget_month" ], name: "index_council_ai_budget_months_on_budget_month", unique: true
+  end
+
+  create_table "council_ai_budget_runs", force: :cascade do |t|
+    t.bigint "council_ai_budget_day_id", null: false
+    t.bigint "limit_microusd", null: false
+    t.bigint "request_limit_microusd", null: false
+    t.integer "max_requests", null: false
+    t.integer "max_concurrent", null: false
+    t.integer "max_input_tokens", null: false
+    t.integer "max_output_tokens", null: false
+    t.datetime "expires_at", null: false
+    t.bigint "actor_id"
+    t.bigint "original_actor_id", null: false
+    t.datetime "authorized_at", null: false
+    t.text "authorization_basis", null: false
+    t.jsonb "request_estimates", null: false
+    t.datetime "revoked_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "live_budget_month_id"
+    t.index [ "actor_id" ], name: "index_council_ai_budget_runs_on_actor_id"
+    t.index [ "council_ai_budget_day_id" ], name: "index_council_ai_budget_runs_on_council_ai_budget_day_id"
+    t.index [ "live_budget_month_id" ], name: "index_council_ai_budget_runs_on_live_budget_month_id"
+  end
+
+  create_table "council_ai_budget_supplements", force: :cascade do |t|
+    t.bigint "council_ai_budget_month_id", null: false
+    t.bigint "council_ai_budget_day_id", null: false
+    t.string "authorization_key", null: false
+    t.bigint "amount_microusd", null: false
+    t.bigint "actor_id"
+    t.bigint "original_actor_id", null: false
+    t.datetime "authorized_at", null: false
+    t.text "authorization_basis", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "actor_id" ], name: "index_council_ai_budget_supplements_on_actor_id"
+    t.index [ "authorization_key" ], name: "index_council_ai_budget_supplements_on_authorization_key", unique: true
+    t.index [ "council_ai_budget_day_id" ], name: "idx_on_council_ai_budget_day_id_4830f24cd4"
+    t.index [ "council_ai_budget_month_id" ], name: "idx_on_council_ai_budget_month_id_82ac6633d9"
+  end
+
+  create_table "council_ai_reservations", force: :cascade do |t|
+    t.bigint "council_ai_budget_run_id", null: false
+    t.jsonb "request_estimate", null: false
+    t.string "request_key", null: false
+    t.bigint "reserved_microusd", null: false
+    t.datetime "finished_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "council_ai_budget_run_id" ], name: "index_council_ai_reservations_on_council_ai_budget_run_id"
+    t.index [ "request_key" ], name: "index_council_ai_reservations_on_request_key", unique: true
+  end
+
+  create_table "council_decision_assignments", force: :cascade do |t|
+    t.bigint "observation_id", null: false
+    t.bigint "minutes_extraction_id", null: false
+    t.bigint "council_decision_id"
+    t.bigint "correction_id"
+    t.jsonb "conflicting_correction_ids", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "correction_id" ], name: "index_council_decision_assignments_on_correction_id"
+    t.index [ "council_decision_id" ], name: "index_council_decision_assignments_on_council_decision_id"
+    t.index [ "minutes_extraction_id", "council_decision_id" ], name: "index_decision_assignments_on_stage_and_decision", unique: true
+    t.index [ "minutes_extraction_id" ], name: "index_council_decision_assignments_on_minutes_extraction_id"
+    t.index [ "observation_id" ], name: "index_council_decision_assignments_on_observation_id", unique: true
+  end
+
+  create_table "council_decision_corrections", force: :cascade do |t|
+    t.bigint "observation_id", null: false
+    t.bigint "basis_observation_id"
+    t.bigint "before_decision_id"
+    t.bigint "after_decision_id"
+    t.bigint "previous_correction_id"
+    t.bigint "actor_id"
+    t.bigint "original_actor_id", null: false
+    t.string "actor_email", null: false
+    t.string "action", null: false
+    t.text "reason", null: false
+    t.string "request_id", null: false
+    t.jsonb "request_manifest", null: false
+    t.jsonb "evidence_manifest", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "actor_id" ], name: "index_council_decision_corrections_on_actor_id"
+    t.index [ "after_decision_id" ], name: "index_council_decision_corrections_on_after_decision_id"
+    t.index [ "basis_observation_id" ], name: "index_council_decision_corrections_on_basis_observation_id"
+    t.index [ "before_decision_id" ], name: "index_council_decision_corrections_on_before_decision_id"
+    t.index [ "observation_id" ], name: "index_council_decision_corrections_on_observation_id"
+    t.index [ "previous_correction_id" ], name: "index_council_decision_corrections_on_previous_correction_id"
+    t.index [ "request_id" ], name: "index_council_decision_corrections_on_request_id", unique: true
+  end
+
+  create_table "council_decision_observations", force: :cascade do |t|
+    t.bigint "minutes_extraction_id", null: false
+    t.bigint "council_decision_id"
+    t.integer "sequence", null: false
+    t.jsonb "data", null: false
+    t.jsonb "location_check", null: false
+    t.jsonb "agenda_context", null: false
+    t.string "identity_status", null: false
+    t.string "reason"
+    t.jsonb "candidate_decision_ids", default: [], null: false
+    t.string "rule_version", null: false
+    t.string "evidence_status", default: "extracted", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "council_decision_id" ], name: "index_council_decision_observations_on_council_decision_id"
+    t.index [ "minutes_extraction_id", "council_decision_id" ], name: "index_decision_observations_on_stage_and_decision", unique: true
+    t.index [ "minutes_extraction_id", "sequence" ], name: "index_decision_observations_on_stage_and_sequence", unique: true
+    t.index [ "minutes_extraction_id" ], name: "index_council_decision_observations_on_minutes_extraction_id"
+  end
+
+  create_table "council_decisions", force: :cascade do |t|
+    t.bigint "meeting_id"
+    t.bigint "original_meeting_id", null: false
+    t.string "public_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "meeting_id" ], name: "index_council_decisions_on_meeting_id"
+    t.index [ "public_id" ], name: "index_council_decisions_on_public_id", unique: true
+  end
+
+  create_table "council_formal_requests", force: :cascade do |t|
+    t.bigint "council_formal_review_id", null: false
+    t.bigint "council_ai_reservation_id", null: false
+    t.integer "attempt", null: false
+    t.string "status", null: false
+    t.jsonb "messages", null: false
+    t.jsonb "request_parameters", null: false
+    t.string "provider_response_id"
+    t.string "response_model"
+    t.string "finish_reason"
+    t.jsonb "usage"
+    t.text "response_body"
+    t.string "error_class"
+    t.integer "duration_ms"
+    t.datetime "started_at", null: false
+    t.datetime "finished_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "council_ai_reservation_id" ], name: "index_council_formal_requests_on_council_ai_reservation_id", unique: true
+    t.index [ "council_formal_review_id", "attempt" ], name: "idx_on_council_formal_review_id_attempt_f8ed94027c", unique: true
+    t.index [ "council_formal_review_id" ], name: "index_council_formal_requests_on_council_formal_review_id"
+  end
+
+  create_table "council_formal_reviews", force: :cascade do |t|
+    t.bigint "council_formal_source_id", null: false
+    t.bigint "council_ai_budget_run_id"
+    t.string "input_key", null: false
+    t.jsonb "context", default: {}, null: false
+    t.jsonb "parameters", default: {}, null: false
+    t.jsonb "data", default: {}, null: false
+    t.string "status", default: "pending", null: false
+    t.integer "attempts", default: 0, null: false
+    t.string "error_code"
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "council_ai_budget_run_id" ], name: "index_council_formal_reviews_on_council_ai_budget_run_id"
+    t.index [ "council_formal_source_id" ], name: "index_council_formal_reviews_on_council_formal_source_id"
+    t.index [ "input_key" ], name: "index_council_formal_reviews_on_input_key", unique: true
+  end
+
+  create_table "council_formal_sources", force: :cascade do |t|
+    t.string "title", null: false
+    t.string "case_reference", null: false
+    t.string "reviewing_body", null: false
+    t.string "policy_label"
+    t.string "source_url", null: false
+    t.string "record_kind", null: false
+    t.date "published_on", null: false
+    t.text "permitted_text", null: false
+    t.jsonb "subject_names", default: [], null: false
+    t.jsonb "service_period_keys", default: [], null: false
+    t.text "private_notes"
+    t.boolean "active", default: true, null: false
+    t.bigint "verified_by_id"
+    t.datetime "verified_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "source_url" ], name: "index_council_formal_sources_on_source_url", unique: true
+    t.index [ "verified_by_id" ], name: "index_council_formal_sources_on_verified_by_id"
+  end
+
+  create_table "council_history_requests", force: :cascade do |t|
+    t.bigint "meeting_id", null: false
+    t.string "stage", null: false
+    t.string "request_digest", null: false
+    t.string "model", null: false
+    t.boolean "pilot", null: false
+    t.integer "reserved_microusd", null: false
+    t.integer "charged_microusd", null: false
+    t.jsonb "usage"
+    t.string "provider_response_id"
+    t.datetime "finished_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "meeting_id", "stage", "request_digest" ], name: "idx_on_meeting_id_stage_request_digest_bb468f34a3"
+  end
+
+  create_table "council_issue_requests", force: :cascade do |t|
+    t.bigint "council_issue_review_id", null: false
+    t.bigint "council_ai_reservation_id", null: false
+    t.integer "attempt", null: false
+    t.string "status", null: false
+    t.jsonb "messages", null: false
+    t.jsonb "request_parameters", null: false
+    t.string "provider_response_id"
+    t.string "response_model"
+    t.string "finish_reason"
+    t.jsonb "usage"
+    t.text "response_body"
+    t.string "error_class"
+    t.integer "duration_ms"
+    t.datetime "started_at", null: false
+    t.datetime "finished_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "council_ai_reservation_id" ], name: "index_council_issue_requests_on_council_ai_reservation_id", unique: true
+    t.index [ "council_issue_review_id", "attempt" ], name: "idx_on_council_issue_review_id_attempt_1de8765df9", unique: true
+    t.index [ "council_issue_review_id" ], name: "index_council_issue_requests_on_council_issue_review_id"
+  end
+
+  create_table "council_issue_reviews", force: :cascade do |t|
+    t.bigint "meeting_document_id"
+    t.bigint "council_ai_budget_run_id"
+    t.string "input_key", null: false
+    t.jsonb "context", default: {}, null: false
+    t.jsonb "parameters", default: {}, null: false
+    t.jsonb "data", default: {}, null: false
+    t.string "status", default: "pending", null: false
+    t.integer "attempts", default: 0, null: false
+    t.string "error_code"
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "council_ai_budget_run_id" ], name: "index_council_issue_reviews_on_council_ai_budget_run_id"
+    t.index [ "input_key" ], name: "index_council_issue_reviews_on_input_key", unique: true
+    t.index [ "meeting_document_id" ], name: "index_council_issue_reviews_on_meeting_document_id"
+  end
+
+  create_table "council_service_periods", force: :cascade do |t|
+    t.bigint "member_id", null: false
+    t.string "period_key", null: false
+    t.date "started_on", null: false
+    t.date "ended_on"
+    t.bigint "start_source_version_id", null: false
+    t.integer "start_page", null: false
+    t.bigint "end_source_version_id"
+    t.integer "end_page"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "end_source_version_id" ], name: "index_council_service_periods_on_end_source_version_id"
+    t.index [ "member_id", "period_key" ], name: "index_council_service_periods_on_member_id_and_period_key", unique: true
+    t.index [ "member_id" ], name: "index_council_service_periods_on_member_id"
+    t.index [ "start_source_version_id" ], name: "index_council_service_periods_on_start_source_version_id"
   end
 
   create_table "entities", force: :cascade do |t|
@@ -267,8 +705,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_30_124500) do
     t.datetime "updated_at", null: false
     t.text "verification_notes"
     t.date "verified_on"
+    t.bigint "source_summary_id"
+    t.jsonb "source_summary_manifest"
+    t.datetime "evidence_withdrawn_at"
+    t.jsonb "source_catalog"
     t.index [ "meeting_id" ], name: "index_knowledge_sources_on_meeting_id"
     t.index [ "origin" ], name: "index_knowledge_sources_on_origin"
+    t.index [ "source_catalog" ], name: "index_knowledge_sources_on_source_catalog", using: :gin
+    t.index [ "source_summary_id" ], name: "index_knowledge_sources_on_source_summary_id"
     t.index [ "status" ], name: "index_knowledge_sources_on_status"
   end
 
@@ -310,6 +754,41 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_30_124500) do
     t.index [ "member_id" ], name: "index_meeting_attendances_on_member_id"
   end
 
+  create_table "meeting_document_text_versions", force: :cascade do |t|
+    t.bigint "meeting_document_version_id", null: false
+    t.string "fingerprint", null: false
+    t.string "extractor_version", null: false
+    t.string "evidence_status", default: "extracted", null: false
+    t.integer "page_count", null: false
+    t.string "text_quality", null: false
+    t.text "extracted_text", null: false
+    t.jsonb "pages", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "fingerprint" ], name: "index_meeting_document_text_versions_on_fingerprint", unique: true
+    t.index [ "meeting_document_version_id" ], name: "idx_on_meeting_document_version_id_5edfcede8a"
+  end
+
+  create_table "meeting_document_versions", force: :cascade do |t|
+    t.bigint "meeting_document_id"
+    t.bigint "original_document_id", null: false
+    t.string "version_key", null: false
+    t.string "sha256", null: false
+    t.text "source_url", null: false
+    t.string "document_type", null: false
+    t.bigint "original_meeting_id", null: false
+    t.datetime "meeting_starts_at"
+    t.datetime "retrieved_at", null: false
+    t.datetime "source_last_modified"
+    t.datetime "published_at"
+    t.string "evidence_status", default: "collected", null: false
+    t.string "capture_method", default: "download_sha256_v1", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "meeting_document_id" ], name: "index_meeting_document_versions_on_meeting_document_id"
+    t.index [ "version_key" ], name: "index_meeting_document_versions_on_version_key", unique: true
+  end
+
   create_table "meeting_documents", force: :cascade do |t|
     t.float "avg_chars_per_page"
     t.bigint "content_length"
@@ -328,6 +807,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_30_124500) do
     t.integer "text_chars"
     t.string "text_quality"
     t.datetime "updated_at", null: false
+    t.bigint "latest_text_version_id"
+    t.index [ "latest_text_version_id" ], name: "index_meeting_documents_on_latest_text_version_id"
     t.index [ "meeting_id" ], name: "index_meeting_documents_on_meeting_id"
     t.index [ "search_vector" ], name: "index_meeting_documents_on_search_vector", using: :gin
   end
@@ -339,6 +820,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_30_124500) do
     t.bigint "meeting_id", null: false
     t.string "summary_type"
     t.datetime "updated_at", null: false
+    t.datetime "evidence_withdrawn_at"
     t.index [ "meeting_id" ], name: "index_meeting_summaries_on_meeting_id"
   end
 
@@ -355,7 +837,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_30_124500) do
     t.datetime "starts_at"
     t.string "status"
     t.datetime "updated_at", null: false
+    t.bigint "minutes_publication_id"
+    t.boolean "council_ai_budget_required", default: false, null: false
+    t.bigint "council_ai_budget_run_id"
     t.index [ "committee_id" ], name: "index_meetings_on_committee_id"
+    t.index [ "council_ai_budget_run_id" ], name: "index_meetings_on_council_ai_budget_run_id"
+    t.index [ "minutes_publication_id" ], name: "index_meetings_on_minutes_publication_id"
   end
 
   create_table "member_aliases", force: :cascade do |t|
@@ -413,6 +900,72 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_30_124500) do
     t.index [ "user_id" ], name: "index_membership_applications_on_user_id"
   end
 
+  create_table "minutes_extractions", force: :cascade do |t|
+    t.bigint "meeting_id"
+    t.bigint "original_meeting_id", null: false
+    t.bigint "meeting_document_text_version_id"
+    t.string "kind", null: false
+    t.string "input_key", null: false
+    t.string "source_key", null: false
+    t.jsonb "input_manifest", null: false
+    t.text "source_text", null: false
+    t.jsonb "data"
+    t.string "status", default: "pending", null: false
+    t.integer "attempts", default: 0, null: false
+    t.string "error_code"
+    t.datetime "started_at"
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.jsonb "evidence_locations"
+    t.boolean "budget_required", default: false, null: false
+    t.bigint "council_ai_budget_run_id"
+    t.index [ "council_ai_budget_run_id" ], name: "index_minutes_extractions_on_council_ai_budget_run_id"
+    t.index [ "input_key" ], name: "index_minutes_extractions_on_input_key", unique: true
+    t.index [ "meeting_document_text_version_id" ], name: "index_minutes_extractions_on_meeting_document_text_version_id"
+    t.index [ "meeting_id" ], name: "index_minutes_extractions_on_meeting_id"
+    t.index [ "source_key", "kind", "status" ], name: "index_minutes_extractions_on_source_key_and_kind_and_status"
+  end
+
+  create_table "minutes_publications", force: :cascade do |t|
+    t.bigint "meeting_id"
+    t.bigint "original_meeting_id", null: false
+    t.bigint "votes_extraction_id", null: false
+    t.bigint "attendance_extraction_id", null: false
+    t.string "fingerprint", null: false
+    t.jsonb "projection_context", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "attendance_extraction_id" ], name: "index_minutes_publications_on_attendance_extraction_id"
+    t.index [ "fingerprint" ], name: "index_minutes_publications_on_fingerprint", unique: true
+    t.index [ "meeting_id" ], name: "index_minutes_publications_on_meeting_id"
+    t.index [ "votes_extraction_id" ], name: "index_minutes_publications_on_votes_extraction_id"
+  end
+
+  create_table "minutes_requests", force: :cascade do |t|
+    t.bigint "minutes_extraction_id", null: false
+    t.integer "attempt", null: false
+    t.string "status", null: false
+    t.jsonb "messages", null: false
+    t.jsonb "request_parameters", null: false
+    t.string "provider_response_id"
+    t.string "response_model"
+    t.string "finish_reason"
+    t.jsonb "usage"
+    t.text "response_body"
+    t.string "error_class"
+    t.integer "duration_ms"
+    t.datetime "started_at", null: false
+    t.datetime "finished_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "council_ai_reservation_id"
+    t.index [ "council_ai_reservation_id" ], name: "index_minutes_requests_on_council_ai_reservation_id", unique: true
+    t.index [ "minutes_extraction_id", "attempt" ], name: "index_minutes_requests_on_minutes_extraction_id_and_attempt", unique: true
+    t.index [ "minutes_extraction_id" ], name: "index_minutes_requests_on_minutes_extraction_id"
+    t.check_constraint "attempt > 0", name: "minutes_requests_positive_attempt"
+  end
+
   create_table "motions", force: :cascade do |t|
     t.bigint "agenda_item_id"
     t.datetime "created_at", null: false
@@ -420,7 +973,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_30_124500) do
     t.bigint "meeting_id", null: false
     t.string "outcome"
     t.datetime "updated_at", null: false
+    t.bigint "decision_observation_id"
     t.index [ "agenda_item_id" ], name: "index_motions_on_agenda_item_id"
+    t.index [ "decision_observation_id" ], name: "index_motions_on_decision_observation_id", unique: true
     t.index [ "meeting_id" ], name: "index_motions_on_meeting_id"
   end
 
@@ -514,6 +1069,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_30_124500) do
     t.datetime "created_at", null: false
     t.integer "singleton_guard", default: 0, null: false
     t.datetime "updated_at", null: false
+    t.jsonb "council_coverage", default: {}, null: false
     t.index [ "singleton_guard" ], name: "index_site_settings_on_singleton_guard", unique: true
   end
 
@@ -703,8 +1259,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_30_124500) do
     t.bigint "triggering_meeting_id"
     t.string "upcoming_headline"
     t.datetime "updated_at", null: false
+    t.datetime "evidence_withdrawn_at"
+    t.bigint "withdrawal_correction_id"
     t.index [ "topic_id" ], name: "index_topic_briefings_on_topic_id", unique: true
     t.index [ "triggering_meeting_id" ], name: "index_topic_briefings_on_triggering_meeting_id"
+    t.index [ "withdrawal_correction_id" ], name: "index_topic_briefings_on_withdrawal_correction_id"
   end
 
   create_table "topic_review_events", force: :cascade do |t|
@@ -731,6 +1290,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_30_124500) do
     t.jsonb "source_ref"
     t.bigint "topic_id", null: false
     t.datetime "updated_at", null: false
+    t.bigint "decision_observation_id"
+    t.index [ "decision_observation_id" ], name: "index_topic_status_events_on_decision_observation_id"
+    t.index [ "topic_id", "decision_observation_id", "evidence_type" ], name: "index_topic_events_on_retained_decision"
     t.index [ "topic_id", "occurred_at" ], name: "index_topic_status_events_on_topic_id_and_occurred_at"
     t.index [ "topic_id" ], name: "index_topic_status_events_on_topic_id"
   end
@@ -820,6 +1382,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_30_124500) do
     t.bigint "motion_id", null: false
     t.datetime "updated_at", null: false
     t.string "value"
+    t.string "evidence_basis", default: "legacy", null: false
     t.index [ "member_id" ], name: "index_votes_on_member_id"
     t.index [ "motion_id", "member_id" ], name: "idx_votes_unique_per_motion", unique: true
     t.index [ "motion_id" ], name: "index_votes_on_motion_id"
@@ -835,9 +1398,59 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_30_124500) do
   add_foreign_key "agenda_items", "meetings"
   add_foreign_key "api_access_tokens", "users"
   add_foreign_key "audit_events", "users", column: "actor_id"
+  add_foreign_key "campaign_action_requests", "campaign_action_reviews"
+  add_foreign_key "campaign_action_requests", "council_ai_reservations"
+  add_foreign_key "campaign_action_reviews", "council_ai_budget_runs"
+  add_foreign_key "campaign_action_reviews", "meetings", on_delete: :nullify
+  add_foreign_key "campaign_extractions", "campaign_extractions", column: "reused_from_id"
+  add_foreign_key "campaign_extractions", "campaign_source_versions"
+  add_foreign_key "campaign_extractions", "council_ai_budget_runs"
+  add_foreign_key "campaign_requests", "campaign_extractions"
+  add_foreign_key "campaign_requests", "council_ai_reservations"
+  add_foreign_key "campaign_source_versions", "campaign_sources"
+  add_foreign_key "campaign_source_versions", "users", column: "submitted_by_id", on_delete: :nullify
+  add_foreign_key "campaign_statement_topics", "campaign_extractions"
+  add_foreign_key "campaign_statement_topics", "campaign_statements"
+  add_foreign_key "campaign_statement_topics", "topics"
+  add_foreign_key "campaign_statements", "campaign_extractions"
+  add_foreign_key "campaign_statements", "members", on_delete: :nullify
   add_foreign_key "committee_aliases", "committees"
   add_foreign_key "committee_memberships", "committees"
   add_foreign_key "committee_memberships", "members"
+  add_foreign_key "council_ai_budget_days", "users", column: "actor_id", on_delete: :nullify
+  add_foreign_key "council_ai_budget_months", "users", column: "actor_id", on_delete: :nullify
+  add_foreign_key "council_ai_budget_runs", "council_ai_budget_days"
+  add_foreign_key "council_ai_budget_runs", "council_ai_budget_months", column: "live_budget_month_id"
+  add_foreign_key "council_ai_budget_runs", "users", column: "actor_id", on_delete: :nullify
+  add_foreign_key "council_ai_budget_supplements", "council_ai_budget_days"
+  add_foreign_key "council_ai_budget_supplements", "council_ai_budget_months"
+  add_foreign_key "council_ai_budget_supplements", "users", column: "actor_id", on_delete: :nullify
+  add_foreign_key "council_ai_reservations", "council_ai_budget_runs"
+  add_foreign_key "council_decision_assignments", "council_decision_corrections", column: "correction_id"
+  add_foreign_key "council_decision_assignments", "council_decision_observations", column: "observation_id"
+  add_foreign_key "council_decision_assignments", "council_decisions"
+  add_foreign_key "council_decision_assignments", "minutes_extractions"
+  add_foreign_key "council_decision_corrections", "council_decision_corrections", column: "previous_correction_id"
+  add_foreign_key "council_decision_corrections", "council_decision_observations", column: "basis_observation_id"
+  add_foreign_key "council_decision_corrections", "council_decision_observations", column: "observation_id"
+  add_foreign_key "council_decision_corrections", "council_decisions", column: "after_decision_id"
+  add_foreign_key "council_decision_corrections", "council_decisions", column: "before_decision_id"
+  add_foreign_key "council_decision_corrections", "users", column: "actor_id", on_delete: :nullify
+  add_foreign_key "council_decision_observations", "council_decisions"
+  add_foreign_key "council_decision_observations", "minutes_extractions"
+  add_foreign_key "council_decisions", "meetings", on_delete: :nullify
+  add_foreign_key "council_formal_requests", "council_ai_reservations"
+  add_foreign_key "council_formal_requests", "council_formal_reviews"
+  add_foreign_key "council_formal_reviews", "council_ai_budget_runs"
+  add_foreign_key "council_formal_reviews", "council_formal_sources"
+  add_foreign_key "council_formal_sources", "users", column: "verified_by_id", on_delete: :nullify
+  add_foreign_key "council_issue_requests", "council_ai_reservations"
+  add_foreign_key "council_issue_requests", "council_issue_reviews"
+  add_foreign_key "council_issue_reviews", "council_ai_budget_runs"
+  add_foreign_key "council_issue_reviews", "meeting_documents", on_delete: :nullify
+  add_foreign_key "council_service_periods", "meeting_document_versions", column: "end_source_version_id"
+  add_foreign_key "council_service_periods", "meeting_document_versions", column: "start_source_version_id"
+  add_foreign_key "council_service_periods", "members"
   add_foreign_key "entity_facts", "entities"
   add_foreign_key "entity_mentions", "entities"
   add_foreign_key "entity_mentions", "meeting_documents"
@@ -849,19 +1462,34 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_30_124500) do
   add_foreign_key "knowledge_chunks", "knowledge_sources"
   add_foreign_key "knowledge_source_topics", "knowledge_sources"
   add_foreign_key "knowledge_source_topics", "topics"
+  add_foreign_key "knowledge_sources", "meeting_summaries", column: "source_summary_id", on_delete: :nullify
   add_foreign_key "knowledge_sources", "meetings"
   add_foreign_key "known_contexts", "users"
   add_foreign_key "magic_links", "users"
   add_foreign_key "meeting_attendances", "meetings"
   add_foreign_key "meeting_attendances", "members"
+  add_foreign_key "meeting_document_text_versions", "meeting_document_versions"
+  add_foreign_key "meeting_document_versions", "meeting_documents", on_delete: :nullify
+  add_foreign_key "meeting_documents", "meeting_document_text_versions", column: "latest_text_version_id"
   add_foreign_key "meeting_documents", "meetings"
   add_foreign_key "meeting_summaries", "meetings"
   add_foreign_key "meetings", "committees"
+  add_foreign_key "meetings", "council_ai_budget_runs"
+  add_foreign_key "meetings", "minutes_publications"
   add_foreign_key "member_aliases", "members"
   add_foreign_key "member_positions", "members"
   add_foreign_key "membership_applications", "users"
   add_foreign_key "membership_applications", "users", column: "reviewed_by_id"
+  add_foreign_key "minutes_extractions", "council_ai_budget_runs"
+  add_foreign_key "minutes_extractions", "meeting_document_text_versions"
+  add_foreign_key "minutes_extractions", "meetings", on_delete: :nullify
+  add_foreign_key "minutes_publications", "meetings", on_delete: :nullify
+  add_foreign_key "minutes_publications", "minutes_extractions", column: "attendance_extraction_id"
+  add_foreign_key "minutes_publications", "minutes_extractions", column: "votes_extraction_id"
+  add_foreign_key "minutes_requests", "council_ai_reservations"
+  add_foreign_key "minutes_requests", "minutes_extractions"
   add_foreign_key "motions", "agenda_items"
+  add_foreign_key "motions", "council_decision_observations", column: "decision_observation_id"
   add_foreign_key "motions", "meetings"
   add_foreign_key "passkey_credentials", "users"
   add_foreign_key "prompt_versions", "prompt_templates"
@@ -880,10 +1508,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_30_124500) do
   add_foreign_key "topic_appearances", "committees"
   add_foreign_key "topic_appearances", "meetings"
   add_foreign_key "topic_appearances", "topics"
+  add_foreign_key "topic_briefings", "council_decision_corrections", column: "withdrawal_correction_id"
   add_foreign_key "topic_briefings", "meetings", column: "triggering_meeting_id"
   add_foreign_key "topic_briefings", "topics"
   add_foreign_key "topic_review_events", "topics"
   add_foreign_key "topic_review_events", "users"
+  add_foreign_key "topic_status_events", "council_decision_observations", column: "decision_observation_id"
   add_foreign_key "topic_status_events", "topics"
   add_foreign_key "topic_summaries", "meetings"
   add_foreign_key "topic_summaries", "topics"

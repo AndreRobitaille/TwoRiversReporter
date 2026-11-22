@@ -5,7 +5,7 @@ class ExtractKnowledgePatternsJob < ApplicationJob
 
   def perform
     # Only read extracted and manual entries — never pattern entries (guardrail 4)
-    first_order_entries = KnowledgeSource.approved.where(origin: %w[extracted manual])
+    first_order_entries = KnowledgeSource.retrievable.where(origin: %w[extracted manual])
     if first_order_entries.none?
       Rails.logger.info "ExtractKnowledgePatternsJob: No first-order knowledge entries to analyze."
       return
@@ -64,7 +64,7 @@ class ExtractKnowledgePatternsJob < ApplicationJob
 
   def gather_recent_summaries
     cutoff = 90.days.ago
-    briefings = TopicBriefing.where("updated_at > ?", cutoff)
+    briefings = TopicBriefing.published.where("updated_at > ?", cutoff)
                              .where.not(generation_data: nil)
                              .includes(:topic)
                              .limit(50)

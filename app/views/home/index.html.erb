@@ -7,6 +7,9 @@
 <div class="home-header">
   <h1 class="page-title">What's Happening</h1>
   <p class="tagline">Two Rivers city government at a glance</p>
+  <% if @election_council_slug %>
+    <%= link_to "Spring #{@council_election.election_on.year} City Council election", committee_path(@election_council_slug, anchor: "spring-election") %>
+  <% end %>
 </div>
 
 <%# === ZONE 1: TOP STORIES === %>

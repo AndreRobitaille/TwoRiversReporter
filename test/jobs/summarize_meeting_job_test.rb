@@ -202,7 +202,7 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     summary = @meeting.topic_summaries.first
     assert_equal @topic, summary.topic
     assert_equal "## Topic Summary", summary.content
-    assert_equal({ "factual_record" => [], "source_catalog" => [] }, summary.generation_data)
+    assert_equal({ "factual_record" => [], "source_catalog" => [] }, summary.generation_data.except("evidence_manifest"))
 
     # Verify mocks
     mock_ai.verify

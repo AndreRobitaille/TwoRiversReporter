@@ -85,7 +85,7 @@ class GeneratedImages::GeneratorTest < ActiveSupport::TestCase
   test "automatic reservation does not supersede newer ready admin override" do
     topic = Topic.create!(name: "Uploaded Override Topic", status: "approved")
     briefing = TopicBriefing.create!(topic: topic, headline: "Headline", upcoming_headline: "Next up", editorial_content: "Editorial", record_content: "Record", generation_tier: "full")
-    reservation = GeneratedImage.create!(imageable: topic, status: "processing", purpose: "feature_and_og", admin_override: false, source_briefing: briefing, source_generation_tier: "full", source_content_fingerprint: "auto", generated_at: nil)
+    reservation = GeneratedImage.create!(imageable: topic, status: "processing", purpose: "feature_and_og", admin_override: false, source_briefing: briefing, source_generation_tier: "full", source_content_fingerprint: GeneratedImages::ContentFingerprint.for_topic_briefing(briefing), generated_at: nil)
     uploaded = GeneratedImage.create!(imageable: topic, status: "ready", purpose: "feature_and_og", admin_override: true, source_generation_tier: "admin_upload", generated_at: Time.current)
 
     ai_service = Minitest::Mock.new
@@ -119,7 +119,8 @@ class GeneratedImages::GeneratorTest < ActiveSupport::TestCase
   test "adds safer composition instruction when retrying" do
     topic = Topic.create!(name: "Retry Topic", status: "approved")
     briefing = TopicBriefing.create!(topic: topic, headline: "Headline", upcoming_headline: "Next", editorial_content: "Editorial", record_content: "Record", generation_tier: "full")
-    failed_image = GeneratedImage.create!(imageable: topic, status: "failed", purpose: "feature_and_og")
+    failed_image = GeneratedImage.create!(imageable: topic, status: "failed", purpose: "feature_and_og",
+      source_briefing: briefing, source_content_fingerprint: GeneratedImages::ContentFingerprint.for_topic_briefing(briefing))
 
     ai_service = Minitest::Mock.new
     ai_service.expect(:build_generated_image_brief, { "civic_issue" => "Topic issue", "composition" => "A topic scene", "avoid" => [] }) { true }

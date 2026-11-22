@@ -174,6 +174,13 @@ the same snapshot. Those future results assume the stored activity stays fixed.
   [MeetingsHelper](../../app/helpers/meetings_helper.rb),
   [share JavaScript](../../app/javascript/controllers/share_controller.js),
   [preferred summary](../../app/services/resident_content/meeting_selection.rb).
+  Known source changes withdraw saved analysis and explain its absence while
+  preserving official links; see [summary withdrawal journey and HTTP checks](meeting-summary-withdrawal-2026-11-07.md).
+  Corrected extracted votes also withdraw summaries with incompatible motion
+  receipts, even with unchanged minutes; later member and meeting reads are
+  covered in [summary fact-dependency checks](meeting-summary-facts-2026-11-07.md).
+  A later topic-briefing correction also withdraws a preview with a known receipt,
+  including a different future meeting; see [saved agenda dependency checks](agenda-summary-dependencies-2026-11-07.md).
 - **Approved contract:** owner clarification October 11 (#171) preserves the
   conditional sections and legacy/agenda-only branches. The March 1 fixed-section
   proposal is superseded; see [behavior contracts](behavior-contracts.md).
@@ -226,6 +233,35 @@ the same snapshot. Those future results assume the stored activity stays fixed.
 
 ## RES-09 — Find a governing body and current officials (P1)
 
+- **Spring election (RES-01/09/10/11).** During the published guide’s dates,
+  Home → City Council opens the election first. Term sources and candidacy
+  sources are recorded separately in the [election guide](../../config/council_election.yml).
+  When a filing or declaration is confirmed, add the name and source under
+  `candidates` and update `checked_on`. Council and member pages read the same
+  edition. A reader can open a position from a named election and see the same
+  statement, qualifications, linked actions, and sources on the member page.
+  A withdrawn or misattributed statement link gives an unavailable message.
+  Gated visitors can reach the Clerk’s public election information.
+
+- **November 21, 2026 local verification.** Patch on `97cf231d`, Ruby 4.0.9,
+  PostgreSQL 18.6. With `RAILS_ENV=test`, a separate local database and
+  `PARALLEL_WORKERS=1`, the following command passed 66 tests and 455
+  assertions with zero skips. Redirecting a statement link to a missing
+  statement failed the selected-position assertion. Bypassing the committee
+  access check exposed the term source and failed the gated-response assertion.
+  Both changes were restored. `bin/rubocop` passed (882 files).
+
+  ```sh
+  bin/rails test test/integration/{council_election,campaign_action_matching,member_profile_layout}_test.rb \
+    test/controllers/{committees_controller,home_controller,members_show_gating,committees_show_gating,home_gating}_test.rb
+  ```
+
+  A 390px Chromium preview read the existing local cohort data with a read-only
+  database connection. The three seat names were visible together. Each person’s
+  link opened their own 2024 position. The Hamilton redevelopment example
+  led through supporting details to the September 21 meeting and its minutes
+  link. Confirmed-candidate behavior was exercised with synthetic records.
+
 - **Start / data:** active/dormant committees, council/nonprofit/independent groups,
   sourced and attendance-derived memberships; staff/non-voting and ended memberships.
 - **Action:** Committees → body → roster official or recent topic.
@@ -244,9 +280,126 @@ the same snapshot. Those future results assume the stored activity stays fixed.
 
 ## RES-10 — Inspect an official's attendance and voting record (P1)
 
+- **November 21 campaign consolidation (BG-08 → RES-09/10/11).** The election
+  guide and member sidebar use the same positions for each election. The
+  [2024 source review](../../config/campaign_platform_2024.yml) groups repeated
+  proposals before looking at council activity. Sources without current review
+  keep their original issue or statement display. Qualifying new extractions
+  can supply comparison headings during normal intake. All accepted source
+  statements remain available to permitted readers.
+- On the local preview based on `97cf231d`, a 1440 × 1000 desktop browser
+  followed the citywide race to all three profiles. Bittner’s committee appeared
+  once with both forums. Brandt’s two rental alternatives were distinct, and
+  his annual pipe priority showed his existing attributed contract motion and
+  its minutes. Derby’s housing entry showed one financing vote. The three
+  source disclosures contained 49, 32 and 42 accepted statements respectively.
+  The [HTTP regressions](../../test/integration/campaign_platform_test.rb) exercise
+  separate campaign sources, an archive-only statement, gated access, and
+  correction of the minutes and campaign source. A test-only change grouping
+  by individual statement produced two rows where one was required. Restoring
+  consolidation returned the check to green. Future provider wording was
+  simulated in the intake test.
+
+- Before the corrections below, with local records from April 16, 2025 through November 21, 2026, the
+  read-only comparison preview reused 33 saved decisions about relevance and
+  identified nine new comparisons across four batches. Two older batches had
+  reached their retry limit. One meeting lacked usable minutes in this snapshot.
+  The three profile requests showed 11, 10 and 10 positions respectively.
+  Brandt’s water-main motion remained visible and the rental-fee votes stayed
+  off both rental proposals. The [job-to-profile tests](../../test/integration/campaign_platform_test.rb)
+  run the normal jobs with simulated provider responses and check the saved
+  evidence on a later member-page request. Temporarily grouping by individual
+  campaign statement produced four comparisons for two decisions and failed
+  the repeated-position test. Restoring grouping by position passed.
+
+- The local profiles show directly cited council minutes and staff reports under
+  the position they address. Bittner’s recruitment record shows his Violet Inn
+  motion. The two motel improvement votes still appear under Brandt’s broader
+  position on city financing. The park contract, subdivision paving and rental
+  licensing ordinance identify the member’s role. The Coenen purchase, concerns
+  about city notices and loss of housing tax credits are reported separately
+  from individual votes. The dated citations include records from the first
+  year of the term. The full first year has yet to be imported.
+
+- **Saved motion reuse:** substantive attributed motions in published minutes
+  recaps reach compact recorded-action cards with the agenda subject and exact
+  source passage. They enter the existing cached campaign comparison path, not
+  an automatic topic-overlap match. See
+  [saved-motion checks](council-saved-motion-actions-2026-11-08.md).
+
+- **November 8 direct evidence matching:** specific campaign positions can show
+  matched recorded work and separately labeled issue updates, including an
+  unsuccessful proposal with no vote. Topic overlap alone cannot publish the
+  connection. All-records issue history includes documented terms and excludes
+  service gaps. See [matching evidence](campaign-issue-evidence-2026-11-08.md).
+- **November 8 formal cases:** verified case records supply dated events in a
+  closed section, with independently opened source passages. Complaints,
+  dispositions and appeals remain distinct; missing records are incomplete
+  coverage. Documented service and known identity control inclusion, including
+  a post-term disposition about earlier service. See
+  [formal-record evidence](council-formal-records-2026-11-08.md).
+- **November 8 work beyond votes:** shared official evidence can show attributed
+  proposals/requests even without a vote or prior campaign/topic record. Known
+  identity and service dates control the projection; short actions and closed
+  sources remain separate from issue outcomes and campaign matching. See
+  [recorded-action evidence](council-recorded-actions-2026-11-08.md).
+- **November 8 vote search:** search and approved-topic/body/type/divided filters
+  apply before pagination in both recorded and featured views. Controls preserve
+  service period and view through search, paging, source navigation and clearing,
+  with no AI. See [filter evidence](member-vote-filters-2026-11-08.md).
+- **November 8 saved-analysis reuse:** published minutes agenda summaries now
+  supply shared issue history through existing topic links and citations, with
+  no new extraction stage or AI request. Retained supplemental evidence takes
+  precedence for the same agenda item; generic summaries are not automatic
+  campaign matches. See [reuse checks](council-saved-history-2026-11-08.md).
+- **November 8 shared issue updates:** selected official minutes can supply a
+  short project/policy update to every relevant profile without another vote.
+  Source/report dates, conditions and body remain separate from member credit
+  and campaign alignment. Reads use current saved evidence only; details are
+  independent disclosures. See [issue-update evidence](council-issue-updates-2026-11-08.md).
+- **November 8 peer votes:** selected terms offer a closed alphabetical comparison
+  table with inspectable shared yes/no fractions and a separate divided subset.
+  The detail route preserves the term through pagination and source navigation,
+  shows exclusions and keeps official outcomes separate. Corrected facts recalculate
+  on subsequent reads without AI. See [peer-vote evidence](council-peer-votes-2026-11-08.md).
+- **November 8 period selection:** the Council record selector defaults to the
+  latest usable evidenced service period, scopes attendance and votes to its
+  eligible Council inventory, and preserves the period through view switches
+  and pagination. All available records keeps the broader recorded history;
+  current roles remain labeled when viewing an earlier period. See
+  [period-selection evidence](council-period-selection-2026-11-08.md).
 - **Start / data:** civic Member with current office/memberships, attendance and
   linked/unlinked substantive/procedural motions; an official with no record.
 - **Action:** roster name → official → voting topic/meeting; disclose Other Votes.
+- **November 8 layout adjustment:** the primary record precedes campaign context
+  in document/phone order; campaign context sits in a secondary column on desktop.
+  Jump links retain easy access to both. Other Votes starts closed but its saved
+  decisions and links remain server-rendered for permitted readers, including
+  verified Google requests. See [layout checks](member-record-layout-2026-11-08.md).
+  The subsequent issue sidebar shows every issue heading per election, with
+  only the first position open. Citations/full statements appear once at the
+  bottom. Opening one issue or statement does not close another; topic scores
+  and vote history do not hide issue headings. The owner rejected automatic
+  topic-based vote pairs as misleading, so the campaign section no longer renders
+  them. Votes remain in the main record. The subsequent bounded direct-comparison
+  slice adds only supported specific statement/decision links, preserving the
+  member vote and Council result separately; it does not grade promises or
+  infer inaction. See [matching checks](campaign-action-matching-2026-11-08.md).
+  A matched issue opens with one position and at most two compact decision rows;
+  explanations and full source passages stay behind Supporting details. Other
+  matched positions remain available in a closed disclosure, without generating
+  new summaries for presentation.
+  Reads use existing analysis with no new AI. See the
+  [issue sidebar checks](member-issue-sidebar-2026-11-08.md).
+- **November 8 recorded-vote view:** switch from Featured votes to All recorded
+  votes (`?votes=all`), paginate 25 saved decisions at a time in either view, and
+  follow a motion to its meeting and sources. Featured omits procedural motions
+  only when passed with all recorded non-absent votes affirmative; All recorded
+  votes keeps them. Both views retain motion descriptions and use accurate
+  recorded-vote labels without a leading disclaimer. A numbered pager appears
+  only below the list, with the current page identified. No new
+  term denominator or campaign comparison is implied. See
+  [acceptance and evidence](member-recorded-votes-2026-11-08.md).
 - **October 24 navigation experiment:** an already visible voter name in a
   meeting roll call or topic Key Decisions section also leads to the stored
   member profile. The profile's existing topic/meeting links complete the
@@ -266,6 +419,33 @@ the same snapshot. Those future results assume the stored activity stays fixed.
   or the first displayed current committee and its existing role label.
   Subsequent requests drop ended roles. No roster links or voting access were
   added; see [evidence](seo-review-2026-10-24.md).
+- **November 7 identity reconstruction:** compatible person merge → source-name
+  alias → cached minutes reconstruction preserves the surviving person's current
+  votes and attendance, original retained attribution, decision review and topic
+  evidence. Fresh authorized member reads are checked; no public route or access
+  change. See [scope and limits](council-member-merges-2026-11-07.md).
+- **November 7 corrected fact propagation:** a corrected extracted vote reaches
+  the same member record while known stale meeting prose is withdrawn. See
+  [later member and meeting reads](meeting-summary-facts-2026-11-07.md).
+- **November 8 campaign records:** accepted statements from the current supplied
+  source version appear on the existing member page, grouped by election, with
+  conditions, timing, original question and publisher link. Unresolved identities
+  or passages do not publish; no candidate creates a new civic person or office.
+  Reads and unchanged publication call no AI. RES-11 applies to the entire
+  generated section. See [real-data and regression checks](member-campaign-records-2026-11-08.md).
+
+- **November 8 related issue records (superseded display):** the earlier slice
+  exposed eligible topic votes beneath statements. Owner review found that this
+  implied a connection the matching had not established. Those automatic pairs
+  are now omitted from campaign content; the main vote record remains available.
+  Eligibility/query coverage is retained separately. Historical evidence remains
+  in [the earlier report](member-campaign-activity-2026-11-08.md).
+
+- **November 8 explicit recommendations:** a closed member section links each
+  recommending source's all/divided fraction to included decisions and exclusions.
+  Same-proposal semantics, known pre-decision timing and actual service dates bound
+  comparison; no unified staff position is inferred. Details and evidence are in
+  [the verification record](council-staff-recommendations-2026-11-08.md).
 
 ## RES-11 — Cross an access-mode or audience boundary (P0)
 
@@ -327,6 +507,10 @@ the same snapshot. Those future results assume the stored activity stays fixed.
   [ResidentQueries](../../app/services/api/v1/resident_queries.rb).
 
 ## RES-14 — Discover newly available evidence for an old event (P1)
+
+- **November 7 withdrawal freshness:** `updated_since` includes a summary withdrawal
+  even when the meeting and its own document did not change; available-analysis
+  metadata still excludes withdrawn prose. See [cross-meeting API evidence](agenda-summary-dependencies-2026-11-07.md).
 
 - **Start / data:** historical meeting/topic; newly changed document, recap,
   briefing, alias or appearance; separately unchanged scrape and extraction rerun.

@@ -1,0 +1,22 @@
+<% if periods.any? %>
+  <section class="member-article-section member-service-periods" aria-labelledby="council-service-heading">
+    <div class="home-section-header">
+      <%= render "shared/atom_marker" %>
+      <h2 class="section-label" id="council-service-heading">Council service</h2>
+      <span class="section-line"></span>
+    </div>
+    <% periods.each do |period| %>
+      <p class="member-service-period" id="service-period-<%= period.id %>">
+        <% if period.ended_on %>
+          <%= period.started_on.strftime("%B %-d, %Y") %> – <%= period.ended_on.strftime("%B %-d, %Y") %>
+        <% else %>
+          Term began <%= period.started_on.strftime("%B %-d, %Y") %>
+        <% end %>
+        · <%= link_to "Start record, p. #{period.start_page}", rails_blob_path(period.start_source_version.file, disposition: "inline", anchor: "page=#{period.start_page}") %>
+        <% if period.ended_on %>
+          · <%= link_to "End record, p. #{period.end_page}", rails_blob_path(period.end_source_version.file, disposition: "inline", anchor: "page=#{period.end_page}") %>
+        <% end %>
+      </p>
+    <% end %>
+  </section>
+<% end %>
