@@ -5,7 +5,7 @@ module ResidentContent
     EDITION = YAML.safe_load_file(Rails.root.join("config/campaign_platform_2024.yml")).freeze
     EVIDENCE_FIELDS = %w[source_name question kind summary supporting_quote conditions timeframe].freeze
 
-    attr_reader :items, :unreviewed
+    attr_reader :items, :unreviewed, :statements
 
     def self.by_election(statements)
       statements.group_by { |row| row.campaign_source_version.election_on }.transform_values { |rows| new(rows) }
@@ -16,18 +16,24 @@ module ResidentContent
       Digest::SHA256.hexdigest(evidence.to_json)
     end
 
-    def initialize(records, edition: EDITION)
+    def initialize(records, edition: EDITION, include_council_records: true)
       @unreviewed = []
-      @record_sources = CampaignRecordSources.new(edition.fetch("council_sources", {}))
+      @record_sources = CampaignRecordSources.new(edition.fetch("council_sources", {})) if include_council_records
       extracted = []
       editorial = records.group_by { |row| row.data["source_name"] }.flat_map do |name, statements|
         review = edition.fetch("members")[name]
         references = {}
         statements.group_by(&:campaign_source_version).each do |source, rows|
           key = edition.fetch("sources").key(source.source_url)
-          if key && review && source.election_on.iso8601 == edition.fetch("election") &&
-              review.fetch("digests")[key] == self.class.source_digest(rows)
-            rows.each { |row| references["#{key}.#{row.sequence}"] = row }
+          if key && review && source.election_on.iso8601 == edition.fetch("election") && review.fetch("digests").key?(key)
+            if review.fetch("digests")[key] == self.class.source_digest(rows)
+              rows.each { |row| references["#{key}.#{row.sequence}"] = row }
+            else
+              # A changed edition cannot revive statements the source review
+              # removed. Use current extracted headings for retained references.
+              retained = review.fetch("items").flat_map { |item| item.fetch("refs") }
+              extracted.concat(rows.filter_map { |row| extracted_item(row) if retained.include?("#{key}.#{row.sequence}") && row.data["comparison_heading"].present? })
+            end
           else
             extracted.concat(rows.filter_map { |row| extracted_item(row) })
           end
@@ -42,6 +48,8 @@ module ResidentContent
         group.first.merge(statements: group.flat_map { |item| item[:statements] }.uniq,
           comparable: group.flat_map { |item| item[:comparable] }.uniq)
       end
+      visible = (@items.flat_map { |item| item.fetch(:statements) } + @unreviewed).to_set
+      @statements = records.select { |row| visible.include?(row) }
     end
 
     private
@@ -58,7 +66,7 @@ module ResidentContent
         { heading: item.fetch("heading"), kind: item.fetch("kind"), description: item.fetch("description"),
           statements: mentions, comparable: item.fetch("compare", refs).filter_map { |ref| references[ref] },
           reviewed_action: item["reviewed_action"], comparison_topic: item["comparison_topic"], prior_review_terms: item["prior_review_terms"] }
-          .merge(@record_sources.review(item))
+          .merge(@record_sources ? @record_sources.review(item) : {})
       end
     end
 

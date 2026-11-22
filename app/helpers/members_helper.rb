@@ -10,6 +10,20 @@ module MembersHelper
     "#{membership.committee.name} #{role}"
   end
 
+  def member_vote_profile_path(vote)
+    @election_profile_ids ||= begin
+      edition = ResidentContent::CouncilElection.current
+      edition ? edition.member_ids_by_name.slice(*edition.terms_ending.keys).values : []
+    end
+    return member_path(vote.member) unless @election_profile_ids.include?(vote.member_id)
+
+    member_path(vote.member, decision: vote.motion_id, anchor: "profile-decision")
+  end
+
+  def voting_record_path(**options)
+    @separate_record ? record_member_path(@member, **options) : member_path(@member, **options)
+  end
+
   def recorded_attendance_summary(counts)
     ResidentContent::CouncilAttendance::LABELS.filter_map do |status, label|
       "#{counts.fetch(status)} #{label.downcase}" if counts.fetch(status).positive?

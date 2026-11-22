@@ -40,6 +40,11 @@ Rails.application.routes.draw do
   resources :committees, only: %i[index show], param: :slug
   get "members", to: redirect("/committees", status: 301), as: nil
   resources :members, only: %i[show] do
+    member do
+      get :record
+      get :campaign
+      get :issues
+    end
     get "compare/:peer_id", action: :compare, on: :member, as: :compare
     get "recommendations", on: :member
   end

@@ -1,4 +1,4 @@
-<%= form_with url: member_path(@member, anchor: "voting-record"), method: :get, data: { turbo: false }, class: "member-vote-filters" do |form| %>
+<%= form_with url: voting_record_path(anchor: "voting-record"), method: :get, data: { turbo: false }, class: "member-vote-filters" do |form| %>
   <%= form.hidden_field :term, value: @record_period.key, id: nil if @record_period.selectable.any? || params[:term].present? %>
   <%= form.hidden_field :votes, value: "all", id: nil if @show_all_votes %>
   <div class="member-vote-search">
@@ -35,7 +35,7 @@
   <% if @vote_filters.active? %>
     <p class="member-vote-filter-result">
       <%= pluralize(@pagy.count, "matching vote") %> ·
-      <%= link_to "Clear search and filters", member_path(@member, **@record_params.slice(:term), votes: ("all" if @show_all_votes), anchor: "voting-record") %>
+      <%= link_to "Clear search and filters", voting_record_path(**@record_params.slice(:term), votes: ("all" if @show_all_votes), anchor: "voting-record") %>
     </p>
   <% end %>
 <% end %>

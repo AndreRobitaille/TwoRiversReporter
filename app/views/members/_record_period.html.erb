@@ -1,5 +1,5 @@
 <% if @record_period.selectable.any? %>
-  <%= form_with url: member_path(@member), method: :get, class: "member-record-period" do |form| %>
+  <%= form_with url: voting_record_path, method: :get, class: "member-record-period" do |form| %>
     <div class="member-record-period-choice">
       <%= form.label :term, "Council record", class: "form-label" %>
       <%= form.select :term, @record_period.selectable.map { |period| [council_period_label(period), period.period_key] } + [["All available records", "all"]], { selected: @record_period.key }, class: "form-select" %>

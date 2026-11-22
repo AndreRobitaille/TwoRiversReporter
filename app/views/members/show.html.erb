@@ -3,45 +3,16 @@
 <% content_for(:description) { [@member.name, profile_role, "committee memberships, meeting attendance, and voting record in Two Rivers, WI"].join(" — ") } %>
 <% content_for(:og_type) { "article" } %>
 
-<% has_campaign = @campaign_statements&.any? %>
+<% has_campaign = !@separate_record && @campaign_platforms.present? %>
 <article class="member-article<%= " member-article--with-campaign" if has_campaign %>">
-  <header class="member-article-header">
-    <h1 class="member-article-title"><%= @member.name %></h1>
-    <% if @current_position %>
-      <span class="badge badge--info"><%= "Current: " if @record_period.selected&.ended_on %><%= @current_position.title %></span>
-    <% end %>
-    <% if @election_council_slug %>
-      <%= gated_content do %>
-        <p class="member-election-status">
-          <% if @election.candidates.key?(@member.name) %>
-            <%= link_to "Confirmed candidate for spring #{@election.election_on.year}", @election.candidates.fetch(@member.name) %>.
-          <% else %>
-            <%= link_to "Council term ends in spring #{@election.election_on.year}", @election.terms_ending.fetch(@member.name) %>.
-          <% end %>
-          <%= link_to "See the spring election", committee_path(@election_council_slug, anchor: "spring-election") %>
-        </p>
-      <% end %>
-    <% end %>
-  </header>
-
-  <% if params[:statement].present? && !gated_for_visitor? %>
-    <%= gated_content do %>
-      <section id="campaign-statement" class="member-article-section">
-        <% if @selected_statement %>
-          <% source = @selected_statement.campaign_source_version %>
-          <% actions = newest_campaign_actions(@campaign_actions.fetch(@selected_statement.id, []) + @campaign_issue_evidence.fetch(@selected_statement.id, [])) %>
-          <h2>From the <%= source.election_on.year %> campaign</h2>
-          <%= render "campaign_comparison", statement: @selected_statement, actions: actions, explain: true %>
-          <% if actions.empty? %>
-            <p>We haven’t linked a later council action to this statement in the records reviewed.</p>
-          <% end %>
-          <p><%= link_to source.publisher, source.source_url %><%= " · #{source.published_on.to_fs(:long)}" if source.published_on %></p>
-        <% else %>
-          <p>This campaign statement is unavailable.</p>
-        <% end %>
-      </section>
-    <% end %>
+  <%= render "profile_header" %>
+  <% if @separate_record && !gated_for_visitor? %>
+    <p><%= link_to "Back to #{@member.name}’s profile", member_path(@member) %></p>
   <% end %>
+  <% if !@separate_record && @election && !@has_election_profile && @campaign_statements.empty? %>
+    <p id="campaign-record">We don’t have a sourced campaign statement for <%= @member.name %> yet.</p>
+  <% end %>
+  <%= render "selected_statement" %>
 
   <% if has_campaign %>
     <nav class="member-profile-nav" aria-label="Member record sections">
@@ -58,7 +29,7 @@
       <section class="member-article-section">
         <div class="home-section-header">
           <%= render "shared/atom_marker" %>
-          <h2 class="section-label">Current committees</h2>
+          <h2 class="section-label" id="current-committees">Current committees</h2>
           <span class="section-line"></span>
         </div>
 
@@ -74,26 +45,29 @@
         </div>
       </section>
 
-      <%= render "council_attendance", attendance: @council_attendance if @council_attendance %>
+      <div id="attendance">
+        <%= render "council_attendance", attendance: @council_attendance if @council_attendance %>
 
-      <% if @attendance %>
-        <section class="member-article-section">
-          <div class="home-section-header">
-            <%= render "shared/atom_marker" %>
-            <h2 class="section-label"><%= @council_attendance ? "Other committee attendance" : "Recorded attendance" %></h2>
-            <span class="section-line"></span>
-          </div>
+        <% if @attendance || (@separate_record && !@council_attendance) %>
+          <section class="member-article-section">
+            <div class="home-section-header">
+              <%= render "shared/atom_marker" %>
+              <h2 class="section-label"><%= @council_attendance ? "Other committee attendance" : "Recorded attendance" %></h2>
+              <span class="section-line"></span>
+            </div>
 
-          <div class="member-attendance-list">
-            <% @attendance.each do |committee, data| %>
-              <div class="member-attendance-row">
-                <span class="member-attendance-committee"><%= committee.name %></span>
-                <span class="member-attendance-stat"><%= recorded_attendance_summary(data) %></span>
-              </div>
-            <% end %>
-          </div>
-        </section>
-      <% end %>
+            <div class="member-attendance-list">
+              <% if @attendance.blank? %><p>No attendance records are available for this period.</p><% end %>
+              <% Array(@attendance).each do |committee, data| %>
+                <div class="member-attendance-row">
+                  <span class="member-attendance-committee"><%= committee.name %></span>
+                  <span class="member-attendance-stat"><%= recorded_attendance_summary(data) %></span>
+                </div>
+              <% end %>
+            </div>
+          </section>
+        <% end %>
+      </div>
 
       <section class="member-article-section">
         <div class="home-section-header">
@@ -107,8 +81,8 @@
         <% else %>
           <%= gated_content do %>
             <nav class="member-vote-views" aria-label="Voting record views">
-              <%= link_to "Featured votes", member_path(@member, **@record_params, anchor: "voting-record"), class: "btn btn--secondary", aria: { current: ("page" unless @show_all_votes) } %>
-              <%= link_to "All recorded votes", member_path(@member, **@record_params, votes: "all", anchor: "voting-record"), class: "btn btn--secondary", aria: { current: ("page" if @show_all_votes) } %>
+              <%= link_to "Featured votes", voting_record_path(**@record_params, anchor: "voting-record"), class: "btn btn--secondary", aria: { current: ("page" unless @show_all_votes) } %>
+              <%= link_to "All recorded votes", voting_record_path(**@record_params, votes: "all", anchor: "voting-record"), class: "btn btn--secondary", aria: { current: ("page" if @show_all_votes) } %>
             </nav>
 
             <%= render "vote_filters" %>
@@ -167,7 +141,7 @@
                   <p class="section-empty"><%= @vote_filters.active? ? "No featured votes match these filters. Other decisions may appear in all recorded votes." : "No featured votes found for this official. Other decisions may appear in all recorded votes." %></p>
                 <% else %>
                   <p class="section-empty">No featured votes on this page.</p>
-                  <%= link_to "Return to the newest votes", member_path(@member, **@record_params, anchor: "voting-record") %>
+                  <%= link_to "Return to the newest votes", voting_record_path(**@record_params, anchor: "voting-record") %>
                 <% end %>
               <% end %>
               <%= render "vote_pagination" %>
@@ -178,7 +152,11 @@
       <% unless gated_for_visitor? %>
         <%= gated_content do %>
           <%= render "recorded_actions" %>
-          <%= render "issue_updates" %>
+          <% if @separate_record %>
+            <p id="issue-updates"><%= link_to "Read the issue history for this period", issues_member_path(@member, term: @record_period.key) %></p>
+          <% else %>
+            <%= render "issue_updates" %>
+          <% end %>
           <%= render "peer_comparisons" %>
           <%= render "staff_recommendations" %>
           <%= render "formal_cases" %>
