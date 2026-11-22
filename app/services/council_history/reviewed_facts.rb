@@ -34,9 +34,13 @@ module CouncilHistory
       end
     end
 
-    def self.preserve_published_votes!(meeting, actor:, agenda:)
+    def self.preserve_published_votes!(meeting, actor:, agenda:, later_repair: false)
       raise ArgumentError, "Active administrator required" unless actor&.admin? && actor.active_for_authentication?
-      raise ArgumentError, "Outside historical window" unless meeting.starts_at.to_date.between?(Batch::FIRST, Batch::LAST)
+      if later_repair
+        raise ArgumentError, "Expected a later held meeting" unless Batch.later_repairable?(meeting)
+      else
+        raise ArgumentError, "Outside historical window" unless meeting.starts_at.to_date.between?(Batch::FIRST, Batch::LAST)
+      end
       meeting.with_lock do
         document = meeting.latest_document("agenda_pdf")
         raise ArgumentError, "Reviewed agenda source changed" unless document && document == agenda &&

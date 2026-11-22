@@ -1,0 +1,25 @@
+<section class="committee-article-section" id="current-members">
+  <div class="home-section-header">
+    <%= render "shared/atom_marker" %>
+    <h2 class="section-label">Current Members</h2>
+    <span class="section-line"></span>
+  </div>
+
+  <% if @memberships.any? %>
+    <div class="committee-roster">
+      <% sort_memberships(@memberships, @council_member_ids).each do |cm| %>
+        <%= link_to member_path(cm.member), class: "committee-member" do %>
+          <span class="committee-member-name"><%= cm.member.name %></span>
+          <span class="committee-member-badges">
+            <% membership_badges(cm, council_member_ids: @council_member_ids).each do |badge| %>
+              <% next if council && badge[:label] == "City Council Member" %>
+              <span class="badge badge--<%= badge[:variant] %>"><%= council ? badge[:label].delete_prefix("City Council ") : badge[:label] %></span>
+            <% end %>
+          </span>
+        <% end %>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="section-empty">No current members on record.</p>
+  <% end %>
+</section>
