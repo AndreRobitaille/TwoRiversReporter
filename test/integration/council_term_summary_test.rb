@@ -250,8 +250,8 @@ class CouncilTermSummaryTest < ActionDispatch::IntegrationTest
     assert_select "meter[min='0'][max='100'][value='0']"
     assert_select "#promise-index section.promise-group[data-status=unresolved]" do
       assert_select "h4 .outcome-count", "1"
-      assert_select "h4 .outcome-label", "Insufficient evidence"
-      assert_select ".outcome-marks i", count: 1
+      assert_select "h4 .outcome-label", "Unfulfilled in the public record"
+      assert_select "h4 .outcome-points", "0 points"
       assert_select "details#promise-1:not([open])" do
         assert_select "summary .promise-title", text: "Form a council growth committee"
         assert_select "summary .promise-excerpt", text: /no action to form the proposed committee/

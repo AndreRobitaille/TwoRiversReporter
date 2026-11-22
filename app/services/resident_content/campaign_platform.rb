@@ -16,7 +16,7 @@ module ResidentContent
       Digest::SHA256.hexdigest(evidence.to_json)
     end
 
-    # Tie status refinements and illustrations to the exact saved finding and its citations.
+    # Tie status refinements and vote details to the exact saved finding and its citations.
     def self.reviewed_findings(report, name)
       rows = report.promise_assessments
       edition_on = Date.iso8601(EDITION.fetch("election"))

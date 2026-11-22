@@ -1,18 +1,4 @@
-<% ayes, nays = vote.values_at("ayes", "nays") %>
-<% total = ayes + nays %>
 <span class="roll-call">
-  <span class="roll-call-tally" aria-hidden="true">
-    <span class="roll-call-arc">
-      <% total.times do |index| %>
-        <span class="<%= "nay" if index >= ayes %>" style="--angle: <%= 180.0 * index / (total - 1) %>deg"></span>
-      <% end %>
-      <strong><%= ayes %>–<%= nays %></strong>
-    </span>
-    Council approved
-  </span>
-  <span class="roll-call-caption">
-    <time datetime="<%= vote.fetch("date") %>"><%= Date.iso8601(vote.fetch("date")).strftime("%b %-d, %Y") %></time>
-    <strong><%= vote.fetch("title") %></strong>
-    <span><%= vote.fetch("caption") %> <span class="sr-only">Council approved, <%= ayes %> yes and <%= nays %> no.</span></span>
-  </span>
+  <span class="roll-call-caption"><%= vote.fetch("caption") %></span>
+  <span class="roll-call-result"><%= vote.fetch("title") %> · Passed <%= vote.fetch("ayes") %>–<%= vote.fetch("nays") %> · <time datetime="<%= vote.fetch("date") %>"><%= Date.iso8601(vote.fetch("date")).strftime("%b %-d, %Y") %></time></span>
 </span>
