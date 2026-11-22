@@ -37,7 +37,13 @@ module CouncilProfiles
     def create_receipt!(parameters, reservation = nil)
       @stage.with_lock do
         raise "Extraction stage is not claimed" unless @stage.status == "running"
-        @receipt = @stage.requests.create!(attempt: @stage.attempts, status: "dispatched",
+        attributes = {}
+        if @stage.is_a?(CampaignActionReview) && CouncilHistory::Execution.meeting_id
+          historical_request = CouncilHistory::Execution.request
+          raise "Missing historical comparison reservation" unless historical_request&.meeting_id == @stage.meeting_id && historical_request.stage == "promise_comparisons"
+          attributes[:council_history_request] = historical_request
+        end
+        @receipt = @stage.requests.create!(**attributes, attempt: @stage.attempts, status: "dispatched",
           council_ai_reservation: reservation,
           messages: parameters.fetch(:messages), request_parameters: parameters.except(:messages), started_at: Time.current)
       end

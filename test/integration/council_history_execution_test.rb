@@ -14,6 +14,43 @@ class CouncilHistoryExecutionTest < ActionDispatch::IntegrationTest
 
   teardown { CouncilHistoryRequest.where(meeting_id: @meeting_id).delete_all }
 
+  test "historical comparison links its response to the committed pilot reservation and replays for free" do
+    meeting = Meeting.create!(starts_at: Time.zone.local(2024, 10, 28, 18), body_name: "Synthetic Council",
+      detail_page_url: "https://example.test/historical-comparison-receipt")
+    @meeting_id = meeting.id
+    stage = CampaignActionReview.create!(meeting: meeting, input_key: Digest::SHA256.hexdigest("historical comparison receipt"),
+      parameters: @parameters, context: { "pairs" => [ { "key" => "item-a" } ], "minutes" => "Vote on a public agreement." })
+    match = { "key" => "item-a", "status" => "not_direct", "reason" => "The motion addressed a separate proposal." }
+    client = Object.new
+    calls = 0
+    client.define_singleton_method(:chat) do |parameters:|
+      calls += 1
+      { "id" => "synthetic-result", "model" => parameters.fetch(:model), "choices" => [
+        { "message" => { "content" => { matches: [ match ] }.to_json }, "finish_reason" => "stop" }
+      ], "usage" => { "prompt_tokens" => 40, "completion_tokens" => 20 } }
+    end
+
+    assert_no_difference("CouncilAiReservation.count") do
+      OpenAI::Client.stub(:new, client) do
+        CouncilHistory::Execution.set(meeting_id: meeting.id, stage: "promise_comparisons", pilot: true) do
+          2.times { Campaigns::MatchActions.call(stage.reload) }
+        end
+      end
+    end
+    assert_equal 1, calls
+    assert_equal [ match ], stage.reload.data.fetch("matches")
+    receipt = stage.requests.sole
+    reservation = CouncilHistoryRequest.where(meeting_id: meeting.id, pilot: true).sole
+    assert_equal reservation.id, receipt.council_history_request_id
+    assert_equal [ "received", "synthetic-result", "synthetic-result" ], [ receipt.status, receipt.provider_response_id, reservation.provider_response_id ]
+  ensure
+    if stage&.persisted?
+      CampaignActionRequest.where(campaign_action_review_id: stage.id).delete_all
+      stage.delete
+    end
+    meeting&.delete
+  end
+
   test "historical transport reserves against both ceilings and retains unknown charges across a retry" do
     service = nil
     called = 0
