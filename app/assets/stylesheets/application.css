@@ -5276,7 +5276,7 @@ th.sortable-header:hover {
    ============================================ */
 
 .committee-article {
-  max-width: 38rem;
+  max-width: 46rem;
   margin: 0 auto;
 }
 
@@ -5301,50 +5301,9 @@ th.sortable-header:hover {
   margin-bottom: var(--space-8);
 }
 
-.committee-article--council {
-  max-width: 46rem;
-}
-
-.council-intro {
+.committee-intro {
   max-width: 56ch;
   margin: var(--space-2) 0;
-}
-
-.committee-article--council .committee-roster {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.committee-article--council .committee-member {
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 0;
-  padding: var(--space-2) var(--space-3);
-  min-height: 2.75rem;
-  border: 0;
-  box-shadow: 1px 1px 0 var(--color-border);
-}
-
-.committee-article--council .committee-member:is(:hover, :focus-visible) {
-  background: var(--color-primary-light);
-}
-
-.committee-article--council .committee-member .badge {
-  padding: 0;
-  background: transparent;
-  color: var(--color-text-secondary);
-  text-transform: none;
-  letter-spacing: normal;
-}
-
-.committee-article--council .council-authority {
-  margin-bottom: var(--space-4);
-}
-
-.council-authority summary {
-  cursor: pointer;
-  color: var(--color-primary);
 }
 
 .committee-article-section[id],
@@ -5357,18 +5316,34 @@ th.sortable-header:hover {
 .council-election {
   align-self: start;
   background: var(--color-surface);
-  padding: var(--space-5);
-  margin-bottom: var(--space-6);
+  padding: 0 var(--space-4);
+  margin-bottom: var(--space-4);
   border-top: 4px solid var(--color-terra-cotta);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
 }
 
+.council-election summary,
 .council-election h2 {
   color: var(--color-primary);
   font-family: var(--font-display);
   line-height: var(--line-height-tight);
   margin: 0;
+}
+
+.council-election summary {
+  padding-block: var(--space-3);
+  cursor: pointer;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-lg);
+}
+
+.council-election h2 {
+  display: none;
+}
+
+.council-election details[open] {
+  padding-bottom: var(--space-4);
 }
 
 .council-election h3 {
@@ -5410,18 +5385,31 @@ th.sortable-header:hover {
   font-weight: var(--font-weight-semibold);
 }
 
-@media (min-width: 40rem) {
-  .committee-article--council .committee-roster {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
 @media (min-width: 58rem) {
   .committee-article--election {
     display: grid;
     grid-template-columns: minmax(0, 1.8fr) minmax(18rem, 1fr);
+    grid-template-rows: auto 1fr auto;
     column-gap: var(--space-8);
     max-width: 70rem;
+  }
+
+  .council-election {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    padding: var(--space-5);
+  }
+
+  .council-election h2 {
+    display: block;
+  }
+
+  .council-election details[open] {
+    padding-bottom: 0;
+  }
+
+  .council-election details[open] > summary {
+    display: none;
   }
 
   .committee-article--election > .back-link {
@@ -5441,7 +5429,12 @@ th.sortable-header:hover {
   font-size: var(--font-size-base);
   color: var(--color-text);
   line-height: var(--line-height-relaxed);
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-4);
+}
+
+.committee-description summary {
+  cursor: pointer;
+  color: var(--color-primary);
 }
 
 .committee-description p {
@@ -5463,30 +5456,35 @@ th.sortable-header:hover {
 }
 
 .committee-roster {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
+@media (min-width: 40rem) {
+  .committee-roster {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 .committee-member {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-5);
-  border-bottom: 1px solid var(--color-border);
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--space-2) var(--space-3);
+  min-height: 2.75rem;
+  box-shadow: 1px 1px 0 var(--color-border);
   text-decoration: none;
   color: inherit;
   transition: background var(--transition-fast);
 }
 
-.committee-member:last-child {
-  border-bottom: none;
-}
-
-.committee-member:hover {
-  background: var(--color-bg);
+.committee-member:is(:hover, :focus-visible) {
+  background: var(--color-primary-light);
   text-decoration: none;
   color: inherit;
 }
@@ -5500,6 +5498,14 @@ th.sortable-header:hover {
   display: flex;
   gap: var(--space-2);
   flex-wrap: wrap;
+}
+
+.committee-member .badge {
+  padding: 0;
+  background: transparent;
+  color: var(--color-text-secondary);
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 .committee-activity {
@@ -6366,10 +6372,6 @@ th.sortable-header:hover {
 }
 
 @media (max-width: 640px) {
-
-  .committee-member {
-    padding: var(--space-3) var(--space-4);
-  }
 
   .committee-activity-header {
     flex-direction: column;

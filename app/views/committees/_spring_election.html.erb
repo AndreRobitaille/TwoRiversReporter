@@ -1,29 +1,34 @@
-<aside class="council-election" id="spring-election" aria-labelledby="election-heading">
-  <h2 id="election-heading">Spring <%= election.election_on.year %> Council election</h2>
-  <ul class="election-timeline">
-    <li><%= time_tag election.signatures_open_on, format: "%B %-d, %Y" %> · Candidates can start collecting signatures</li>
-    <li><%= time_tag election.filing_deadline, format: "%B %-d, %Y" %> · Regular filing deadline at 5 p.m.</li>
-    <li><%= time_tag election.election_on, format: "%B %-d, %Y" %> · Election Day</li>
-  </ul>
-  <p>Vote for up to three. You can choose just one or two.</p>
-  <p><%= link_to "Official ballot and election information", "https://www.two-rivers.org/clerk/page/election-information" %></p>
+<% title = "Spring #{election.election_on.year} Council election" %>
+<aside class="council-election" id="spring-election" aria-labelledby="election-heading"
+       data-controller="election-guide" data-action="hashchange@window->election-guide#openLinkedGuide turbo:load@document->election-guide#openLinkedGuide">
+  <details data-election-guide-target="disclosure">
+    <summary><%= title %></summary>
+    <h2 id="election-heading"><%= title %></h2>
+    <ul class="election-timeline">
+      <li><%= time_tag election.signatures_open_on, format: "%B %-d, %Y" %> · Candidates can start collecting signatures</li>
+      <li><%= time_tag election.filing_deadline, format: "%B %-d, %Y" %> · Regular filing deadline at 5 p.m.</li>
+      <li><%= time_tag election.election_on, format: "%B %-d, %Y" %> · Election Day</li>
+    </ul>
+    <p>Vote for up to three. You can choose just one or two.</p>
+    <p><%= link_to "Official ballot and election information", "https://www.two-rivers.org/clerk/page/election-information" %></p>
 
-  <% unless gated_for_visitor? %>
-    <%= gated_content do %>
-      <% if election.terms_ending.any? %>
-        <h3>Council terms ending in <%= election.election_on.year %></h3>
-        <p>Their profiles cover what they ran on and what they did in office. Meeting records may never name everyone running.</p>
-        <ul class="election-people">
-          <%= render partial: "election_person", collection: election.terms_ending.keys, as: :name, locals: { election: election } %>
-        </ul>
-      <% end %>
-      <% challengers = election.candidates.keys - election.terms_ending.keys %>
-      <% if challengers.any? %>
-        <h3>Confirmed challengers</h3>
-        <ul class="election-people">
-          <%= render partial: "election_person", collection: challengers, as: :name, locals: { election: election } %>
-        </ul>
+    <% unless gated_for_visitor? %>
+      <%= gated_content do %>
+        <% if election.terms_ending.any? %>
+          <h3>Council terms ending in <%= election.election_on.year %></h3>
+          <p>Their profiles cover what they ran on and what they did in office. Meeting records may never name everyone running.</p>
+          <ul class="election-people">
+            <%= render partial: "election_person", collection: election.terms_ending.keys, as: :name, locals: { election: election } %>
+          </ul>
+        <% end %>
+        <% challengers = election.candidates.keys - election.terms_ending.keys %>
+        <% if challengers.any? %>
+          <h3>Confirmed challengers</h3>
+          <ul class="election-people">
+            <%= render partial: "election_person", collection: challengers, as: :name, locals: { election: election } %>
+          </ul>
+        <% end %>
       <% end %>
     <% end %>
-  <% end %>
+  </details>
 </aside>

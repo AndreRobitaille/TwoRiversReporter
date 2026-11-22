@@ -3,29 +3,30 @@
 <% content_for(:og_type) { "article" } %>
 
 <% council = @committee.name == "City Council" %>
-<article class="<%= class_names("committee-article", "committee-article--council": council, "committee-article--election": @election) %>">
+<% introduction = council ? "Voters elect the Council to set the city budget and make local laws. The city manager runs day-to-day operations." : CommitteesController::CARD_DESCRIPTIONS[@committee.name] %>
+<article class="<%= class_names("committee-article", "committee-article--election": @election) %>">
   <div>
     <header class="committee-article-header">
       <% unless council %>
         <span class="badge badge--default"><%= committee_type_label(@committee.committee_type) %></span>
       <% end %>
       <h1 class="committee-article-title"><%= @committee.name %></h1>
-      <% if council %>
-        <p class="council-intro">Voters elect the Council to set the city budget and make local laws. The city manager runs day-to-day operations.</p>
+      <% if introduction.present? %>
+        <p class="committee-intro"><%= introduction %></p>
       <% end %>
     </header>
 
     <% if @committee.description.present? %>
-      <% if council %>
-        <details class="committee-description council-authority">
-          <summary>About the Council’s authority</summary>
-          <%= render_committee_description(@committee.description) %>
-        </details>
-      <% else %>
-        <div class="committee-description"><%= render_committee_description(@committee.description) %></div>
-      <% end %>
+      <details class="committee-description">
+        <summary><%= council ? "About the Council’s authority" : "What this group does" %></summary>
+        <%= render_committee_description(@committee.description) %>
+      </details>
     <% end %>
+  </div>
 
+  <%= render "spring_election", election: @election if @election %>
+
+  <div>
     <% unless gated_for_visitor? %>
       <%= gated_content { render "roster", council: council } %>
     <% end %>
@@ -33,7 +34,6 @@
 
     <%= render "shared/gate" if gated_for_visitor? %>
   </div>
-  <%= render "spring_election", election: @election if @election %>
 
   <%= link_to committees_path, class: "back-link" do %>
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

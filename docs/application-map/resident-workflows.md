@@ -233,6 +233,31 @@ the same snapshot. Those future results assume the stored activity stays fixed.
 
 ## RES-09 — Find a governing body and current officials (P1)
 
+- **November 22, 2026 mobile election guide (RES-01/09/11).** On a regular
+  Council visit the closed guide sits immediately above the roster. A link to
+  `#spring-election` opens it. At 390 × 844, Chromium showed all nine local
+  roster links before opening the guide. At 1366 pixels the guide was open in
+  the right column. On `10aed114` with working changes, the committee, election
+  and source-access tests listed below passed 28 tests and 842 assertions.
+  `bin/rails test test/system/resident_navigation_journeys_test.rb` passed
+  six tests and 99 assertions with zero skips. Forcing the guide open on every
+  visit failed the mobile journey’s closed-state assertion. The journey also
+  caught a return from a member profile that left the guide closed. Reading
+  the URL fragment after Turbo navigation fixed the return trip.
+
+- **November 22, 2026 committee pages (RES-09/11).** Non-Council bodies use
+  the Council’s compact roster in a single column. On the local Plan Commission
+  page at 390 × 844, the recent topics heading moved from 858 to 582 pixels
+  down the page. Chromium opened the full description by keyboard and followed
+  both a member link and a topic link. The Library Board at 1366 pixels used
+  three roster columns, Explore Two Rivers at 320 used two, and the Board of
+  Appeals displayed its empty-roster message. All four omitted the election panel.
+  On `10aed114` with working changes, Ruby 4.0.9 and isolated PostgreSQL,
+  `bin/rails test test/controllers/{committees_controller,committees_show_gating}_test.rb test/integration/{council_election,source_access_contract}_test.rb`
+  passed 28 tests and 840 assertions with zero skips. Temporarily loading the
+  election for every committee failed the Commission sidebar assertion. It
+  passed after restoring the Council condition.
+
 - **November 22, 2026 Council page (RES-01/09/11).** The ordinary Council
   entry leads with its role, roster and work. Wide screens show the guide
   beside the roster. The homepage election link opens `#spring-election`

@@ -19,7 +19,8 @@ class CouncilElectionTest < ActionDispatch::IntegrationTest
       assert_select "aside#spring-election" do
         assert_select "p", text: /up to three/
         assert_equal %w[2026-12-01 2027-01-05 2027-04-06], css_select("time").map { |time| time["datetime"] }
-        assert_select "details", count: 0
+        assert_select "details:not([open]) > summary", text: "Spring 2027 Council election"
+        assert_select ".election-people details", count: 0
         assert_select "#seat-shannon-derby a[href=?]", member_path(member), text: member.name
         assert_select "#seat-doug-brandt a[href=?]", member_path(doug), text: "Doug Brandt"
         assert_select "#seat-mark-bittner", text: "Mark Bittner"
