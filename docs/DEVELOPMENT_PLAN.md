@@ -910,9 +910,12 @@ field is a fallback for meetings without `generation_data`.
 
 ### Committees and Members Pages
 
-`/committees` is the directory of governing bodies, and each committee page
-shows its current public roster. Member pages show the person's current
-public memberships, attendance, and voting record.
+`/committees` is the directory of governing bodies. Each body’s page introduces
+its role, offers its full description when available, and puts a compact roster
+of current members above recent topics. Boards, commissions, and other groups
+use a single column. The election sidebar belongs to the City Council.
+Member pages show the person's current public memberships, attendance, and
+voting record.
 
 Where a meeting roll call or topic Key Decisions section already displays a
 voter's name, the name links to that stored member's profile. Links use the

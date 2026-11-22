@@ -2,7 +2,7 @@
 
 Voters come with three questions. Who’s running? What are they running on? Should I vote for them? Our strongest reporting compares what the three Council members whose terms are ending promised in their last campaigns with what they did in office.
 
-**Keep the year-round page useful.** A resident who comes for current members or Council business should find both on the first screen or one obvious tap away. Link the homepage election notice to the seasonal section and each incumbent’s name to their individual profile.
+**Keep the year-round page useful.** A resident who comes for current members or Council business should find both on the first screen or one obvious tap away. On phones, place one collapsed election guide immediately above the roster. On wide screens, show it open beside the roster. Links from the homepage and member profiles open the guide directly. Each incumbent’s name links to their individual profile.
 
 ## What voters need as the election approaches
 
