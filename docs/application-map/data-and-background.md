@@ -107,9 +107,10 @@ published, an administrator can review the new agenda against its retained PDF.
 The prior vote extraction must have had an empty agenda. The receipt pins that
 extraction, the recovered agenda items and the agenda document version. Replaying
 the facts stage preserves the publication and vote IDs. An edited heading or a
-replacement PDF requires another review. The historical batch integration test
-exercises the real stage with simulated provider transport.
-
+replacement PDF requires another review. An operator repairing a specific later
+meeting can request the same review for a held meeting in the existing archive.
+The historical batch integration tests exercise both paths with simulated provider
+transport, including replay and the refusal of canceled or future later meetings.
 
 - **Start / data:** archived agenda/packet with multiple substantive items;
   later minutes containing distinct closing action and official votes/attendance;
