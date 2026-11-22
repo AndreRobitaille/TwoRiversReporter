@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_21_230200) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_21_230300) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -112,7 +112,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_230200) do
 
   create_table "campaign_action_requests", force: :cascade do |t|
     t.bigint "campaign_action_review_id", null: false
-    t.bigint "council_ai_reservation_id", null: false
+    t.bigint "council_ai_reservation_id"
     t.integer "attempt", null: false
     t.string "status", null: false
     t.jsonb "messages", null: false
@@ -128,9 +128,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_230200) do
     t.datetime "finished_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "council_history_request_id"
     t.index [ "campaign_action_review_id", "attempt" ], name: "idx_on_campaign_action_review_id_attempt_374008eb13", unique: true
     t.index [ "campaign_action_review_id" ], name: "index_campaign_action_requests_on_campaign_action_review_id"
     t.index [ "council_ai_reservation_id" ], name: "index_campaign_action_requests_on_council_ai_reservation_id", unique: true
+    t.index [ "council_history_request_id" ], name: "index_campaign_action_requests_on_council_history_request_id", unique: true
+    t.check_constraint "num_nonnulls(council_ai_reservation_id, council_history_request_id) = 1", name: "one_campaign_action_reservation"
   end
 
   create_table "campaign_action_reviews", force: :cascade do |t|
@@ -1400,6 +1403,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_230200) do
   add_foreign_key "audit_events", "users", column: "actor_id"
   add_foreign_key "campaign_action_requests", "campaign_action_reviews"
   add_foreign_key "campaign_action_requests", "council_ai_reservations"
+  add_foreign_key "campaign_action_requests", "council_history_requests"
   add_foreign_key "campaign_action_reviews", "council_ai_budget_runs"
   add_foreign_key "campaign_action_reviews", "meetings", on_delete: :nullify
   add_foreign_key "campaign_extractions", "campaign_extractions", column: "reused_from_id"

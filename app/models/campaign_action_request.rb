@@ -1,7 +1,8 @@
 class CampaignActionRequest < ApplicationRecord
   belongs_to :campaign_action_review
-  belongs_to :council_ai_reservation
-  attr_readonly :campaign_action_review_id, :attempt, :messages, :request_parameters, :started_at, :council_ai_reservation_id
+  belongs_to :council_ai_reservation, optional: true
+  belongs_to :council_history_request, optional: true
+  attr_readonly :campaign_action_review_id, :attempt, :messages, :request_parameters, :started_at, :council_ai_reservation_id, :council_history_request_id
   validates :attempt, numericality: { only_integer: true, greater_than: 0 }, uniqueness: { scope: :campaign_action_review_id }
   validates :status, inclusion: { in: %w[dispatched received uncertain] }
   validates :messages, :request_parameters, :started_at, presence: true
