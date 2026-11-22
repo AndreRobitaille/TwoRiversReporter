@@ -68,6 +68,26 @@ class SummarizeMeetingJobTest < ActiveJob::TestCase
     assert_nil summary.content
   end
 
+  test "the historical recap and linked topic finish in the same scoped pass" do
+    @meeting.meeting_documents.create!(document_type: "minutes_pdf", source_url: "https://example.test/budget.pdf",
+      extracted_text: "The Council discussed the proposed budget.")
+    ai = Minitest::Mock.new
+    ai.expect(:prepare_kb_context, "") { true }
+    ai.expect(:analyze_meeting_content, { headline: "Budget discussion", highlights: [], public_input: [], item_details: [] }.to_json) { |*, **| true }
+    ai.expect(:analyze_topic_summary, { factual_record: [] }.to_json) { true }
+    ai.expect(:render_topic_summary, "Budget discussion") { |*, **| true }
+    batch = CouncilHistory::Batch.new([])
+    Ai::OpenAiService.stub(:new, ai) do
+      assert_no_enqueued_jobs do
+        batch.repair_saved(@meeting, stages: %w[summaries])
+        assert_equal "Budget discussion", @meeting.meeting_summaries.published.sole.generation_data.fetch("headline")
+        assert_equal [ "Budget discussion" ], @meeting.reload.topic_summaries.where(topic: @topic).pluck(:content)
+        batch.repair_saved(@meeting.reload, stages: %w[summaries])
+      end
+    end
+    ai.verify
+  end
+
   test "enqueues generated image job after summary persistence when enabled" do
     @meeting.meeting_documents.create!(
       document_type: "minutes_pdf",
