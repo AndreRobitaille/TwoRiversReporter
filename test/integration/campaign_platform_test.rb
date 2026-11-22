@@ -6,7 +6,7 @@ class CampaignPlatformTest < ActionDispatch::IntegrationTest
   include ActiveSupport::Testing::ConstantStubbing
   include CampaignIssueEvidenceScenario
 
-  test "new source comparisons consolidate repeats while the archive retains every accepted statement" do
+  test "new source comparisons consolidate repeats and only retained positions enter the source list" do
     setup_member_campaign
     data = campaign_response_data
     jordan = data.fetch("participants").first
@@ -26,8 +26,9 @@ class CampaignPlatformTest < ActionDispatch::IntegrationTest
       assert_select "a[href=?]", first_source.source_url, count: 1
       assert_select "a[href=?]", @source.source_url, count: 1
     end
-    assert_select "details.member-campaign-evidence .member-campaign-card", count: 4
-    assert_select "details.member-campaign-evidence", text: /Do not delay urgent repairs/
+    assert_select "details.member-campaign-evidence .member-campaign-card", count: 2
+    assert_not_includes response.body, second.fetch("summary")
+    assert_not_includes response.body, second.fetch("conditions")
     assert_select "[data-campaign-proposal]", text: /Start with the oldest pipes/, count: 0
     SiteSetting.create!(access_mode: "gated", singleton_guard: 0)
     get member_path(@jordan)

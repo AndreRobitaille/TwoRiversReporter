@@ -1,0 +1,23 @@
+<% content_for(:title) { "#{@member.name} — Issue history" } %>
+<article class="member-article">
+  <%= render "profile_header" %>
+  <p class="member-profile-nav"><%= link_to "Back to the Council record", record_member_path(@member, term: @record_period.key) %></p>
+  <% if gated_for_visitor? %>
+    <%= render "shared/gate" %>
+  <% else %>
+    <%= gated_content do %>
+      <section id="issue-updates">
+        <h2>Issue history</h2>
+        <p>Developments on issues from this member’s record. Other officials and committees also took part.</p>
+        <% if @issue_updates.any? %>
+          <%= render partial: "issue_update", collection: @issue_updates, as: :update %>
+        <% else %>
+          <p>No issue updates on this page.</p>
+        <% end %>
+        <% if @pagy.last > 1 %>
+          <%= @pagy.series_nav(slots: 5, fragment: "issue-updates", aria_label: "Issue history pages").html_safe %>
+        <% end %>
+      </section>
+    <% end %>
+  <% end %>
+</article>

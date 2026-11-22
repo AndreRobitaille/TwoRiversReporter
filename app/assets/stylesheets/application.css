@@ -5667,6 +5667,86 @@ th.sortable-header:hover {
   margin-bottom: var(--space-8);
 }
 
+.election-profile {
+  max-width: 48rem;
+}
+
+.member-profile-office,
+.member-term-date {
+  margin: var(--space-1) 0;
+  color: var(--color-text-secondary);
+}
+
+.member-profile-contact {
+  display: block;
+  margin-top: var(--space-1);
+}
+
+.member-term-overview {
+  margin-block: var(--space-6);
+}
+
+.member-term-copy {
+  font-size: var(--font-size-lg);
+  line-height: 1.6;
+  max-width: 63ch;
+  margin: var(--space-2) 0;
+}
+
+.member-term-copy sup,
+.member-term-source,
+.member-term-sources {
+  font-size: var(--font-size-sm);
+}
+
+.member-term-sources summary {
+  cursor: pointer;
+  padding-block: var(--space-2);
+  color: var(--color-primary);
+}
+
+.member-promises { margin-top: var(--space-6); }
+
+.member-promise-list {
+  list-style: none;
+  padding: 0;
+}
+
+.member-promise-list li {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.member-promise-list h4 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+}
+
+.member-promise-citations {
+  font-size: var(--font-size-sm);
+  overflow-wrap: anywhere;
+}
+
+.member-promise-list li + li {
+  margin-top: var(--space-4);
+}
+
+.member-promise-list p {
+  margin: var(--space-1) 0;
+}
+
+.member-term-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-6);
+  border-block: 1px solid var(--color-border);
+}
+
+.member-term-links a {
+  padding-block: var(--space-3);
+  font-weight: 600;
+}
+
 /* Campaign positions stay distinct from the separate voting record. */
 .member-campaign-issue {
   border-bottom: 1px solid var(--color-border);
@@ -6005,7 +6085,7 @@ th.sortable-header:hover {
   margin-bottom: var(--space-5);
 }
 
-.member-article #voting-record {
+.member-article :is(#voting-record, #attendance, #current-committees, #profile-priorities, #issue-updates, .member-campaign-election, .member-campaign-issue[id]) {
   scroll-margin-top: calc(var(--nav-height) + var(--space-4));
 }
 

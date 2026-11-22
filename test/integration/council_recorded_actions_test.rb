@@ -147,12 +147,12 @@ class CouncilRecordedActionsTest < ActionDispatch::IntegrationTest
         "summary" => "Advocated reconsidering the library funding increase; no clear consensus was reached." }
     ] }
     assert_no_difference("Vote.count") { assert_equal "completed", extract_recorded_actions(data).status }
-    get member_path(@member)
+    get record_member_path(@member)
     assert_select "#recorded-actions [data-recorded-action=follow_up]", count: 1
     assert_select "#recorded-actions", text: /no clear consensus/
     assert_select "#recorded-actions summary", text: "Nov 24, 2025 · Source"
     assert_select "#recorded-actions blockquote", text: quote
-    assert_select "#issue-updates", count: 0
+    assert_select "#issue-updates [data-issue-update]", count: 0
   end
 
   test "reporting is allowed for readers and verified Google but hidden from gated visitors" do

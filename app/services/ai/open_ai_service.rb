@@ -29,6 +29,7 @@ module Ai
     EVALUATION_MODELS = %w[gpt-5.6-luna gpt-5.6-terra gpt-5.6-sol].freeze
     LEGACY_TEMPERATURE_UNSUPPORTED_MODELS = %w[gpt-5-mini gpt-5.4-mini].freeze
     REQUIRED_PROMPT_KEYS = %w[
+      summarize_council_term
       extract_votes
       extract_campaign_statements
       extract_committee_members
@@ -687,6 +688,27 @@ module Ai
       JSON.parse(content)
     rescue JSON::ParserError
       { "headline" => context[:current_headline], "upcoming_note" => "" }
+    end
+
+    def self.council_term_parameters(member, facts)
+      template = PromptTemplate.find_by!(key: "summarize_council_term")
+      numbered = facts.map.with_index(1) do |fact, id|
+        fact.slice(:kind, :text, :dates, :promise_words, :position, :identity).compact_blank.merge(id: id, sources: fact[:sources].pluck(:label))
+      end
+      context = { member: member.name, tracked_positions: CouncilProfiles::PromiseFollowThrough.position_groups(facts), facts: numbered }.to_json
+      messages = [ { role: "system", content: template.system_role },
+        { role: "user", content: template.interpolate(context: context) } ]
+      allowance = 700 + 100 * facts.count { |fact| fact[:promise_words].present? }
+      build_chat_parameters(model: model_for_tier(template.model_tier), messages: messages, response_format: { type: "json_object" })
+        .merge(max_completion_tokens: [ allowance, 2_800 ].min)
+    end
+
+    def summarize_council_term(member, facts, request_recorder:)
+      params = self.class.council_term_parameters(member, facts)
+      content, duration = call_api(**params, request_recorder: request_recorder)
+      record_prompt_run(template_key: "summarize_council_term", messages: params.fetch(:messages), response_content: content,
+        model: params.fetch(:model), response_format: "json_object", duration_ms: duration, source: member)
+      JSON.parse(content)
     end
 
     def generate_topic_description(topic_context, source: nil)

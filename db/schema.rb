@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_21_230300) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_23_000100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -381,6 +381,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_230300) do
     t.datetime "finished_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "provider_usage"
     t.index [ "council_ai_budget_run_id" ], name: "index_council_ai_reservations_on_council_ai_budget_run_id"
     t.index [ "request_key" ], name: "index_council_ai_reservations_on_request_key", unique: true
   end
@@ -589,6 +590,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_230300) do
     t.index [ "member_id", "period_key" ], name: "index_council_service_periods_on_member_id_and_period_key", unique: true
     t.index [ "member_id" ], name: "index_council_service_periods_on_member_id"
     t.index [ "start_source_version_id" ], name: "index_council_service_periods_on_start_source_version_id"
+  end
+
+  create_table "council_term_summaries", force: :cascade do |t|
+    t.bigint "member_id", null: false
+    t.date "term_started_on", null: false
+    t.date "attempted_cycle"
+    t.string "evidence_digest"
+    t.jsonb "sentences", default: [], null: false
+    t.jsonb "promise_assessments", default: [], null: false
+    t.datetime "generated_at"
+    t.index [ "member_id", "term_started_on" ], name: "index_council_term_summaries_on_member_id_and_term_started_on", unique: true
   end
 
   create_table "entities", force: :cascade do |t|
@@ -1455,6 +1467,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_230300) do
   add_foreign_key "council_service_periods", "meeting_document_versions", column: "end_source_version_id"
   add_foreign_key "council_service_periods", "meeting_document_versions", column: "start_source_version_id"
   add_foreign_key "council_service_periods", "members"
+  add_foreign_key "council_term_summaries", "members", on_delete: :cascade
   add_foreign_key "entity_facts", "entities"
   add_foreign_key "entity_mentions", "entities"
   add_foreign_key "entity_mentions", "meeting_documents"

@@ -1,0 +1,18 @@
+<% if params[:statement].present? && !gated_for_visitor? %>
+  <%= gated_content do %>
+    <section id="campaign-statement" class="member-article-section">
+      <% if @selected_statement %>
+        <% source = @selected_statement.campaign_source_version %>
+        <% actions = newest_campaign_actions(@campaign_actions.fetch(@selected_statement.id, []) + @campaign_issue_evidence.fetch(@selected_statement.id, [])) %>
+        <h2>From the <%= source.election_on.year %> campaign</h2>
+        <%= render "campaign_comparison", statement: @selected_statement, actions: actions, explain: true %>
+        <% if actions.empty? %>
+          <p>We haven’t linked a later council action to this statement in the records reviewed.</p>
+        <% end %>
+        <p><%= link_to source.publisher, source.source_url %><%= " · #{source.published_on.to_fs(:long)}" if source.published_on %></p>
+      <% else %>
+        <p>This campaign statement is unavailable.</p>
+      <% end %>
+    </section>
+  <% end %>
+<% end %>

@@ -1,0 +1,24 @@
+<header class="member-article-header">
+  <h1 class="member-article-title"><%= @member.name %></h1>
+  <% if @has_election_profile %>
+    <p class="member-profile-office"><%= "Current: " if @record_period.selected&.ended_on %><%= @current_position&.title || "City Council Member" %></p>
+  <% elsif @current_position %>
+    <span class="badge badge--info"><%= "Current: " if @record_period.selected&.ended_on %><%= @current_position.title %></span>
+  <% end %>
+  <% if @election_council_slug %>
+    <%= gated_content do %>
+      <p class="member-election-status">
+        <% if (official_page = @election.terms_ending[@election_name]) %>
+          Council term ends in spring <%= @election.election_on.year %>.
+          <span class="member-profile-contact">
+            <%= link_to "Election dates", committee_path(@election_council_slug, anchor: "spring-election") %>
+            · <%= link_to "Contact #{@member.name}", official_page %>
+          </span>
+        <% elsif @election.candidates.key?(@election_name) %>
+          <%= link_to "Confirmed candidate for spring #{@election.election_on.year}", @election.candidates.fetch(@election_name) %>.
+          <%= link_to "Election dates", committee_path(@election_council_slug, anchor: "spring-election") %>
+        <% end %>
+      </p>
+    <% end %>
+  <% end %>
+</header>

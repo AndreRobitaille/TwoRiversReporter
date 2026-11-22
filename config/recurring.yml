@@ -24,7 +24,8 @@ production:
   daily_meeting_discovery:
     class: Scrapers::DiscoverMeetingsJob
     queue: default
-    schedule: every day at 11pm
+    args: ["nightly"]
+    schedule: "0 23 * * * America/Chicago"
   extract_knowledge_patterns:
     class: ExtractKnowledgePatternsJob
     queue: default

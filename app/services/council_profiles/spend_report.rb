@@ -12,7 +12,7 @@ module CouncilProfiles
         CouncilIssueRequest.where(council_ai_reservation_id: ids).to_a +
         CouncilFormalRequest.where(council_ai_reservation_id: ids).to_a
       by_reservation = receipts.index_by(&:council_ai_reservation_id)
-      groups = reservations.group_by { |reservation| stage_name(by_reservation[reservation.id]) }
+      groups = reservations.group_by { |reservation| reservation.request_key.start_with?("term-summary/") ? "term_summaries" : stage_name(by_reservation[reservation.id]) }
       reserved = reservations.sum(&:reserved_microusd)
       authorization = if month.nil?
         "missing"
@@ -45,7 +45,7 @@ module CouncilProfiles
 
     def self.summarize(reservations, receipts)
       costs = reservations.filter_map do |reservation|
-        usage = receipts[reservation.id]&.usage
+        usage = receipts[reservation.id]&.usage || reservation.provider_usage
         next unless usage && %w[input_tokens output_tokens].all? { |key| usage[key].is_a?(Integer) && usage[key] >= 0 }
 
         RequestEstimate.ceiling_microusd(reservation.request_estimate.merge(

@@ -37,7 +37,7 @@ class ResidentNavigationJourneysTest < ApplicationSystemTestCase
       click_link "Spring 2027 City Council election"
       assert_selector "#spring-election a[href='#{profile}']"
       find("#spring-election a[href='#{profile}']").click
-      click_link "See the spring election"
+      click_link "Election dates"
       assert_selector "#spring-election a[href='#{profile}']"
 
       page.driver.browser.manage.window.resize_to(1280, 900)

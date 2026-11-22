@@ -98,6 +98,7 @@ class CouncilElectionTest < ActionDispatch::IntegrationTest
         get target
         assert_select ".member-election-status", text: /term ends in spring 2027/
         assert_select ".member-election-status a[href=?]", guide.terms_ending.fetch(@jordan.name)
+        get css_select(".member-term-links a").first["href"]
         assert_select "#campaign-record", text: /Require owners to live/
         statement_path = member_path(@jordan, statement: @specific.id, anchor: "campaign-statement")
         get statement_path

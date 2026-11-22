@@ -12,9 +12,14 @@ module Scrapers
       meeting_ids
     end
 
-    def perform(since: nil)
+    def perform(run = nil, since: nil)
       ReconcileCampaignSourcesJob.perform_later
-      self.class.run_inline!(since: since)
+      meetings = self.class.run_inline!(since: since)
+      cycle = (enqueued_at || Time.current).in_time_zone("America/Chicago").to_date
+      if run == "nightly" && cycle.tuesday?
+        CouncilProfiles::RefreshTermSummariesJob.perform_later(cycle.iso8601)
+      end
+      meetings
     end
 
     def discover_meeting_ids(since: nil, enqueue_parse_jobs: true)

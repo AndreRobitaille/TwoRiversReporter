@@ -13,7 +13,7 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
       name: "Public Works Committee", slug: "public-works",
       committee_type: "city", status: "active"
     )
-    @member = Member.create!(name: "Doug Brandt")
+    @member = Member.create!(name: "Bill LeClair")
     CommitteeMembership.create!(committee: @council, member: @member, source: "admin_manual")
     CommitteeMembership.create!(committee: @public_works, member: @member, source: "admin_manual")
   end

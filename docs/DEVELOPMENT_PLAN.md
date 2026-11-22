@@ -966,7 +966,15 @@ voter-forum transcripts outside the website. Source intake should extract eviden
 for all relevant members from one supplied article or prepared transcript.
 Formal-conduct coverage is limited to documented complaints and findings.
 
-Owner layout direction (November 8, 2026): the ongoing service, attendance and
+For the three seat holders featured in the current election guide, use the
+[election profile layout](ELECTION_FEATURES.md) with direct access to the full record.
+The Tuesday 11 p.m. Central discovery run checks all sitting members with a verified
+term and tracked promises. It searches Council and committee minutes and may
+synthesize changed evidence once per member within the standing Council allowance.
+Show each finding with the member's action, its material effect or the remaining
+evidence gap, and the sources. Use the documented thresholds for the overview tone.
+
+Year-round layout direction (November 8, 2026): the ongoing service, attendance and
 voting record is primary. Campaign context belongs in a secondary desktop column
 and follows the main record on phones, with a direct jump link. Additional votes
 start collapsed and remain available through a native disclosure. Keep the same
@@ -977,13 +985,12 @@ For campaign comparisons, start with the campaign sources. Show each distinct
 proposal or observable policy position that matters to residents once per election.
 Keep alternative rules separate, preserve conditions, and label priorities and
 positions in the candidate’s own degree of commitment. General aspirations and
-personal qualities belong in the source archive. Open the first position and let
+personal qualities remain in the original interviews and stay out of the resident lists. Open the first position and let
 readers expand any others independently. Each comparison links its campaign
-sources. The complete collection of accepted statements remains available below. Use a small white inset panel and side rule to separate the saved
+sources. The source disclosure contains the statements behind the retained positions. Use a small white inset panel and side rule to separate the saved
 position from its dated campaign sources; these summaries are paraphrases, not
 verbatim quotations. Keep qualifications and deadlines beside the position.
-Remove the redundant Follow this issue control. Preserve all accepted statements,
-questions and source links in the permitted HTML, with full detail on demand.
+Remove the redundant Follow this issue control. Keep the original questions and source links for those positions available on demand.
 
 **Campaign-to-action comparison boundary:** an approved topic association alone
 must not place a vote beneath a campaign position. The owner identified the
@@ -1035,7 +1042,7 @@ Keep the open panel short: at most two decision rows with a readable title,
 member vote, separate Council result and date. Put explanations, full formal
 titles, exact motions and minutes passages behind one Supporting details
 disclosure. Additional matched positions remain available in a closed disclosure;
-all campaign statements and citations remain in the source section. Readability
+the source section contains the statements and citations behind the retained positions. Readability
 changes must reuse saved evidence without another AI call.
 
 Use the independently assessed topic importance for normal ordering. A major,

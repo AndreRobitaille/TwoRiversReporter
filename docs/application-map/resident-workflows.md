@@ -64,7 +64,7 @@ with the lead window temporarily reset to 30 days reproduced both ordering
 failures. Restoring 21 days passed both tests with 12 assertions and zero skips.
 
 Follow-up on November 20 used an authorized read-only production snapshot in
-development. A temporary
+development with 612 topics, 311 meetings, and 307 topic briefings. A temporary
 `bin/rails runner -e development --skip-executor` script requested `/` through
 the development Rack stack with both lead windows and a simulated clock. Both
 windows showed the city manager search and Flock on November 20. At 6 p.m.
@@ -340,13 +340,27 @@ the same snapshot. Those future results assume the stored activity stays fixed.
 
 ## RES-10 — Inspect an official's attendance and voting record (P1)
 
+- **Election profiles (RES-09/10/11, November 22, 2026).** The guide opens a
+  saved overview with the spring term end, official contact and election dates.
+  Its two primary links open the campaign evidence and searchable votes.
+  Meeting and topic roll calls carry the specific member decision into the profile.
+  A direct minutes link uses a resolved retained passage when available or the
+  unambiguous whole minutes for an older vote. The campaign and issue archives
+  load separately. The first page shows a brief campaign excerpt until the
+  first usable summary is saved. The [election guidance](../ELECTION_FEATURES.md)
+  defines coverage and tone. The [weekly job checks](../../test/integration/council_term_summary_test.rb)
+  cover the persisted summary, spending, thin evidence, thresholds, sources and gated access.
+  The November 22 development run used the three actual members and retained three provider responses. Revalidating those responses against the reviewed positions required no additional request. One of Derby’s sentences cited an excluded remark and was replaced with the sourced opening from her existing platform.
+  A development HTTP check compared all three campaign lists with the original review, checked their vote searches and sampled their excluded statement URLs. The pages retained 11, 10 and 10 positions and omitted 30, 19 and 26 unselected source statements respectively. Chromium opened the count on each profile at 390 pixels. An unchanged Tuesday check across all three issued zero additional requests.
+  The subsequent [meeting-record audit](council-promise-record-audit-2026-11-22.md) checked 22 unresolved findings and corrected two housing assessments. The profile now shows each assessment, explanation and citations directly in the page. Evidence search and weekly eligibility apply to sitting members beyond the current election guide.
+
 - **November 21 campaign consolidation (BG-08 → RES-09/10/11).** The election
   guide and member sidebar use the same positions for each election. The
   [2024 source review](../../config/campaign_platform_2024.yml) groups repeated
   proposals before looking at council activity. Sources without current review
   keep their original issue or statement display. Qualifying new extractions
-  can supply comparison headings during normal intake. All accepted source
-  statements remain available to permitted readers.
+  can supply comparison headings during normal intake. The original interviews remain available at their sources. The site displays
+  statements behind the retained positions.
 - On the local preview based on `97cf231d`, a 1440 × 1000 desktop browser
   followed the citywide race to all three profiles. Bittner’s committee appeared
   once with both forums. Brandt’s two rental alternatives were distinct, and

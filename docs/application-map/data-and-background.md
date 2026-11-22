@@ -412,6 +412,8 @@ provider diagnostics; permanent HTTP rejections bypass transient retries. See
 
 ## BG-08 — Extract a shared campaign source within a spending allowance (P1)
 
+- The [Tuesday discovery follow-up](../../app/jobs/council_profiles/refresh_term_summaries_job.rb) waits for incoming evidence jobs, then checks sitting Council members with a verified term and tracked campaign positions. The [minutes search](../../app/services/council_profiles/promise_minutes.rb) selects dated passages across Council and committee meetings for each position. The standing Council ledger reserves at most one request per member per cycle. That request produces sourced sentences and promise assessments. The site computes the percentage and tone. An uncertain call retains its reservation. A missing or exhausted allowance leaves the sourced fallback or a still-supported earlier overview available. [Job and resident checks](../../test/integration/council_term_summary_test.rb).
+
 - Campaign intake also carries a comparison heading for a concrete council
   position or a null heading for source-only material. The resident projection
   groups repeat headings within the same election while keeping distinct
@@ -608,7 +610,7 @@ scheduler zone/timing and worker liveness still need verification.
 | Crawler IP refresh | Every hour at minute 7 | Verified full-reporting access or fail-closed teaser |
 | Clear finished Solid Queue jobs | Every hour at minute 12 | Queue history retention; not source/content deletion |
 | Topic description refresh | Monday at 3am | Eligible stale generated description; manual text remains protected |
-| Meeting discovery | Every day at 11pm | New meetings/document links and downstream processing |
+| Meeting discovery | Every day at 11 p.m. America/Chicago | New meeting documents and downstream processing. Tuesday also checks sitting members’ tracked campaign promises for material changes. |
 | Knowledge pattern extraction | Monday at 3:30am | New proposed/reviewable background context |
 | Homepage topic image refresh | Every 6 hours | Eligible illustrative assets for current topic selection |
 | Expired auth cleanup | Every day at 4am | Expired records/context/throttle retention cleanup |

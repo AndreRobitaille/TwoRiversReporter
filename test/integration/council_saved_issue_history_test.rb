@@ -60,6 +60,32 @@ class CouncilSavedIssueHistoryTest < ActionDispatch::IntegrationTest
     assert_not_includes response.body, "construction has not begun"
   end
 
+  test "the separate issue history keeps all updates across pages and checks access on each page" do
+    data = @summary.generation_data.deep_dup
+    25.times do |n|
+      item = @update_meeting.agenda_items.create!(title: "Park project #{n}", number: "6.#{n}")
+      item.topics << @topic
+      data.fetch("item_details") << data.fetch("item_details").first.merge(
+        "agenda_item_id" => item.id, "agenda_item_title" => item.title, "summary" => "Update for park project #{n}.")
+    end
+    @summary.update!(generation_data: data)
+    get issues_member_path(@member, term: @period.period_key)
+    assert_select "[data-issue-update]", count: 25
+    seen = css_select("[data-issue-update] > p").map(&:text)
+    next_page = css_select('a[rel="next"]').first["href"]
+    get next_page
+    assert_select "[data-issue-update]", count: 1
+    seen += css_select("[data-issue-update] > p").map(&:text)
+    assert_equal data.fetch("item_details").pluck("summary").sort, seen.sort
+    assert_select "a[href=?]", @document.source_url
+    SiteSetting.instance.update!(access_mode: "gated")
+    get next_page
+    assert_select ".gate-card"
+    assert_select "[data-issue-update]", count: 0
+    assert_not_includes response.body, seen.last
+    assert_equal "private, no-store", response.headers["Cache-Control"]
+  end
+
   test "older published recaps keep their meeting link without inventing a page citation" do
     data = summary_data("The renovation is awaiting funding.").except("source_catalog")
     data.fetch("item_details").first["citations"] = [ "Page 3" ]
