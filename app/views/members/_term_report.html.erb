@@ -95,17 +95,18 @@
     <% CouncilProfiles::PromiseFollowThrough::LABELS.each do |status, label| %>
       <% group = groups[status] %>
       <% next unless group %>
+      <% points = { "met" => "1 point", "contrary" => "−1 point" }.fetch(status, "0 points") %>
       <section class="promise-group" data-status="<%= status %>">
         <h4 class="outcome-heading">
           <span class="outcome-count"><%= group.size %></span>
           <span class="outcome-label"><%= %w[met missed].include?(status) ? label.pluralize(group.size) : label %></span>
-          <span class="outcome-marks" aria-hidden="true"><% group.size.times do %><i></i><% end %></span>
+          <span class="outcome-points"><%= points %><%= " each" if group.many? && %w[met contrary].include?(status) %></span>
         </h4>
         <ul class="member-promise-list">
           <% group.each do |item, index| %>
             <li><details id="promise-<%= index + 1 %>" class="promise-finding">
               <summary>
-                <span class="linked-finding-status"><%= label %> · <%= { "met" => "1 point", "contrary" => "−1 point" }.fetch(status, "0 points") %></span>
+                <span class="linked-finding-status"><%= label %> · <%= points %></span>
                 <span class="promise-title"><%= item["profile_subject"] || item["heading"].presence || item.fetch("label") %></span>
                 <% if item["roll_call"] %>
                   <%= render "roll_call", vote: item.fetch("roll_call") %>
@@ -151,7 +152,7 @@
       <dl>
         <dt>One point</dt><dd>The member delivered or materially advanced what they proposed. A vote on the same issue earns credit only if it advanced that goal. Bringing a measure to a vote can fulfill a promise to introduce it.</dd>
         <dt>Minus one point</dt><dd>The member took a documented action against that campaign position. Each position can lose one point.</dd>
-        <dt>Zero points</dt><dd>An unsuccessful attempt earns zero toward a promised outcome. A missed opportunity is a failure to act at a specific opening documented in the record. An evidence gap also earns zero.</dd>
+        <dt>Zero points</dt><dd>A promise with no documented result counts as unfulfilled and earns zero. All such promises count in the score. An unsuccessful effort also earns zero toward a promised outcome. A missed opportunity means the records show a specific chance to act.</dd>
         <% if pace.rating %>
           <dt>Term pace</dt><dd>We compare the net score with the share of the term elapsed. Green meets an even pace, amber trails by up to 10 percentage points, and red trails by more. At term end, any outstanding promise leaves the record short. Individual projects can have different deadlines.</dd>
         <% end %>

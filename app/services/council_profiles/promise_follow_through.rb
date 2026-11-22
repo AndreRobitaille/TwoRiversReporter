@@ -2,7 +2,7 @@ module CouncilProfiles
   class PromiseFollowThrough
     LABELS = {
       "contrary" => "Acted against the position", "met" => "Documented result", "pursued" => "Acted, result unconfirmed", "blocked" => "Acted and was outvoted",
-      "missed" => "Missed opportunity", "fell_short" => "Fell short", "unresolved" => "Insufficient evidence"
+      "missed" => "Missed opportunity", "fell_short" => "Fell short", "unresolved" => "Unfulfilled in the public record"
     }.freeze
 
     MATERIAL_EFFECTS = %w[binding_decision committed_resources operating_program documented_result].freeze
