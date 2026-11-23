@@ -6,7 +6,7 @@ module CouncilProfiles
     }.freeze
 
     POINTS = {
-      "met" => 1, "contrary" => -1, "missed" => -0.5, "unresolved" => -0.5,
+      "met" => 1, "contrary" => -2.5, "missed" => -0.5, "unresolved" => -0.5,
       "fell_short" => -0.5, "pursued" => 0, "blocked" => 0
     }.freeze
 
@@ -168,6 +168,10 @@ module CouncilProfiles
 
     def percentage
       (100.0 * net_points / total).round if total.positive?
+    end
+
+    def meter_max
+      net_points.negative? ? (100 * POINTS.values.min.abs).to_i : 100
     end
 
     def lead

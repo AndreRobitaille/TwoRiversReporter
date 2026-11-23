@@ -248,7 +248,7 @@ class CouncilTermSummaryTest < ActionDispatch::IntegrationTest
     assert_select ".promise-meter[data-negative=true] .member-term-score", text: /-50%/
     assert_select ".score-deductions a[href='#promise-1']", text: /−0.5.*Unfulfilled.*Form a council growth committee/
     assert_select ".term-digest a", count: 0
-    assert_select "meter[min='0'][max='100'][value='50']"
+    assert_select "meter[min='0'][max='250'][value='50']"
     assert_select "#promise-index section.promise-group[data-status=unresolved]" do
       assert_select "h4 .outcome-count", "1"
       assert_select "h4 .outcome-label", "Unfulfilled in the public record"
@@ -338,21 +338,38 @@ class CouncilTermSummaryTest < ActionDispatch::IntegrationTest
     assert_nil CouncilProfiles::PromiseFollowThrough.new([]).percentage
   end
 
-  test "each position gets one weight and half-point deductions can take the net below zero" do
+  test "a published reversal shows the full negative score and links the deduction to the finding" do
+    with_campaign_transport(content: @result) { refresh }
+    report = CouncilTermSummary.sole
+    finding = report.promise_assessments.sole.merge("status" => "contrary", "label" => "Acted against the position",
+      "reason" => "Bittner voted to dissolve the growth committee he proposed.")
+    report.update!(promise_assessments: [ finding ])
+
+    get member_path(@bittner)
+    assert_select ".member-term-score", text: /-250% promise score/
+    assert_select ".promise-meter[data-negative=true] meter[min='0'][max='250'][value='250'][aria-valuetext='-250%']"
+    assert_select ".score-lead", text: /0 points for results − 2.5 in deductions = −2.5 of 1 point/
+    assert_select ".score-deductions a[href='#promise-1']", text: /−2.5.*Reversal/
+    assert_select ".promise-group[data-status=contrary] .outcome-points", "−2.5 points"
+    assert_select "#promise-1 .promise-reason", finding.fetch("reason")
+    assert_select ".promise-method dt", "−2.5 points"
+  end
+
+  test "each position gets one weight and a reversal costs two and a half points" do
     score = ->(*statuses) { CouncilProfiles::PromiseFollowThrough.new(statuses.map { |status| { "status" => status } }) }
     record = score.call(*%w[met met met met met contrary missed pursued unresolved])
-    assert_equal 33, record.percentage
-    assert_equal 3, record.net_points
+    assert_equal 17, record.percentage
+    assert_equal 1.5, record.net_points
     %w[missed unresolved fell_short].each do |status|
       assert_equal(-50, score.call(status).percentage, status)
     end
     assert_equal 0, score.call("blocked", "pursued").net_points
     assert_equal 13, score.call("met", "missed", "blocked", "pursued").percentage
-    assert_equal(-75, score.call("contrary", "unresolved").percentage)
-    assert_equal(-100, score.call("contrary").percentage)
+    assert_equal(-150, score.call("contrary", "unresolved").percentage)
+    assert_equal(-250, score.call("contrary").percentage)
     assert_nil score.call.percentage
     start = Date.new(2026, 1, 1)
-    assert_equal "red", CouncilProfiles::PromisePace.new(record, started_on: start, ends_on: start + 100, as_of: start + 50).rating
+    assert_equal "red", CouncilProfiles::PromisePace.new(record, started_on: start, ends_on: start + 100, as_of: start + 30).rating
   end
 
   test "the weekly assessment must consider a directly opposing vote even if an older review credited the promise" do

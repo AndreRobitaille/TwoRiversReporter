@@ -13,7 +13,7 @@
     <% if pace.rating %><h3 class="pace-label"><%= pace.label %></h3><% end %>
     <div class="promise-meter" data-negative="<%= score.net_points.negative? %>">
       <span class="member-term-score"><strong><%= score.percentage %>%</strong> promise score</span>
-      <meter min="0" max="100" value="<%= score.percentage.abs %>" aria-label="<%= score.net_points.negative? ? "Net percentage below zero" : "Net promise score" %>"><%= score.percentage.abs %>%</meter>
+      <meter min="0" max="<%= score.meter_max %>" value="<%= score.percentage.abs %>" aria-valuetext="<%= score.percentage %>%" aria-label="<%= score.net_points.negative? ? "Net percentage below zero" : "Net promise score" %>"><%= score.percentage.abs %>%</meter>
     </div>
     <% if pace.rating %>
       <div class="promise-meter term-clock">
@@ -152,7 +152,7 @@
       <summary>How we score the record</summary>
       <dl>
         <dt>One point</dt><dd>The member delivered or materially advanced what they proposed. A vote on the same issue earns credit only if it advanced that goal. Bringing a measure to a vote can fulfill a promise to introduce it.</dd>
-        <dt>Minus one point</dt><dd>The member took a documented action against that campaign position. Each position can lose one point.</dd>
+        <dt><%= CouncilProfiles::PromiseFollowThrough.point_label("contrary") %></dt><dd>The member took a documented action that materially opposed their campaign position.</dd>
         <dt>Minus half a point</dt><dd>The member missed a recorded chance to act, the original effort fell short, or the public record shows no follow-through on the promise.</dd>
         <dt>Zero points</dt><dd>The member took a documented step and the outcome is still open, or made an effort that was outvoted.</dd>
         <% if pace.rating %>
