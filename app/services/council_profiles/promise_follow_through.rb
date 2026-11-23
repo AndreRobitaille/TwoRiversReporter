@@ -5,6 +5,11 @@ module CouncilProfiles
       "missed" => "Missed opportunity", "fell_short" => "Fell short", "unresolved" => "Unfulfilled in the public record"
     }.freeze
 
+    POINTS = {
+      "met" => 1, "contrary" => -1, "missed" => -0.5, "unresolved" => -0.5,
+      "fell_short" => -0.5, "pursued" => 0, "blocked" => 0
+    }.freeze
+
     MATERIAL_EFFECTS = %w[binding_decision committed_resources operating_program documented_result].freeze
 
     def self.from_response(result, evidence, member)
@@ -143,16 +148,22 @@ module CouncilProfiles
         .group_by { |i| facts[i].fetch(:promise_words) }.values.map { |indexes| indexes.map(&:succ) }
     end
 
-    attr_reader :met, :contrary, :total
+    attr_reader :met, :contrary, :total, :net_points
 
     def initialize(assessments)
       @total = assessments.size
       @contrary = assessments.count { |row| row.fetch("status") == "contrary" }
       @met = assessments.count { |row| row.fetch("status") == "met" }
+      @net_points = assessments.sum { |row| POINTS.fetch(row.fetch("status")) }
     end
 
-    def net_points
-      met - contrary
+    def self.point_label(status)
+      points = POINTS.fetch(status)
+      "#{format_points(points)} #{'point'.pluralize(points.abs)}"
+    end
+
+    def self.format_points(points)
+      (points == points.to_i ? points.to_i : points).to_s.tr("-", "−")
     end
 
     def percentage
@@ -161,8 +172,10 @@ module CouncilProfiles
 
     def lead
       return if total.zero?
-      return "#{met} #{'result'.pluralize(met)} − #{contrary} #{'reversal'.pluralize(contrary)} = #{net_points} of #{total} points." if contrary.positive?
-      "Results on #{met} of #{total} campaign #{'position'.pluralize(total)}."
+      deductions = met - net_points
+      return "Results on #{met} of #{total} campaign #{'position'.pluralize(total)}." if deductions.zero?
+
+      "#{met} #{'point'.pluralize(met)} for results − #{self.class.format_points(deductions)} in deductions = #{self.class.format_points(net_points)} of #{total} #{'point'.pluralize(total)}."
     end
   end
 end

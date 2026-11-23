@@ -243,15 +243,16 @@ class CouncilTermSummaryTest < ActionDispatch::IntegrationTest
     assert_equal 1, @calls.size
     assert_not_includes @calls.sole.fetch(:messages).last.fetch(:content), @excluded.data.fetch("summary")
     get member_path(@bittner)
-    assert_select ".score-lead", text: /Results on 0 of 1 campaign position/
+    assert_select ".score-lead", text: /0 points for results − 0.5 in deductions = −0.5 of 1 point/
     assert_select ".promise-report[data-pace=red] .term-clock", text: /87% of term elapsed/
-    assert_select ".member-term-score", text: /0%/
+    assert_select ".promise-meter[data-negative=true] .member-term-score", text: /-50%/
+    assert_select ".score-deductions a[href='#promise-1']", text: /−0.5.*Unfulfilled.*Form a council growth committee/
     assert_select ".term-digest a", count: 0
-    assert_select "meter[min='0'][max='100'][value='0']"
+    assert_select "meter[min='0'][max='100'][value='50']"
     assert_select "#promise-index section.promise-group[data-status=unresolved]" do
       assert_select "h4 .outcome-count", "1"
       assert_select "h4 .outcome-label", "Unfulfilled in the public record"
-      assert_select "h4 .outcome-points", "0 points"
+      assert_select "h4 .outcome-points", "−0.5 points"
       assert_select "details#promise-1:not([open])" do
         assert_select "summary .promise-title", text: "Form a council growth committee"
         assert_select "summary .promise-excerpt", text: /no action to form the proposed committee/
@@ -264,7 +265,7 @@ class CouncilTermSummaryTest < ActionDispatch::IntegrationTest
     assert_equal 1, CouncilTermSummary.sole.promise_assessments.size
     SiteSetting.instance.update!(access_mode: "gated")
     get member_path(@bittner)
-    assert_not_includes response.body, "Results on 0 of 1 campaign position"
+    assert_not_includes response.body, "0 points for results − 0.5 in deductions = −0.5 of 1 point"
     assert_select ".term-clock", count: 0
     assert_not_includes response.body, @specific.data.fetch("supporting_quote")
     assert_select ".gate-card"
@@ -324,9 +325,9 @@ class CouncilTermSummaryTest < ActionDispatch::IntegrationTest
     finish = Date.new(2027, 4, 20)
     pace = ->(as_of) { CouncilProfiles::PromisePace.new(result, started_on: start, ends_on: finish, as_of: as_of) }
 
-    assert_equal 40, result.percentage
-    assert_equal "green", pace.call(start + 400).rating
-    assert_equal "amber", pace.call(start + 530).rating
+    assert_equal 20, result.percentage
+    assert_equal "green", pace.call(start + 200).rating
+    assert_equal "amber", pace.call(start + 300).rating
     late = pace.call(Date.new(2026, 11, 22))
     assert_equal 86, late.elapsed_percent
     assert_equal 149, late.days_left
@@ -337,15 +338,21 @@ class CouncilTermSummaryTest < ActionDispatch::IntegrationTest
     assert_nil CouncilProfiles::PromiseFollowThrough.new([]).percentage
   end
 
-  test "one reversal costs a full point even below zero and changes term pace" do
+  test "each position gets one weight and half-point deductions can take the net below zero" do
     score = ->(*statuses) { CouncilProfiles::PromiseFollowThrough.new(statuses.map { |status| { "status" => status } }) }
     record = score.call(*%w[met met met met met contrary missed pursued unresolved])
-    assert_equal 44, record.percentage
-    assert_equal 4, record.net_points
+    assert_equal 33, record.percentage
+    assert_equal 3, record.net_points
+    %w[missed unresolved fell_short].each do |status|
+      assert_equal(-50, score.call(status).percentage, status)
+    end
+    assert_equal 0, score.call("blocked", "pursued").net_points
+    assert_equal 13, score.call("met", "missed", "blocked", "pursued").percentage
+    assert_equal(-75, score.call("contrary", "unresolved").percentage)
     assert_equal(-100, score.call("contrary").percentage)
     assert_nil score.call.percentage
     start = Date.new(2026, 1, 1)
-    assert_equal "amber", CouncilProfiles::PromisePace.new(record, started_on: start, ends_on: start + 100, as_of: start + 50).rating
+    assert_equal "red", CouncilProfiles::PromisePace.new(record, started_on: start, ends_on: start + 100, as_of: start + 50).rating
   end
 
   test "the weekly assessment must consider a directly opposing vote even if an older review credited the promise" do
