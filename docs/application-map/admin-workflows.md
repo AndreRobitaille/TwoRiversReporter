@@ -412,6 +412,7 @@ saved forum can be reopened for correction.
 **Find HTR questionnaire** queues the seasonal discovery job for the selected
 year. A discovered article opens in the existing questionnaire reader. If
 automatic intake needs help, the editor can supply the Council answers there.
+**Find voter forums** queues a search for that election’s City notices and recordings. The desk offers **Label speakers** once a transcript is ready and **Upload captions** if preparation needs an editor.
 [Historical backfill workflow and checks](election-backfill-2026-11-27.md)
 
 The [forum quotation recovery command](campaign-forum-quote-recovery-2026-11-08.md)

@@ -14,7 +14,8 @@ module Campaigns
       return unless date
 
       discoveries = ElectionArticleLead.where(election_on: date).order(:id).to_a
-      return historical if discoveries.empty?
+      forums = ElectionForum.where(election_on: date).order(:held_on, :id).to_a
+      return historical if discoveries.empty? && forums.empty?
 
       edition = historical || { "election_on" => date.iso8601,
         "candidates" => ResidentContent::CouncilElection.for_year(year).candidates.keys, "sources" => {} }
@@ -23,7 +24,14 @@ module Campaigns
         next if sources.values.any? { |s| [ s["url"], s["original_url"] ].include?(discovery.source_url) }
         sources["article_#{discovery.id}"] = discovery.questionnaire
       end
-      edition.merge("sources" => sources)
+      listed_keys = sources.keys.index_by { |key| sources.fetch(key).fetch("url") }
+      forums.each do |forum|
+        forum.recording_leads.each do |key, lead|
+          source_key = listed_keys.fetch(lead.fetch("url"), key)
+          sources[source_key] = lead.merge(sources.fetch(source_key, {}))
+        end
+      end
+      edition.merge("sources" => sources, "announced_forums" => forums.select { |forum| forum.recordings.empty? })
     end
 
     def self.import_questionnaire!(edition, lead, html)

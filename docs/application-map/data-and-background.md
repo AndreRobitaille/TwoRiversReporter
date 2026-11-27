@@ -412,6 +412,7 @@ provider diagnostics; permanent HTTP rejections bypass transient retries. See
 
 ## BG-08 — Extract a shared campaign source within a spending allowance (P1)
 
+- The forum watcher queues caption preparation for matched City recordings. An editor verifies speaker labels before a forum enters campaign intake. [Forum discovery and replay](election-backfill-2026-11-27.md#queued-forum-discovery)
 - The [HTR discovery job](../../app/jobs/discover_htr_questionnaires_job.rb) feeds the same source intake from the seasonal schedule or an admin backfill request. A saved article follows the existing extraction authorization. A link awaiting an editor’s copy stays in Elections. [Queue and reader verification](election-backfill-2026-11-27.md#queued-htr-discovery)
 - The [Tuesday discovery follow-up](../../app/jobs/council_profiles/refresh_term_summaries_job.rb) waits for incoming evidence jobs, then checks sitting Council members with a verified term and tracked campaign positions. The [minutes search](../../app/services/council_profiles/promise_minutes.rb) selects dated passages across Council and committee meetings for each position. The standing Council ledger reserves at most one request per member per cycle. That request produces sourced sentences and promise assessments. The site computes the percentage and tone. An uncertain call retains its reservation. A missing or exhausted allowance leaves the sourced fallback or a still-supported earlier overview available. [Job and resident checks](../../test/integration/council_term_summary_test.rb).
 

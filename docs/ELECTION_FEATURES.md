@@ -66,6 +66,8 @@ Election Day. Running **Find HTR questionnaire** in an earlier edition uses
 the same job. A publisher restriction or an unfamiliar article layout leaves
 the article on the editor’s desk for a permitted copy.
 
+The forum watcher checks imported Council agendas and minutes each morning from February 1 through Election Day. It matches named League of Women Voters and Two Rivers Business Association events to broadcasts on the City’s YouTube channel. **Find voter forums** runs the same search for the selected election. The editor steps in when a recording needs captions or the transcript is ready for speaker labels.
+
 | When | Work to automate | When a person is needed |
 | --- | --- | --- |
 | November 1 | Identify the three regular terms ending next spring. Recover questionnaires and forums from their previous campaigns and feature their records on the Council guide and profiles. Keep campaign records visible year-round. | Resolve a vacancy or appointment against the Clerk’s notice. |

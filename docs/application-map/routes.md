@@ -23,6 +23,7 @@ Current reconciliation: PR #181 removes the ten unsupported dispatch rows and du
 | Verb | Path | Operator action |
 | --- | --- | --- |
 | GET | `/admin/elections` | Choose an election, source or recording |
+| POST | `/admin/elections/:year/find_forums` | Queue the forum search and transcript preparation for the selected election |
 | POST | `/admin/elections/:year/find_htr` | Queue the HTR questionnaire search for the selected spring election |
 | GET | `/admin/campaign_forum/desk` | Label a forum or reopen a saved speaker project |
 | GET | `/admin/campaign_forum/desk.json?source_id=ID` | Load the retained project for a forum correction |

@@ -4,11 +4,13 @@
 
 The HTR discovery job is configured for 7:15 a.m. Central each day from March 1 through the scheduled spring election. In **Admin → Elections**, **Find HTR questionnaire** queues the same job for the selected year. It looks up publisher links, saves Council answers when the reader can identify them, and leaves **Add Council answers** on the desk when it needs an editor’s copy. Repeating the job preserves saved answers and corrections. The March 2025 questionnaire exercises this path with five Council candidates and two explicit nonresponses in an article that also covers school board. [Campaign intake and review, #328](https://github.com/AndreRobitaille/TwoRiversReporter/issues/328)
 
-## What to build next
+## Watching for voter forums
 
-Start watching for forums in February. The City had already announced the March 6 and March 18 forums by February 17, 2025. [City Manager’s report](https://www.two-rivers.org/sites/default/files/fileattachments/city_manager/page/8434/city_managers_report_2-17-2025.pdf)
+The forum watcher starts February 1. The City’s February 17, 2025 agenda already named both March forums. In **Admin → Elections**, **Find voter forums** runs the same job for the selected year. A City notice stays under **Done and waiting** until the watcher finds the recording. Once captions are ready, **Label speakers** opens the transcript beside its time-linked recording. [February Council agenda](https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Agenda-fee71fed0ac4495b883128fa9e46cb01.pdf)
 
-Queue discovery and transcript preparation for voter forums. Start with the March 6, 2025 League of Women Voters forum. Have the job find the event and recording, fetch captions or transcribe the audio, then open the transcript in the existing speaker desk. An admin can listen at a timestamp, identify who spoke and leave uncertain passages unlabeled. The five caption files for three 2025–26 events under `storage/election-captions` give us real examples for testing. Once the workflow works, admins can use it for other years. [Forum discovery and speaker review, #337](https://github.com/AndreRobitaille/TwoRiversReporter/issues/337)
+The first local run found the March 6 League forum and all three parts of the March 18 Business Association forum. It reused the prepared transcripts. A separate download of the March 6 captions matched the saved copy. The watcher currently recognizes named League and Business Association Council notices in imported City agendas and minutes. The March 2026 notice names neither organizer. Its joint forum is already available through the historical catalog.
+
+The next editorial check is to listen to one March 6 question and answer, save the speakers an admin can identify, and reopen those passages at their timestamps. Leave uncertain speech unlabeled. [Forum discovery and speaker review, #337](https://github.com/AndreRobitaille/TwoRiversReporter/issues/337)
 
 ## Spring 2027 candidate list
 

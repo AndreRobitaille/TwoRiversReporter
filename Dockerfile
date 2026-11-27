@@ -22,7 +22,7 @@ WORKDIR /rails
 
 # Install base packages
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y curl libjemalloc2 libvips nodejs postgresql-client poppler-utils tesseract-ocr unzip && \
+    apt-get install --no-install-recommends -y curl libjemalloc2 libvips nodejs postgresql-client poppler-utils python3 tesseract-ocr unzip && \
     curl --fail --show-error --location "https://github.com/denoland/deno/releases/download/v${DENO_VERSION}/deno-x86_64-unknown-linux-gnu.zip" -o /tmp/deno.zip && \
     echo "${DENO_SHA256}  /tmp/deno.zip" | sha256sum --check --strict && \
     unzip -q /tmp/deno.zip -d /usr/local/bin && \

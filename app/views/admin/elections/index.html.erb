@@ -81,6 +81,13 @@
           <p><%= link_to "City Clerk election information", clerk_url, target: "_blank", rel: "noopener" %></p>
         </div>
       <% end %>
+      <% @workspace.edition.fetch("announced_forums", []).each do |forum| %>
+        <div class="election-panel-row">
+          <p class="election-task-status">Watching for the recording</p>
+          <h3><%= forum.organizer %> forum · <%= forum.held_on.strftime("%B %-d") %></h3>
+          <%= link_to "City announcement", forum.announcement_url %>
+        </div>
+      <% end %>
       <% if prior %>
         <div class="election-panel-row">
           <p class="election-task-status">Prior campaign evidence</p>
@@ -110,6 +117,7 @@
   <footer class="election-source-tools">
     <h2>Other source tools</h2>
     <% if filing_edition || @workspace.edition.present? %>
+      <%= button_to "Find voter forums", admin_election_find_forums_path(year: year), class: "election-action" %>
       <%= button_to "Find HTR questionnaire", admin_election_find_htr_path(year: year), class: "election-action" %>
     <% end %>
     <nav aria-label="Other source tools">

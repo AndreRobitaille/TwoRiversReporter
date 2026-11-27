@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Prepare a recording for the admin speaker desk on the operator's workstation."""
 import argparse
+import importlib.util
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import tempfile
 
@@ -34,6 +36,8 @@ with tempfile.TemporaryDirectory(dir=directory) as temp:
             os.replace(captions, destination)
             print(destination)
             raise SystemExit(0)
+        if not shutil.which("ffmpeg") or importlib.util.find_spec("faster_whisper") is None:
+            parser.exit(1, "Local transcription needs ffmpeg and faster-whisper. A local SRT or VTT can be opened in the speaker desk.\n")
         subprocess.run(command + ["-f", "bestaudio/best", url], check=False)
         media = next((f for f in work.glob("forum.*") if f.suffix in (".m4a", ".webm", ".mp4", ".opus")), None)
     if media is None or not media.is_file():

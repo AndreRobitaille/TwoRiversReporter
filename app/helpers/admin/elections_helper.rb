@@ -10,6 +10,10 @@ module Admin::ElectionsHelper
           path: new_admin_campaign_source_path(year: workspace.year, lead: key), attention: true }
       else
         ready = Campaigns::ElectionBackfill.caption_path(lead)
+        if !ready && lead["preparing_captions"]
+          next { title: lead.fetch("short_title"), status: "Preparing captions", action: "Watch recording",
+            path: lead.fetch("url"), attention: false }
+        end
         { title: lead.fetch("short_title"), status: ready ? "Captions ready · Speakers needed" : "Caption file needed",
           action: ready ? "Label speakers" : "Upload captions", path: desk_admin_campaign_forum_path(year: workspace.year, lead: key),
           source_url: lead.fetch("url"), attention: true }

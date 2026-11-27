@@ -53,6 +53,18 @@ The integration test uses simulated publisher responses to exercise an uncatalog
 
 The focused Rails run covered discovery, election backfill, source intake, candidate lists and route dispatch (24 tests, 635 assertions). The four Chromium election backfill journeys passed 153 assertions, and the separate live worker journey passed 27. All ran on Ruby 4.0.9 with no skips. RuboCop and `git diff --check` passed. The production schedule takes effect on deployment.
 
+### Queued forum discovery
+
+**Find voter forums** queues the same job used by the 7:30 a.m. Central routine from February 1 through Election Day. With a local worker running, the console equivalent is `bin/rails runner 'DiscoverElectionForumsJob.perform_later(2025)'`. Discovery reads the existing City Council agenda and minutes collection, saves the named event with its City announcement and looks for the organizer’s completed broadcasts on the City channel. It matches the broadcast start to the announced date in Central time and orders multiple recordings by start time.
+
+The caption job reuses prepared files and skips forums with saved labels. It tries English subtitles, then local audio transcription on workers with ffmpeg and faster-whisper installed. The app image includes the subtitle downloader. A failed attempt exposes **Upload captions** on the year’s election desk. A subsequent search can pick up captions that became available later.
+
+Discovery currently covers named League and Business Association notices in City documents. The 2026 City notice describes a candidates forum without naming an organizer. The historical catalog already supplies that recording.
+
+On the November 27 working tree based on `e3c23402`, Chromium queued the search from the 2025 desk in an isolated PostgreSQL database containing the real February 17 agenda. A Solid Queue worker found the March 6 recording and all three March 18 recordings on the live channel. The desk opened the League transcript and linked to the recording at its starting timestamp. In an empty captions directory the downloader retrieved 3,757 timestamped cues with the same SHA-256 as the retained file. Speaker identity and audio transcription were outside this run.
+
+The focused Rails run passed 26 tests and 675 assertions. It exercised an uncataloged election, the February schedule, a failed caption retrieval and recovery, the speaker desk and replay. A process-local fault treating a UTC broadcast time as a local clock reading caused the caption-job assertion to fail. The unmodified run passed. The separate live Chromium and worker journey passed 28 assertions. RuboCop and the diff check passed.
+
 ### Preparing cataloged terms and recordings
 
 Run each of these once after a fresh development sync, or rerun to fill gaps.
