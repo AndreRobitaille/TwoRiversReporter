@@ -229,6 +229,82 @@ class CouncilTermSummaryTest < ActionDispatch::IntegrationTest
     assert_select "details .promise-group", count: 0
   end
 
+  test "a reviewed forum answer is readable independently of promises and follows the current speaker attribution" do
+    with_campaign_transport(content: @result) { refresh }
+    segments = JSON.parse(file_fixture("council_business_forum_exchanges_2024.json").read)
+      .select { |segment| [ 2_887_000, 2_916_630 ].include?(segment.fetch("start_ms")) }
+    @source.update!(coverage: "full_transcript", body: segments.pluck("text").join("\n"),
+      prepared_transcript: { "segments" => segments })
+    clip = "#{@source.source_url}&t=2887s"
+    get member_path(@bittner)
+    assert_select ".profile-reading-layout > #campaign-record + .council-work + #promise-index + #campaign-answers h2", "Did Bittner Answer?"
+    assert_select "#campaign-answers .campaign-answer", count: 1 do
+      assert_select ".campaign-answer-label", "Evasive answer"
+      assert_select "a[href=?]", clip
+      assert_select "a[href=?]", "#{@source.source_url}&t=2916s", text: "Answer at 48:36"
+      assert_select "details.campaign-answer-captions", text: /#{Regexp.escape(segments.last.fetch("text"))}/
+    end
+    assert_select ".promise-report .campaign-answer", count: 0
+    CouncilTermSummary.sole.destroy!
+    get member_path(@bittner)
+    assert_select ".profile-reading-layout > .council-work ~ #campaign-answers", count: 1
+    get campaign_member_path(@bittner)
+    assert_select ".campaign-answer-captions", text: /#{Regexp.escape(segments.last.fetch("text"))}/
+
+    SiteSetting.instance.update!(access_mode: "gated")
+    [ member_path(@bittner), campaign_member_path(@bittner) ].each do |page|
+      get page
+      assert_not_includes response.body, "Evasive answer"
+      assert_not_includes response.body, segments.last.fetch("text")
+    end
+    SiteSetting.instance.update!(access_mode: "open")
+    segments.last["speaker"] = "Different candidate"
+    @source.update!(prepared_transcript: { "segments" => segments })
+    get campaign_member_path(@bittner)
+    assert_select "#campaign-answers", count: 0
+    segments.last.merge!("speaker" => @bittner.name, "text" => "I would look to Cedarburg.")
+    @source.update!(prepared_transcript: { "segments" => segments })
+    get member_path(@bittner)
+    assert_select "#campaign-answers", count: 0
+  end
+
+  test "only flagged answers appear in the elected members' forum reviews" do
+    segments = JSON.parse(file_fixture("council_business_forum_exchanges_2024.json").read)
+    @source.update!(coverage: "full_transcript", body: segments.pluck("text").join("\n"),
+      prepared_transcript: { "segments" => segments })
+    benchmark = "Which cities should Two Rivers learn from?"
+    preparation = "How did you learn what local businesses need?"
+    {
+      "Mark Bittner" => [ [ benchmark, 2887, 2916 ] ],
+      "Doug Brandt" => [],
+      "Shannon Derby" => [ [ benchmark, 2887, 3098 ], [ preparation, 1052, 1331 ] ]
+    }.each do |name, findings|
+      get campaign_member_path(Member.find_by!(name: name))
+      assert_response :success
+      assert_select "#campaign-answers", count: findings.any? ? 1 : 0
+      assert_equal findings.map(&:first), css_select(".campaign-answer-question").map(&:text)
+      assert_equal findings.flat_map { |_, question, answer| [ question, answer ].map { |time| "#{@source.source_url}&t=#{time}s" } },
+        css_select(".campaign-answer-source a").map { |link| link["href"] }
+    end
+  end
+
+  test "a responsive proposal stays in the campaign and term records without an answer callout" do
+    with_campaign_transport(content: @result) { refresh }
+    segments = JSON.parse(file_fixture("bittner_growth_committee_exchange.json").read)
+    CampaignSource.create!(title: "2024 League candidate forum", publisher: "League of Women Voters",
+      source_url: ResidentContent::CampaignPlatform::EDITION.fetch("sources").fetch("league"),
+      published_on: "2024-03-07", election_on: "2024-04-02", coverage: "full_transcript",
+      body: segments.pluck("text").join("\n"), prepared_transcript: { "segments" => segments })
+    get campaign_member_path(@bittner)
+    assert_select "#campaign-record", text: /Form a council growth committee/
+    assert_select "#campaign-answers", count: 0
+    get member_path(@bittner)
+    assert_select "#term-heading", "Follow-through during the 2024–27 term"
+    assert_select "#promise-index .promise-title", "Form a council growth committee"
+    assert_select "#campaign-answers, a[href='#campaign-answers']", count: 0
+    assert_select "a.profile-campaign-link[href=?]", campaign_member_path(@bittner, anchor: "campaign-record")
+  end
+
   test "the approved platform supplies the full denominator and excludes removed statements at every public entry" do
     get member_path(@bittner)
     assert_select ".member-term-overview", text: /growth committee/
@@ -250,9 +326,9 @@ class CouncilTermSummaryTest < ActionDispatch::IntegrationTest
     assert_select ".term-digest a", count: 0
     assert_select "meter[min='0'][max='250'][value='50']"
     assert_select "#promise-index section.promise-group[data-status=unresolved]" do
-      assert_select "h4 .outcome-count", "1"
-      assert_select "h4 .outcome-label", "Unfulfilled in the public record"
-      assert_select "h4 .outcome-points", "−0.5 points"
+      assert_select "h3 .outcome-count", "1"
+      assert_select "h3 .outcome-label", "Unfulfilled in the public record"
+      assert_select "h3 .outcome-points", "−0.5 points"
       assert_select "details#promise-1:not([open])" do
         assert_select "summary .promise-title", text: "Form a council growth committee"
         assert_select "summary .promise-excerpt", text: /no action to form the proposed committee/

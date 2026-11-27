@@ -25,6 +25,9 @@ class MembersController < ApplicationController
       else
         load_campaign_preview
       end
+      @answer_reviews = ResidentContent::ReviewedCampaignAnswers.for(@member).select do |review|
+        @record_period.selected&.period_key == "#{review.fetch("source_record").election_on.year}-election"
+      end
       @council_attendance = council_attendance if @record_period.selected
       return render :election_profile
     end
@@ -47,7 +50,10 @@ class MembersController < ApplicationController
   end
 
   def campaign
-    load_campaign_comparisons unless gated_for_visitor?
+    return if gated_for_visitor?
+
+    @answer_reviews = ResidentContent::ReviewedCampaignAnswers.for(@member)
+    load_campaign_comparisons
   end
 
   def issues

@@ -20,6 +20,24 @@ The currently configured guide switches to the next election the Tuesday one wee
 
 ## Did the member follow through?
 
+For a past election, review answers from the members who won seats. The 2024
+profiles for Bittner, Brandt and Derby assess how each answered the same two
+questions about comparable cities and preparation on local business issues.
+Lead the member profile with the term score and in-office findings. On desktop,
+keep the promise breakdown in the main column and put the forum findings
+directly below **Council work** in the sidebar. On narrow screens, the reading
+order is follow-through, Council work, Campaign promises, then the forum findings.
+Council work opens expanded, with vote search, committees and attendance visible.
+Readers can collapse it. Use a distinct background at each section change so
+someone scrolling can find their place.
+Use **Did [surname] Answer?** only when a reviewed exchange shows a specific
+shortcoming a voter should know about. Name what the question asked for and
+what the answer left unresolved. Link separately to the question and the
+member’s response. Leave routine, responsive answers in the source material.
+Omit the section and its navigation when there is no finding to show. On the
+profile, show a proposal once when its scored finding already covers it.
+Only the reviewed platform supplies the promise score.
+
 Use the existing consolidated platform as the complete list for the weekly assessment. The 2024 review retained 12 items for Bittner, 10 for Brandt and 10 for Derby. Brandt presented two rental rules as alternatives in one answer, so the 32 items represent 31 distinct commitments or positions. Excluded campaign remarks stay out of all resident lists, direct statement links and summary inputs. Preserve the member's words and conditions. Give each retained position the meaning the member gave it, whether it was a proposal, priority or pledge. Combine repeat mentions across sources. A preference or general aspiration does not enter the count. Credit requires the member's own action and a documented result proportionate to the undertaking. Distinguish an adopted rule, a funded contract and a completed project. For a promised outcome, a pending action or a losing vote earns zero result credit. For a promise to introduce a measure, making the motion can itself deliver the undertaking. Identify the vote and what happened afterward.
 
 Give one point for a documented result. Deduct 2.5 points for a personally attributable action materially against the position. Deduct half a point for a missed opportunity, a documented shortfall or a promise unfulfilled in the public record. A recorded effort with an open outcome or a losing vote carries zero points. Apply one verdict per position and round only the final percentage. Divide the net points by **every distinct tracked promise**. Label the percentage “promise score.” Show the arithmetic and each deduction beside it. A red −2.5 links to the action, the result and its sources. A negative score remains visible below zero. Use a distinct label for a documented attempt, an outvoted effort, a missed opportunity, a contrary action, or a gap in evidence. A missed opportunity requires a cited review identifying a concrete occasion to act and no recorded public follow-through on that promise. Look for later action before assigning that finding. When the reviewed record does not document delivery, mark the promise “Unfulfilled in the public record.” It costs half a point and stays in the denominator. A claim that the member passed up a specific opportunity requires evidence of that opportunity. Work-session recordings can establish a named position that the minutes summarize collectively. Compare the direction of the actual decision with the specific campaign proposal. Distinguish a vote on the proposal from a decision that points away from its goal. An attributed action in a reviewed shortfall cannot supply credit for that shortfall. Check the wording of the motion and how the individual voted, including votes on repeals and denials. Review personal advocacy at work sessions and subsequent decisions. When evidence points in both directions, weigh and cite both. A newly identified vote can change a prior judgment even when the event predates the review.

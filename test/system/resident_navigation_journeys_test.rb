@@ -37,6 +37,13 @@ class ResidentNavigationJourneysTest < ApplicationSystemTestCase
       click_link "Spring 2027 City Council election"
       assert_selector "#spring-election a[href='#{profile}']"
       find("#spring-election a[href='#{profile}']").click
+      within ".council-work" do
+        assert_field "Find a vote or meeting"
+        find("summary").send_keys(:enter)
+        assert_no_field "Find a vote or meeting"
+        find("summary").send_keys(:enter)
+        assert_field "Find a vote or meeting"
+      end
       click_link "Election dates"
       assert_selector "#spring-election a[href='#{profile}']"
 

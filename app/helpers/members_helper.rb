@@ -1,6 +1,20 @@
 module MembersHelper
   MINUTES_LOCATIONS = YAML.safe_load_file(Rails.root.join("config/council_profile_minutes_locations.yml")).freeze
 
+  def forum_clip_link(label, source_url, milliseconds)
+    seconds = milliseconds.div(1000)
+    link_to "#{label} at #{format("%d:%02d", *seconds.divmod(60))}", "#{source_url}&t=#{seconds}s"
+  end
+
+  def profile_term_heading
+    return "Last campaign" unless @term_summary&.sentences.present?
+    if (ends_on = ResidentContent::CouncilElection.scheduled_term_end(@member.name, @record_period.selected))
+      return "Follow-through during the #{@term_summary.term_started_on.year}–#{ends_on.strftime("%y")} term"
+    end
+
+    "The term so far"
+  end
+
   def promise_deductions(groups)
     labels = { "contrary" => "Reversal", "missed" => "Missed opportunity", "unresolved" => "Unfulfilled", "fell_short" => "Fell short" }
     labels.flat_map do |status, label|
