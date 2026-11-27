@@ -285,8 +285,12 @@ the same snapshot. Those future results assume the stored activity stays fixed.
   from the homepage election link. `bin/rubocop` passed.
 
 - **Spring election (RES-01/09/10/11).** During the published guide’s dates,
-  Home → City Council opens the election first. Term sources and candidacy
-  sources are recorded separately in the [election guide](../../config/council_election.yml).
+  Home → City Council opens the election first. The
+  [election schedule](../../config/council_election.yml) identifies term holders.
+  [ADM-23](admin-workflows.md#adm-23--publish-the-council-candidate-list-p1)
+  supplies the candidate names for the active edition. A returning member
+  appears once in the guide. A challenger can appear without a profile.
+  The Clerk link remains available before a candidate list is published.
   Each edition has a fixed timeline and three sourced seat holders. Home,
   Council and member pages select the next edition one week after the first
   Tuesday in April, using the local calendar date. The schedule contains the

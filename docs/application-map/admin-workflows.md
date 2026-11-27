@@ -468,3 +468,39 @@ without another source analysis or replacing original uploaded transcripts.
   source text removes stale events on later reads; title, private-note and service
   attribution corrections reuse analysis. No ordinary reader can view or edit intake.
 - **Evidence:** [formal-record verification](council-formal-records-2026-11-08.md).
+
+## ADM-23 — Publish the Council candidate list (P1)
+
+- **Start / role:** an active administrator and the first available candidate
+  list for a scheduled spring election.
+- **Action:** The Record → Elections → select the year → Needs you → Add
+  candidates. The action is available before filing closes and is highlighted
+  when the deadline has passed. Paste one name per line. A list found in HTR
+  or Seehafer can include its article link. Publishing moves the names to
+  Done and waiting.
+- **Required outcome:** the list publishes for the year displayed in the form.
+  Edit candidates opens the saved names. Correct a line or remove it and save.
+  To clear the whole list, choose Remove candidate list and confirm. A second
+  submission from the Add candidates form leaves the existing list intact.
+- **Next:** RES-09/10/11 shows the names after a fresh request when that edition
+  is active.
+- **Observed:** [candidate list controller](../../app/controllers/admin/election_candidate_lists_controller.rb),
+  [election workspace](../../app/services/admin/election_workspace.rb) and
+  [guide projection](../../app/services/resident_content/council_election.rb).
+- **Verified November 27, 2026:** `72991b69` with working changes on isolated
+  PostgreSQL. The 42 focused Rails tests passed with 745 assertions, including
+  `test/integration/council_election_candidate_lists_test.rb`. The eight
+  Chromium journeys passed with 154 assertions, including
+  `test/system/council_election_candidate_list_journeys_test.rb` at 390 and 1280
+  pixels. The journeys used synthetic names and captured sign-in email. In a
+  separate copy, removing the election date filter leaked names into the next
+  edition and removing the Council access guard exposed names to a gated
+  visitor. Each fault failed its expected assertion. Restoring both passed
+  the two candidate list integration tests with 51 assertions.
+- **Year label, editing, and task placement:** the focused Rails selection
+  passed 43 tests and 785 assertions on the same base revision. The Chromium
+  journey passed 44 assertions covering the early task under Needs you, phone
+  publishing, desktop corrections, canceling and confirming removal, and the
+  next public reads. In isolated copies, loading edits by ID alone failed the
+  cross-edition assertion, and delaying the task until after filing closed
+  failed the early placement assertion. Restoring each change passed its test.

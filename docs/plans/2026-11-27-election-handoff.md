@@ -1,10 +1,10 @@
 # Council elections handoff · November 27, 2026
 
-## Start with the 2027 filing guide
+## Spring 2027 candidate list
 
-The guide lists Mark Bittner, Doug Brandt and Shannon Derby as the three members whose terms end in spring 2027. Its configured filing calendar starts December 1. A resident who comes back during filing needs to know which candidates have actually filed and where the City confirmed that.
+The guide lists Mark Bittner, Doug Brandt and Shannon Derby as the three members whose terms end in spring 2027. The configured filing calendar starts December 1. The guide links to the City Clerk for the official ballot.
 
-Work from the existing **Admin → Elections → Spring 2027** page and the **City Council → Spring election** guide. The admin workspace can request a confirmed list after filing closes. Both views currently read the candidate field from `config/council_election.yml`. Trace `Admin::ElectionWorkspace`, `ResidentContent::CouncilElection` and the guide’s candidate links before adding another source of data. The first deliverable is one editor-entered filing or correction that reaches the right public edition with its date and source. [Filing workflow and acceptance cases, #336](https://github.com/AndreRobitaille/TwoRiversReporter/issues/336)
+In **Admin → Elections → Spring 2027**, **2027 Candidates** sits under **Needs you** while the list is empty. Add the names once they’re available to an editor or an HTR or Seehafer article lists the field. The same form accepts an optional article link. Publishing moves the list to **Done and waiting** and shows the names on **City Council → Spring election**. **Edit candidates** lets an editor correct or remove names. **Remove candidate list** clears all names after confirmation. [Candidate list workflow and acceptance cases, #336](https://github.com/AndreRobitaille/TwoRiversReporter/issues/336)
 
 ## What is already available
 

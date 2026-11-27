@@ -1,6 +1,6 @@
 module Admin
   class ElectionWorkspace
-    attr_reader :year, :current_year, :date, :edition, :scheduled, :sources, :years
+    attr_reader :year, :current_year, :date, :edition, :sources, :years
 
     def initialize(requested_year, today: Date.current)
       schedule = ResidentContent::CouncilElection::SCHEDULE.fetch("elections")
@@ -13,7 +13,7 @@ module Admin
       @year = years.include?(requested_year) ? requested_year : current_year
       @edition = historical.fetch(year, {})
       @scheduled = scheduled_years[year]
-      official_date = edition["election_on"] || scheduled&.fetch("election_on")
+      official_date = edition["election_on"] || @scheduled&.fetch("election_on")
       @date = if official_date
         Date.iso8601(official_date)
       elsif year == current_year || seasons_to_date.include?(year)
@@ -32,9 +32,16 @@ module Admin
       year == current_year
     end
 
+    def filing_edition
+      @filing_edition ||= ResidentContent::CouncilElection.new(@scheduled) if @scheduled
+    end
+
+    def candidate_list_needed?(today: Date.current)
+      current? && filing_edition && today < date && filing_edition.candidates.empty?
+    end
+
     def candidate_list_due?(today: Date.current)
-      current? && scheduled && today > Date.iso8601(scheduled.fetch("filing_deadline")) && today < date &&
-        scheduled.fetch("candidates", {}).empty?
+      candidate_list_needed?(today: today) && today > filing_edition.filing_deadline
     end
 
     def prior_sources

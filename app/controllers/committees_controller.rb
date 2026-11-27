@@ -86,8 +86,7 @@ class CommitteesController < ApplicationController
     @election = ResidentContent::CouncilElection.current if @committee.name == "City Council"
     if @election && !gated_for_visitor?
       @election_member_ids = @election.member_ids_by_name
-      names = @election.terms_ending.keys | @election.candidates.keys
-      @election_portraits = CandidatePortrait.current_for(names.index_with { |name| @election_member_ids[name] })
+      @election_portraits = CandidatePortrait.current_for(@election.people_names.index_with { |name| @election_member_ids[name] })
     end
 
     @memberships = @committee.committee_memberships

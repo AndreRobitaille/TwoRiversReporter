@@ -2,11 +2,13 @@
 <% year = @workspace.year %>
 <% date = @workspace.date %>
 <% attention, saved = election_work_items(@workspace).partition { |item| item[:attention] } %>
-<% filing = @workspace.scheduled %>
+<% filing_edition = @workspace.filing_edition %>
+<% candidate_list_needed = @workspace.candidate_list_needed? %>
 <% candidate_list_due = @workspace.candidate_list_due? %>
+<% candidate_list_title = "#{year} Candidates" %>
 <% prior_sources = @workspace.prior_sources %>
 <% prior = prior_sources.find { |source| !source.forum? && Campaigns::ElectionBackfill.htr?(source) } %>
-<% clerk_url = "https://www.two-rivers.org/clerk/page/election-information" %>
+<% clerk_url = ResidentContent::CouncilElection::CLERK_URL %>
 <div class="election-workspace" data-controller="election-drafts" data-user="<%= Current.user.id %>">
   <header class="election-board-heading election-season-banner">
     <h1>Spring <%= year %> Council election</h1>
@@ -33,37 +35,43 @@
       <header class="election-panel-heading <%= (attention.any? || candidate_list_due) ? "election-panel-heading--attention" : "election-panel-heading--clear" %>">
         <h2 id="<%= task_heading %>"><%= @workspace.current? ? "Needs you" : "Backfill tasks" %></h2>
       </header>
-      <% if candidate_list_due %>
-        <div class="election-panel-row">
-          <h3>Check the Clerk’s candidate list</h3>
-          <p>Filing has closed. This election is waiting for a confirmed list.</p>
-          <%= link_to "Open Clerk election information", clerk_url, class: "election-action election-action--article", target: "_blank", rel: "noopener" %>
+      <% if candidate_list_needed %>
+        <div class="election-panel-row" id="candidate-list-task">
+          <h3><%= candidate_list_title %></h3>
+          <% unless candidate_list_due %><p>Add the list when the names are available.</p><% end %>
+          <%= link_to "Add candidates", new_admin_election_candidate_list_path(year: year), class: "election-action" %>
         </div>
       <% end %>
       <% if attention.any? %>
         <ul class="election-task-list"><%= render partial: "work_item", collection: attention, as: :item, locals: { date: date } %></ul>
-      <% elsif !candidate_list_due %>
+      <% elsif !candidate_list_needed %>
         <div class="election-panel-row"><h3><%= @workspace.current? ? "Nothing needed today" : "No source intake tasks" %></h3>
-          <% if filing && date >= Date.current %><p>The next milestone is the Clerk’s candidate list after filing closes.</p><% end %>
         </div>
       <% end %>
     </section>
 
     <section class="election-panel" aria-labelledby="election-done">
       <header class="election-panel-heading"><h2 id="election-done">Done and waiting</h2></header>
-      <% if filing %>
+      <% if filing_edition %>
         <div class="election-panel-row">
           <p class="election-task-status">Terms identified</p>
           <h3>Terms ending this spring</h3>
-          <p><%= filing.fetch("terms_ending").keys.to_sentence %>.</p>
+          <p><%= filing_edition.terms_ending.keys.to_sentence %>.</p>
         </div>
-        <div class="election-panel-row">
-          <% candidates = filing.fetch("candidates", {}).keys %>
-          <p class="election-task-status"><%= candidates.any? ? "Candidate list recorded" : "Awaiting candidate list" %></p>
-          <h3>Candidate filing</h3>
-          <p><%= Date.iso8601(filing.fetch("signatures_open_on")).strftime("%B %-d") %> through <%= Date.iso8601(filing.fetch("filing_deadline")).strftime("%B %-d") %>.</p>
-          <% if candidates.any? %><p><%= candidates.to_sentence %>.</p><% end %>
-        </div>
+        <% unless candidate_list_needed %>
+          <div class="election-panel-row" id="candidate-list">
+            <h3><%= candidate_list_title %></h3>
+            <% if filing_edition.candidates.any? %>
+              <p><%= filing_edition.candidates.keys.to_sentence %></p>
+              <% if (list = filing_edition.candidate_list) %>
+                <% if list.source_url %><p><%= link_to "Candidate list source", list.source_url %></p><% end %>
+                <%= link_to "Edit candidates", edit_admin_election_candidate_list_path(year: year, id: list), class: "election-action" %>
+              <% end %>
+            <% else %>
+              <%= link_to "Add candidates", new_admin_election_candidate_list_path(year: year), class: "election-action" %>
+            <% end %>
+          </div>
+        <% end %>
       <% elsif @workspace.current? && date >= Date.current %>
         <div class="election-panel-row">
           <p class="election-task-status">Awaiting the Clerk’s schedule</p>

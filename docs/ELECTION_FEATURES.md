@@ -11,12 +11,10 @@ The Tuesday 11 p.m. Central discovery run checks sitting Council members with a 
 ## What voters need as the election approaches
 
 - **During filing**, a voter may have heard only one name. Identify the three members whose terms end in the election year. Keep a fixed timeline for that election showing when signature gathering begins, the regular filing deadline and Election Day. Use the Clerk’s dates. [City Clerk’s filing instructions](https://www.two-rivers.org/clerk/page/ballot-access-procedure-and-documents-required)
-- **As voters hear more names**, date each campaign statement. Give any confirmed candidacy its own source and direct readers to the Clerk for the official ballot.
+- **When the candidate list is available**, choose **Add candidates** under **Needs you** in Admin → Elections. Use the first list available to the editor or the first HTR or Seehafer article that lists the field. An editor can correct or remove names from the saved list. The guide shows the names and links to the Clerk for the official ballot. Date individual campaign statements where they appear on member records.
 - **Near Election Day**, the term overview should help voters weigh consequential promises and what the member did about them. For the regular three-seat race, say “You may vote for up to three people. You can choose just one or two.”
 
-The currently configured guide switches to the next election the Tuesday one week after Election Day. The proposed annual schedule below extends results coverage and opens the following season in November. Use the year in the heading so someone arriving in April can tell which spring the guide covers. Put a short note beside the names.
-
-> These members hold the seats up for election that year. We compare what they promised when they last ran with what they did in office. Meeting records may never name everyone running. For the official ballot once available, see the [City Clerk’s election information](https://www.two-rivers.org/clerk/page/election-information).
+The currently configured guide switches to the next election the Tuesday one week after Election Day. The proposed annual schedule below extends results coverage and opens the following season in November. Use the year in the guide and candidate headings so someone arriving in April can tell which spring the names are for. Identify members whose terms end and give readers the [City Clerk’s election information](https://www.two-rivers.org/clerk/page/election-information).
 
 ## Did the member follow through?
 
@@ -66,7 +64,7 @@ week after Election Day.
 | When | Work to automate | When a person is needed |
 | --- | --- | --- |
 | November 1 | Identify the three regular terms ending next spring. Recover questionnaires and forums from their previous campaigns and feature their records on the Council guide and profiles. Keep campaign records visible year-round. | Resolve a vacancy or appointment against the Clerk’s notice. |
-| December to January | Follow the Clerk’s candidacy calendar. Look for notices of non-candidacy, the January City Manager report, ballot drawing and sample ballot. Preserve the source and the date of confirmation. | Resolve a missing roster or conflicting spelling. Campaign announcements can identify leads. |
+| December to January | Follow the Clerk’s candidacy calendar. Keep the official election link in the guide. | Publish the first available candidate list in Elections. |
 | February | Check if a City Council primary is scheduled and whether it changes the April field. | Confirm a changed field if the published ballot is unclear. |
 | March through Election Day | Watch HTR, local news, forum announcements and organizers’ video channels. Treat each recording as part of its event. Try published captions, then local transcription. Record nonresponses and gaps for each candidate. | Supply permitted questionnaire text when blocked, identify speakers and review poor audio. Use campaign accounts as attributed optional sources. |
 | Election night through the canvass | Check city results and label preliminary totals with their source and time. Use the municipal canvass to confirm winners. | Read a scanned or handwritten canvass when extraction is unreliable. |

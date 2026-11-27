@@ -132,6 +132,8 @@ This accepts a half-Tailwind vocabulary living in the codebase temporarily, in e
 
 **Component vocabulary — twelve, and that is the whole list:** page header · toolbar + segmented control · data table · detail layout · panel · form controls · buttons · status chips · empty state · flash · pagination · confirm modal.
 
+The election candidate editor uses the election workspace’s page header and panel. Its lined names field is a form-control variant for entering one name per line. The panel footer groups the save and cancel actions. Removing the entire list uses the shared confirmation behavior.
+
 Where the July 2026 auth pages already established a good pattern (`section-header`, `detail-list`, `empty-state`, `data-cell`, `truncate-cell`), the component absorbs that spelling rather than inventing a competing one. The flat `section-header-label` / `section-header-line` variants and the hand-inlined atom SVGs are removed in favour of `section-header__label` and `render "shared/atom_marker", theme: "silo"`.
 
 **The rule that prevents re-drift:** a page may not invent a class name. If it needs something the vocabulary lacks, the vocabulary grows and this spec is updated.

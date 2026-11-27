@@ -37,7 +37,9 @@
               · <%= link_to "Contact #{@member.name}", official_page %>
             </span>
           <% elsif @election.candidates.key?(@election_name) %>
-            <%= link_to "Confirmed candidate for spring #{@election.election_on.year}", @election.candidates.fetch(@election_name) %>.
+            <% label = "Candidate for spring #{@election.election_on.year}" %>
+            <% source_url = @election.candidates[@election_name] %>
+            <%= source_url ? link_to(label, source_url) : label %>.
             <%= link_to "Election dates", committee_path(@election_council_slug, anchor: "spring-election") %>
           <% end %>
         </p>

@@ -16,9 +16,13 @@ class ElectionBackfillTest < ActionDispatch::IntegrationTest
     assert_select "h1", text: "Spring 2027 Council election"
     assert_select "select[name=year] option[value='2025']"
     assert_select "select[name=year] option[value='2027'][selected]"
-    assert_select "h3", text: "Nothing needed today"
     assert_select "#election-needs-you", count: 1
-    assert_select "section[aria-labelledby=election-needs-you] a", count: 0
+    assert_select "section[aria-labelledby=election-needs-you] #candidate-list-task" do
+      assert_select "h3", text: "2027 Candidates"
+      assert_select "p", text: "Add the list when the names are available."
+      assert_select "a[href=?]", new_admin_election_candidate_list_path(year: 2027), text: "Add candidates"
+    end
+    assert_select "section[aria-labelledby=election-done] #candidate-list", count: 0
     get admin_elections_path(year: "2025")
     assert_select "h1", text: "Spring 2025 Council election"
     assert_select "#election-needs-you", count: 0

@@ -1221,6 +1221,47 @@
 .election-action--article { background: var(--article-ink); border-color: var(--article-ink); color: var(--color-text-inverse); }
 .election-action--article:hover { background: color-mix(in srgb, var(--article-ink), var(--color-text) 22%); color: var(--color-text-inverse); }
 .election-back { display: inline-block; margin: .4rem 0 .7rem; color: var(--color-primary); font-weight: 650; text-decoration: underline; text-underline-offset: .18em; }
+.election-workspace.election-candidate-editor { max-width: 42rem; }
+.election-candidate-editor__fields { padding: clamp(1rem, 3vw, 1.5rem); }
+.election-candidate-editor .form-label {
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+}
+.election-candidate-editor #candidate-names-help {
+  margin-bottom: var(--space-2);
+  color: var(--color-text-secondary);
+}
+.election-candidate-editor .form-input,
+.election-candidate-editor .election-candidate-editor__names {
+  display: block;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-base);
+}
+.election-candidate-editor .election-candidate-editor__names {
+  --candidate-line-height: 1.75rem;
+  line-height: var(--candidate-line-height);
+  background-image: repeating-linear-gradient(to bottom,
+    transparent 0 calc(var(--candidate-line-height) - 1px),
+    var(--color-border) 0 var(--candidate-line-height));
+  background-origin: content-box;
+  background-clip: content-box;
+  background-attachment: local;
+}
+.election-candidate-editor__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-3) clamp(1rem, 3vw, 1.5rem);
+  border-top: var(--adm-hairline);
+  background: var(--color-bg);
+}
+.election-candidate-editor :is(.election-candidate-editor__actions, .election-candidate-editor__remove) .btn {
+  min-height: 44px;
+}
+.election-candidate-editor__remove { margin-top: var(--space-3); }
+.election-candidate-editor__remove .btn--ghost { color: var(--color-danger); }
 .questionnaire-layout { display: grid; grid-template-columns: minmax(15rem, .78fr) minmax(0, 1.45fr); gap: 1.2rem; align-items: start; }
 .questionnaire-source, .questionnaire-editor {
   background: var(--color-surface); border: var(--adm-hairline); border-radius: var(--radius-lg); overflow: hidden;

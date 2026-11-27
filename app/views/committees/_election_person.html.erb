@@ -1,10 +1,8 @@
 <li id="seat-<%= name.parameterize %>">
   <% member_id = @election_member_ids[name] %>
   <% portrait = @election_portraits[name] %>
-  <% label = name.dup %>
-  <% label += " · Confirmed candidate" if election.terms_ending.key?(name) && election.candidates.key?(name) %>
   <% image = image_tag(candidate_portrait_path(portrait, v: portrait.image_key), alt: "", class: "candidate-photo") if portrait %>
-  <% row = safe_join([tag.span(label), image].compact) %>
+  <% row = safe_join([tag.span(name), image].compact) %>
   <% if member_id %>
     <%= link_to row, member_path(member_id), class: "election-person-row" %>
   <% else %>

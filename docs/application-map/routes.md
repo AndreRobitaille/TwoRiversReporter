@@ -28,6 +28,16 @@ Current reconciliation: PR #181 removes the ten unsupported dispatch rows and du
 | GET | `/admin/campaign_forum/recording` | Open captions for a known recording |
 | POST | `/admin/campaign_forum/captions` | Parse an uploaded private SRT or VTT for the desk |
 
+### Council candidate list (ADM-23)
+
+| Verb | Path | Operator action |
+| --- | --- | --- |
+| GET | `/admin/elections/:year/candidate_list/new` | Open the candidate list form for a scheduled edition |
+| POST | `/admin/elections/:year/candidate_list` | Publish the first candidate list for that edition |
+| GET | `/admin/elections/:year/candidate_list/:id/edit` | Open the saved list for editing |
+| PATCH / PUT | `/admin/elections/:year/candidate_list/:id` | Save corrected names or remove individual names |
+| DELETE | `/admin/elections/:year/candidate_list/:id` | Remove the saved list from the guide |
+
 ## Campaign article intake addition: November 8, 2026
 
 ADM-21 adds these private admin dispatches. They were enumerated locally and

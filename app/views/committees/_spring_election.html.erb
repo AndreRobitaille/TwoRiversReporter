@@ -10,22 +10,23 @@
       <li><%= time_tag election.election_on, format: "%B %-d, %Y" %> · Election Day</li>
     </ul>
     <p>Vote for up to three. You can choose just one or two.</p>
-    <p><%= link_to "Official ballot and election information", "https://www.two-rivers.org/clerk/page/election-information" %></p>
+    <p><%= link_to "Official ballot and election information", ResidentContent::CouncilElection::CLERK_URL %></p>
 
     <% unless gated_for_visitor? %>
       <%= gated_content do %>
-        <% if election.terms_ending.any? %>
-          <h3>Council terms ending in <%= election.election_on.year %></h3>
-          <p>Their profiles cover what they ran on and what they did in office. Meeting records may never name everyone running.</p>
+        <% candidate_names = election.candidates.keys %>
+        <% if candidate_names.any? %>
+          <h3><%= election.election_on.year %> Candidates</h3>
           <ul class="election-people">
-            <%= render partial: "election_person", collection: election.terms_ending.keys, as: :name, locals: { election: election } %>
+            <%= render partial: "election_person", collection: candidate_names, as: :name %>
           </ul>
+          <% if (source_url = election.candidate_list&.source_url) %><p><%= link_to "Candidate list source", source_url %></p><% end %>
         <% end %>
-        <% challengers = election.candidates.keys - election.terms_ending.keys %>
-        <% if challengers.any? %>
-          <h3>Confirmed challengers</h3>
+        <% other_terms = election.terms_ending.keys - candidate_names %>
+        <% if other_terms.any? %>
+          <h3><%= "Other " if candidate_names.intersect?(election.terms_ending.keys) %>Council terms ending in <%= election.election_on.year %></h3>
           <ul class="election-people">
-            <%= render partial: "election_person", collection: challengers, as: :name, locals: { election: election } %>
+            <%= render partial: "election_person", collection: other_terms, as: :name %>
           </ul>
         <% end %>
       <% end %>
