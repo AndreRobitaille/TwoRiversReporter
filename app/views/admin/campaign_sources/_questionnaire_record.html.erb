@@ -24,11 +24,6 @@
           <% end %>
         </div>
       </div>
-      <% if Campaigns::ElectionBackfill.htr?(@version) %>
-        <div class="election-panel-row"><h3>Candidate photos <small>Optional</small></h3>
-          <p>Any photos are in the original article. This record contains the answers.</p>
-        </div>
-      <% end %>
       <div class="election-panel-row">
         <h3>Analysis details</h3>
         <p><%= link_to "Processing and issue matching", admin_campaign_source_path(@source, version: params[:version], view: "processing", from_year: params[:from_year]) %></p>
@@ -89,7 +84,41 @@
       <% end %>
       <section class="election-panel election-source-text questionnaire-saved-answers" id="source-text">
         <header class="election-panel-heading"><h2>Saved Council answers</h2></header>
-        <div data-campaign-source-text class="election-panel-row detail-value--preserve"><%= @version.body %></div>
+        <% if @questionnaire["body_selector"] && (article = questionnaire_answer_sections(@version.body, @year)) %>
+          <% introduction, sections = article %>
+          <% portraits = @version == @source.current_version ? @source.questionnaire_portraits : {} %>
+          <div data-campaign-source-text>
+            <% if introduction.any? %>
+              <div class="election-panel-row"><% introduction.each do |line| %><p><%= line %></p><% end %></div>
+            <% end %>
+            <% sections.each do |name, *lines| %>
+              <section class="election-panel-row questionnaire-candidate">
+                <header>
+                  <% if (photo = portraits[name]) %>
+                    <%= link_to photo, target: "_blank", rel: "noopener noreferrer", aria: { label: "Open #{name}’s original portrait" } do %>
+                      <%= image_tag photo, alt: name, class: "candidate-photo", referrerpolicy: "no-referrer" %>
+                    <% end %>
+                  <% end %>
+                  <h3><%= name %></h3>
+                </header>
+                <% question_at = lines.index(@questionnaire["response_question"]) %>
+                <% lines.take(question_at || lines.size).each do |line| %>
+                  <% if @questionnaire.fetch("questions", []).include?(line) %>
+                    <h4><%= line %></h4>
+                  <% else %>
+                    <p><%= line %></p>
+                  <% end %>
+                <% end %>
+                <% if question_at %>
+                  <h4><%= lines[question_at] %></h4>
+                  <ul><% lines.drop(question_at + 1).each do |answer| %><li><%= answer %></li><% end %></ul>
+                <% end %>
+              </section>
+            <% end %>
+          </div>
+        <% else %>
+          <div data-campaign-source-text class="election-panel-row detail-value--preserve"><%= @version.body %></div>
+        <% end %>
       </section>
     </div>
   </div>

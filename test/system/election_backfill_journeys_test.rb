@@ -122,10 +122,10 @@ class ElectionBackfillJourneysTest < ApplicationSystemTestCase
     click_button "Save Council answers"
     assert_selector "[role=alert]", text: /must include Council answers/
     assert_field "Paste the Council answers", with: school
-    council = "Question one?\nFirst candidate: I worked with the Two Rivers Board of Education.\nFinal candidate: This is my last answer."
-    fill_in "Paste the Council answers", with: "#{council}\n#{school}"
+    council = "First candidate\nDid not answer.\nQuestion one?\nNext candidate: I worked with the Two Rivers Board of Education.\nFinal candidate: This is my last answer."
+    fill_in "Paste the Council answers", with: "Article headline\nBoth races are contested.\nTwo Rivers City Council\n#{council}\n#{school}"
     click_button "Save Council answers"
-    assert_selector "[role=status]", text: /Council answers saved for 2025.*school board section was left out/
+    assert_selector "[role=status]", text: /Council answers saved for 2025/
     source = CampaignSource.sole
     assert_equal [ Date.new(2025, 4, 1), "selected_excerpts", council ], [ source.election_on, source.coverage, source.current_version.body ]
     assert_selector "#questionnaire-progress", text: "Analysis pending"
@@ -146,6 +146,54 @@ class ElectionBackfillJourneysTest < ApplicationSystemTestCase
     assert_text "last answer. Corrected."
     assert_equal 2, source.versions.count
     assert_operator page.evaluate_script("document.documentElement.scrollWidth"), :<=, 390
+  end
+
+  test "a formatted article paste keeps the named portrait and clean editable Council answers after reopening" do
+    admin = User.create!(email_address: "questionnaire-paste@example.test", admin: true, status: "active")
+    admin.passkey_credentials.create!(external_id: "questionnaire-paste-key", public_key: "key", sign_count: 0)
+    sign_in_by_email(admin)
+    visit new_admin_campaign_source_path(year: 2025, lead: "htr")
+    lead = Campaigns::ElectionBackfill.lead(2025, "htr", kind: "article")
+    photo = "https://media.zenfs.com/en/herald-times-reporter/#{"a" * 32}"
+    candidates = Campaigns::ElectionBackfill.for(2025).fetch("candidates")
+    blocks = candidates.map do |name|
+      if name == "Tim Petri"
+        <<~HTML
+          <h3>#{name}</h3><figure><img alt="#{name}" src="#{photo}"><figcaption>#{name}</figcaption></figure>
+          <p>#{lead.fetch("response_question")}</p><div><p>Unrelated headline</p></div><ul><li>Repair the city’s streets.</li></ul>
+        HTML
+      else
+        "<h3>#{name}</h3><p>Did not answer.</p>"
+      end
+    end.join
+    html = "<h2>Two Rivers City Council</h2>#{blocks}<h2>Two Rivers Board of Education</h2><p>School news.</p>"
+    paste_formatted_article(html)
+    assert_text "1 named portrait"
+    assert_includes find_field("Paste the Council answers").value, "Repair the city’s streets."
+    click_button "Save Council answers"
+    assert_selector ".questionnaire-candidate", count: 5
+    page.refresh
+    within "#source-text" do
+      assert_selector "section", count: 5
+      within find("section", text: /Tim Petri/) do
+        assert_selector "li", text: "Repair the city’s streets."
+        assert_selector "a[href='#{photo}'] img[alt='Tim Petri']", visible: :all
+        assert_equal "contain", find("img[alt='Tim Petri']", visible: :all).style("object-fit").fetch("object-fit")
+      end
+      assert_no_text "Unrelated headline"
+      assert_no_text "School news."
+    end
+    source = CampaignSource.sole
+    assert_equal({ "Tim Petri" => photo }, source.questionnaire_portraits)
+    assert_equal 1, source.versions.count
+    assert_no_match(/img|zenfs|headline|School news/, source.current_version.body)
+    click_link "Edit answers"
+    paste_formatted_article(html.sub(/<figure>.*?<\/figure>/, ""))
+    assert_text "0 named portraits"
+    click_button "Save Council answers"
+    assert_selector "img[alt='Tim Petri']", visible: :all
+    assert_equal({ "Tim Petri" => photo }, source.reload.questionnaire_portraits)
+    assert_equal 1, source.versions.count
   end
 
   test "switching between split recordings keeps each labeled passage and its reading position" do
@@ -196,5 +244,18 @@ class ElectionBackfillJourneysTest < ApplicationSystemTestCase
         assert_operator page.evaluate_script("document.documentElement.scrollWidth"), :<=, 390
       end
     end
+  end
+  private
+
+  def paste_formatted_article(html)
+    field = find_field("Paste the Council answers")
+    page.execute_script(<<~JS, html, field)
+      const field = arguments[1];
+      field.select();
+      const data = new DataTransfer();
+      data.setData("text/html", arguments[0]);
+      data.setData("text/plain", "Unformatted fallback");
+      field.dispatchEvent(new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData: data }));
+    JS
   end
 end

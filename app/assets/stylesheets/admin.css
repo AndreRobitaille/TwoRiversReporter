@@ -1260,6 +1260,13 @@
 .questionnaire-record .questionnaire-sidebar { grid-area: source; }
 
 .questionnaire-saved-answers [data-campaign-source-text] { overflow-wrap: anywhere; }
+.questionnaire-candidate + .questionnaire-candidate { border-top: 1px solid var(--color-border); }
+.questionnaire-candidate header { display: flex; align-items: center; gap: 1rem; }
+.questionnaire-candidate h3 { color: var(--color-primary); }
+.questionnaire-candidate p { margin: .45rem 0 0; }
+.questionnaire-candidate h4 { margin: 1rem 0 .5rem; }
+.questionnaire-candidate ul { margin: 0; padding-inline-start: 1.4rem; list-style: disc; }
+.questionnaire-candidate li + li { margin-top: .65rem; }
 .election-analysis {
   --analysis-ink: var(--color-primary);
   --analysis-paper: var(--color-primary-light);

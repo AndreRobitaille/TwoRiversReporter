@@ -24,6 +24,23 @@ module Admin
       save_source(:new)
     end
 
+    def read_questionnaire
+      edition = Campaigns::ElectionBackfill.for(params[:year])
+      lead = edition&.fetch("sources")&.values&.find { |item| item["url"] == params[:source_url] && item["body_selector"] }
+      return head :not_found unless lead
+
+      file = params[:article_file]
+      unless file.is_a?(ActionDispatch::Http::UploadedFile) && file.size <= 5.megabytes
+        return render json: { error: "Choose an HTML article smaller than 5 MB." }, status: :unprocessable_entity
+      end
+
+      article = Campaigns::QuestionnaireArticle.new(edition, lead).read(file.read, clipboard: params[:clipboard] == "1")
+      token = portrait_verifier.generate({ "portraits" => article.portraits, "body_sha256" => Digest::SHA256.hexdigest(article.body) }, purpose: lead.fetch("url"))
+      render json: { body: article.body, portrait_evidence: token, photo_count: article.portraits.size }
+    rescue ArgumentError => error
+      render json: { error: error.message }, status: :unprocessable_entity
+    end
+
     def show
       @versions = @source.versions.order(created_at: :desc, id: :desc)
       @version = params[:version].present? ? @versions.find(params[:version]) : @source.current_version
@@ -93,6 +110,10 @@ module Admin
       @source = CampaignSource.find(params[:id])
     end
 
+    def portrait_verifier
+      Rails.application.message_verifier(:questionnaire_portraits)
+    end
+
     def source_params
       params.require(:campaign_source).permit(*(CampaignSource::SNAPSHOT_FIELDS - [ "prepared_transcript" ]))
     end
@@ -103,14 +124,39 @@ module Admin
 
     def save_source(failure_view)
       notice = @questionnaire ? "Council answers saved for #{@year}." : "Article saved."
-      excerpt = Campaigns::ElectionBackfill.before_end_heading(@source.body, @questionnaire)
+      excerpt = Campaigns::ElectionBackfill.council_excerpt(@source.body, @questionnaire)
       if excerpt
         if excerpt.blank?
-          @source.errors.add(:body, "must include Council answers above the school board heading.")
+          @source.errors.add(:body, "must include Council answers. Copy the candidates’ names and responses from the Council section.")
           return render failure_view, status: :unprocessable_entity
         end
         @source.body = excerpt
-        notice += " The school board section was left out."
+        notice += " Only the Council section was kept."
+      end
+      if @questionnaire&.key?("start_heading")
+        edition = Campaigns::ElectionBackfill.for(@year)
+        @source.body = Campaigns::QuestionnaireArticle.clean_paste(@source.body, edition.fetch("candidates"))
+      end
+      if @questionnaire&.key?("body_selector") && params[:portrait_evidence].present?
+        evidence = portrait_verifier.verified(params[:portrait_evidence], purpose: @source.source_url)
+        unless evidence
+          @source.errors.add(:base, "Read the article again to confirm its portraits.")
+          return render failure_view, status: :unprocessable_entity
+        end
+        # A verified complete upload can supersede a previously selected excerpt.
+        if @questionnaire["questions"] && evidence["body_sha256"] == Digest::SHA256.hexdigest(@source.body)
+          @source.assign_attributes(coverage: "full_article", coverage_notes: nil)
+        end
+        @source.add_article_portraits(evidence.fetch("portraits", evidence))
+      end
+      if (file = params[:portrait_article]).present?
+        begin
+          raise ArgumentError, "Choose an HTML article smaller than 5 MB." unless file.is_a?(ActionDispatch::Http::UploadedFile) && file.size <= 5.megabytes
+          @source.add_article_portraits(Campaigns::ArticlePortraits.read(@source, file.read))
+        rescue ArgumentError => error
+          @source.errors.add(:base, error.message)
+          return render failure_view, status: :unprocessable_entity
+        end
       end
       @source.submitted_by = Current.user
       if @source.save

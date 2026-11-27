@@ -1,5 +1,4 @@
 "2026":
-  questionnaire_note: An HTR questionnaire for 2026 has yet to be located.
   election_on: "2026-04-07"
   term_start:
     started_on: "2026-04-21"
@@ -11,13 +10,33 @@
   term_members: [Katherine Dahlke, Darla LeClair, Adam Wachowski]
   candidates: [Katherine Dahlke, Shawntel Hoffman, Darla LeClair, Bonnie Shimulunas, Adam Wachowski]
   sources:
+    htr:
+      short_title: HTR News questionnaire
+      title: Two Rivers council candidates in April 7 election share top priorities
+      link_label: Open HTR article
+      body_selector: article .gnt_ar_b
+      profiles_end_heading: How do I register to vote?
+      response_question: What would be your top three priorities if elected?
+      section: City Council candidate questions and answers.
+      publisher: Manitowoc Herald Times Reporter
+      published_on: "2026-03-19"
+      url: https://www.htrnews.com/story/news/politics/elections/2026/03/19/two-rivers-city-council-candidate-priorities-april-7-election/89188351007/
+      kind: article
     seehafer:
       short_title: Seehafer News candidate questionnaire
       title: Two Rivers City Council Candidates Address Tourism, City Improvements, Life in the Cool City
       body_selector: article .entry-content
+      headshot_titles:
+        Darla LeClair: Darla LeClaire headshot
       publisher: Seehafer News
       published_on: "2026-04-01"
       url: https://www.seehafernews.com/2026/04/01/two-rivers-city-council-candidate-responses/
+      portraits:
+        Adam Wachowski: https://media-cdn.socastsrm.com/wordpress/wp-content/blogs.dir/1960/files/2026/04/adam-wachowski-headshot.png
+        Bonnie Shimulunas: https://media-cdn.socastsrm.com/wordpress/wp-content/blogs.dir/1960/files/2026/04/bonnie-shimulunas-headshot-1.png
+        Darla LeClair: https://media-cdn.socastsrm.com/wordpress/wp-content/blogs.dir/1960/files/2026/04/darla-leclaire-headshot-300x296.jpg
+        Katherine Dahlke: https://media-cdn.socastsrm.com/wordpress/wp-content/blogs.dir/1960/files/2026/04/katherine-dahlke-headshot-219x300.jpg
+        Shawntel Hoffman: https://media-cdn.socastsrm.com/wordpress/wp-content/blogs.dir/1960/files/2026/04/shawntel-hoffman-headshot-297x300.jpg
       kind: article
     joint:
       short_title: Combined candidate forum
@@ -46,10 +65,16 @@
       link_note: This copy opens on Yahoo News in a new tab.
       start_heading: Two Rivers City Council
       end_heading: Two Rivers Board of Education
+      body_selector: article
+      response_question: What would be your top three priorities if elected?
       section: Council answers only. Stop at the Two Rivers Board of Education heading.
       publisher: Manitowoc Herald Times Reporter
       published_on: "2025-03-21"
       url: https://www.yahoo.com/news/two-rivers-city-council-school-095547436.html
+      portraits:
+        Andre Robitaille: https://media.zenfs.com/en/herald-times-reporter/a29c0b2cca6ba7ed975e16ed10420dc1
+        Scott Stechmesser: https://media.zenfs.com/en/herald-times-reporter/0da36d017a97c0ac7a8ae56c8a1aeb9e
+        Tim Petri: https://media.zenfs.com/en/herald-times-reporter/04b0eb89cc3b7bbcc761837c6f4842a4
       kind: article
     league:
       short_title: League of Women Voters forum
@@ -84,12 +109,26 @@
 "2024":
   election_on: "2024-04-02"
   term_members: [Mark Bittner, Doug Brandt, Shannon Derby]
+  candidates: [Mark Bittner, Doug Brandt, Jeff Dahlke, Shannon Derby, Andrew Quackenbush]
   sources:
     htr:
       short_title: HTR News (Herald Times Reporter)
       title: Two Rivers council candidates talk about the city's potential as the April 2 election nears
       publisher: Herald Times Reporter
+      body_selector: article .gnt_ar_b
+      questions:
+        - Why are you running for office?
+        - What makes you the better candidate in this race?
+        - What are the two biggest challenges for the city of Two Rivers right now, and how would you overcome them?
+        - What is your vision for this community?
+        - What are your thoughts on the current budget for the city?
       published_on: "2024-03-27"
       url: https://www.htrnews.com/story/news/politics/elections/2024/03/27/two-rivers-council-candidates-talk-about-the-citys-potential-as-the-april-2-election-nears/73099320007/
+      portraits:
+        Andrew Quackenbush: https://www.gannett-cdn.com/authoring/authoring-images/2024/03/26/PMAC/73111315007-andrew-quackenbush.jpeg
+        Doug Brandt: https://www.gannett-cdn.com/authoring/authoring-images/2024/03/26/PMAC/73111293007-doug-brandt.jpg
+        Jeff Dahlke: https://www.gannett-cdn.com/presto/2018/10/25/PMAC/65332947-560e-480a-aa5d-cf9e7f4f7147-Dahlke_REVISED.jpg
+        Mark Bittner: https://www.gannett-cdn.com/authoring/authoring-images/2024/03/26/PMAC/73111281007-mark-bittner.jpg
+        Shannon Derby: https://www.gannett-cdn.com/authoring/authoring-images/2024/03/26/PMAC/73111298007-shannon-derby.jpg
       kind: article
       outside_council_records: [Andrew Quackenbush]

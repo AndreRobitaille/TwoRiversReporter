@@ -68,7 +68,7 @@ week after Election Day.
 | November 1 | Identify the three regular terms ending next spring. Recover questionnaires and forums from their previous campaigns and feature their records on the Council guide and profiles. Keep campaign records visible year-round. | Resolve a vacancy or appointment against the Clerk’s notice. |
 | December to January | Follow the Clerk’s candidacy calendar. Look for notices of non-candidacy, the January City Manager report, ballot drawing and sample ballot. Preserve the source and the date of confirmation. | Resolve a missing roster or conflicting spelling. Campaign announcements can identify leads. |
 | February | Check if a City Council primary is scheduled and whether it changes the April field. | Confirm a changed field if the published ballot is unclear. |
-| March through Election Day | Watch HTR, local news, forum announcements and organizers’ video channels. Treat each recording as part of its event. Try published captions, then local transcription. Record nonresponses and gaps for each candidate. | Supply permitted questionnaire text when blocked, identify speakers and review poor audio. Use campaign accounts as attributed optional sources. Article photos need permission for reuse. |
+| March through Election Day | Watch HTR, local news, forum announcements and organizers’ video channels. Treat each recording as part of its event. Try published captions, then local transcription. Record nonresponses and gaps for each candidate. | Supply permitted questionnaire text when blocked, identify speakers and review poor audio. Use campaign accounts as attributed optional sources. |
 | Election night through the canvass | Check city results and label preliminary totals with their source and time. Use the municipal canvass to confirm winners. | Read a scanned or handwritten canvass when extraction is unreliable. |
 | After the election | Feature results for about two weeks. Keep a dated, searchable annual guide with candidates, sources, results and coverage gaps. Use the oath to start the winner’s term. | Resolve any correction against the official result. |
 
@@ -76,9 +76,34 @@ The city has published candidate information beyond Facebook. The 2025 January
 report lists the draw, and the 2026 Clerk packet includes the December notice
 and possible primary. [January 2025 City Manager report](https://www.two-rivers.org/sites/default/files/fileattachments/city_manager/page/8434/city_managers_report_1-20-2025.pdf) · [2026 Clerk packet](https://www.two-rivers.org/sites/default/files/fileattachments/city_clerk/page/2533/2026_candidacy_paperwork_memo_for_online.pdf)
 
-HTR published on March 27 in 2024 and March 21 in 2025. An April 1 Seehafer
-questionnaire covers 2026. The March 19 joint forum accepted audience questions.
-[2024 HTR](https://www.htrnews.com/story/news/politics/elections/2024/03/27/two-rivers-council-candidates-talk-about-the-citys-potential-as-the-april-2-election-nears/73099320007/) · [2025 HTR via Yahoo](https://www.yahoo.com/news/two-rivers-city-council-school-095547436.html) · [2026 Seehafer](https://www.seehafernews.com/2026/04/01/two-rivers-city-council-candidate-responses/) · [Audience Q&A in the recording](https://www.youtube.com/watch?v=RhG-NPrI65Q&t=5068s)
+HTR published Council questionnaires on March 27, 2024, March 21, 2025, and
+March 19, 2026. Seehafer published its 2026 questionnaire on April 1. The
+March 19 joint forum accepted audience questions.
+[2024 HTR](https://www.htrnews.com/story/news/politics/elections/2024/03/27/two-rivers-council-candidates-talk-about-the-citys-potential-as-the-april-2-election-nears/73099320007/) · [2025 HTR via Yahoo](https://www.yahoo.com/news/two-rivers-city-council-school-095547436.html) · [2026 HTR](https://www.htrnews.com/story/news/politics/elections/2026/03/19/two-rivers-city-council-candidate-priorities-april-7-election/89188351007/) · [2026 Seehafer](https://www.seehafernews.com/2026/04/01/two-rivers-city-council-candidate-responses/) · [Audience Q&A in the recording](https://www.youtube.com/watch?v=RhG-NPrI65Q&t=5068s)
 
 Keep the season-long entry points on Council and member pages. A temporary
 sitewide notice near voting or on results night remains an editorial choice.
+
+## Candidate photos
+
+The election guide places a framed portrait to the right of the candidate’s
+name, up to 80 pixels tall on phones and 96 on desktop. The member profile
+uses the same photo at up to 144 and 176 pixels respectively and links the
+publication credit beneath the name to the article. A challenger without a profile gets that
+credit below the guide row. Both layouts show the entire image at its original
+aspect ratio. The ordinary Council roster stays text-only.
+
+In **Admin → Elections**, save the HTR or Seehafer questionnaire with its
+named photos. Cataloged questionnaires accept a formatted paste or saved
+article HTML. For a new questionnaire, enter each candidate’s name on its own
+line above their answers and attach the saved article HTML.
+
+The 13 known portraits from 2024–2026 have article and image links in the
+election catalog, so a fresh installation can fetch them. The site keeps one
+public thumbnail per person. When another saved article
+includes their photo, the article’s publication date decides which image and
+credit appear on both pages. An undated article sorts at the start of its
+election year. An older backfill or a newer article without a photo leaves
+the current image in place. While a replacement download is being retried,
+readers can still see the previous photo. Each questionnaire retains its
+original named image links alongside its answers.

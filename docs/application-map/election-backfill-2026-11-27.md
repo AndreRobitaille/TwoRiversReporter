@@ -27,12 +27,13 @@ A failed save leaves the review window and draft open. **Review labels** on
 the election page or **Edit speaker labels** on the source reopens it for a
 versioned correction.
 
-Choose **Add Council answers** in Needs you. For 2025, **Open HTR
-article** opens the syndicated copy on Yahoo News. Copy the Council questions,
-candidate names and answers into the second panel and choose **Save Council
-answers**. A paste that includes the standalone **Two Rivers Board of Education**
-heading ends there. A paste beginning at that heading asks the editor for the
-Council section and keeps the text available to correct. The corresponding
+For 2025, choose **Add Council answers** under **Backfill tasks**. **Open HTR
+article** opens the syndicated copy on Yahoo News. Paste the article into the
+second panel or choose **Or open a saved HTML article**, then **Save Council answers**. A formatted copy pairs the published portraits with named responses in the private source record. A plain-text correction keeps any portraits already found. The form keeps the text
+between the standalone **Two Rivers City Council** and **Two Rivers Board of
+Education** headings, including named nonresponses. A Council-only excerpt
+also works. A paste beginning with the school-board heading asks the editor
+for the Council section and keeps the text available to correct. The corresponding
 year then offers **Read answers** and the source offers **Edit answers**.
 Analysis status stays at the top. The source and history sidebar is visible
 alongside matched statements and any actual review exceptions. Accepted statements feed the
@@ -50,7 +51,11 @@ bin/rails 'elections:prepare[2026]'
 The [historical catalog](../../config/election_backfill.yml) identifies checked
 city packets, oath pages, candidates and source URLs. Preparation verifies the
 packet digest, records the term starts, checks for an existing article and tries
-published English captions for each recording. If captions are missing it tries
+published English captions for each recording. For the 2025 HTR article,
+automatic intake checks both race headings, all five Council candidates and
+their answers or explicit nonresponses. If the publisher limits requests or
+the page no longer matches, the questionnaire form accepts a paste or a saved HTML article. The file reader and automatic import use the same race and candidate checks.
+If captions are missing it tries
 the audio and local faster-whisper. Set `YT_DLP` to a working yt-dlp executable.
 Local transcription also needs ffmpeg and the Python faster-whisper package.
 If retrieval fails, open a local SRT/VTT in the desk or use
@@ -193,9 +198,10 @@ to October failed the boundary assertion. The working copy passed. RuboCop and
 
 ### Independent source analysis in the 2026 archive
 
-ADM-21 and BG-08 distinguish the saved Seehafer questionnaire, the unlocated
-HTR questionnaire, and the combined forum with captions awaiting speaker
-labels. The questionnaire page uses a prominent status and links directly to
+The 2026 development election workspace has separate saved questionnaires for
+the March 19 HTR article and the April 1 Seehafer article. The combined forum
+awaits speaker labels.
+The questionnaire page uses a prominent status and links directly to
 the member's campaign record. An authorized current version can be queued
 from its source page. A newly saved version uses the same exact-request
 admission when processed. The nightly job can pick up a previously paused
@@ -204,8 +210,8 @@ another article or forum.
 
 Development source 4 went from zero requests and no statements to one
 completed request with five participants, 15 answers and 71 located statements.
-All 71 linked to existing Council member records. No other 2026 source was
-created. The one-request authorization reserved 132,660 micro-USD and was
+All 71 linked to existing Council member records. That analysis run created
+no other 2026 source. The one-request authorization reserved 132,660 micro-USD and was
 revoked after the run. An authenticated Chromium browser checked both admin
 screens, the link to Katherine Dahlke's campaign record and the phone layout.
 
@@ -217,3 +223,102 @@ reuse without another provider call. RuboCop and `git diff --check` passed.
 Disabling the worker's exact-request lookup in an isolated copy made the
 independent-publication test record zero provider calls instead of one.
 The restored checkout passed that test.
+
+### Restoring the 2025 HTR questionnaire
+
+On the working tree based on `536aa721`, ADM-21 accepts a formatted article
+paste or a saved HTML file. The editor can review and change the text before
+saving. The reader takes candidate headings, paragraphs and list items from
+the Council section. It matches a portrait to a candidate when the image’s
+alt text and figure caption agree with that candidate’s heading. The admin
+source record links to the publisher’s images. BG-08 receives the answer text
+without picture URLs or recommendation headlines.
+
+The original 2025 paste remains in development source 5’s version history.
+The supplied March 21 article and the corrected version agree on all five
+candidates, nine priority paragraphs and two explicit nonresponses.
+Authenticated Chromium at 390 and 1280 pixels opened the saved record and
+decoded all three original JPEGs. The portraits measured 672 × 1250 for
+Tim Petri, 2228 × 2970 for Andre Robitaille and 200 × 200 for Scott Stechmesser.
+
+The Rails integration checks used `test/integration/election_backfill_test.rb`
+and `test/integration/campaign_source_intake_test.rb`. The four browser journeys
+in `test/system/election_backfill_journeys_test.rb` include saving and reopening
+a formatted paste and keeping an existing portrait through a text correction.
+The integration files passed 14 tests and 231 assertions. The browser file
+passed four tests and 151 assertions. In an isolated copy, discarding the
+matched portrait failed the candidate-to-image assertion. Keeping the
+recommended stories failed the exact saved-answer assertion. Both passed
+after restoring the reader. `bin/rubocop` and `git diff --check` passed.
+
+### Reading the 2024 and 2026 questionnaires
+
+In **Admin → Elections**, select the year and open the saved questionnaire.
+**Read saved answers** jumps to the candidates. To import a publisher copy
+for a cataloged article, choose **Edit answers → Or open a saved HTML article**.
+Review the text and named portrait count, then choose **Save Council answers**.
+
+For ADM-21, the HTR reader uses the five biography headings, the published
+question headings and the surname at the start of each response. It keeps
+continuation paragraphs and explicit nonresponses with their speaker. The
+Seehafer reader keeps the common introduction and published answer order.
+Portraits on the private source page link to the named publisher images.
+
+On the development working tree based on `536aa721`, an authenticated
+Chromium session used the file input and saved both publisher articles.
+The 2024 record gained a complete version. Comparison against the archived
+HTML matched all 25 candidate-and-question responses. Its earlier selected
+excerpt still opens with 11 analyzed statements. The 2026 text matched the
+existing source exactly. Its version and all 71 analyzed statements persisted.
+All ten portraits decoded and both pages fit at 390 and 1280 pixels.
+
+The two intake integration files passed 16 tests and 425 assertions. The four
+election browser journeys passed 151 assertions. In a separate checkout and
+PostgreSQL test database, dropping a continuation paragraph failed the 2024
+candidate-and-question check. Omitting Darla LeClair’s portrait failed the
+2026 import check. Both tests passed after restoring their readers.
+
+The full system suite ran 51 tests with one error in the separate mobile cost
+estimate journey. The same missing cost panel reproduced on the clean
+`536aa721` revision. RuboCop and `git diff --check` passed.
+
+The supplied March 19, 2026 HTR HTML was subsequently saved as development
+source 6. An authenticated browser reopened the record. Each of the five
+candidate profiles and priorities answers matched the publisher text, including
+Darla LeClair’s numbered list. All five captioned portraits loaded. The final
+profile ended before the voter-registration guide. The new HTR version awaits
+analysis. The April 1 Seehafer version retained its 71 analyzed statements.
+The two intake integration files passed 17 tests and 471 assertions. Dropping
+PNG portraits in an isolated run failed the named-portrait check. The restored
+reader passed. RuboCop and `git diff --check` passed.
+
+### Current candidate portraits on the public site
+
+In ADM-21, saving a questionnaire with a named HTR or Seehafer photo queues
+a refresh for that person. The worker reads publication dates across elections
+and known name aliases, stores one full-frame JPEG and updates the linked
+publication credit with it. An unreadable replacement leaves the previous
+thumbnail available during retries. The original photo links stay in the
+private questionnaires. The historical catalog supplies the initial 13 photo
+references on installations that have yet to import those articles.
+
+RES-09/10/11 use that JPEG in the election guide and member profile. The
+public image address stays with the person, and both pages change the image
+cache key when a new publisher image replaces it. A challenger can appear
+with a linked photo credit before acquiring a member record.
+
+On the November 27 development working tree based on `536aa721`, four
+questionnaires supplied 18 named photo links for 13 people. Each of the five
+people in both 2026 articles uses the April 1 Seehafer photo. Twelve people
+have member profiles. Andrew Quackenbush’s original 921 × 2048 portrait
+produced a 108 × 240 thumbnail with his full head visible.
+
+- Chromium rendered the real guide and profiles at 390 and 1280 pixels wide.
+  The three guide portraits measured 80 and 96 pixels tall respectively.
+  Profile frames reached 144 and 176 pixels. The 12 profiles loaded their
+  JPEGs and source credits, preserved intrinsic proportions and fit the
+  viewport. The Council roster contained zero images at both widths.
+- `bin/rails test test/integration/{candidate_portraits,election_backfill,campaign_source_intake,council_election}_test.rb test/controllers/{committees_controller,committees_show_gating}_test.rb` passed 42 tests and 768 assertions. Intake tests used fixture image bytes and the real decoder and public image controller.
+- `bin/rails test test/system/{candidate_portrait_journeys,election_backfill_journeys}_test.rb` passed five Chromium journeys and 171 assertions. A phone visitor followed the framed image to the credited profile. The desktop guide used its larger image size.
+- Reversing publication-date ordering in an isolated test process caused the replacement case to fail. Restoring normal ordering passed all four portrait integration tests. An isolated PostgreSQL schema migration queued all 13 historical imports with zero private questionnaires.
+- After the profile alignment fix, the name began 8 px below committee navigation on both Katherine Dahlke’s and Mark Bittner’s 1280 px profiles. Dahlke’s record started 101 px higher and Bittner’s term review started 59 px higher. Hiding the three guide photos left the City Council heading at the same position. The desktop browser assertion failed on the previous centered layout and passed with the fix. Both profiles were also checked at 390 px.

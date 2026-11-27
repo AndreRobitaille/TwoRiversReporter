@@ -84,7 +84,11 @@ class CommitteesController < ApplicationController
   def show
     @committee = Committee.find_by!(slug: params[:slug])
     @election = ResidentContent::CouncilElection.current if @committee.name == "City Council"
-    @election_member_ids = @election.member_ids_by_name if @election && !gated_for_visitor?
+    if @election && !gated_for_visitor?
+      @election_member_ids = @election.member_ids_by_name
+      names = @election.terms_ending.keys | @election.candidates.keys
+      @election_portraits = CandidatePortrait.current_for(names.index_with { |name| @election_member_ids[name] })
+    end
 
     @memberships = @committee.committee_memberships
       .where(ended_on: nil)

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_23_000100) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_27_000500) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -232,6 +232,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_000100) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.jsonb "prepared_transcript", default: {}, null: false
+    t.jsonb "questionnaire_portraits", default: {}, null: false
     t.index [ "source_url" ], name: "index_campaign_sources_on_source_url", unique: true
   end
 
@@ -262,6 +263,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_000100) do
     t.index [ "campaign_extraction_id", "sequence" ], name: "idx_on_campaign_extraction_id_sequence_3d52e6269b", unique: true
     t.index [ "campaign_extraction_id" ], name: "index_campaign_statements_on_campaign_extraction_id"
     t.index [ "member_id" ], name: "index_campaign_statements_on_member_id"
+  end
+
+  create_table "candidate_portraits", force: :cascade do |t|
+    t.string "image_url", null: false
+    t.binary "thumbnail", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "name", null: false
+    t.bigint "member_id"
+    t.string "source_url", null: false
+    t.string "publisher", null: false
+    t.index [ "member_id" ], name: "index_candidate_portraits_on_member_id", unique: true
+    t.index [ "name" ], name: "index_candidate_portraits_on_name", unique: true
   end
 
   create_table "committee_aliases", force: :cascade do |t|
@@ -1430,6 +1444,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_000100) do
   add_foreign_key "campaign_statement_topics", "topics"
   add_foreign_key "campaign_statements", "campaign_extractions"
   add_foreign_key "campaign_statements", "members", on_delete: :nullify
+  add_foreign_key "candidate_portraits", "members", on_delete: :nullify
   add_foreign_key "committee_aliases", "committees"
   add_foreign_key "committee_memberships", "committees"
   add_foreign_key "committee_memberships", "members"

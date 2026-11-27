@@ -23,30 +23,38 @@
           <%= @questionnaire.fetch("link_label", "Open published article") %> <span aria-hidden="true">↗</span>
         <% end %>
         <p class="questionnaire-link-note"><%= @questionnaire.fetch("link_note", "Opens in a new tab.") %></p>
-        <% if Campaigns::ElectionBackfill.htr?(source) %>
-          <p class="questionnaire-link-note"><strong>Candidate photos are optional.</strong> Check the original article for any portraits.</p>
-        <% end %>
       </div>
     </section>
-    <%= form_with model: [:admin, source], class: "questionnaire-editor",
+    <% formatted_article = @questionnaire["body_selector"].present? %>
+    <% reader = { controller: "questionnaire-article", questionnaire_article_url_value: read_questionnaire_admin_campaign_sources_path(year: @year, source_url: source.source_url) } if formatted_article %>
+    <%= form_with multipart: !formatted_article, data: reader, model: [:admin, source], class: "questionnaire-editor",
           url: (source.persisted? ? admin_campaign_source_path(source, answers: 1, from_year: params[:from_year]) : admin_campaign_sources_path(year: @year, lead: params[:lead])) do |form| %>
       <h2 class="questionnaire-step"><span>2</span> <%= form.label :body, "Paste the Council answers" %></h2>
       <p id="questionnaire-help">
         <% if @questionnaire["start_heading"] %>
-          Start at <strong><%= @questionnaire["start_heading"] %></strong>. Copy each name, question and answer, including any “Did not answer” entries.
+          Copy the whole article or the Council section. A formatted paste keeps the named portraits with the answers.
+        <% elsif formatted_article %>
+          Open the saved HTML article or paste the formatted questionnaire to include the publisher’s named portraits.
         <% else %>
           Copy the Council questions, each candidate’s name, and their answers into this box.
         <% end %>
       </p>
       <% if (heading = @questionnaire["end_heading"]) %>
-        <p class="questionnaire-boundary" id="questionnaire-boundary"><strong>Stop before the <%= heading %> heading.</strong> If you also paste that heading on its own line, we’ll leave out the school board section for you.</p>
+        <p class="questionnaire-boundary" id="questionnaire-boundary">For a whole article, we keep the text between <strong><%= @questionnaire.fetch("start_heading") %></strong> and <strong><%= heading %></strong>. Leave those headings on their own lines.</p>
       <% end %>
       <% if source.errors.any? %>
         <p class="flash flash--danger" role="alert"><%= source.errors.map { |error| error.attribute == :body ? "The pasted text #{error.message}" : error.full_message }.to_sentence %></p>
       <% end %>
-      <%= form.text_area :body, rows: 9, class: "form-textarea", required: true, placeholder: "Paste the questions and answers here…", aria: { describedby: ["questionnaire-help", ("questionnaire-boundary" if heading)].compact.join(" ") } %>
+      <%= form.text_area :body, data: ({ questionnaire_article_target: "body", action: "paste->questionnaire-article#paste input->questionnaire-article#edit" } if formatted_article), rows: 9, class: "form-textarea", required: true, placeholder: "Paste the questions and answers here…", aria: { describedby: ["questionnaire-help", ("questionnaire-boundary" if heading)].compact.join(" ") } %>
+      <% if formatted_article %>
+        <%= hidden_field_tag :portrait_evidence, params[:portrait_evidence], data: { questionnaire_article_target: "evidence" } %>
+        <%= label_tag :questionnaire_file, "Or open a saved HTML article" %>
+        <%= file_field_tag :questionnaire_file, name: nil, accept: ".html,.htm,text/html", data: { action: "change->questionnaire-article#choose" } %>
+        <p role="status" data-questionnaire-article-target="status"></p>
+      <% end %>
+      <%= render "portrait_file" unless formatted_article %>
       <div class="questionnaire-save">
-        <%= form.submit "Save Council answers", class: "election-action election-action--primary" %>
+        <%= form.submit "Save Council answers", data: { questionnaire_article_target: "save" }, class: "election-action election-action--primary" %>
         <%= link_to "Back to #{@return_year || @year} election", admin_elections_path(year: @return_year || @year) %>
       </div>
     <% end %>

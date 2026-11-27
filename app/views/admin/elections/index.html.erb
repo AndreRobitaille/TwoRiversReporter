@@ -95,12 +95,6 @@
           <p><%= @workspace.edition.fetch("term_members").to_sentence %>.</p>
         </div>
       <% end %>
-      <% if @workspace.leads.key?("htr") %>
-        <div class="election-panel-row">
-          <p class="election-task-status">Optional</p><h3>Candidate photos</h3>
-          <p>The article intake saves answers. Candidate portraits can be checked in the original article.</p>
-        </div>
-      <% end %>
     </section>
   </div>
   <footer class="election-source-tools">

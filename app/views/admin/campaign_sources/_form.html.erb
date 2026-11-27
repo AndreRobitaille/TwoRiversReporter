@@ -1,4 +1,4 @@
-<%= form_with model: [:admin, source] do |form| %>
+<%= form_with multipart: true, model: [:admin, source] do |form| %>
   <% if source.errors.any? %>
     <div class="flash flash--danger" role="alert"><%= source.errors.full_messages.to_sentence %></div>
   <% end %>
@@ -35,6 +35,7 @@
     <%= form.label :coverage_notes, "Missing material or other context", class: "form-label" %>
     <%= form.text_area :coverage_notes, rows: 2, class: "form-textarea" %>
   </div>
+  <%= render "portrait_file" %>
   <%= form.submit "Save article", class: "btn btn--primary" %>
   <%= link_to "Cancel", admin_campaign_sources_path, class: "btn btn--secondary" %>
 <% end %>

@@ -8,28 +8,32 @@ module Campaigns
     end
 
     def self.import_questionnaire!(edition, lead, html)
-      article = Nokogiri::HTML5(html).at_css(lead.fetch("body_selector"))
-      raise ArgumentError, "Article text missing." unless article
-      article.css("br").each { |br| br.replace("\n") }
-      sections = article.css("p, h2, li").slice_before { |node| node.name == "h2" }.to_a
-      responses = sections.select { |heading, *| heading.name == "h2" }
-      names = responses.map { |heading, *| heading.text.squish }
-      unless names.sort == edition.fetch("candidates").sort && responses.all? { |_heading, *answer| answer.any? { |node| node.text.present? } }
-        raise ArgumentError, "Questionnaire coverage changed. Review the source before importing."
-      end
-      body = sections.flatten.filter_map { |node| node.text.strip.presence }.join("\n\n")
-      CampaignSource.find_or_create_by!(source_url: lead.fetch("url")) do |source|
+      article = QuestionnaireArticle.new(edition, lead).read(html)
+      source = CampaignSource.find_or_create_by!(source_url: lead.fetch("url")) do |source|
         source.assign_attributes(lead.slice("title", "publisher", "published_on"))
-        source.assign_attributes(election_on: edition.fetch("election_on"), coverage: "full_article", body: body)
+        source.assign_attributes(election_on: edition.fetch("election_on"), coverage: lead["section"] ? "selected_excerpts" : "full_article",
+          coverage_notes: lead["section"], body: article.body, questionnaire_portraits: article.portraits)
       end
+      if article.portraits.present?
+        source.with_lock do
+          source.add_article_portraits(article.portraits)
+          source.save! if source.changed?
+        end
+      end
+      source
     end
 
-    # A standalone heading marks the end of this race. Keep mentions in answers.
-    def self.before_end_heading(body, lead)
-      return unless (heading = lead&.fetch("end_heading", nil))
+    # Match standalone headings so a candidate can mention another race in an answer.
+    def self.council_excerpt(body, lead)
+      return unless lead && lead["end_heading"]
+
       lines = body.to_s.lines
-      boundary = lines.index { |line| line.squish.delete_suffix(":").casecmp?(heading) }
-      lines.take(boundary).join if boundary
+      headings = lines.map { |line| line.squish.delete_suffix(":").downcase }
+      first = headings.index(lead["start_heading"]&.downcase)
+      last = headings.index(lead.fetch("end_heading").downcase)
+      return unless first || last
+
+      lines[(first ? first + 1 : 0)...last].join
     end
 
     def self.catalog_article(record)
@@ -40,7 +44,7 @@ module Campaigns
     end
 
     def self.htr?(record)
-      record.publisher.match?(/\bHerald Times Reporter\b/i)
+      record.publisher.to_s.match?(/\bHerald Times Reporter\b/i)
     end
 
     def self.caption_path(lead)

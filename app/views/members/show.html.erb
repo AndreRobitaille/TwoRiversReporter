@@ -5,7 +5,7 @@
 
 <% has_campaign = !@separate_record && @campaign_platforms.present? %>
 <article class="member-article<%= " member-article--with-campaign" if has_campaign %>">
-  <%= render "profile_header" %>
+  <%= render "profile_header", show_record_links: has_campaign %>
   <% if @separate_record && !gated_for_visitor? %>
     <p><%= link_to "Back to #{@member.name}’s profile", member_path(@member) %></p>
   <% end %>
@@ -13,13 +13,6 @@
     <p id="campaign-record">We don’t have a sourced campaign statement for <%= @member.name %> yet.</p>
   <% end %>
   <%= render "selected_statement" %>
-
-  <% if has_campaign %>
-    <nav class="member-profile-nav" aria-label="Member record sections">
-      <a href="#voting-record">Voting record</a>
-      <a href="#campaign-record">Campaign priorities</a>
-    </nav>
-  <% end %>
 
   <div class="member-profile-layout">
     <div class="member-profile-primary">

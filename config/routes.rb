@@ -84,6 +84,7 @@ Rails.application.routes.draw do
     end
   end
 
+  get "candidate-portraits/:id", to: "candidate_portraits#show", as: :candidate_portrait
   get "sitemap.xml", to: "sitemaps#show", as: :sitemap, defaults: { format: :xml }
 
   get "admin" => "admin/dashboard#show", as: :admin_root
@@ -92,6 +93,7 @@ Rails.application.routes.draw do
     resources :council_formal_sources, only: %i[index show new create edit update], controller: "admin/council_formal_sources", as: :admin_council_formal_sources
     resources :campaign_sources, only: %i[index show new create edit update], controller: "admin/campaign_sources", as: :admin_campaign_sources do
       post :analyze, on: :member
+      post :read_questionnaire, on: :collection
     end
     resources :elections, only: :index, controller: "admin/elections", as: :admin_elections
     resource :campaign_forum, only: %i[new create], controller: "admin/campaign_forums", as: :admin_campaign_forum do

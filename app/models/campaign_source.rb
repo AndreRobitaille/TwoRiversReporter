@@ -19,6 +19,8 @@ class CampaignSource < ApplicationRecord
   validates :body, length: { maximum: 200_000 }
   validate :publisher_url
   validate :transcript_coverage
+  before_update :clear_replaced_article_portraits, if: :will_save_change_to_source_url?
+  after_save :schedule_portrait_updates
   after_save :retain_version
   after_commit :queue_processing, on: %i[create update]
 
@@ -30,7 +32,17 @@ class CampaignSource < ApplicationRecord
     prepared_transcript.present?
   end
 
+  def add_article_portraits(photos)
+    @replacement_portraits = photos if persisted? && will_save_change_to_source_url?
+    self.questionnaire_portraits = questionnaire_portraits.merge(photos)
+  end
+
   private
+
+  def clear_replaced_article_portraits
+    self.questionnaire_portraits = @replacement_portraits || {}
+    @replacement_portraits = nil
+  end
 
   def transcript_coverage
     if forum? != (coverage == "full_transcript")
@@ -46,6 +58,17 @@ class CampaignSource < ApplicationRecord
     snapshot = attributes.slice(*SNAPSHOT_FIELDS)
     snapshot.delete("prepared_transcript") unless forum?
     Digest::SHA256.hexdigest(JSON.generate([ id, snapshot ]))
+  end
+
+  def schedule_portrait_updates
+    names = if saved_change_to_questionnaire_portraits?
+      saved_change_to_questionnaire_portraits.compact.flat_map(&:keys).uniq
+    elsif saved_changes.keys.intersect?(%w[election_on published_on publisher source_url])
+      questionnaire_portraits.keys
+    end
+    return if names.blank?
+
+    ActiveRecord.after_all_transactions_commit { names.each { |name| RefreshCandidatePortraitJob.perform_later(name) } }
   end
 
   def retain_version

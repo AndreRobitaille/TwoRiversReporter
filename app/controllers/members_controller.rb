@@ -97,6 +97,7 @@ class MembersController < ApplicationController
   def load_profile
     respond_to { |format| format.html }
     @member = Member.find(params[:id])
+    @portrait = CandidatePortrait.current_for(@member.name => @member.id)[@member.name]
 
     memberships = @member.committee_memberships.where("role IS NULL OR role NOT IN (?)", %w[staff non_voting]).includes(:committee)
     @memberships = memberships.current.sort_by { |cm| [ cm.committee.name == "City Council" ? 0 : 1, cm.committee.name ] }

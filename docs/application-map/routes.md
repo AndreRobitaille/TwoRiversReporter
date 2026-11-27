@@ -38,11 +38,16 @@ checked by `ApplicationDispatchTest`; actual form and access evidence is in
 | --- | --- | --- |
 | GET | `/admin/campaign_sources` | `admin/campaign_sources#index` |
 | POST | `/admin/campaign_sources` | `admin/campaign_sources#create` |
+| POST | `/admin/campaign_sources/read_questionnaire` | Preview the Council answers and named portrait links from a formatted paste or saved article. |
 | GET | `/admin/campaign_sources/new` | `admin/campaign_sources#new` |
 | GET | `/admin/campaign_sources/:id/edit` | `admin/campaign_sources#edit` |
 | GET | `/admin/campaign_sources/:id` | `admin/campaign_sources#show` |
 | POST | `/admin/campaign_sources/:id/analyze` | Queue authorized analysis for the current source version |
 | PATCH / PUT | `/admin/campaign_sources/:id` | `admin/campaign_sources#update` |
+
+The guide and member profile use `GET /candidate-portraits/:id` to serve each
+person’s current JPEG. Both pages refresh their image URL when it changes. The
+stable endpoint also revalidates the current image for a returning visitor.
 
 The prepared-forum extension adds two admin-only routes:
 

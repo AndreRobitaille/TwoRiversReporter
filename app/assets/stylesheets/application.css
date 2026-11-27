@@ -7807,3 +7807,88 @@ th.sortable-header:hover {
   }
 
 }
+
+.election-people .election-person-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  justify-content: space-between;
+  min-height: 44px;
+  padding-block: var(--space-2);
+}
+
+.candidate-photo {
+  display: block;
+  flex: none;
+  width: auto;
+  height: auto;
+  max-width: var(--portrait-width, 8rem);
+  max-height: var(--portrait-height, 9rem);
+  object-fit: contain;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  background: var(--color-surface);
+}
+
+.election-person-row {
+  --portrait-width: 5.5rem;
+  --portrait-height: 5rem;
+}
+
+.member-article-header:has(> .candidate-photo) {
+  --portrait-width: 7rem;
+  --portrait-height: 9rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: var(--space-4);
+}
+
+.member-identity {
+  overflow-wrap: anywhere;
+}
+
+.member-header-copy .member-profile-nav {
+  margin: var(--space-2) 0 0;
+}
+
+.member-article-header > .candidate-photo {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+@media (max-width: 767px) {
+  .member-article-header:has(> .candidate-photo) .member-header-copy {
+    display: contents;
+  }
+
+  .member-header-copy > :not(.member-identity) {
+    grid-column: 1 / -1;
+  }
+
+  .member-identity,
+  .member-article-header > .candidate-photo {
+    align-self: center;
+    grid-row: 2;
+  }
+}
+
+.portrait-credit {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  margin: var(--space-1) 0 0;
+}
+
+@media (min-width: 768px) {
+  .election-person-row {
+    --portrait-width: 7rem;
+    --portrait-height: 6rem;
+  }
+
+  .member-article-header:has(> .candidate-photo) {
+    --portrait-width: 10rem;
+    --portrait-height: 11rem;
+    column-gap: var(--space-6);
+  }
+}
