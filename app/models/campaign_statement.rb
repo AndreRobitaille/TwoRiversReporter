@@ -15,7 +15,7 @@ class CampaignStatement < ApplicationRecord
 
   def self.current_for(member)
     current_versions = {}
-    where(member: member, status: "accepted")
+    where(member: member, status: "accepted", excluded_at: nil)
       .includes(campaign_extraction: { campaign_source_version: :campaign_source })
       .select do |statement|
         version = statement.campaign_source_version

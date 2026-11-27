@@ -49,8 +49,10 @@ module Admin
       when "completed"
         if unresolved.any?
           "Check the items below against the original article. Only statements that passed the source and identity checks are linked to Council member records."
+        elsif matched.any? { |statement| !statement.excluded_at? }
+          "Checked statements are linked to Council member records."
         else
-          matched.any? ? "Checked statements are linked to Council member records." : "Analysis is complete. No statements from this source are linked to a Council member record."
+          "Analysis is complete. No statements from this source are linked to a Council member record."
         end
       when "budget_paused"
         can_start? ? "Start analysis of these answers. Checked statements can appear on Council member records when this source finishes." :

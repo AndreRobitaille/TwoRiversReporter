@@ -1,8 +1,14 @@
-<li data-campaign-statement>
+<li data-campaign-statement id="<%= dom_id(statement) %>">
   <p><strong><%= CampaignStatement::KINDS.fetch(statement.data["kind"], "Statement") %></strong> · <%= statement.data["summary"] %></p>
   <% if statement.data["supporting_quote"].present? %>
     <blockquote><%= statement.data["supporting_quote"] %></blockquote>
   <% end %>
   <% if statement.data["conditions"].present? %><p>Conditions · <%= statement.data["conditions"] %></p><% end %>
   <% if statement.data["timeframe"].present? %><p>Timeframe · <%= statement.data["timeframe"] %></p><% end %>
+  <% if local_assigns[:reviewable] %>
+    <% if statement.excluded_at? %><p><strong>Excluded from the campaign record</strong></p><% end %>
+    <%= button_to(statement.excluded_at? ? "Restore statement" : "Exclude statement",
+          admin_campaign_source_statement_path(@source, statement), method: :patch, class: "election-action",
+          params: { decision: (statement.excluded_at? ? "restore" : "exclude"), from_year: params[:from_year] }) %>
+  <% end %>
 </li>

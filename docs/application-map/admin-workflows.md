@@ -432,6 +432,11 @@ without another source analysis or replacing original uploaded transcripts.
   Page reads do not publish claims. The extraction job publishes
   statements whose source passage and unique existing member identity pass the
   automatic checks; this view links matched records and identifies exceptions.
+- **Statement review:** in a completed current questionnaire, open **Review
+  statements** under a member’s name. **Exclude statement** removes that passage
+  from the public campaign record and the inputs for the next term assessment.
+  **Restore statement** puts it back. The saved quotation and extraction stay
+  available to the editor, and the audit log records the decision.
 - **Failures:** missing input, invalid publisher link, missing publication date
   versus invented date, partial coverage, lost continuation/qualification,
   unauthorized current/historical access, and an old submission replacing an edit.

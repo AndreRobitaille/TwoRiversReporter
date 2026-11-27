@@ -224,6 +224,30 @@ Disabling the worker's exact-request lookup in an isolated copy made the
 independent-publication test record zero provider calls instead of one.
 The restored checkout passed that test.
 
+### Reviewing one saved Seehafer statement
+
+On the working tree based on `9dcbb935`, the 390-pixel local browser journey
+used the saved April 1, 2026 questionnaire and its completed extraction. Adam
+Wachowski’s statement described a willingness to meet with residents when
+possible. The editor’s view showed the exact passage. The public statement
+link showed the summary, its qualification and the publisher link.
+
+Excluding the statement reduced both the public campaign positions and the next
+term assessment’s position groups from nine to eight. A fresh public request
+showed the saved statement link as unavailable. Replaying the retained extraction
+preserved the exclusion and the original passage. Restoring returned both
+counts to nine and reopened the public link. The editor actions were recorded
+in the audit log. The decision belongs to the reviewed source version. This
+case used the saved assessment inputs and made zero provider requests.
+
+The review used an isolated copy of the saved article and relevant civic rows
+with a synthetic editor. The application selection passed 55 Rails tests and
+1,068 assertions, and the related campaign and election system suites passed
+six Chromium journeys and 224 assertions. Removing the exclusion filter in a
+separate copy failed the fresh-profile count assertion. Restoring the filter
+passed both statement-review tests with 55 assertions. RuboCop and
+`git diff --check` passed.
+
 ### Restoring the 2025 HTR questionnaire
 
 On the working tree based on `536aa721`, ADM-21 accepts a formatted article

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_27_001000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_27_002000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -260,6 +260,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_001000) do
     t.jsonb "data", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "excluded_at"
     t.index [ "campaign_extraction_id", "sequence" ], name: "idx_on_campaign_extraction_id_sequence_3d52e6269b", unique: true
     t.index [ "campaign_extraction_id" ], name: "index_campaign_statements_on_campaign_extraction_id"
     t.index [ "member_id" ], name: "index_campaign_statements_on_member_id"

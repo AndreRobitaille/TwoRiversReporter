@@ -15,13 +15,13 @@ The election desk and speaker-labeling workflow are in `82374913`, the reviewed 
 | 2024 HTR | Full five-question questionnaire for five candidates. The earlier excerpt retains its completed analysis. | Review the full version against the existing commitments for the three members whose terms end in 2027. |
 | 2025 HTR | Council section saved with five names, including two explicit nonresponses. | The current version awaits analysis. Preserve both nonresponses. |
 | 2026 HTR | March 19 questionnaire saved for all five candidates. | The current version awaits analysis. |
-| 2026 Seehafer | April 1 questionnaire analyzed. Its statements can be reviewed on members’ campaign records. | Use a saved statement to exercise editorial acceptance and correction. |
+| 2026 Seehafer | April 1 questionnaire analyzed. One saved statement has been checked through exclusion, restore and the next assessment’s inputs. | Review additional statements as needed. |
 
 Thirteen people have a current portrait in development. The election guide and member profiles use the newest named article photo, with a border and the full frame. New questionnaire intake refreshes both pages. The Council roster stays text-only. [Election guidance](../ELECTION_FEATURES.md) · [Historical intake steps and verification](../application-map/election-backfill-2026-11-27.md)
 
 ## Work that can proceed independently
 
-- **Campaign review.** Start with a completed Seehafer statement for a member outside the 2024 cohort. Trace it from the original passage to a later profile request, including what happens when an editor excludes or corrects it. Use the existing exact-request authorization for any paid analysis of the HTR versions. [Next case on #328](https://github.com/AndreRobitaille/TwoRiversReporter/issues/328#issuecomment-7229489448)
+- **Campaign review.** Compare the full 2024 HTR questionnaire with the reviewed commitments for Bittner, Brandt and Derby. Add to the count only when the full answer supports a distinct commitment. Keep prior reviews and the evidence for their scores traceable. Use the existing exact-request authorization for any paid analysis of the HTR versions. [Verified Seehafer case and next step, #328](https://github.com/AndreRobitaille/TwoRiversReporter/issues/328#issuecomment-7229991933)
 - **Historical forums.** The two 2024 forums have completed analysis. The five caption files for three events in 2025–26 are available locally under `storage/election-captions`. Start in the speaker desk, check voices against the recording and preserve uncertain passages as gaps. [Events, recording order and completion checks, #337](https://github.com/AndreRobitaille/TwoRiversReporter/issues/337)
 - **Results and archive.** The public guide currently advances one week after Election Day. The later milestone gives each edition a permanent address and follows preliminary totals through the municipal canvass. [Post-election guide, #338](https://github.com/AndreRobitaille/TwoRiversReporter/issues/338)
 

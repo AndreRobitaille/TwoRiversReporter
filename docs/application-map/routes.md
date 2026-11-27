@@ -54,6 +54,7 @@ checked by `ApplicationDispatchTest`; actual form and access evidence is in
 | GET | `/admin/campaign_sources/:id` | `admin/campaign_sources#show` |
 | POST | `/admin/campaign_sources/:id/analyze` | Queue authorized analysis for the current source version |
 | PATCH / PUT | `/admin/campaign_sources/:id` | `admin/campaign_sources#update` |
+| PATCH | `/admin/campaign_sources/:source_id/statements/:id` | Exclude or restore a matched statement in the current source version |
 
 The guide and member profile use `GET /candidate-portraits/:id` to serve each
 person’s current JPEG. Both pages refresh their image URL when it changes. The

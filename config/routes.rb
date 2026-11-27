@@ -94,6 +94,7 @@ Rails.application.routes.draw do
     resources :campaign_sources, only: %i[index show new create edit update], controller: "admin/campaign_sources", as: :admin_campaign_sources do
       post :analyze, on: :member
       post :read_questionnaire, on: :collection
+      resources :statements, only: :update, controller: "admin/campaign_statement_reviews"
     end
     resources :elections, only: :index, controller: "admin/elections", as: :admin_elections
     scope "elections/:year", as: :admin_election do
