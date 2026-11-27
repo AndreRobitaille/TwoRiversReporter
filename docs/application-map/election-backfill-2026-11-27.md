@@ -41,6 +41,20 @@ year-round member record under the existing funding and evidence rules.
 
 ## Preparing the local sources
 
+### Queued HTR discovery
+
+Choose **Find HTR questionnaire** in **Admin → Elections** for a selected year. With the local queue worker running (`bin/jobs`), the console equivalent is `bin/rails runner 'DiscoverHtrQuestionnairesJob.perform_later(2025)'`. Production’s recurring configuration queues the same job at 7:15 a.m. Central from March 1 through Election Day for a configured spring election.
+
+During the campaign, discovery checks HTR’s recent news sitemap. For an earlier election, or when the sitemap yields no matching links, it searches the Internet Archive’s URL index for the publisher’s election coverage. The job reads article text from the publisher or its known syndicated copy. A found link stays on that election’s desk if access is blocked or the reader cannot identify the Council answers. The editor can supply a permitted copy. Each subsequent search can collect a previously blocked article and reuses a saved source with its corrections. Discovery coverage depends on what the publisher or the archive has indexed.
+
+On the November 27 working tree based on `55ace328`, an authenticated Chromium session queued 2025 through the election desk in an isolated PostgreSQL database. A Solid Queue worker claimed that job, found the original HTR link in the live index, and read the syndicated questionnaire. On a fresh admin request all five Council candidates appeared. All 28 paragraphs matched the retained article in order after normalizing whitespace, including Jeff Dahlke’s and Bill LeClair’s explicit nonresponses. The saved Council section ended before the school-board race.
+
+The integration test uses simulated publisher responses to exercise an uncataloged spring edition through the recurring task, a blocked copy, next-day recovery and the Election Day cutoff. A separate historical run checks that a repeat job preserves an editor’s correction. In an isolated test process, skipping a lead discovered the day before failed the next-day source-count assertion. Removing that fault restored the normal intake path.
+
+The focused Rails run covered discovery, election backfill, source intake, candidate lists and route dispatch (24 tests, 635 assertions). The four Chromium election backfill journeys passed 153 assertions, and the separate live worker journey passed 27. All ran on Ruby 4.0.9 with no skips. RuboCop and `git diff --check` passed. The production schedule takes effect on deployment.
+
+### Preparing cataloged terms and recordings
+
 Run each of these once after a fresh development sync, or rerun to fill gaps.
 
 ```sh

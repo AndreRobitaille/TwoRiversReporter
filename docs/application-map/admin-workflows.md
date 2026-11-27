@@ -409,6 +409,9 @@ that election immediately. Needs you applies to the current season only.
 Historical intake stays available under Backfill tasks. Done and waiting
 includes the next milestone, saved sources and prior campaign evidence. A
 saved forum can be reopened for correction.
+**Find HTR questionnaire** queues the seasonal discovery job for the selected
+year. A discovered article opens in the existing questionnaire reader. If
+automatic intake needs help, the editor can supply the Council answers there.
 [Historical backfill workflow and checks](election-backfill-2026-11-27.md)
 
 The [forum quotation recovery command](campaign-forum-quote-recovery-2026-11-08.md)

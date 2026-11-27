@@ -25,6 +25,8 @@
     </div>
   </header>
 
+  <%= tag.p(notice, class: "flash flash--success", role: "status") if notice %>
+
   <% if attention.any? || saved.any? %>
     <p class="election-source-guidance"><strong>Process each source when it’s ready.</strong> Checked statements from an article or forum can appear on Council member records on their own.</p>
   <% end %>
@@ -107,6 +109,9 @@
   </div>
   <footer class="election-source-tools">
     <h2>Other source tools</h2>
+    <% if filing_edition || @workspace.edition.present? %>
+      <%= button_to "Find HTR questionnaire", admin_election_find_htr_path(year: year), class: "election-action" %>
+    <% end %>
     <nav aria-label="Other source tools">
       <%= link_to "Label another forum", desk_admin_campaign_forum_path(year: year) %>
       <%= link_to "Add another article", new_admin_campaign_source_path(year: year) %>

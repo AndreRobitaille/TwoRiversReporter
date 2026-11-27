@@ -10,6 +10,10 @@
 #     schedule: at 5am every day
 
 production:
+  discover_spring_htr_questionnaires:
+    class: DiscoverHtrQuestionnairesJob
+    queue: default
+    schedule: "15 7 * 3,4 * America/Chicago"
   refresh_crawler_ip_ranges:
     class: Crawlers::RefreshIpRangesJob
     queue: default

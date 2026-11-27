@@ -3,8 +3,27 @@ module Campaigns
   class ElectionBackfill
     EDITIONS = YAML.safe_load_file(Rails.root.join("config/election_backfill.yml")).freeze
 
+    def self.election_on(year)
+      date = EDITIONS.dig(year.to_s, "election_on")
+      date ? Date.iso8601(date) : ResidentContent::CouncilElection.for_year(year)&.election_on
+    end
+
     def self.for(year)
-      EDITIONS[year.to_s]
+      historical = EDITIONS[year.to_s]
+      date = election_on(year)
+      return unless date
+
+      discoveries = ElectionArticleLead.where(election_on: date).order(:id).to_a
+      return historical if discoveries.empty?
+
+      edition = historical || { "election_on" => date.iso8601,
+        "candidates" => ResidentContent::CouncilElection.for_year(year).candidates.keys, "sources" => {} }
+      sources = edition.fetch("sources").dup
+      discoveries.each do |discovery|
+        next if sources.values.any? { |s| [ s["url"], s["original_url"] ].include?(discovery.source_url) }
+        sources["article_#{discovery.id}"] = discovery.questionnaire
+      end
+      edition.merge("sources" => sources)
     end
 
     def self.import_questionnaire!(edition, lead, html)

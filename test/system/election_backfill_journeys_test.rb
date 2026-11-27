@@ -112,6 +112,8 @@ class ElectionBackfillJourneysTest < ApplicationSystemTestCase
     assert_field "Change election", with: current_year
     select "2025", from: "Change election"
     assert_current_path admin_elections_path(year: 2025)
+    click_button "Find HTR questionnaire"
+    assert_selector "[role=status]", text: /HTR search queued/
     within "section[aria-labelledby='election-backfill-tasks']" do
       click_link "Add Council answers"
     end

@@ -11,7 +11,7 @@ module Admin
       seasons_to_date = (scheduled_years.keys.min.to_i..current_year.to_i).map(&:to_s)
       @years = (historical.keys | source_dates.keys | seasons_to_date | [ current_year ]).sort.reverse
       @year = years.include?(requested_year) ? requested_year : current_year
-      @edition = historical.fetch(year, {})
+      @edition = Campaigns::ElectionBackfill.for(year) || {}
       @scheduled = scheduled_years[year]
       official_date = edition["election_on"] || @scheduled&.fetch("election_on")
       @date = if official_date

@@ -23,6 +23,9 @@
           <%= @questionnaire.fetch("link_label", "Open published article") %> <span aria-hidden="true">↗</span>
         <% end %>
         <p class="questionnaire-link-note"><%= @questionnaire.fetch("link_note", "Opens in a new tab.") %></p>
+        <% if @questionnaire["original_url"] %>
+          <%= link_to "Original HTR article", @questionnaire["original_url"], target: "_blank", rel: "noopener" %>
+        <% end %>
       </div>
     </section>
     <% formatted_article = @questionnaire["body_selector"].present? %>

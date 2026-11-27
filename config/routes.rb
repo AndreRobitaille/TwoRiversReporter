@@ -98,6 +98,7 @@ Rails.application.routes.draw do
     end
     resources :elections, only: :index, controller: "admin/elections", as: :admin_elections
     scope "elections/:year", as: :admin_election do
+      post "find_htr", to: "admin/elections#find_htr", as: :find_htr
       resources :candidate_lists, path: "candidate_list", only: %i[new create edit update destroy], controller: "admin/election_candidate_lists"
     end
     resource :campaign_forum, only: %i[new create], controller: "admin/campaign_forums", as: :admin_campaign_forum do

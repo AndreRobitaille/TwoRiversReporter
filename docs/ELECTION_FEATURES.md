@@ -61,14 +61,23 @@ seasonal workflow below is product direction. The current public guide has a
 configured list of elections through spring 2029 and switches editions one
 week after Election Day.
 
+The HTR questionnaire check now has a Solid Queue schedule for March 1 through
+Election Day. Running **Find HTR questionnaire** in an earlier edition uses
+the same job. A publisher restriction or an unfamiliar article layout leaves
+the article on the editor’s desk for a permitted copy.
+
 | When | Work to automate | When a person is needed |
 | --- | --- | --- |
 | November 1 | Identify the three regular terms ending next spring. Recover questionnaires and forums from their previous campaigns and feature their records on the Council guide and profiles. Keep campaign records visible year-round. | Resolve a vacancy or appointment against the Clerk’s notice. |
-| December to January | Follow the Clerk’s candidacy calendar. Keep the official election link in the guide. | Publish the first available candidate list in Elections. |
-| February | Check if a City Council primary is scheduled and whether it changes the April field. | Confirm a changed field if the published ballot is unclear. |
-| March through Election Day | Watch HTR, local news, forum announcements and organizers’ video channels. Treat each recording as part of its event. Try published captions, then local transcription. Record nonresponses and gaps for each candidate. | Supply permitted questionnaire text when blocked, identify speakers and review poor audio. Use campaign accounts as attributed optional sources. |
+| December to January | Follow the Clerk’s candidacy calendar. From the January filing deadline, watch HTR and Seehafer for the field until the guide has a list. | Publish the first available list in Elections. An editor can enter it earlier. |
+| February through Election Day | Look for forum announcements and recordings. Keep each recording with its event. Try published captions, then local transcription. Check whether a February Council primary changes the April field. | Identify speakers, review poor audio or supply a missing recording. |
+| March through Election Day | Look for candidate questionnaires. Keep each response and explicit nonresponse with its candidate. | Supply permitted questionnaire text when a publisher restricts access. |
 | Election night through the canvass | Check city results and label preliminary totals with their source and time. Use the municipal canvass to confirm winners. | Read a scanned or handwritten canvass when extraction is unreliable. |
 | After the election | Feature results for about two weeks. Keep a dated, searchable annual guide with candidates, sources, results and coverage gaps. Use the oath to start the winner’s term. | Resolve any correction against the official result. |
+
+Seehafer reported the Two Rivers field on January 9, 2025 and January 7, 2026.
+HTR named all five candidates by January 14, 2025. The City’s February 17, 2025
+report already announced both March forums. [2025 Seehafer](https://www.seehafernews.com/2025/01/09/nominee-paperwork-filed-for-manitowoc-two-rivers-local-elections/) · [2026 Seehafer](https://www.seehafernews.com/2026/01/07/manitowoc-and-two-rivers-city-council-races-is-set/) · [2025 HTR](https://www.yahoo.com/news/2-vie-manitowoc-mayor-spring-105933413.html) · [February forum announcements](https://www.two-rivers.org/sites/default/files/fileattachments/city_manager/page/8434/city_managers_report_2-17-2025.pdf)
 
 The city has published candidate information beyond Facebook. The 2025 January
 report lists the draw, and the 2026 Clerk packet includes the December notice

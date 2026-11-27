@@ -18,6 +18,8 @@ module Campaigns
       article.css("br").each { |br| br.replace("\n") }
       return QuestionFirstArticle.new(@names, @lead.fetch("questions")).read(article) if @lead["questions"]
 
+      return assemble(named_profiles(article)) if @lead["named_profiles"]
+
       if @lead["start_heading"]
         nodes = council_nodes(article, clipboard)
         heading_tag = "h3"
@@ -35,23 +37,8 @@ module Campaigns
 
       blocks = nodes.slice_before { |node| node.name == heading_tag }.to_a
       responses = blocks.select { |heading, *| heading.name == heading_tag }
-      unless responses.map { |heading, *| heading.text.squish }.sort == @names.sort
-        raise ArgumentError, "The candidate headings do not match this Council race."
-      end
-
-      portraits = {}
       introduction = blocks.first if blocks.first&.first&.name != heading_tag
-      body = text_lines(Array(introduction))
-      responses.each do |heading, *answer|
-        name = heading.text.squish
-        lines = text_lines(answer)
-        raise ArgumentError, "Check the response for #{name}." unless answered?(lines.map(&:squish))
-
-        body.push(heading.text.strip, *lines)
-        photo = portrait(answer, name)
-        portraits[name] = photo if photo
-      end
-      Result.new(body.join("\n\n"), portraits)
+      assemble(responses, Array(introduction))
     end
 
     # In a plain-text copy Yahoo puts a recommendation panel between these two biographical fields.
@@ -75,6 +62,40 @@ module Campaigns
 
     private
 
+    def named_profiles(article)
+      nodes = article.css("h2, h3, p, li, figure").reject { |node| node.ancestors("p, li, figure").any? }
+      council = nodes.index { |node| node.name == "h2" && node.text.squish.casecmp?("Two Rivers City Council") }
+      if council
+        nodes = nodes.drop(council + 1).take_while { |node| node.name != "h2" }
+      elsif @names.empty?
+        raise ArgumentError, "Supply the named Council answers or add the candidate list."
+      end
+
+      nodes.slice_before { |node| %w[h2 h3].include?(node.name) }.select do |heading, *|
+        %w[h2 h3].include?(heading.name) && (council || @names.include?(heading.text.squish))
+      end
+    end
+
+    def assemble(responses, introduction = [])
+      names = responses.map { |heading, *| heading.text.squish }
+      if names.empty? || names.uniq != names || (@names.any? && names.sort != @names.sort)
+        raise ArgumentError, "The candidate headings do not match this Council race."
+      end
+
+      portraits = {}
+      body = text_lines(introduction)
+      responses.each do |heading, *answer|
+        name = heading.text.squish
+        lines = text_lines(answer)
+        raise ArgumentError, "Check the response for #{name}." unless answered?(lines.map(&:squish))
+
+        body.push(heading.text.strip, *lines)
+        photo = portrait(answer, name)
+        portraits[name] = photo if photo
+      end
+      Result.new(body.join("\n\n"), portraits)
+    end
+
     def text_lines(nodes)
       lines = nodes.reject { |node| node.name == "figure" }.map { |node| node.text.strip }.compact_blank
       return lines unless @lead["profiles_end_heading"]
@@ -86,7 +107,7 @@ module Campaigns
     end
 
     def portrait(nodes, name)
-      format = if @lead["profiles_end_heading"]
+      format = if @lead["profiles_end_heading"] || @lead["named_profiles"]
         :gannett
       elsif @lead["start_heading"]
         :yahoo
@@ -120,6 +141,10 @@ module Campaigns
     end
 
     def answered?(lines)
+      if @lead["named_profiles"]
+        return true if lines == [ "Did not answer." ]
+        return lines.join(" ").match?(/\?\s*\S/)
+      end
       question = @lead["response_question"]
       return lines.any? unless question
       return true if lines == [ "Did not answer." ]
