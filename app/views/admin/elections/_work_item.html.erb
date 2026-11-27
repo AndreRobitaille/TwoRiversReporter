@@ -1,0 +1,9 @@
+<li data-source-url="<%= item[:source_url] %>" data-election="<%= date.iso8601 %>" data-version="<%= item[:version] %>">
+  <div>
+    <p class="election-task-status" data-source-status><%= item.fetch(:status) %></p>
+    <h3><%= item.fetch(:title) %></h3>
+    <% if item[:hint] %><p><%= item[:hint] %></p><% end %>
+  </div>
+  <%= link_to item.fetch(:action), item.fetch(:path),
+        class: ["election-action", ("election-action--article" if item[:attention])], data: { label_action: (true if item[:source_url]) } %>
+</li>

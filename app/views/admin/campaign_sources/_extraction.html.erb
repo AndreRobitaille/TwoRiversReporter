@@ -31,6 +31,8 @@
       <h3>Reported gaps</h3>
       <ul><% extraction.data.fetch("coverage_gaps").each do |gap| %><li><%= gap["description"] %></li><% end %></ul>
     <% end %>
+  <% elsif local_assigns[:simplify_status] && extraction.status == "budget_paused" %>
+    <p>Waiting for analysis. The saved answers are ready.</p>
   <% else %>
     <p><%= extraction.status.humanize %><%= ": #{extraction.error_code.humanize}" if extraction.error_code.present? %>.</p>
     <p>The saved source remains available in full. No statements have been published.</p>

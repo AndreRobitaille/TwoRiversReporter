@@ -1,0 +1,24 @@
+<% complete = progress.extraction&.status == "completed" %>
+<section class="election-analysis election-analysis--<%= progress.tone %>" aria-labelledby="questionnaire-progress">
+  <header class="election-analysis__headline">
+    <p><%= saved_label %></p>
+    <h2 id="questionnaire-progress"><%= progress.label %></h2>
+  </header>
+  <div class="election-analysis__body">
+    <div>
+      <% if complete && (progress.matched.any? || progress.unresolved.any?) %>
+        <h3><%= pluralize(progress.matched.size, "matched statement") %> · <%= progress.unresolved.size %> to review</h3>
+      <% end %>
+      <p><%= progress.guidance %></p>
+      <% unless complete %><p>Each article and forum is analyzed on its own.</p><% end %>
+    </div>
+    <% if version == source.current_version && progress.can_start? %>
+      <%= button_to "Analyze this source", analyze_admin_campaign_source_path(source), params: { version_id: version.id },
+        class: "election-action election-action--article" %>
+    <% elsif progress.unresolved.any? && !version.forum? %>
+      <%= link_to "Read items to review", "#questionnaire-findings", class: "election-action election-action--article" %>
+    <% elsif complete && progress.matched.any? && !version.forum? %>
+      <%= link_to "See linked statements", "#questionnaire-findings", class: "election-action" %>
+    <% end %>
+  </div>
+</section>

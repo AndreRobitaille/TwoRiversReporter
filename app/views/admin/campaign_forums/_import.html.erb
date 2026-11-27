@@ -1,0 +1,54 @@
+<%= form_with url: admin_campaign_forum_path, scope: :forum, multipart: true, id: "forum-import", data: { turbo: false } do |form| %>
+  <%= form.hidden_field :source_id, value: @replacement.id if @replacement %>
+  <% unless desk %>
+  <div class="form-group">
+    <%= form.label :file, "Speaker-labeled JSON", class: "form-label" %>
+    <%= form.file_field :file, accept: ".json,application/json", required: true, class: "form-input" %>
+    <p class="text-sm text-muted">Upload the forum-speaker-desk export containing captions and speaker labels. You can also label an SRT or VTT with the forum speaker desk.</p>
+  </div>
+  <% end %>
+  <% if desk %>
+    <details id="recording-details" class="desk-disclosure"><summary>Recording details</summary>
+      <label for="forum-title">Recording title</label><input id="forum-title" class="form-input" value="<%= @lead['title'] %>" maxlength="300" required>
+      <label for="source-url">Recording URL</label><input id="source-url" class="form-input" type="url" value="<%= @lead['url'] %>" required>
+  <% end %>
+  <div class="form-group">
+    <%= form.label :publisher, "Organizer", class: "form-label" %>
+    <%= form.text_field :publisher, value: @values["publisher"], required: true, class: "form-input" %>
+  </div>
+  <div class="form-group">
+    <%= form.label :published_on, "Forum date", class: "form-label" %>
+    <%= form.date_field :published_on, value: @values["published_on"], required: true, class: "form-input" %>
+  </div>
+  <div class="form-group">
+    <%= form.label :election_on, "Election date", class: "form-label" %>
+    <%= form.date_field :election_on, value: @values["election_on"], required: true, class: "form-input" %>
+  </div>
+  <div class="form-group">
+    <%= form.label :coverage_notes, "Source context", class: "form-label" %>
+    <%= form.text_area :coverage_notes, value: @values["coverage_notes"], rows: 2, class: "form-textarea" %>
+  </div>
+  <% if desk %></details><% end %>
+  <div class="form-group">
+    <%= form.label :speaker_verified do %>
+      <%= form.check_box :speaker_verified, required: true %> Speaker labels were verified against the recording.
+    <% end %>
+  </div>
+  <div class="form-group">
+    <%= form.label :gaps_are_moderator do %>
+      <%= form.check_box :gaps_are_moderator %> Any unlabeled words are moderator filler.
+    <% end %>
+    <p class="text-sm text-muted">Otherwise, unlabeled words remain unattributed.</p>
+  </div>
+  <p class="text-sm text-muted">The original file and prepared text stay private. Saving queues campaign processing. New analysis requires a spending allowance.</p>
+  <% if desk %>
+    <p id="review-error" role="alert" hidden></p>
+    <div class="desk-actions">
+      <%= form.submit "Save forum", id: "save-forum", class: "desk-button desk-button--primary" %>
+      <button id="review-close" type="button" class="desk-button">Keep labeling</button>
+    </div>
+  <% else %>
+    <%= form.submit "Save forum", class: "btn btn--primary" %>
+    <%= link_to "Cancel", admin_campaign_sources_path, class: "btn btn--secondary" %>
+  <% end %>
+<% end %>

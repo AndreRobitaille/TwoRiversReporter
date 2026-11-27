@@ -31,6 +31,9 @@
   </head>
 
   <body class="theme-silo">
+    <% if content_for?(:editor_workspace) %>
+      <main class="editor-canvas"><%= yield %></main>
+    <% else %>
     <div class="adm-shell" data-controller="admin-sidebar" data-action="keydown@document->admin-sidebar#handleKeydown">
       <button class="adm-drawer-toggle"
               type="button"
@@ -56,5 +59,6 @@
         </div>
       </main>
     </div>
+    <% end %>
   </body>
 </html>

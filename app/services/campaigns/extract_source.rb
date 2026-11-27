@@ -14,8 +14,9 @@ module Campaigns
       version.reload.extraction || raise
     end
 
-    def self.call(version, budget_run: nil)
+    def self.call(version, budget_run: nil, find_authorized_run: false)
       stage = prepare(version)
+      budget_run ||= AnalysisRun.for(stage) if find_authorized_run
       return stage unless stage.claim!(budget_run)
       raise CouncilProfiles::ReserveAiSpend::Paused, "missing_budget" unless budget_run
 

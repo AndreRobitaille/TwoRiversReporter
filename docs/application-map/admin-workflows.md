@@ -403,6 +403,14 @@ assertions below are candidate acceptance criteria based on the user's brief.
 
 ## ADM-21 — Supply and correct a shared campaign article (P1)
 
+Elections in The Record opens the current Council election. The default
+switches to next spring on November 1 in Central Time. Changing the year opens
+that election immediately. Needs you applies to the current season only.
+Historical intake stays available under Backfill tasks. Done and waiting
+includes the next milestone, saved sources and prior campaign evidence. A
+saved forum can be reopened for correction.
+[Historical backfill workflow and checks](election-backfill-2026-11-27.md)
+
 The [forum quotation recovery command](campaign-forum-quote-recovery-2026-11-08.md)
 lets an active administrator recover exact passages from a retained result,
 without another source analysis or replacing original uploaded transcripts.
@@ -415,8 +423,11 @@ without another source analysis or replacing original uploaded transcripts.
   privately. Unchanged input reuses its version; duplicate URL intake cannot undo
   an explicit correction. Source retention creates no candidate, office or claim.
 - **Next:** committed source changes queue shared processing when the current
-  version has no extraction. Identical analysis input reuses cached results;
-  new analysis pauses without a spending allowance. The source page shows all
+  version has no extraction. Articles and verified forums are processed
+  independently. The source page shows whether a saved version is pending,
+  underway, complete or needs intervention. **Analyze this source** can queue
+  the current version when its exact request is authorized. Identical analysis
+  input reuses cached results. The source page shows all
   extracted participants, statements, qualifications, passages and gaps privately.
   Page reads do not publish claims. The extraction job publishes
   statements whose source passage and unique existing member identity pass the

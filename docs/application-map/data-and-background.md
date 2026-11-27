@@ -489,9 +489,12 @@ and held before provider construction; no text is silently truncated.
 - **Action:** ExtractCampaignSourceJob analyzes the supplied source once for all
   participants through the existing AI service and shared spending recorder.
   A committed source save queues it when extraction is missing. Nightly discovery
-  queues ReconcileCampaignSourcesJob to recover missing/pending intake and publish
-  completed cached results. Paused, running, uncertain and failed stages are not
-  automatically retried; this does not admit paid work.
+  queues ReconcileCampaignSourcesJob to recover missing or pending intake and
+  publish completed cached results. A source paused before transport becomes
+  eligible for the nightly pass once an active run covers its exact request.
+  Running, uncertain and failed stages are not automatically requeued. Each
+  article and forum goes through its own cycle, and reservation is required
+  before any paid transport.
 - **Required outcome:** original questions, full answer passages, distinct
   statements, conditions/timeframes and gaps remain in one retained result.
   Counts and exact text locations use code. Unresolved attribution/passages flag

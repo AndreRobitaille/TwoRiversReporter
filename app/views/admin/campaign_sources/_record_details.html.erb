@@ -1,0 +1,22 @@
+<dl class="detail-list">
+  <dt class="detail-term"><%= @version.forum? ? "Organizer" : "Publisher" %></dt><dd class="detail-value"><%= link_to @version.publisher, @version.source_url, target: "_blank", rel: "noopener" %></dd>
+  <dt class="detail-term"><%= @version.forum? ? "Forum date" : "Published" %></dt><dd class="detail-value"><%= @version.published_on&.strftime("%B %-d, %Y") || "Unknown" %></dd>
+  <dt class="detail-term">Election</dt><dd class="detail-value"><%= @version.election_on.strftime("%B %-d, %Y") %></dd>
+  <dt class="detail-term">Coverage</dt><dd class="detail-value"><%= CampaignSource::COVERAGES.fetch(@version.coverage) %></dd>
+  <% if @version.coverage_notes.present? %>
+    <dt class="detail-term">Context</dt><dd class="detail-value"><%= @version.coverage_notes %></dd>
+  <% end %>
+</dl>
+<%= render "forum", version: @version if @version.forum? %>
+<%= render "extraction", extraction: @extraction, simplify_status: @questionnaire.present? || params[:view] != "processing" if @extraction %>
+<%= render "cost_preflight", preflight: @cost_preflight if @cost_preflight %>
+<%= render "topic_matching", matching: @topic_matching, preflight: @matching_cost, simplify_status: @questionnaire.present? || params[:view] != "processing" if @topic_matching %>
+<%= yield if block_given? %>
+<section class="card">
+  <h2 class="card-title">Saved versions</h2>
+  <ul>
+    <% @versions.each do |version| %>
+      <li><%= link_to version.created_at.strftime("%b %-d, %Y at %l:%M %p"), admin_campaign_source_path(@source, version: version.id) %><%= " (viewing)" if version == @version %></li>
+    <% end %>
+  </ul>
+</section>

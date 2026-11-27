@@ -1,0 +1,116 @@
+<% content_for(:title) { "Spring #{@workspace.year} Council election — Admin" } %>
+<% year = @workspace.year %>
+<% date = @workspace.date %>
+<% attention, saved = election_work_items(@workspace).partition { |item| item[:attention] } %>
+<% filing = @workspace.scheduled %>
+<% candidate_list_due = @workspace.candidate_list_due? %>
+<% prior_sources = @workspace.prior_sources %>
+<% prior = prior_sources.find { |source| !source.forum? && Campaigns::ElectionBackfill.htr?(source) } %>
+<% clerk_url = "https://www.two-rivers.org/clerk/page/election-information" %>
+<div class="election-workspace" data-controller="election-drafts" data-user="<%= Current.user.id %>">
+  <header class="election-board-heading election-season-banner">
+    <h1>Spring <%= year %> Council election</h1>
+    <div class="election-board-context">
+      <%= form_with url: admin_elections_path, method: :get, class: "election-year-picker",
+            data: { controller: "election-year", action: "pageshow@window->election-year#restoreSelection", turbo: false } do |form| %>
+        <%= form.label :year, "Change election" %>
+        <span class="sr-only" id="election-year-help">Choosing a year opens its page immediately.</span>
+        <% choices = @workspace.years.map { |option| [option == @workspace.current_year ? "#{option} · Current season" : option, option] } %>
+        <%= form.select :year, options_for_select(choices, year), {}, class: "form-select",
+              aria: { describedby: "election-year-help" }, data: { action: "change->election-year#navigate" } %>
+      <% end %>
+      <time datetime="<%= date.iso8601 %>"><%= date.strftime("%B %-d, %Y") %></time>
+    </div>
+  </header>
+
+  <% if attention.any? || saved.any? %>
+    <p class="election-source-guidance"><strong>Process each source when it’s ready.</strong> Checked statements from an article or forum can appear on Council member records on their own.</p>
+  <% end %>
+
+  <div class="election-board-grid">
+    <% task_heading = @workspace.current? ? "election-needs-you" : "election-backfill-tasks" %>
+    <section class="election-panel" aria-labelledby="<%= task_heading %>">
+      <header class="election-panel-heading <%= (attention.any? || candidate_list_due) ? "election-panel-heading--attention" : "election-panel-heading--clear" %>">
+        <h2 id="<%= task_heading %>"><%= @workspace.current? ? "Needs you" : "Backfill tasks" %></h2>
+      </header>
+      <% if candidate_list_due %>
+        <div class="election-panel-row">
+          <h3>Check the Clerk’s candidate list</h3>
+          <p>Filing has closed. This election is waiting for a confirmed list.</p>
+          <%= link_to "Open Clerk election information", clerk_url, class: "election-action election-action--article", target: "_blank", rel: "noopener" %>
+        </div>
+      <% end %>
+      <% if attention.any? %>
+        <ul class="election-task-list"><%= render partial: "work_item", collection: attention, as: :item, locals: { date: date } %></ul>
+      <% elsif !candidate_list_due %>
+        <div class="election-panel-row"><h3><%= @workspace.current? ? "Nothing needed today" : "No source intake tasks" %></h3>
+          <% if filing && date >= Date.current %><p>The next milestone is the Clerk’s candidate list after filing closes.</p><% end %>
+        </div>
+      <% end %>
+    </section>
+
+    <section class="election-panel" aria-labelledby="election-done">
+      <header class="election-panel-heading"><h2 id="election-done">Done and waiting</h2></header>
+      <% if filing %>
+        <div class="election-panel-row">
+          <p class="election-task-status">Terms identified</p>
+          <h3>Terms ending this spring</h3>
+          <p><%= filing.fetch("terms_ending").keys.to_sentence %>.</p>
+        </div>
+        <div class="election-panel-row">
+          <% candidates = filing.fetch("candidates", {}).keys %>
+          <p class="election-task-status"><%= candidates.any? ? "Candidate list recorded" : "Awaiting candidate list" %></p>
+          <h3>Candidate filing</h3>
+          <p><%= Date.iso8601(filing.fetch("signatures_open_on")).strftime("%B %-d") %> through <%= Date.iso8601(filing.fetch("filing_deadline")).strftime("%B %-d") %>.</p>
+          <% if candidates.any? %><p><%= candidates.to_sentence %>.</p><% end %>
+        </div>
+      <% elsif @workspace.current? && date >= Date.current %>
+        <div class="election-panel-row">
+          <p class="election-task-status">Awaiting the Clerk’s schedule</p>
+          <h3>Candidate filing</h3>
+          <p><%= link_to "City Clerk election information", clerk_url, target: "_blank", rel: "noopener" %></p>
+        </div>
+      <% end %>
+      <% if prior %>
+        <div class="election-panel-row">
+          <p class="election-task-status">Prior campaign evidence</p>
+          <h3><%= prior.election_on.year %> HTR questionnaire</h3>
+          <p>Answers from the election that started the terms ending this spring.</p>
+          <% if prior_sources.all? { |source| source.current_version.extraction&.status == "completed" } %>
+            <p>Analysis complete for <%= pluralize(prior_sources.count(&:forum?), "forum") %> and the questionnaire.</p>
+          <% end %>
+          <div class="questionnaire-sidebar-links">
+            <%= link_to "View #{prior.election_on.year} questionnaire", admin_campaign_source_path(prior, from_year: year) %>
+            <%= link_to "View #{prior.election_on.year} election sources", admin_elections_path(year: prior.election_on.year) %>
+          </div>
+        </div>
+      <% end %>
+      <% if saved.any? %>
+        <ul class="election-task-list"><%= render partial: "work_item", collection: saved, as: :item, locals: { date: date } %></ul>
+      <% end %>
+      <% if @workspace.edition["term_members"] %>
+        <div class="election-panel-row">
+          <p class="election-task-status">Election outcome on file</p>
+          <h3>Elected to the Council</h3>
+          <p><%= @workspace.edition.fetch("term_members").to_sentence %>.</p>
+        </div>
+      <% end %>
+      <% if @workspace.leads.key?("htr") %>
+        <div class="election-panel-row">
+          <p class="election-task-status">Optional</p><h3>Candidate photos</h3>
+          <p>The article intake saves answers. Candidate portraits can be checked in the original article.</p>
+        </div>
+      <% end %>
+    </section>
+  </div>
+  <footer class="election-source-tools">
+    <h2>Other source tools</h2>
+    <nav aria-label="Other source tools">
+      <%= link_to "Label another forum", desk_admin_campaign_forum_path(year: year) %>
+      <%= link_to "Add another article", new_admin_campaign_source_path(year: year) %>
+      <%= link_to "Open a speaker project", desk_admin_campaign_forum_path(year: year, files: 1) %>
+      <%= link_to "Import reviewed JSON", new_admin_campaign_forum_path %>
+      <%= link_to "All campaign sources", admin_campaign_sources_path %>
+    </nav>
+  </footer>
+</div>

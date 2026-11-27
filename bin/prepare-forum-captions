@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+"""Prepare a recording for the admin speaker desk on the operator's workstation."""
+import argparse
+import os
+from pathlib import Path
+import re
+import subprocess
+import tempfile
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("video_id", help="YouTube recording ID")
+parser.add_argument("--media", type=Path, help="Use a local audio or video file")
+args = parser.parse_args()
+if not re.fullmatch(r"[\w-]{11}", args.video_id, re.ASCII):
+    parser.error("Use the 11-character YouTube recording ID.")
+directory = Path(__file__).resolve().parents[1] / "storage" / "election-captions"
+directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+destination = directory / (args.video_id + ".vtt")
+if destination.is_file() and not args.media:
+    print(destination)
+    raise SystemExit(0)
+url = "https://www.youtube.com/watch?v=" + args.video_id
+with tempfile.TemporaryDirectory(dir=directory) as temp:
+    work = Path(temp)
+    command = [os.environ.get("YT_DLP", "yt-dlp"), "--ignore-config", "--no-playlist", "--socket-timeout", "15",
+               "--retries", "1", "--extractor-retries", "1", "-o", str(work / "forum.%(ext)s")]
+    media = args.media
+    if media is None:
+        subprocess.run(command + ["--skip-download", "--write-subs", "--write-auto-subs",
+                                  "--sub-langs", "en-orig,en", "--sub-format", "vtt", url], check=False)
+        captions = next((f for f in (work / "forum.en-orig.vtt", work / "forum.en.vtt")
+                         if f.exists() and "-->" in f.read_text()), None)
+        if captions:
+            os.replace(captions, destination)
+            print(destination)
+            raise SystemExit(0)
+        subprocess.run(command + ["-f", "bestaudio/best", url], check=False)
+        media = next((f for f in work.glob("forum.*") if f.suffix in (".m4a", ".webm", ".mp4", ".opus")), None)
+    if media is None or not media.is_file():
+        parser.exit(1, "Recording unavailable. Supply --media FILE or open a local SRT in the speaker desk.\n")
+    from faster_whisper import WhisperModel
+    import numpy as np
+
+    def timestamp(seconds):
+        minutes, ms = divmod(round(seconds * 1000), 60_000)
+        return f"{minutes // 60:02}:{minutes % 60:02}:{ms // 1000:02}.{ms % 1000:03}"
+
+    model = WhisperModel("medium", device="auto", compute_type="default")
+    pcm = subprocess.check_output(["ffmpeg", "-nostdin", "-v", "error", "-i", str(media),
+                                   "-vn", "-ac", "1", "-ar", "16000", "-f", "s16le", "-"])
+    audio = np.frombuffer(pcm, dtype="<i2").astype(np.float32) / 32768
+    segments, _ = model.transcribe(audio, language="en", vad_filter=True)
+    output = work / "transcribed.vtt"
+    with output.open("w", encoding="utf-8") as handle:
+        handle.write("WEBVTT\n\n")
+        for segment in segments:
+            handle.write(f"{timestamp(segment.start)} --> {timestamp(segment.end)}\n{segment.text.strip()}\n\n")
+    if "-->" not in output.read_text():
+        parser.exit(1, "No speech was transcribed. Check the recording.\n")
+    os.replace(output, destination)
+    print(destination)

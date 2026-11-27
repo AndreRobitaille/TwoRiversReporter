@@ -1,0 +1,95 @@
+"2026":
+  questionnaire_note: An HTR questionnaire for 2026 has yet to be located.
+  election_on: "2026-04-07"
+  term_start:
+    started_on: "2026-04-21"
+    packet: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Packet-1bad539f496a49ba9d09c799ab35bf2f.pdf
+    meeting_url: https://www.two-rivers.org/citycouncil/page/city-council-meeting-262
+    meeting_on: "2026-05-18"
+    page: 9
+    sha256: 7ed089cd27decd643b8b6533c4b5efa2152c5978ee33451825451903c1f4455d
+  term_members: [Katherine Dahlke, Darla LeClair, Adam Wachowski]
+  candidates: [Katherine Dahlke, Shawntel Hoffman, Darla LeClair, Bonnie Shimulunas, Adam Wachowski]
+  sources:
+    seehafer:
+      short_title: Seehafer News candidate questionnaire
+      title: Two Rivers City Council Candidates Address Tourism, City Improvements, Life in the Cool City
+      body_selector: article .entry-content
+      publisher: Seehafer News
+      published_on: "2026-04-01"
+      url: https://www.seehafernews.com/2026/04/01/two-rivers-city-council-candidate-responses/
+      kind: article
+    joint:
+      short_title: Combined candidate forum
+      title: Two Rivers City Council candidate forum
+      publisher: League of Women Voters, Two Rivers Business Association and Chamber of Manitowoc County
+      published_on: "2026-03-19"
+      url: https://www.youtube.com/watch?v=RhG-NPrI65Q
+      kind: forum
+"2025":
+  forum_note: The March 18 Business Association forum spans three recordings. Work through its parts in the order shown.
+  election_on: "2025-04-01"
+  term_start:
+    started_on: "2025-04-15"
+    packet: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Packet-dd2fc5f16ff04a8f99ff5697daa2d1f5.pdf
+    meeting_url: https://www.two-rivers.org/citycouncil/page/city-council-meeting-271
+    meeting_on: "2025-05-19"
+    page: 5
+    sha256: bef80a5d12b8691e80f4e1b89eb2e896e8ee603cd61b58495d1acc2ed0eed4ed
+  term_members: [Bill LeClair, Tim Petri, Scott Stechmesser]
+  candidates: [Andre Robitaille, Tim Petri, Jeff Dahlke, Scott Stechmesser, Bill LeClair]
+  sources:
+    htr:
+      short_title: HTR News (Herald Times Reporter)
+      title: Two Rivers city council, school board candidates share priorities ahead of April 1 election
+      link_label: Open HTR article
+      link_note: This copy opens on Yahoo News in a new tab.
+      start_heading: Two Rivers City Council
+      end_heading: Two Rivers Board of Education
+      section: Council answers only. Stop at the Two Rivers Board of Education heading.
+      publisher: Manitowoc Herald Times Reporter
+      published_on: "2025-03-21"
+      url: https://www.yahoo.com/news/two-rivers-city-council-school-095547436.html
+      kind: article
+    league:
+      short_title: League of Women Voters forum
+      title: League of Women Voters Two Rivers City Council candidate forum
+      publisher: League of Women Voters of Manitowoc County
+      published_on: "2025-03-06"
+      url: https://www.youtube.com/watch?v=8pNwbZrKSRo
+      kind: forum
+    business:
+      short_title: Business Association · Opening recording
+      caption_note: Local transcription has repeated phrases and long gaps in this recording. Check wording and timing against the video before attributing an answer.
+      title: Two Rivers Business Association City Council candidate forum
+      publisher: Two Rivers Business Association
+      published_on: "2025-03-18"
+      url: https://www.youtube.com/watch?v=5Wmgl7ZFUgg
+      kind: forum
+    business_continued:
+      short_title: Business Association · Short restart
+      caption_note: This short restart was transcribed locally. Check it against the other parts before attributing a new answer.
+      title: Two Rivers Business Association candidate forum · Continued
+      publisher: Two Rivers Business Association
+      published_on: "2025-03-18"
+      url: https://www.youtube.com/watch?v=QZYVmc8aE2E
+      kind: forum
+    business_part2:
+      short_title: Business Association · Part 2
+      title: Two Rivers Business Association candidate forum · Part 2
+      publisher: Two Rivers Business Association
+      published_on: "2025-03-18"
+      url: https://www.youtube.com/watch?v=Q_p7r4TKG5U
+      kind: forum
+"2024":
+  election_on: "2024-04-02"
+  term_members: [Mark Bittner, Doug Brandt, Shannon Derby]
+  sources:
+    htr:
+      short_title: HTR News (Herald Times Reporter)
+      title: Two Rivers council candidates talk about the city's potential as the April 2 election nears
+      publisher: Herald Times Reporter
+      published_on: "2024-03-27"
+      url: https://www.htrnews.com/story/news/politics/elections/2024/03/27/two-rivers-council-candidates-talk-about-the-citys-potential-as-the-april-2-election-nears/73099320007/
+      kind: article
+      outside_council_records: [Andrew Quackenbush]

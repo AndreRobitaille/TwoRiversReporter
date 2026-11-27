@@ -18,7 +18,7 @@ module Campaigns
       check(@raw_json.bytesize <= MAX_BYTES, "The speaker file must be smaller than 2 MB.")
       check(@raw_json.valid_encoding?, "The speaker file must contain UTF-8 JSON.")
       @data = JSON.parse(@raw_json)
-      check(@data.is_a?(Hash) && @data.values_at("format", "version", "parserVersion") == [ "forum-speaker-desk", 1, 1 ],
+      check(@data.is_a?(Hash) && @data.values_at("format", "version") == [ "forum-speaker-desk", 1 ] && [ 1, 2 ].include?(@data["parserVersion"]),
         "Use a forum-speaker-desk version 1 export.")
       check(@verified_by&.persisted?, "A reviewer must verify the speaker labels.")
       check(@data["title"].is_a?(String) && @data["title"].present?, "The file needs a forum title.")
@@ -27,7 +27,11 @@ module Campaigns
       check(Digest::SHA256.hexdigest(@data["captions"]) == @data["sourceSha256"], "The captions do not match the file's source hash.")
       names = @data["names"]
       check(names.is_a?(Array) && names.any? && names.all? { |name| name.is_a?(String) && name.present? }, "The file needs speaker names.")
-      words = caption_words
+      words = ForumCaptions.words(@data["captions"])
+      # Early version-one exports used rolling-line removal even on plain WebVTT.
+      if @data["parserVersion"] == 1 && words.size != @data["wordCount"] && @data["captions"].lstrip.start_with?("WEBVTT")
+        words = legacy_caption_words
+      end
       check(words.size == @data["wordCount"], "The parsed word count does not match the speaker labels.")
       segments = speaker_segments(words, names)
       body = +""
@@ -50,7 +54,7 @@ module Campaigns
 
     private
 
-    def caption_words
+    def legacy_caption_words
       words = []
       @data["captions"].split(/\n\s*\n/).each do |block|
         lines = block.lines.map(&:chomp)

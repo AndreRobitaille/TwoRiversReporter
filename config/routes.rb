@@ -90,8 +90,15 @@ Rails.application.routes.draw do
 
   scope :admin do
     resources :council_formal_sources, only: %i[index show new create edit update], controller: "admin/council_formal_sources", as: :admin_council_formal_sources
-    resources :campaign_sources, only: %i[index show new create edit update], controller: "admin/campaign_sources", as: :admin_campaign_sources
-    resource :campaign_forum, only: %i[new create], controller: "admin/campaign_forums", as: :admin_campaign_forum
+    resources :campaign_sources, only: %i[index show new create edit update], controller: "admin/campaign_sources", as: :admin_campaign_sources do
+      post :analyze, on: :member
+    end
+    resources :elections, only: :index, controller: "admin/elections", as: :admin_elections
+    resource :campaign_forum, only: %i[new create], controller: "admin/campaign_forums", as: :admin_campaign_forum do
+      get :desk
+      get :recording
+      post :captions
+    end
 
     resource :site_settings, only: %i[show update], controller: "admin/site_settings", as: :admin_site_settings
 

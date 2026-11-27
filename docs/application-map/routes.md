@@ -18,6 +18,16 @@ promise that every representation is supported or authorized.
 
 Current reconciliation: PR #181 removes the ten unsupported dispatch rows and duplicate promotion after reviewing actual controls, while retaining approved compatibility actions. `ApplicationDispatchTest` verifies current repository routes; real browser/denial/failure evidence is in the [audit](overnight-progress.md#merged-notification-and-admin-evidence). The expanded table below preserves the historical discovery revision.
 
+## Election backfill additions, November 27, 2026
+
+| Verb | Path | Operator action |
+| --- | --- | --- |
+| GET | `/admin/elections` | Choose an election, source or recording |
+| GET | `/admin/campaign_forum/desk` | Label a forum or reopen a saved speaker project |
+| GET | `/admin/campaign_forum/desk.json?source_id=ID` | Load the retained project for a forum correction |
+| GET | `/admin/campaign_forum/recording` | Open captions for a known recording |
+| POST | `/admin/campaign_forum/captions` | Parse an uploaded private SRT or VTT for the desk |
+
 ## Campaign article intake addition: November 8, 2026
 
 ADM-21 adds these private admin dispatches. They were enumerated locally and
@@ -31,6 +41,7 @@ checked by `ApplicationDispatchTest`; actual form and access evidence is in
 | GET | `/admin/campaign_sources/new` | `admin/campaign_sources#new` |
 | GET | `/admin/campaign_sources/:id/edit` | `admin/campaign_sources#edit` |
 | GET | `/admin/campaign_sources/:id` | `admin/campaign_sources#show` |
+| POST | `/admin/campaign_sources/:id/analyze` | Queue authorized analysis for the current source version |
 | PATCH / PUT | `/admin/campaign_sources/:id` | `admin/campaign_sources#update` |
 
 The prepared-forum extension adds two admin-only routes:

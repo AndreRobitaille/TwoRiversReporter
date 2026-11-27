@@ -14,7 +14,7 @@ The Tuesday 11 p.m. Central discovery run checks sitting Council members with a 
 - **As voters hear more names**, date each campaign statement. Give any confirmed candidacy its own source and direct readers to the Clerk for the official ballot.
 - **Near Election Day**, the term overview should help voters weigh consequential promises and what the member did about them. For the regular three-seat race, say “You may vote for up to three people. You can choose just one or two.”
 
-On the Tuesday one week after Election Day, switch to the next election’s dates and three seat holders. Use the year in the heading so someone arriving in April can tell which spring the guide covers. Put a short note beside the names.
+The currently configured guide switches to the next election the Tuesday one week after Election Day. The proposed annual schedule below extends results coverage and opens the following season in November. Use the year in the heading so someone arriving in April can tell which spring the guide covers. Put a short note beside the names.
 
 > These members hold the seats up for election that year. We compare what they promised when they last ran with what they did in office. Meeting records may never name everyone running. For the official ballot once available, see the [City Clerk’s election information](https://www.two-rivers.org/clerk/page/election-information).
 
@@ -37,3 +37,30 @@ Check the text and attachments the member actually voted to adopt. A work-sessio
 A dated response to a resident or an amendment that changed a decision tells voters something about listening and independent judgment. A majority-vote percentage alone cannot explain someone’s contribution.
 
 For substantive changes, give Frank and Dana the same entry page and a reason to visit appropriate to the season. Keep expected answers and ballot rules with the coordinator. Ask what the reader learned, what wording shaped their judgment, and where they stopped. Include an ordinary year-round task. An informed voter can still be undecided. [Resident review method](testing/resident-persona-reviews.md)
+
+## Annual collection schedule proposed November 27
+
+The historical backfill desk is available in local development. The recurring
+seasonal workflow below is product direction. The current public guide has a
+configured list of elections through spring 2029 and switches editions one
+week after Election Day.
+
+| When | Work to automate | When a person is needed |
+| --- | --- | --- |
+| November 1 | Identify the three regular terms ending next spring. Recover questionnaires and forums from their previous campaigns and feature their records on the Council guide and profiles. Keep campaign records visible year-round. | Resolve a vacancy or appointment against the Clerk’s notice. |
+| December to January | Follow the Clerk’s candidacy calendar. Look for notices of non-candidacy, the January City Manager report, ballot drawing and sample ballot. Preserve the source and the date of confirmation. | Resolve a missing roster or conflicting spelling. Campaign announcements can identify leads. |
+| February | Check if a City Council primary is scheduled and whether it changes the April field. | Confirm a changed field if the published ballot is unclear. |
+| March through Election Day | Watch HTR, local news, forum announcements and organizers’ video channels. Treat each recording as part of its event. Try published captions, then local transcription. Record nonresponses and gaps for each candidate. | Supply permitted questionnaire text when blocked, identify speakers and review poor audio. Use campaign accounts as attributed optional sources. Article photos need permission for reuse. |
+| Election night through the canvass | Check city results and label preliminary totals with their source and time. Use the municipal canvass to confirm winners. | Read a scanned or handwritten canvass when extraction is unreliable. |
+| After the election | Feature results for about two weeks. Keep a dated, searchable annual guide with candidates, sources, results and coverage gaps. Use the oath to start the winner’s term. | Resolve any correction against the official result. |
+
+The city has published candidate information beyond Facebook. The 2025 January
+report lists the draw, and the 2026 Clerk packet includes the December notice
+and possible primary. [January 2025 City Manager report](https://www.two-rivers.org/sites/default/files/fileattachments/city_manager/page/8434/city_managers_report_1-20-2025.pdf) · [2026 Clerk packet](https://www.two-rivers.org/sites/default/files/fileattachments/city_clerk/page/2533/2026_candidacy_paperwork_memo_for_online.pdf)
+
+HTR published on March 27 in 2024 and March 21 in 2025. An April 1 Seehafer
+questionnaire covers 2026. The March 19 joint forum accepted audience questions.
+[2024 HTR](https://www.htrnews.com/story/news/politics/elections/2024/03/27/two-rivers-council-candidates-talk-about-the-citys-potential-as-the-april-2-election-nears/73099320007/) · [2025 HTR via Yahoo](https://www.yahoo.com/news/two-rivers-city-council-school-095547436.html) · [2026 Seehafer](https://www.seehafernews.com/2026/04/01/two-rivers-city-council-candidate-responses/) · [Audience Q&A in the recording](https://www.youtube.com/watch?v=RhG-NPrI65Q&t=5068s)
+
+Keep the season-long entry points on Council and member pages. A temporary
+sitewide notice near voting or on results night remains an editorial choice.

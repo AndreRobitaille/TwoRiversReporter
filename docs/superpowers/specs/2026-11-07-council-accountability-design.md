@@ -7,9 +7,9 @@ Extend the existing member pages into year-round records updated automatically
 as evidence arrives. AI and deterministic jobs perform routine enrichment;
 manual work supplies difficult sources, corrects errors, and resolves ambiguity.
 The next election cohort is the initial rollout. Conduct coverage is limited to
-formal complaints and findings. Transcript preparation and speaker labeling
-happen separately, outside the website. The main expected manual inputs are
-locating the HTR candidate-profile article and preparing voter-forum transcripts.
+formal complaints and findings. The November 27 owner update brings the speaker
+desk into Elections admin. Local tools recover captions or run faster-whisper.
+Editors verify speakers and supply an article when automatic intake fails.
 The page sections, source responsibilities, update triggers, and proposed
 operating cadence below flesh out that direction. They are design proposals,
 not shipped behavior. Publication rules and cost limits need pilot evidence
@@ -150,7 +150,7 @@ AI-generated explanations retain citations and distinguish actions from outcomes
 | --- | --- | --- |
 | New or revised meeting documents | Extract attendance, decisions, attributed actions, and explicit recommendations; link members/topics; update affected profiles and comparisons | Resolve ambiguous or conflicting evidence and correct errors |
 | HTR or another candidate questionnaire | From one supplied source, extract each identified candidate's positions, preserve context/citations, and link topics and election/term | Locate/provide the article URL or permitted source material when discovery cannot find it |
-| Voter forum | Ingest a prepared speaker-labeled transcript or excerpts; extract positions and evidence links for all identified participants | Prepare/correct speaker attribution in a separate workflow and supply the result with recording references |
+| Voter forum | Ingest a prepared speaker-labeled transcript or excerpts; extract positions and evidence links for all identified participants | Verify or correct speaker attribution in the admin desk and supply the result with recording references |
 | New topic developments | Relate new actions and outcome evidence to relevant campaign positions; refresh affected timelines and generated explanations | Resolve uncertain matches or interpretations |
 | Source, identity, or term correction | Revalidate dependent evidence, recalculate comparisons, and refresh or withdraw affected statements across representations | Supply the correction once, with its basis |
 
@@ -209,7 +209,7 @@ code evidence, not an audit of production completeness or extraction accuracy.
 | `ResidentContent::OfficialProfile` | Existing profile, topic navigation, attendance display | Current attendance uses stored rows; selected topic groups and procedural filters are presentation rules, not an analytics denominator |
 | Meeting discovery, documents, and citations | Existing nightly discovery with a 90-day lookback, conditional downloads, content hashes, extraction, source resolution | Durable source versions, older coverage checks, campaign material, and assertions outside an official meeting |
 | Canonical roster services | Official Council/manager identity and current-role reconciliation | Currently invoked through roster tasks; add scheduled source checks and separately evidenced service terms |
-| Existing meeting transcript import | Existing meeting-reporting context and recording references | Campaign/forum preparation happens separately; the feature accepts prepared transcripts or excerpts with provenance, without an in-app transcript editor |
+| Existing meeting transcript import | Existing meeting-reporting context and recording references | Elections admin accepts caption uploads and reviewed speaker projects with recording provenance |
 | `Entity`, `EntityFact`, `StanceObservation` | Existing groundwork and related issue #59 | Not a complete campaign pipeline; stance observations currently require a meeting and meeting document, with a free-text topic |
 | Knowledge sources | Background and proposed/approved/blocked review patterns | Free-form background alone cannot supply reproducible campaign-to-action comparisons |
 
@@ -281,9 +281,9 @@ across sources can support one commitment; retain their provenance rather than
 counting them as separate promises. Preserve later qualifications and position
 changes as dated entries instead of overwriting what was originally said.
 
-Owner decision: transcript preparation, speaker identification, and annotation
-happen outside the website. Choosing or building a separate tool is separate
-work; this feature does not require a new transcript editor or labeling UI.
+The November 27 owner update moves the existing speaker-labeling tool into the
+admin area for historical backfill. Preserve the standalone project handoff and
+let the editor upload SRT or VTT whenever automatic recovery fails.
 
 The website accepts a prepared speaker-labeled transcript or a set of reviewed
 excerpts as a source handoff. AI extracts the individual campaign statements;
@@ -302,8 +302,8 @@ Full prepared transcripts support extracting all relevant statements in one pass
 partial evidence does not imply the rest of the forum was analyzed.
 Unknown speakers remain unresolved and cannot support a named campaign claim.
 Automated statement extraction, topic matching, validation, and publication remain
-app responsibilities, with ambiguous cases sent for exception review;
-transcription and speaker-labeling mechanics remain in the separate workflow.
+app responsibilities, with ambiguous cases sent for exception review. The admin
+can review labels in the speaker desk and reopen a saved source for corrections.
 Forum material must not be treated as an official Council meeting or sent
 automatically through the existing meeting import/summarization pipeline.
 

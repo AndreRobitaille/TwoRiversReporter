@@ -1,6 +1,6 @@
 <section class="card" data-campaign-topic-matching>
   <h2 class="card-title">Related issue matching</h2>
-  <p>Status: <%= matching.status.humanize %></p>
+  <p><%= local_assigns[:simplify_status] && matching.status == "budget_paused" ? "Waiting for issue matching" : matching.status.humanize %></p>
   <p>Uses saved statements across all candidates. An issue link does not establish support for a particular action or a completed promise.</p>
   <% if matching.status == "completed" %>
     <% statements = matching.context.fetch("statements").index_by { |statement| statement.fetch("sequence") } %>
@@ -21,4 +21,4 @@
     <% end %>
   <% end %>
 </section>
-<%= render "cost_preflight", preflight: preflight, title: "Issue matching cost" %>
+<%= render "cost_preflight", preflight: preflight, title: "Issue matching cost" if preflight %>

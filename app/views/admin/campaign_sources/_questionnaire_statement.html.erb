@@ -1,0 +1,8 @@
+<li data-campaign-statement>
+  <p><strong><%= CampaignStatement::KINDS.fetch(statement.data["kind"], "Statement") %></strong> · <%= statement.data["summary"] %></p>
+  <% if statement.data["supporting_quote"].present? %>
+    <blockquote><%= statement.data["supporting_quote"] %></blockquote>
+  <% end %>
+  <% if statement.data["conditions"].present? %><p>Conditions · <%= statement.data["conditions"] %></p><% end %>
+  <% if statement.data["timeframe"].present? %><p>Timeframe · <%= statement.data["timeframe"] %></p><% end %>
+</li>

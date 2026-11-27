@@ -42,6 +42,20 @@ class ReconcileCampaignSourcesJobTest < ActiveJob::TestCase
     end
   end
 
+  test "nightly recovery resumes a paused source once its exact request is authorized" do
+    ExtractCampaignSourceJob.perform_now(@source.id)
+    stage = @source.reload.current_version.extraction
+    assert_equal "budget_paused", stage.status
+    campaign_budget(stage: stage)
+    clear_enqueued_jobs
+
+    assert_enqueued_with(job: ExtractCampaignSourceJob, args: [ @source.id ]) { ReconcileCampaignSourcesJob.perform_now }
+    with_campaign_transport { perform_enqueued_jobs(only: ExtractCampaignSourceJob) }
+    assert_equal "completed", stage.reload.status
+    assert_equal 2, CampaignStatement.current_for(@jordan).size
+    assert_equal 1, @calls.size
+  end
+
   test "the existing nightly discovery queues recovery before fetching the city listing" do
     clear_enqueued_jobs
     assertions = self
