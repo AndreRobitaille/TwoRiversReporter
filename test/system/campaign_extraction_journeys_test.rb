@@ -11,9 +11,10 @@ class CampaignExtractionJourneysTest < ApplicationSystemTestCase
       admin.passkey_credentials.create!(external_id: "campaign-cost-browser-key", public_key: "public-key", sign_count: 0)
       sign_in_by_email(admin)
       Ai::OpenAiService.stub(:new, ->(*) { flunk "Reading the estimate must stay offline" }) do
+        page.driver.browser.manage.window.resize_to(390, 844)
         visit admin_campaign_sources_path
         click_link @source.title
-        page.driver.browser.manage.window.resize_to(390, 844)
+        click_link "Processing details"
         within "[data-campaign-cost-preflight]" do
           assert_text "2 attempts remaining"
           assert_text "shared across all participants"

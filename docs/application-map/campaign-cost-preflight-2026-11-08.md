@@ -19,6 +19,12 @@ shows no additional call. Held work stays held. Neither entry point creates a
 stage, authorization, receipt or queued job. The CLI emits metadata and a digest,
 not article text. Existing admin access rules still apply.
 
+On November 27 the mobile journey for a general campaign source was updated to
+follow **Campaign sources → source title → Processing details → Estimate
+assumptions**. It opens the saved version, reads the estimate and reloads
+the page with zero extraction or budget records created. Cataloged newspaper
+questionnaires have their own analysis status view.
+
 ## Pricing and token assumptions
 
 Official [Luna](https://developers.openai.com/api/docs/models/gpt-5.6-luna),
