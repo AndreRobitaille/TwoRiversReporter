@@ -93,13 +93,49 @@ March 19 joint forum accepted audience questions.
 Keep the season-long entry points on Council and member pages. A temporary
 sitewide notice near voting or on results night remains an editorial choice.
 
+## Forums, questionnaires and family in local government
+
+Put the finding in the candidate’s profile. Date the campaign, explain what
+opportunities voters had to hear from that candidate, and link the records in
+**Campaign sources**. When a returning candidate drops out of both forums and
+questionnaires, explain what the prior answers leave open in the later race.
+During the race, every published candidate name opens a profile, including a challenger who has
+never served. The list supplies the name and year. Saved questionnaires,
+verified forum passages, photos and public service records fill the same profile
+as they arrive. When the app matches a challenger to a person, the original
+candidate link opens that person’s profile. Editors can correct the shared
+source or list without creating or republishing an individual page.
+The municipal canvass closes each losing campaign. Unpublish the individual
+candidate page and its search listing. Keep the field, results and source
+material for the election desk. A winner keeps their profile. Someone who
+served in another term or on a committee keeps that public service record.
+A later filing opens the new campaign under the same person.
+
+Count each forum once across recordings. A verified speaking passage establishes
+participation. A named absence needs confirmation from the recording. In
+**Admin → Elections**, open the saved forum and use **Confirm forum absences**
+to record or clear it. An unchecked name without a speaking passage stays
+unconfirmed. Reopening the profile uses the current saved material. For a
+timed forum statement, link to the question and the candidate’s answer in the
+recording when their passages can be located. Keep the caption excerpt available.
+If someone answered a questionnaire and their positions have yet to be processed,
+give the reader a direct link to the published answers.
+
+A nonresponse applies to the whole questionnaire only when the publisher says
+so for that candidate. A skipped question or missing copy does not establish a
+nonresponse. Participation records carry no score or assumed explanation.
+State family ties directly. When two people served together, give the public
+body, their roles and the period. Link relevant public records in the source
+disclosure. An editor can supply a relationship once for the people involved.
+A new candidate needs no family note.
+
 ## Candidate photos
 
 The election guide places a framed portrait to the right of the candidate’s
 name, up to 80 pixels tall on phones and 96 on desktop. The member profile
 uses the same photo at up to 144 and 176 pixels respectively and links the
-publication credit beneath the name to the article. A challenger without a profile gets that
-credit below the guide row. Both layouts show the entire image at its original
+publication credit beneath the name to the article. A challenger without a matched person record also has a
+photo credit below the guide row. Both layouts show the entire image at its original
 aspect ratio. The ordinary Council roster stays text-only.
 
 In **Admin → Elections**, save the HTR or Seehafer questionnaire with its

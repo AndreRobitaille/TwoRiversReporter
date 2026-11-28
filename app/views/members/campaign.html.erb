@@ -6,6 +6,7 @@
   <% if gated_for_visitor? %>
     <%= render "shared/gate" %>
   <% else %>
+    <%= render "election_context" %>
     <% if @answer_reviews.present? %>
       <%= gated_content { render "campaign_answers", reviews: @answer_reviews } %>
     <% end %>

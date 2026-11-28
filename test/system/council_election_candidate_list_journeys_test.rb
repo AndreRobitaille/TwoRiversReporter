@@ -34,8 +34,11 @@ class CouncilElectionCandidateListJourneysTest < ApplicationSystemTestCase
         within "#spring-election" do
           assert_selector "h3", text: "2027 Candidates"
           assert_link member.name, href: member_path(member)
-          assert_text "Example Challenger"
+          click_link "Example Challenger"
         end
+        assert_selector "h1", text: /Example Challenger/i
+        assert_text "2027 City Council candidate"
+        assert_text "We haven’t recorded campaign answers"
         assert_operator page.evaluate_script("document.documentElement.scrollWidth"), :<=, 390
 
         page.current_window.resize_to(1280, 900)

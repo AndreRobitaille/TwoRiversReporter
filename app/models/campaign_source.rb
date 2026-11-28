@@ -20,6 +20,7 @@ class CampaignSource < ApplicationRecord
   validate :publisher_url
   validate :transcript_coverage
   before_update :clear_replaced_article_portraits, if: :will_save_change_to_source_url?
+  before_update :clear_moved_forum_absences
   after_save :schedule_portrait_updates
   after_save :retain_version
   after_commit :queue_processing, on: %i[create update]
@@ -32,12 +33,37 @@ class CampaignSource < ApplicationRecord
     prepared_transcript.present?
   end
 
+  def record_forum_absences!(names)
+    raise ArgumentError unless forum?
+
+    transaction do
+      parts = CampaignSource.where(election_on: election_on, published_on: published_on, coverage: "full_transcript")
+        .where("LOWER(publisher) = ?", publisher.downcase).order(:id).select(:id, :confirmed_absences).lock.to_a
+      recording = parts.find { |part| part.id == id } || raise(ArgumentError)
+      guide = ResidentContent::ElectionParticipation.new(election_on)
+      field = guide.names - guide.forum_for(self).speakers
+      raise ArgumentError unless (names - field).empty?
+
+      # Keep the recording that established each absence. Clearing it on any part corrects the whole event.
+      existing = parts.flat_map(&:confirmed_absences)
+      parts.each do |part|
+        retained = part.confirmed_absences & names
+        retained |= names - existing if part == recording
+        part.update_column(:confirmed_absences, retained) if retained != part.confirmed_absences
+      end
+    end
+  end
+
   def add_article_portraits(photos)
     @replacement_portraits = photos if persisted? && will_save_change_to_source_url?
     self.questionnaire_portraits = questionnaire_portraits.merge(photos)
   end
 
   private
+
+  def clear_moved_forum_absences
+    self.confirmed_absences = [] if changes_to_save.keys.intersect?(%w[source_url election_on published_on publisher])
+  end
 
   def clear_replaced_article_portraits
     self.questionnaire_portraits = @replacement_portraits || {}

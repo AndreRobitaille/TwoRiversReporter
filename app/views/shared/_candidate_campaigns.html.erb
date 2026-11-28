@@ -1,0 +1,24 @@
+<% latest = campaigns.first %>
+<% previous = campaigns.drop(1).find(&:spoken_and_written_answers?) if latest.missed_forums_and_surveys? %>
+<p class="member-term-copy"><%= latest.account(previous: previous) %></p>
+<% if @term_summary.blank? && !@campaign_platforms&.keys&.any? { |date| date.year == latest.year } %>
+  <% latest.events.each do |event| %>
+    <% if !event.forum && event.statuses[latest.name] == "Answered" %>
+      <p><%= link_to "Read #{latest.name.split.last}’s answers in #{event.name}", event.source_for(latest.name) %></p>
+    <% end %>
+  <% end %>
+<% end %>
+<details class="member-term-sources story-notes">
+  <summary>Campaign sources</summary>
+  <ul>
+    <% [latest, previous].compact.each do |campaign| %>
+      <% campaign.events.each do |event| %>
+        <li>
+          <%= link_to "#{event.name} #{event.forum ? "forum" : "questionnaire"}", event.source_for(campaign.name) %>
+          · <%= event.date ? event.date.strftime("%b %-d, %Y") : campaign.year %>
+          · <%= event.statuses.fetch(campaign.name, "Participation unconfirmed") %>
+        </li>
+      <% end %>
+    <% end %>
+  </ul>
+</details>

@@ -120,7 +120,6 @@ function mount(root, signal) {
     $("reading-title").textContent = $("forum-title").value
     const picker = $("recording-switch")
     if (picker) picker.value = [...picker.options].find(option => option.dataset.url === $("source-url").value)?.value || ""
-    updateWatch()
     renderNames()
     renderTranscript()
     renderSpeakers()
@@ -164,9 +163,13 @@ function mount(root, signal) {
   }
 
   function updateWatch() {
-    const href = recordingLink(0);
-    $("watch").hidden = !href;
-    if (href) $("watch").href = href;
+    const at = selected ? words[selected.start].start : 0
+    const href = recordingLink(at)
+    const link = $("watch")
+    link.hidden = !href
+    if (!href) return
+    link.href = href
+    link.textContent = at && href !== recordingLink(0) ? `Play from ${clock(at)} ↗` : "Watch recording ↗"
   }
 
   function renderTranscript() {
@@ -292,6 +295,7 @@ function mount(root, signal) {
       for (let index = markedSelection.start; index < markedSelection.end; index++) elements[index]?.classList.remove("pending");
     }
     markedSelection = selected && { ...selected };
+    updateWatch()
     const active = Boolean(selected);
     const speaker = selectedSpeaker();
     $("clear").disabled = !active;
@@ -514,7 +518,6 @@ function mount(root, signal) {
   $("source-url").addEventListener("change", () => {
     if (!current) return
     selected = null
-    updateWatch()
     renderTranscript()
     updateLabels()
     updateSelection()

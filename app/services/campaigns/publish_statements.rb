@@ -1,14 +1,15 @@
 module Campaigns
   class PublishStatements
-    VALIDATION_METHOD = "article_passage_and_existing_identity_v1".freeze
+    VALIDATION_METHOD = "article_passage_and_resolved_identity_v2".freeze
 
     def self.call(extraction)
       return unless extraction.purpose == "statements" && extraction.status == "completed"
 
       extraction.with_lock do
+        field = ElectionBackfill.candidates_on(extraction.campaign_source_version.election_on)
         sequence = 0
         extraction.data.fetch("participants").each do |participant|
-          member, identity_exception = resolve_person(participant["name"])
+          member, identity_exception = resolve_person(participant["name"], field)
           participant.fetch("answers").each do |answer|
             answer.fetch("statements").each do |statement|
               exception = identity_exception || statement_exception(statement, answer, extraction.campaign_source_version.body)
@@ -16,10 +17,11 @@ module Campaigns
               data = statement.slice("kind", "summary", "supporting_quote", "conditions", "timeframe", "comparison_heading", "location").merge(
                 "source_name" => participant["name"], "question" => answer["question"])
               attributes = { member_id: member&.id, status: exception ? "unresolved" : "accepted",
-                exception: exception, validation_method: VALIDATION_METHOD }
+                exception: exception }
               if record.new_record? || attributes.any? { |key, value| record.public_send(key) != value }
                 record.data = data if record.new_record?
                 record.assign_attributes(attributes)
+                record.validation_method = VALIDATION_METHOD
                 record.validated_at = Time.current
                 record.save!
               end
@@ -30,16 +32,22 @@ module Campaigns
       end
     end
 
-    def self.resolve_person(name)
+    def self.resolve_person(name, field)
       normalized = Member.normalize_name(name)
       return [ nil, "unknown_person" ] if normalized.blank?
 
       ids = Member.where("LOWER(name) = LOWER(?)", normalized).pluck(:id) +
         MemberAlias.where("LOWER(name) = LOWER(?)", normalized).pluck(:member_id)
       ids.uniq!
-      return [ nil, ids.empty? ? "unknown_person" : "ambiguous_person" ] unless ids.one?
+      return [ Member.find(ids.sole), nil ] if ids.one?
+      return [ nil, "ambiguous_person" ] if ids.many?
 
-      [ Member.find(ids.sole), nil ]
+      candidate = field.find { |listed| listed.casecmp?(normalized) }
+      return [ nil, "unknown_person" ] unless candidate
+
+      # Other source jobs can publish the same new candidate concurrently.
+      Member.insert_all([ { name: candidate } ], unique_by: :index_members_on_name)
+      [ Member.find_by!(name: candidate), nil ]
     end
     private_class_method :resolve_person
 

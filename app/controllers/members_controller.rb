@@ -4,8 +4,13 @@ class MembersController < ApplicationController
   before_action :load_profile, only: %i[show record campaign issues]
 
   def show
+    load_election_context unless gated_for_visitor?
     if !gated_for_visitor? && @current_position&.kind == "city_council" && @record_period.selected
       @term_summary = CouncilTermSummary.find_by(member: @member, term_started_on: @record_period.selected.started_on)
+    end
+    if @candidate_role && !@has_election_profile && !@former_committee && @service_periods.empty? &&
+        params.slice(:term, :votes, :page, :q, :topic, :body, :split, :kind, :statement, :decision).empty?
+      return show_challenger
     end
     summary_profile = @has_election_profile || @term_summary&.sentences.present?
     if summary_profile && params[:statement].present?
@@ -50,8 +55,12 @@ class MembersController < ApplicationController
   end
 
   def campaign
+    if withdrawn_campaign_dates.any? && ResidentContent::CandidateProfile.new(member_names).latest_entry.nil? && campaign_statements.empty?
+      raise ActiveRecord::RecordNotFound
+    end
     return if gated_for_visitor?
 
+    load_election_context
     @answer_reviews = ResidentContent::ReviewedCampaignAnswers.for(@member)
     load_campaign_comparisons
   end
@@ -64,8 +73,8 @@ class MembersController < ApplicationController
   end
 
   def compare
-    @member = Member.find(params[:id])
-    @peer = Member.find(params[:peer_id])
+    @member = ResidentContent::ElectionPublication.current.public_members.find(params[:id])
+    @peer = ResidentContent::ElectionPublication.current.public_members.find(params[:peer_id])
     raise ActiveRecord::RecordNotFound if @peer == @member
     @record_period = ResidentContent::CouncilPeriod.new(@member, key: params[:term])
     @show_divided = params[:subset] == "divided"
@@ -79,7 +88,7 @@ class MembersController < ApplicationController
   end
 
   def recommendations
-    @member = Member.find(params[:id])
+    @member = ResidentContent::ElectionPublication.current.public_members.find(params[:id])
     @record_period = ResidentContent::CouncilPeriod.new(@member, key: params[:term])
     @show_divided = params[:subset] == "divided"
     unless gated_for_visitor?
@@ -94,10 +103,40 @@ class MembersController < ApplicationController
 
   private
 
+  def member_names
+    @member_names ||= [ @member.name, *@member.member_aliases.pluck(:name) ]
+  end
+
+  def withdrawn_campaign_dates
+    @withdrawn_campaign_dates ||= ResidentContent::ElectionPublication.current.withdrawn_dates(member_names)
+  end
+
+  def load_election_context
+    names = member_names
+    profile = ResidentContent::CandidateProfile.new(names)
+    @civic_connections = profile.connections
+    @candidate_campaigns = profile.campaigns
+    if @current_position.nil? && @memberships.empty? && profile.latest_entry
+      @date, @listed_name = profile.latest_entry
+      @candidate_role = "#{@date.year} City Council candidate"
+    end
+  end
+
+  def show_challenger
+    @name = @member.name
+    @list_source = ResidentContent::CouncilElection.for_year(@date.year)&.candidates&.fetch(@listed_name, nil)
+    @has_public_record = @member.votes.exists? || @member.meeting_attendances.exists? ||
+      @member.member_positions.exists? || @member.committee_memberships.exists?
+    load_campaign_comparisons
+    render "council_candidates/show"
+  end
+
   def load_profile
     respond_to { |format| format.html }
-    @member = Member.find(params[:id])
+    @member = ResidentContent::ElectionPublication.current.public_members.find(params[:id])
     @portrait = CandidatePortrait.current_for(@member.name => @member.id)[@member.name]
+
+    @portrait = nil if @portrait && ResidentContent::ElectionPublication.current.withdrawn_portrait?(@portrait)
 
     memberships = @member.committee_memberships.where("role IS NULL OR role NOT IN (?)", %w[staff non_voting]).includes(:committee)
     @memberships = memberships.current.sort_by { |cm| [ cm.committee.name == "City Council" ? 0 : 1, cm.committee.name ] }
@@ -140,7 +179,9 @@ class MembersController < ApplicationController
   end
 
   def campaign_statements
-    @campaign_statements ||= CampaignStatement.current_for(@member)
+    @campaign_statements ||= CampaignStatement.current_for(@member).reject do |row|
+      withdrawn_campaign_dates.include?(row.campaign_source_version.election_on)
+    end
   end
 
   def load_campaign_preview

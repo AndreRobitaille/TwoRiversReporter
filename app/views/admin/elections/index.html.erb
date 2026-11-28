@@ -114,18 +114,38 @@
       <% end %>
     </section>
   </div>
-  <footer class="election-source-tools">
-    <h2>Other source tools</h2>
-    <% if filing_edition || @workspace.edition.present? %>
-      <%= button_to "Find voter forums", admin_election_find_forums_path(year: year), class: "election-action" %>
-      <%= button_to "Find HTR questionnaire", admin_election_find_htr_path(year: year), class: "election-action" %>
-    <% end %>
-    <nav aria-label="Other source tools">
-      <%= link_to "Label another forum", desk_admin_campaign_forum_path(year: year) %>
-      <%= link_to "Add another article", new_admin_campaign_source_path(year: year) %>
-      <%= link_to "Open a speaker project", desk_admin_campaign_forum_path(year: year, files: 1) %>
-      <%= link_to "Import reviewed JSON", new_admin_campaign_forum_path %>
+  <section class="election-source-tools" aria-labelledby="source-tools-heading">
+    <header class="source-tools-heading">
+      <h2 id="source-tools-heading">Source tools</h2>
       <%= link_to "All campaign sources", admin_campaign_sources_path %>
-    </nav>
-  </footer>
+    </header>
+    <% can_search = filing_edition || @workspace.edition.present? %>
+    <div class="source-tools-groups">
+      <div class="source-tools-group">
+        <h3><%= render "source_icon", kind: "forum" %> Voter forums</h3>
+        <div class="source-tools-actions">
+          <% if can_search %>
+            <%= button_to "Find voter forums", admin_election_find_forums_path(year: year), class: "election-action" %>
+          <% end %>
+          <%= link_to "Label another forum", desk_admin_campaign_forum_path(year: year) %>
+        </div>
+      </div>
+      <div class="source-tools-group">
+        <h3><%= render "source_icon", kind: "article" %> News articles</h3>
+        <div class="source-tools-actions">
+          <% if can_search %>
+            <%= button_to "Find HTR questionnaire", admin_election_find_htr_path(year: year), class: "election-action" %>
+          <% end %>
+          <%= link_to "Add another article", new_admin_campaign_source_path(year: year) %>
+        </div>
+      </div>
+    </div>
+    <details class="source-tools-files">
+      <summary>Speaker project files</summary>
+      <nav aria-label="Speaker project files">
+        <%= link_to "Resume a speaker project", desk_admin_campaign_forum_path(year: year, files: 1) %>
+        <%= link_to "Import a reviewed transcript", new_admin_campaign_forum_path %>
+      </nav>
+    </details>
+  </section>
 </div>

@@ -1,4 +1,6 @@
 "2026":
+  canvassed_on: "2026-04-08"
+  canvass_source: https://mccmeetingspublic.blob.core.usgovcloudapi.net/tworivrswi-meet-8b3551cf06b040c9a7496d60a1448ba1/ITEM-Attachment-001-a36db182c0a949c3b24c5e3b71ae3c6c.pdf
   election_on: "2026-04-07"
   term_start:
     started_on: "2026-04-21"
@@ -46,6 +48,8 @@
       url: https://www.youtube.com/watch?v=RhG-NPrI65Q
       kind: forum
 "2025":
+  canvassed_on: "2025-04-02"
+  canvass_source: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Packet-07581b86719e479794b5a74621e516dc.pdf#page=46
   forum_note: The March 18 Business Association forum spans three recordings. Work through its parts in the order shown.
   election_on: "2025-04-01"
   term_start:
@@ -108,6 +112,8 @@
       url: https://www.youtube.com/watch?v=Q_p7r4TKG5U
       kind: forum
 "2024":
+  canvassed_on: "2024-04-03"
+  canvass_source: https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Packet-c47cb640553943268ab18152fa2d5876.pdf#page=39
   election_on: "2024-04-02"
   term_members: [Mark Bittner, Doug Brandt, Shannon Derby]
   candidates: [Mark Bittner, Doug Brandt, Jeff Dahlke, Shannon Derby, Andrew Quackenbush]

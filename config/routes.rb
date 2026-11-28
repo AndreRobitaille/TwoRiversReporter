@@ -38,6 +38,8 @@ Rails.application.routes.draw do
     constraints: { year: /\d{4}/, month: /0[1-9]|1[0-2]/, page: /[1-9]\d*/ }
   resources :meetings, only: %i[index show]
   resources :committees, only: %i[index show], param: :slug
+  get "elections/:year/candidates/:name", to: "council_candidates#show", as: :council_candidate,
+    constraints: { year: /\d{4}/, name: /[^\/]+/ }, format: false
   get "members", to: redirect("/committees", status: 301), as: nil
   resources :members, only: %i[show] do
     member do
@@ -92,6 +94,7 @@ Rails.application.routes.draw do
   scope :admin do
     resources :council_formal_sources, only: %i[index show new create edit update], controller: "admin/council_formal_sources", as: :admin_council_formal_sources
     resources :campaign_sources, only: %i[index show new create edit update], controller: "admin/campaign_sources", as: :admin_campaign_sources do
+      patch :attendance, on: :member
       post :analyze, on: :member
       post :read_questionnaire, on: :collection
       resources :statements, only: :update, controller: "admin/campaign_statement_reviews"

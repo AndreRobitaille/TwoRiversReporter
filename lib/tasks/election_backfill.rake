@@ -92,3 +92,12 @@ namespace :elections do
     end
   end
 end
+
+namespace :elections do
+  desc "Record the municipal canvass. Supply YEAR, CONFIRMED_ON, SOURCE_URL and WINNERS (one filed name per line)."
+  task confirm_result: :environment do
+    date = Campaigns::ElectionBackfill.election_on(ENV.fetch("YEAR")) || abort("Unknown election")
+    CouncilElectionResult.confirm!(election_on: date, confirmed_on: Date.iso8601(ENV.fetch("CONFIRMED_ON")),
+      source_url: ENV.fetch("SOURCE_URL"), winner_names: ENV.fetch("WINNERS").lines.map(&:strip).compact_blank)
+  end
+end

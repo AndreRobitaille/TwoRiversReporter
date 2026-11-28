@@ -10,7 +10,16 @@ The forum watcher starts February 1. The City’s February 17, 2025 agenda alrea
 
 The first local run found the March 6 League forum and all three parts of the March 18 Business Association forum. It reused the prepared transcripts. A separate download of the March 6 captions matched the saved copy. The watcher currently recognizes named League and Business Association Council notices in imported City agendas and minutes. The March 2026 notice names neither organizer. Its joint forum is already available through the historical catalog.
 
-The next editorial check is to listen to one March 6 question and answer, save the speakers an admin can identify, and reopen those passages at their timestamps. Leave uncertain speech unlabeled. [Forum discovery and speaker review, #337](https://github.com/AndreRobitaille/TwoRiversReporter/issues/337)
+All four 2025 recordings and the March 19, 2026 joint forum have editor-verified
+speaker labels in development. The March 18 Business Association event uses
+three recordings. Its moderator identifies three panelists in the closing
+remarks. The March 6 League moderator addresses the two missing candidates in
+the introduction. The 2025 HTR questionnaire explicitly marks both
+nonresponses. Candidate profiles explain how that affected the comparison voters could make and link to the recordings and article. [Forum discovery and review, #337](https://github.com/AndreRobitaille/TwoRiversReporter/issues/337)
+
+The 2026 joint forum has 119 reviewed passages covering all five candidates,
+the moderator and an audience member. Saving queued the forum for analysis.
+**Open saved forum → Edit speaker labels** reopens a transcript for correction.
 
 ## Spring 2027 candidate list
 
@@ -19,6 +28,14 @@ The guide lists Mark Bittner, Doug Brandt and Shannon Derby as the three members
 The planned HTR and Seehafer check for candidate names starts at the January 5 filing deadline if the list is still empty. An editor can publish the names as soon as they have them. The March questionnaire job handles candidate answers.
 
 In **Admin → Elections → Spring 2027**, **2027 Candidates** sits under **Needs you** while the list is empty. Add the names once they’re available to an editor or an HTR or Seehafer article lists the field. The same form accepts an optional article link. Publishing moves the list to **Done and waiting** and shows the names on **City Council → Spring election**. **Edit candidates** lets an editor correct or remove names. **Remove candidate list** clears all names after confirmation. [Candidate list workflow and acceptance cases, #336](https://github.com/AndreRobitaille/TwoRiversReporter/issues/336)
+
+Publishing the field gives every candidate a profile immediately during the race. The name
+continues to work after automatic matching links their forum or questionnaire
+statements to a person. Development verified this with all 15 entries from the
+three earlier races. Both simulated voter reviewers used the current guide and
+a challenger’s historical profile. The next missing input for the public guide
+is the January publisher check when no editor has entered the names.
+[Public pages and acceptance evidence](../application-map/election-backfill-2026-11-27.md#automatic-candidate-profiles-and-public-entry-points-res-091011-adm-2123)
 
 ## What is already available
 
@@ -38,6 +55,14 @@ Thirteen people have a current portrait in development. The election guide and m
 The two 2024 forums also have completed analysis. The current 2025 and 2026 HTR versions are saved and await analysis if a development case needs it. Use the existing exact-request authorization for any paid analysis.
 
 ## Results and archive
+
+The municipal canvass withdraws each losing candidate’s individual campaign
+from the public site. The editor retains the data. The 2024–26 outcomes are
+included with the backfill. For a new regular election, the result intake
+accepts the election year, canvass date, official source URL and the three
+winning names from the filed list via `bin/rails elections:confirm_result`
+with `YEAR`, `CONFIRMED_ON`, `SOURCE_URL` and newline-separated `WINNERS`.
+The future canvass reader can call the same `CouncilElectionResult.confirm!`.
 
 The public guide currently advances one week after Election Day. The later milestone gives each edition a permanent address and follows preliminary totals through the municipal canvass. [Post-election guide, #338](https://github.com/AndreRobitaille/TwoRiversReporter/issues/338)
 

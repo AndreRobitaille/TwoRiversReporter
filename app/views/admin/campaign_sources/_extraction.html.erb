@@ -9,7 +9,7 @@
       <h3><%= participant["name"].presence || "Unidentified participant" %></h3>
       <% identity = records.find { |record| record.data["source_name"] == participant["name"] } %>
       <% if identity&.member %>
-        <p><%= link_to "View #{identity.member.name}'s record", member_path(identity.member) %></p>
+        <p><%= link_to "View #{identity.member.name}'s record", (ResidentContent::ElectionPublication.current.withdrawn?(extraction.campaign_source_version.election_on, participant["name"]) ? admin_member_path(identity.member) : member_path(identity.member)) %></p>
       <% elsif identity %>
         <p data-campaign-identity-exception><%= identity.exception.humanize %>. No statements have been assigned to a member.</p>
       <% end %>

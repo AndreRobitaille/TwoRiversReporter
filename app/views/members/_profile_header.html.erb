@@ -23,6 +23,7 @@
       <% elsif @current_position %>
         <span class="badge badge--info"><%= "Current: " if @record_period.selected&.ended_on %><%= @current_position.title %></span>
       <% end %>
+      <% if @candidate_role %><p class="member-profile-office"><%= @candidate_role %></p><% end %>
       <% if @portrait %>
         <p class="portrait-credit">Photo · <%= link_to @portrait.publisher, @portrait.source_url %></p>
       <% end %>

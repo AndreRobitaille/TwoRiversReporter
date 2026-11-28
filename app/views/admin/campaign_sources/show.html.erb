@@ -33,6 +33,26 @@
   <% if @version != @source.current_version %>
     <p class="flash">Viewing an earlier version. <%= link_to "View current version", admin_campaign_source_path(@source) %></p>
   <% end %>
+  <% if @version.forum? && @version == @source.current_version && params[:view] != "processing" %>
+    <% participation = ResidentContent::ElectionParticipation.new(@source.election_on) %>
+    <% forum = participation.forum_for(@source) %>
+    <% candidates = participation.names - forum.speakers %>
+    <% if candidates.any? %>
+      <details class="card">
+        <summary>Confirm forum absences</summary>
+        <%= form_with url: attendance_admin_campaign_source_path(@source), method: :patch, scope: :attendance do |form| %>
+          <fieldset>
+            <legend>Who did the recording confirm did not participate?</legend>
+            <p>Leave a name unchecked if you’re unsure. Speaker labels already show who spoke.</p>
+            <%= form.collection_check_boxes :absent, candidates, :itself, :itself, checked: forum.absences do |box| %>
+              <div><%= box.label { safe_join([box.check_box, box.text], " ") } %></div>
+            <% end %>
+          </fieldset>
+          <%= form.submit "Save forum attendance", class: "btn btn--primary" %>
+        <% end %>
+      </details>
+    <% end %>
+  <% end %>
   <%= render layout: "record_details" do %>
     <div class="card election-source-text" id="source-text">
       <h2 class="card-title"><%= @version.forum? ? "Prepared transcript" : "Article text" %></h2>

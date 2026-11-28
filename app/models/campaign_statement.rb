@@ -13,6 +13,28 @@ class CampaignStatement < ApplicationRecord
   validates :validation_method, :validated_at, :data, presence: true
   validates :member, presence: true, if: -> { status == "accepted" }
 
+  def forum_clip_times
+    source = campaign_source_version
+    return {} unless source.forum? && source.source_url.match?(%r{\Ahttps://(?:www\.)?youtube\.com/watch\?v=[a-zA-Z0-9_-]{11}\z})
+
+    location = data["location"]
+    return {} unless location && location["start"] && location["end"]
+
+    segments = source.prepared_transcript.fetch("segments", []).select { |segment| segment["text_start"] && segment["text_end"] }
+    answer = segments.find do |segment|
+      segment["speaker"] == data["source_name"] && segment["attribution"] == "reviewer_verified" &&
+        segment["text_start"] <= location["start"] && segment["text_end"] >= location["end"]
+    end
+    return {} unless answer
+
+    # Use the nearest caption containing the question before this answer, including audience questions.
+    question = segments.reverse_each.find do |segment|
+      segment["text_start"] <= answer["text_start"] &&
+        data["question"].present? && segment["text"].to_s.include?(data["question"])
+    end
+    { question: question&.fetch("start_ms", nil), answer: answer["start_ms"] }.compact
+  end
+
   def self.current_for(member)
     current_versions = {}
     where(member: member, status: "accepted", excluded_at: nil)

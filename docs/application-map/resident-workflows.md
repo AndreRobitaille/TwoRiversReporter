@@ -289,7 +289,10 @@ the same snapshot. Those future results assume the stored activity stays fixed.
   [election schedule](../../config/council_election.yml) identifies term holders.
   [ADM-23](admin-workflows.md#adm-23--publish-the-council-candidate-list-p1)
   supplies the candidate names for the active edition. A returning member
-  appears once in the guide. A challenger can appear without a profile.
+  appears once in the guide. During the race every listed challenger links to a profile, even
+  before the first questionnaire or forum arrives. The saved field and current
+  campaign sources supply the [candidate profile](election-backfill-2026-11-27.md#automatic-candidate-profiles-and-public-entry-points-res-091011-adm-2123).
+  The municipal canvass withdraws losing campaign pages and preserves the editor’s records.
   The Clerk link remains available before a candidate list is published.
   Each edition has a fixed timeline and three sourced seat holders. Home,
   Council and member pages select the next edition one week after the first

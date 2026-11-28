@@ -30,6 +30,12 @@ Current reconciliation: PR #181 removes the ten unsupported dispatch rows and du
 | GET | `/admin/campaign_forum/recording` | Open captions for a known recording |
 | POST | `/admin/campaign_forum/captions` | Parse an uploaded private SRT or VTT for the desk |
 
+### Public candidate profile (RES-09/10/11)
+
+| Verb | Path | Resident action |
+| --- | --- | --- |
+| GET | `/elections/:year/candidates/:name` | Open a published candidate’s profile. A known person resolves to their member profile. Losing campaigns return 404 after the confirmed result. |
+
 ### Council candidate list (ADM-23)
 
 | Verb | Path | Operator action |

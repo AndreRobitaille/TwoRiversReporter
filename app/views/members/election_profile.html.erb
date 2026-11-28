@@ -48,6 +48,7 @@
         <% else %>
           <p>We don’t have a sourced statement from this member’s last campaign yet.</p>
         <% end %>
+        <%= render "election_context" %>
         <% if findings.empty? %>
           <%= link_to "Read the full campaign record", campaign_member_path(@member, anchor: "campaign-record"), class: "profile-campaign-link" %>
         <% end %>

@@ -77,6 +77,7 @@ class CandidatePortraitsTest < ActionDispatch::IntegrationTest
 
   test "an HTR challenger has a credited guide photo before becoming a member" do
     name = "Andrew Quackenbush"
+    CouncilElectionCandidateList.create!(election_on: Date.new(2027, 4, 6), names: [ name ])
     url = "https://www.htrnews.com/story/council-questionnaire/"
     html = <<~HTML
       <head><link rel="canonical" href="#{url}"></head>

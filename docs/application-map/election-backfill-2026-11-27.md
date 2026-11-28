@@ -11,21 +11,33 @@ Each recording has an action. **Label speakers** opens available captions.
 **Open captions** accepts a local file when needed. **Resume labeling** returns
 to a draft in the same browser. Each recording keeps its own reading position.
 
+Under **Source tools**, use **Voter forums** to find or label a forum and
+**News articles** to find an HTR questionnaire or add an article. **All campaign
+sources** opens the saved collection. Open **Speaker project files** to resume a
+downloaded project or import a reviewed transcript.
+
+On the November 27 working tree based on `d3d11920`, an authenticated Chromium
+session queued both searches from Spring 2026 and returned to the same year.
+On a 390-pixel phone layout, the editor opened **Speaker project files** with
+the keyboard and reached the saved-project file picker. The source groups fit
+at 320, 390 and 1280 pixels. Forcing the file actions open on load failed the
+visibility assertion. Restoring the default passed the same journey.
+
 In the speaker desk, drag across one speaker’s words, then click their name or
 press its number. Choose a different speaker to correct the same passage.
 The speaker palette stays beside the transcript on desktop. On phones, long
 press to select text and use the speaker menu above the transcript. A timestamp
 opens the matching point in the recording. **Next unlabeled passage** and
-**Labeled passages** jump through the transcript. Leave uncertain speech
+**Labeled passages** jump through the transcript. Selecting a passage in a YouTube recording changes **Watch recording** to **Play from** its first timestamp. Leave uncertain speech
 unattributed. **Download backup** saves a portable JSON project, and **Export
 labeled text** produces a readable, timestamped copy.
 
 Choose **Review & save** when the labels are ready. Known recordings already
 have their dates, organizer and URL. For a new upload, fill in the missing
 details in the review window. Confirm attribution and choose **Save forum**.
-A failed save leaves the review window and draft open. **Review labels** on
-the election page or **Edit speaker labels** on the source reopens it for a
-versioned correction.
+A failed save leaves the review window and draft open. While analysis is
+pending, choose **Open saved forum → Edit speaker labels** to correct a saved
+passage. After analysis, **Review labels** reopens a listed recording directly.
 
 For 2025, choose **Add Council answers** under **Backfill tasks**. **Open HTR
 article** opens the syndicated copy on Yahoo News. Paste the article into the
@@ -38,6 +50,96 @@ year then offers **Read answers** and the source offers **Edit answers**.
 Analysis status stays at the top. The source and history sidebar is visible
 alongside matched statements and any actual review exceptions. Accepted statements feed the
 year-round member record under the existing funding and evidence rules.
+
+## Closing individual campaign pages after the canvass
+
+The official result withdraws a losing campaign from its named URL, person
+profile, campaign record, portrait and sitemap. Public service remains
+available for a person with separate civic work. Meeting guests alone do
+not acquire a public official profile. A new candidacy opens a profile
+again, while earlier losing campaigns remain on the election desk. The
+public field can still name an unsuccessful candidate without linking to
+a withdrawn page. The earlier phone-review evidence below records the
+profiles *before* applying this publication rule.
+
+On the November 27 working tree based on `d3d11920`, the development site
+returned 404 for Quackenbush’s dated and person URLs while retaining his 29
+accepted statements. Shimulunas’s public service record returned 200 and her
+losing campaign returned 404. The focused Rails run passed 83 tests and 1,794
+assertions. Six Chromium journeys passed 228 assertions. Bypassing the
+person visibility scope in an isolated test returned 200 at the closed member
+URL and failed the expected 404. Restoring it passed all 50 assertions.
+RuboCop and the staged diff check passed.
+
+## Automatic candidate profiles and public entry points (RES-09/10/11, ADM-21/23)
+
+| Voter’s entry point | What supplies it |
+| --- | --- |
+| Homepage election link and City Council spring guide | The current election calendar, the dated candidate list and existing Council roster. Before filing, the guide identifies whose terms end. |
+| Candidate name in the guide or sitemap | The filed name itself is enough for a profile. Names matched to a person use the existing person URL. A correction takes effect on the next request. |
+| Candidate profile and full campaign record | Accepted statements from current source versions, saved questionnaire responses, reviewed forum speakers and confirmed absences. Named article photos carry their publisher credit. |
+| An incumbent’s term review, votes and issue history | The same person’s service periods, recorded votes, and saved assessments. A challenger’s filing or statement creates no office or voting history. |
+
+In the development data on November 27, 2026, an HTTP inventory followed all 15
+candidate entries from the three historical elections to 14 people and opened
+each campaign record. Jeff Dahlke appeared in two races. All 14 profiles had a dated
+participation account. The current guide linked the three 2027 seat holders and
+the homepage opened the guide. The new-candidate browser journey starts by
+publishing a list, then follows the challenger’s name from a signed-out phone.
+
+The same publication routine used by nightly reconciliation replayed the two
+completed 2024 forum extractions for Andrew Quackenbush. Of 31 previously
+unmatched current statements, 29 passed the existing passage checks and two
+remained unresolved. Repeating the routine preserved the statement timestamps.
+The replay used the saved sources, created one person, and added zero
+AI reservations, offices or committee memberships. Disabling the filed-name
+match in an isolated process made the new-challenger job test fail.
+
+Both simulated phone readers could identify a concrete Bittner vote, return
+to ordinary Council business and find Quackenbush’s housing priority. Both
+flagged an unintelligible question in the captions. The shared statement
+view now offers the original question and answer at their recorded times. On
+the second phone visit both readers found the question at 13:56 and the answer
+at 17:05. The review checked those links against the labeled transcript.
+Playback of the external recording was outside the browser check. All three
+2025 respondents whose questionnaire analysis is pending had a direct link to
+their published answers. Bittner’s profile also opened its campaign record,
+public service record, issue history and voting comparison.
+
+On the local working tree based on `d3d11920`, the focused `bin/rails test`
+run covering candidate lists, publication, forum extraction, participation,
+photos, member pages, search metadata and sitemaps passed 61 tests and 936
+assertions. The full `bin/rails test:system` run passed 54 Chromium journeys
+and 1,534 assertions. After consolidating the field lookup, the filing journey
+passed again with 46 assertions. All runs used the isolated PostgreSQL test
+database and had zero skips. `bin/rubocop` and `git diff --check` passed.
+
+## Candidate participation (ADM-21, RES-10 and the Council guide)
+
+The spring guide links every listed candidate to a generated profile. Candidates
+without a matching person open a year-and-name URL. When saved analysis identifies
+that person, the same URL leads to their canonical profile. Both paths show the
+dated finding under **What voters heard**. Verified speaker passages, explicit questionnaire
+responses, and editor-confirmed absences determine the finding on each request.
+Correcting an absence on any recording part corrects the whole event without
+repeating the transcript analysis. **Campaign sources** keeps the evidence for
+the finding, including the older race when it informs the comparison.
+
+In development, the 2025 League introduction names two absences. The Business
+Association moderator counts three panelists, all three of whom speak on the
+reviewed recordings. HTR identifies the two nonresponses. Jeff Dahlke spoke and
+answered HTR in 2024. His later profile can therefore explain which evidence
+voters had to rely on in 2025. Both Dahlke profiles give the family connection and its date directly.
+[League introduction](https://www.youtube.com/watch?v=8pNwbZrKSRo&t=456s) · [Business Association closing](https://www.youtube.com/watch?v=Q_p7r4TKG5U&t=486s) · [HTR questionnaire](https://www.yahoo.com/news/two-rivers-city-council-school-095547436.html)
+
+On the November 27 working tree based on `d3d11920`, the profile integration
+journey exercised the admin absence correction, a later questionnaire
+correction, a returning candidate, anonymous gated access and the current
+guide’s challenger entry. A process-local fault dropping the previous campaign
+made the cross-year finding assertion fail. The normal run passed. At 390 and
+1280 pixels Chromium opened Jeff Dahlke’s profile and expanded its six source
+links. Two simulated phone readers understood what the 2025 material left open
+about his earlier positions.
 
 ## Preparing the local sources
 
@@ -64,6 +166,10 @@ Discovery currently covers named League and Business Association notices in City
 On the November 27 working tree based on `e3c23402`, Chromium queued the search from the 2025 desk in an isolated PostgreSQL database containing the real February 17 agenda. A Solid Queue worker found the March 6 recording and all three March 18 recordings on the live channel. The desk opened the League transcript and linked to the recording at its starting timestamp. In an empty captions directory the downloader retrieved 3,757 timestamped cues with the same SHA-256 as the retained file. Speaker identity and audio transcription were outside this run.
 
 The focused Rails run passed 26 tests and 675 assertions. It exercised an uncataloged election, the February schedule, a failed caption retrieval and recovery, the speaker desk and replay. A process-local fault treating a UTC broadcast time as a local clock reading caused the caption-job assertion to fail. The unmodified run passed. The separate live Chromium and worker journey passed 28 assertions. RuboCop and the diff check passed.
+
+On `d3d11920` with the passage playback change, Chromium opened the real March 6 captions, selected the audience’s manufacturing question and the first sentence of Tim Petri’s reply, saved them in an isolated test database, then reopened the saved source. Both labels and the remaining unattributed words survived. The recording links opened the correct video at 1,516 and 1,531 seconds. The prior toolbar always opened at zero when an editor selected a saved passage. The split-recording browser test failed against that behavior and passed with the fix.
+
+The City video showed the microphone at the same panel seat during the self-introduction and the reply. An independent local transcription of the audio identified Tim in the opening and corroborated the exchange. The caption wording remains as supplied. The historical browser check passed 41 assertions and created no development campaign source.
 
 ### Preparing cataloged terms and recordings
 

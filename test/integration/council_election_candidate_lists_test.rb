@@ -39,13 +39,29 @@ class CouncilElectionCandidateListsTest < ActionDispatch::IntegrationTest
     assert_select "#spring-election h3", text: "2027 Candidates"
     assert_select "#spring-election .election-person-row", text: "Doug Brandt", count: 1
     assert_select "#seat-doug-brandt a[href=?]", member_path(member)
-    assert_select "#seat-example-challenger span.election-person-row", text: "Example Challenger"
+    assert_select "#seat-example-challenger a[href=?]", council_candidate_path(year: 2027, name: "Example Challenger"), text: "Example Challenger"
     assert_select "#spring-election a", text: /Official ballot/
     refute_includes response.body, "Later Candidate"
+    profile = council_candidate_path(year: 2027, name: "Example Challenger")
+    assert_no_difference [ "Member.count", "CommitteeMembership.count", "MemberPosition.count" ] do
+      get profile
+      assert_response :success
+      assert_select "h1", text: "Example Challenger"
+      assert_select ".member-profile-office", text: "2027 City Council candidate"
+      assert_select "p", text: /haven’t recorded campaign answers/
+    end
+    get sitemap_path
+    assert_includes response.body, profile
     SiteSetting.create!(access_mode: "gated", singleton_guard: 0)
     get committee_path(@council.slug)
     refute_includes response.body, "Example Challenger"
     assert_select "#spring-election a", text: /Official ballot/
+
+    get profile
+    assert_redirected_to committee_path(@council.slug, anchor: "spring-election")
+    refute_includes response.body, "Example Challenger"
+    get sitemap_path
+    refute_includes response.body, profile
 
     SiteSetting.first.update!(access_mode: "open")
     travel_to Time.zone.local(2027, 4, 13)
@@ -69,8 +85,10 @@ class CouncilElectionCandidateListsTest < ActionDispatch::IntegrationTest
     assert_redirected_to admin_elections_path(year: 2027)
     delete public_session_path
     get committee_path(@council.slug)
-    assert_select "#seat-example-challenger span.election-person-row", text: "Example Challenger"
+    assert_select "#seat-example-challenger a[href=?]", council_candidate_path(year: 2027, name: "Example Challenger"), text: "Example Challenger"
     assert_select "#spring-election a[href=?]", article_url, text: "Candidate list source"
+    get council_candidate_path(year: 2027, name: "Example Challenger")
+    assert_select "a[href=?]", article_url, text: "Candidate list source"
   end
 
   test "only the selected list can be corrected or removed by an editor" do
@@ -107,6 +125,10 @@ class CouncilElectionCandidateListsTest < ActionDispatch::IntegrationTest
     assert_select "#seat-avery-example"
     assert_select "#seat-avery-exampl, #seat-jordan-example", count: 0
 
+    get council_candidate_path(year: 2027, name: "Avery Exampl")
+    assert_response :not_found
+    get council_candidate_path(year: 2027, name: "Avery Example")
+    assert_select "h1", text: "Avery Example"
     delete member_path
     assert_redirected_to admin_elections_path(year: 2027)
     refute CouncilElectionCandidateList.exists?(list.id)

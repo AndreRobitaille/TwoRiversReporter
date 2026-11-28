@@ -56,9 +56,18 @@ module ResidentContent
     end
 
     def member_ids_by_name(names = people_names)
-      members = Member.where(name: names).pluck(:name, :id).to_h
-      aliases = MemberAlias.where(name: names - members.keys).pluck(:name, :member_id).to_h
-      members.merge(aliases)
+      self.class.member_ids_by_name(names)
+    end
+
+    def self.member_ids_by_name(names)
+      normalized = names.map(&:downcase)
+      members = Member.where("LOWER(name) IN (?)", normalized).pluck(:name, :id)
+      aliases = MemberAlias.where("LOWER(name) IN (?)", normalized).pluck(:name, :member_id)
+      matches = (members + aliases).group_by { |name, _id| name.downcase }
+      names.each_with_object({}) do |name, result|
+        ids = matches.fetch(name.downcase, []).map(&:last).uniq
+        result[name] = ids.first if ids.one?
+      end
     end
 
     def normalize_candidate_names(raw_names)

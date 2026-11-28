@@ -1,6 +1,6 @@
 module Admin
   class CampaignSourcesController < BaseController
-    before_action :set_source, only: %i[show edit update analyze]
+    before_action :set_source, only: %i[show edit update analyze attendance]
     before_action :use_forum_import, only: %i[edit update]
 
     def index
@@ -56,6 +56,15 @@ module Admin
         @cost_preflight = Campaigns::CostPreflight.call(@version)
         @matching_cost = Campaigns::CostPreflight.for_stage(@topic_matching) if @topic_matching
       end
+    end
+
+    def attendance
+      return head :not_found unless @source.forum?
+      names = params.expect(attendance: [ absent: [] ]).fetch(:absent).compact_blank
+      @source.record_forum_absences!(names)
+      redirect_to admin_campaign_source_path(@source), notice: "Forum attendance saved.", status: :see_other
+    rescue ArgumentError
+      redirect_to admin_campaign_source_path(@source), alert: "Choose from the candidates listed for this forum.", status: :see_other
     end
 
     def analyze

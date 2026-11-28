@@ -46,6 +46,24 @@ class CampaignStatementPublicationTest < ActiveJob::TestCase
     assert_equal 1, @calls.size
   end
 
+  test "publishing a filed challenger reuses current analysis without assigning an office" do
+    @morgan.destroy!
+    analyze_member_campaign
+    extraction = @source.current_version.extraction
+    row = extraction.campaign_statements.find_by!(exception: "unknown_person")
+    assert_equal "Morgan Example", row.data.fetch("source_name")
+    CouncilElectionCandidateList.create!(election_on: @source.election_on, names: [ "Morgan Example" ])
+
+    assert_no_difference [ "CommitteeMembership.count", "MemberPosition.count", "CampaignExtraction.count", "CouncilAiReservation.count" ] do
+      Ai::OpenAiService.stub(:new, ->(*) { flunk "Publication must reuse the saved extraction" }) do
+        assert_difference("Member.count", 1) { ReconcileCampaignSourcesJob.perform_now }
+        assert_equal "accepted", row.reload.status
+        assert_equal [ row ], CampaignStatement.current_for(Member.find_by!(name: "Morgan Example"))
+        assert_no_changes(-> { [ Member.count, row.reload.updated_at ] }) { ExtractCampaignSourceJob.perform_now(@source.id) }
+      end
+    end
+  end
+
   test "a missing passage prevents only that statement from publishing" do
     data = campaign_response_data
     data.fetch("participants").first.fetch("answers").last.fetch("statements").sole["supporting_quote"] = "Unsupported promise"

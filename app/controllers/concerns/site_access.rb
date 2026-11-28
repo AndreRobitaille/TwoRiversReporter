@@ -11,6 +11,7 @@ module SiteAccess
     "topics" => %w[index show],
     "meetings" => %w[index show],
     "committees" => %w[show],
+    "council_candidates" => %w[show],
     "members" => %w[show record campaign issues compare recommendations],
     "crawler_probes" => %w[show],
     "sitemaps" => %w[show]

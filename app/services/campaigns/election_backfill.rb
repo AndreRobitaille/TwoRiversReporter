@@ -8,6 +8,14 @@ module Campaigns
       date ? Date.iso8601(date) : ResidentContent::CouncilElection.for_year(year)&.election_on
     end
 
+    def self.candidates_on(date)
+      edition = EDITIONS[date.year.to_s]
+      return edition.fetch("candidates") if edition && edition["election_on"] == date.iso8601
+
+      guide = ResidentContent::CouncilElection.for_year(date.year)
+      guide&.election_on == date ? guide.candidates.keys : []
+    end
+
     def self.for(year)
       historical = EDITIONS[year.to_s]
       date = election_on(year)

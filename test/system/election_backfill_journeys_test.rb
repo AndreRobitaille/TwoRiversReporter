@@ -3,6 +3,37 @@ require "tempfile"
 require "minitest/mock"
 
 class ElectionBackfillJourneysTest < ApplicationSystemTestCase
+  test "an editor can search for sources and open a saved speaker project for the selected year" do
+    admin = User.create!(email_address: "source-tools@example.test", admin: true, status: "active")
+    admin.passkey_credentials.create!(external_id: "source-tools-key", public_key: "test", sign_count: 0)
+    sign_in_by_email(admin)
+    visit admin_elections_path(year: 2026)
+
+    within ".source-tools-group", text: "Voter forums" do
+      assert_link "Label another forum", href: desk_admin_campaign_forum_path(year: 2026)
+      click_button "Find voter forums"
+    end
+    assert_text "Forum search queued"
+    assert_current_path admin_elections_path(year: 2026)
+
+    page.current_window.resize_to(390, 844)
+    within ".source-tools-group", text: "News articles" do
+      assert_link "Add another article", href: new_admin_campaign_source_path(year: 2026)
+      click_button "Find HTR questionnaire"
+    end
+    assert_text "HTR search queued"
+    assert_current_path admin_elections_path(year: 2026)
+    within ".election-source-tools" do
+      assert_link "All campaign sources", href: admin_campaign_sources_path
+      assert_no_link "Resume a speaker project"
+      find("summary", text: "Speaker project files").send_keys(:enter)
+      assert_link "Import a reviewed transcript", href: new_admin_campaign_forum_path
+      click_link "Resume a speaker project"
+    end
+    assert_current_path desk_admin_campaign_forum_path(year: 2026, files: 1)
+    assert_field "Resume a saved speaker project"
+  end
+
   test "a past election accepts a manually labeled SRT with repeated words and resumes the editor's work" do
     admin = User.create!(email_address: "backfill-editor@example.test", admin: true, status: "active")
     admin.passkey_credentials.create!(external_id: "backfill-editor-key", public_key: "public-key", sign_count: 0)
@@ -225,11 +256,13 @@ class ElectionBackfillJourneysTest < ApplicationSystemTestCase
         find("summary", text: /Labeled passages/).click
         find("#label-list button", text: /Moderator/).click
         assert_text "Assigned to Moderator"
+        assert_link "Play from 00:00:01", href: "#{edition.dig("sources", "business", "url")}&t=1s"
         pos = page.evaluate_script("document.querySelector('#transcript').scrollTop = 500")
         select "Business Association · Short restart", from: "recording-switch"
         assert_selector "#reading-title", text: /Continued/
         assert_selector "#transcript .word", text: "business_continued"
         assert_no_selector ".word.labeled"
+        assert_link "Watch recording", href: "#{edition.dig("sources", "business_continued", "url")}&t=0s"
         click_link "Elections · 2025", exact: false
         within find("li", text: /Opening recording/) do
           assert_text "4 words labeled in this browser"

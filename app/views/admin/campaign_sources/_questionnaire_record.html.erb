@@ -58,7 +58,7 @@
           <% end %>
           <% @progress.matched.group_by(&:member).each do |member, statements| %>
             <section class="election-panel-row">
-              <h3><%= link_to member.name, campaign_member_path(member, anchor: "campaign-record") %></h3>
+              <h3><%= link_to member.name, (ResidentContent::ElectionPublication.current.withdrawn?(@version.election_on, statements.first.data["source_name"]) ? admin_member_path(member) : campaign_member_path(member, anchor: "campaign-record")) %></h3>
               <details class="desk-disclosure" <%= "open" if params[:reviewed_member] == member.id.to_s %>>
                 <summary><%= current ? "Review statements" : "Read statements" %> (<%= statements.size %>)</summary>
                 <ul class="questionnaire-statement-list">

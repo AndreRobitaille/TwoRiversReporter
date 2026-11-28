@@ -1,4 +1,4 @@
-<% profile_role = member_profile_role(@current_position, @memberships) %>
+<% profile_role = @candidate_role || member_profile_role(@current_position, @memberships) %>
 <% content_for(:title) { "#{@member.name} — #{profile_role} in Two Rivers, WI" } %>
 <% content_for(:description) { [@member.name, profile_role, "committee memberships, meeting attendance, and voting record in Two Rivers, WI"].join(" — ") } %>
 <% content_for(:og_type) { "article" } %>
@@ -16,6 +16,7 @@
 
   <div class="member-profile-layout">
     <div class="member-profile-primary">
+      <%= render "election_context" %>
       <%= render "record_period" %>
       <%= render "service_periods", periods: @service_periods %>
 
