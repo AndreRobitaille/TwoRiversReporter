@@ -7859,6 +7859,14 @@ th.sortable-header:hover {
 }
 
 @media (max-width: 767px) {
+  .election-profile .member-article-header:has(> .candidate-photo) {
+    --portrait-width: clamp(4rem, 21vw, 7rem);
+  }
+
+  .election-profile .member-article-header:has(> .candidate-photo) .member-article-title {
+    font-size: clamp(1.45rem, 7vw, 2.1rem);
+  }
+
   .member-article-header:has(> .candidate-photo) .member-header-copy {
     display: contents;
   }

@@ -46,7 +46,7 @@
             <p class="member-term-copy"><%= description %> <%= link_to "Source", campaign_member_path(@member, statement: statement.id, anchor: "campaign-statement"), class: "member-term-source" %></p>
           <% end %>
         <% else %>
-          <p>We don’t have a sourced statement from this member’s last campaign yet.</p>
+          <p>We haven’t published a summary of this member’s last campaign yet.</p>
         <% end %>
         <%= render "election_context" %>
         <% if findings.empty? %>

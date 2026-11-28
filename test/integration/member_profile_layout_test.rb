@@ -10,6 +10,30 @@ class MemberProfileLayoutTest < ActionDispatch::IntegrationTest
     @other.motion.agenda_item.topics.clear
   end
 
+  test "the Council roster opens the same profile outside filing season and before a term review exists" do
+    travel_to Date.new(2025, 7, 1) do
+      @council.committee_memberships.create!(member: @jordan, role: "member", source: "official_roster")
+      get committee_path(@council.slug)
+      get css_select(".committee-roster a").sole["href"]
+      assert_select "article.election-profile h1", text: @jordan.name
+      assert_select ".member-profile-office", text: "City Council Member"
+      assert_select "#campaign-record .member-term-date", text: "2024 Council campaign"
+      assert_select "#campaign-record a.member-term-source"
+      assert_select ".member-election-status", count: 0
+      assert_select ".council-work a[href=?]", record_member_path(@jordan)
+      get record_member_path(@jordan)
+      assert_select ".member-profile-primary #voting-record"
+      decision_path = member_path(@jordan, decision: @other.motion_id, anchor: "profile-decision")
+      assert_select "a[href=?]", decision_path, text: @other.motion.description
+      get decision_path
+      assert_select "#profile-decision", text: /Keep the public pier accessible/
+      SiteSetting.create!(access_mode: "gated", singleton_guard: 0)
+      get member_path(@jordan)
+      assert_select ".gate-card"
+      assert_select ".member-term-source, .council-work", count: 0
+    end
+  end
+
   test "main record precedes complementary campaign context and other votes remain in closed server-rendered disclosure" do
     get member_path(@jordan)
     assert_response :success

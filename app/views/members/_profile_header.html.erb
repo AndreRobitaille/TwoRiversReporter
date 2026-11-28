@@ -18,7 +18,7 @@
     </nav>
     <div class="member-identity">
       <h1 class="member-article-title"><%= @member.name %></h1>
-      <% if @has_election_profile %>
+      <% if @council_profile %>
         <p class="member-profile-office"><%= "Current: " if @record_period.selected&.ended_on %><%= @current_position&.title || "City Council Member" %></p>
       <% elsif @current_position %>
         <span class="badge badge--info"><%= "Current: " if @record_period.selected&.ended_on %><%= @current_position.title %></span>

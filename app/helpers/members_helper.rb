@@ -64,7 +64,9 @@ module MembersHelper
   def member_vote_profile_path(vote)
     @election_profile_ids ||= begin
       edition = ResidentContent::CouncilElection.current
-      edition ? edition.member_ids_by_name(edition.terms_ending.keys).values : []
+      featured = edition ? edition.member_ids_by_name(edition.terms_ending.keys).values : []
+      roster = CommitteeMembership.on_roster.joins(:committee).where(committees: { name: "City Council" })
+      (featured + roster.pluck(:member_id)).to_set
     end
     return member_path(vote.member) unless @election_profile_ids.include?(vote.member_id)
 

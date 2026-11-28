@@ -12,7 +12,7 @@ class MembersController < ApplicationController
         params.slice(:term, :votes, :page, :q, :topic, :body, :split, :kind, :statement, :decision).empty?
       return show_challenger
     end
-    summary_profile = @has_election_profile || @term_summary&.sentences.present?
+    summary_profile = !gated_for_visitor? && (@council_profile || @term_summary&.sentences.present?)
     if summary_profile && params[:statement].present?
       load_campaign_comparisons
       return render :campaign
@@ -152,7 +152,9 @@ class MembersController < ApplicationController
   def load_committee_navigation(memberships)
     committees = @memberships.map(&:committee)
     roster = committees.find { |committee| committee.slug == params[:committee] }
-    council = committees.find { |committee| committee.name == "City Council" }
+    council_membership = @memberships.find { |membership| membership.committee.name == "City Council" }
+    @council_profile = council_membership&.role.present? || @has_election_profile
+    council = council_membership&.committee
     council ||= council_committee if @current_position&.kind == "city_council" || @has_election_profile
     @profile_committees = [ roster, council ].compact.uniq
     @profile_committees = committees if committees.one? && @profile_committees.empty?
@@ -186,7 +188,10 @@ class MembersController < ApplicationController
 
   def load_campaign_preview
     by_year = campaign_statements.group_by { |statement| statement.campaign_source_version.election_on }
-    @campaign_date = by_year.keys.select { |date| date < @election.election_on }.max
+    period = @record_period.selected
+    dates = by_year.keys.select { |date| date <= Date.current && (!@election || date < @election.election_on) }
+    dates.select! { |date| date.year == period.started_on.year } if period && period.period_key == "#{period.started_on.year}-election"
+    @campaign_date = dates.max
     return unless @campaign_date
 
     platform = ResidentContent::CampaignPlatform.new(by_year.fetch(@campaign_date), include_council_records: false)

@@ -89,18 +89,11 @@ class CommitteesController < ApplicationController
       @election_portraits = CandidatePortrait.current_for(@election.people_names.index_with { |name| @election_member_ids[name] })
     end
 
-    @memberships = @committee.committee_memberships
-      .where(ended_on: nil)
-      .where.not(role: %w[staff non_voting])
-      .includes(member: :current_member_positions)
+    @memberships = @committee.committee_memberships.on_roster.includes(member: :current_member_positions)
 
     city_council = Committee.find_by(name: "City Council")
     @council_member_ids = if city_council && city_council.id != @committee.id
-      city_council.committee_memberships
-        .where(ended_on: nil)
-        .where.not(role: %w[staff non_voting])
-        .pluck(:member_id)
-        .to_set
+      city_council.committee_memberships.on_roster.pluck(:member_id).to_set
     else
       Set.new
     end

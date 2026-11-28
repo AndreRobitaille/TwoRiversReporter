@@ -96,7 +96,7 @@
                         <div class="member-vote-row">
                           <div class="member-vote-motion">
                             <span class="member-vote-date"><%= vote.motion.meeting.starts_at&.strftime("%b %-d, %Y") %></span>
-                            <%= link_to vote.motion.description.presence || vote_context(vote), (@has_election_profile ? member_vote_profile_path(vote) : meeting_path(vote.motion.meeting)) %>
+                            <%= link_to vote.motion.description.presence || vote_context(vote), (@council_profile ? member_vote_profile_path(vote) : meeting_path(vote.motion.meeting)) %>
                           </div>
                           <div class="member-vote-result">
                             <span class="vote-value <%= vote_color_class(vote.value) %>"><%= vote.value.titleize %></span>
@@ -119,7 +119,7 @@
                         <div class="member-vote-motion">
                           <span class="member-vote-date"><%= vote.motion.meeting.starts_at&.strftime("%b %-d, %Y") %></span>
                           <span class="member-vote-body"><%= vote.motion.meeting.body_name %></span>
-                          <%= link_to vote.motion.description.presence || vote_context(vote), (@has_election_profile ? member_vote_profile_path(vote) : meeting_path(vote.motion.meeting)) %>
+                          <%= link_to vote.motion.description.presence || vote_context(vote), (@council_profile ? member_vote_profile_path(vote) : meeting_path(vote.motion.meeting)) %>
                         </div>
                         <div class="member-vote-result">
                           <span class="vote-value <%= vote_color_class(vote.value) %>"><%= vote.value.titleize %></span>
