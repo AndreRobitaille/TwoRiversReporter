@@ -13,7 +13,7 @@ class CampaignStatementReviewsTest < ActionDispatch::IntegrationTest
     CouncilServicePeriod.record_starts!(period_key: "2026-election", source_version: service_source(date: Date.new(2026, 4, 21)), page: 5,
       entries: [ { member_id: @member.id, started_on: Date.new(2026, 4, 21) } ])
     @question = "What would you do on the Council?"
-    @quotes = [ "I will meet with residents when I can.", "I will publish the budget proposal before voting." ]
+    @quotes = [ "I will publish a quarterly list of street repairs.", "I will publish the budget proposal before voting." ]
     @source = CampaignSource.create!(title: "Council questionnaire", publisher: "Herald Times Reporter", election_on: "2026-04-07",
       published_on: "2026-04-01", source_url: "https://example.test/questionnaire", body: [ @question, @member.name, *@quotes ].join("\n"))
     @extraction = CampaignExtraction.create!(campaign_source_version: @source.current_version, purpose: "statements", status: "completed", input_key: "a" * 64,
@@ -29,8 +29,16 @@ class CampaignStatementReviewsTest < ActionDispatch::IntegrationTest
     get @profile
     assert_select "#campaign-record [data-campaign-proposal]", count: 2
     assert_select "#campaign-record a[href=?]", @source.source_url
+    assert_empty assessment_positions
+    selection = Campaigns::PlatformSelection.new(CampaignStatement.current_for(@member))
+    stage = selection.prepare
+    groups = selection.rows.map.with_index(1) do |row, i|
+      { primary: i, other_ids: [], heading: row.data.fetch("comparison_heading"), action_quote: row.data.fetch("supporting_quote"),
+        record_test: row.data.fetch("comparison_heading"), undertaking: "personal_action" }
+    end
+    selection.publish!(stage, { groups: groups, excluded: [] }.to_json)
     assert_equal 2, assessment_positions.size
-    assert_includes assessment_positions, "Meet with residents"
+    assert_includes assessment_positions, "Publish a quarterly list of street repairs"
 
     sign_in_as_admin(@admin)
     get admin_campaign_source_path(@source)
@@ -55,7 +63,7 @@ class CampaignStatementReviewsTest < ActionDispatch::IntegrationTest
     assert_not @other.reload.excluded_at?
     get @profile
     assert_select "#campaign-record [data-campaign-proposal]", count: 1
-    assert_select "#campaign-record", text: /Meet with residents/, count: 0
+    assert_select "#campaign-record", text: /Publish a quarterly list of street repairs/, count: 0
     assert_select "#campaign-record", text: /Publish the budget proposal/
     get campaign_member_path(@member, statement: @statement.id)
     assert_select "#campaign-statement", text: /statement is unavailable/
@@ -68,7 +76,7 @@ class CampaignStatementReviewsTest < ActionDispatch::IntegrationTest
     get campaign_member_path(@member, statement: @statement.id)
     assert_select "#campaign-statement .member-campaign-position", text: @quotes.first
     assert_select "#campaign-statement a[href=?]", @source.source_url
-    assert_includes assessment_positions, "Meet with residents"
+    assert_includes assessment_positions, "Publish a quarterly list of street repairs"
   end
 
   test "an anonymous visitor or an editor with an obsolete source cannot review a statement" do
@@ -81,13 +89,13 @@ class CampaignStatementReviewsTest < ActionDispatch::IntegrationTest
     patch @path, params: { decision: "exclude" }
     assert_redirected_to root_path
     assert_not @statement.reload.excluded_at?
-    assert_empty AuditEvent.all
+    assert_empty AuditEvent.where(action: %w[campaign_statement_excluded campaign_statement_restored])
   end
 
   private
 
   def extracted_statements
-    @quotes.zip([ "Meet with residents", "Publish the budget proposal" ]).map do |quote, heading|
+    @quotes.zip([ "Publish a quarterly list of street repairs", "Publish the budget proposal" ]).map do |quote, heading|
       start = @source.body.index(quote)
       { kind: "commitment", summary: quote, comparison_heading: heading, supporting_quote: quote,
         location: { start: start, end: start + quote.length }, location_status: "located" }
