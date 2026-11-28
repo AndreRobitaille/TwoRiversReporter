@@ -32,7 +32,7 @@ module Admin
       raise ActiveRecord::RecordNotFound unless path
 
       no_store
-      send_file path, type: "text/vtt", disposition: "inline"
+      send_data path.binread, filename: path.basename.to_s, type: "text/vtt", disposition: "inline"
     end
 
     def captions

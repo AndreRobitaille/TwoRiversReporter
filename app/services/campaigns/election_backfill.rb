@@ -87,8 +87,7 @@ module Campaigns
       id = lead["url"].to_s[%r{\Ahttps://www\.youtube\.com/watch\?v=([a-zA-Z0-9_-]{11})\z}, 1]
       return unless id
 
-      path = Rails.root.join("storage", "election-captions", "#{id}.vtt")
-      path if path.file?
+      Rails.root.glob("storage/election-captions/*.vtt").find { |file| file.basename.to_s == "#{id}.vtt" && file.file? && !file.symlink? }
     end
 
     def self.lead(year, key, kind:)
