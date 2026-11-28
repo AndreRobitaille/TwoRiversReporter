@@ -8,6 +8,7 @@ module Ai
     MAX_CAMPAIGN_COMPLETION_TOKENS = 8_000
     MAX_CAMPAIGN_FORUM_CHARS = 100_000
     MAX_CAMPAIGN_FORUM_COMPLETION_TOKENS = 32_000
+    CAMPAIGN_ANALYSIS_TIMEOUT = 10.minutes.to_i
     class InputTooLargeError < StandardError; end
     class IncompleteResponseError < StandardError
       attr_reader :finish_reason
@@ -32,6 +33,7 @@ module Ai
       summarize_council_term
       extract_votes
       extract_campaign_statements
+      extract_long_campaign_forum
       extract_committee_members
       extract_topics
       refine_catchall_topic
@@ -53,8 +55,9 @@ module Ai
       render_meeting_summary
     ].freeze
 
-    def initialize
-      @client = OpenAI::Client.new(access_token: Rails.application.credentials.openai_access_token || ENV["OPENAI_ACCESS_TOKEN"])
+    def initialize(request_timeout: OpenAI.configuration.request_timeout)
+      @client = OpenAI::Client.new(access_token: Rails.application.credentials.openai_access_token || ENV["OPENAI_ACCESS_TOKEN"],
+        request_timeout: request_timeout)
     end
 
     class << self
@@ -123,15 +126,17 @@ module Ai
       def campaign_request_parameters(version)
         input_limit = version.forum? ? MAX_CAMPAIGN_FORUM_CHARS : MAX_CAMPAIGN_CHARS
         raise InputTooLargeError, "Campaign source requires partitioning" if version.body.length > input_limit
-        output_limit = if version.body.length > MAX_CAMPAIGN_CHARS
-          MAX_CAMPAIGN_FORUM_COMPLETION_TOKENS
-        else
-          MAX_CAMPAIGN_COMPLETION_TOKENS
+        long_forum = version.forum? && version.body.length > MAX_CAMPAIGN_CHARS
+        output_limit = long_forum ? MAX_CAMPAIGN_FORUM_COMPLETION_TOKENS : MAX_CAMPAIGN_COMPLETION_TOKENS
+        template = PromptTemplate.find_by!(key: long_forum ? "extract_long_campaign_forum" : "extract_campaign_statements")
+        text = version.body
+        if long_forum
+          turn = 0
+          text = text.gsub(/^\[(?=\d{2}:\d{2}:\d{2}\.\d{3} - )/) { "Turn #{turn += 1} [" }
         end
-        template = PromptTemplate.find_by!(key: "extract_campaign_statements")
         messages = [
           (template.system_role.present? ? { role: "system", content: template.system_role } : nil),
-          { role: "user", content: template.interpolate(text: version.body, election_on: version.election_on,
+          { role: "user", content: template.interpolate(text: text, election_on: version.election_on,
             coverage: version.coverage, coverage_notes: version.coverage_notes.to_s) }
         ].compact
         build_chat_parameters(model: model_for_tier(template.model_tier), messages: messages,
@@ -690,27 +695,38 @@ module Ai
       { "headline" => context[:current_headline], "upcoming_note" => "" }
     end
 
-    def self.council_term_parameters(member, facts)
+    def self.council_term_parameters(member, facts, review_groups: nil, reviewed_on: Date.current)
       template = PromptTemplate.find_by!(key: "summarize_council_term")
       numbered = facts.map.with_index(1) do |fact, id|
-        fact.slice(:kind, :text, :dates, :promise_words, :position, :identity, :reviewed_status, :reviewed_on, :matched_positions, :opposed_positions, :advanced_positions, :unclear_positions).compact_blank.merge(id: id, sources: fact[:sources].pluck(:label))
+        fact.slice(:kind, :text, :dates, :promise_words, :position, :undertaking, :record_test, :identity, :reviewed_status, :reviewed_on, :city_outcome, :outcome_quote, :matched_positions, :opposed_positions, :advanced_positions, :unclear_positions).compact_blank.merge(id: id, sources: fact[:sources].pluck(:label))
       end
       period = member.council_service_periods.newest_first.first
-      context = { member: member.name, reviewed_on: Date.current, term_started_on: period&.started_on,
+      groups = review_groups || CouncilProfiles::PromiseFollowThrough.position_groups(facts)
+      if review_groups
+        judgment_limits = groups.map do |group|
+          headings = group.map { |id| facts.fetch(id - 1).fetch(:position) }
+          opposed = facts.any? { |f| Array(f[:opposed_positions]).intersect?(headings) || (f[:reviewed_status] == "contrary" && headings.include?(f[:position])) }
+          missed = facts.any? { |f| f[:reviewed_status] == "missed" && headings.include?(f[:position]) }
+          { positions: group, contrary_allowed: opposed, missed_allowed: missed }
+        end
+      end
+      context = { member: member.name, reviewed_on: reviewed_on, term_started_on: period&.started_on,
         scheduled_term_end: ResidentContent::CouncilElection.scheduled_term_end(member.name, period),
-        tracked_positions: CouncilProfiles::PromiseFollowThrough.position_groups(facts), facts: numbered }.compact.to_json
+        tracked_positions: groups, facts: numbered, judgment_limits: judgment_limits,
+        review: ("Assess only the listed groups and obey their judgment limits. For city_result or city_progress, use the separately verified city_outcome and copy its outcome_quote. For a personal minutes-based judgment, copy the exact words identifying this member's action from the cited excerpt for this position. Check whether the motion supported or opposed the promise, then check which way the member voted. Use unresolved when the supplied evidence cannot establish the action or result." if review_groups) }.compact.to_json
       messages = [ { role: "system", content: template.system_role },
         { role: "user", content: template.interpolate(context: context) } ]
-      allowance = 700 + 100 * facts.count { |fact| fact[:promise_words].present? }
-      build_chat_parameters(model: model_for_tier(template.model_tier), messages: messages, response_format: { type: "json_object" })
-        .merge(max_completion_tokens: [ allowance, 2_800 ].min)
+      allowance = 900 + 150 * groups.size
+      model = review_groups ? DEFAULT_MODEL : model_for_tier(template.model_tier)
+      build_chat_parameters(model: model, messages: messages, response_format: CouncilProfiles::TermResponse.format)
+        .merge(max_completion_tokens: [ allowance, MAX_CAMPAIGN_COMPLETION_TOKENS ].min)
     end
 
-    def summarize_council_term(member, facts, request_recorder:)
-      params = self.class.council_term_parameters(member, facts)
+    def summarize_council_term(member, facts, request_recorder:, review_groups: nil)
+      params = self.class.council_term_parameters(member, facts, review_groups: review_groups)
       content, duration = call_api(**params, request_recorder: request_recorder)
       record_prompt_run(template_key: "summarize_council_term", messages: params.fetch(:messages), response_content: content,
-        model: params.fetch(:model), response_format: "json_object", duration_ms: duration, source: member)
+        model: params.fetch(:model), response_format: "json_schema", duration_ms: duration, source: member)
       JSON.parse(content)
     end
 

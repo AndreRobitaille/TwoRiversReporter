@@ -18,6 +18,34 @@ promise that every representation is supported or authorized.
 
 Current reconciliation: PR #181 removes the ten unsupported dispatch rows and duplicate promotion after reviewing actual controls, while retaining approved compatibility actions. `ApplicationDispatchTest` verifies current repository routes; real browser/denial/failure evidence is in the [audit](overnight-progress.md#merged-notification-and-admin-evidence). The expanded table below preserves the historical discovery revision.
 
+## Election backfill additions, November 27, 2026
+
+| Verb | Path | Operator action |
+| --- | --- | --- |
+| GET | `/admin/elections` | Choose an election, source or recording |
+| POST | `/admin/elections/:year/find_forums` | Queue the forum search and transcript preparation for the selected election |
+| POST | `/admin/elections/:year/find_htr` | Queue the HTR questionnaire search for the selected spring election |
+| GET | `/admin/campaign_forum/desk` | Label a forum or reopen a saved speaker project |
+| GET | `/admin/campaign_forum/desk.json?source_id=ID` | Load the retained project for a forum correction |
+| GET | `/admin/campaign_forum/recording` | Open captions for a known recording |
+| POST | `/admin/campaign_forum/captions` | Parse an uploaded private SRT or VTT for the desk |
+
+### Public candidate profile (RES-09/10/11)
+
+| Verb | Path | Resident action |
+| --- | --- | --- |
+| GET | `/elections/:year/candidates/:name` | Open a published candidate’s profile. A known person resolves to their member profile. Losing campaigns return 404 after the confirmed result. |
+
+### Council candidate list (ADM-23)
+
+| Verb | Path | Operator action |
+| --- | --- | --- |
+| GET | `/admin/elections/:year/candidate_list/new` | Open the candidate list form for a scheduled edition |
+| POST | `/admin/elections/:year/candidate_list` | Publish the first candidate list for that edition |
+| GET | `/admin/elections/:year/candidate_list/:id/edit` | Open the saved list for editing |
+| PATCH / PUT | `/admin/elections/:year/candidate_list/:id` | Save corrected names or remove individual names |
+| DELETE | `/admin/elections/:year/candidate_list/:id` | Remove the saved list from the guide |
+
 ## Campaign article intake addition: November 8, 2026
 
 ADM-21 adds these private admin dispatches. They were enumerated locally and
@@ -28,10 +56,17 @@ checked by `ApplicationDispatchTest`; actual form and access evidence is in
 | --- | --- | --- |
 | GET | `/admin/campaign_sources` | `admin/campaign_sources#index` |
 | POST | `/admin/campaign_sources` | `admin/campaign_sources#create` |
+| POST | `/admin/campaign_sources/read_questionnaire` | Preview the Council answers and named portrait links from a formatted paste or saved article. |
 | GET | `/admin/campaign_sources/new` | `admin/campaign_sources#new` |
 | GET | `/admin/campaign_sources/:id/edit` | `admin/campaign_sources#edit` |
 | GET | `/admin/campaign_sources/:id` | `admin/campaign_sources#show` |
+| POST | `/admin/campaign_sources/:id/analyze` | Queue authorized analysis for the current source version |
 | PATCH / PUT | `/admin/campaign_sources/:id` | `admin/campaign_sources#update` |
+| PATCH | `/admin/campaign_sources/:source_id/statements/:id` | Exclude or restore a matched statement in the current source version |
+
+The guide and member profile use `GET /candidate-portraits/:id` to serve each
+person’s current JPEG. Both pages refresh their image URL when it changes. The
+stable endpoint also revalidates the current image for a returning visitor.
 
 The prepared-forum extension adds two admin-only routes:
 

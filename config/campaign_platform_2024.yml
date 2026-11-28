@@ -300,6 +300,30 @@ council_sources:
 members:
   Mark Bittner:
     story_emphasis: [Hamilton, family beach campout, growth committee]
+    answer_reviews:
+      - source: business
+        question_ms: 2887000
+        answer_ms: 2916630
+        exchange_sha256: 8eb8bf6ac70b553b6b648179b8963b366020eb4d946b35a1ebf891a415886b31
+        label: Evasive answer
+        flagged: true
+        question: Which cities should Two Rivers learn from?
+        finding: Bittner described what he would look for in a city of similar size. Asked for an example, he named none in this answer.
+      - source: business
+        question_ms: 1052240
+        answer_ms: 1088919
+        exchange_sha256: 3feaf92b2e3745248c5e0cbae1b735259ca5b7e97dc57a85c27b702a8c8e7725
+        label: Named sources
+        question: How did you learn what local businesses need?
+        finding: Bittner said he read Council meeting notes, asked the finance department about money available for development, and checked on the former Hamilton property. He also described speaking with people who had served on the Council.
+      - source: league
+        question_ms: 2492750
+        answer_ms: 2535710
+        exchange_sha256: e4328397e1d1dfff6003f5535b6d2fe1b9b9f11bac6bdd1f4c2566724a1c1e36
+        label: Specific proposal
+        question: Where should Two Rivers be in five or ten years?
+        finding: Bittner proposed a committee of Council members that would meet once or twice a month and report on growth priorities at Council work sessions.
+        promise_heading: Form a council growth committee
     digests:
       business: 57803fbdf60a1420e114aa858aa62678113353e61e8a89fb7accfbe63477c77f
       league: fe36bc3ba10a58e752f3b640b46aab2a0b9ba2e1a4616e0353813fa518d5e80b
@@ -439,6 +463,21 @@ members:
             sources: [riverside]
   Doug Brandt:
     story_emphasis: [housing site, industrial property sale proceeds, owner-residency rule]
+    answer_reviews:
+      - source: business
+        question_ms: 2887000
+        answer_ms: 2977910
+        exchange_sha256: 7beaeecec7b0d00143b80a6259ab4e116c465c415eae88bcfee39ff188968056
+        label: Gave examples
+        question: Which cities should Two Rivers learn from?
+        finding: Brandt suggested looking at a community that had also lost a major employer and named Denmark for its industry. He said he needed more research to judge which communities made the best comparisons.
+      - source: business
+        question_ms: 1052240
+        answer_ms: 1189520
+        exchange_sha256: 5d423589c426afa1da7bc06983ebced8c354d4a31d511031f696149779900338
+        label: Named sources
+        question: How did you learn what local businesses need?
+        finding: Brandt said he spoke with current and former Council members and the city manager. He said a manufacturer’s account of trouble finding and keeping workers led him to look up that business and check the city’s list of manufacturers.
     digests:
       business: f6aeaa9f916ba7ca62f60e288f126dffaed3c14592c69713db03fa133cc6f05e
       league: fa9a40fd6e15ef4d413495714b760641451a3fb3a5fab32506bfc3b5a260f394
@@ -559,6 +598,23 @@ members:
             sources: [hansen, eggers_site_vote]
   Shannon Derby:
     story_emphasis: [Paddlers Park, Violet Inn, city newsletter]
+    answer_reviews:
+      - source: business
+        question_ms: 2887000
+        answer_ms: 3098829
+        exchange_sha256: 019991a5f37cf29d41447a1ee6553b3c0150a3d3f995714655375c541ba8f480
+        label: No outside city named
+        flagged: true
+        question: Which cities should Two Rivers learn from?
+        finding: Derby acknowledged she hadn’t prepared a comparison. She pointed to once-empty storefronts as a reason other cities might study Two Rivers and offered to meet with leaders elsewhere.
+      - source: business
+        question_ms: 1052240
+        answer_ms: 1331320
+        exchange_sha256: 4122a517e62a164ee9b41128d6915375ea3fbfc77c5eb0a26c52d0e2b9e03e9d
+        label: Partial answer
+        flagged: true
+        question: How did you learn what local businesses need?
+        finding: Derby said she studied tax-increment financing after a question about it tripped her up the year before. She drew on her own workplace to explain why wages and benefits matter. She didn’t name anyone she consulted or anything she read to prepare.
     digests:
       business: 5a2333852067bc15cccaf4975f79ac393adb909fc77feff9e137fd69b66d583a
       league: 14c1d78dae237f11e9fe366a99314d497bfa9850cad2191bc0f33441e2949ad6

@@ -10,7 +10,8 @@ class PreparedCampaignForumExtractionTest < ActiveJob::TestCase
     seed_prompt_templates
     @calls = []
     actor = User.create!(email_address: "forum-importer@example.test", admin: true, status: "active")
-    @source, = Campaigns::ImportPreparedForum.call(file: StringIO.new(forum_export.to_json), actor: actor,
+    @export = forum_export.merge("sourceUrl" => "https://www.youtube.com/watch?v=testFORUM01")
+    @source, = Campaigns::ImportPreparedForum.call(file: StringIO.new(@export.to_json), actor: actor,
       gaps_are_moderator: true, attributes: { publisher: "Example association", published_on: "2024-03-12", election_on: "2024-04-02" })
     @jordan = Member.create!(name: "Jordan Example")
     @segments = @source.prepared_transcript.fetch("segments").reject { |row| row["speaker"] == "Moderator" }
@@ -35,6 +36,7 @@ class PreparedCampaignForumExtractionTest < ActiveJob::TestCase
       assert_equal 5, stage.campaign_statements.count
       assert_equal [ @jordan.id ], stage.campaign_statements.where(status: "accepted").pluck(:member_id)
       assert_equal 4, stage.campaign_statements.where(exception: "unknown_person").count
+      assert_equal({ question: 0, answer: 60_000 }, CampaignStatement.current_for(@jordan).sole.forum_clip_times)
       assert_includes @calls.sole.fetch(:messages).last.fetch(:content), "Keep the library open on Saturdays."
       original = stage.campaign_statements.order(:sequence).pluck(:id, :data)
       avery = Member.create!(name: "Avery Example")
@@ -44,7 +46,7 @@ class PreparedCampaignForumExtractionTest < ActiveJob::TestCase
       assert_equal [ @jordan.id, avery.id ].sort, stage.campaign_statements.where(status: "accepted").pluck(:member_id).sort
       assert_equal 0, avery.member_positions.count
 
-      exported_again = forum_export.merge("savedAt" => "2026-11-08T12:00:00Z")
+      exported_again = @export.merge("savedAt" => "2026-11-08T12:00:00Z")
       Campaigns::ImportPreparedForum.call(file: StringIO.new(exported_again.to_json), actor: @source.current_version.submitted_by,
         gaps_are_moderator: true, source: @source, attributes: { publisher: @source.publisher,
           published_on: @source.published_on, election_on: @source.election_on })

@@ -216,6 +216,38 @@ class CouncilTermSummaryTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "an unsupported judgment stays unscored and an exact queued review can resolve it once" do
+    draft = JSON.parse(@result)
+    draft["promises"].first.merge!("status" => "contrary", "reason" => "An unsupported reversal.")
+    draft["sentences"].first["text"] = "An unsupported reversal from the same draft."
+    with_campaign_transport(content: draft.to_json) { refresh }
+    summary = CouncilTermSummary.find_by!(member: @bittner)
+    assert_equal [ "pending_review" ], summary.promise_assessments.pluck("status")
+    get member_path(@bittner)
+    assert_select "#promise-group-pending_review .promise-wording blockquote"
+    assert_select ".promise-meter", count: 0
+    assert_not_includes response.body, "An unsupported reversal"
+    assert_includes response.body, "0 of 1 campaign positions assessed"
+
+    receipt = PromptRun.where(source: @bittner, prompt_template_key: "summarize_council_term").sole
+    review = CouncilProfiles::TermAssessmentDraft.new(summary, @evidence, receipt)
+    params = review.parameters
+    assert_equal [ [ @position ] ], review.missing
+    assert_equal "json_schema", params.dig(:response_format, :type)
+    estimate = @intake.request_estimate.merge("stage_key" => @evidence.digest,
+      "request_digest" => CouncilProfiles::ReserveAiSpend.request_digest(params), "max_output_tokens" => params.fetch(:max_completion_tokens))
+    run = campaign_budget(request_estimates: [ estimate ], request_limit_microusd: 50_000)
+    with_campaign_transport(content: @result) do
+      2.times { CouncilProfiles::ReviewTermAssessmentJob.perform_now(summary.id, receipt.id, run.id) }
+    end
+    assert_equal 1, run.reservations.count
+    assert_equal 2, @calls.size
+    get member_path(@bittner)
+    assert_select "#promise-group-pending_review", count: 0
+    assert_select "#promise-group-unresolved .promise-wording blockquote"
+    assert_select ".promise-meter"
+  end
+
   test "the campaign and in-office passages are readable together before opening any disclosure" do
     promise = "Bittner proposed a council growth committee."
     result = JSON.parse(@result)
@@ -227,6 +259,82 @@ class CouncilTermSummaryTest < ActionDispatch::IntegrationTest
     assert_equal [ promise, @sentence ], css_select(".term-digest .member-term-copy").map(&:text)
     assert_select "details .term-digest, .term-digest details", count: 0
     assert_select "details .promise-group", count: 0
+  end
+
+  test "a reviewed forum answer is readable independently of promises and follows the current speaker attribution" do
+    with_campaign_transport(content: @result) { refresh }
+    segments = JSON.parse(file_fixture("council_business_forum_exchanges_2024.json").read)
+      .select { |segment| [ 2_887_000, 2_916_630 ].include?(segment.fetch("start_ms")) }
+    @source.update!(coverage: "full_transcript", body: segments.pluck("text").join("\n"),
+      prepared_transcript: { "segments" => segments })
+    clip = "#{@source.source_url}&t=2887s"
+    get member_path(@bittner)
+    assert_select ".profile-reading-layout > #campaign-record + .council-work + #promise-index + #campaign-answers h2", "Did Bittner Answer?"
+    assert_select "#campaign-answers .campaign-answer", count: 1 do
+      assert_select ".campaign-answer-label", "Evasive answer"
+      assert_select "a[href=?]", clip
+      assert_select "a[href=?]", "#{@source.source_url}&t=2916s", text: "Answer at 48:36"
+      assert_select "details.campaign-answer-captions", text: /#{Regexp.escape(segments.last.fetch("text"))}/
+    end
+    assert_select ".promise-report .campaign-answer", count: 0
+    CouncilTermSummary.sole.destroy!
+    get member_path(@bittner)
+    assert_select ".profile-reading-layout > .council-work ~ #campaign-answers", count: 1
+    get campaign_member_path(@bittner)
+    assert_select ".campaign-answer-captions", text: /#{Regexp.escape(segments.last.fetch("text"))}/
+
+    SiteSetting.instance.update!(access_mode: "gated")
+    [ member_path(@bittner), campaign_member_path(@bittner) ].each do |page|
+      get page
+      assert_not_includes response.body, "Evasive answer"
+      assert_not_includes response.body, segments.last.fetch("text")
+    end
+    SiteSetting.instance.update!(access_mode: "open")
+    segments.last["speaker"] = "Different candidate"
+    @source.update!(prepared_transcript: { "segments" => segments })
+    get campaign_member_path(@bittner)
+    assert_select "#campaign-answers", count: 0
+    segments.last.merge!("speaker" => @bittner.name, "text" => "I would look to Cedarburg.")
+    @source.update!(prepared_transcript: { "segments" => segments })
+    get member_path(@bittner)
+    assert_select "#campaign-answers", count: 0
+  end
+
+  test "only flagged answers appear in the elected members' forum reviews" do
+    segments = JSON.parse(file_fixture("council_business_forum_exchanges_2024.json").read)
+    @source.update!(coverage: "full_transcript", body: segments.pluck("text").join("\n"),
+      prepared_transcript: { "segments" => segments })
+    benchmark = "Which cities should Two Rivers learn from?"
+    preparation = "How did you learn what local businesses need?"
+    {
+      "Mark Bittner" => [ [ benchmark, 2887, 2916 ] ],
+      "Doug Brandt" => [],
+      "Shannon Derby" => [ [ benchmark, 2887, 3098 ], [ preparation, 1052, 1331 ] ]
+    }.each do |name, findings|
+      get campaign_member_path(Member.find_by!(name: name))
+      assert_response :success
+      assert_select "#campaign-answers", count: findings.any? ? 1 : 0
+      assert_equal findings.map(&:first), css_select(".campaign-answer-question").map(&:text)
+      assert_equal findings.flat_map { |_, question, answer| [ question, answer ].map { |time| "#{@source.source_url}&t=#{time}s" } },
+        css_select(".campaign-answer-source a").map { |link| link["href"] }
+    end
+  end
+
+  test "a responsive proposal stays in the campaign and term records without an answer callout" do
+    with_campaign_transport(content: @result) { refresh }
+    segments = JSON.parse(file_fixture("bittner_growth_committee_exchange.json").read)
+    CampaignSource.create!(title: "2024 League candidate forum", publisher: "League of Women Voters",
+      source_url: ResidentContent::CampaignPlatform::EDITION.fetch("sources").fetch("league"),
+      published_on: "2024-03-07", election_on: "2024-04-02", coverage: "full_transcript",
+      body: segments.pluck("text").join("\n"), prepared_transcript: { "segments" => segments })
+    get campaign_member_path(@bittner)
+    assert_select "#campaign-record", text: /Form a council growth committee/
+    assert_select "#campaign-answers", count: 0
+    get member_path(@bittner)
+    assert_select "#term-heading", "Follow-through during the 2024–27 term"
+    assert_select "#promise-index .promise-title", "Form a council growth committee"
+    assert_select "#campaign-answers, a[href='#campaign-answers']", count: 0
+    assert_select "a.profile-campaign-link[href=?]", campaign_member_path(@bittner, anchor: "campaign-record")
   end
 
   test "the approved platform supplies the full denominator and excludes removed statements at every public entry" do
@@ -243,16 +351,16 @@ class CouncilTermSummaryTest < ActionDispatch::IntegrationTest
     assert_equal 1, @calls.size
     assert_not_includes @calls.sole.fetch(:messages).last.fetch(:content), @excluded.data.fetch("summary")
     get member_path(@bittner)
-    assert_select ".score-lead", text: /0 points for results − 0.5 in deductions = −0.5 of 1 point/
-    assert_select ".promise-report[data-pace=red] .term-clock", text: /87% of term elapsed/
-    assert_select ".promise-meter[data-negative=true] .member-term-score", text: /-50%/
-    assert_select ".score-deductions a[href='#promise-1']", text: /−0.5.*Unfulfilled.*Form a council growth committee/
+    assert_select ".score-lead", text: /0 documented results.*1 assessed position.*1 open.*87%/m
+    assert_select ".promise-report[data-pace=red] .term-clock meter[value='87']"
+    assert_select ".member-term-score", text: /0\/100/
+    assert_select ".score-deductions a[href='#promise-group-unresolved']", text: /−0.43.*1 open position/
     assert_select ".term-digest a", count: 0
-    assert_select "meter[min='0'][max='250'][value='50']"
+    assert_select "meter[min='0'][max='100'][value='0']"
     assert_select "#promise-index section.promise-group[data-status=unresolved]" do
-      assert_select "h4 .outcome-count", "1"
-      assert_select "h4 .outcome-label", "Unfulfilled in the public record"
-      assert_select "h4 .outcome-points", "−0.5 points"
+      assert_select "h3 .outcome-count", "1"
+      assert_select "h3 .outcome-label", "Open in the public record"
+      assert_select ".outcome-points", count: 0
       assert_select "details#promise-1:not([open])" do
         assert_select "summary .promise-title", text: "Form a council growth committee"
         assert_select "summary .promise-excerpt", text: /no action to form the proposed committee/
@@ -265,7 +373,7 @@ class CouncilTermSummaryTest < ActionDispatch::IntegrationTest
     assert_equal 1, CouncilTermSummary.sole.promise_assessments.size
     SiteSetting.instance.update!(access_mode: "gated")
     get member_path(@bittner)
-    assert_not_includes response.body, "0 points for results − 0.5 in deductions = −0.5 of 1 point"
+    assert_select ".promise-report", count: 0
     assert_select ".term-clock", count: 0
     assert_not_includes response.body, @specific.data.fetch("supporting_quote")
     assert_select ".gate-card"
@@ -320,25 +428,29 @@ class CouncilTermSummaryTest < ActionDispatch::IntegrationTest
 
   test "pace changes over the term while a documented result always earns the same credit" do
     rows = (%w[met] * 4 + %w[pursued blocked missed fell_short unresolved unresolved]).map { |status| { "status" => status } }
-    result = CouncilProfiles::PromiseFollowThrough.new(rows)
-    start = Date.new(2024, 4, 16)
-    finish = Date.new(2027, 4, 20)
-    pace = ->(as_of) { CouncilProfiles::PromisePace.new(result, started_on: start, ends_on: finish, as_of: as_of) }
-
-    assert_equal 20, result.percentage
-    assert_equal "green", pace.call(start + 200).rating
-    assert_equal "amber", pace.call(start + 300).rating
-    late = pace.call(Date.new(2026, 11, 22))
-    assert_equal 86, late.elapsed_percent
-    assert_equal 149, late.days_left
-    assert_equal "red", late.rating
-    assert_equal 0, pace.call(finish + 30).days_left
-    assert_equal "red", pace.call(finish).rating
-    assert_nil CouncilProfiles::PromisePace.new(result, started_on: start, ends_on: nil).rating
-    assert_nil CouncilProfiles::PromiseFollowThrough.new([]).percentage
+    start = Date.new(2026, 1, 1)
+    finish = start + 100
+    evaluate = lambda do |as_of, ends_on = finish|
+      pace = CouncilProfiles::PromisePace.new(started_on: start, ends_on: ends_on, as_of: as_of)
+      [ pace, CouncilProfiles::PromiseFollowThrough.new(rows, elapsed: pace.elapsed) ]
+    end
+    early, initial = evaluate.call(start + 20)
+    assert_equal 33, initial.score
+    assert_equal "green", early.rating(initial)
+    middle, midway = evaluate.call(start + 40)
+    assert_equal "amber", middle.rating(midway)
+    late, final_month = evaluate.call(start + 90)
+    assert_equal 26, final_month.score
+    assert_equal "red", late.rating(final_month)
+    assert_equal 25, evaluate.call(finish + 20).last.score
+    assert_equal 35, evaluate.call(start - 1).last.score
+    unknown, unmatured = evaluate.call(start + 90, nil)
+    assert_nil unknown.rating(unmatured)
+    assert_equal 35, unmatured.score
+    assert_equal 0, unmatured.points_for("unresolved")
   end
 
-  test "a published reversal shows the full negative score and links the deduction to the finding" do
+  test "a published score floors at zero while the full reversal and its evidence remain visible" do
     with_campaign_transport(content: @result) { refresh }
     report = CouncilTermSummary.sole
     finding = report.promise_assessments.sole.merge("status" => "contrary", "label" => "Acted against the position",
@@ -346,30 +458,22 @@ class CouncilTermSummaryTest < ActionDispatch::IntegrationTest
     report.update!(promise_assessments: [ finding ])
 
     get member_path(@bittner)
-    assert_select ".member-term-score", text: /-250% promise score/
-    assert_select ".promise-meter[data-negative=true] meter[min='0'][max='250'][value='250'][aria-valuetext='-250%']"
-    assert_select ".score-lead", text: /0 points for results − 2.5 in deductions = −2.5 of 1 point/
+    assert_select ".member-term-score", text: /0\/100 promise score/
+    assert_select ".promise-meter meter[min='0'][max='100'][value='0']"
+    assert_select ".promise-method", text: /−2.5 net points across 1 assessed position/
     assert_select ".score-deductions a[href='#promise-1']", text: /−2.5.*Reversal/
     assert_select ".promise-group[data-status=contrary] .outcome-points", "−2.5 points"
     assert_select "#promise-1 .promise-reason", finding.fetch("reason")
-    assert_select ".promise-method dt", "−2.5 points"
   end
 
-  test "each position gets one weight and a reversal costs two and a half points" do
-    score = ->(*statuses) { CouncilProfiles::PromiseFollowThrough.new(statuses.map { |status| { "status" => status } }) }
-    record = score.call(*%w[met met met met met contrary missed pursued unresolved])
-    assert_equal 17, record.percentage
-    assert_equal 1.5, record.net_points
-    %w[missed unresolved fell_short].each do |status|
-      assert_equal(-50, score.call(status).percentage, status)
-    end
-    assert_equal 0, score.call("blocked", "pursued").net_points
-    assert_equal 13, score.call("met", "missed", "blocked", "pursued").percentage
-    assert_equal(-150, score.call("contrary", "unresolved").percentage)
-    assert_equal(-250, score.call("contrary").percentage)
-    assert_nil score.call.percentage
-    start = Date.new(2026, 1, 1)
-    assert_equal "red", CouncilProfiles::PromisePace.new(record, started_on: start, ends_on: start + 100, as_of: start + 30).rating
+  test "only open positions are prorated and awaiting assessments do not enter the score" do
+    rows = %w[met missed fell_short pursued blocked contrary unresolved pending_review].map { |s| { "status" => s } }
+    score = CouncilProfiles::PromiseFollowThrough.new(rows, elapsed: Rational(1, 4))
+    assert_equal 7, score.total
+    assert_equal(-2.125, score.net_points)
+    assert_equal(-0.125, score.points_for("unresolved"))
+    assert_equal 0, score.score
+    assert_nil CouncilProfiles::PromiseFollowThrough.new([ { "status" => "pending_review" } ]).score
   end
 
   test "the weekly assessment must consider a directly opposing vote even if an older review credited the promise" do
@@ -420,7 +524,7 @@ class CouncilTermSummaryTest < ActionDispatch::IntegrationTest
       CouncilProfiles::PromiseFollowThrough.from_response({ "promises" => [ row ] }, evidence, @bittner).sole.fetch("status")
     end
     assert_equal "blocked", assess.call("blocked", [ 2 ])
-    assert_equal "pursued", assess.call("pursued", [ 2 ])
+    assert_equal "blocked", assess.call("pursued", [ 2 ])
     assert_equal "missed", assess.call("missed", [ 3 ])
     assert_equal "unresolved", assess.call("unresolved", [])
     assert_raises(ArgumentError) { assess.call("missed", []) }

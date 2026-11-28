@@ -22,8 +22,10 @@ class CampaignCostPreflightTest < ActionDispatch::IntegrationTest
     Ai::OpenAiService.stub(:new, ->(*) { flunk "A cost preview must not construct an AI client" }) do
       assert_no_difference unchanged do
         assert_no_enqueued_jobs do
+          get admin_campaign_source_path(@source)
+          processing = assert_select("a", text: "Processing details").sole["href"]
           2.times do
-            get admin_campaign_source_path(@source)
+            get processing
             assert_response :success
             assert_select "[data-campaign-cost-preflight]" do
               assert_select "strong", text: /\$0\.\d{4}/

@@ -87,3 +87,12 @@ The [off-server build evidence](application-map/off-server-builds-2026-11-01.md)
 distinguishes implementation tests, transport simulations, real CI image execution
 and outstanding production boundaries. A recorded earlier blocker does not
 replace checking the current Actions run, registry image and live revision.
+
+For the November 27 election release, verify the nine Council profile links,
+the three spring discovery jobs and the discovery job that queues the weekly
+term assessment. The score reads saved findings on each request. A verified
+city milestone or member step earns half a point and a delivered undertaking
+earns one. Check the four campaign extraction, forum extraction, issue comparison
+and term summary templates with the selected-template dry run. The historical
+questionnaire text, reviewed transcripts and assessments are database records.
+Verify which records are present on the installation separately from the image.

@@ -1,13 +1,31 @@
 module MembersHelper
   MINUTES_LOCATIONS = YAML.safe_load_file(Rails.root.join("config/council_profile_minutes_locations.yml")).freeze
 
-  def promise_deductions(groups)
-    labels = { "contrary" => "Reversal", "missed" => "Missed opportunity", "unresolved" => "Unfulfilled", "fell_short" => "Fell short" }
+  def forum_clip_link(label, source_url, milliseconds)
+    seconds = milliseconds.div(1000)
+    link_to "#{label} at #{format("%d:%02d", *seconds.divmod(60))}", "#{source_url}&t=#{seconds}s"
+  end
+
+  def profile_term_heading
+    return "Last campaign" unless @term_summary&.sentences.present?
+    if (ends_on = ResidentContent::CouncilElection.scheduled_term_end(@member.name, @record_period.selected))
+      return "Follow-through during the #{@term_summary.term_started_on.year}–#{ends_on.strftime("%y")} term"
+    end
+
+    "The term so far"
+  end
+
+  def promise_deductions(groups, score)
+    labels = { "contrary" => "Reversal", "missed" => "Missed opportunity", "unresolved" => "Open", "fell_short" => "Fell short" }
     labels.flat_map do |status, label|
       group = groups[status]
       next [] unless group
 
-      points = CouncilProfiles::PromiseFollowThrough::POINTS.fetch(status)
+      points = score.points_for(status)
+      next [] if points.zero?
+      if status == "unresolved"
+        next [ [ points * group.size, "#{pluralize(group.size, "open position")} · time in office", "#promise-group-unresolved" ] ]
+      end
       if group.many? && status != "contrary"
         caption = status == "missed" ? label.pluralize.downcase : label.downcase
         [ [ points * group.size, "#{group.size} #{caption}", "#promise-group-#{status}" ] ]
@@ -50,7 +68,9 @@ module MembersHelper
   def member_vote_profile_path(vote)
     @election_profile_ids ||= begin
       edition = ResidentContent::CouncilElection.current
-      edition ? edition.member_ids_by_name.slice(*edition.terms_ending.keys).values : []
+      featured = edition ? edition.member_ids_by_name(edition.terms_ending.keys).values : []
+      roster = CommitteeMembership.on_roster.joins(:committee).where(committees: { name: "City Council" })
+      (featured + roster.pluck(:member_id)).to_set
     end
     return member_path(vote.member) unless @election_profile_ids.include?(vote.member_id)
 

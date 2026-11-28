@@ -14,15 +14,18 @@ module Campaigns
       version.reload.extraction || raise
     end
 
-    def self.call(version, budget_run: nil)
+    def self.call(version, budget_run: nil, find_authorized_run: false)
       stage = prepare(version)
+      budget_run ||= AnalysisRun.for(stage) if find_authorized_run
       return stage unless stage.claim!(budget_run)
       raise CouncilProfiles::ReserveAiSpend::Paused, "missing_budget" unless budget_run
 
       parameters = stage.parameters.deep_symbolize_keys
-      response = Ai::OpenAiService.new.extract_campaign_source(parameters: parameters,
+      # Full forums can return 32,000 tokens in one non-streaming response.
+      service = Ai::OpenAiService.new(request_timeout: Ai::OpenAiService::CAMPAIGN_ANALYSIS_TIMEOUT)
+      response = service.extract_campaign_source(parameters: parameters,
         request_recorder: CouncilProfiles::RequestRecorder.new(stage))
-      data = ExtractedStatements.new(version.body, speaker_segments: version.prepared_transcript["segments"]).parse(response)
+      data = ExtractedStatements.for_version(version).parse(response)
       stage.update!(status: "completed", data: data, completed_at: Time.current)
       stage
     rescue CouncilProfiles::ReserveAiSpend::Paused => e

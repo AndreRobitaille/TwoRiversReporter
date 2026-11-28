@@ -1,11 +1,11 @@
-<% profile_role = member_profile_role(@current_position, @memberships) %>
+<% profile_role = @candidate_role || member_profile_role(@current_position, @memberships) %>
 <% content_for(:title) { "#{@member.name} — #{profile_role} in Two Rivers, WI" } %>
 <% content_for(:description) { [@member.name, profile_role, "committee memberships, meeting attendance, and voting record in Two Rivers, WI"].join(" — ") } %>
 <% content_for(:og_type) { "article" } %>
 
 <% has_campaign = !@separate_record && @campaign_platforms.present? %>
 <article class="member-article<%= " member-article--with-campaign" if has_campaign %>">
-  <%= render "profile_header" %>
+  <%= render "profile_header", show_record_links: has_campaign %>
   <% if @separate_record && !gated_for_visitor? %>
     <p><%= link_to "Back to #{@member.name}’s profile", member_path(@member) %></p>
   <% end %>
@@ -14,15 +14,9 @@
   <% end %>
   <%= render "selected_statement" %>
 
-  <% if has_campaign %>
-    <nav class="member-profile-nav" aria-label="Member record sections">
-      <a href="#voting-record">Voting record</a>
-      <a href="#campaign-record">Campaign priorities</a>
-    </nav>
-  <% end %>
-
   <div class="member-profile-layout">
     <div class="member-profile-primary">
+      <%= render "election_context" %>
       <%= render "record_period" %>
       <%= render "service_periods", periods: @service_periods %>
 
@@ -102,7 +96,7 @@
                         <div class="member-vote-row">
                           <div class="member-vote-motion">
                             <span class="member-vote-date"><%= vote.motion.meeting.starts_at&.strftime("%b %-d, %Y") %></span>
-                            <%= link_to vote.motion.description.presence || vote_context(vote), (@has_election_profile ? member_vote_profile_path(vote) : meeting_path(vote.motion.meeting)) %>
+                            <%= link_to vote.motion.description.presence || vote_context(vote), (@council_profile ? member_vote_profile_path(vote) : meeting_path(vote.motion.meeting)) %>
                           </div>
                           <div class="member-vote-result">
                             <span class="vote-value <%= vote_color_class(vote.value) %>"><%= vote.value.titleize %></span>
@@ -125,7 +119,7 @@
                         <div class="member-vote-motion">
                           <span class="member-vote-date"><%= vote.motion.meeting.starts_at&.strftime("%b %-d, %Y") %></span>
                           <span class="member-vote-body"><%= vote.motion.meeting.body_name %></span>
-                          <%= link_to vote.motion.description.presence || vote_context(vote), (@has_election_profile ? member_vote_profile_path(vote) : meeting_path(vote.motion.meeting)) %>
+                          <%= link_to vote.motion.description.presence || vote_context(vote), (@council_profile ? member_vote_profile_path(vote) : meeting_path(vote.motion.meeting)) %>
                         </div>
                         <div class="member-vote-result">
                           <span class="vote-value <%= vote_color_class(vote.value) %>"><%= vote.value.titleize %></span>

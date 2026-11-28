@@ -25,24 +25,43 @@
         <% end %>
       </section>
     <% end %>
+    <% report = @term_summary if @term_summary&.sentences.present? %>
+    <% findings = report ? ResidentContent::CampaignPlatform.reviewed_findings(report, @member.name) : [] %>
+    <% scored_headings = findings.flat_map { |finding| finding["heading"].to_s.split(" / ") } %>
+    <% reviews = Array(@answer_reviews).reject { |review| scored_headings.include?(review["promise_heading"]) } %>
+    <% if report %>
+      <% term_end = ResidentContent::CouncilElection.scheduled_term_end(@member.name, @record_period.selected) %>
+      <% pace = CouncilProfiles::PromisePace.new(started_on: report.term_started_on, ends_on: term_end) %>
+      <% score = CouncilProfiles::PromiseFollowThrough.new(findings, elapsed: pace.elapsed) %>
+      <% groups = findings.each_with_index.group_by { |item, _index| item.fetch("status") } %>
+    <% end %>
     <div class="profile-reading-layout">
-      <%= render "council_work" %>
       <section class="member-term-overview" id="campaign-record" aria-labelledby="term-heading">
-        <h2 id="term-heading"><%= @term_summary&.sentences.present? ? "The term so far" : "Last campaign" %></h2>
-        <% if @term_summary&.sentences.present? %>
-          <%= render "term_report", report: @term_summary %>
+        <h2 id="term-heading"><%= profile_term_heading %></h2>
+        <% if report %>
+          <%= render "term_report", report: report, groups: groups, score: score, pace: pace %>
         <% elsif @campaign_preview.present? %>
           <p class="member-term-date"><%= @campaign_date.year %> Council campaign</p>
           <% @campaign_preview.each do |description, statement| %>
             <p class="member-term-copy"><%= description %> <%= link_to "Source", campaign_member_path(@member, statement: statement.id, anchor: "campaign-statement"), class: "member-term-source" %></p>
           <% end %>
+        <% elsif @candidate_campaigns.any? { |campaign| campaign.year == @record_period.selected&.started_on&.year && campaign.missed_forums_and_surveys? } %>
+          <p>These forums and questionnaires provide no campaign position to assess for this term.</p>
         <% else %>
-          <p>We don’t have a sourced statement from this member’s last campaign yet.</p>
+          <p>We haven’t published a summary of this member’s last campaign yet.</p>
         <% end %>
-        <% unless @term_summary&.sentences.present? %>
+        <%= render "election_context" %>
+        <% if findings.empty? %>
           <%= link_to "Read the full campaign record", campaign_member_path(@member, anchor: "campaign-record"), class: "profile-campaign-link" %>
         <% end %>
       </section>
+      <%= render "council_work" %>
+      <% if findings.any? %>
+        <%= render "campaign_promises", report: report, groups: groups, pace: pace, score: score, reviews: reviews %>
+      <% end %>
+      <% if reviews.any? %>
+        <%= render "campaign_answers", reviews: reviews %>
+      <% end %>
     </div>
   <% end %>
 </article>

@@ -42,9 +42,10 @@ module Campaigns
       return stage unless claimed
       raise CouncilProfiles::ReserveAiSpend::Paused, "missing_budget" unless budget_run || historical
 
-      response = Ai::OpenAiService.new.extract_campaign_source(parameters: stage.parameters.deep_symbolize_keys,
+      response = Ai::OpenAiService.new(request_timeout: Ai::OpenAiService::CAMPAIGN_ANALYSIS_TIMEOUT).extract_campaign_source(parameters: stage.parameters.deep_symbolize_keys,
         request_recorder: CouncilProfiles::RequestRecorder.new(stage))
       stage.update!(status: "completed", data: ActionMatches.new(stage.context).parse(response), completed_at: Time.current)
+      stage.enqueue_city_outcomes
       stage
     rescue CouncilProfiles::ReserveAiSpend::Paused => e
       stage.with_lock do

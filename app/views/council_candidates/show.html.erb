@@ -1,0 +1,25 @@
+<% content_for(:title) { "#{@name} — #{@date.year} City Council candidate" } %>
+<article class="member-article">
+  <header class="member-article-header">
+    <div class="member-header-copy">
+      <nav class="member-committee-nav" aria-label="Council navigation">
+        <%= link_to "City Council", committee_path("city-council") %>
+      </nav>
+      <div class="member-identity">
+        <h1 class="member-article-title"><%= @name %></h1>
+        <p class="member-profile-office"><%= @date.year %> City Council candidate</p>
+        <% if @portrait %><p class="portrait-credit">Photo · <%= link_to @portrait.publisher, @portrait.source_url %></p><% end %>
+      </div>
+      <% if @list_source %><p><%= link_to "Candidate list source", @list_source %></p><% end %>
+    </div>
+    <% if @portrait %><%= image_tag candidate_portrait_path(@portrait, v: @portrait.image_key), alt: "", class: "candidate-photo" %><% end %>
+  </header>
+  <% if @has_public_record %><p><%= link_to "View public service record", record_member_path(@member) %></p><% end %>
+  <% if @candidate_campaigns.none? { |campaign| campaign.year == @date.year } && !@campaign_platforms&.key?(@date) %>
+    <p>We haven’t recorded campaign answers for <%= @name %> in <%= @date.year %> yet.</p>
+  <% end %>
+  <%= render "members/election_context" %>
+  <% if @campaign_platforms.present? %>
+    <%= render "members/campaign_statements", statements: @campaign_statements %>
+  <% end %>
+</article>

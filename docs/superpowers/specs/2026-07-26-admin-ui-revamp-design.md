@@ -132,6 +132,8 @@ This accepts a half-Tailwind vocabulary living in the codebase temporarily, in e
 
 **Component vocabulary — twelve, and that is the whole list:** page header · toolbar + segmented control · data table · detail layout · panel · form controls · buttons · status chips · empty state · flash · pagination · confirm modal.
 
+The election candidate editor uses the election workspace’s page header and panel. Its lined names field is a form-control variant for entering one name per line. The panel footer groups the save and cancel actions. Removing the entire list uses the shared confirmation behavior.
+
 Where the July 2026 auth pages already established a good pattern (`section-header`, `detail-list`, `empty-state`, `data-cell`, `truncate-cell`), the component absorbs that spelling rather than inventing a competing one. The flat `section-header-label` / `section-header-line` variants and the hand-inlined atom SVGs are removed in favour of `section-header__label` and `render "shared/atom_marker", theme: "silo"`.
 
 **The rule that prevents re-drift:** a page may not invent a class name. If it needs something the vocabulary lacks, the vocabulary grows and this spec is updated.
@@ -248,3 +250,30 @@ Four, not three: navigation consistency, no-inline-style, no-undefined-class, an
 - **`topic_recent_mentions` remains inefficient**, now paid once per expansion rather than 182 times per page load. Batching it is the real fix.
 - **Index "Block" writes a permanent `TopicBlocklist` entry.** A post-review confirmation now states that side effect and warns that Unblock does not remove the blocklist entry.
 - **Turbo-stream responses render no flash anywhere in this app.** Inline edits surface validation errors inside the replaced row; every other turbo-stream action succeeds or fails silently.
+
+## Elections and the speaker desk, November 27, 2026
+
+The election workspace defaults to next spring beginning November 1 in
+Central Time. A new season page is available even before sources are saved.
+Choosing a year in **Change election** immediately opens that election.
+**Needs you** contains current-season work only. Past election pages use
+**Backfill tasks** for unfinished intake. **Done and waiting** shows completed
+work and the next milestone. The current season links to prior-cycle sources
+under their original dates. Source and backup tools stay visible below the work.
+
+The questionnaire page shows the action or analysis status first. Known
+articles pair a publisher link with a labeled Council answer box. Saved
+questionnaires show actual review exceptions ahead of matched statements,
+while source details and saved versions stay visible alongside the results.
+An amber status identifies the saved source that needs analysis or a review.
+A green status identifies completed analysis and links into the checked
+statements. Each article or verified forum follows its own workflow as soon
+as it is ready. On phones the sidebar stacks with the rest of the page.
+
+Speaker labeling uses a full-width reading workspace with a return link to the
+selected election. The original speaker tool supplies the timestamp gutter,
+serif transcript, colored speaker keys, stable selection and bounded drag
+scrolling. File controls, recording metadata and the final review are secondary
+to reading and attribution. Narrow screens place a speaker menu next to the
+transcript. The signed-in admin gates and shared intake services still apply.
+[Workflow and verification](../../application-map/election-backfill-2026-11-27.md)

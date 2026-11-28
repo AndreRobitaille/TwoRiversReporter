@@ -1,6 +1,10 @@
-<% content_for(:title) { "Edit campaign article - Admin" } %>
-<div class="page-header">
-  <h1 class="page-title">Edit campaign article</h1>
-  <p class="page-subtitle">Earlier saved versions remain available.</p>
-</div>
-<%= render "form", source: @source %>
+<% if @questionnaire %>
+  <%= render "questionnaire", source: @source %>
+<% else %>
+  <% content_for(:title) { "Edit campaign article - Admin" } %>
+  <div class="page-header">
+    <h1 class="page-title">Edit campaign article</h1>
+    <p class="page-subtitle">Earlier saved versions remain available.</p>
+  </div>
+  <%= render "form", source: @source %>
+<% end %>

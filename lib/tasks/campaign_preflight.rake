@@ -14,3 +14,26 @@ namespace :council_profiles do
       preflight: Campaigns::CostPreflight.call(source.current_version) })
   end
 end
+
+namespace :council_profiles do
+  desc "List current platform review requests and their funding estimates without dispatch"
+  task platform_preflight: :environment do
+    Member.where(id: CampaignStatement.where(status: "accepted", excluded_at: nil).select(:member_id)).find_each do |member|
+      CampaignStatement.current_for(member).group_by { |s| s.campaign_source_version.election_on }.each_value do |rows|
+        selection = Campaigns::PlatformSelection.new(rows)
+        stage = selection.current || selection.prepare
+        next unless stage
+        puts({ member: member.name, election: stage.election_on, request: stage.input_key, status: stage.status,
+          positions: stage.groups&.size, estimate: Campaigns::CostPreflight.for_stage(stage) }.to_json)
+      end
+    end
+  end
+
+  desc "Apply a source-checked platform correction to the exact current request from a local JSON file"
+  task :correct_platform, [ :input_key, :file ] => :environment do |_task, args|
+    stage = CampaignPlatformReview.find_by!(input_key: args.fetch(:input_key))
+    rows = CampaignStatement.current_for(stage.member).select { |row| row.campaign_source_version.election_on == stage.election_on }
+    Campaigns::PlatformSelection.new(rows).publish!(stage, File.read(args.fetch(:file)), correction: true)
+    puts "Retained #{stage.groups.size} positions for #{stage.member.name}."
+  end
+end

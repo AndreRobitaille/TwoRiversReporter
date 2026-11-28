@@ -11,10 +11,12 @@ class ReconcileCampaignSourcesJob < ApplicationJob
         if matching.nil? || matching.status == "pending"
           MatchCampaignTopicsJob.perform_later(source.id)
         end
-      elsif extraction.nil? || extraction.status == "pending"
+      elsif extraction.nil? || extraction.status == "pending" ||
+          (extraction.status == "budget_paused" && Campaigns::AnalysisRun.for(extraction))
         ExtractCampaignSourceJob.perform_later(source.id)
       end
     end
+    ReviewCampaignPlatformsJob.perform_later if CampaignStatement.exists?
     ExtractCouncilFormalRecordsJob.perform_later if CouncilFormalSource.where(active: true).where.not(verified_at: nil).exists?
     MatchCampaignActionsJob.perform_later
     if CouncilIssueReview.where(status: "completed").exists? || MeetingSummary.published.where(summary_type: CouncilProfiles::SavedRecapEvidence::SUMMARY_TYPES).exists?

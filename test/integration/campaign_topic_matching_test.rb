@@ -39,7 +39,7 @@ class CampaignTopicMatchingTest < ActionDispatch::IntegrationTest
       ReconcileCampaignSourcesJob.perform_now
     end
     assert_equal links, CampaignStatementTopic.order(:id).pluck(:id, :topic_id, :updated_at)
-    assert_no_enqueued_jobs(except: MatchCampaignActionsJob)
+    assert_no_enqueued_jobs(except: [ MatchCampaignActionsJob, ReviewCampaignPlatformsJob ])
     assert_equal 2, @calls.size
   end
 
@@ -70,7 +70,7 @@ class CampaignTopicMatchingTest < ActionDispatch::IntegrationTest
     assert_equal 0, @stage.attempts
     assert_empty @stage.requests
     assert_empty CampaignStatementTopic.all
-    assert_no_enqueued_jobs(except: MatchCampaignActionsJob) { ReconcileCampaignSourcesJob.perform_now }
+    assert_no_enqueued_jobs(except: [ MatchCampaignActionsJob, ReviewCampaignPlatformsJob ]) { ReconcileCampaignSourcesJob.perform_now }
 
     # An allowance for the preceding extraction cannot authorize this request.
     budget = campaign_budget
@@ -106,7 +106,7 @@ class CampaignTopicMatchingTest < ActionDispatch::IntegrationTest
     end
     assert_equal "incomplete", @stage.reload.status
     assert_empty CampaignStatementTopic.all
-    assert_no_enqueued_jobs(except: MatchCampaignActionsJob) { ReconcileCampaignSourcesJob.perform_now }
+    assert_no_enqueued_jobs(except: [ MatchCampaignActionsJob, ReviewCampaignPlatformsJob ]) { ReconcileCampaignSourcesJob.perform_now }
   end
 
   test "a complete larger matching context fits its bounded request without losing the final statement" do
@@ -167,6 +167,10 @@ class CampaignTopicMatchingTest < ActionDispatch::IntegrationTest
         assert_select "[data-campaign-topic-match]", count: 5
         assert_select "[data-campaign-topic-matching]", text: /Same water project canary/
         assert_select "[data-campaign-topic-matching] a[href=?]", topic_path(@water), count: 2
+        processing = admin_campaign_source_path(@source, view: "processing")
+        assert_select "a[href=?]", processing, text: "Processing details"
+        get processing
+        assert_response :success
         assert_select "h2", text: "Issue matching cost"
         get member_path(@jordan)
         assert_select "#campaign-record .member-campaign-card", count: 2

@@ -9,4 +9,5 @@ class CommitteeMembership < ApplicationRecord
   validates :source, inclusion: { in: SOURCES }
 
   scope :current, -> { where(ended_on: nil) }
+  scope :on_roster, -> { current.where.not(role: %w[staff non_voting]) }
 end

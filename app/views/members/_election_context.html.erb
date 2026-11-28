@@ -1,0 +1,28 @@
+<% if @candidate_campaigns.present? || @civic_connections.present? %>
+  <%= gated_content do %>
+    <% if @candidate_campaigns.present? %>
+      <section class="member-article-section" id="campaign-participation">
+        <h2>What voters heard</h2>
+        <%= render "shared/candidate_campaigns", campaigns: @candidate_campaigns %>
+      </section>
+    <% end %>
+    <% if @civic_connections.present? %>
+      <section class="member-article-section" id="civic-connections">
+        <h2>Local ties</h2>
+        <% @civic_connections.each do |connection| %>
+          <p><%= connection.fetch("note") %></p>
+          <% if connection["sources"].present? %>
+            <details class="member-term-sources story-notes">
+              <summary>Sources for this connection</summary>
+              <ul>
+                <% connection.fetch("sources").each do |label, url| %>
+                  <li><%= link_to label, url %></li>
+                <% end %>
+              </ul>
+            </details>
+          <% end %>
+        <% end %>
+      </section>
+    <% end %>
+  <% end %>
+<% end %>

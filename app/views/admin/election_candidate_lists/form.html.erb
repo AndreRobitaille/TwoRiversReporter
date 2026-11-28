@@ -1,0 +1,43 @@
+<% title = "#{@year} Candidates" %>
+<% editing = @candidate_list.persisted? %>
+<% workspace_path = admin_elections_path(year: @year) %>
+<% form_path = editing ? admin_election_candidate_list_path(year: @year, id: @candidate_list) : admin_election_candidate_lists_path(year: @year) %>
+<% content_for(:title) { "#{title} — Council election admin" } %>
+
+<div class="election-workspace election-candidate-editor">
+  <%= link_to "← Spring #{@year} Council election", workspace_path, class: "election-back" %>
+  <header class="election-board-heading election-season-banner">
+    <h1><%= title %></h1>
+  </header>
+
+  <div class="election-panel">
+    <%= form_with model: @candidate_list, url: form_path do |form| %>
+      <div class="election-candidate-editor__fields">
+        <% if @candidate_list.errors.any? %>
+          <div class="flash flash--danger" role="alert"><%= @candidate_list.errors.full_messages.to_sentence %></div>
+        <% end %>
+        <div class="form-group">
+          <%= form.label :names, "Candidate names", class: "form-label" %>
+          <p id="candidate-names-help">Type or paste one name per line.<% if editing %> To remove a candidate, delete their line.<% end %></p>
+          <%= form.text_area :names, value: @candidate_list.names.to_a.join("\n"), rows: 6,
+                class: "form-textarea election-candidate-editor__names", required: true,
+                aria: { describedby: "candidate-names-help", invalid: @candidate_list.errors.include?(:names) } %>
+        </div>
+        <div class="form-group mb-0">
+          <%= form.label :source_url, "Article link (optional)", class: "form-label" %>
+          <%= form.url_field :source_url, class: "form-input", placeholder: "https://",
+                aria: { invalid: @candidate_list.errors.include?(:source_url) } %>
+        </div>
+      </div>
+      <div class="election-candidate-editor__actions">
+        <%= form.submit(editing ? "Save changes" : "Publish candidates", class: "btn btn--primary") %>
+        <%= link_to "Cancel", workspace_path, class: "btn btn--secondary" %>
+      </div>
+    <% end %>
+  </div>
+
+  <% if editing %>
+    <%= button_to "Remove candidate list", form_path, method: :delete, class: "btn btn--ghost",
+          form: { class: "election-candidate-editor__remove", data: { turbo_confirm: "Remove all #{@year} candidates from the guide?" } } %>
+  <% end %>
+</div>

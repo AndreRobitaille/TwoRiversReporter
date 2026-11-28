@@ -2,7 +2,7 @@ module Api
   module V1
     class OfficialsController < Api::BaseController
       def index
-        render_collection(Member.includes(:current_member_positions).order(:name, :id)) { |record| serializer.official(record) }
+        render_collection(ResidentContent::ElectionPublication.current.public_members.includes(:current_member_positions).order(:name, :id)) { |record| serializer.official(record) }
       end
 
       def show
@@ -16,7 +16,7 @@ module Api
       private
 
         def official
-          @official ||= Member.includes(:current_member_positions, committee_memberships: :committee).find(params[:id])
+          @official ||= ResidentContent::ElectionPublication.current.public_members.includes(:current_member_positions, committee_memberships: :committee).find(params[:id])
         end
     end
   end

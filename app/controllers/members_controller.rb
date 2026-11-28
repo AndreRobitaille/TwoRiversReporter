@@ -4,10 +4,15 @@ class MembersController < ApplicationController
   before_action :load_profile, only: %i[show record campaign issues]
 
   def show
+    load_election_context unless gated_for_visitor?
     if !gated_for_visitor? && @current_position&.kind == "city_council" && @record_period.selected
       @term_summary = CouncilTermSummary.find_by(member: @member, term_started_on: @record_period.selected.started_on)
     end
-    summary_profile = @has_election_profile || @term_summary&.sentences.present?
+    if @candidate_role && !@has_election_profile && !@former_committee && @service_periods.empty? &&
+        params.slice(:term, :votes, :page, :q, :topic, :body, :split, :kind, :statement, :decision).empty?
+      return show_challenger
+    end
+    summary_profile = !gated_for_visitor? && (@council_profile || @term_summary&.sentences.present?)
     if summary_profile && params[:statement].present?
       load_campaign_comparisons
       return render :campaign
@@ -22,8 +27,21 @@ class MembersController < ApplicationController
         entries = @term_summary.sentences + @term_summary.promise_assessments
         urls = entries.flat_map { |item| item.fetch("sources").pluck("url") }.uniq
         @campaign_source_urls = CampaignSourceVersion.where(source_url: urls).distinct.pluck(:source_url).to_set
+        if @record_period.selected.period_key == "#{@term_summary.term_started_on.year}-election"
+          reviewed = CampaignPlatformReview.where(member: @member,
+            election_on: @term_summary.term_started_on.beginning_of_year..@term_summary.term_started_on).maximum(:election_on)
+          if reviewed
+            records = campaign_statements.select { |row| row.campaign_source_version.election_on == reviewed }
+            @campaign_source_urls.merge(records.map { |row| row.campaign_source_version.source_url })
+            platform = ResidentContent::CampaignPlatform.new(records, include_council_records: false)
+            @term_summary = CouncilProfiles::ReviewedPlatformReport.new(@term_summary, platform, @campaign_source_urls)
+          end
+        end
       else
         load_campaign_preview
+      end
+      @answer_reviews = ResidentContent::ReviewedCampaignAnswers.for(@member).select do |review|
+        @record_period.selected&.period_key == "#{review.fetch("source_record").election_on.year}-election"
       end
       @council_attendance = council_attendance if @record_period.selected
       return render :election_profile
@@ -47,7 +65,14 @@ class MembersController < ApplicationController
   end
 
   def campaign
-    load_campaign_comparisons unless gated_for_visitor?
+    if withdrawn_campaign_dates.any? && ResidentContent::CandidateProfile.new(member_names).latest_entry.nil? && campaign_statements.empty?
+      raise ActiveRecord::RecordNotFound
+    end
+    return if gated_for_visitor?
+
+    load_election_context
+    @answer_reviews = ResidentContent::ReviewedCampaignAnswers.for(@member)
+    load_campaign_comparisons
   end
 
   def issues
@@ -58,8 +83,8 @@ class MembersController < ApplicationController
   end
 
   def compare
-    @member = Member.find(params[:id])
-    @peer = Member.find(params[:peer_id])
+    @member = ResidentContent::ElectionPublication.current.public_members.find(params[:id])
+    @peer = ResidentContent::ElectionPublication.current.public_members.find(params[:peer_id])
     raise ActiveRecord::RecordNotFound if @peer == @member
     @record_period = ResidentContent::CouncilPeriod.new(@member, key: params[:term])
     @show_divided = params[:subset] == "divided"
@@ -73,7 +98,7 @@ class MembersController < ApplicationController
   end
 
   def recommendations
-    @member = Member.find(params[:id])
+    @member = ResidentContent::ElectionPublication.current.public_members.find(params[:id])
     @record_period = ResidentContent::CouncilPeriod.new(@member, key: params[:term])
     @show_divided = params[:subset] == "divided"
     unless gated_for_visitor?
@@ -88,9 +113,40 @@ class MembersController < ApplicationController
 
   private
 
+  def member_names
+    @member_names ||= [ @member.name, *@member.member_aliases.pluck(:name) ]
+  end
+
+  def withdrawn_campaign_dates
+    @withdrawn_campaign_dates ||= ResidentContent::ElectionPublication.current.withdrawn_dates(member_names)
+  end
+
+  def load_election_context
+    names = member_names
+    profile = ResidentContent::CandidateProfile.new(names)
+    @civic_connections = profile.connections
+    @candidate_campaigns = profile.campaigns
+    if @current_position.nil? && @memberships.empty? && profile.latest_entry
+      @date, @listed_name = profile.latest_entry
+      @candidate_role = "#{@date.year} City Council candidate"
+    end
+  end
+
+  def show_challenger
+    @name = @member.name
+    @list_source = ResidentContent::CouncilElection.for_year(@date.year)&.candidates&.fetch(@listed_name, nil)
+    @has_public_record = @member.votes.exists? || @member.meeting_attendances.exists? ||
+      @member.member_positions.exists? || @member.committee_memberships.exists?
+    load_campaign_comparisons
+    render "council_candidates/show"
+  end
+
   def load_profile
     respond_to { |format| format.html }
-    @member = Member.find(params[:id])
+    @member = ResidentContent::ElectionPublication.current.public_members.find(params[:id])
+    @portrait = CandidatePortrait.current_for(@member.name => @member.id)[@member.name]
+
+    @portrait = nil if @portrait && ResidentContent::ElectionPublication.current.withdrawn_portrait?(@portrait)
 
     memberships = @member.committee_memberships.where("role IS NULL OR role NOT IN (?)", %w[staff non_voting]).includes(:committee)
     @memberships = memberships.current.sort_by { |cm| [ cm.committee.name == "City Council" ? 0 : 1, cm.committee.name ] }
@@ -106,7 +162,9 @@ class MembersController < ApplicationController
   def load_committee_navigation(memberships)
     committees = @memberships.map(&:committee)
     roster = committees.find { |committee| committee.slug == params[:committee] }
-    council = committees.find { |committee| committee.name == "City Council" }
+    council_membership = @memberships.find { |membership| membership.committee.name == "City Council" }
+    @council_profile = council_membership&.role.present? || @has_election_profile
+    council = council_membership&.committee
     council ||= council_committee if @current_position&.kind == "city_council" || @has_election_profile
     @profile_committees = [ roster, council ].compact.uniq
     @profile_committees = committees if committees.one? && @profile_committees.empty?
@@ -133,12 +191,17 @@ class MembersController < ApplicationController
   end
 
   def campaign_statements
-    @campaign_statements ||= CampaignStatement.current_for(@member)
+    @campaign_statements ||= CampaignStatement.current_for(@member).reject do |row|
+      withdrawn_campaign_dates.include?(row.campaign_source_version.election_on)
+    end
   end
 
   def load_campaign_preview
     by_year = campaign_statements.group_by { |statement| statement.campaign_source_version.election_on }
-    @campaign_date = by_year.keys.select { |date| date < @election.election_on }.max
+    period = @record_period.selected
+    dates = by_year.keys.select { |date| date <= Date.current && (!@election || date < @election.election_on) }
+    dates.select! { |date| date.year == period.started_on.year } if period && period.period_key == "#{period.started_on.year}-election"
+    @campaign_date = dates.max
     return unless @campaign_date
 
     platform = ResidentContent::CampaignPlatform.new(by_year.fetch(@campaign_date), include_council_records: false)

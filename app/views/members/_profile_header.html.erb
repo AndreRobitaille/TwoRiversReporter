@@ -1,40 +1,59 @@
 <header class="member-article-header">
-  <nav class="member-committee-nav" aria-label="Committee navigation">
-    <%= link_to "All committees", committees_path %>
-    <% if @profile_committees.any? || @memberships.many? || @former_committee %>
-      <span aria-hidden="true">›</span>
-      <ul>
-        <% if @former_committee %>
-          <li><span class="member-former-label">Former committee</span> <%= link_to @former_committee.name, committee_path(@former_committee.slug) %></li>
-        <% elsif @profile_committees.empty? %>
-          <li><%= link_to pluralize(@memberships.size, "current committee"), member_path(@member, anchor: "current-committees") %></li>
-        <% end %>
-        <% @profile_committees.each do |committee| %>
-          <li><%= link_to committee.name, committee_path(committee.slug) %></li>
-        <% end %>
-      </ul>
-    <% end %>
-  </nav>
-  <h1 class="member-article-title"><%= @member.name %></h1>
-  <% if @has_election_profile %>
-    <p class="member-profile-office"><%= "Current: " if @record_period.selected&.ended_on %><%= @current_position&.title || "City Council Member" %></p>
-  <% elsif @current_position %>
-    <span class="badge badge--info"><%= "Current: " if @record_period.selected&.ended_on %><%= @current_position.title %></span>
-  <% end %>
-  <% if @election_council_slug %>
-    <%= gated_content do %>
-      <p class="member-election-status">
-        <% if (official_page = @election.terms_ending[@election_name]) %>
-          Council term ends in spring <%= @election.election_on.year %>.
-          <span class="member-profile-contact">
+  <div class="member-header-copy">
+    <nav class="member-committee-nav" aria-label="Committee navigation">
+      <%= link_to "All committees", committees_path %>
+      <% if @profile_committees.any? || @memberships.many? || @former_committee %>
+        <span aria-hidden="true">›</span>
+        <ul>
+          <% if @former_committee %>
+            <li><span class="member-former-label">Former committee</span> <%= link_to @former_committee.name, committee_path(@former_committee.slug) %></li>
+          <% elsif @profile_committees.empty? %>
+            <li><%= link_to pluralize(@memberships.size, "current committee"), member_path(@member, anchor: "current-committees") %></li>
+          <% end %>
+          <% @profile_committees.each do |committee| %>
+            <li><%= link_to committee.name, committee_path(committee.slug) %></li>
+          <% end %>
+        </ul>
+      <% end %>
+    </nav>
+    <div class="member-identity">
+      <h1 class="member-article-title"><%= @member.name %></h1>
+      <% if @council_profile %>
+        <p class="member-profile-office"><%= "Current: " if @record_period.selected&.ended_on %><%= @current_position&.title || "City Council Member" %></p>
+      <% elsif @current_position %>
+        <span class="badge badge--info"><%= "Current: " if @record_period.selected&.ended_on %><%= @current_position.title %></span>
+      <% end %>
+      <% if @candidate_role %><p class="member-profile-office"><%= @candidate_role %></p><% end %>
+      <% if @portrait %>
+        <p class="portrait-credit">Photo · <%= link_to @portrait.publisher, @portrait.source_url %></p>
+      <% end %>
+    </div>
+    <% if @election_council_slug %>
+      <%= gated_content do %>
+        <p class="member-election-status">
+          <% if (official_page = @election.terms_ending[@election_name]) %>
+            Council term ends in spring <%= @election.election_on.year %>.
+            <span class="member-profile-contact">
+              <%= link_to "Election dates", committee_path(@election_council_slug, anchor: "spring-election") %>
+              · <%= link_to "Contact #{@member.name}", official_page %>
+            </span>
+          <% elsif @election.candidates.key?(@election_name) %>
+            <% label = "Candidate for spring #{@election.election_on.year}" %>
+            <% source_url = @election.candidates[@election_name] %>
+            <%= source_url ? link_to(label, source_url) : label %>.
             <%= link_to "Election dates", committee_path(@election_council_slug, anchor: "spring-election") %>
-            · <%= link_to "Contact #{@member.name}", official_page %>
-          </span>
-        <% elsif @election.candidates.key?(@election_name) %>
-          <%= link_to "Confirmed candidate for spring #{@election.election_on.year}", @election.candidates.fetch(@election_name) %>.
-          <%= link_to "Election dates", committee_path(@election_council_slug, anchor: "spring-election") %>
-        <% end %>
-      </p>
+          <% end %>
+        </p>
+      <% end %>
     <% end %>
+    <% if local_assigns[:show_record_links] %>
+      <nav class="member-profile-nav" aria-label="Member record sections">
+        <a href="#voting-record">Voting record</a>
+        <a href="#campaign-record">Campaign priorities</a>
+      </nav>
+    <% end %>
+  </div>
+  <% if @portrait %>
+    <%= image_tag candidate_portrait_path(@portrait, v: @portrait.image_key), alt: "", class: "candidate-photo" %>
   <% end %>
 </header>

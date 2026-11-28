@@ -1,42 +1,62 @@
 <% content_for(:title) { "#{@source.title} - Campaign source - Admin" } %>
+<% if flash[:alert] %><p class="flash flash--danger" role="alert"><%= flash[:alert] %></p><% end %>
 <% if flash[:notice] %>
   <div class="flash flash--success" role="status"><%= flash[:notice] %></div>
 <% end %>
-<div class="page-header">
-  <h1 class="page-title"><%= @version.title %></h1>
-  <p class="page-subtitle"><%= @extraction&.status == "completed" ? "Shared analysis for this source version." : "Saved source text. New analysis requires a spending allowance." %></p>
-  <% if @source.forum? %>
-    <%= link_to "Replace transcript", new_admin_campaign_forum_path(source_id: @source.id), class: "btn btn--primary" %>
+<% if @questionnaire && params[:view] != "processing" %>
+  <%= render "questionnaire_record" %>
+<% else %>
+  <% if @questionnaire %>
+    <%= link_to "← Questionnaire", admin_campaign_source_path(@source, version: params[:version], from_year: params[:from_year]), class: "election-back" %>
   <% else %>
-    <%= link_to "Edit article", edit_admin_campaign_source_path(@source), class: "btn btn--primary" %>
+    <%= link_to "← #{@version.election_on.year} election", admin_elections_path(year: @version.election_on.year), class: "speaker-desk__back" %>
   <% end %>
-</div>
-<p><%= link_to "All campaign sources", admin_campaign_sources_path %></p>
-<% if @version != @source.current_version %>
-  <p class="flash">Viewing an earlier version. <%= link_to "View current version", admin_campaign_source_path(@source) %></p>
-<% end %>
-<dl class="detail-list">
-  <dt class="detail-term"><%= @version.forum? ? "Organizer" : "Publisher" %></dt><dd class="detail-value"><%= link_to @version.publisher, @version.source_url, target: "_blank", rel: "noopener" %></dd>
-  <dt class="detail-term"><%= @version.forum? ? "Forum date" : "Published" %></dt><dd class="detail-value"><%= @version.published_on&.strftime("%B %-d, %Y") || "Unknown" %></dd>
-  <dt class="detail-term">Election</dt><dd class="detail-value"><%= @version.election_on.strftime("%B %-d, %Y") %></dd>
-  <dt class="detail-term">Coverage</dt><dd class="detail-value"><%= CampaignSource::COVERAGES.fetch(@version.coverage) %></dd>
-  <% if @version.coverage_notes.present? %>
-    <dt class="detail-term">Context</dt><dd class="detail-value"><%= @version.coverage_notes %></dd>
-  <% end %>
-</dl>
-<%= render "forum", version: @version if @version.forum? %>
-<%= render "extraction", extraction: @extraction if @extraction %>
-<%= render "cost_preflight", preflight: @cost_preflight %>
-<%= render "topic_matching", matching: @topic_matching, preflight: @matching_cost if @topic_matching %>
-<div class="card">
-  <h2 class="card-title"><%= @version.forum? ? "Prepared transcript" : "Article text" %></h2>
-  <div data-campaign-source-text class="detail-value detail-value--preserve"><%= @version.body %></div>
-</div>
-<section class="card">
-  <h2 class="card-title">Saved versions</h2>
-  <ul>
-    <% @versions.each do |version| %>
-      <li><%= link_to version.created_at.strftime("%b %-d, %Y at %l:%M %p"), admin_campaign_source_path(@source, version: version.id) %><%= " (viewing)" if version == @version %></li>
+  <div class="page-header">
+    <h1 class="page-title"><%= @version.title %></h1>
+    <p class="page-subtitle"><%= params[:view] == "processing" ? "Source processing and issue matching." : @version.publisher %></p>
+    <% if @source.forum? %>
+      <%= link_to "Edit speaker labels", desk_admin_campaign_forum_path(source_id: @source), class: "btn btn--primary" %>
+      <%= link_to "Replace transcript", new_admin_campaign_forum_path(source_id: @source.id), class: "btn btn--secondary" %>
+    <% else %>
+      <%= link_to "Edit article", edit_admin_campaign_source_path(@source), class: "btn btn--primary" %>
     <% end %>
-  </ul>
-</section>
+  </div>
+  <% if @version == @source.current_version && params[:view] != "processing" && @extraction&.status != "completed" %>
+    <div class="election-workspace"><%= render "analysis_status", source: @source, version: @version,
+      progress: Admin::QuestionnaireProgress.new(@version), saved_label: (@version.forum? ? "Speaker labels saved" : "Answers saved") %></div>
+  <% end %>
+  <p><%= link_to "All campaign sources", admin_campaign_sources_path %>
+    <% if params[:view] != "processing" %>
+      · <%= link_to "Processing details", admin_campaign_source_path(@source, view: "processing", version: params[:version]) %>
+    <% end %>
+  </p>
+  <% if @version != @source.current_version %>
+    <p class="flash">Viewing an earlier version. <%= link_to "View current version", admin_campaign_source_path(@source) %></p>
+  <% end %>
+  <% if @version.forum? && @version == @source.current_version && params[:view] != "processing" %>
+    <% participation = ResidentContent::ElectionParticipation.new(@source.election_on) %>
+    <% forum = participation.forum_for(@source) %>
+    <% candidates = participation.names - forum.speakers %>
+    <% if candidates.any? %>
+      <details class="card">
+        <summary>Confirm forum absences</summary>
+        <%= form_with url: attendance_admin_campaign_source_path(@source), method: :patch, scope: :attendance do |form| %>
+          <fieldset>
+            <legend>Who did the recording confirm did not participate?</legend>
+            <p>Leave a name unchecked if you’re unsure. Speaker labels already show who spoke.</p>
+            <%= form.collection_check_boxes :absent, candidates, :itself, :itself, checked: forum.absences do |box| %>
+              <div><%= box.label { safe_join([box.check_box, box.text], " ") } %></div>
+            <% end %>
+          </fieldset>
+          <%= form.submit "Save forum attendance", class: "btn btn--primary" %>
+        <% end %>
+      </details>
+    <% end %>
+  <% end %>
+  <%= render layout: "record_details" do %>
+    <div class="card election-source-text" id="source-text">
+      <h2 class="card-title"><%= @version.forum? ? "Prepared transcript" : "Article text" %></h2>
+      <div data-campaign-source-text class="detail-value detail-value--preserve"><%= @version.body %></div>
+    </div>
+  <% end %>
+<% end %>

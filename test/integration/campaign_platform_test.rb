@@ -6,6 +6,30 @@ class CampaignPlatformTest < ActionDispatch::IntegrationTest
   include ActiveSupport::Testing::ConstantStubbing
   include CampaignIssueEvidenceScenario
 
+  test "a published full questionnaire preserves a reviewed excerpt only while the named answers still match" do
+    setup_member_campaign
+    @source.update!(coverage: "selected_excerpts")
+    analyze_member_campaign
+    records = CampaignStatement.current_for(@jordan)
+    assert_equal 2, records.size
+    edition = { "election" => @source.election_on.iso8601, "sources" => { "article" => @source.source_url },
+      "members" => { @jordan.name => { "digests" => { "article" => ResidentContent::CampaignPlatform.source_digest(records) } } } }
+    people = campaign_response_data.fetch("participants")
+    full = people.map do |person|
+      [ person.fetch("name"), *person.fetch("answers").flat_map do |answer|
+        [ answer.fetch("question"), answer.fetch("passage").delete_prefix("#{person.fetch("name")}: ") ]
+      end ].join("\n\n")
+    end.join("\n\n")
+    stub_const(ResidentContent::CampaignPlatform, :EDITION, edition) do
+      Campaigns::ElectionBackfill.stub(:candidates_on, people.pluck("name")) do
+        @source.update!(coverage: "full_article", body: full)
+        assert_equal records, CampaignStatement.current_for(@jordan)
+        @source.update!(body: full.sub("while waiting.", "while waiting for the city budget."))
+        assert_empty CampaignStatement.current_for(@jordan)
+      end
+    end
+  end
+
   test "new source comparisons consolidate repeats and only retained positions enter the source list" do
     setup_member_campaign
     data = campaign_response_data

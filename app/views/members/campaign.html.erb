@@ -5,9 +5,15 @@
   <%= render "selected_statement" %>
   <% if gated_for_visitor? %>
     <%= render "shared/gate" %>
-  <% elsif @campaign_statements.any? %>
-    <%= render "campaign_statements", statements: @campaign_statements %>
   <% else %>
-    <p>We don’t have a sourced campaign statement for <%= @member.name %> yet.</p>
+    <%= render "election_context" %>
+    <% if @answer_reviews.present? %>
+      <%= gated_content { render "campaign_answers", reviews: @answer_reviews } %>
+    <% end %>
+    <% if @campaign_statements.any? %>
+      <%= render "campaign_statements", statements: @campaign_statements %>
+    <% elsif @answer_reviews.blank? %>
+      <p>We don’t have a sourced campaign statement for <%= @member.name %> yet.</p>
+    <% end %>
   <% end %>
 </article>

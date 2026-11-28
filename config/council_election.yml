@@ -3,7 +3,7 @@ opens_on: "2026-11-21"
 # https://www.two-rivers.org/clerk/page/ballot-access-procedure-and-documents-required
 # https://www.two-rivers.org/clerk/page/election-information
 # List elections in date order. Each edition ends seven days after Election Day.
-# Term sources identify seat holders. A confirmed campaign needs its own source.
+# Term sources identify seat holders. Publish candidate names from Admin → Elections.
 elections:
   - election_on: "2027-04-06"
     signatures_open_on: "2026-12-01"

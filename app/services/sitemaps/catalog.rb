@@ -6,7 +6,7 @@ module Sitemaps
 
     def call
       entries = [ topics_path, meetings_path, committees_path ].map { |path| entry(path) }
-      entries + topic_entries + meeting_entries + committee_entries + member_entries
+      entries + topic_entries + meeting_entries + committee_entries + member_entries + candidate_entries
     end
 
     private
@@ -44,8 +44,15 @@ module Sitemaps
         end
       end
 
+      def candidate_entries
+        ResidentContent::ElectionParticipation.editions.flat_map do |date, names|
+          ids = ResidentContent::CouncilElection.member_ids_by_name(names)
+          (names - ids.keys).reject { |name| ResidentContent::ElectionPublication.current.withdrawn?(date, name) }.map { |name| entry(council_candidate_path(year: date.year, name: name)) }
+        end
+      end
+
       def member_entries
-        Member.order(:id).pluck(:id).map { |id| entry(member_path(id)) }
+        ResidentContent::ElectionPublication.current.public_members.order(:id).pluck(:id).map { |id| entry(member_path(id)) }
       end
 
       def entry(path, *timestamps)

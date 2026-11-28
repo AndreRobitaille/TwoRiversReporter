@@ -138,7 +138,7 @@ class CouncilElectionTest < ActionDispatch::IntegrationTest
       assert_equal @morgan.name, target.text
       assert_equal member_path(@morgan), target["href"]
       get target["href"]
-      assert_select ".member-election-status a[href=?]", source_url, text: /Confirmed candidate for spring 2027/
+      assert_select ".member-election-status a[href=?]", source_url, text: /Candidate for spring 2027/
       assert_select "#campaign-record", text: /Publish clearer spending reports/
       statement = CampaignStatement.current_for(@morgan).first
       get member_path(@morgan, statement: statement.id, anchor: "campaign-statement")

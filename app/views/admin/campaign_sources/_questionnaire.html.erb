@@ -1,0 +1,65 @@
+<% content_for(:title) { "#{@year} candidate questionnaire — Elections" } %>
+<div class="election-workspace">
+  <%= link_to "← #{@return_year || @year} election", admin_elections_path(year: @return_year || @year), class: "election-back" %>
+  <header class="election-workspace__header">
+    <h1><%= @year %> candidate questionnaire</h1>
+    <p><%= source.persisted? ? "Correct the saved source for everyone in this race." : "Save the questions and named answers together, once for everyone in this race." %></p>
+  </header>
+  <% unless source.persisted? %>
+    <section class="election-panel questionnaire-intake-status" aria-labelledby="intake-next">
+      <header class="election-panel-heading election-panel-heading--attention"><h2 id="intake-next">Needs you · Council answers</h2></header>
+      <div class="election-panel-row"><p>The article is already located. Save the Council section to make it available for analysis.</p></div>
+    </section>
+  <% end %>
+  <div class="questionnaire-layout">
+    <section class="questionnaire-source" aria-labelledby="article-step">
+      <h2 class="questionnaire-step" id="article-step"><span>1</span> Open the article</h2>
+      <div class="questionnaire-clipping">
+        <%= render "admin/elections/source_icon", kind: "article" %>
+        <p class="questionnaire-publication"><%= @questionnaire.fetch("publisher") %></p>
+        <time datetime="<%= source.published_on&.iso8601 %>"><%= source.published_on&.strftime("%B %-d, %Y") %></time>
+        <h3><%= source.title %></h3>
+        <%= link_to source.source_url, class: "election-action election-action--article", target: "_blank", rel: "noopener" do %>
+          <%= @questionnaire.fetch("link_label", "Open published article") %> <span aria-hidden="true">↗</span>
+        <% end %>
+        <p class="questionnaire-link-note"><%= @questionnaire.fetch("link_note", "Opens in a new tab.") %></p>
+        <% if @questionnaire["original_url"] %>
+          <%= link_to "Original HTR article", @questionnaire["original_url"], target: "_blank", rel: "noopener" %>
+        <% end %>
+      </div>
+    </section>
+    <% formatted_article = @questionnaire["body_selector"].present? %>
+    <% reader = { controller: "questionnaire-article", questionnaire_article_url_value: read_questionnaire_admin_campaign_sources_path(year: @year, source_url: source.source_url) } if formatted_article %>
+    <%= form_with multipart: !formatted_article, data: reader, model: [:admin, source], class: "questionnaire-editor",
+          url: (source.persisted? ? admin_campaign_source_path(source, answers: 1, from_year: params[:from_year]) : admin_campaign_sources_path(year: @year, lead: params[:lead])) do |form| %>
+      <h2 class="questionnaire-step"><span>2</span> <%= form.label :body, "Paste the Council answers" %></h2>
+      <p id="questionnaire-help">
+        <% if @questionnaire["start_heading"] %>
+          Copy the whole article or the Council section. A formatted paste keeps the named portraits with the answers.
+        <% elsif formatted_article %>
+          Open the saved HTML article or paste the formatted questionnaire to include the publisher’s named portraits.
+        <% else %>
+          Copy the Council questions, each candidate’s name, and their answers into this box.
+        <% end %>
+      </p>
+      <% if (heading = @questionnaire["end_heading"]) %>
+        <p class="questionnaire-boundary" id="questionnaire-boundary">For a whole article, we keep the text between <strong><%= @questionnaire.fetch("start_heading") %></strong> and <strong><%= heading %></strong>. Leave those headings on their own lines.</p>
+      <% end %>
+      <% if source.errors.any? %>
+        <p class="flash flash--danger" role="alert"><%= source.errors.map { |error| error.attribute == :body ? "The pasted text #{error.message}" : error.full_message }.to_sentence %></p>
+      <% end %>
+      <%= form.text_area :body, data: ({ questionnaire_article_target: "body", action: "paste->questionnaire-article#paste input->questionnaire-article#edit" } if formatted_article), rows: 9, class: "form-textarea", required: true, placeholder: "Paste the questions and answers here…", aria: { describedby: ["questionnaire-help", ("questionnaire-boundary" if heading)].compact.join(" ") } %>
+      <% if formatted_article %>
+        <%= hidden_field_tag :portrait_evidence, params[:portrait_evidence], data: { questionnaire_article_target: "evidence" } %>
+        <%= label_tag :questionnaire_file, "Or open a saved HTML article" %>
+        <%= file_field_tag :questionnaire_file, name: nil, accept: ".html,.htm,text/html", data: { action: "change->questionnaire-article#choose" } %>
+        <p role="status" data-questionnaire-article-target="status"></p>
+      <% end %>
+      <%= render "portrait_file" unless formatted_article %>
+      <div class="questionnaire-save">
+        <%= form.submit "Save Council answers", data: { questionnaire_article_target: "save" }, class: "election-action election-action--primary" %>
+        <%= link_to "Back to #{@return_year || @year} election", admin_elections_path(year: @return_year || @year) %>
+      </div>
+    <% end %>
+  </div>
+</div>

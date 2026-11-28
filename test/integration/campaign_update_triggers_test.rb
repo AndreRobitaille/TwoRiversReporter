@@ -57,6 +57,10 @@ class CampaignUpdateTriggersTest < ActionDispatch::IntegrationTest
     assert_select "#campaign-record", count: 0
     assert_select "h2", text: "Voting Record"
     get admin_campaign_source_path(@source)
+    assert_select "#questionnaire-progress", text: "Analysis hasn’t run"
+    processing = admin_campaign_source_path(@source, view: "processing")
+    assert_select "a[href=?]", processing, text: "Processing details"
+    get processing
     assert_includes response.body, "Budget paused: Missing budget"
     get admin_campaign_source_path(@source, version: original.id)
     assert_select "[data-campaign-statement]", count: 5

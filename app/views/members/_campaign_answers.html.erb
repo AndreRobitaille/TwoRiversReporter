@@ -1,0 +1,22 @@
+<section class="campaign-answers" id="campaign-answers" aria-labelledby="campaign-answers-heading">
+  <h2 id="campaign-answers-heading">Did <%= @member.name.split.last %> Answer?</h2>
+  <% reviews.each do |review| %>
+    <% source = review.fetch("source_record") %>
+    <article class="campaign-answer">
+      <p class="campaign-answer-label"><%= review.fetch("label") %></p>
+      <h3 class="campaign-answer-question"><%= review.fetch("question") %></h3>
+      <p><%= review.fetch("finding") %></p>
+      <p class="campaign-answer-source"><%= source.published_on.strftime("%b %-d, %Y") %> · <%= source.publisher %>
+        <span class="campaign-answer-clips">
+          <%= forum_clip_link "Question", source.source_url, review.fetch("question_ms") %>
+          <%= forum_clip_link "Answer", source.source_url, review.fetch("answer_ms") %>
+        </span>
+      </p>
+      <details class="campaign-answer-captions">
+        <summary>Read the forum captions</summary>
+        <p><strong>Question</strong> <%= review.fetch("question_text") %></p>
+        <p><strong><%= @member.name %></strong> <%= review.fetch("answer_text") %></p>
+      </details>
+    </article>
+  <% end %>
+</section>

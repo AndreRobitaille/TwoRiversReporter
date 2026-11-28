@@ -1,10 +1,15 @@
 <li id="seat-<%= name.parameterize %>">
-  <% if (member_id = @election_member_ids[name]) %>
-    <%= link_to name, member_path(member_id) %>
+  <% member_id = @election_member_ids[name] %>
+  <% withdrawn = ResidentContent::ElectionPublication.current.withdrawn?(@election.election_on, name) %>
+  <% portrait = @election_portraits[name] unless withdrawn %>
+  <% image = image_tag(candidate_portrait_path(portrait, v: portrait.image_key), alt: "", class: "candidate-photo") if portrait %>
+  <% row = safe_join([tag.span(name), image].compact) %>
+  <% if member_id && !withdrawn %>
+    <%= link_to row, member_path(member_id), class: "election-person-row" %>
+  <% elsif !withdrawn && @election.candidates.key?(name) %>
+    <%= link_to row, council_candidate_path(year: @election.election_on.year, name: name), class: "election-person-row" %>
   <% else %>
-    <%= name %>
+    <span class="election-person-row"><%= row %></span>
   <% end %>
-  <% if election.terms_ending.key?(name) && election.candidates.key?(name) %>
-    · Confirmed candidate
-  <% end %>
+  <% if !member_id && portrait %><small>Photo · <%= link_to portrait.publisher, portrait.source_url %></small><% end %>
 </li>

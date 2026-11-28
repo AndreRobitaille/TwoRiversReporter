@@ -23,7 +23,7 @@ class CampaignSourceIntakeTest < ActionDispatch::IntegrationTest
       assert_select "[data-campaign-source-text] script", count: 0
       assert_equal @admin.id, source.current_version.submitted_by_id
       assert_equal campaign_article_attributes[:body], source.current_version.body
-      assert_match "New analysis requires a spending allowance", response.body
+      assert_match "Analysis pending", response.body
 
       original = source.current_version
       assert_no_difference [ "CampaignSource.count", "CampaignSourceVersion.count" ] do

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_23_000100) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_27_012000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -176,6 +176,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_000100) do
     t.index [ "reused_from_id" ], name: "index_campaign_extractions_on_reused_from_id"
   end
 
+  create_table "campaign_platform_reviews", force: :cascade do |t|
+    t.bigint "member_id", null: false
+    t.date "election_on", null: false
+    t.string "input_key", null: false
+    t.jsonb "parameters", null: false
+    t.jsonb "groups"
+    t.string "status", default: "pending", null: false
+    t.integer "attempts", default: 0, null: false
+    t.text "response_body"
+    t.bigint "council_ai_budget_run_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "council_ai_budget_run_id" ], name: "index_campaign_platform_reviews_on_council_ai_budget_run_id"
+    t.index [ "input_key" ], name: "index_campaign_platform_reviews_on_input_key", unique: true
+    t.index [ "member_id" ], name: "index_campaign_platform_reviews_on_member_id"
+  end
+
   create_table "campaign_requests", force: :cascade do |t|
     t.bigint "campaign_extraction_id", null: false
     t.bigint "council_ai_reservation_id", null: false
@@ -232,6 +249,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_000100) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.jsonb "prepared_transcript", default: {}, null: false
+    t.jsonb "questionnaire_portraits", default: {}, null: false
+    t.string "confirmed_absences", default: [], null: false, array: true
     t.index [ "source_url" ], name: "index_campaign_sources_on_source_url", unique: true
   end
 
@@ -259,9 +278,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_000100) do
     t.jsonb "data", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "excluded_at"
     t.index [ "campaign_extraction_id", "sequence" ], name: "idx_on_campaign_extraction_id_sequence_3d52e6269b", unique: true
     t.index [ "campaign_extraction_id" ], name: "index_campaign_statements_on_campaign_extraction_id"
     t.index [ "member_id" ], name: "index_campaign_statements_on_member_id"
+  end
+
+  create_table "candidate_portraits", force: :cascade do |t|
+    t.string "image_url", null: false
+    t.binary "thumbnail", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "name", null: false
+    t.bigint "member_id"
+    t.string "source_url", null: false
+    t.string "publisher", null: false
+    t.index [ "member_id" ], name: "index_candidate_portraits_on_member_id", unique: true
+    t.index [ "name" ], name: "index_candidate_portraits_on_name", unique: true
   end
 
   create_table "committee_aliases", force: :cascade do |t|
@@ -456,6 +489,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_000100) do
     t.index [ "public_id" ], name: "index_council_decisions_on_public_id", unique: true
   end
 
+  create_table "council_election_candidate_lists", force: :cascade do |t|
+    t.date "election_on", null: false
+    t.string "names", null: false, array: true
+    t.string "source_url"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "election_on" ], name: "index_council_election_candidate_lists_on_election_on", unique: true
+  end
+
+  create_table "council_election_results", force: :cascade do |t|
+    t.date "election_on", null: false
+    t.date "confirmed_on", null: false
+    t.string "source_url", null: false
+    t.string "candidate_names", null: false, array: true
+    t.string "winner_names", null: false, array: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "election_on" ], name: "index_council_election_results_on_election_on", unique: true
+  end
+
   create_table "council_formal_requests", force: :cascade do |t|
     t.bigint "council_formal_review_id", null: false
     t.bigint "council_ai_reservation_id", null: false
@@ -601,6 +654,36 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_000100) do
     t.jsonb "promise_assessments", default: [], null: false
     t.datetime "generated_at"
     t.index [ "member_id", "term_started_on" ], name: "index_council_term_summaries_on_member_id_and_term_started_on", unique: true
+  end
+
+  create_table "election_article_leads", force: :cascade do |t|
+    t.date "election_on", null: false
+    t.string "source_url", null: false
+    t.date "published_on", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "election_on" ], name: "index_election_article_leads_on_election_on"
+    t.index [ "source_url" ], name: "index_election_article_leads_on_source_url", unique: true
+  end
+
+  create_table "election_filing_watches", force: :cascade do |t|
+    t.date "election_on", null: false
+    t.string "article_url"
+    t.boolean "stopped", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "election_on" ], name: "index_election_filing_watches_on_election_on", unique: true
+  end
+
+  create_table "election_forums", force: :cascade do |t|
+    t.date "election_on", null: false
+    t.date "held_on", null: false
+    t.string "organizer", null: false
+    t.string "announcement_url", null: false
+    t.jsonb "recordings", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "election_on", "held_on", "organizer" ], name: "index_election_forums_on_election_on_and_held_on_and_organizer", unique: true
   end
 
   create_table "entities", force: :cascade do |t|
@@ -1421,6 +1504,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_000100) do
   add_foreign_key "campaign_extractions", "campaign_extractions", column: "reused_from_id"
   add_foreign_key "campaign_extractions", "campaign_source_versions"
   add_foreign_key "campaign_extractions", "council_ai_budget_runs"
+  add_foreign_key "campaign_platform_reviews", "council_ai_budget_runs"
+  add_foreign_key "campaign_platform_reviews", "members"
   add_foreign_key "campaign_requests", "campaign_extractions"
   add_foreign_key "campaign_requests", "council_ai_reservations"
   add_foreign_key "campaign_source_versions", "campaign_sources"
@@ -1430,6 +1515,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_000100) do
   add_foreign_key "campaign_statement_topics", "topics"
   add_foreign_key "campaign_statements", "campaign_extractions"
   add_foreign_key "campaign_statements", "members", on_delete: :nullify
+  add_foreign_key "candidate_portraits", "members", on_delete: :nullify
   add_foreign_key "committee_aliases", "committees"
   add_foreign_key "committee_memberships", "committees"
   add_foreign_key "committee_memberships", "members"

@@ -38,6 +38,8 @@ Rails.application.routes.draw do
     constraints: { year: /\d{4}/, month: /0[1-9]|1[0-2]/, page: /[1-9]\d*/ }
   resources :meetings, only: %i[index show]
   resources :committees, only: %i[index show], param: :slug
+  get "elections/:year/candidates/:name", to: "council_candidates#show", as: :council_candidate,
+    constraints: { year: /\d{4}/, name: /[^\/]+/ }, format: false
   get "members", to: redirect("/committees", status: 301), as: nil
   resources :members, only: %i[show] do
     member do
@@ -84,14 +86,30 @@ Rails.application.routes.draw do
     end
   end
 
+  get "candidate-portraits/:id", to: "candidate_portraits#show", as: :candidate_portrait
   get "sitemap.xml", to: "sitemaps#show", as: :sitemap, defaults: { format: :xml }
 
   get "admin" => "admin/dashboard#show", as: :admin_root
 
   scope :admin do
     resources :council_formal_sources, only: %i[index show new create edit update], controller: "admin/council_formal_sources", as: :admin_council_formal_sources
-    resources :campaign_sources, only: %i[index show new create edit update], controller: "admin/campaign_sources", as: :admin_campaign_sources
-    resource :campaign_forum, only: %i[new create], controller: "admin/campaign_forums", as: :admin_campaign_forum
+    resources :campaign_sources, only: %i[index show new create edit update], controller: "admin/campaign_sources", as: :admin_campaign_sources do
+      patch :attendance, on: :member
+      post :analyze, on: :member
+      post :read_questionnaire, on: :collection
+      resources :statements, only: :update, controller: "admin/campaign_statement_reviews"
+    end
+    resources :elections, only: :index, controller: "admin/elections", as: :admin_elections
+    scope "elections/:year", as: :admin_election do
+      post "find_forums", to: "admin/elections#find_forums", as: :find_forums
+      post "find_htr", to: "admin/elections#find_htr", as: :find_htr
+      resources :candidate_lists, path: "candidate_list", only: %i[new create edit update destroy], controller: "admin/election_candidate_lists"
+    end
+    resource :campaign_forum, only: %i[new create], controller: "admin/campaign_forums", as: :admin_campaign_forum do
+      get :desk
+      get :recording
+      post :captions
+    end
 
     resource :site_settings, only: %i[show update], controller: "admin/site_settings", as: :admin_site_settings
 

@@ -11,3 +11,7 @@
 load Rails.root.join("db/seeds/community_context.rb")
 load Rails.root.join("db/seeds/committees.rb")
 load Rails.root.join("db/seeds/prompt_templates.rb")
+
+(Campaigns::LatestPortrait.catalog.keys - CandidatePortrait.pluck(:name)).each do |name|
+  RefreshCandidatePortraitJob.perform_later(name)
+end

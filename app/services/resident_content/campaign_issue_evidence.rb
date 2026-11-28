@@ -24,7 +24,8 @@ module ResidentContent
             # A recap can discuss several subjects. Show the checked finding specific to this position.
             candidate = candidate.merge(evidence: candidate.fetch(:evidence).merge("summary" => match.fetch("reason")))
           end
-          result[candidate.fetch(:statement).id] << candidate.merge(reason: match.fetch("reason"), action_effect: match["action_effect"], source_quote: match.fetch("source_quote"))
+          result[candidate.fetch(:statement).id] << candidate.merge(reason: match.fetch("reason"), action_effect: match["action_effect"], source_quote: match.fetch("source_quote"),
+            city_outcome: match["city_outcome"], outcome_on: match["outcome_on"])
         end
       end
       result.transform_values { |rows| rows.sort_by { |row| row.dig(:evidence, "occurred_on") || row.fetch(:reported_on).iso8601 }.reverse }

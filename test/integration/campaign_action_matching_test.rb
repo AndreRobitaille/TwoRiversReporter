@@ -184,6 +184,11 @@ class CampaignActionMatchingTest < ActionDispatch::IntegrationTest
   test "a contrary decision can be comparable without an automatic promise grade" do
     heading = "Require owners to live in short-term rentals"
     setup_campaign_actions(comparison_heading: heading)
+    selection = Campaigns::PlatformSelection.new(CampaignStatement.current_for(@jordan))
+    primary = selection.rows.index(@specific) + 1
+    selection.publish!(selection.prepare, { groups: [ { primary: primary, other_ids: [], heading: heading,
+      action_quote: @specific.data.fetch("supporting_quote"), record_test: "The city adopts a residency requirement.", undertaking: "city_outcome" } ],
+      excluded: (1..selection.rows.size).to_a - [ primary ] }.to_json)
     @vote.motion.update!(description: "Remove the requirement that rental owners reside at the property")
     @quote = "Motion to remove the requirement that rental owners reside at the property passed."
     @vote.motion.votes.where.not(id: @vote.id).update_all(value: "yes")

@@ -1,0 +1,568 @@
+# Historical election backfill in development
+
+The November 27 owner request extends ADM-21 with a private speaker desk to
+collect campaign evidence once per source for all candidates. Accepted campaign
+positions are available to the existing year-round member and BG-08 workflows.
+
+## Using the desk
+
+Open **Admin → The Record → Elections** and choose the spring election year.
+Each recording has an action. **Label speakers** opens available captions.
+**Open captions** accepts a local file when needed. **Resume labeling** returns
+to a draft in the same browser. Each recording keeps its own reading position.
+
+Under **Source tools**, use **Voter forums** to find or label a forum and
+**News articles** to find an HTR questionnaire or add an article. **All campaign
+sources** opens the saved collection. Open **Speaker project files** to resume a
+downloaded project or import a reviewed transcript.
+
+On the November 27 working tree based on `d3d11920`, an authenticated Chromium
+session queued both searches from Spring 2026 and returned to the same year.
+On a 390-pixel phone layout, the editor opened **Speaker project files** with
+the keyboard and reached the saved-project file picker. The source groups fit
+at 320, 390 and 1280 pixels. Forcing the file actions open on load failed the
+visibility assertion. Restoring the default passed the same journey.
+
+In the speaker desk, drag across one speaker’s words, then click their name or
+press its number. Choose a different speaker to correct the same passage.
+The speaker palette stays beside the transcript on desktop. On phones, long
+press to select text and use the speaker menu above the transcript. A timestamp
+opens the matching point in the recording. **Next unlabeled passage** and
+**Labeled passages** jump through the transcript. Selecting a passage in a YouTube recording changes **Watch recording** to **Play from** its first timestamp. Leave uncertain speech
+unattributed. **Download backup** saves a portable JSON project, and **Export
+labeled text** produces a readable, timestamped copy.
+
+Choose **Review & save** when the labels are ready. Known recordings already
+have their dates, organizer and URL. For a new upload, fill in the missing
+details in the review window. Confirm attribution and choose **Save forum**.
+A failed save leaves the review window and draft open. While analysis is
+pending, choose **Open saved forum → Edit speaker labels** to correct a saved
+passage. After analysis, **Review labels** reopens a listed recording directly.
+
+For 2025, choose **Add Council answers** under **Backfill tasks**. **Open HTR
+article** opens the syndicated copy on Yahoo News. Paste the article into the
+second panel or choose **Or open a saved HTML article**, then **Save Council answers**. A formatted copy pairs the published portraits with named responses in the private source record. A plain-text correction keeps any portraits already found. The form keeps the text
+between the standalone **Two Rivers City Council** and **Two Rivers Board of
+Education** headings, including named nonresponses. A Council-only excerpt
+also works. A paste beginning with the school-board heading asks the editor
+for the Council section and keeps the text available to correct. The corresponding
+year then offers **Read answers** and the source offers **Edit answers**.
+Analysis status stays at the top. The source and history sidebar is visible
+alongside matched statements and any actual review exceptions. Accepted statements feed the
+year-round member record under the existing funding and evidence rules.
+
+## Closing individual campaign pages after the canvass
+
+The official result withdraws a losing campaign from its named URL, person
+profile, campaign record, portrait and sitemap. Public service remains
+available for a person with separate civic work. Meeting guests alone do
+not acquire a public official profile. A new candidacy opens a profile
+again, while earlier losing campaigns remain on the election desk. The
+public field can still name an unsuccessful candidate without linking to
+a withdrawn page. The earlier phone-review evidence below records the
+profiles *before* applying this publication rule.
+
+On the November 27 working tree based on `d3d11920`, the development site
+returned 404 for Quackenbush’s dated and person URLs while retaining his 29
+accepted statements. Shimulunas’s public service record returned 200 and her
+losing campaign returned 404. The focused Rails run passed 83 tests and 1,794
+assertions. Six Chromium journeys passed 228 assertions. Bypassing the
+person visibility scope in an isolated test returned 200 at the closed member
+URL and failed the expected 404. Restoring it passed all 50 assertions.
+RuboCop and the staged diff check passed.
+
+## Automatic candidate profiles and public entry points (RES-09/10/11, ADM-21/23)
+
+| Voter’s entry point | What supplies it |
+| --- | --- |
+| Homepage election link and City Council spring guide | The current election calendar, the dated candidate list and existing Council roster. Before filing, the guide identifies whose terms end. |
+| Candidate name in the guide or sitemap | The filed name itself is enough for a profile. Names matched to a person use the existing person URL. A correction takes effect on the next request. |
+| Candidate profile and full campaign record | Accepted statements from current source versions, saved questionnaire responses, reviewed forum speakers and confirmed absences. Named article photos carry their publisher credit. |
+| An incumbent’s term review, votes and issue history | The same person’s service periods, recorded votes, and saved assessments. A challenger’s filing or statement creates no office or voting history. |
+
+In the development data on November 27, 2026, an HTTP inventory followed all 15
+candidate entries from the three historical elections to 14 people and opened
+each campaign record. Jeff Dahlke appeared in two races. All 14 profiles had a dated
+participation account. The current guide linked the three 2027 seat holders and
+the homepage opened the guide. The new-candidate browser journey starts by
+publishing a list, then follows the challenger’s name from a signed-out phone.
+
+The same publication routine used by nightly reconciliation replayed the two
+completed 2024 forum extractions for Andrew Quackenbush. Of 31 previously
+unmatched current statements, 29 passed the existing passage checks and two
+remained unresolved. Repeating the routine preserved the statement timestamps.
+The replay used the saved sources, created one person, and added zero
+AI reservations, offices or committee memberships. Disabling the filed-name
+match in an isolated process made the new-challenger job test fail.
+
+Both simulated phone readers could identify a concrete Bittner vote, return
+to ordinary Council business and find Quackenbush’s housing priority. Both
+flagged an unintelligible question in the captions. The shared statement
+view now offers the original question and answer at their recorded times. On
+the second phone visit both readers found the question at 13:56 and the answer
+at 17:05. The review checked those links against the labeled transcript.
+Playback of the external recording was outside the browser check. All three
+2025 respondents whose questionnaire analysis is pending had a direct link to
+their published answers. Bittner’s profile also opened its campaign record,
+public service record, issue history and voting comparison.
+
+On the local working tree based on `d3d11920`, the focused `bin/rails test`
+run covering candidate lists, publication, forum extraction, participation,
+photos, member pages, search metadata and sitemaps passed 61 tests and 936
+assertions. The full `bin/rails test:system` run passed 54 Chromium journeys
+and 1,534 assertions. After consolidating the field lookup, the filing journey
+passed again with 46 assertions. All runs used the isolated PostgreSQL test
+database and had zero skips. `bin/rubocop` and `git diff --check` passed.
+
+## January filing discovery (ADM-23, RES-09)
+
+The working tree based on `a163ab3a` found Seehafer’s two January 9, 2025
+stories and its January 7, 2026 filing report through the live publisher index.
+The 2026 reader returned all five names in the local race, preserving the
+challenger’s middle initial. It left the 2025 prose reports for the editor.
+HTR’s news sitemap returned HTTP 402. The HTR test used a simulated sitemap
+and article. [2025 field](https://www.seehafernews.com/2025/01/09/nominee-paperwork-filed-for-manitowoc-two-rivers-local-elections/)
+· [2026 field](https://www.seehafernews.com/2026/01/07/manitowoc-and-two-rivers-city-council-races-is-set/)
+
+On isolated PostgreSQL, `bin/rails test` for election filing discovery,
+candidate lists and HTR questionnaire discovery passed 8 tests and 220
+assertions. Disabling the roster count check in the test process published
+five names from a story declaring six and failed the expected assertion.
+Restoring the check passed. The two candidate-list Chromium journeys passed
+68 assertions, including the saved story link on the desk, the prefilled
+editor form and the public guide after submission. All runs had zero skips.
+
+## Candidate participation (ADM-21, RES-10 and the Council guide)
+
+The spring guide links every listed candidate to a generated profile. Candidates
+without a matching person open a year-and-name URL. When saved analysis identifies
+that person, the same URL leads to their canonical profile. Both paths show the
+dated finding under **What voters heard**. Verified speaker passages, explicit questionnaire
+responses, and editor-confirmed absences determine the finding on each request.
+Correcting an absence on any recording part corrects the whole event without
+repeating the transcript analysis. **Campaign sources** keeps the evidence for
+the finding, including the older race when it informs the comparison.
+
+In development, the 2025 League introduction names two absences. The Business
+Association moderator counts three panelists, all three of whom speak on the
+reviewed recordings. HTR identifies the two nonresponses. Jeff Dahlke spoke and
+answered HTR in 2024. His later profile can therefore explain which evidence
+voters had to rely on in 2025. Both Dahlke profiles give the family connection and its date directly.
+[League introduction](https://www.youtube.com/watch?v=8pNwbZrKSRo&t=456s) · [Business Association closing](https://www.youtube.com/watch?v=Q_p7r4TKG5U&t=486s) · [HTR questionnaire](https://www.yahoo.com/news/two-rivers-city-council-school-095547436.html)
+
+On the November 27 working tree based on `d3d11920`, the profile integration
+journey exercised the admin absence correction, a later questionnaire
+correction, a returning candidate, anonymous gated access and the current
+guide’s challenger entry. A process-local fault dropping the previous campaign
+made the cross-year finding assertion fail. The normal run passed. At 390 and
+1280 pixels Chromium opened Jeff Dahlke’s profile and expanded its six source
+links. Two simulated phone readers understood what the 2025 material left open
+about his earlier positions.
+
+## Preparing the local sources
+
+### Queued HTR discovery
+
+Choose **Find HTR questionnaire** in **Admin → Elections** for a selected year. With the local queue worker running (`bin/jobs`), the console equivalent is `bin/rails runner 'DiscoverHtrQuestionnairesJob.perform_later(2025)'`. Production’s recurring configuration queues the same job at 7:15 a.m. Central from March 1 through Election Day for a configured spring election.
+
+During the campaign, discovery checks HTR’s recent news sitemap. For an earlier election, or when the sitemap yields no matching links, it searches the Internet Archive’s URL index for the publisher’s election coverage. The job reads article text from the publisher or its known syndicated copy. A found link stays on that election’s desk if access is blocked or the reader cannot identify the Council answers. The editor can supply a permitted copy. Each subsequent search can collect a previously blocked article and reuses a saved source with its corrections. Discovery coverage depends on what the publisher or the archive has indexed.
+
+On the November 27 working tree based on `55ace328`, an authenticated Chromium session queued 2025 through the election desk in an isolated PostgreSQL database. A Solid Queue worker claimed that job, found the original HTR link in the live index, and read the syndicated questionnaire. On a fresh admin request all five Council candidates appeared. All 28 paragraphs matched the retained article in order after normalizing whitespace, including Jeff Dahlke’s and Bill LeClair’s explicit nonresponses. The saved Council section ended before the school-board race.
+
+The integration test uses simulated publisher responses to exercise an uncataloged spring edition through the recurring task, a blocked copy, next-day recovery and the Election Day cutoff. A separate historical run checks that a repeat job preserves an editor’s correction. In an isolated test process, skipping a lead discovered the day before failed the next-day source-count assertion. Removing that fault restored the normal intake path.
+
+The focused Rails run covered discovery, election backfill, source intake, candidate lists and route dispatch (24 tests, 635 assertions). The four Chromium election backfill journeys passed 153 assertions, and the separate live worker journey passed 27. All ran on Ruby 4.0.9 with no skips. RuboCop and `git diff --check` passed. The production schedule takes effect on deployment.
+
+### Queued forum discovery
+
+**Find voter forums** queues the same job used by the 7:30 a.m. Central routine from February 1 through Election Day. With a local worker running, the console equivalent is `bin/rails runner 'DiscoverElectionForumsJob.perform_later(2025)'`. Discovery reads the existing City Council agenda and minutes collection, saves the named event with its City announcement and looks for the organizer’s completed broadcasts on the City channel. It matches the broadcast start to the announced date in Central time and orders multiple recordings by start time.
+
+The caption job reuses prepared files and skips forums with saved labels. It tries English subtitles, then local audio transcription on workers with ffmpeg and faster-whisper installed. The app image includes the subtitle downloader. A failed attempt exposes **Upload captions** on the year’s election desk. A subsequent search can pick up captions that became available later.
+
+Discovery currently covers named League and Business Association notices in City documents. The 2026 City notice describes a candidates forum without naming an organizer. The historical catalog already supplies that recording.
+
+On the November 27 working tree based on `e3c23402`, Chromium queued the search from the 2025 desk in an isolated PostgreSQL database containing the real February 17 agenda. A Solid Queue worker found the March 6 recording and all three March 18 recordings on the live channel. The desk opened the League transcript and linked to the recording at its starting timestamp. In an empty captions directory the downloader retrieved 3,757 timestamped cues with the same SHA-256 as the retained file. Speaker identity and audio transcription were outside this run.
+
+The focused Rails run passed 26 tests and 675 assertions. It exercised an uncataloged election, the February schedule, a failed caption retrieval and recovery, the speaker desk and replay. A process-local fault treating a UTC broadcast time as a local clock reading caused the caption-job assertion to fail. The unmodified run passed. The separate live Chromium and worker journey passed 28 assertions. RuboCop and the diff check passed.
+
+On `d3d11920` with the passage playback change, Chromium opened the real March 6 captions, selected the audience’s manufacturing question and the first sentence of Tim Petri’s reply, saved them in an isolated test database, then reopened the saved source. Both labels and the remaining unattributed words survived. The recording links opened the correct video at 1,516 and 1,531 seconds. The prior toolbar always opened at zero when an editor selected a saved passage. The split-recording browser test failed against that behavior and passed with the fix.
+
+The City video showed the microphone at the same panel seat during the self-introduction and the reply. An independent local transcription of the audio identified Tim in the opening and corroborated the exchange. The caption wording remains as supplied. The historical browser check passed 41 assertions and created no development campaign source.
+
+### Preparing cataloged terms and recordings
+
+Run each of these once after a fresh development sync, or rerun to fill gaps.
+
+```sh
+bin/rails 'elections:prepare[2025]'
+bin/rails 'elections:prepare[2026]'
+```
+
+The [historical catalog](../../config/election_backfill.yml) identifies checked
+city packets, oath pages, candidates and source URLs. Preparation verifies the
+packet digest, records the term starts, checks for an existing article and tries
+published English captions for each recording. For the 2025 HTR article,
+automatic intake checks both race headings, all five Council candidates and
+their answers or explicit nonresponses. If the publisher limits requests or
+the page no longer matches, the questionnaire form accepts a paste or a saved HTML article. The file reader and automatic import use the same race and candidate checks.
+If captions are missing it tries
+the audio and local faster-whisper. Set `YT_DLP` to a working yt-dlp executable.
+Local transcription also needs ffmpeg and the Python faster-whisper package.
+If retrieval fails, open a local SRT/VTT in the desk or use
+`bin/prepare-forum-captions VIDEO_ID --media /path/to/recording`. Captions are
+stored outside Git under `storage/election-captions`. The development sync
+replaces the local database, including newly entered articles and saved labels.
+Keep the questionnaire text and download speaker projects before a later sync.
+
+## Verification on November 27
+
+Local changes on master `abd9eb8a`, Ruby 4.0.9, PostgreSQL and headless Chromium.
+An independent review of the 2025 questionnaire identified the school-board
+boundary. The desk also preserves the original race and organizer when a
+project is resumed from a different year's entry.
+
+- The targeted Rails suite covered source intake, repeat import, incomplete
+  questionnaires, extraction with a simulated provider, navigation, routing,
+  and styles. It ran 52 tests and 546 assertions.
+- Three browser journeys ran 94 assertions. They exercised actual sign-in,
+  article and JSON intake, SRT import, correcting a label, restoring a draft,
+  saving and reopening a retained version, and opening a project under a
+  different year. The new journey asserts the two speakers, words and exact
+  timestamps retrieved from the saved version. A temporary one-millisecond
+  start-time error made that assertion fail. Restoring the parser returned
+  the suite to green. No tests in either group were skipped.
+- In the normal synced development database, the three verified 2024 starts
+  remained and the oath packets supplied three starts each for 2025 and 2026.
+  The five-part source collection covers three events. Three caption tracks
+  came from YouTube, and two drafts came from local audio transcription. The
+  Seehafer source has one retained article version with all five names. A
+  signed-in browser opened the real 2026 recording with 16,083 words and seven
+  speaker choices. Speaker identities in these five recordings await editorial
+  review. The historical sources have not been evaluated by a paid provider.
+
+Application tests used the files for election backfill, prepared forum intake,
+full forum, campaign source intake, prepared forum extraction, source extraction,
+campaign source, admin navigation, application dispatch and admin stylesheet.
+Browser tests used the election backfill, prepared campaign forum and campaign
+source intake journey files under `test/system`. Both groups used the isolated
+`trr_election_backfill_test` database. The normal development server served the
+real-data browser check. Production was used only for the authorized database
+sync and read-only comparison.
+
+### Operator workflow revision
+
+The original standalone speaker desk and the first admin port were compared in
+Chromium at 1280 and 390 pixels. Independent review identified the missing
+speaker palette, visual selection feedback and recording-specific draft state.
+The redesigned desk was checked at the same widths with the full 2026 caption
+track. On the running development site a signed-in browser saw the saved
+Seehafer questionnaire and opened the 16,083-word joint forum and 2025 HTR intake.
+No campaign source was submitted during that live check.
+
+The focused application group ran 44 tests and 431 assertions across the
+election and campaign intake integrations, admin navigation, routing, stylesheet
+and view hygiene. The three journey files listed above ran four browser tests
+and 131 assertions. They include real drag selection, numbered keys, immediate
+reassignment, undo and redo, switching between the March 18 recordings, and
+returning through **Resume labeling**. They also check a failed correction
+stays in the desk, a later successful save, actual JSON and text downloads,
+and restoring the downloaded file under a different year.
+
+In an isolated copy, forcing resume to scroll to the top produced the intended
+failure at 0 rather than the saved 500-pixel position. The working checkout
+passed the same journey. Phone-width verification used Chromium and its native
+speaker menu. Physical touch selection was not exercised on a handset.
+
+### Year selection and questionnaire intake
+
+For ADM-21 the November 27 review called for finding 2025 from the first phone
+screen, distinguishing article work from forum labeling, and reading the saved
+Council answers after returning to the same election. Chromium screenshots
+at 1280 and 390 pixels checked both year choices, the article action, and the
+order of the source and paste panels. The HTR form identifies both headings
+in the [syndicated questionnaire](https://www.yahoo.com/news/two-rivers-city-council-school-095547436.html).
+
+On working tree `abd9eb8a`, `bin/rails test` ran the election backfill,
+campaign source intake and prepared forum intake integrations, admin stylesheet
+and admin view hygiene files against `trr_election_backfill_test` (31 tests,
+282 assertions). The election backfill, campaign source intake and prepared
+forum system files ran five browser journeys and 166 assertions on that
+database. The HTR journey checks a school-only paste, recovery without
+retyping, the final Council response and exact saved version, then reopens
+and corrects the answers under 2025. In an isolated checkout, moving the
+section boundary up one line failed on the missing final answer. The same
+journey passed on the working checkout. `bin/rubocop` passed.
+
+On the running development server an authenticated browser read the 2026
+questionnaire, switched to 2025 and opened the HTR form. Save-and-correct
+checks used sample text only in the test database.
+
+### Current season and questionnaire work
+
+ADM-21 now opens on the current scheduled season. Earlier configured and saved
+elections share the same Change election menu. The November 2026 view uses the
+2027 filing calendar and links to the completed 2024 campaign sources for the
+members whose terms end next spring. The saved 2024 HTR questionnaire keeps the
+additional candidate's answers with the source and leaves the reviewed cohort
+complete. Other unresolved identities still appear as review work.
+
+The saved 2026 questionnaire shows that analysis is waiting. Its answers stay
+available and the editor has no repeat intake task. The 2025 questionnaire
+starts in Needs you. Saving the Council section moves it into Done and waiting.
+Questionnaire screens show review exceptions alongside the original answers and
+source history. Request costs remain part of processing enforcement.
+
+On development checkout `abd9eb8a`, the focused Rails files passed 33 tests
+and 321 assertions. The three system files passed five browser journeys and
+170 assertions, including choosing 2025 on a phone, saving the HTR Council
+answers, moving the questionnaire to Done and waiting, and reopening it
+for correction. The isolated test database was `trr_election_backfill_test`.
+Removing the reviewed historical identity exception in an isolated copy
+changed Analysis complete to Review needed and failed the expected assertion.
+The restored checkout passed. RuboCop passed.
+
+The authenticated browser check on the normal local server covered the 2027
+landing page, the nine matched and two retained unlinked statements in the
+2024 HTR source, the saved 2026 answers and the write-free 2025 intake preview.
+The real records were read without submitting new text or making paid calls.
+
+### Annual rollover and year navigation
+
+ADM-21 uses the local November 1 boundary for the default election. The new
+page works before any source has been saved. Configured dates take precedence.
+New seasons without a configured date use the first Tuesday in April, the
+[regular spring election date](https://townofrichfordwi.gov/election-information/).
+The page waits for the [Clerk’s filing schedule](https://www.two-rivers.org/clerk/page/ballot-access-procedure-and-documents-required)
+when dates are absent. The year in an explicit URL stays selected across the
+default rollover. Choosing a year updates the URL immediately. Current tasks
+and archived backfill appear only on their respective election pages.
+
+On development checkout `abd9eb8a`, the integration, stylesheet and view
+checks passed 26 tests and 165 assertions. The three Chromium journeys passed
+118 assertions, including immediate navigation, reload, browser Back, and
+2025 HTR intake after selecting the archive. The November boundary was checked
+at 23:59:59 on October 31 and midnight on November 1 in Central Time, plus a
+season beyond the configured schedule. In an isolated copy, moving the rollover
+to October failed the boundary assertion. The working copy passed. RuboCop and
+`git diff --check` passed.
+
+### Independent source analysis in the 2026 archive
+
+The 2026 development election workspace has separate saved questionnaires for
+the March 19 HTR article and the April 1 Seehafer article. At this earlier
+checkpoint, the combined forum was awaiting speaker labels.
+The questionnaire page uses a prominent status and links directly to
+the member's campaign record. An authorized current version can be queued
+from its source page. A newly saved version uses the same exact-request
+admission when processed. The nightly job can pick up a previously paused
+source once its exact request has authorization. Neither path depends on
+another article or forum.
+
+Development source 4 went from zero requests and no statements to one
+completed request with five participants, 15 answers and 71 located statements.
+All 71 linked to existing Council member records. That analysis run created
+no other 2026 source. The one-request authorization reserved 132,660 micro-USD and was
+revoked after the run. An authenticated Chromium browser checked both admin
+screens, the link to Katherine Dahlke's campaign record and the phone layout.
+
+On checkout `abd9eb8a`, the targeted Rails files passed 53 tests and 624
+assertions, and three system files passed five browser journeys and 176
+assertions. Tests cover the authenticated queue, stale-source version rejection,
+automatic nightly recovery after exact authorization, later member reads, and
+reuse without another provider call. RuboCop and `git diff --check` passed.
+Disabling the worker's exact-request lookup in an isolated copy made the
+independent-publication test record zero provider calls instead of one.
+The restored checkout passed that test.
+
+### Reviewing one saved Seehafer statement
+
+On the working tree based on `9dcbb935`, the 390-pixel local browser journey
+used the saved April 1, 2026 questionnaire and its completed extraction. Adam
+Wachowski’s statement described a willingness to meet with residents when
+possible. The editor’s view showed the exact passage. The public statement
+link showed the summary, its qualification and the publisher link.
+
+Excluding the statement reduced both the public campaign positions and the next
+term assessment’s position groups from nine to eight. A fresh public request
+showed the saved statement link as unavailable. Replaying the retained extraction
+preserved the exclusion and the original passage. Restoring returned both
+counts to nine and reopened the public link. The editor actions were recorded
+in the audit log. The decision belongs to the reviewed source version. This
+case used the saved assessment inputs and made zero provider requests.
+
+The review used an isolated copy of the saved article and relevant civic rows
+with a synthetic editor. The application selection passed 55 Rails tests and
+1,068 assertions, and the related campaign and election system suites passed
+six Chromium journeys and 224 assertions. Removing the exclusion filter in a
+separate copy failed the fresh-profile count assertion. Restoring the filter
+passed both statement-review tests with 55 assertions. RuboCop and
+`git diff --check` passed.
+
+### Restoring the 2025 HTR questionnaire
+
+On the working tree based on `536aa721`, ADM-21 accepts a formatted article
+paste or a saved HTML file. The editor can review and change the text before
+saving. The reader takes candidate headings, paragraphs and list items from
+the Council section. It matches a portrait to a candidate when the image’s
+alt text and figure caption agree with that candidate’s heading. The admin
+source record links to the publisher’s images. BG-08 receives the answer text
+without picture URLs or recommendation headlines.
+
+The original 2025 paste remains in development source 5’s version history.
+The supplied March 21 article and the corrected version agree on all five
+candidates, nine priority paragraphs and two explicit nonresponses.
+Authenticated Chromium at 390 and 1280 pixels opened the saved record and
+decoded all three original JPEGs. The portraits measured 672 × 1250 for
+Tim Petri, 2228 × 2970 for Andre Robitaille and 200 × 200 for Scott Stechmesser.
+
+The Rails integration checks used `test/integration/election_backfill_test.rb`
+and `test/integration/campaign_source_intake_test.rb`. The four browser journeys
+in `test/system/election_backfill_journeys_test.rb` include saving and reopening
+a formatted paste and keeping an existing portrait through a text correction.
+The integration files passed 14 tests and 231 assertions. The browser file
+passed four tests and 151 assertions. In an isolated copy, discarding the
+matched portrait failed the candidate-to-image assertion. Keeping the
+recommended stories failed the exact saved-answer assertion. Both passed
+after restoring the reader. `bin/rubocop` and `git diff --check` passed.
+
+### Reading the 2024 and 2026 questionnaires
+
+In **Admin → Elections**, select the year and open the saved questionnaire.
+**Read saved answers** jumps to the candidates. To import a publisher copy
+for a cataloged article, choose **Edit answers → Or open a saved HTML article**.
+Review the text and named portrait count, then choose **Save Council answers**.
+
+For ADM-21, the HTR reader uses the five biography headings, the published
+question headings and the surname at the start of each response. It keeps
+continuation paragraphs and explicit nonresponses with their speaker. The
+Seehafer reader keeps the common introduction and published answer order.
+Portraits on the private source page link to the named publisher images.
+
+On the development working tree based on `536aa721`, an authenticated
+Chromium session used the file input and saved both publisher articles.
+The 2024 record gained a complete version. Comparison against the archived
+HTML matched all 25 candidate-and-question responses. Its earlier selected
+excerpt still opens with 11 analyzed statements. The 2026 text matched the
+existing source exactly. Its version and all 71 analyzed statements persisted.
+All ten portraits decoded and both pages fit at 390 and 1280 pixels.
+
+The two intake integration files passed 16 tests and 425 assertions. The four
+election browser journeys passed 151 assertions. In a separate checkout and
+PostgreSQL test database, dropping a continuation paragraph failed the 2024
+candidate-and-question check. Omitting Darla LeClair’s portrait failed the
+2026 import check. Both tests passed after restoring their readers.
+
+The full system suite ran 51 tests with one error in the separate mobile cost
+estimate journey. The same missing cost panel reproduced on the clean
+`536aa721` revision. RuboCop and `git diff --check` passed.
+
+The supplied March 19, 2026 HTR HTML was subsequently saved as development
+source 6. An authenticated browser reopened the record. Each of the five
+candidate profiles and priorities answers matched the publisher text, including
+Darla LeClair’s numbered list. All five captioned portraits loaded. The final
+profile ended before the voter-registration guide. At intake, the new HTR
+version awaited analysis. The April 1 Seehafer version retained its 71 analyzed statements.
+The two intake integration files passed 17 tests and 471 assertions. Dropping
+PNG portraits in an isolated run failed the named-portrait check. The restored
+reader passed. RuboCop and `git diff --check` passed.
+
+### Current candidate portraits on the public site
+
+In ADM-21, saving a questionnaire with a named HTR or Seehafer photo queues
+a refresh for that person. The worker reads publication dates across elections
+and known name aliases, stores one full-frame JPEG and updates the linked
+publication credit with it. An unreadable replacement leaves the previous
+thumbnail available during retries. The original photo links stay in the
+private questionnaires. The historical catalog supplies the initial 13 photo
+references on installations that have yet to import those articles.
+
+RES-09/10/11 use that JPEG in the election guide and member profile. The
+public image address stays with the person, and both pages change the image
+cache key when a new publisher image replaces it. A challenger can appear
+with a linked photo credit before acquiring a member record.
+
+On the November 27 development working tree based on `536aa721`, four
+questionnaires supplied 18 named photo links for 13 people. Each of the five
+people in both 2026 articles uses the April 1 Seehafer photo. Twelve people
+have member profiles. Andrew Quackenbush’s original 921 × 2048 portrait
+produced a 108 × 240 thumbnail with his full head visible.
+
+- Chromium rendered the real guide and profiles at 390 and 1280 pixels wide.
+  The three guide portraits measured 80 and 96 pixels tall respectively.
+  Profile frames reached 144 and 176 pixels. The 12 profiles loaded their
+  JPEGs and source credits, preserved intrinsic proportions and fit the
+  viewport. The Council roster contained zero images at both widths.
+- `bin/rails test test/integration/{candidate_portraits,election_backfill,campaign_source_intake,council_election}_test.rb test/controllers/{committees_controller,committees_show_gating}_test.rb` passed 42 tests and 768 assertions. Intake tests used fixture image bytes and the real decoder and public image controller.
+- `bin/rails test test/system/{candidate_portrait_journeys,election_backfill_journeys}_test.rb` passed five Chromium journeys and 171 assertions. A phone visitor followed the framed image to the credited profile. The desktop guide used its larger image size.
+- Reversing publication-date ordering in an isolated test process caused the replacement case to fail. Restoring normal ordering passed all four portrait integration tests. An isolated PostgreSQL schema migration queued all 13 historical imports with zero private questionnaires.
+- After the profile alignment fix, the name began 8 px below committee navigation on both Katherine Dahlke’s and Mark Bittner’s 1280 px profiles. Dahlke’s record started 101 px higher and Bittner’s term review started 59 px higher. Hiding the three guide photos left the City Council heading at the same position. The desktop browser assertion failed on the previous centered layout and passed with the fix. Both profiles were also checked at 390 px.
+
+### Current members’ campaign findings · ADM-21 and RES-11
+
+On the November 27 development working tree based on `95a6624e`, all six members
+elected in 2025–26 initially had zero published term assessments. The two HTR
+responses contained 49 statements. Replaying the saved answers against the
+respondent headings located all 49 without a second request. Both 2025
+nonresponses remained explicit. The three shorter 2025 recordings supplied
+27 more statements. The full League recording supplied 56 and the 2026 joint
+forum supplied 80. Fifteen proposed excerpts from the two full recordings
+failed source checks and stayed out of the published campaign evidence.
+
+Long forums use numbered turns across the entire recording. The worker restores
+the question and answer from the saved transcript and checks the attributed
+quote inside the selected speaker’s passage. Campaign extraction and term
+analysis have a ten-minute request timeout. The two earlier timeouts and the
+two later responses stopped at the output limit retain their separate receipts.
+
+| Current member | Accepted campaign statements for this term | Assessed positions | Awaiting assessment |
+| --- | ---: | ---: | ---: |
+| Darla LeClair | 39 | 19 | 3 |
+| Katherine Dahlke | 47 | 36 | 3 |
+| Adam Wachowski | 37 | 23 | 2 |
+| Scott Stechmesser | 41 | 23 | 1 |
+| Tim Petri | 27 | 10 | 1 |
+| Bill LeClair | 0 | 0 | 0 |
+
+The Tuesday job uses the same publication checks. Each scored finding requires
+its original campaign position and a valid judgment against the supplied term
+evidence. A failed judgment leaves that position visible and unscored. In a
+partial review the overview draws its campaign description and votes directly
+from the saved facts. An exact authorization can queue
+`CouncilProfiles::ReviewTermAssessmentJob` with the summary, original prompt
+receipt and budget run IDs. It accepts the same evidence and numbered facts,
+reuses valid groups, and checks the held groups again. Opening a member page
+reads the saved report.
+
+- A fresh development HTTP request to each of the nine profiles matched the
+  persisted finding counts. Chromium at 390 px verified all nine and opened
+  a held position on Darla LeClair’s page to read its wording and HTR link.
+  The three 2024 profiles retained their 12, 9 and 10 findings. Bill LeClair’s
+  page showed both missed forums, the written nonresponse and the Council
+  record without a promise score.
+- `bin/rails test test/jobs/{extract_campaign_source_job,prepared_campaign_forum_extraction}_test.rb test/integration/{council_term_summary,forum_quote_recovery,election_participation,questionnaire_statement_publication,member_profile_layout,full_campaign_forum,campaign_cost_preflight}_test.rb test/{lib/prompt_template_data,tasks/prompt_templates_rake,services/ai/open_ai_service_prompt_template}_test.rb` passed 78 tests and 873 assertions on isolated PostgreSQL. RuboCop passed.
+- In isolated test processes, disabling respondent-specific question matching
+  reduced the two expected located statements to zero. Treating a held
+  judgment as a scored unresolved finding failed the publication assertion.
+  Both tests passed with the normal implementation.
+
+## Cross-source platform review and term scoring
+
+The November 21 [2024 platform selection](../../config/campaign_platform_2024.yml) and [consolidation record](resident-workflows.md) cover Bittner, Brandt and Derby. The November 27 development review covered the ten other person-election records with saved attributed answers. It retained 73 positions from 341 statements. An absent participant or explicit questionnaire nonresponse supplies no promise. The development database holds these decisions and source passages. A fresh checkout needs its own saved source data.
+
+Completed extraction queues a review for the candidate. Nightly reconciliation also discovers missing reviews. Each request is scoped to one person, election and exact set of accepted statements. A changed or removed primary passage cannot keep a position on its own. Unchanged inputs reuse the saved selection. A seasonal source-analysis budget does not automatically authorize a different request. Run `bin/rails council_profiles:platform_preflight` to see the prepared input keys and estimates. Once exact funding is available, the queue processes eligible requests. An invalid response is retained for correction. For a checked correction, run `bin/rails 'council_profiles:correct_platform[INPUT_KEY,FILE]'` with local JSON using the IDs from that request and its group/exclusion format. Original provider output and source records survive a correction.
+
+In the ten development requests the provider returned five structurally complete selections and five that failed validation. A source review also found broad aspirations among the proposed positions. The stored selections incorporate those corrections. Future requests use consecutive references, omit the extractor's proposed heading from the evidence, and require an exact action clause and an observable public record for every retained group. These structural checks can flag unsupported evidence. Editorial judgment is still needed when a formally valid interpretation overstates what the speaker said.
+
+The campaign record, selected statement links, term inputs and saved profile use the same selection. An old judgment carries forward only with the same heading, source and quoted position. A changed undertaking or conflicting judgments await assessment. The scoring clock uses verified calendar days without another provider request. Results, open positions and time served precede the 0–100 score. Reversals keep their full weight.
+
+The longer HTR article retained the complete 2024 answers supporting five previously reviewed findings. The weekly inputs reuse a reviewed excerpt while its full edition awaits extraction when the publisher, dates, candidate, question and complete answer still match. This preserves Bittner’s 12, Brandt’s 9 and Derby’s 10 assessed positions.
+
+### City outcomes during the term
+
+BG-08 compares the actual undertaking with dated official evidence. An outcome comparison records the candidate’s exact words, the City’s exact source passage, the event date, and whether the action materially advanced or delivered the goal. The term job can reuse that checked comparison when personal sponsorship is unknown. A dated City milestone appears separately from attributed member action. A personal promise to introduce a measure still needs the member’s own action. Unknown timing, old activity, an unfunded idea, or a general topic match cannot earn a city result. The assessment checks for opposing evidence and later setbacks.
+
+A completed comparison updates a saved assessment through a local job. Reconciliation can recheck older direct outcome comparisons under the existing funding and source limits. Until that check, the older comparison remains available as supporting context. Rejecting a mistaken connection also withdraws the city finding. The [integration case](../../test/integration/campaign_city_outcome_test.rb) exercises an owner-occupancy rule from the official passage through the later member profile, including correction.
+
+Scott Stechmesser suggested surveys in utility bills. The [Hamilton outreach plan](https://www.two-rivers.org/sites/default/files/fileattachments/community_development_services/page/10731/presentation_-_hamilton_visioning_process_roadmap.pdf) proposed the channel and the [September Council record](https://meetings.municode.com/adaHtmlDocument/index?cc=TWORIVRSWI&ip=True&me=f79e6ec229024a6e8164140ca117f10f) confirms a community survey. Those records leave actual mail distribution and any increase in frequency open. For Darla LeClair’s single-family housing position, the [August Development Authority minutes](https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-573aa7d4aba946e0ad576f6522ba1305.pdf) report two houses nearing completion at Sandy Bay and plans for single-family lots at a separate site. The [October city report](https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Packet-095115218b2c4007a69b6408f977958a.pdf) confirms the September purchase of that site. A new home, a home under construction and a prospective lot have different meanings for residents.
+
+On the November 27 development tree based on `95a6624e`, the weekly input counts matched all nine public profiles. Eight members had 72 positions in total. Bill LeClair had no attributed position to score. The two new findings appeared as **City made progress**. The shared score gives each half a point, including when the official record establishes a change in service without naming a sponsor. Older direct comparisons for Bittner, Brandt and Derby retain their prior findings until an eligible comparison documents a change. The other three members with scored positions had no separately verified city outcome in the saved material. For a verified forum answer, **Campaign wording and sources** links to its starting time in the recording.

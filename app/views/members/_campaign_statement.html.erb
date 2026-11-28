@@ -15,8 +15,13 @@
       <% if source.published_on %> · <%= source.published_on.strftime("%b %-d, %Y") %><% end %>
       <% if source.coverage == "selected_excerpts" %> · Selected excerpts<% end %>
     </p>
+    <% if source.forum? && (clips = record.forum_clip_times).any? %>
+      <p class="member-campaign-source">
+        <%= safe_join(clips.map { |part, time| forum_clip_link("Hear the #{part}", source.source_url, time) }, " · ") %>
+      </p>
+    <% end %>
     <details class="member-campaign-context">
-      <summary>Read the question</summary>
+      <summary><%= source.forum? ? "Question from the forum captions" : "Read the question" %></summary>
       <p><%= record.data.fetch("question") %></p>
     </details>
   </div>
