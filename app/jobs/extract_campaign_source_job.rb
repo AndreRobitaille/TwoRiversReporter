@@ -9,8 +9,11 @@ class ExtractCampaignSourceJob < ApplicationJob
     extraction = Campaigns::ExtractSource.call(version,
       budget_run: CouncilAiBudgetRun.find_by(id: budget_run_id), find_authorized_run: budget_run_id.nil?)
     Campaigns::PublishStatements.call(extraction)
-    if extraction.status == "completed" && !version.topic_matching && source.reload.current_version.id == version.id
-      MatchCampaignTopicsJob.perform_later(source.id)
+    if extraction.status == "completed" && source.reload.current_version.id == version.id
+      extraction.campaign_statements.where(status: "accepted", excluded_at: nil).distinct.pluck(:member_id).each do |id|
+        ReviewCampaignPlatformsJob.perform_later(id)
+      end
+      MatchCampaignTopicsJob.perform_later(source.id) unless version.topic_matching
     end
   end
 end

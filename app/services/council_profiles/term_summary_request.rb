@@ -4,11 +4,12 @@ module CouncilProfiles
   class TermSummaryRequest
     attr_reader :input_key, :budget_request_key, :council_ai_budget_run_id, :cycle
 
-    def initialize(summary, cycle, evidence, authorized_run: nil)
+    def initialize(summary, cycle, evidence, authorized_run: nil, draft_id: nil)
       @summary, @cycle = summary, cycle
       @input_key = evidence.digest
       @council_ai_budget_run_id = authorized_run&.id
-      @budget_request_key = "term-summary/#{summary.id}/#{cycle.iso8601}"
+      @draft_id = draft_id
+      @budget_request_key = [ "term-summary", summary.id, cycle.iso8601, draft_id ].compact.join("/")
     end
 
     def start!(parameters)
@@ -45,6 +46,10 @@ module CouncilProfiles
       end
     end
     def check_pending!(summary)
+      if @draft_id
+        return if council_ai_budget_run_id && summary.attempted_cycle == cycle && !summary.complete_for?(input_key)
+        raise ReserveAiSpend::Paused, "draft_already_processed"
+      end
       if (summary.attempted_cycle && summary.attempted_cycle >= cycle) || summary.evidence_digest == input_key
         raise ReserveAiSpend::Paused, "summary_already_processed"
       end

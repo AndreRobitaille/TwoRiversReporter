@@ -349,8 +349,8 @@ to October failed the boundary assertion. The working copy passed. RuboCop and
 ### Independent source analysis in the 2026 archive
 
 The 2026 development election workspace has separate saved questionnaires for
-the March 19 HTR article and the April 1 Seehafer article. The combined forum
-awaits speaker labels.
+the March 19 HTR article and the April 1 Seehafer article. At this earlier
+checkpoint, the combined forum was awaiting speaker labels.
 The questionnaire page uses a prominent status and links directly to
 the member's campaign record. An authorized current version can be queued
 from its source page. A newly saved version uses the same exact-request
@@ -460,8 +460,8 @@ The supplied March 19, 2026 HTR HTML was subsequently saved as development
 source 6. An authenticated browser reopened the record. Each of the five
 candidate profiles and priorities answers matched the publisher text, including
 Darla LeClair’s numbered list. All five captioned portraits loaded. The final
-profile ended before the voter-registration guide. The new HTR version awaits
-analysis. The April 1 Seehafer version retained its 71 analyzed statements.
+profile ended before the voter-registration guide. At intake, the new HTR
+version awaited analysis. The April 1 Seehafer version retained its 71 analyzed statements.
 The two intake integration files passed 17 tests and 471 assertions. Dropping
 PNG portraits in an isolated run failed the named-portrait check. The restored
 reader passed. RuboCop and `git diff --check` passed.
@@ -496,3 +496,73 @@ produced a 108 × 240 thumbnail with his full head visible.
 - `bin/rails test test/system/{candidate_portrait_journeys,election_backfill_journeys}_test.rb` passed five Chromium journeys and 171 assertions. A phone visitor followed the framed image to the credited profile. The desktop guide used its larger image size.
 - Reversing publication-date ordering in an isolated test process caused the replacement case to fail. Restoring normal ordering passed all four portrait integration tests. An isolated PostgreSQL schema migration queued all 13 historical imports with zero private questionnaires.
 - After the profile alignment fix, the name began 8 px below committee navigation on both Katherine Dahlke’s and Mark Bittner’s 1280 px profiles. Dahlke’s record started 101 px higher and Bittner’s term review started 59 px higher. Hiding the three guide photos left the City Council heading at the same position. The desktop browser assertion failed on the previous centered layout and passed with the fix. Both profiles were also checked at 390 px.
+
+### Current members’ campaign findings · ADM-21 and RES-11
+
+On the November 27 development working tree based on `95a6624e`, all six members
+elected in 2025–26 initially had zero published term assessments. The two HTR
+responses contained 49 statements. Replaying the saved answers against the
+respondent headings located all 49 without a second request. Both 2025
+nonresponses remained explicit. The three shorter 2025 recordings supplied
+27 more statements. The full League recording supplied 56 and the 2026 joint
+forum supplied 80. Fifteen proposed excerpts from the two full recordings
+failed source checks and stayed out of the published campaign evidence.
+
+Long forums use numbered turns across the entire recording. The worker restores
+the question and answer from the saved transcript and checks the attributed
+quote inside the selected speaker’s passage. Campaign extraction and term
+analysis have a ten-minute request timeout. The two earlier timeouts and the
+two later responses stopped at the output limit retain their separate receipts.
+
+| Current member | Accepted campaign statements for this term | Assessed positions | Awaiting assessment |
+| --- | ---: | ---: | ---: |
+| Darla LeClair | 39 | 19 | 3 |
+| Katherine Dahlke | 47 | 36 | 3 |
+| Adam Wachowski | 37 | 23 | 2 |
+| Scott Stechmesser | 41 | 23 | 1 |
+| Tim Petri | 27 | 10 | 1 |
+| Bill LeClair | 0 | 0 | 0 |
+
+The Tuesday job uses the same publication checks. Each scored finding requires
+its original campaign position and a valid judgment against the supplied term
+evidence. A failed judgment leaves that position visible and unscored. In a
+partial review the overview draws its campaign description and votes directly
+from the saved facts. An exact authorization can queue
+`CouncilProfiles::ReviewTermAssessmentJob` with the summary, original prompt
+receipt and budget run IDs. It accepts the same evidence and numbered facts,
+reuses valid groups, and checks the held groups again. Opening a member page
+reads the saved report.
+
+- A fresh development HTTP request to each of the nine profiles matched the
+  persisted finding counts. Chromium at 390 px verified all nine and opened
+  a held position on Darla LeClair’s page to read its wording and HTR link.
+  The three 2024 profiles retained their 12, 9 and 10 findings. Bill LeClair’s
+  page showed both missed forums, the written nonresponse and the Council
+  record without a promise score.
+- `bin/rails test test/jobs/{extract_campaign_source_job,prepared_campaign_forum_extraction}_test.rb test/integration/{council_term_summary,forum_quote_recovery,election_participation,questionnaire_statement_publication,member_profile_layout,full_campaign_forum,campaign_cost_preflight}_test.rb test/{lib/prompt_template_data,tasks/prompt_templates_rake,services/ai/open_ai_service_prompt_template}_test.rb` passed 78 tests and 873 assertions on isolated PostgreSQL. RuboCop passed.
+- In isolated test processes, disabling respondent-specific question matching
+  reduced the two expected located statements to zero. Treating a held
+  judgment as a scored unresolved finding failed the publication assertion.
+  Both tests passed with the normal implementation.
+
+## Cross-source platform review and term scoring
+
+The November 21 [2024 platform selection](../../config/campaign_platform_2024.yml) and [consolidation record](resident-workflows.md) cover Bittner, Brandt and Derby. The November 27 development review covered the ten other person-election records with saved attributed answers. It retained 73 positions from 341 statements. An absent participant or explicit questionnaire nonresponse supplies no promise. The development database holds these decisions and source passages. A fresh checkout needs its own saved source data.
+
+Completed extraction queues a review for the candidate. Nightly reconciliation also discovers missing reviews. Each request is scoped to one person, election and exact set of accepted statements. A changed or removed primary passage cannot keep a position on its own. Unchanged inputs reuse the saved selection. A seasonal source-analysis budget does not automatically authorize a different request. Run `bin/rails council_profiles:platform_preflight` to see the prepared input keys and estimates. Once exact funding is available, the queue processes eligible requests. An invalid response is retained for correction. For a checked correction, run `bin/rails 'council_profiles:correct_platform[INPUT_KEY,FILE]'` with local JSON using the IDs from that request and its group/exclusion format. Original provider output and source records survive a correction.
+
+In the ten development requests the provider returned five structurally complete selections and five that failed validation. A source review also found broad aspirations among the proposed positions. The stored selections incorporate those corrections. Future requests use consecutive references, omit the extractor's proposed heading from the evidence, and require an exact action clause and an observable public record for every retained group. These structural checks can flag unsupported evidence. Editorial judgment is still needed when a formally valid interpretation overstates what the speaker said.
+
+The campaign record, selected statement links, term inputs and saved profile use the same selection. An old judgment carries forward only with the same heading, source and quoted position. A changed undertaking or conflicting judgments await assessment. The scoring clock uses verified calendar days without another provider request. Results, open positions and time served precede the 0–100 score. Reversals keep their full weight.
+
+The longer HTR article retained the complete 2024 answers supporting five previously reviewed findings. The weekly inputs reuse a reviewed excerpt while its full edition awaits extraction when the publisher, dates, candidate, question and complete answer still match. This preserves Bittner’s 12, Brandt’s 9 and Derby’s 10 assessed positions.
+
+### City outcomes during the term
+
+BG-08 compares the actual undertaking with dated official evidence. An outcome comparison records the candidate’s exact words, the City’s exact source passage, the event date, and whether the action materially advanced or delivered the goal. The term job can reuse that checked comparison when personal sponsorship is unknown. A dated City milestone appears separately from attributed member action. A personal promise to introduce a measure still needs the member’s own action. Unknown timing, old activity, an unfunded idea, or a general topic match cannot earn a city result. The assessment checks for opposing evidence and later setbacks.
+
+A completed comparison updates a saved assessment through a local job. Reconciliation can recheck older direct outcome comparisons under the existing funding and source limits. Until that check, the older comparison remains available as supporting context. Rejecting a mistaken connection also withdraws the city finding. The [integration case](../../test/integration/campaign_city_outcome_test.rb) exercises an owner-occupancy rule from the official passage through the later member profile, including correction.
+
+Scott Stechmesser suggested surveys in utility bills. The [Hamilton outreach plan](https://www.two-rivers.org/sites/default/files/fileattachments/community_development_services/page/10731/presentation_-_hamilton_visioning_process_roadmap.pdf) proposed the channel and the [September Council record](https://meetings.municode.com/adaHtmlDocument/index?cc=TWORIVRSWI&ip=True&me=f79e6ec229024a6e8164140ca117f10f) confirms a community survey. Those records leave actual mail distribution and any increase in frequency open. For Darla LeClair’s single-family housing position, the [August Development Authority minutes](https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Minutes-573aa7d4aba946e0ad576f6522ba1305.pdf) report two houses nearing completion at Sandy Bay and plans for single-family lots at a separate site. The [October city report](https://mccmeetings.blob.core.usgovcloudapi.net/tworivrswi-pubu/MEET-Packet-095115218b2c4007a69b6408f977958a.pdf) confirms the September purchase of that site. A new home, a home under construction and a prospective lot have different meanings for residents.
+
+On the November 27 development tree based on `95a6624e`, the weekly input counts matched all nine public profiles. Eight members had 72 positions in total. Bill LeClair had no attributed position to score. The two new findings appeared as **City made progress**. The shared score gives each half a point, including when the official record establishes a change in service without naming a sponsor. Older direct comparisons for Bittner, Brandt and Derby retain their prior findings until an eligible comparison documents a change. The other three members with scored positions had no separately verified city outcome in the saved material. For a verified forum answer, **Campaign wording and sources** links to its starting time in the recording.

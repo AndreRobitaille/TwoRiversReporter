@@ -27,6 +27,16 @@ class MembersController < ApplicationController
         entries = @term_summary.sentences + @term_summary.promise_assessments
         urls = entries.flat_map { |item| item.fetch("sources").pluck("url") }.uniq
         @campaign_source_urls = CampaignSourceVersion.where(source_url: urls).distinct.pluck(:source_url).to_set
+        if @record_period.selected.period_key == "#{@term_summary.term_started_on.year}-election"
+          reviewed = CampaignPlatformReview.where(member: @member,
+            election_on: @term_summary.term_started_on.beginning_of_year..@term_summary.term_started_on).maximum(:election_on)
+          if reviewed
+            records = campaign_statements.select { |row| row.campaign_source_version.election_on == reviewed }
+            @campaign_source_urls.merge(records.map { |row| row.campaign_source_version.source_url })
+            platform = ResidentContent::CampaignPlatform.new(records, include_council_records: false)
+            @term_summary = CouncilProfiles::ReviewedPlatformReport.new(@term_summary, platform, @campaign_source_urls)
+          end
+        end
       else
         load_campaign_preview
       end

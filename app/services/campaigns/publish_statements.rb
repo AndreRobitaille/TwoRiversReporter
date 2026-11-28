@@ -8,13 +8,13 @@ module Campaigns
       extraction.with_lock do
         field = ElectionBackfill.candidates_on(extraction.campaign_source_version.election_on)
         sequence = 0
-        extraction.data.fetch("participants").each do |participant|
+        participants_for_publication(extraction).each do |participant|
           member, identity_exception = resolve_person(participant["name"], field)
           participant.fetch("answers").each do |answer|
             answer.fetch("statements").each do |statement|
               exception = identity_exception || statement_exception(statement, answer, extraction.campaign_source_version.body)
               record = extraction.campaign_statements.find_or_initialize_by(sequence: sequence)
-              data = statement.slice("kind", "summary", "supporting_quote", "conditions", "timeframe", "comparison_heading", "location").merge(
+              data = statement.slice("kind", "summary", "supporting_quote", "conditions", "timeframe", "comparison_heading", "action_quote", "location").merge(
                 "source_name" => participant["name"], "question" => answer["question"])
               attributes = { member_id: member&.id, status: exception ? "unresolved" : "accepted",
                 exception: exception }
@@ -31,6 +31,19 @@ module Campaigns
         end
       end
     end
+
+    def self.participants_for_publication(extraction)
+      data = extraction.data
+      version = extraction.campaign_source_version
+      participants = data.fetch("participants")
+      return participants if version.forum? || !data.dig("counts", "unresolved_statements").to_i.positive?
+      return participants unless participants.any? { |p| p.fetch("answers").any? { |a| a["passage_location"] && !a["question_location"] } }
+
+      # Older questionnaire results retained exact answer and quote offsets even when
+      # a repeated question was unresolved. Replay validation without a provider request.
+      ExtractedStatements.for_version(version).validate(data).fetch("participants")
+    end
+    private_class_method :participants_for_publication
 
     def self.resolve_person(name, field)
       normalized = Member.normalize_name(name)

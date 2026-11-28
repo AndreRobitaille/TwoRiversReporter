@@ -6,8 +6,8 @@ module CouncilProfiles
     # comparisons. Let that run settle before taking the weekly snapshot.
     INTAKE_JOBS = %w[Scrapers::ParseMeetingPageJob Scrapers::DiscoverTranscriptsJob Documents::DownloadTranscriptJob ReconcileCampaignSourcesJob
       Scrapers::ParseAgendaJob Documents::DownloadJob Documents::AnalyzePdfJob Documents::OcrJob ExtractVotesJob
-      ExtractTopicsJob Topics::AutoTriageJob SummarizeMeetingJob ExtractCampaignSourceJob MatchCampaignTopicsJob
-      MatchCampaignActionsJob MatchCampaignIssueEvidenceJob ExtractCouncilIssueUpdatesJob].freeze
+      ExtractTopicsJob Topics::AutoTriageJob SummarizeMeetingJob ExtractCampaignSourceJob ReviewCampaignPlatformsJob MatchCampaignTopicsJob
+      MatchCampaignActionsJob MatchCampaignIssueEvidenceJob CouncilProfiles::ApplyCityOutcomesJob ExtractCouncilIssueUpdatesJob].freeze
 
     def perform(cycle, member_id = nil)
       cycle = Date.iso8601(cycle)

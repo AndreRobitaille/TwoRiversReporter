@@ -42,7 +42,7 @@ module CampaignExtractionScenario
     end
     estimate = { "stage_key" => stage.input_key,
       "request_digest" => CouncilProfiles::ReserveAiSpend.request_digest(parameters),
-      "input_tokens" => 100, "max_output_tokens" => 8_000,
+      "input_tokens" => 100, "max_output_tokens" => parameters.fetch(:max_completion_tokens),
       "input_rate_microusd" => 1_000_000, "output_rate_microusd" => 1_000_000,
       "estimate_basis" => { "model" => parameters.fetch(:model), "token_count_method" => "synthetic fixture",
         "pricing_source" => "https://example.test/synthetic-pricing", "checked_at" => Time.current.iso8601 } }

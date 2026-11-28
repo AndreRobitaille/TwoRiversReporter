@@ -25,18 +25,30 @@ module Campaigns
     end
 
     def self.for_stage(stage)
-      estimate(stage, stage.parameters.deep_symbolize_keys)
+      parameters = stage.parameters.deep_symbolize_keys
+      if stage.is_a?(CampaignPlatformReview) && parameters.dig(:response_format, :type) == "json_schema"
+        size = JSON.parse(parameters.fetch(:messages).last.fetch(:content)).size
+        return estimate_schema_request(parameters, stage) if parameters[:response_format] == PlatformSelection.response_format(size)
+      end
+      estimate(stage, parameters)
     end
 
     def self.for_parameters(parameters)
       format = parameters[:response_format]
-      return { state: "unavailable" } unless [ nil, { type: "json_object" }, Topics::TriageResponse.response_format ].include?(format)
+      return { state: "unavailable" } unless [ nil, { type: "json_object" }, Topics::TriageResponse.response_format, CouncilProfiles::TermResponse.format ].include?(format)
+      estimate_schema_request(parameters)
+    end
+
+    def self.estimate_schema_request(parameters, stage = nil)
+      format = parameters[:response_format]
       # Account for the complete schema in the request's input allowance.
       messages = parameters.fetch(:messages).map(&:dup)
       messages.last[:content] += JSON.generate(format) if format
-      estimate(nil, parameters.merge(messages: messages, response_format: { type: "json_object" })).merge(
+      estimate(stage, parameters.merge(messages: messages, response_format: { type: "json_object" })).merge(
         request_digest: CouncilProfiles::ReserveAiSpend.request_digest(parameters))
     end
+
+    private_class_method :estimate_schema_request
 
     def self.for_comparison(context)
       estimate(nil, Ai::OpenAiService.campaign_action_matching_parameters(context))

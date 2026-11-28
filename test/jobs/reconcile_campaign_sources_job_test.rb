@@ -17,8 +17,13 @@ class ReconcileCampaignSourcesJobTest < ActiveJob::TestCase
       published = CampaignStatement.order(:id).pluck(:id, :updated_at)
       perform_enqueued_jobs(only: MatchCampaignTopicsJob)
       assert_equal "completed", @source.current_version.topic_matching.status
-      assert_no_enqueued_jobs(except: MatchCampaignActionsJob) { ReconcileCampaignSourcesJob.perform_now }
-      perform_enqueued_jobs(only: MatchCampaignActionsJob)
+      perform_enqueued_jobs(only: ReviewCampaignPlatformsJob)
+      pending = CampaignPlatformReview.order(:id).pluck(:id, :updated_at)
+      assert_equal 3, pending.size
+      routines = [ MatchCampaignActionsJob, ReviewCampaignPlatformsJob ]
+      assert_no_enqueued_jobs(except: routines) { ReconcileCampaignSourcesJob.perform_now }
+      perform_enqueued_jobs(only: routines)
+      assert_equal pending, CampaignPlatformReview.order(:id).pluck(:id, :updated_at)
       assert_equal published, CampaignStatement.order(:id).pluck(:id, :updated_at)
     end
     assert_no_enqueued_jobs

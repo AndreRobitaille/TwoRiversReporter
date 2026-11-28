@@ -18,7 +18,8 @@ the introduction. The 2025 HTR questionnaire explicitly marks both
 nonresponses. Candidate profiles explain how that affected the comparison voters could make and link to the recordings and article. [Forum discovery and review, #337](https://github.com/AndreRobitaille/TwoRiversReporter/issues/337)
 
 The 2026 joint forum has 119 reviewed passages covering all five candidates,
-the moderator and an audience member. Saving queued the forum for analysis.
+the moderator and an audience member. The extraction linked 80 statements to
+speaker-verified passages. Four additional excerpts could not be located.
 **Open saved forum → Edit speaker labels** reopens a transcript for correction.
 
 ## Spring 2027 candidate list
@@ -44,16 +45,27 @@ The election desk and speaker-labeling workflow are in `82374913`, the reviewed 
 
 The 2024 campaign review for Mark Bittner, Doug Brandt and Shannon Derby is complete. Keep the reviewed commitments and the evidence behind their scores. The saved questionnaires and recordings serve as examples for developing the workflow.
 
+The first 2025–26 term assessments covered 121 extracted positions for five current members. The cross-source review reduced those five platforms to 41 distinct positions and carried forward matching judgments. A reworded undertaking or conflicting finding awaits assessment. All ten previously unreviewed candidate-election records with attributable material now have a saved selection. Original answers and prior analysis remain in development. [Review workflow and evidence](../application-map/election-backfill-2026-11-27.md#cross-source-platform-review-and-term-scoring)
+
+New questionnaires and labeled forums queue the same selection for every candidate. Each retained position needs the speaker’s action clause and an observable public record. During a member’s term, a verified city action can advance or deliver a policy the member supported. A personal pledge still requires evidence of the member’s own action. Documented progress earns half a point per position, and delivery earns one. Two development profiles show the city-progress finding from that shared workflow. [City outcomes during the term](../application-map/election-backfill-2026-11-27.md#city-outcomes-during-the-term)
+
+Bill LeClair’s profile explains that he missed
+both recorded forums and did not answer the newspaper questionnaire. His
+Council record remains available without a promise score.
+
 | Development source | Saved material | What it can verify |
 | --- | --- | --- |
 | 2024 HTR | Full five-question questionnaire for five candidates and the earlier analyzed excerpt. | A longer source version can coexist with the original evidence. |
-| 2025 HTR | Council section saved with all five names. | Discovery finds the right article. Intake preserves Council answers and both nonresponses in a story covering two races. |
-| 2026 HTR | March 19 questionnaire saved for all five candidates. | The same intake can handle another year and keep a candidate’s numbered priorities together. |
+| 2025 HTR | Council section analyzed with 16 statements and both explicit nonresponses preserved. | The same printed question can be located separately under each respondent’s name. |
+| 2026 HTR | March 19 questionnaire analyzed with 33 statements across five candidates. | The same intake keeps numbered priorities and their source wording together. |
 | 2026 Seehafer | April 1 questionnaire with completed analysis. | Already verified that excluding or restoring a statement reaches the public profile and the next assessment’s inputs. |
 
 Thirteen people have a current portrait in development. The election guide and member profiles use the newest named article photo, with a border and the full frame. New questionnaire intake refreshes both pages. The Council roster stays text-only. [Election guidance](../ELECTION_FEATURES.md) · [Historical intake steps and verification](../application-map/election-backfill-2026-11-27.md)
 
-The two 2024 forums also have completed analysis. The current 2025 and 2026 HTR versions are saved and await analysis if a development case needs it. Use the existing exact-request authorization for any paid analysis.
+The two 2024 forums also have completed analysis. The four 2025 recordings now
+contribute 83 source-verified statements. The two full-length 2025–26 forums
+use numbered speaker turns so the job can restore the original questions,
+answers and recording locations from the editor’s saved transcript.
 
 ## Results and archive
 
@@ -69,4 +81,4 @@ The public guide currently advances one week after Election Day. The later miles
 
 ## Verification at handoff
 
-The focused portrait, intake, election guide and controller tests passed 59 tests and 838 assertions. The full Chromium system suite passed 52 tests and 1,458 assertions, including the corrected phone journey that opens **Processing details** to read a cost estimate. RuboCop and the staged diff checks passed. The public profile was checked locally at 390 and 1280 pixels. No release or paid analysis was run for this handoff.
+The original portrait, intake, election guide and controller tests passed 59 tests and 838 assertions. The full Chromium system suite passed 52 tests and 1,458 assertions, including the phone journey that opens **Processing details** to read a cost estimate. The subsequent approved campaign backfill ran in development. The saved articles, labeled transcripts and published assessments reside in that database.

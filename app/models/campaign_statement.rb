@@ -39,10 +39,9 @@ class CampaignStatement < ApplicationRecord
     current_versions = {}
     where(member: member, status: "accepted", excluded_at: nil)
       .includes(campaign_extraction: { campaign_source_version: :campaign_source })
-      .select do |statement|
-        version = statement.campaign_source_version
-        current_versions[version.campaign_source_id] ||= version.campaign_source.current_version&.id
-        current_versions[version.campaign_source_id] == version.id
+      .group_by(&:campaign_source_version).flat_map do |version, rows|
+        current = current_versions[version.campaign_source_id] ||= version.campaign_source.current_version
+        version == current || Campaigns::ReviewedQuestionnaireExcerpt.retained?(rows, current) ? rows : []
       end
       .sort_by { |statement| [ -statement.campaign_source_version.election_on.jd, -statement.campaign_source_version.id, statement.sequence ] }
   end

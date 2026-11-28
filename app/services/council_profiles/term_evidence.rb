@@ -6,7 +6,7 @@ module CouncilProfiles
 
     MAX_FACTS_PER_SECTION = 8
 
-    attr_reader :facts
+    attr_reader :facts, :selection_review
 
     def initialize(member, period: ResidentContent::CouncilPeriod.new(member))
       @member = member
@@ -28,13 +28,26 @@ module CouncilProfiles
       @tracked_statements.any?
     end
 
+    # A rejected attribution can also appear in the generated overview. Use
+    # saved campaign wording and individually recorded votes for a partial review.
+    def sourced_overview(sentences)
+      cited = Array(sentences).grep(Hash).flat_map { |row| Array(row["evidence"]) }.select { |id| id.is_a?(Integer) && id.between?(1, facts.size) }
+      ordered = (cited + (1..facts.size).to_a).uniq
+      campaign = ordered.find { |id| facts[id - 1][:promise_words].present? }
+      votes = ordered.select { |id| facts[id - 1][:kind] == "Member vote" }.first(2)
+      [ campaign, *votes ].compact.map do |id|
+        fact = facts.fetch(id - 1)
+        { text: fact[:overview_text] || fact.fetch(:text), facts: [ fact_keys.fetch(id - 1) ], sources: fact.fetch(:sources) }
+      end
+    end
+
     def fact_keys
       @fact_keys ||= @facts.map { |fact| Digest::SHA256.hexdigest(fact.slice(:kind, :text, :dates, :promise_words, :position, :identity).to_json) }
     end
 
     def digest
       judgments = @facts.zip(fact_keys).filter_map do |fact, key|
-        scope = fact.slice(:matched_positions, :opposed_positions, :advanced_positions, :unclear_positions, :reviewed_status, :reviewed_on).compact_blank
+        scope = fact.slice(:undertaking, :record_test, :matched_positions, :opposed_positions, :advanced_positions, :unclear_positions, :reviewed_status, :reviewed_on, :city_outcome, :outcome_quote, :outcome_state).compact_blank
         [ key, scope ] if scope.any?
       end
       Digest::SHA256.hexdigest([ fact_keys.uniq.sort, judgments.sort_by(&:first) ].to_json)
@@ -43,14 +56,15 @@ module CouncilProfiles
     private
 
     def campaign_facts
-      platform = ResidentContent::CampaignPlatform.new(@statements)
+      platform = ResidentContent::CampaignPlatform.new(@statements, reviewed_only: true)
+      @selection_review = platform.selection_review
       @platform_items = platform.items
       @tracked_statements = platform.items.flat_map { |item| item.fetch(:statements) }.uniq
       ActiveRecord::Associations::Preloader.new(records: @tracked_statements, associations: :related_topics).call
       positions = platform.items.map do |item|
         records = item.fetch(:statements)
         text = [ item.fetch(:description), *item[:qualifications] ].compact_blank.uniq.join(" ")
-        campaign_fact(records, text).merge(position: item.fetch(:heading))
+        campaign_fact(records, text).merge(position: item.fetch(:heading), overview_text: item.fetch(:description), undertaking: item[:undertaking], record_test: item[:record_test]).compact
       end
       reports = platform.items.flat_map do |item|
         item.fetch(:reports, []).map do |report|
@@ -73,6 +87,9 @@ module CouncilProfiles
       # Keep the representative quote's publication among the visible sources.
       ordered = ([ commitments.first&.campaign_source_version ].compact + versions.sort_by(&:source_url)).uniq
       sources = ordered.first(4).map { |v| source([ v.publisher, v.published_on ].compact.join(" · "), v.source_url) }
+      if (time = commitments.first&.forum_clip_times&.dig(:answer))
+        sources.first[:answer_ms] = time
+      end
       { kind: "#{versions.first.election_on.year} campaign", dates: versions.filter_map(&:published_on).uniq.sort,
         text: text.squish.truncate(750), promise_words: words.uniq, sources: sources }
     end
@@ -85,7 +102,9 @@ module CouncilProfiles
       actions = member_actions(relevant_topics)
       comparisons = direct_issue_comparisons.uniq.sort_by { |fact| [ fact.fetch(:dates), fact.fetch(:text) ] }.reverse
       contested = (votes + comparisons).flat_map { |fact| Array(fact[:opposed_positions]) }.uniq
-      include_conflicting_actions(votes, contested) + newest(actions) + newest(issue_outcomes(relevant_topics)) + include_conflicting_actions(comparisons, contested)
+      city = comparisons.select { |fact| fact[:city_outcome] || %w[rejected deferred].include?(fact[:outcome_state]) }
+        .group_by { |fact| [ fact[:position], fact[:city_outcome] ] }.values.map { |items| items.max_by { |fact| fact.fetch(:dates).max } }
+      include_conflicting_actions(votes, contested) + newest(actions) + newest(issue_outcomes(relevant_topics)) + (city + include_conflicting_actions(comparisons, contested)).uniq
     end
 
     def direct_votes
@@ -127,6 +146,10 @@ module CouncilProfiles
         detail = [ result, motion.description, motion.agenda_item&.display_context_title, *comparison.pluck(:text).uniq.sort ].compact_blank.uniq.join(" ")
         minutes = ResidentContent::VoteMinutes.for(motion)
         fact = meeting_fact("Member vote", motion.meeting, detail, minutes&.fetch(:source_url), minutes&.fetch(:label))
+        subject = (motion.agenda_item&.title.presence || motion.description).to_s.sub(/\A\d{2}-\d{3}\s+/, "")
+        action = motion.description.to_s.squish
+        wording = [ subject, action ].compact_blank.uniq.join(" — ")
+        fact[:overview_text] = "#{motion.meeting.starts_at.to_date.to_fs(:long)} · #{wording}. #{@member.name} voted #{vote.value}. #{motion.outcome&.humanize || "Outcome unrecorded"} (#{counts.fetch("yes", 0)} yes, #{counts.fetch("no", 0)} no)."
         headings = comparison.pluck(:heading).compact.uniq.sort
         fact[:matched_positions] = headings if headings.any?
         unclear = comparison.reject { |entry| %w[advances opposes].include?(entry[:effect]) }.pluck(:heading).compact.uniq.sort
@@ -191,8 +214,18 @@ module CouncilProfiles
           position = comparison_heading(statement, row)
           label = row.dig(:focus, "heading") || statement.data.fetch("summary")
           detail = [ label, row.fetch(:reason), row.dig(:evidence, "summary"), row.dig(:evidence, "conditions") ].compact_blank.uniq.join(" ")
-          kind = row[:kind] == "action" ? "Member work on campaign position" : "Outcome on campaign position, no personal credit"
+          kind = row[:kind] == "action" ? "Member work on campaign position" : "City outcome on campaign position"
           fact = meeting_fact(kind, meeting, detail, row.dig(:citation, :source_url))
+          if row[:kind] == "outcome" && position
+            fact.merge!(position: position, outcome_state: row.dig(:evidence, "status"))
+          end
+          if row[:city_outcome] && position && row[:source_quote].present?
+            occurred_on = Date.iso8601(row.fetch(:outcome_on))
+            if @period.range.cover?(occurred_on.in_time_zone) && occurred_on <= meeting.starts_at.to_date
+              fact.merge!(position: position, city_outcome: row[:city_outcome], outcome_quote: row[:source_quote],
+                outcome_reason: row.fetch(:reason), dates: [ occurred_on ])
+            end
+          end
           if position
             fact[:matched_positions] = [ position ]
             if row[:kind] == "action"

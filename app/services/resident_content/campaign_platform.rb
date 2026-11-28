@@ -5,7 +5,7 @@ module ResidentContent
     EDITION = YAML.safe_load_file(Rails.root.join("config/campaign_platform_2024.yml")).freeze
     EVIDENCE_FIELDS = %w[source_name question kind summary supporting_quote conditions timeframe].freeze
 
-    attr_reader :items, :unreviewed, :statements
+    attr_reader :items, :unreviewed, :statements, :selection_review
 
     def self.by_election(statements)
       statements.group_by { |row| row.campaign_source_version.election_on }.transform_values { |rows| new(rows) }
@@ -39,11 +39,19 @@ module ResidentContent
       end
     end
 
-    def initialize(records, edition: EDITION, include_council_records: true)
+    def initialize(records, edition: EDITION, include_council_records: true, reviewed_only: false)
       @unreviewed = []
       @record_sources = CampaignRecordSources.new(edition.fetch("council_sources", {})) if include_council_records
+      selection = Campaigns::PlatformSelection.new(records)
+      @selection_review = selection.published
+      consolidated = @selection_review ? selection.items(@selection_review) : []
+      # While a first cross-source check is queued, do not promote unreviewed
+      # headings to the public promise list. Older extractions still have their
+      # original source-level classification until reconciliation prepares them.
+      under_review = reviewed_only || @selection_review || selection.current || selection.rows.any? { |row| row.data["action_quote"] }
+      records_to_extract = under_review ? records - selection.rows : records
       extracted = []
-      editorial = records.group_by { |row| row.data["source_name"] }.flat_map do |name, statements|
+      editorial = records_to_extract.group_by { |row| row.data["source_name"] }.flat_map do |name, statements|
         review = edition.fetch("members")[name]
         references = {}
         statements.group_by(&:campaign_source_version).each do |source, rows|
@@ -64,7 +72,7 @@ module ResidentContent
         references.empty? ? [] : reviewed_items(review.fetch("items"), references)
       end
       @unreviewed.uniq!
-      groups = (editorial + extracted).group_by do |item|
+      groups = (editorial + consolidated + extracted).group_by do |item|
         [ item[:kind], item[:heading].squish.downcase, Array(item[:qualifications]).compact_blank ]
       end
       @items = groups.values.map do |group|

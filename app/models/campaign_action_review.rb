@@ -63,7 +63,23 @@ class CampaignActionReview < ApplicationRecord
       AuditEvent.record!(actor: actor, action: "campaign_actions.reject_matches", subject: self,
         label: "Campaign comparison review", metadata: { pair_keys: changes.keys, reason: reason })
     end
+    enqueue_city_outcomes(rejected: keys)
     true
+  end
+
+  def enqueue_city_outcomes(rejected: [])
+    return unless issue_evidence?
+    matches = data.fetch("matches", []).index_by { |match| match.fetch("key") }
+    statements = context.fetch("pairs").select do |pair|
+      next unless pair["evidence_kind"] == "outcome"
+      match = matches.fetch(pair.fetch("key"))
+      rejected.include?(Campaigns::ActionInput.key(pair)) || match["city_outcome"].present? ||
+        (match["status"] == "direct" && %w[deferred rejected].include?(pair.dig("evidence", "status")))
+    end.pluck("statement_id")
+    return if statements.empty?
+    CampaignStatement.where(id: statements).where.not(member_id: nil).distinct.pluck(:member_id).each do |id|
+      CouncilProfiles::ApplyCityOutcomesJob.perform_later(id)
+    end
   end
 
   def claim!(budget_run)

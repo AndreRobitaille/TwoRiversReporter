@@ -1,19 +1,19 @@
 module CouncilProfiles
   class PromiseFollowThrough
     LABELS = {
+      "city_result" => "City delivered the outcome", "city_progress" => "City made progress",
       "contrary" => "Acted against the position", "met" => "Documented result", "pursued" => "Acted, result unconfirmed", "blocked" => "Acted and was outvoted",
-      "missed" => "Missed opportunity", "fell_short" => "Fell short", "unresolved" => "Unfulfilled in the public record"
+      "missed" => "Missed opportunity", "fell_short" => "Fell short", "unresolved" => "Open in the public record"
     }.freeze
 
     POINTS = {
-      "met" => 1, "contrary" => -2.5, "missed" => -0.5, "unresolved" => -0.5,
-      "fell_short" => -0.5, "pursued" => 0, "blocked" => 0
+      "met" => 1, "city_result" => 1, "city_progress" => 0.5, "contrary" => -2.5, "missed" => -0.5, "unresolved" => -0.5,
+      "fell_short" => -0.5, "pursued" => 0.5, "blocked" => 0
     }.freeze
 
     MATERIAL_EFFECTS = %w[binding_decision committed_resources operating_program documented_result].freeze
 
-    def self.from_response(result, evidence, member)
-      expected = position_groups(evidence.facts)
+    def self.from_response(result, evidence, member, expected: position_groups(evidence.facts))
       groups = result.fetch("promises")
       unless groups.is_a?(Array) && groups.all? { |row| row.is_a?(Hash) && row["positions"].is_a?(Array) }
         raise ArgumentError, "Invalid promise list"
@@ -40,7 +40,17 @@ module CouncilProfiles
           review = evidence.facts.fetch(review_id - 1)
           status, reason, records = review.fetch(:reviewed_status), review.fetch(:text), [ review_id ]
         else
+          if %w[city_result city_progress].include?(status) && positions.any? { |id| evidence.facts.fetch(id - 1)[:undertaking] == "personal_action" }
+            raise ArgumentError, "The candidate promised a personal action"
+          end
           validate_judgment!(group, relevant, headings, member)
+          if status == "pursued" && relevant.present? && relevant.all? { |fact| outvoted?(fact, group["attribution"]) }
+            status = "blocked"
+          end
+          if %w[city_result city_progress].include?(status)
+            city = relevant.find { |fact| fact[:outcome_quote] == group["attribution"] && headings.include?(fact[:position]) && fact[:city_outcome] == (status == "city_result" ? "delivered" : "advanced") }
+            reason = city.fetch(:outcome_quote)
+          end
         end
 
         ids = positions + records
@@ -95,6 +105,15 @@ module CouncilProfiles
         raise ArgumentError, "A different verdict needs evidence of follow-through alongside the opposing action" unless corroborated
         relevant = relevant.reject { |fact| opposing.include?(fact) || fact[:kind] == "Minutes excerpt" }
       end
+      if %w[city_result city_progress].include?(status)
+        effect = status == "city_result" ? "delivered" : "advanced"
+        confirmed = relevant.any? do |fact|
+          fact[:kind] == "City outcome on campaign position" && headings.include?(fact[:position]) &&
+            fact[:city_outcome] == effect && fact[:outcome_quote].present? && group["attribution"] == fact[:outcome_quote]
+        end
+        raise ArgumentError, "A city outcome needs a dated, directly matched source for this undertaking" unless confirmed
+        return
+      end
       return if status == "unresolved"
 
       if %w[met pursued blocked].include?(status)
@@ -127,7 +146,7 @@ module CouncilProfiles
         return text.match?(/\AMember voted (?:yes\. Council result: (?:failed|defeated|rejected)|no\. Council result: (?:passed|approved))\b/i)
       end
       # In a longer minutes passage the member and disposition must be in the quoted action.
-      text = attribution if fact[:kind] == "Minutes excerpt"
+      text = attribution.to_s if fact[:kind] == "Minutes excerpt"
       text.match?(/\b(?:outvoted|motion (?:failed|was defeated|was rejected|did not (?:carry|pass))|voted down)\b/i)
     end
 
@@ -148,13 +167,85 @@ module CouncilProfiles
         .group_by { |i| facts[i].fetch(:promise_words) }.values.map { |indexes| indexes.map(&:succ) }
     end
 
-    attr_reader :met, :contrary, :total, :net_points
+    # Only this local path can mark a position as awaiting review. Every scored
+    # finding still goes through the full attribution and direction checks.
+    def self.checked_groups(result, evidence, member)
+      rows = result.fetch("promises")
+      raise ArgumentError, "Invalid promise list" unless rows.is_a?(Array)
+      indexed = rows.select { |row| row.is_a?(Hash) && row["positions"].is_a?(Array) }.group_by do |row|
+        ids = row["positions"].map { |ref| ref.is_a?(Hash) ? ref["id"] : ref }
+        ids.sort if ids.all?(Integer)
+      end
+      position_groups(evidence.facts).map do |group|
+        candidates = indexed[group]
+        finding = from_response({ "promises" => candidates }, evidence, member, expected: [ group ]).sole if candidates&.one?
+        [ group, candidates&.first, finding ]
+      rescue ArgumentError, KeyError
+        [ group, nil, nil ]
+      end
+    end
 
-    def initialize(assessments)
+    # A checked comparison already accounts for the intended result, the date
+    # and the implementation stage. Reuse it when no personal finding settles the position.
+    def self.city_finding(group, evidence)
+      campaigns = group.map { |id| evidence.facts.fetch(id - 1) }
+      headings = campaigns.pluck(:position).uniq
+      return unless headings.one? && campaigns.none? { |fact| fact[:undertaking] == "personal_action" }
+      heading = headings.first
+      return if evidence.facts.any? do |fact|
+        Array(fact[:opposed_positions]).include?(heading) ||
+          (fact[:position] == heading && %w[contrary missed fell_short].include?(fact[:reviewed_status]))
+      end
+      outcomes = evidence.facts.select { |fact| fact[:position] == heading && fact[:kind] == "City outcome on campaign position" }
+      latest = outcomes.select { |fact| %w[delivered advanced].include?(fact[:city_outcome]) && fact[:outcome_quote].present? }
+        .max_by { |fact| [ fact.fetch(:dates).max, fact[:city_outcome] == "delivered" ? 1 : 0 ] }
+      return unless latest
+      return if outcomes.any? { |fact| %w[rejected deferred].include?(fact[:outcome_state]) && fact.fetch(:dates).max >= latest.fetch(:dates).max }
+
+      step = evidence.facts.select { |fact| Array(fact[:advanced_positions]).include?(heading) }.max_by { |fact| fact.fetch(:dates).max }
+      ids = group + [ latest, step ].compact.map { |fact| evidence.facts.index(fact) + 1 }
+      { "heading" => heading, "label" => campaigns.first.fetch(:text), "quote" => campaigns.first.fetch(:promise_words).first.fetch("supporting_quote"),
+        "status" => latest.fetch(:city_outcome) == "delivered" ? "city_result" : "city_progress",
+        "reason" => latest.fetch(:outcome_reason), "outcome_quote" => latest.fetch(:outcome_quote),
+        "member_step" => step && (step[:overview_text] || step.fetch(:text)),
+        "facts" => ids.map { |id| evidence.fact_keys.fetch(id - 1) }, "sources" => ids.flat_map { |id| evidence.facts.fetch(id - 1).fetch(:sources) }.uniq }.compact
+    end
+
+    def self.city_updates?(status)
+      %w[pending_review unresolved city_result city_progress pursued blocked].include?(status)
+    end
+
+    def self.for_publication(result, evidence, member)
+      checked_groups(result, evidence, member).map do |group, _, finding|
+        city = city_finding(group, evidence)
+        next city if city && (!finding || city_updates?(finding["status"]))
+        finding = nil if finding && %w[city_result city_progress].include?(finding["status"])
+        next finding if finding
+        facts = group.map { |id| evidence.facts.fetch(id - 1) }
+        { "status" => "pending_review", "heading" => facts.pluck(:position).uniq.join(" / "), "label" => facts.first.fetch(:text),
+          "quote" => facts.first.fetch(:promise_words).first.fetch("supporting_quote"),
+          "reason" => "The link between this campaign position and the Council record still needs review.",
+          "facts" => group.map { |id| evidence.fact_keys.fetch(id - 1) }, "sources" => facts.flat_map { |fact| fact.fetch(:sources) }.uniq }
+      end
+    end
+
+    attr_reader :met, :contrary, :total, :net_points, :open_count, :partial_count
+
+    def initialize(assessments, elapsed: nil)
+      assessments = assessments.reject { |row| row["status"] == "pending_review" }
       @total = assessments.size
       @contrary = assessments.count { |row| row.fetch("status") == "contrary" }
-      @met = assessments.count { |row| row.fetch("status") == "met" }
-      @net_points = assessments.sum { |row| POINTS.fetch(row.fetch("status")) }
+      @met = assessments.count { |row| %w[met city_result].include?(row.fetch("status")) }
+      @partial_count = assessments.count { |row| %w[pursued city_progress].include?(row.fetch("status")) }
+      @elapsed = elapsed
+      @open_count = assessments.count { |row| row.fetch("status") == "unresolved" }
+      @net_points = assessments.sum { |row| points_for(row.fetch("status")) }
+    end
+
+    def points_for(status)
+      return POINTS.fetch(status).to_r * (@elapsed || 0) if status == "unresolved"
+
+      POINTS.fetch(status)
     end
 
     def self.point_label(status)
@@ -163,23 +254,12 @@ module CouncilProfiles
     end
 
     def self.format_points(points)
-      (points == points.to_i ? points.to_i : points).to_s.tr("-", "−")
+      rounded = points.round(2)
+      (rounded == rounded.to_i ? rounded.to_i : rounded.to_f).to_s.tr("-", "−")
     end
 
-    def percentage
-      (100.0 * net_points / total).round if total.positive?
-    end
-
-    def meter_max
-      net_points.negative? ? (100 * POINTS.values.min.abs).to_i : 100
-    end
-
-    def lead
-      return if total.zero?
-      deductions = met - net_points
-      return "Results on #{met} of #{total} campaign #{'position'.pluralize(total)}." if deductions.zero?
-
-      "#{met} #{'point'.pluralize(met)} for results − #{self.class.format_points(deductions)} in deductions = #{self.class.format_points(net_points)} of #{total} #{'point'.pluralize(total)}."
+    def score
+      (100 * net_points.to_r / total).round.clamp(0, 100) if total.positive?
     end
   end
 end

@@ -15,13 +15,17 @@ module MembersHelper
     "The term so far"
   end
 
-  def promise_deductions(groups)
-    labels = { "contrary" => "Reversal", "missed" => "Missed opportunity", "unresolved" => "Unfulfilled", "fell_short" => "Fell short" }
+  def promise_deductions(groups, score)
+    labels = { "contrary" => "Reversal", "missed" => "Missed opportunity", "unresolved" => "Open", "fell_short" => "Fell short" }
     labels.flat_map do |status, label|
       group = groups[status]
       next [] unless group
 
-      points = CouncilProfiles::PromiseFollowThrough::POINTS.fetch(status)
+      points = score.points_for(status)
+      next [] if points.zero?
+      if status == "unresolved"
+        next [ [ points * group.size, "#{pluralize(group.size, "open position")} · time in office", "#promise-group-unresolved" ] ]
+      end
       if group.many? && status != "contrary"
         caption = status == "missed" ? label.pluralize.downcase : label.downcase
         [ [ points * group.size, "#{group.size} #{caption}", "#promise-group-#{status}" ] ]

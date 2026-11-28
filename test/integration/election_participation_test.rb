@@ -1,6 +1,9 @@
 require "test_helper"
+require_relative "../support/council_service_sources"
 
 class ElectionParticipationTest < ActionDispatch::IntegrationTest
+  include CouncilServiceSources
+
   test "confirmed absences, speaking and newspaper responses follow the selected race and recording" do
     travel_to Date.new(2025, 3, 30)
     day = Date.new(2025, 3, 18)
@@ -46,6 +49,17 @@ class ElectionParticipationTest < ActionDispatch::IntegrationTest
     assert_select "#civic-connections", text: /previously married and still lived in the same household/
     get member_path(Member.create!(name: "Katherine Dahlke"))
     assert_select "#civic-connections", text: /previously married and still lived in the same household/
+
+    travel_to Date.new(2025, 4, 20) do
+      Committee.find_or_create_by!(name: "City Council").committee_memberships.create!(member: profile, role: "member", source: "official_roster")
+      profile.member_positions.create!(kind: "city_council", title: "City Council Member", source: "official_website",
+        source_url: "https://example.test/council-roster", verified_at: Time.current)
+      CouncilServicePeriod.record_starts!(period_key: "2025-election", source_version: service_source(date: Date.current), page: 1,
+        entries: [ { member_id: profile.id, started_on: Date.new(2025, 4, 15) } ])
+      get member_path(profile)
+      assert_select "#campaign-record", text: /provide no campaign position to assess for this term/
+      assert_select ".promise-finding", count: 0
+    end
 
     get admin_campaign_source_path(first)
     assert_select "input[value='Bill LeClair'][checked]"

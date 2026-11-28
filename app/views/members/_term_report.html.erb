@@ -3,23 +3,24 @@
      sources = sentence.fetch("sources")
      sources.any? && sources.all? { |source| @campaign_source_urls.include?(source.fetch("url")) }
    end %>
-<% if groups.any? %>
-  <section class="promise-report" aria-label="Campaign promise results and term pace" data-pace="<%= pace.rating %>">
-    <% if pace.rating %><h3 class="pace-label"><%= pace.label %></h3><% end %>
-    <div class="promise-meter" data-negative="<%= score.net_points.negative? %>">
-      <span class="member-term-score"><strong><%= score.percentage %>%</strong> promise score</span>
-      <meter min="0" max="<%= score.meter_max %>" value="<%= score.percentage.abs %>" aria-valuetext="<%= score.percentage %>%" aria-label="<%= score.net_points.negative? ? "Net percentage below zero" : "Net promise score" %>"><%= score.percentage.abs %>%</meter>
+<% if score.total.positive? %>
+  <section class="promise-report" aria-label="Campaign promise results and term pace" data-pace="<%= pace.rating(score) %>">
+    <p class="member-term-copy score-lead"><strong><%= pluralize(score.met, "documented result") %></strong>
+      across <%= pluralize(score.total, "assessed position") %>.<% if score.partial_count.positive? %> <%= pluralize(score.partial_count, "position") %> with partial credit.<% end %> <%= score.open_count %> open.
+      <% if pace.elapsed %><%= pace.elapsed_percent %>% of the term has elapsed.<% end %>
+    </p>
+    <div class="promise-meter">
+      <span class="member-term-score"><strong><%= score.score %>/100</strong> promise score</span>
+      <meter min="0" max="100" value="<%= score.score %>" aria-label="Promise score out of 100"><%= score.score %>/100</meter>
     </div>
-    <% if pace.rating %>
+    <% if pace.rating(score) %>
       <div class="promise-meter term-clock">
-        <span><strong><%= pace.elapsed_percent %>%</strong> of term elapsed</span>
+        <span><%= pace.label(score) %> · <%= pluralize(pace.days_left, "day") %> left</span>
         <meter min="0" max="100" value="<%= pace.elapsed_percent %>" aria-label="Council term elapsed"><%= pace.elapsed_percent %>%</meter>
       </div>
     <% end %>
-    <p class="member-term-copy score-lead"><%= score.lead %>
-      <% if pace.days_left&.positive? %><%= pluralize(pace.days_left, "day") %> left.<% end %>
-    </p>
-    <% deductions = promise_deductions(groups) %>
+    <% deductions = promise_deductions(groups, score) %>
+    <% if score.net_points.negative? %><p class="member-term-copy">Deductions exceed credit for results so far. The score stops at zero.</p><% end %>
     <% if deductions.any? %>
       <ul class="score-deductions" aria-label="Point deductions">
         <% deductions.each do |points, caption, target| %>
@@ -30,6 +31,10 @@
       </ul>
     <% end %>
   </section>
+<% end %>
+
+<% if (pending = groups["pending_review"]) %>
+  <p class="term-assessment-coverage"><%= score.total %> of <%= report.promise_assessments.size %> campaign positions assessed. <%= link_to "#{pluralize(pending.size, "position")} awaiting review", "#promise-group-pending_review", data: { turbo: false } %>.</p>
 <% end %>
 
 <div class="term-narrative">

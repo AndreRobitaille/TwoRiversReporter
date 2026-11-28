@@ -3,21 +3,22 @@
   <% if reviews.any? %>
     <p class="campaign-answers-jump"><%= link_to "#{reviews.first.fetch("source_record").election_on.year} forum review", "#campaign-answers", data: { turbo: false } %></p>
   <% end %>
-  <% CouncilProfiles::PromiseFollowThrough::LABELS.each do |status, label| %>
+  <% CouncilProfiles::PromiseFollowThrough::LABELS.merge("pending_review" => "Awaiting assessment").each do |status, label| %>
+    <% label = "Unfulfilled in the public record" if status == "unresolved" && pace.days_left == 0 %>
     <% group = groups[status] %>
     <% next unless group %>
-    <% points = CouncilProfiles::PromiseFollowThrough.point_label(status) %>
+    <% points = CouncilProfiles::PromiseFollowThrough.point_label(status) unless %w[pending_review unresolved].include?(status) %>
     <section class="promise-group" id="promise-group-<%= status %>" data-status="<%= status %>">
       <h3 class="outcome-heading">
         <span class="outcome-count"><%= group.size %></span>
         <span class="outcome-label"><%= %w[met missed].include?(status) ? label.pluralize(group.size) : label %></span>
-        <span class="outcome-points"><%= points %><%= " each" if group.many? %></span>
+        <% if points %><span class="outcome-points"><%= points %><%= " each" if group.many? %></span><% end %>
       </h3>
       <ul class="member-promise-list">
         <% group.each do |item, index| %>
           <li><details id="promise-<%= index + 1 %>" class="promise-finding">
             <summary>
-              <span class="linked-finding-status"><%= label %> · <%= points %></span>
+              <span class="linked-finding-status"><%= label %></span>
               <span class="promise-title"><%= item["profile_subject"] || item["heading"].presence || item.fetch("label") %></span>
               <% if item["roll_call"] %>
                 <%= render "roll_call", vote: item.fetch("roll_call") %>
@@ -26,12 +27,14 @@
               <% end %>
             </summary>
             <div class="finding-body">
+              <% if item["member_step"].present? %><p><%= item.fetch("member_step") %></p><% end %>
               <% if item["profile_excerpt"] || item["roll_call"] %><p class="promise-reason"><%= item.fetch("reason") %></p><% end %>
               <% if item["finding_detail"] %><p class="finding-detail"><%= item["finding_detail"] %></p><% end %>
               <% campaign, evidence = item.fetch("sources").partition { |source| @campaign_source_urls.include?(source.fetch("url")) } %>
               <% if evidence.any? %>
                 <div class="finding-sources">
                   <strong>Supporting <%= "record".pluralize(evidence.size) %></strong>
+                  <% if item["outcome_quote"].present? %><blockquote><%= item.fetch("outcome_quote") %></blockquote><% end %>
                   <ul>
                     <% evidence.each do |source| %>
                       <li><%= profile_source_link source.fetch("label"), source.fetch("url"), finding: item["heading"] %></li>
@@ -47,7 +50,12 @@
                   <% end %>
                   <ul>
                     <% campaign.each do |source| %>
-                      <li><%= link_to source.fetch("label"), source.fetch("url") %></li>
+                      <li>
+                        <%= link_to source.fetch("label"), source.fetch("url") %>
+                        <% if (start = source["answer_ms"]) %>
+                          · <%= forum_clip_link("Hear the answer", source.fetch("url"), start) %>
+                        <% end %>
+                      </li>
                     <% end %>
                   </ul>
                 </details>
@@ -61,15 +69,17 @@
   <details class="promise-method">
     <summary>How we score the record</summary>
     <dl>
-      <dt>One point</dt><dd>The member delivered or materially advanced what they proposed. A vote on the same issue earns credit only if it advanced that goal. Bringing a measure to a vote can fulfill a promise to introduce it.</dd>
+      <dt>One point</dt><dd>The record shows the promised result. That can be a city service residents received or a specific action the member promised to take, such as introducing a measure.</dd>
+      <dt>Half a point for progress</dt><dd>A documented city milestone or a member’s motion, vote or other action moved the proposal forward. Each position earns credit once. The finding names the member’s role when the record establishes it.</dd>
       <dt><%= CouncilProfiles::PromiseFollowThrough.point_label("contrary") %></dt><dd>The member took a documented action that materially opposed their campaign position.</dd>
-      <dt>Minus half a point</dt><dd>The member missed a recorded chance to act, the original effort fell short, or the public record shows no follow-through on the promise.</dd>
-      <dt>Zero points</dt><dd>The member took a documented step and the outcome is still open, or made an effort that was outvoted.</dd>
-      <% if pace.rating %>
+      <dt>Minus half a point</dt><dd>The member missed a recorded chance to act or the original effort fell short.</dd>
+      <dt>Open positions</dt><dd>Each open position costs up to half a point in proportion to the term elapsed. Halfway through the term it costs a quarter point. With unknown term dates the time deduction is zero.</dd>
+      <dt>Zero points</dt><dd>The member was outvoted and the record shows no further progress toward the promised outcome.</dd>
+      <% if pace.rating(score) %>
         <dt>Term pace</dt><dd>We compare the net score with the share of the term elapsed. Green meets an even pace, amber trails by up to 10 percentage points, and red trails by more. At term end, any outstanding promise leaves the record short. Individual projects can have different deadlines.</dd>
       <% end %>
     </dl>
-    <p>We divide total points after deductions by all tracked positions. Each position counts once. The score can fall below zero. Findings reviewed <%= report.generated_at.to_date.to_fs(:long) %>.<% if pace.rating %> Term runs <%= report.term_started_on.to_fs(:long) %> – <%= pace.ends_on.to_fs(:long) %>.<% end %></p>
+    <p><%= CouncilProfiles::PromiseFollowThrough.format_points(score.net_points) %> net points across <%= pluralize(score.total, "assessed position") %>. We divide net points by assessed positions and multiply by 100. The score stops at zero. Positions awaiting review are unscored. Findings reviewed <%= report.generated_at.to_date.to_fs(:long) %>.<% if pace.rating(score) %> Term runs <%= report.term_started_on.to_fs(:long) %> – <%= pace.ends_on.to_fs(:long) %>.<% end %></p>
   </details>
   <%= link_to "Full campaign record", campaign_member_path(@member, anchor: "campaign-record"), class: "profile-campaign-link" %>
 </section>

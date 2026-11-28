@@ -12,14 +12,42 @@ module Campaigns
         { "rules" => RULES, "source_key" => review.input_key,
           "statement_id" => statement.id, "campaign_version" => statement.campaign_source_version.version_key,
           "statement" => statement.data.slice("question", "kind", "summary", "supporting_quote", "conditions", "timeframe"),
-          "evidence_kind" => candidate.fetch(:kind), "evidence" => evidence.except("agenda_item_id", "topic_ids") }
+          "evidence_kind" => candidate.fetch(:kind), "evidence" => evidence.except("agenda_item_id", "topic_ids"), "platform_test" => candidate[:platform_test] }.compact
       end
     end
 
     def context(pairs)
       reference = @review.is_a?(CouncilProfiles::SavedMeetingEvidence) ? @review.reference : { "issue_review_id" => @review.id }
-      reference.merge("rules" => RULES, "source" => @review.context.fetch("source"),
+      reference.merge("rules" => RULES, "assesses_city_outcomes" => true, "source" => @review.context.fetch("source"),
         "reported_on" => @review.context.fetch("reported_on"), "pairs" => pairs)
+    end
+
+    # Older direct comparisons established relevance, without assessing whether
+    # the city had delivered anything. Preserve those links until rechecked.
+    def pairs_for_review(stages)
+      legacy = stages.select { |s| s.status == "completed" && s.issue_evidence? && !s.context["assesses_city_outcomes"] }
+        .each_with_object({}) { |stage, results| results.merge!(stage.matches_by_key) }
+      selected = super
+      return selected if legacy.empty?
+      selected.map do |pair|
+        match = saved_match(pair, legacy)
+        if pair["evidence_kind"] == "outcome" && pair.dig("platform_test", "undertaking") != "personal_action" &&
+            !%w[proposed rejected deferred unresolved].include?(pair.dig("evidence", "status")) &&
+            match&.fetch("status") == "direct" && !match["city_outcome"]
+          revision = pair.merge("assess_city_outcome" => true)
+          revision.merge("key" => ActionInput.key(revision))
+        else
+          pair
+        end
+      end
+    end
+
+    def saved_match(pair, results)
+      return super unless pair["evidence_kind"] == "outcome"
+      original = super
+      # An editor's rejection of the original connection also removes its later assessment.
+      return original if original && original["status"] != "direct"
+      results[ActionInput.key(pair.merge("assess_city_outcome" => true))] || original
     end
 
     def self.prepare(review, candidates:)

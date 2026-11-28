@@ -50,7 +50,7 @@ module Campaigns
           (source.published_on || source.election_on) <= date
         end
         mentions.map do |row|
-          { statement: row, focus: target[:focus], comparison_group: [ mentions.first.id, target[:focus] ],
+          { statement: row, focus: target[:focus], platform_test: target[:platform_test], comparison_group: [ mentions.first.id, target[:focus] ],
             reuse_topic_match: target[:comparison_topic] && shares_topic, prior_review_terms: target[:prior_review_terms],
             editorial_reason: editorial && row == mentions.first ? review.fetch("reason") : nil }
         end
@@ -91,7 +91,8 @@ module Campaigns
       # An old statement can contain two alternatives. Compare the exact part
       # being shown, and keep its results separate from its sibling's.
       focus = item.slice(:heading, :description).stringify_keys if item[:comparable].empty? || item[:comparison_topic]
-      { statements: item[:comparable].presence || [ mentions.first ], topics: topics, phrases: phrases, focus: focus,
+      platform_test = item.slice(:heading, :undertaking, :record_test).stringify_keys if item[:record_test]
+      { platform_test: platform_test, statements: item[:comparable].presence || [ mentions.first ], topics: topics, phrases: phrases, focus: focus,
         comparison_topic: item[:comparison_topic], prior_review_terms: item[:prior_review_terms], reviewed_action: item[:reviewed_action],
         handled_records: item[:handled_records] || [],
         topic_names: mentions.flat_map(&:related_topics).map { |topic| " #{words(topic.canonical_name).join(" ")} " }.uniq,

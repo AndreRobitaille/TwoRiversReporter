@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_27_011000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_27_012000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -174,6 +174,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_011000) do
     t.index [ "council_ai_budget_run_id" ], name: "index_campaign_extractions_on_council_ai_budget_run_id"
     t.index [ "input_key" ], name: "index_campaign_extractions_on_input_key", unique: true
     t.index [ "reused_from_id" ], name: "index_campaign_extractions_on_reused_from_id"
+  end
+
+  create_table "campaign_platform_reviews", force: :cascade do |t|
+    t.bigint "member_id", null: false
+    t.date "election_on", null: false
+    t.string "input_key", null: false
+    t.jsonb "parameters", null: false
+    t.jsonb "groups"
+    t.string "status", default: "pending", null: false
+    t.integer "attempts", default: 0, null: false
+    t.text "response_body"
+    t.bigint "council_ai_budget_run_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index [ "council_ai_budget_run_id" ], name: "index_campaign_platform_reviews_on_council_ai_budget_run_id"
+    t.index [ "input_key" ], name: "index_campaign_platform_reviews_on_input_key", unique: true
+    t.index [ "member_id" ], name: "index_campaign_platform_reviews_on_member_id"
   end
 
   create_table "campaign_requests", force: :cascade do |t|
@@ -655,7 +672,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_011000) do
     t.boolean "stopped", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["election_on"], name: "index_election_filing_watches_on_election_on", unique: true
+    t.index [ "election_on" ], name: "index_election_filing_watches_on_election_on", unique: true
   end
 
   create_table "election_forums", force: :cascade do |t|
@@ -1487,6 +1504,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_011000) do
   add_foreign_key "campaign_extractions", "campaign_extractions", column: "reused_from_id"
   add_foreign_key "campaign_extractions", "campaign_source_versions"
   add_foreign_key "campaign_extractions", "council_ai_budget_runs"
+  add_foreign_key "campaign_platform_reviews", "council_ai_budget_runs"
+  add_foreign_key "campaign_platform_reviews", "members"
   add_foreign_key "campaign_requests", "campaign_extractions"
   add_foreign_key "campaign_requests", "council_ai_reservations"
   add_foreign_key "campaign_source_versions", "campaign_sources"

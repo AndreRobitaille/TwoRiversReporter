@@ -26,9 +26,14 @@ class FullCampaignForumTest < ActionDispatch::IntegrationTest
         "located_statements" => 10, "unresolved_statements" => 0, "reported_gaps" => 0 }, stage.data.fetch("counts"))
       assert_equal @names.sort, stage.campaign_statements.where(status: "accepted").joins(:member).distinct.pluck("members.name").sort
       assert_equal 10, stage.campaign_statements.where(status: "accepted").count
+      answer = stage.data.fetch("participants").first.fetch("answers").last
+      assert_equal @source.prepared_transcript.fetch("segments").fetch(7).fetch("text"), answer.fetch("passage")
+      assert_match(/Question 2/, answer.fetch("question"))
       parameters = @calls.sole
       assert_equal 32_000, parameters.fetch(:max_completion_tokens)
-      assert parameters.fetch(:messages).last.fetch(:content).include?(@source.body), "The complete forum must reach provider transport"
+      prompt = parameters.fetch(:messages).last.fetch(:content)
+      assert_includes prompt, "Turn 12 ["
+      assert_includes prompt.gsub(/^Turn \d+ /, ""), @source.body
       assert_equal parameters.except(:messages).deep_stringify_keys, stage.requests.sole.request_parameters
       assert_equal parameters.fetch(:messages).map { |message| Digest::SHA256.hexdigest(message.fetch(:content)) },
         stage.requests.sole.messages.map { |message| Digest::SHA256.hexdigest(message.fetch("content")) }
@@ -46,6 +51,16 @@ class FullCampaignForumTest < ActionDispatch::IntegrationTest
       assert_equal 1, stage.requests.count
       assert_equal 2, CampaignExtraction::MAX_ATTEMPTS
     end
+  end
+
+  test "a numbered answer stays with its reviewed speaker" do
+    response = forum_response
+    participant = response.fetch("participants").first
+    participant["name"] = @names.second
+    data = Campaigns::ExtractedStatements.for_version(@source.current_version).parse(response.to_json)
+    statements = data.fetch("participants").first.fetch("answers").flat_map { |answer| answer.fetch("statements") }
+    assert_equal [ "unresolved_attribution", "unresolved_attribution" ], statements.pluck("exception")
+    assert_equal 8, data.dig("counts", "located_statements")
   end
 
   test "larger output needs an explicit matching allowance and does not consume an attempt while paused" do
@@ -117,11 +132,10 @@ class FullCampaignForumTest < ActionDispatch::IntegrationTest
     segments = @source.prepared_transcript.fetch("segments")
     { "participants" => @names.map do |name|
       turns = segments.select { |segment| segment["speaker"] == name }
-      { "name" => name, "name_quote" => "#{name}\n#{turns.first.fetch('text')}",
+      { "name" => name,
         "answers" => turns.each_with_index.map do |segment, index|
           quote = segment.fetch("text").split("Background discussion. ").last
-          { "question" => "Question #{index + 1}: What would you prioritize and under what conditions?",
-            "passage" => segment.fetch("text"), "statements" => [
+          { "question_turn" => 1 + index * (@names.size + 1), "answer_turn" => segments.index(segment) + 1, "statements" => [
               { "kind" => "priority", "summary" => quote, "supporting_quote" => quote,
                 "conditions" => "Only if grants cover the cost.", "timeframe" => nil }
             ] }
