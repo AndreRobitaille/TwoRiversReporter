@@ -8,7 +8,7 @@ class CandidatePortraitJourneysTest < ApplicationSystemTestCase
   test "a resident follows the latest questionnaire photo from the phone guide to the credited profile" do
     travel_to Date.new(2027, 2, 1)
     member = Member.create!(name: "Shannon Derby")
-    council = Committee.create!(name: "City Council")
+    council = Committee.find_or_create_by!(name: "City Council")
     CommitteeMembership.create!(committee: council, member: member, role: "member", source: "admin_manual")
     photo = "https://www.gannett-cdn.com/presto/2027/03/01/PHTR/test.jpg"
     source = nil

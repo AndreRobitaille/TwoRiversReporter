@@ -5,7 +5,7 @@ class CouncilElectionCandidateListJourneysTest < ApplicationSystemTestCase
     travel_to Time.zone.local(2027, 1, 7, 18) do
       admin = User.create!(email_address: "filing-story@example.test", admin: true, status: "active")
       admin.passkey_credentials.create!(external_id: "filing-story-key", public_key: "public-key", sign_count: 0)
-      council = Committee.create!(name: "City Council")
+      council = Committee.find_or_create_by!(name: "City Council")
       url = "https://www.seehafernews.com/2027/01/07/two-rivers-council-ballot/"
       ElectionFilingWatch.create!(election_on: Date.new(2027, 4, 6), article_url: url)
       sign_in_by_email(admin)
@@ -33,7 +33,7 @@ class CouncilElectionCandidateListJourneysTest < ApplicationSystemTestCase
     travel_to Time.zone.local(2026, 11, 27) do
       admin = User.create!(email_address: "candidate-browser@example.test", admin: true, status: "active")
       admin.passkey_credentials.create!(external_id: "candidate-browser-key", public_key: "public-key", sign_count: 0)
-      council = Committee.create!(name: "City Council")
+      council = Committee.find_or_create_by!(name: "City Council")
       member = Member.create!(name: "Mark Bittner")
       CommitteeMembership.create!(committee: council, member: member, role: "member", source: "admin_manual")
 
