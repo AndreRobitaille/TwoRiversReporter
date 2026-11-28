@@ -40,6 +40,7 @@
       <% if candidate_list_needed %>
         <div class="election-panel-row" id="candidate-list-task">
           <h3><%= candidate_list_title %></h3>
+          <% if (url = @workspace.filing_article_url) %><p><%= link_to "Read the filing story", url %></p><% end %>
           <% unless candidate_list_due %><p>Add the list when the names are available.</p><% end %>
           <%= link_to "Add candidates", new_admin_election_candidate_list_path(year: year), class: "election-action" %>
         </div>

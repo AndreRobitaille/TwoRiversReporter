@@ -491,6 +491,10 @@ without another source analysis or replacing original uploaded transcripts.
   Edit candidates opens the saved names. Correct a line or remove it and save.
   To clear the whole list, choose Remove candidate list and confirm. A second
   submission from the Add candidates form leaves the existing list intact.
+  The daily filing check stops once a list exists. Removing it stops further
+  automatic publication for the edition. When a filing story needs a reader,
+  the desk links to the story and prefills the article URL in Add candidates.
+- **January discovery evidence:** [Publisher checks and editor handoff](election-backfill-2026-11-27.md#january-filing-discovery-adm-23-res-09).
 - **Next:** RES-09/10/11 shows the names after a fresh request when that edition
   is active.
 - **Observed:** [candidate list controller](../../app/controllers/admin/election_candidate_lists_controller.rb),

@@ -25,7 +25,7 @@ the moderator and an audience member. Saving queued the forum for analysis.
 
 The guide lists Mark Bittner, Doug Brandt and Shannon Derby as the three members whose terms end in spring 2027. The configured filing calendar starts December 1. The guide links to the City Clerk for the official ballot.
 
-The planned HTR and Seehafer check for candidate names starts at the January 5 filing deadline if the list is still empty. An editor can publish the names as soon as they have them. The March questionnaire job handles candidate answers.
+The January filing watcher is configured to run at 6 p.m. Central beginning January 5, 2027, while the field is empty. It checks Seehafer’s article index and HTR’s news sitemap. An editor can still enter names earlier. When a filing story gives the size of the Two Rivers Council field and names everyone in a recognizable list, the job publishes those names and the source. Otherwise the election desk offers **Read the filing story** alongside **Add candidates**. Removing the list stops automatic publication for that edition.
 
 In **Admin → Elections → Spring 2027**, **2027 Candidates** sits under **Needs you** while the list is empty. Add the names once they’re available to an editor or an HTR or Seehafer article lists the field. The same form accepts an optional article link. Publishing moves the list to **Done and waiting** and shows the names on **City Council → Spring election**. **Edit candidates** lets an editor correct or remove names. **Remove candidate list** clears all names after confirmation. [Candidate list workflow and acceptance cases, #336](https://github.com/AndreRobitaille/TwoRiversReporter/issues/336)
 
@@ -33,8 +33,9 @@ Publishing the field gives every candidate a profile immediately during the race
 continues to work after automatic matching links their forum or questionnaire
 statements to a person. Development verified this with all 15 entries from the
 three earlier races. Both simulated voter reviewers used the current guide and
-a challenger’s historical profile. The next missing input for the public guide
-is the January publisher check when no editor has entered the names.
+a challenger’s historical profile. The January reader recovered the five names
+from Seehafer’s January 7, 2026 article. Both January 9, 2025 stories use prose
+that needs an editor. HTR’s live sitemap returned HTTP 402 during verification.
 [Public pages and acceptance evidence](../application-map/election-backfill-2026-11-27.md#automatic-candidate-profiles-and-public-entry-points-res-091011-adm-2123)
 
 ## What is already available

@@ -44,6 +44,10 @@ module Admin
       candidate_list_needed?(today: today) && today > filing_edition.filing_deadline
     end
 
+    def filing_article_url
+      ElectionFilingWatch.find_by(election_on: date, stopped: false)&.article_url
+    end
+
     def prior_sources
       return [] unless current?
 

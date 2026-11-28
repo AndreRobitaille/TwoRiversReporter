@@ -1,0 +1,2 @@
+class ElectionFilingWatch < ApplicationRecord
+end

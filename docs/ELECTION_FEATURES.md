@@ -71,7 +71,7 @@ The forum watcher checks imported Council agendas and minutes each morning from 
 | When | Work to automate | When a person is needed |
 | --- | --- | --- |
 | November 1 | Identify the three regular terms ending next spring. Recover questionnaires and forums from their previous campaigns and feature their records on the Council guide and profiles. Keep campaign records visible year-round. | Resolve a vacancy or appointment against the Clerk’s notice. |
-| December to January | Follow the Clerk’s candidacy calendar. From the January filing deadline, watch HTR and Seehafer for the field until the guide has a list. | Publish the first available list in Elections. An editor can enter it earlier. |
+| December to January | From the Clerk’s filing deadline, check HTR and Seehafer daily. Publish the first complete Council field and its story link when the reader can identify every name. | Enter the names earlier if known, or use the filing story linked from Elections when the reader needs help. |
 | February through Election Day | Look for forum announcements and recordings. Keep each recording with its event. Try published captions, then local transcription. Check whether a February Council primary changes the April field. | Identify speakers, review poor audio or supply a missing recording. |
 | March through Election Day | Look for candidate questionnaires. Keep each response and explicit nonresponse with its candidate. | Supply permitted questionnaire text when a publisher restricts access. |
 | Election night through the canvass | Check city results and label preliminary totals with their source and time. Use the municipal canvass to confirm winners. | Read a scanned or handwritten canvass when extraction is unreliable. |

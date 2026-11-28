@@ -114,6 +114,24 @@ and 1,534 assertions. After consolidating the field lookup, the filing journey
 passed again with 46 assertions. All runs used the isolated PostgreSQL test
 database and had zero skips. `bin/rubocop` and `git diff --check` passed.
 
+## January filing discovery (ADM-23, RES-09)
+
+The working tree based on `a163ab3a` found Seehafer’s two January 9, 2025
+stories and its January 7, 2026 filing report through the live publisher index.
+The 2026 reader returned all five names in the local race, preserving the
+challenger’s middle initial. It left the 2025 prose reports for the editor.
+HTR’s news sitemap returned HTTP 402. The HTR test used a simulated sitemap
+and article. [2025 field](https://www.seehafernews.com/2025/01/09/nominee-paperwork-filed-for-manitowoc-two-rivers-local-elections/)
+· [2026 field](https://www.seehafernews.com/2026/01/07/manitowoc-and-two-rivers-city-council-races-is-set/)
+
+On isolated PostgreSQL, `bin/rails test` for election filing discovery,
+candidate lists and HTR questionnaire discovery passed 8 tests and 220
+assertions. Disabling the roster count check in the test process published
+five names from a story declaring six and failed the expected assertion.
+Restoring the check passed. The two candidate-list Chromium journeys passed
+68 assertions, including the saved story link on the desk, the prefilled
+editor form and the public guide after submission. All runs had zero skips.
+
 ## Candidate participation (ADM-21, RES-10 and the Council guide)
 
 The spring guide links every listed candidate to a generated profile. Candidates

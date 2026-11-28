@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_27_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_27_011000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -647,6 +647,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_010000) do
     t.datetime "updated_at", null: false
     t.index [ "election_on" ], name: "index_election_article_leads_on_election_on"
     t.index [ "source_url" ], name: "index_election_article_leads_on_source_url", unique: true
+  end
+
+  create_table "election_filing_watches", force: :cascade do |t|
+    t.date "election_on", null: false
+    t.string "article_url"
+    t.boolean "stopped", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["election_on"], name: "index_election_filing_watches_on_election_on", unique: true
   end
 
   create_table "election_forums", force: :cascade do |t|

@@ -1,6 +1,34 @@
 require "application_system_test_case"
 
 class CouncilElectionCandidateListJourneysTest < ApplicationSystemTestCase
+  test "an editor can open a discovered filing story and publish its names" do
+    travel_to Time.zone.local(2027, 1, 7, 18) do
+      admin = User.create!(email_address: "filing-story@example.test", admin: true, status: "active")
+      admin.passkey_credentials.create!(external_id: "filing-story-key", public_key: "public-key", sign_count: 0)
+      council = Committee.create!(name: "City Council")
+      url = "https://www.seehafernews.com/2027/01/07/two-rivers-council-ballot/"
+      ElectionFilingWatch.create!(election_on: Date.new(2027, 4, 6), article_url: url)
+      sign_in_by_email(admin)
+      visit admin_elections_path(year: 2027)
+      within "#candidate-list-task" do
+        assert_link "Read the filing story", href: url
+        click_link "Add candidates"
+      end
+      assert_field "Article link (optional)", with: url
+      fill_in "Candidate names", with: "Avery Bell\nRobin Green"
+      click_button "Publish candidates"
+      assert_selector "#candidate-list", text: "Avery Bell and Robin Green"
+      using_session(:resident) do
+        visit committee_path(council.slug)
+        within "#spring-election" do
+          assert_link "Avery Bell"
+          assert_link "Robin Green"
+          assert_link "Candidate list source", href: url
+        end
+      end
+    end
+  end
+
   test "an editor publishes, corrects and removes names and the guide reflects the saved list" do
     travel_to Time.zone.local(2026, 11, 27) do
       admin = User.create!(email_address: "candidate-browser@example.test", admin: true, status: "active")

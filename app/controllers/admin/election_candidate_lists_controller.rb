@@ -5,7 +5,8 @@ module Admin
     before_action :set_candidate_list, only: %i[edit update destroy]
 
     def new
-      @candidate_list = CouncilElectionCandidateList.new
+      watch = ElectionFilingWatch.find_by(election_on: @edition.election_on, stopped: false)
+      @candidate_list = CouncilElectionCandidateList.new(source_url: watch&.article_url)
       render :form
     end
 
@@ -25,7 +26,11 @@ module Admin
     end
 
     def destroy
-      @candidate_list.destroy!
+      watch = ElectionFilingWatch.create_or_find_by!(election_on: @edition.election_on)
+      watch.with_lock do
+        watch.update!(stopped: true)
+        @candidate_list.destroy!
+      end
       redirect_to admin_elections_path(year: @year), notice: "Candidate list removed.", status: :see_other
     end
 

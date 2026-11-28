@@ -10,6 +10,10 @@
 #     schedule: at 5am every day
 
 production:
+  discover_spring_candidate_filings:
+    class: DiscoverElectionFilingsJob
+    queue: default
+    schedule: "0 18 * 1-4 * America/Chicago"
   discover_spring_forums:
     class: DiscoverElectionForumsJob
     queue: default
